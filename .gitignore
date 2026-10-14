@@ -1,0 +1,103 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Dependencies
+node_modules/
+
+# Vite / frontend build output
+dist/
+dist-ssr/
+
+# Tauri / Rust build artifacts
+src-tauri/target/
+target/
+
+# Rust generated files
+**/*.rs.bk
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# SQLite databases and related files
+*.db
+*.db3
+*.sqlite
+*.sqlite3
+
+# SQLite transient files (WAL / shared memory / rollback journal)
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Test / coverage output
+coverage/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+
+# Editors and IDEs
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Local backups
+*.bak
+*.old
+
+# Private
+.local
