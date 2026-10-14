@@ -1,8 +1,10 @@
 [package]
 name = "bloogbase"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "A cross-platform desktop launcher for the Commander Keen games"
+authors = ["transporthummel"]
+license = "MIT"
+repository = "https://github.com/transporthummel/BloogBase"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -27,10 +29,17 @@ rusqlite_migration = "2.6.0"
 zip = "9.0.3"
 sha2 = "0.11.1"
 thiserror = "2.0.21"
-tracing = "0.1.44"
+tracing = { version = "0.1.44", features = ["log-always"] }
 walkdir = "2.5.0"
 scraper = "0.27.0"
 minisign-verify = "0.3.0"
+tauri-plugin-log = "2"
+tauri-plugin-dialog = "2"
+tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
+specta = { version = "=2.0.0-rc.25", features = ["derive"] }
+specta-typescript = "0.0.12"
+tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "fs", "process", "sync", "time"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "stream", "json"] }
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
@@ -40,3 +49,6 @@ lto = true
 opt-level = 3
 panic = "abort"
 strip = true
+
+[dev-dependencies]
+tempfile = "3.27.0"
