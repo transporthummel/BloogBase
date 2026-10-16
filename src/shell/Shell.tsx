@@ -1,12 +1,25 @@
-import { Link, Outlet } from "@tanstack/react-router";
+import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { LibraryBig, Settings, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { JobsPanel } from "../jobs/JobsPanel";
+import { useJobEvents } from "../jobs/queries";
 
 /**
- * App frame (PLAN.md §8.2): full sidebar from 1200px, icon rail below.
+ * App frame (PLAN.md §8.2): full sidebar from 1200px, icon rail below. The
+ * setup wizard gets the whole window.
  */
 export function Shell() {
   const { t } = useTranslation();
+  const inSetup = useRouterState({ select: (s) => s.location.pathname === "/setup" });
+  useJobEvents();
+
+  if (inSetup) {
+    return (
+      <main className="bb-starfield min-h-screen overflow-y-auto">
+        <Outlet />
+      </main>
+    );
+  }
   return (
     <div className="flex h-screen">
       <nav
@@ -20,7 +33,8 @@ export function Shell() {
           <span className="hidden text-sm xl:inline">BloogBase</span>
         </div>
         <NavItem to="/" icon={LibraryBig} label={t("nav.library")} />
-        <div className="mt-auto">
+        <div className="mt-auto grid gap-1">
+          <JobsPanel />
           <NavItem to="/settings" icon={Settings} label={t("nav.settings")} />
         </div>
       </nav>

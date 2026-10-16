@@ -19,28 +19,44 @@ export const commands = {
 	 */
 	launchProfile: (profileId: string) => typedError<null, CommandError>(__TAURI_INVOKE("launch_profile", { profileId })),
 	runtimeStatus: () => typedError<RuntimeStatus, CommandError>(__TAURI_INVOKE("runtime_status")),
-	/**
-	 *  Downloads and installs the pinned DOSBox Staging build, emitting
-	 *  `RuntimeInstallProgress` along the way.
-	 */
-	installRuntime: () => typedError<RuntimeStatus, CommandError>(__TAURI_INVOKE("install_runtime")),
+	/**  Starts downloading and installing the pinned DOSBox Staging build. */
+	installRuntime: () => __TAURI_INVOKE<Job>("install_runtime"),
 	/**
 	 *  Uses the given DOSBox Staging executable instead of the managed one;
 	 *  `None` switches back.
 	 */
 	setCustomRuntime: (path: string | null) => typedError<RuntimeStatus, CommandError>(__TAURI_INVOKE("set_custom_runtime", { path })),
+	listJobs: () => __TAURI_INVOKE<Job[]>("list_jobs"),
+	clearFinishedJobs: () => __TAURI_INVOKE<void>("clear_finished_jobs"),
+	freeEpisodes: () => typedError<FreeEpisode[], CommandError>(__TAURI_INVOKE("free_episodes")),
+	/**  Starts downloading a free shareware episode into the library. */
+	installFreeEpisode: (gameId: string) => __TAURI_INVOKE<Job>("install_free_episode", { gameId }),
+	/**  Looks for Commander Keen in the Steam and GOG library folders. */
+	scanStores: () => typedError<StoreInstall[], CommandError>(__TAURI_INVOKE("scan_stores")),
+	/**  Imports the chosen episodes from a folder found by `scan_stores`. */
+	importStoreGames: (store: Store, path: string, gameIds: string[]) => typedError<Install[], CommandError>(__TAURI_INVOKE("import_store_games", { store, path, gameIds })),
+	setupStatus: () => typedError<SetupStatus, CommandError>(__TAURI_INVOKE("setup_status")),
+	completeSetup: () => typedError<null, CommandError>(__TAURI_INVOKE("complete_setup")),
+	/**
+	 *  Keeps BloogBase's data in (or below) `path` from the next start on;
+	 *  `None` goes back to the default folder. Only while the library is empty,
+	 *  so nothing has to be moved. Returns the new data folder.
+	 */
+	setDataLocation: (path: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("set_data_location", { path })),
+	restartApp: () => __TAURI_INVOKE<void>("restart_app"),
 };
 
 /** Events */
 export const events = {
+	jobUpdated: makeEvent<JobUpdated>("job-updated"),
 	playSessionEnded: makeEvent<PlaySessionEnded>("play-session-ended"),
-	runtimeInstallProgress: makeEvent<RuntimeInstallProgress>("runtime-install-progress"),
 };
 
 /* Types */
 export type AppInfo = {
 	version: string,
 	dataDir: string,
+	defaultDataDir: string,
 	schemaVersion: number,
 };
 
@@ -54,7 +70,23 @@ export type CommandError = {
 export type Engine = "vorticons" | "galaxy" | "dreams";
 
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
-export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound";
+export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation";
+
+export type FoundGame = {
+	gameId: string,
+	versionId: string | null,
+	/**  Already imported from this folder. */
+	imported: boolean,
+};
+
+export type FreeEpisode = {
+	gameId: string,
+	versionId: string,
+	/**  Download size in bytes. */
+	size: number,
+	/**  This version is already in the library. */
+	installed: boolean,
+};
 
 export type Game = {
 	id: string,
@@ -77,6 +109,8 @@ export type GameVersion = {
 	/**  File name → lowercase hex SHA-256. */
 	files: { [key in string]: string },
 	shareware: boolean,
+	/**  Program to launch instead of the episode executable. */
+	start?: string | null,
 };
 
 export type Install = {
@@ -90,9 +124,30 @@ export type Install = {
 	addedAt: number,
 };
 
-export type InstallPhase = "downloading" | "extracting";
-
 export type InstallSource = "folder" | "zip" | "download" | "steam" | "gog";
+
+export type Job = {
+	id: number,
+	kind: JobKind,
+	subject: string | null,
+	phase: JobPhase,
+	/**  Bytes downloaded so far. */
+	received: number,
+	/**  Expected download size in bytes; 0 while unknown. */
+	total: number,
+	error: CommandError | null,
+};
+
+export type JobKind = 
+/**  Downloading DOSBox Staging. */
+"runtime" | 
+/**  Downloading a free episode; the subject is the game id. */
+"shareware";
+
+export type JobPhase = "downloading" | "installing" | "done" | "failed";
+
+/**  Sent whenever a job starts, makes progress or finishes. */
+export type JobUpdated = Job;
 
 export type PlaySessionEnded = {
 	profileId: string,
@@ -125,14 +180,6 @@ export type Runtime = {
 	managed: boolean,
 };
 
-export type RuntimeInstallProgress = {
-	phase: InstallPhase,
-	/**  Bytes downloaded so far. */
-	received: number,
-	/**  Expected download size in bytes. */
-	total: number,
-};
-
 export type RuntimeStatus = {
 	/**  The runtime launches use; `None` if DOSBox still has to be installed. */
 	active: Runtime | null,
@@ -141,6 +188,22 @@ export type RuntimeStatus = {
 	pinnedVersion: string,
 	/**  Whether a managed download exists for this OS/architecture. */
 	downloadAvailable: boolean,
+};
+
+export type SetupStatus = {
+	/**  The user finished or skipped the setup wizard. */
+	completed: boolean,
+	/**  Games were imported (e.g. before the wizard existed, or by it). */
+	hasInstalls: boolean,
+};
+
+export type Store = "steam" | "gog";
+
+/**  A store folder with one or more episodes in it. */
+export type StoreInstall = {
+	store: Store,
+	path: string,
+	games: FoundGame[],
 };
 
 /* Tauri Specta runtime */

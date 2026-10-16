@@ -1,0 +1,53 @@
+{
+  "$comment": "Free shareware episodes the setup wizard offers (PLAN.md §2.3). BloogBase never hosts them: each is downloaded from public archives of the original, unmodified shareware release. Mirrors are tried in order; each has its own archive hash, and the episode executable must match `versionId` in games.json. Terms: Keen 1 and Keen 4 (Apogee VENDOR.DOC) may be passed around freely as long as nothing is charged and the files are unmodified; Keen Dreams (Softdisk LICENSE.DOC) may be distributed free of charge as the complete, unmodified package.",
+  "episodes": [
+    {
+      "gameId": "keen1",
+      "versionId": "keen1-1.31",
+      "mirrors": [
+        {
+          "url": "https://archive.org/download/commander_keen_volume_one_131/keen.zip",
+          "sha256": "62d58adf9a3076e95a80e291845d3ad4a64a650b72d3f8fa3db3f46d39549989",
+          "size": 150934
+        },
+        {
+          "url": "http://cd.textfiles.com/smsharew/GAMES1/1KEENV3.ZIP",
+          "sha256": "6da80d127634b5d5b3447c3fc94a66096aac141cc2d06fc9de85bfd186aa0c27",
+          "size": 183750
+        }
+      ]
+    },
+    {
+      "gameId": "keen4",
+      "versionId": "keen4-1.4-ega",
+      "mirrors": [
+        {
+          "url": "https://archive.org/download/Keen4e-sw/keen4.zip",
+          "sha256": "d7834a9b3265a997951743b58282886966e555bc6bf71d92df4de17b6129c36b",
+          "size": 631332
+        },
+        {
+          "url": "https://archive.org/download/CommanderKeenGoodbyeGalaxy/4keen.ZIP",
+          "sha256": "c7695d4d3feee73aa3e3dd81f206dd0adb6266f91f654b452cc51bdc46e46f83",
+          "size": 593497
+        },
+        {
+          "url": "https://davidgow.net/keen/4keen14.zip",
+          "sha256": "f92e2d02d3779a2e717a50287ef3ed116c22fdf7bcc12ccf676a412e97195cfe",
+          "size": 585043
+        }
+      ]
+    },
+    {
+      "gameId": "kdreams",
+      "versionId": "kdreams-1.13",
+      "mirrors": [
+        {
+          "url": "http://cd.textfiles.com/megagames2/GAMES/APOGEE/KEENDR13.ZIP",
+          "sha256": "f44f33847b907231f781fc97e6dd1e801c3fb32209e0e14ee96394b9a8e6583e",
+          "size": 379768
+        }
+      ]
+    }
+  ]
+}

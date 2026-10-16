@@ -10,7 +10,10 @@ use rusqlite_migration::{M, Migrations};
 use crate::error::Result;
 
 /// Append-only: never edit a migration that has shipped, add a new one instead.
-const MIGRATIONS_SLICE: &[M<'_>] = &[M::up(include_str!("../migrations/0001_initial.sql"))];
+const MIGRATIONS_SLICE: &[M<'_>] = &[
+    M::up(include_str!("../migrations/0001_initial.sql")),
+    M::up(include_str!("../migrations/0002_install_origin.sql")),
+];
 const MIGRATIONS: Migrations<'_> = Migrations::from_slice(MIGRATIONS_SLICE);
 
 pub struct Db(Mutex<Connection>);

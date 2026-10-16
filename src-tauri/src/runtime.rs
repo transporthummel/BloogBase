@@ -11,23 +11,16 @@ use std::time::{Duration, Instant};
 
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use specta::Type;
-use tokio::io::AsyncWriteExt;
 
 use crate::db::Db;
-use crate::detect::hex;
+use crate::downloads;
 use crate::error::{Error, Result};
+use crate::jobs::JobPhase;
 use crate::paths::AppPaths;
 
 pub const KIND: &str = "dosbox-staging";
 const CUSTOM_ID: &str = "custom";
-
-pub const USER_AGENT: &str = concat!(
-    "BloogBase/",
-    env!("CARGO_PKG_VERSION"),
-    " (+https://github.com/transporthummel/BloogBase)"
-);
 
 #[derive(Debug, Deserialize)]
 struct Manifest {
@@ -257,23 +250,6 @@ pub fn hide_console(cmd: &mut Command) {
 // ---------------------------------------------------------------------------
 // Managed install
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
-#[serde(rename_all = "camelCase")]
-pub enum InstallPhase {
-    Downloading,
-    Extracting,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Type, tauri_specta::Event)]
-#[serde(rename_all = "camelCase")]
-pub struct RuntimeInstallProgress {
-    pub phase: InstallPhase,
-    /// Bytes downloaded so far.
-    pub received: u32,
-    /// Expected download size in bytes.
-    pub total: u32,
-}
-
 static INSTALLING: AtomicBool = AtomicBool::new(false);
 
 struct InstallGuard;
@@ -294,10 +270,11 @@ impl Drop for InstallGuard {
 }
 
 /// Downloads, verifies and installs the pinned DOSBox Staging build.
+/// `progress` gets the phase and (received, total) bytes.
 pub async fn install(
     paths: AppPaths,
     db: &Db,
-    progress: impl Fn(RuntimeInstallProgress) + Send + 'static,
+    progress: impl Fn(JobPhase, u64, u64),
 ) -> Result<RuntimeStatus> {
     let _guard = InstallGuard::acquire()?;
     let dl = current_download().ok_or(Error::UnsupportedPlatform)?;
@@ -309,13 +286,16 @@ pub async fn install(
         pinned_version(),
         dl.url
     );
-    download(dl, &archive, &progress).await?;
+    downloads::fetch(
+        &dl.url,
+        &dl.sha256,
+        dl.size,
+        &archive,
+        &|received, total| progress(JobPhase::Downloading, received, total),
+    )
+    .await?;
 
-    progress(RuntimeInstallProgress {
-        phase: InstallPhase::Extracting,
-        received: clamp(dl.size),
-        total: clamp(dl.size),
-    });
+    progress(JobPhase::Installing, dl.size, dl.size);
     let version = pinned_version().to_string();
     let a = archive.clone();
     let rt = tokio::task::spawn_blocking(move || install_archive(&paths, &version, dl, &a))
@@ -326,73 +306,6 @@ pub async fn install(
     register(db, &rt)?;
     tracing::info!("installed DOSBox Staging {} at {}", rt.version, rt.path);
     status(db)
-}
-
-fn clamp(n: u64) -> u32 {
-    n.min(u32::MAX as u64) as u32
-}
-
-/// Streams `dl` to `dest`, hashing on the fly. `dest` only appears once the
-/// checksum matched.
-async fn download(
-    dl: &Download,
-    dest: &Path,
-    progress: &impl Fn(RuntimeInstallProgress),
-) -> Result<()> {
-    if let Some(dir) = dest.parent() {
-        fs::create_dir_all(dir)?;
-    }
-    let part = dest.with_extension("part");
-    let client = reqwest::Client::builder().user_agent(USER_AGENT).build()?;
-    let mut resp = client.get(&dl.url).send().await?;
-    if !resp.status().is_success() {
-        return Err(Error::HttpStatus(resp.status().as_u16()));
-    }
-    let total = resp.content_length().unwrap_or(dl.size);
-    let mut file = tokio::fs::File::create(&part).await?;
-    let mut hasher = Sha256::new();
-    let mut received = 0u64;
-    let mut last_report = Instant::now();
-
-    let result: Result<()> = async {
-        while let Some(chunk) = resp.chunk().await? {
-            hasher.update(&chunk);
-            file.write_all(&chunk).await?;
-            received += chunk.len() as u64;
-            if last_report.elapsed() > Duration::from_millis(100) {
-                last_report = Instant::now();
-                progress(RuntimeInstallProgress {
-                    phase: InstallPhase::Downloading,
-                    received: clamp(received),
-                    total: clamp(total),
-                });
-            }
-        }
-        file.flush().await?;
-        Ok(())
-    }
-    .await;
-    drop(file);
-
-    let result = result.and_then(|()| verify(&hex(&hasher.finalize()), &dl.sha256));
-    match result {
-        Ok(()) => Ok(fs::rename(&part, dest)?),
-        Err(e) => {
-            let _ = fs::remove_file(&part);
-            Err(e)
-        }
-    }
-}
-
-fn verify(actual: &str, expected: &str) -> Result<()> {
-    if actual.eq_ignore_ascii_case(expected) {
-        Ok(())
-    } else {
-        Err(Error::ChecksumMismatch {
-            expected: expected.into(),
-            actual: actual.into(),
-        })
-    }
 }
 
 /// Extracts a verified archive into `runtimes/dosbox-staging/<version>/`,
@@ -612,15 +525,6 @@ mod tests {
         );
         assert_eq!(parse_version_output("DOSBox version 0.74-3"), None);
         assert_eq!(parse_version_output(""), None);
-    }
-
-    #[test]
-    fn checksum_is_enforced() {
-        assert!(verify("ABCD", "abcd").is_ok());
-        assert!(matches!(
-            verify("abcd", "beef"),
-            Err(Error::ChecksumMismatch { .. })
-        ));
     }
 
     #[test]

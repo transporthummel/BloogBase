@@ -1,12 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FileCog } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { FileCog, Wand } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands } from "../bindings";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
-import { getTheme, setLanguage, setTheme, type Language, type Theme } from "../preferences";
+import {
+  getTheme,
+  setLanguage,
+  setSetupStep,
+  setTheme,
+  type Language,
+  type Theme,
+} from "../preferences";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { useRuntimeMutation, useRuntimeStatus } from "../runtime/queries";
 import { Button } from "../ui/Button";
@@ -16,6 +24,7 @@ import { PageHeader } from "../ui/PageHeader";
 
 export function Settings() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [theme, setThemeState] = useState(getTheme);
   const info = useQuery({ queryKey: ["appInfo"], queryFn: () => unwrap(commands.appInfo()) });
 
@@ -55,6 +64,21 @@ export function Settings() {
           </Field>
         </Section>
         <RuntimeSection />
+        <Section title={t("settings.setup")}>
+          <p className="text-sm text-muted">{t("settings.rerunHint")}</p>
+          <div>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setSetupStep("welcome");
+                navigate({ to: "/setup" });
+              }}
+            >
+              <Wand className="size-4" aria-hidden />
+              {t("settings.rerunSetup")}
+            </Button>
+          </div>
+        </Section>
         <Section title={t("settings.about")}>
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
             <dt className="text-muted">{t("settings.version")}</dt>

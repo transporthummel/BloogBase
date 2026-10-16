@@ -33,10 +33,6 @@
     "needed": "BloogBase runs the games in DOSBox Staging, a free DOS emulator. It's downloaded once from its official website.",
     "install": "Download DOSBox Staging {{version}}",
     "update": "Update to DOSBox Staging {{version}}",
-    "downloading": "Downloading DOSBox Staging…",
-    "downloadProgress": "Downloading DOSBox Staging… {{received}} of {{total}} MB",
-    "extracting": "Unpacking…",
-    "installed": "DOSBox Staging is ready.",
     "notInstalled": "DOSBox Staging is not installed yet.",
     "activeManaged": "Using DOSBox Staging {{version}}, installed by BloogBase.",
     "activeCustom": "Using your own DOSBox Staging {{version}}.",
@@ -61,7 +57,10 @@
     "themeSystem": "Like the system",
     "about": "About",
     "version": "Version",
-    "dataDir": "Data folder"
+    "dataDir": "Data folder",
+    "setup": "Setup",
+    "rerunSetup": "Run setup again",
+    "rerunHint": "Download DOSBox and the free episodes, or add games from Steam and GOG."
   },
   "errors": {
     "noGamesFound": "No Commander Keen games were found there.",
@@ -74,6 +73,78 @@
     "invalidRuntime": "That doesn't look like DOSBox Staging ({{message}}).",
     "busy": "That's already in progress.",
     "alreadyRunning": "This game is already running.",
+    "invalidLocation": "BloogBase can't keep its data there ({{message}}).",
     "generic": "Something went wrong: {{message}}"
+  },
+  "jobs": {
+    "title": "Downloads",
+    "runtime": "DOSBox Staging",
+    "shareware": "{{game}}",
+    "starting": "Starting download…",
+    "progress": "{{received}} of {{total}} MB",
+    "installing": "Installing…",
+    "done": "{{label}} is ready.",
+    "failed": "{{label}} didn't work.",
+    "retry": "Try again",
+    "clearFinished": "Clear finished",
+    "close": "Close"
+  },
+  "setup": {
+    "skipAll": "Skip setup",
+    "progress": "Setup progress",
+    "back": "Back",
+    "skip": "Skip",
+    "next": "Next",
+    "advanced": "Advanced",
+    "offline": "You seem to be offline. Downloads need an internet connection; you can skip them and add games from your computer instead.",
+    "welcome": {
+      "title": "Welcome to BloogBase!",
+      "intro": "BloogBase is a home for Commander Keen: your games and saves in one place, started with a single click.",
+      "steps": "A few quick steps and you're ready to play. You can skip any of them and run the setup again from the settings.",
+      "start": "Let's go"
+    },
+    "storage": {
+      "title": "Where to keep your games",
+      "intro": "BloogBase keeps your games, saved games and DOSBox in this folder:",
+      "usage": "That needs about 150 MB. Most of it is DOSBox; each game only takes a few MB.",
+      "choose": "Choose another folder…",
+      "useDefault": "Use the default folder",
+      "locked": "The folder can't be changed anymore because there are already games in it.",
+      "restarting": "BloogBase restarts to use the new folder…"
+    },
+    "engine": {
+      "title": "Game engine",
+      "continue": "You can continue while it downloads."
+    },
+    "episodes": {
+      "title": "Free episodes",
+      "intro": "These episodes were released as shareware and are free to play. Mods made for them work right away.",
+      "installed": "In your library",
+      "size": "{{size}} MB",
+      "terms": "BloogBase downloads the original, unmodified shareware releases from public archives (archive.org, textfiles.com). Shareware may be shared freely, but never sold.",
+      "download_one": "Download {{count}} episode",
+      "download_other": "Download {{count}} episodes"
+    },
+    "owned": {
+      "title": "Already own Keen?",
+      "intro": "Episodes 2, 3, 5 and 6 were never free. If you bought them on Steam or GOG, BloogBase can add them from there.",
+      "scanning": "Looking for games from Steam and GOG…",
+      "noneFound": "No Commander Keen games from Steam or GOG were found on this computer.",
+      "imported": "In your library",
+      "other": "Have the games somewhere else? Add them from a folder or ZIP file:",
+      "buy": "Where can I buy the other episodes?",
+      "store": {
+        "steam": "Steam",
+        "gog": "GOG"
+      },
+      "import_one": "Add {{count}} game",
+      "import_other": "Add {{count}} games"
+    },
+    "done": {
+      "title": "All set!",
+      "running": "Downloads keep running in the background. Your games show up in the library as soon as they're ready.",
+      "ready": "Everything is ready. Have fun!",
+      "open": "Open my library"
+    }
   }
 }

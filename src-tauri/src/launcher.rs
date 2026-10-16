@@ -100,7 +100,7 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
     for dir in [&layers.upper, &dirs.config, &dirs.capture] {
         fs::create_dir_all(dir)?;
     }
-    let exe = profiles::find_executable(game, &layers.lower)?;
+    let exe = profiles::find_executable(game, profile.version_id.as_deref(), &layers.lower)?;
 
     let (engine, defaults) = default_conf(game.engine);
     let default_path = paths.default_conf(engine);
@@ -389,9 +389,11 @@ mod e2e {
         paths.ensure().unwrap();
         let db = Db::open(&paths.database).unwrap();
 
-        let status = runtime::install(paths.clone(), &db, |p| eprintln!("{p:?}"))
-            .await
-            .unwrap();
+        let status = runtime::install(paths.clone(), &db, |phase, received, total| {
+            eprintln!("{phase:?} {received}/{total}")
+        })
+        .await
+        .unwrap();
         let rt = status.active.unwrap();
         eprintln!("runtime: {rt:?}");
 

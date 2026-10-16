@@ -1,15 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, Navigate } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FileArchive, FolderOpen, Play } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type Profile } from "../bindings";
+import { useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatDate, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
+import { profilesKey } from "./queries";
+import { getSetupStep } from "../preferences";
 import { useRuntimeStatus } from "../runtime/queries";
+import { useSetupStatus } from "../setup/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -17,12 +21,11 @@ import { EmptyState } from "../ui/EmptyState";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
 
-const profilesKey = ["profiles"] as const;
-
 export function Library() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const games = useQuery({ queryKey: ["games"], queryFn: commands.listGames, staleTime: Infinity });
+  const games = useGames();
+  const setup = useSetupStatus();
   const profiles = useQuery({
     queryKey: profilesKey,
     queryFn: () => unwrap(commands.listProfiles()),
@@ -67,6 +70,10 @@ export function Library() {
       </Button>
     </>
   );
+
+  // First start, or a wizard that was interrupted after adding games.
+  if (setup.data && !setup.data.completed && (!setup.data.hasInstalls || getSetupStep()))
+    return <Navigate to="/setup" />;
 
   const gameById = new Map(games.data?.map((g) => [g.id, g]));
   const error = importGames.error ?? launch.error ?? profiles.error;

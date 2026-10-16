@@ -6,6 +6,7 @@ export type Language = "en" | "de";
 
 const THEME_KEY = "bloogbase.theme";
 const LANGUAGE_KEY = "bloogbase.language";
+const SETUP_STEP_KEY = "bloogbase.setupStep";
 
 function read(key: string): string | null {
   try {
@@ -15,9 +16,10 @@ function read(key: string): string | null {
   }
 }
 
-function write(key: string, value: string) {
+function write(key: string, value: string | null) {
   try {
-    localStorage.setItem(key, value);
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
   } catch {
     // Not fatal: the preference just won't survive a restart.
   }
@@ -52,4 +54,13 @@ export function getLanguage(): Language {
 
 export function setLanguage(language: Language) {
   write(LANGUAGE_KEY, language);
+}
+
+/** The setup wizard step to resume at after an interruption or restart. */
+export function getSetupStep(): string | null {
+  return read(SETUP_STEP_KEY);
+}
+
+export function setSetupStep(step: string | null) {
+  write(SETUP_STEP_KEY, step);
 }

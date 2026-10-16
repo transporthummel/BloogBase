@@ -2,20 +2,27 @@ mod catalog;
 mod commands;
 mod db;
 mod detect;
+mod downloads;
 mod error;
+mod jobs;
 mod launcher;
 mod library;
 mod overlay_view;
 mod paths;
 mod profiles;
 mod runtime;
+mod settings;
+mod shareware;
 mod source;
+mod stores;
 
 use tauri::Manager;
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, log::LevelFilter};
 use tauri_specta::{collect_commands, collect_events};
 
+use crate::commands::DataLocation;
 use crate::db::Db;
+use crate::jobs::Jobs;
 use crate::launcher::Running;
 use crate::paths::AppPaths;
 
@@ -34,10 +41,20 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::runtime_status,
             commands::install_runtime,
             commands::set_custom_runtime,
+            commands::list_jobs,
+            commands::clear_finished_jobs,
+            commands::free_episodes,
+            commands::install_free_episode,
+            commands::scan_stores,
+            commands::import_store_games,
+            commands::setup_status,
+            commands::complete_setup,
+            commands::set_data_location,
+            commands::restart_app,
         ])
         .events(collect_events![
-            runtime::RuntimeInstallProgress,
-            launcher::PlaySessionEnded,
+            jobs::JobUpdated,
+            launcher::PlaySessionEnded
         ])
 }
 
@@ -85,8 +102,21 @@ pub fn run() {
         .setup(move |app| {
             builder.mount_events(app);
 
-            let paths = AppPaths::new(app.path().app_data_dir()?);
-            paths.ensure()?;
+            let location = DataLocation {
+                config_dir: app.path().app_config_dir()?,
+                default_root: app.path().app_data_dir()?,
+            };
+            let mut paths = AppPaths::new(paths::resolve_root(
+                &location.config_dir,
+                location.default_root.clone(),
+            ));
+            if let Err(err) = paths.ensure() {
+                // E.g. on a removed USB drive: better to start with the
+                // default folder than not at all. Logging isn't up yet.
+                eprintln!("data folder {} unusable: {err}", paths.root.display());
+                paths = AppPaths::new(location.default_root.clone());
+                paths.ensure()?;
+            }
             // Registered here rather than on the builder because the log
             // directory lives inside the app data dir, known only at runtime.
             app.handle().plugin(log_plugin(&paths))?;
@@ -102,6 +132,8 @@ pub fn run() {
             app.manage(paths);
             app.manage(db);
             app.manage(Running::default());
+            app.manage(Jobs::default());
+            app.manage(location);
             Ok(())
         })
         .run(tauri::generate_context!())

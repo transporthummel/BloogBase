@@ -6,7 +6,10 @@ import { commands, type Game, type Profile, type RuntimeStatus } from "../bindin
 import { Library } from "./Library";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
-vi.mock("@tanstack/react-router", () => ({ Link: (props: object) => <a {...props} /> }));
+vi.mock("@tanstack/react-router", () => ({
+  Link: (props: object) => <a {...props} />,
+  Navigate: ({ to }: { to: string }) => <p>redirect to {to}</p>,
+}));
 vi.mock("../bindings", () => {
   const event = { listen: vi.fn(() => Promise.resolve(() => {})) };
   return {
@@ -17,8 +20,10 @@ vi.mock("../bindings", () => {
       launchProfile: vi.fn(),
       runtimeStatus: vi.fn(),
       installRuntime: vi.fn(),
+      listJobs: vi.fn(() => Promise.resolve([])),
+      setupStatus: vi.fn(),
     },
-    events: { playSessionEnded: event, runtimeInstallProgress: event },
+    events: { playSessionEnded: event, jobUpdated: event },
   };
 });
 
@@ -67,6 +72,20 @@ function renderLibrary() {
 beforeEach(() => {
   vi.mocked(commands.listGames).mockResolvedValue([keen5]);
   vi.mocked(commands.runtimeStatus).mockResolvedValue({ status: "ok", data: ready });
+  vi.mocked(commands.setupStatus).mockResolvedValue({
+    status: "ok",
+    data: { completed: true, hasInstalls: true },
+  });
+});
+
+test("opens the setup wizard on first start", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [] });
+  vi.mocked(commands.setupStatus).mockResolvedValue({
+    status: "ok",
+    data: { completed: false, hasInstalls: false },
+  });
+  renderLibrary();
+  expect(await screen.findByText("redirect to /setup")).toBeInTheDocument();
 });
 
 test("shows the empty state with import actions", async () => {

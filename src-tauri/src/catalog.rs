@@ -39,6 +39,9 @@ pub struct GameVersion {
     /// File name → lowercase hex SHA-256.
     pub files: BTreeMap<String, String>,
     pub shareware: bool,
+    /// Program to launch instead of the episode executable.
+    #[serde(default)]
+    pub start: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

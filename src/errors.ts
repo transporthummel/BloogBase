@@ -14,6 +14,7 @@ const translated: ErrorKind[] = [
   "invalidRuntime",
   "busy",
   "alreadyRunning",
+  "invalidLocation",
 ];
 
 export function errorMessage(t: TFunction, err: unknown): string {

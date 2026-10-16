@@ -33,10 +33,6 @@
     "needed": "BloogBase startet die Spiele mit DOSBox Staging, einem kostenlosen DOS-Emulator. Er wird einmalig von der offiziellen Website heruntergeladen.",
     "install": "DOSBox Staging {{version}} herunterladen",
     "update": "Auf DOSBox Staging {{version}} aktualisieren",
-    "downloading": "Lade DOSBox Staging herunter…",
-    "downloadProgress": "Lade DOSBox Staging herunter… {{received}} von {{total}} MB",
-    "extracting": "Entpacke…",
-    "installed": "DOSBox Staging ist bereit.",
     "notInstalled": "DOSBox Staging ist noch nicht installiert.",
     "activeManaged": "Verwendet DOSBox Staging {{version}}, installiert von BloogBase.",
     "activeCustom": "Verwendet dein eigenes DOSBox Staging {{version}}.",
@@ -61,7 +57,10 @@
     "themeSystem": "Wie das System",
     "about": "Über",
     "version": "Version",
-    "dataDir": "Datenordner"
+    "dataDir": "Datenordner",
+    "setup": "Einrichtung",
+    "rerunSetup": "Einrichtung erneut starten",
+    "rerunHint": "DOSBox und die kostenlosen Episoden herunterladen oder Spiele von Steam und GOG hinzufügen."
   },
   "errors": {
     "noGamesFound": "Dort wurden keine Commander-Keen-Spiele gefunden.",
@@ -74,6 +73,78 @@
     "invalidRuntime": "Das sieht nicht nach DOSBox Staging aus ({{message}}).",
     "busy": "Das läuft bereits.",
     "alreadyRunning": "Dieses Spiel läuft bereits.",
+    "invalidLocation": "BloogBase kann seine Daten dort nicht speichern ({{message}}).",
     "generic": "Etwas ist schiefgelaufen: {{message}}"
+  },
+  "jobs": {
+    "title": "Downloads",
+    "runtime": "DOSBox Staging",
+    "shareware": "{{game}}",
+    "starting": "Download startet…",
+    "progress": "{{received}} von {{total}} MB",
+    "installing": "Wird installiert…",
+    "done": "{{label}} ist bereit.",
+    "failed": "{{label}} hat nicht geklappt.",
+    "retry": "Noch einmal versuchen",
+    "clearFinished": "Erledigte entfernen",
+    "close": "Schließen"
+  },
+  "setup": {
+    "skipAll": "Einrichtung überspringen",
+    "progress": "Fortschritt der Einrichtung",
+    "back": "Zurück",
+    "skip": "Überspringen",
+    "next": "Weiter",
+    "advanced": "Erweitert",
+    "offline": "Du scheinst offline zu sein. Downloads brauchen eine Internetverbindung; du kannst sie überspringen und stattdessen Spiele von deinem Computer hinzufügen.",
+    "welcome": {
+      "title": "Willkommen bei BloogBase!",
+      "intro": "BloogBase ist ein Zuhause für Commander Keen: deine Spiele und Spielstände an einem Ort, mit einem Klick gestartet.",
+      "steps": "Ein paar kurze Schritte, dann kann es losgehen. Du kannst jeden davon überspringen und die Einrichtung später in den Einstellungen erneut starten.",
+      "start": "Los geht's"
+    },
+    "storage": {
+      "title": "Wo deine Spiele liegen",
+      "intro": "BloogBase speichert deine Spiele, Spielstände und DOSBox in diesem Ordner:",
+      "usage": "Dafür werden etwa 150 MB gebraucht. Das meiste davon ist DOSBox; jedes Spiel braucht nur ein paar MB.",
+      "choose": "Anderen Ordner wählen…",
+      "useDefault": "Standardordner verwenden",
+      "locked": "Der Ordner kann nicht mehr geändert werden, weil schon Spiele darin liegen.",
+      "restarting": "BloogBase startet neu, um den neuen Ordner zu verwenden…"
+    },
+    "engine": {
+      "title": "Spiel-Engine",
+      "continue": "Du kannst weitermachen, während der Download läuft."
+    },
+    "episodes": {
+      "title": "Kostenlose Episoden",
+      "intro": "Diese Episoden wurden als Shareware veröffentlicht und sind kostenlos spielbar. Mods dafür funktionieren sofort.",
+      "installed": "In deiner Bibliothek",
+      "size": "{{size}} MB",
+      "terms": "BloogBase lädt die originalen, unveränderten Shareware-Versionen aus öffentlichen Archiven herunter (archive.org, textfiles.com). Shareware darf frei weitergegeben, aber nie verkauft werden.",
+      "download_one": "{{count}} Episode herunterladen",
+      "download_other": "{{count}} Episoden herunterladen"
+    },
+    "owned": {
+      "title": "Hast du Keen schon?",
+      "intro": "Die Episoden 2, 3, 5 und 6 waren nie kostenlos. Wenn du sie bei Steam oder GOG gekauft hast, kann BloogBase sie von dort hinzufügen.",
+      "scanning": "Suche nach Spielen von Steam und GOG…",
+      "noneFound": "Auf diesem Computer wurden keine Commander-Keen-Spiele von Steam oder GOG gefunden.",
+      "imported": "In deiner Bibliothek",
+      "other": "Liegen die Spiele woanders? Füge sie aus einem Ordner oder einer ZIP-Datei hinzu:",
+      "buy": "Wo kann ich die anderen Episoden kaufen?",
+      "store": {
+        "steam": "Steam",
+        "gog": "GOG"
+      },
+      "import_one": "{{count}} Spiel hinzufügen",
+      "import_other": "{{count}} Spiele hinzufügen"
+    },
+    "done": {
+      "title": "Fertig!",
+      "running": "Die Downloads laufen im Hintergrund weiter. Deine Spiele erscheinen in der Bibliothek, sobald sie bereit sind.",
+      "ready": "Alles ist bereit. Viel Spaß!",
+      "open": "Zur Bibliothek"
+    }
   }
 }

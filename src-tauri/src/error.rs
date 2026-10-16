@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use specta::Type;
 
 #[derive(Debug, thiserror::Error)]
@@ -27,6 +27,8 @@ pub enum Error {
     HttpStatus(u16),
     #[error("checksum mismatch: expected {expected}, got {actual}")]
     ChecksumMismatch { expected: String, actual: String },
+    #[error("the download didn't contain what was expected: {0}")]
+    UnexpectedContent(String),
     #[error("could not extract archive: {0}")]
     Extract(String),
     #[error("no DOSBox Staging build available for this platform")]
@@ -41,6 +43,8 @@ pub enum Error {
     AlreadyRunning,
     #[error("not found: {0}")]
     NotFound(String),
+    #[error("can't store data there: {0}")]
+    InvalidLocation(String),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -55,7 +59,9 @@ impl Error {
             Error::UnsupportedSource(_) => ErrorKind::UnsupportedSource,
             Error::NoGamesFound => ErrorKind::NoGamesFound,
             Error::Network(_) | Error::HttpStatus(_) => ErrorKind::Network,
-            Error::ChecksumMismatch { .. } => ErrorKind::ChecksumMismatch,
+            Error::ChecksumMismatch { .. } | Error::UnexpectedContent(_) => {
+                ErrorKind::ChecksumMismatch
+            }
             Error::Extract(_) => ErrorKind::Archive,
             Error::UnsupportedPlatform => ErrorKind::UnsupportedPlatform,
             Error::RuntimeMissing => ErrorKind::RuntimeMissing,
@@ -63,12 +69,13 @@ impl Error {
             Error::Busy => ErrorKind::Busy,
             Error::AlreadyRunning => ErrorKind::AlreadyRunning,
             Error::NotFound(_) => ErrorKind::NotFound,
+            Error::InvalidLocation(_) => ErrorKind::InvalidLocation,
         }
     }
 }
 
 /// Error category the frontend can branch on (e.g. to pick a translated message).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum ErrorKind {
     Database,
@@ -85,10 +92,11 @@ pub enum ErrorKind {
     Busy,
     AlreadyRunning,
     NotFound,
+    InvalidLocation,
 }
 
 /// The error shape every command returns to the frontend.
-#[derive(Debug, Serialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct CommandError {
     pub kind: ErrorKind,

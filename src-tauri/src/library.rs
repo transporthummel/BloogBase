@@ -27,7 +27,7 @@ pub enum InstallSource {
 }
 
 impl InstallSource {
-    fn as_str(self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         match self {
             InstallSource::Folder => "folder",
             InstallSource::Zip => "zip",
@@ -63,21 +63,38 @@ pub struct Install {
     pub added_at: i64,
 }
 
-/// Imports every game found in `path`. Each game becomes an install with a
-/// vanilla play profile that receives the saves found next to it.
+/// Imports every game found in a folder or ZIP the user picked.
 pub fn import(paths: &AppPaths, db: &Db, path: &Path) -> Result<Vec<Install>> {
-    let source = Source::open(path)?;
-    let kind = match source {
+    let kind = match Source::open(path)? {
         Source::Folder(_) => InstallSource::Folder,
         Source::Zip(_) => InstallSource::Zip,
     };
-    let detections = detect(&source)?;
+    import_from(paths, db, path, kind, &path.display().to_string(), None)
+}
+
+/// Imports every game found in `path`. Each game becomes an install with a
+/// vanilla play profile that receives the saves found next to it. `origin`
+/// records where the files came from (a path or download URL); `only`
+/// limits the import to these game ids.
+pub fn import_from(
+    paths: &AppPaths,
+    db: &Db,
+    path: &Path,
+    kind: InstallSource,
+    origin: &str,
+    only: Option<&[String]>,
+) -> Result<Vec<Install>> {
+    let source = Source::open(path)?;
+    let mut detections = detect(&source)?;
+    if let Some(only) = only {
+        detections.retain(|d| only.contains(&d.game_id));
+    }
     if detections.is_empty() {
         return Err(Error::NoGamesFound);
     }
     detections
         .iter()
-        .map(|d| import_one(paths, db, &source, kind, d))
+        .map(|d| import_one(paths, db, &source, kind, origin, d))
         .collect()
 }
 
@@ -86,6 +103,7 @@ fn import_one(
     db: &Db,
     source: &Source,
     kind: InstallSource,
+    origin: &str,
     d: &Detection,
 ) -> Result<Install> {
     let game = catalog::game(&d.game_id).expect("detections come from the catalog");
@@ -94,51 +112,55 @@ fn import_one(
     let profile_dir = paths.profiles.join(&id);
     let staging = paths.cache.join(format!("import-{id}"));
 
-    let result =
-        (|| {
-            // Copy into a staging dir first so a failed import leaves nothing half-done.
-            let _ = fs::remove_dir_all(&staging);
-            for (files, sub) in [(&d.base_files, "base"), (&d.state_files, "state")] {
-                fs::create_dir_all(staging.join(sub))?;
-                for rel in files {
-                    source.copy_to(rel, &staging.join(sub).join(split_dir(rel).1))?;
-                }
+    let result = (|| {
+        // Copy into a staging dir first so a failed import leaves nothing half-done.
+        let _ = fs::remove_dir_all(&staging);
+        for (files, sub) in [(&d.base_files, "base"), (&d.state_files, "state")] {
+            fs::create_dir_all(staging.join(sub))?;
+            for rel in files {
+                source.copy_to(rel, &staging.join(sub).join(split_dir(rel).1))?;
             }
-            fs::create_dir(&profile_dir)?;
-            fs::rename(staging.join("base"), install_dir.join("base"))?;
-            fs::rename(staging.join("state"), profile_dir.join("state"))?;
+        }
+        fs::create_dir(&profile_dir)?;
+        fs::rename(staging.join("base"), install_dir.join("base"))?;
+        fs::rename(staging.join("state"), profile_dir.join("state"))?;
 
-            let install = Install {
-                id: id.clone(),
-                game_id: game.id.clone(),
-                version_id: d.version_id.clone(),
-                label: game.title.clone(),
-                source: kind,
-                path: install_dir.display().to_string(),
-                added_at: now(),
-            };
-            let mut conn = db.conn();
-            let tx = conn.transaction()?;
-            tx.execute(
-                "INSERT INTO installs (id, game_id, version_id, label, source, path, added_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-                params![
-                    install.id,
-                    install.game_id,
-                    install.version_id,
-                    install.label,
-                    install.source.as_str(),
-                    install.path,
-                    install.added_at
-                ],
-            )?;
-            tx.execute(
-            "INSERT INTO profiles (id, install_id, state_path, created_at) VALUES (?1, ?1, ?2, ?3)",
-            params![id, profile_dir.join("state").display().to_string(), install.added_at],
+        let install = Install {
+            id: id.clone(),
+            game_id: game.id.clone(),
+            version_id: d.version_id.clone(),
+            label: game.title.clone(),
+            source: kind,
+            path: install_dir.display().to_string(),
+            added_at: now(),
+        };
+        let mut conn = db.conn();
+        let tx = conn.transaction()?;
+        tx.execute(
+            "INSERT INTO installs (id, game_id, version_id, label, source, path, added_at, origin)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![
+                install.id,
+                install.game_id,
+                install.version_id,
+                install.label,
+                install.source.as_str(),
+                install.path,
+                install.added_at,
+                origin
+            ],
         )?;
-            tx.commit()?;
-            Ok(install)
-        })();
+        tx.execute(
+            "INSERT INTO profiles (id, install_id, state_path, created_at) VALUES (?1, ?1, ?2, ?3)",
+            params![
+                id,
+                profile_dir.join("state").display().to_string(),
+                install.added_at
+            ],
+        )?;
+        tx.commit()?;
+        Ok(install)
+    })();
 
     let _ = fs::remove_dir_all(&staging);
     match &result {
@@ -197,6 +219,24 @@ pub fn list(db: &Db) -> Result<Vec<Install>> {
         })
     })?;
     Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
+/// Whether an install of `game_id` from `origin` is in the library.
+pub fn has_origin(db: &Db, game_id: &str, origin: &str) -> Result<bool> {
+    Ok(db.conn().query_row(
+        "SELECT EXISTS (SELECT 1 FROM installs WHERE game_id = ?1 AND origin = ?2)",
+        params![game_id, origin],
+        |r| r.get(0),
+    )?)
+}
+
+/// Whether the library has an install of this exact game version.
+pub fn has_version(db: &Db, version_id: &str) -> Result<bool> {
+    Ok(db.conn().query_row(
+        "SELECT EXISTS (SELECT 1 FROM installs WHERE version_id = ?1)",
+        [version_id],
+        |r| r.get(0),
+    )?)
 }
 
 pub fn now() -> i64 {
@@ -265,6 +305,20 @@ mod tests {
             )
             .unwrap();
         assert_eq!(profile, "keen4-1");
+        assert!(has_origin(&db, "keen4", &src.display().to_string()).unwrap());
+        assert!(!has_origin(&db, "keen5", &src.display().to_string()).unwrap());
+    }
+
+    #[test]
+    fn import_from_records_kind_and_origin() {
+        let (tmp, paths, db) = setup();
+        let zip = tmp.path().join("4keen.zip");
+        write_zip(&zip, KEEN4);
+        let url = "https://example.invalid/4keen.zip";
+        let installs = import_from(&paths, &db, &zip, InstallSource::Download, url, None).unwrap();
+        assert_eq!(installs[0].source, InstallSource::Download);
+        assert!(has_origin(&db, "keen4", url).unwrap());
+        assert!(!has_version(&db, "keen4-1.4-ega").unwrap());
     }
 
     #[test]

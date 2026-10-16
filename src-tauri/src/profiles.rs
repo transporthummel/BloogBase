@@ -123,16 +123,21 @@ fn count_saves(game: &Game, layers: &Layers) -> Result<u32> {
         .count() as u32)
 }
 
-/// The episode executable inside `dir`, spelled as on disk. Catalog order
+/// The program to start inside `dir`, spelled as on disk: the version's own
+/// start program if it has one, else the episode executable. Catalog order
 /// decides when several exist (e.g. EGA before CGA).
-pub fn find_executable(game: &Game, dir: &Path) -> Result<String> {
+pub fn find_executable(game: &Game, version_id: Option<&str>, dir: &Path) -> Result<String> {
     let names: Vec<String> = fs::read_dir(dir)?
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_ok_and(|t| t.is_file()))
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .collect();
-    game.executables
-        .iter()
+    let start = version_id
+        .and_then(|id| game.versions.iter().find(|v| v.id == id))
+        .and_then(|v| v.start.as_ref());
+    start
+        .into_iter()
+        .chain(&game.executables)
         .find_map(|exe| names.iter().find(|n| n.eq_ignore_ascii_case(exe)))
         .cloned()
         .ok_or_else(|| Error::NotFound(format!("{} executable in {}", game.id, dir.display())))
@@ -193,10 +198,30 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let k4 = catalog::game("keen4").unwrap();
         write_folder(tmp.path(), &[("keen4c.exe", b""), ("KEEN4E.EXE", b"")]);
-        assert_eq!(find_executable(k4, tmp.path()).unwrap(), "KEEN4E.EXE");
+        assert_eq!(find_executable(k4, None, tmp.path()).unwrap(), "KEEN4E.EXE");
         fs::remove_file(tmp.path().join("KEEN4E.EXE")).unwrap();
-        assert_eq!(find_executable(k4, tmp.path()).unwrap(), "keen4c.exe");
+        assert_eq!(find_executable(k4, None, tmp.path()).unwrap(), "keen4c.exe");
         fs::remove_file(tmp.path().join("keen4c.exe")).unwrap();
-        assert!(find_executable(k4, tmp.path()).is_err());
+        assert!(find_executable(k4, None, tmp.path()).is_err());
+    }
+
+    #[test]
+    fn prefers_the_versions_start_program() {
+        let tmp = tempfile::tempdir().unwrap();
+        let kd = catalog::game("kdreams").unwrap();
+        write_folder(tmp.path(), &[("KDREAMS.EXE", b""), ("start.exe", b"")]);
+        assert_eq!(
+            find_executable(kd, Some("kdreams-1.13"), tmp.path()).unwrap(),
+            "start.exe"
+        );
+        assert_eq!(
+            find_executable(kd, None, tmp.path()).unwrap(),
+            "KDREAMS.EXE"
+        );
+        fs::remove_file(tmp.path().join("start.exe")).unwrap();
+        assert_eq!(
+            find_executable(kd, Some("kdreams-1.13"), tmp.path()).unwrap(),
+            "KDREAMS.EXE"
+        );
     }
 }

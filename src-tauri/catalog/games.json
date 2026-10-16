@@ -1,5 +1,5 @@
 {
-  "$comment": "Game definitions (PLAN.md §5). File names are matched case-insensitively; `?` and `*` are wildcards in saves/stateFiles. Hashes are SHA-256 of the listed files. TODO: confirm all names and add hashes against the Shikadi ModdingWiki.",
+  "$comment": "Game definitions (PLAN.md §5). File names are matched case-insensitively; `?` and `*` are wildcards in saves/stateFiles. Hashes are SHA-256 of the listed files. A version's `start` replaces the episode executable at launch (Keen Dreams 1.13 refuses to run without its START shell). TODO: confirm all names and add hashes against the Shikadi ModdingWiki.",
   "games": [
     {
       "id": "keen1",
@@ -9,7 +9,14 @@
       "requiredFiles": ["EGAHEAD.CK1", "EGALATCH.CK1", "EGASPRIT.CK1", "LEVEL01.CK1", "SOUNDS.CK1"],
       "saves": ["SAVED?.CK1"],
       "stateFiles": ["CTLPANEL.CK1", "SCORES.CK1"],
-      "versions": []
+      "versions": [
+        {
+          "id": "keen1-1.31",
+          "label": "v1.31",
+          "files": { "KEEN1.EXE": "8b3f829f7eeab18a7fbf9d539967e9ae9c856258aa78efc0531fa922df71c4a2" },
+          "shareware": true
+        }
+      ]
     },
     {
       "id": "keen2",
@@ -39,7 +46,14 @@
       "requiredFiles": ["GAMEMAPS.CK4", "AUDIO.CK4"],
       "saves": ["SAVEGAM?.CK4"],
       "stateFiles": ["CONFIG.CK4"],
-      "versions": []
+      "versions": [
+        {
+          "id": "keen4-1.4-ega",
+          "label": "v1.4 EGA",
+          "files": { "KEEN4E.EXE": "bdbb46746e02c0dddcba9b24fa464c26cc7e3514a3b3931267c8c17b9fb9c405" },
+          "shareware": true
+        }
+      ]
     },
     {
       "id": "keen5",
@@ -76,7 +90,15 @@
       "requiredFiles": ["KDREAMS.MAP", "KDREAMS.AUD"],
       "saves": ["SAVEGAM?.KDR", "SAVEGM?.KDR"],
       "stateFiles": ["CONFIG.KDR"],
-      "versions": []
+      "versions": [
+        {
+          "id": "kdreams-1.13",
+          "label": "v1.13 Shareware",
+          "files": { "KDREAMS.EXE": "574d49b882af9ac15232eadb4c6edce94a35b30d622f6e01f6ae20565f7c5aab" },
+          "shareware": true,
+          "start": "START.EXE"
+        }
+      ]
     }
   ]
 }
