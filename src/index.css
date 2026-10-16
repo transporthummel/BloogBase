@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* Design tokens. Placeholder palette until the M0 design pass. */
+@theme {
+  --color-surface: #f6f5f0;
+  --color-card: #ffffff;
+  --color-ink: #1d1b26;
+  --color-muted: #6b6878;
+  --color-accent: #e8483b;
+  --color-vorticons: #3b6fd8;
+  --color-galaxy: #2f9e5b;
+  --color-dreams: #8a4fd0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: #16151c;
+    --color-card: #23212c;
+    --color-ink: #f1f0f5;
+    --color-muted: #a3a0b2;
+  }
+}
+
+body {
+  @apply bg-surface text-ink antialiased;
+  font-family: system-ui, sans-serif;
+}

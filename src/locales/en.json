@@ -1,0 +1,18 @@
+{
+  "library": {
+    "title": "Library",
+    "empty": "No games yet. Import a folder or ZIP file with a Commander Keen game.",
+    "importFolder": "Import folder",
+    "importZip": "Import ZIP",
+    "importing": "Importing…",
+    "imported_one": "Imported {{count}} game.",
+    "imported_other": "Imported {{count}} games.",
+    "unknownVersion": "Unknown version"
+  },
+  "errors": {
+    "noGamesFound": "No Commander Keen games were found there.",
+    "unsupportedSource": "Please choose a folder or a ZIP file.",
+    "archive": "The ZIP file could not be read.",
+    "generic": "Something went wrong: {{message}}"
+  }
+}

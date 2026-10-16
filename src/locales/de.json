@@ -1,0 +1,18 @@
+{
+  "library": {
+    "title": "Bibliothek",
+    "empty": "Noch keine Spiele. Importiere einen Ordner oder eine ZIP-Datei mit einem Commander-Keen-Spiel.",
+    "importFolder": "Ordner importieren",
+    "importZip": "ZIP importieren",
+    "importing": "Importiere…",
+    "imported_one": "{{count}} Spiel importiert.",
+    "imported_other": "{{count}} Spiele importiert.",
+    "unknownVersion": "Unbekannte Version"
+  },
+  "errors": {
+    "noGamesFound": "Dort wurden keine Commander-Keen-Spiele gefunden.",
+    "unsupportedSource": "Bitte wähle einen Ordner oder eine ZIP-Datei.",
+    "archive": "Die ZIP-Datei konnte nicht gelesen werden.",
+    "generic": "Etwas ist schiefgelaufen: {{message}}"
+  }
+}
