@@ -1,13 +1,31 @@
 {
+  "nav": {
+    "label": "Hauptnavigation",
+    "library": "Bibliothek",
+    "settings": "Einstellungen"
+  },
   "library": {
     "title": "Bibliothek",
-    "empty": "Noch keine Spiele. Importiere einen Ordner oder eine ZIP-Datei mit einem Commander-Keen-Spiel.",
+    "emptyTitle": "Noch ganz leer hier",
+    "empty": "Importiere einen Ordner oder eine ZIP-Datei mit einem Commander-Keen-Spiel, um loszulegen.",
     "importFolder": "Ordner importieren",
     "importZip": "ZIP importieren",
     "importing": "Importiere…",
     "imported_one": "{{count}} Spiel importiert.",
     "imported_other": "{{count}} Spiele importiert.",
     "unknownVersion": "Unbekannte Version"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "appearance": "Darstellung",
+    "language": "Sprache",
+    "theme": "Farbschema",
+    "themeDark": "Dunkel",
+    "themeLight": "Hell",
+    "themeSystem": "Wie das System",
+    "about": "Über",
+    "version": "Version",
+    "dataDir": "Datenordner"
   },
   "errors": {
     "noGamesFound": "Dort wurden keine Commander-Keen-Spiele gefunden.",

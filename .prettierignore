@@ -1,0 +1,5 @@
+dist
+src-tauri
+src/bindings.ts
+pnpm-lock.yaml
+.local

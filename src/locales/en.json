@@ -1,13 +1,31 @@
 {
+  "nav": {
+    "label": "Main navigation",
+    "library": "Library",
+    "settings": "Settings"
+  },
   "library": {
     "title": "Library",
-    "empty": "No games yet. Import a folder or ZIP file with a Commander Keen game.",
+    "emptyTitle": "Nothing here yet",
+    "empty": "Import a folder or ZIP file with a Commander Keen game to get started.",
     "importFolder": "Import folder",
     "importZip": "Import ZIP",
     "importing": "Importing…",
     "imported_one": "Imported {{count}} game.",
     "imported_other": "Imported {{count}} games.",
     "unknownVersion": "Unknown version"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "language": "Language",
+    "theme": "Theme",
+    "themeDark": "Dark",
+    "themeLight": "Light",
+    "themeSystem": "Like the system",
+    "about": "About",
+    "version": "Version",
+    "dataDir": "Data folder"
   },
   "errors": {
     "noGamesFound": "No Commander Keen games were found there.",

@@ -1,27 +1,108 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/press-start-2p/latin-400.css";
 
-/* Design tokens. Placeholder palette until the M0 design pass. */
-@theme {
-  --color-surface: #f6f5f0;
-  --color-card: #ffffff;
-  --color-ink: #1d1b26;
-  --color-muted: #6b6878;
-  --color-accent: #e8483b;
-  --color-vorticons: #3b6fd8;
-  --color-galaxy: #2f9e5b;
-  --color-dreams: #8a4fd0;
+/*
+ * Design tokens (PLAN.md §8.1). Dark is the default theme; `data-theme` on
+ * <html> selects light. Accents come from the EGA 16-colour palette.
+ */
+:root {
+  --bb-ega-blue: #0000aa;
+  --bb-ega-magenta: #aa00aa;
+  --bb-ega-brown: #aa5500;
+  --bb-ega-bright-blue: #5555ff;
+  --bb-ega-bright-green: #55ff55;
+  --bb-ega-bright-red: #ff5555;
+  --bb-ega-yellow: #ffff55;
+
+  --bb-bg: #0d0c1d;
+  --bb-surface: #181631;
+  --bb-surface-raised: #221f42;
+  --bb-border: #34305e;
+  --bb-ink: #f2f0ff;
+  --bb-muted: #a19dc4;
+  --bb-accent: var(--bb-ega-bright-green);
+  --bb-accent-ink: #082b08;
+  --bb-danger: var(--bb-ega-bright-red);
+  --bb-focus: var(--bb-ega-yellow);
+  --bb-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
+
+  --bb-vorticons: var(--bb-ega-magenta);
+  --bb-galaxy: var(--bb-ega-bright-blue);
+  --bb-dreams: var(--bb-ega-brown);
+
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-surface: #16151c;
-    --color-card: #23212c;
-    --color-ink: #f1f0f5;
-    --color-muted: #a3a0b2;
-  }
+:root[data-theme="light"] {
+  --bb-bg: #f4f3fb;
+  --bb-surface: #ffffff;
+  --bb-surface-raised: #ebe9f7;
+  --bb-border: #d6d3ea;
+  --bb-ink: #17152e;
+  --bb-muted: #5e5a80;
+  --bb-accent: #1e9e1e;
+  --bb-accent-ink: #ffffff;
+  --bb-danger: #c62828;
+  --bb-focus: var(--bb-ega-blue);
+  --bb-shadow: 0 4px 16px rgb(23 21 46 / 0.08);
+
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg: var(--bb-bg);
+  --color-surface: var(--bb-surface);
+  --color-surface-raised: var(--bb-surface-raised);
+  --color-border: var(--bb-border);
+  --color-ink: var(--bb-ink);
+  --color-muted: var(--bb-muted);
+  --color-accent: var(--bb-accent);
+  --color-accent-ink: var(--bb-accent-ink);
+  --color-danger: var(--bb-danger);
+  --color-focus: var(--bb-focus);
+  --color-vorticons: var(--bb-vorticons);
+  --color-galaxy: var(--bb-galaxy);
+  --color-dreams: var(--bb-dreams);
+  --shadow-card: var(--bb-shadow);
+}
+
+@theme {
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  /* Pixel font: headings, badges and numbers only. */
+  --font-pixel: "Press Start 2P", monospace;
 }
 
 body {
-  @apply bg-surface text-ink antialiased;
-  font-family: system-ui, sans-serif;
+  @apply bg-bg font-sans text-ink antialiased;
+}
+
+/* Keyboard and controller focus, visible on every interactive element. */
+:focus-visible {
+  outline: 3px solid var(--bb-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Starfield for empty states: two layers of tiny dots. */
+.bb-starfield {
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, var(--bb-ink) 50%, transparent 51%),
+    radial-gradient(1px 1px at 70% 60%, var(--bb-muted) 50%, transparent 51%),
+    radial-gradient(2px 2px at 40% 80%, var(--bb-ega-yellow) 50%, transparent 51%),
+    radial-gradient(1px 1px at 85% 15%, var(--bb-ink) 50%, transparent 51%);
+  background-size:
+    120px 120px,
+    90px 90px,
+    210px 210px,
+    150px 150px;
 }
