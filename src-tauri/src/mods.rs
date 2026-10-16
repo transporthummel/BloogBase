@@ -1,0 +1,1173 @@
+//! Mods: analysis, install pipeline, removal (PLAN.md §9.2, §9.4, §9.5).
+//!
+//! Installing is two steps so the user can confirm what was detected:
+//! [`inspect`] looks at a folder or ZIP, [`install`] stores the mod and creates
+//! its play profile.
+
+use std::collections::BTreeMap;
+use std::fs::{self, File};
+use std::io::{self, Write};
+use std::path::Path;
+
+use rusqlite::{OptionalExtension, params};
+use serde::{Deserialize, Serialize};
+use specta::Type;
+use zip::write::SimpleFileOptions;
+
+use crate::catalog::{self, Game};
+use crate::db::Db;
+use crate::detect::sha256_hex;
+use crate::error::{Error, Result};
+use crate::library::{self, Install, now};
+use crate::overlay_view;
+use crate::paths::AppPaths;
+use crate::recipe::{self, Recipe, has_ext, patcher_game};
+use crate::source::{Source, split_dir};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum ModSource {
+    Index,
+    Keenwiki,
+    Manual,
+}
+
+impl ModSource {
+    fn as_str(self) -> &'static str {
+        match self {
+            ModSource::Index => "index",
+            ModSource::Keenwiki => "keenwiki",
+            ModSource::Manual => "manual",
+        }
+    }
+
+    fn parse(s: &str) -> Option<Self> {
+        Some(match s {
+            "index" => ModSource::Index,
+            "keenwiki" => ModSource::Keenwiki,
+            "manual" => ModSource::Manual,
+            _ => return None,
+        })
+    }
+}
+
+/// What [`inspect`] found, for the user to confirm.
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ModInfo {
+    pub name: String,
+    pub authors: Vec<String>,
+    pub version: Option<String>,
+    /// `YYYY-MM-DD`, when known.
+    pub released: Option<String>,
+    pub game_id: String,
+    /// Ways to start the mod, best first.
+    pub recipes: Vec<RecipeOption>,
+    /// False when the user should pick from `recipes`.
+    pub confident: bool,
+    pub file_count: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct RecipeOption {
+    pub recipe: Recipe,
+    /// The file that suggested this recipe, e.g. `PLAY.BAT`.
+    pub origin: String,
+    /// Versions the patch file names, e.g. `1.4`.
+    pub game_versions: Vec<String>,
+    /// Catalog versions matching `game_versions`. Empty when any version
+    /// may do, or the catalog doesn't know the named versions.
+    pub version_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallModRequest {
+    /// The folder or ZIP passed to [`inspect`].
+    pub path: String,
+    pub name: String,
+    /// One of the recipes [`inspect`] offered.
+    pub recipe: Recipe,
+    /// The install the mod is played on.
+    pub install_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct Mod {
+    pub id: String,
+    pub game_id: String,
+    pub name: String,
+    pub authors: Vec<String>,
+    pub version: Option<String>,
+    pub recipe: Recipe,
+    pub source: ModSource,
+    /// Unix epoch seconds.
+    #[specta(type = u32)]
+    pub added_at: i64,
+    /// The play profile created for the mod.
+    pub profile_id: String,
+}
+
+/// The mod inside a source.
+struct Analysis {
+    /// Directory of the mod inside the source, `""` for the root.
+    root: String,
+    /// Files to install, relative to the source.
+    files: Vec<String>,
+    info: ModInfo,
+}
+
+pub fn inspect(path: &Path) -> Result<ModInfo> {
+    Ok(analyze(&Source::open(path)?, path)?.info)
+}
+
+fn analyze(source: &Source, path: &Path) -> Result<Analysis> {
+    let files: Vec<String> = source
+        .files()?
+        .into_iter()
+        .filter(|f| !is_junk(split_dir(f).1))
+        .collect();
+    let root = find_root(&files).ok_or(Error::NoModFound)?;
+    let in_root = |f: &&String| root.is_empty() || f.starts_with(&format!("{root}/"));
+    let mut files: Vec<String> = files.iter().filter(in_root).cloned().collect();
+    // Bare names in the mod root, where recipes have to live.
+    let names: Vec<String> = files
+        .iter()
+        .filter(|f| split_dir(f).0 == root)
+        .map(|f| split_dir(f).1.to_string())
+        .collect();
+    let rel = |name: &str| {
+        if root.is_empty() {
+            name.to_string()
+        } else {
+            format!("{root}/{name}")
+        }
+    };
+    let read = |name: &str| {
+        source
+            .read(&rel(name))
+            .ok()
+            .map(|b| String::from_utf8_lossy(&b).into_owned())
+    };
+
+    let meta = guess_metadata(path, &root);
+    let game = find_game(&names, &read, meta.episode).ok_or(Error::NoModFound)?;
+
+    // Pristine game executables would hide the install's own version.
+    let mut pristine = Vec::new();
+    for name in &names {
+        if game
+            .executables
+            .iter()
+            .any(|e| e.eq_ignore_ascii_case(name))
+        {
+            let hash = sha256_hex(&source.read(&rel(name))?);
+            if game
+                .versions
+                .iter()
+                .any(|v| v.files.values().any(|h| *h == hash))
+            {
+                pristine.push(rel(name));
+            }
+        }
+    }
+    files.retain(|f| !pristine.contains(f));
+
+    let guess = recipe::guess(&names, read, &game.executables);
+    let recipes = guess
+        .candidates
+        .into_iter()
+        .map(|c| {
+            let game_versions = c
+                .recipe
+                .patch_file()
+                .and_then(read)
+                .map(|t| recipe::patch_versions(&t))
+                .unwrap_or_default();
+            RecipeOption {
+                version_ids: version_ids(game, &game_versions),
+                game_versions,
+                recipe: c.recipe,
+                origin: c.origin,
+            }
+        })
+        .collect();
+
+    Ok(Analysis {
+        info: ModInfo {
+            name: meta.name,
+            authors: meta.authors,
+            version: meta.version,
+            released: meta.released,
+            game_id: game.id.clone(),
+            recipes,
+            confident: guess.confident,
+            file_count: files.len() as u32,
+        },
+        root,
+        files,
+    })
+}
+
+fn is_junk(name: &str) -> bool {
+    name.starts_with("._")
+        || ["THUMBS.DB", ".DS_STORE", "DESKTOP.INI"]
+            .iter()
+            .any(|j| j.eq_ignore_ascii_case(name))
+}
+
+/// Whether a file name says "Commander Keen data": episode data, patches,
+/// patchers, episode executables.
+fn is_keen_file(name: &str) -> bool {
+    episode_of_ext(name).is_some()
+        || has_ext(name, "PAT")
+        || patcher_game(name).is_some()
+        || catalog::games()
+            .iter()
+            .any(|g| g.executables.iter().any(|e| e.eq_ignore_ascii_case(name)))
+}
+
+fn episode_of_ext(name: &str) -> Option<&'static str> {
+    let (_, ext) = name.rsplit_once('.')?;
+    Some(match ext.to_ascii_uppercase().as_str() {
+        "CK1" => "keen1",
+        "CK2" => "keen2",
+        "CK3" => "keen3",
+        "CK4" => "keen4",
+        "CK5" => "keen5",
+        "CK6" => "keen6",
+        "KDR" => "kdreams",
+        _ => return None,
+    })
+}
+
+/// The directory with the most Keen files directly inside it; the shallowest
+/// one on a tie. Mods are often zipped with a folder around them.
+fn find_root(files: &[String]) -> Option<String> {
+    let mut score: BTreeMap<&str, usize> = BTreeMap::new();
+    for f in files {
+        let (dir, name) = split_dir(f);
+        if is_keen_file(name) {
+            *score.entry(dir).or_default() += 1;
+        }
+    }
+    score
+        .into_iter()
+        .max_by(|a, b| {
+            a.1.cmp(&b.1)
+                .then_with(|| depth(b.0).cmp(&depth(a.0)))
+                .then_with(|| b.0.cmp(a.0))
+        })
+        .map(|(dir, _)| dir.to_string())
+}
+
+fn depth(dir: &str) -> usize {
+    if dir.is_empty() {
+        0
+    } else {
+        dir.matches('/').count() + 1
+    }
+}
+
+/// The target episode: the patcher says it best, then a patch file's `%ext`,
+/// then the data files, then the archive name.
+fn find_game(
+    names: &[String],
+    read: &impl Fn(&str) -> Option<String>,
+    hint: Option<&str>,
+) -> Option<&'static Game> {
+    let by_patcher = names.iter().find_map(|n| patcher_game(n));
+    let by_ext = || {
+        names
+            .iter()
+            .filter(|n| has_ext(n, "PAT"))
+            .filter_map(|n| read(n).and_then(|t| recipe::patch_ext(&t)))
+            .find_map(|ext| episode_of_ext(&format!("x.{ext}")))
+    };
+    let by_data = || {
+        let mut counts: BTreeMap<&str, usize> = BTreeMap::new();
+        for n in names {
+            if let Some(g) = episode_of_ext(n) {
+                *counts.entry(g).or_default() += 1;
+            }
+        }
+        counts.into_iter().max_by_key(|(_, c)| *c).map(|(g, _)| g)
+    };
+    let by_exe = || {
+        catalog::games()
+            .iter()
+            .find(|g| {
+                g.executables
+                    .iter()
+                    .any(|e| names.iter().any(|n| n.eq_ignore_ascii_case(e)))
+            })
+            .map(|g| g.id.as_str())
+    };
+    let id = by_patcher
+        .or_else(by_ext)
+        .or_else(by_data)
+        .or_else(by_exe)
+        .or(hint)?;
+    catalog::game(id)
+}
+
+/// Catalog versions of `game` matching patch file versions like `1.4`
+/// (labels look like `v1.4 EGA`), plus third-party builds of those.
+fn version_ids(game: &Game, versions: &[String]) -> Vec<String> {
+    let originals: Vec<&str> = game
+        .versions
+        .iter()
+        .filter(|v| v.original.is_none())
+        .filter(|v| {
+            let number = v
+                .label
+                .split_whitespace()
+                .next()
+                .unwrap_or("")
+                .trim_start_matches('v');
+            versions.iter().any(|w| w == number)
+        })
+        .map(|v| v.id.as_str())
+        .collect();
+    game.versions
+        .iter()
+        .filter(|v| originals.contains(&v.original.as_deref().unwrap_or(&v.id)))
+        .map(|v| v.id.clone())
+        .collect()
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct Metadata {
+    name: String,
+    authors: Vec<String>,
+    version: Option<String>,
+    released: Option<String>,
+    episode: Option<&'static str>,
+}
+
+/// Name and details from the file name. Understands the archive naming
+/// scheme `m.<author>.<name>[_v<version>].<episode>.<date>`
+/// (e.g. `m.dave216.aurora_bliss_v.1.2.k4.2023-08-23.zip`); otherwise uses
+/// the mod's folder or the file name.
+fn guess_metadata(path: &Path, root: &str) -> Metadata {
+    let file_name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let stem = if path.is_dir() {
+        file_name.as_str()
+    } else {
+        file_name
+            .rsplit_once('.')
+            .map_or(file_name.as_str(), |(s, _)| s)
+    };
+
+    let parts: Vec<&str> = stem.split('.').collect();
+    // Level packs without a name: `l.<author>.<episode>.<date>`.
+    if parts.len() == 4
+        && parts[0].eq_ignore_ascii_case("l")
+        && is_date(parts[3])
+        && let Some(episode) = episode_code(parts[2])
+    {
+        return Metadata {
+            name: format!("{} Level Pack", title_case(&parts[1].replace('_', " "))),
+            authors: vec![parts[1].to_string()],
+            version: None,
+            released: Some(parts[3].to_string()),
+            episode: Some(episode),
+        };
+    }
+    if parts.len() >= 5
+        && parts[0].len() == 1
+        && is_date(parts[parts.len() - 1])
+        && let Some(episode) = episode_code(parts[parts.len() - 2])
+    {
+        let raw = parts[2..parts.len() - 2].join(".");
+        let (name, version) = split_version(&raw);
+        return Metadata {
+            name: title_case(&name.replace('_', " ")),
+            authors: vec![parts[1].to_string()],
+            version,
+            released: Some(parts[parts.len() - 1].to_string()),
+            episode: Some(episode),
+        };
+    }
+
+    let folder = split_dir(root).1;
+    let name = if folder.is_empty() { stem } else { folder };
+    let name = name.replace('_', " ").trim().to_string();
+    let name = if name.chars().any(|c| c.is_ascii_uppercase()) {
+        name
+    } else {
+        title_case(&name)
+    };
+    Metadata {
+        name: if name.is_empty() { "Mod".into() } else { name },
+        authors: Vec::new(),
+        version: None,
+        released: None,
+        episode: None,
+    }
+}
+
+fn episode_code(code: &str) -> Option<&'static str> {
+    Some(match code.to_ascii_lowercase().as_str() {
+        "k1" => "keen1",
+        "k2" => "keen2",
+        "k3" => "keen3",
+        "k4" => "keen4",
+        "k5" => "keen5",
+        "k6" => "keen6",
+        "kd" => "kdreams",
+        _ => return None,
+    })
+}
+
+fn is_date(s: &str) -> bool {
+    let b = s.as_bytes();
+    b.len() == 10
+        && b.iter().enumerate().all(|(i, c)| {
+            if i == 4 || i == 7 {
+                *c == b'-'
+            } else {
+                c.is_ascii_digit()
+            }
+        })
+}
+
+/// `aurora_bliss_v.1.2` → (`aurora_bliss`, `1.2`); also `simulator_keen.v.1.1`.
+fn split_version(raw: &str) -> (String, Option<String>) {
+    for sep in ["_v", ".v"] {
+        if let Some((name, v)) = raw.rsplit_once(sep) {
+            let v = v.trim_start_matches('.');
+            if !v.is_empty() && v.chars().all(|c| c.is_ascii_digit() || c == '.') {
+                return (name.to_string(), Some(v.to_string()));
+            }
+        }
+    }
+    (raw.to_string(), None)
+}
+
+fn title_case(s: &str) -> String {
+    const SMALL: &[&str] = &["a", "an", "and", "in", "of", "on", "the", "to"];
+    s.split_whitespace()
+        .enumerate()
+        .map(|(i, w)| {
+            if i > 0 && SMALL.contains(&w) {
+                return w.to_string();
+            }
+            let mut c = w.chars();
+            c.next()
+                .map(|f| f.to_uppercase().chain(c).collect())
+                .unwrap_or_default()
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Installs a mod and creates its play profile on `install_id`.
+pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod> {
+    let path = Path::new(&req.path);
+    let source = Source::open(path)?;
+    let analysis = analyze(&source, path)?;
+    let option = analysis
+        .info
+        .recipes
+        .iter()
+        .find(|o| o.recipe == req.recipe)
+        .ok_or_else(|| Error::IncompatibleInstall("unknown recipe".into()))?;
+    let target = library::list(db)?
+        .into_iter()
+        .find(|i| i.id == req.install_id)
+        .ok_or_else(|| Error::NotFound(format!("install {}", req.install_id)))?;
+    check_install(&analysis.info.game_id, option, &target)?;
+
+    let name = match req.name.trim() {
+        "" => analysis.info.name.clone(),
+        n => n.to_string(),
+    };
+    let id = reserve_id(paths, &name)?;
+    let mod_dir = paths.mods.join(&id);
+    let profile_dir = paths.profiles.join(&id);
+    let staging = paths.cache.join(format!("mod-{id}"));
+
+    let result = (|| {
+        let _ = fs::remove_dir_all(&staging);
+        fs::create_dir_all(staging.join("files"))?;
+        for rel in &analysis.files {
+            let inner = if analysis.root.is_empty() {
+                rel.as_str()
+            } else {
+                &rel[analysis.root.len() + 1..]
+            };
+            source.copy_to(rel, &staging.join("files").join(inner))?;
+        }
+        if let Source::Zip(zip) = &source {
+            fs::create_dir_all(staging.join("source"))?;
+            fs::copy(
+                zip,
+                staging
+                    .join("source")
+                    .join(zip.file_name().expect("a file")),
+            )?;
+        }
+        fs::create_dir_all(profile_dir.join("state"))?;
+        for entry in fs::read_dir(&staging)? {
+            let entry = entry?;
+            fs::rename(entry.path(), mod_dir.join(entry.file_name()))?;
+        }
+
+        let m = Mod {
+            id: id.clone(),
+            game_id: analysis.info.game_id.clone(),
+            name,
+            authors: analysis.info.authors.clone(),
+            version: analysis.info.version.clone(),
+            recipe: option.recipe.clone(),
+            source: ModSource::Manual,
+            added_at: now(),
+            profile_id: id.clone(),
+        };
+        let archive_sha256 = match &source {
+            Source::Zip(zip) => Some(sha256_hex(&fs::read(zip)?)),
+            Source::Folder(_) => None,
+        };
+        let mut conn = db.conn();
+        let tx = conn.transaction()?;
+        tx.execute(
+            "INSERT INTO mods (id, game_id, name, authors, version, recipe_json, path, source,
+                               source_url, archive_sha256, added_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            params![
+                m.id,
+                m.game_id,
+                m.name,
+                serde_json::to_string(&m.authors).expect("strings serialize"),
+                m.version,
+                serde_json::to_string(&m.recipe).expect("recipes serialize"),
+                mod_dir.display().to_string(),
+                m.source.as_str(),
+                req.path,
+                archive_sha256,
+                m.added_at
+            ],
+        )?;
+        tx.execute(
+            "INSERT INTO profiles (id, install_id, mod_id, state_path, created_at)
+             VALUES (?1, ?2, ?1, ?3, ?4)",
+            params![
+                m.id,
+                target.id,
+                profile_dir.join("state").display().to_string(),
+                m.added_at
+            ],
+        )?;
+        tx.commit()?;
+        Ok(m)
+    })();
+
+    let _ = fs::remove_dir_all(&staging);
+    match &result {
+        Ok(m) => tracing::info!(
+            "installed mod {} for {} on {}: {} files, recipe {:?}",
+            m.id,
+            m.game_id,
+            target.id,
+            analysis.files.len(),
+            m.recipe
+        ),
+        Err(err) => {
+            tracing::warn!("install of mod {id} failed, cleaning up: {err}");
+            let _ = fs::remove_dir_all(&mod_dir);
+            let _ = fs::remove_dir_all(&profile_dir);
+        }
+    }
+    result
+}
+
+/// Whether the mod can be played on `install`. Installs of an unknown
+/// version are allowed: the catalog doesn't know every release. A known
+/// version the patch file doesn't name is refused, even when the catalog
+/// doesn't know the named ones (e.g. a CGA-only patch on the EGA release).
+fn check_install(game_id: &str, option: &RecipeOption, install: &Install) -> Result<()> {
+    if install.game_id != game_id {
+        return Err(Error::IncompatibleInstall(format!(
+            "the mod is for {game_id}, not {}",
+            install.game_id
+        )));
+    }
+    if let Some(version) = &install.version_id
+        && !option.game_versions.is_empty()
+        && !option.version_ids.contains(version)
+    {
+        return Err(Error::IncompatibleInstall(format!(
+            "the mod needs version {}, not {version}",
+            option.game_versions.join(", ")
+        )));
+    }
+    Ok(())
+}
+
+/// A readable, unique id derived from the name, claimed by creating the
+/// mod's directory. Never one that is also a profile or install id.
+fn reserve_id(paths: &AppPaths, name: &str) -> Result<String> {
+    let base = slug(name);
+    for n in 1.. {
+        let id = if n == 1 {
+            base.clone()
+        } else {
+            format!("{base}-{n}")
+        };
+        if paths.profiles.join(&id).exists() || paths.library.join(&id).exists() {
+            continue;
+        }
+        match fs::create_dir(paths.mods.join(&id)) {
+            Ok(()) => return Ok(id),
+            Err(e) if e.kind() == io::ErrorKind::AlreadyExists => continue,
+            Err(e) => return Err(e.into()),
+        }
+    }
+    unreachable!()
+}
+
+fn slug(name: &str) -> String {
+    let mut out = String::new();
+    for c in name.chars() {
+        if c.is_ascii_alphanumeric() {
+            out.push(c.to_ascii_lowercase());
+        } else if !out.ends_with('-') && !out.is_empty() {
+            out.push('-');
+        }
+    }
+    let out: String = out.trim_end_matches('-').chars().take(40).collect();
+    let out = out.trim_end_matches('-');
+    if out.is_empty() {
+        "mod".into()
+    } else {
+        out.into()
+    }
+}
+
+pub fn list(db: &Db) -> Result<Vec<Mod>> {
+    let conn = db.conn();
+    let mut stmt = conn.prepare(
+        "SELECT m.id, m.game_id, m.name, m.authors, m.version, m.recipe_json, m.source,
+                m.added_at, p.id
+         FROM mods m JOIN profiles p ON p.mod_id = m.id
+         ORDER BY m.added_at, m.id",
+    )?;
+    let rows = stmt.query_map([], |r| {
+        let authors: String = r.get(3)?;
+        let recipe: String = r.get(5)?;
+        let source: String = r.get(6)?;
+        Ok(Mod {
+            id: r.get(0)?,
+            game_id: r.get(1)?,
+            name: r.get(2)?,
+            authors: serde_json::from_str(&authors).unwrap_or_default(),
+            version: r.get(4)?,
+            recipe: serde_json::from_str(&recipe).unwrap_or(Recipe::Episode),
+            source: ModSource::parse(&source).expect("valid mod source"),
+            added_at: r.get(7)?,
+            profile_id: r.get(8)?,
+        })
+    })?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
+/// Removes a mod with its profile. With `keep_saves`, what the game wrote is
+/// archived into `backups/` first (§9.5).
+pub fn delete(paths: &AppPaths, db: &Db, mod_id: &str, keep_saves: bool) -> Result<()> {
+    let (profile_id, state_path): (String, String) = db
+        .conn()
+        .query_row(
+            "SELECT id, state_path FROM profiles WHERE mod_id = ?1",
+            [mod_id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .optional()?
+        .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))?;
+    let state = Path::new(&state_path);
+
+    let backup = if keep_saves {
+        backup_state(paths, &profile_id, state)?
+    } else {
+        None
+    };
+    {
+        let mut conn = db.conn();
+        let tx = conn.transaction()?;
+        if let Some((archive, files)) = &backup {
+            tx.execute(
+                "INSERT INTO save_backups (profile_id, label, archive_path, created_at, files_json)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![
+                    profile_id,
+                    "Mod removed",
+                    archive.display().to_string(),
+                    now(),
+                    serde_json::to_string(files).expect("strings serialize")
+                ],
+            )?;
+        }
+        tx.execute("DELETE FROM profiles WHERE id = ?1", [&profile_id])?;
+        tx.execute("DELETE FROM mods WHERE id = ?1", [mod_id])?;
+        tx.commit()?;
+    }
+    for dir in [
+        paths.mods.join(mod_id),
+        paths.profiles.join(&profile_id),
+        paths.composed(&profile_id),
+    ] {
+        if let Err(e) = fs::remove_dir_all(&dir)
+            && e.kind() != io::ErrorKind::NotFound
+        {
+            tracing::warn!("could not remove {}: {e}", dir.display());
+        }
+    }
+    tracing::info!("removed mod {mod_id} (saves kept: {})", backup.is_some());
+    Ok(())
+}
+
+/// Zips the files the game wrote, if any. Returns the archive and its files.
+fn backup_state(
+    paths: &AppPaths,
+    profile_id: &str,
+    state: &Path,
+) -> Result<Option<(std::path::PathBuf, Vec<String>)>> {
+    // Overlay markers only make sense next to the lower layer.
+    let mut files = Vec::new();
+    for entry in walkdir::WalkDir::new(state) {
+        let entry = entry.map_err(io::Error::from)?;
+        let rel = entry
+            .path()
+            .strip_prefix(state)
+            .expect("walkdir yields children");
+        if entry.file_type().is_file()
+            && !overlay_view::is_marker(&entry.file_name().to_string_lossy())
+        {
+            files.push(rel.to_string_lossy().replace('\\', "/"));
+        }
+    }
+    if files.is_empty() {
+        return Ok(None);
+    }
+    let dir = paths.backups.join(profile_id);
+    fs::create_dir_all(&dir)?;
+    let archive = dir.join(format!("{}.zip", now()));
+    let mut zip = zip::ZipWriter::new(File::create(&archive)?);
+    for rel in &files {
+        zip.start_file(rel.as_str(), SimpleFileOptions::default())?;
+        zip.write_all(&fs::read(state.join(rel))?)?;
+    }
+    zip.finish()?;
+    Ok(Some((archive, files)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::source::testutil::*;
+
+    fn setup() -> (tempfile::TempDir, AppPaths, Db) {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(tmp.path().join("data"));
+        paths.ensure().unwrap();
+        let db = Db::open_in_memory().unwrap();
+        let src = tmp.path().join("k4");
+        write_folder(&src, KEEN4);
+        library::import(&paths, &db, &src).unwrap();
+        (tmp, paths, db)
+    }
+
+    const AURORA: &[(&str, &[u8])] = &[
+        (
+            "Aurora/play.bat",
+            b"@echo off\r\nCK4PATCH.EXE abiathar.pat\r\n",
+        ),
+        ("Aurora/CK4PATCH.EXE", b"patcher"),
+        ("Aurora/abiathar.pat", b"%ext ck4\n%version 1.4\n"),
+        ("Aurora/GAMEMAPS.CK4", b"new maps"),
+        ("Aurora/READ ME.txt", b"hi"),
+        ("Aurora/Thumbs.db", b""),
+        ("__MACOSX/Aurora/._play.bat", b""),
+        ("info.txt", b"outside the mod"),
+    ];
+
+    fn request(path: &Path, recipe: Recipe) -> InstallModRequest {
+        InstallModRequest {
+            path: path.display().to_string(),
+            name: String::new(),
+            recipe,
+            install_id: "keen4-1".into(),
+        }
+    }
+
+    #[test]
+    fn inspects_zip_with_folder_and_metadata_from_name() {
+        let tmp = tempfile::tempdir().unwrap();
+        let zip = tmp
+            .path()
+            .join("m.dave216.aurora_bliss_v.1.2.k4.2023-08-23.zip");
+        write_zip(&zip, AURORA);
+        let info = inspect(&zip).unwrap();
+        assert_eq!(info.name, "Aurora Bliss");
+        assert_eq!(info.authors, ["dave216"]);
+        assert_eq!(info.version.as_deref(), Some("1.2"));
+        assert_eq!(info.released.as_deref(), Some("2023-08-23"));
+        assert_eq!(info.game_id, "keen4");
+        assert!(info.confident);
+        assert_eq!(info.file_count, 5);
+        assert_eq!(
+            info.recipes[0],
+            RecipeOption {
+                recipe: Recipe::Patch {
+                    patcher: "CK4PATCH.EXE".into(),
+                    patch: "abiathar.pat".into(),
+                    args: vec![]
+                },
+                origin: "play.bat".into(),
+                game_versions: vec!["1.4".into()],
+                version_ids: vec!["keen4-1.4-ega".into()],
+            }
+        );
+    }
+
+    #[test]
+    fn installs_mod_with_profile_and_removes_it_keeping_saves() {
+        let (tmp, paths, db) = setup();
+        let zip = tmp.path().join("aurora.zip");
+        write_zip(&zip, AURORA);
+        let info = inspect(&zip).unwrap();
+        assert_eq!(info.name, "Aurora");
+
+        // The fake Keen 4 has an unknown version, which is allowed.
+        let m = install(&paths, &db, &request(&zip, info.recipes[0].recipe.clone())).unwrap();
+        assert_eq!((m.id.as_str(), m.profile_id.as_str()), ("aurora", "aurora"));
+        let files = paths.mods.join("aurora/files");
+        assert!(files.join("GAMEMAPS.CK4").is_file());
+        assert!(files.join("READ ME.txt").is_file());
+        assert!(!files.join("Thumbs.db").exists());
+        assert!(!paths.mods.join("aurora/files/info.txt").exists());
+        assert!(paths.mods.join("aurora/source/aurora.zip").is_file());
+        assert!(paths.profiles.join("aurora/state").is_dir());
+        assert_eq!(list(&db).unwrap().len(), 1);
+        assert_eq!(fs::read_dir(&paths.cache).unwrap().count(), 0);
+
+        // Same name again gets its own id.
+        let second = install(&paths, &db, &request(&zip, info.recipes[0].recipe.clone())).unwrap();
+        assert_eq!(second.id, "aurora-2");
+
+        fs::write(paths.profiles.join("aurora/state/SAVEGAM0.CK4"), b"save").unwrap();
+        delete(&paths, &db, "aurora", true).unwrap();
+        assert!(!paths.mods.join("aurora").exists());
+        assert!(!paths.profiles.join("aurora").exists());
+        let (archive, files): (String, String) = db
+            .conn()
+            .query_row(
+                "SELECT archive_path, files_json FROM save_backups WHERE profile_id = 'aurora'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(files, r#"["SAVEGAM0.CK4"]"#);
+        let mut zip = zip::ZipArchive::new(File::open(archive).unwrap()).unwrap();
+        assert_eq!(zip.by_index(0).unwrap().name().unwrap(), "SAVEGAM0.CK4");
+        assert_eq!(list(&db).unwrap().len(), 1);
+
+        delete(&paths, &db, "aurora-2", false).unwrap();
+        assert!(list(&db).unwrap().is_empty());
+        assert!(matches!(
+            delete(&paths, &db, "aurora-2", false),
+            Err(Error::NotFound(_))
+        ));
+    }
+
+    #[test]
+    fn refuses_other_games_and_versions() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("k5mod");
+        write_folder(&src, &[("LEVEL.CK5", b""), ("GAMEMAPS.CK5", b"")]);
+        let info = inspect(&src).unwrap();
+        assert_eq!(info.game_id, "keen5");
+        let err = install(&paths, &db, &request(&src, Recipe::Episode)).unwrap_err();
+        assert!(matches!(err, Error::IncompatibleInstall(_)));
+        // Nothing left behind.
+        assert_eq!(fs::read_dir(&paths.mods).unwrap().count(), 0);
+
+        let option = RecipeOption {
+            recipe: Recipe::Episode,
+            origin: String::new(),
+            game_versions: vec!["1.4".into()],
+            version_ids: vec!["keen4-1.4-ega".into()],
+        };
+        let mut i = library::list(&db).unwrap().remove(0);
+        check_install("keen4", &option, &i).unwrap();
+        i.version_id = Some("keen4-1.0".into());
+        assert!(check_install("keen4", &option, &i).is_err());
+        i.version_id = Some("keen4-1.4-ega".into());
+        check_install("keen4", &option, &i).unwrap();
+
+        // A CGA-only patch: the catalog knows no CGA release, but the EGA one isn't it.
+        let cga = RecipeOption {
+            game_versions: vec!["cga-1.4".into()],
+            version_ids: vec![],
+            ..option
+        };
+        assert!(check_install("keen4", &cga, &i).is_err());
+        i.version_id = None;
+        check_install("keen4", &cga, &i).unwrap();
+    }
+
+    #[test]
+    fn unknown_recipe_is_rejected() {
+        let (tmp, paths, db) = setup();
+        let zip = tmp.path().join("aurora.zip");
+        write_zip(&zip, AURORA);
+        let bad = Recipe::Batch {
+            file: "EVIL.BAT".into(),
+        };
+        assert!(install(&paths, &db, &request(&zip, bad)).is_err());
+    }
+
+    #[test]
+    fn nothing_moddy() {
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(tmp.path(), &[("README.TXT", b"")]);
+        assert!(matches!(inspect(tmp.path()), Err(Error::NoModFound)));
+    }
+
+    #[test]
+    fn keeps_unknown_executables() {
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(
+            tmp.path(),
+            &[
+                ("KDREAMS.EXE", b"modded"),
+                ("KDREAMS.MAP", b""),
+                ("KDRPATCH.EXE", b""),
+            ],
+        );
+        let a = analyze(&Source::open(tmp.path()).unwrap(), tmp.path()).unwrap();
+        assert!(a.files.contains(&"KDREAMS.EXE".to_string()));
+        assert_eq!(a.info.game_id, "kdreams");
+    }
+
+    #[test]
+    fn root_is_the_folder_with_most_keen_files() {
+        let files: Vec<String> = [
+            "Mod/LEVEL01.CK1",
+            "Mod/LEVEL02.CK1",
+            "Mod/extras/LEVEL01.CK1",
+            "readme.txt",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        assert_eq!(find_root(&files).as_deref(), Some("Mod"));
+        assert_eq!(find_root(&["a.txt".to_string()]), None);
+    }
+
+    #[test]
+    fn metadata_from_names() {
+        let m = guess_metadata(
+            Path::new("m.88vega.fireblaze_curse_of_the_dragonlords.k1.2018-11-18.zip"),
+            "Fireblaze_Curse_of_the_Dragonlords",
+        );
+        assert_eq!(m.name, "Fireblaze Curse of the Dragonlords");
+        assert_eq!(m.episode, Some("keen1"));
+        assert_eq!(m.version, None);
+
+        let m = guess_metadata(
+            Path::new("l.alopex.back_to_fribbulus_xax_v1.0.k6.2024-10-03.zip"),
+            "",
+        );
+        assert_eq!(
+            (m.name.as_str(), m.version.as_deref()),
+            ("Back to Fribbulus Xax", Some("1.0"))
+        );
+
+        let m = guess_metadata(
+            Path::new("m.shikadi.simulator_keen.v.1.1.k3.2023-03-25.zip"),
+            "",
+        );
+        assert_eq!(
+            (m.name.as_str(), m.version.as_deref()),
+            ("Simulator Keen", Some("1.1"))
+        );
+        let m = guess_metadata(Path::new("l.shikadi.k1.2008-02-14.zip"), "");
+        assert_eq!(
+            (m.name.as_str(), m.episode),
+            ("Shikadi Level Pack", Some("keen1"))
+        );
+
+        assert_eq!(
+            guess_metadata(Path::new("x/btower.zip"), "BTOWER").name,
+            "BTOWER"
+        );
+        assert_eq!(guess_metadata(Path::new("x/my_mod.zip"), "").name, "My Mod");
+        assert_eq!(
+            guess_metadata(Path::new("x/magnet.zip"), "stuff/magnet").name,
+            "Magnet"
+        );
+    }
+
+    #[test]
+    fn third_party_builds_count_as_their_original() {
+        let k6 = catalog::game("keen6").unwrap();
+        assert_eq!(
+            version_ids(k6, &["1.0".into()]),
+            ["keen6-1.0", "keen6-1.0-nocp"]
+        );
+        assert_eq!(version_ids(k6, &["1.4".into()]), ["keen6-1.4-ega"]);
+    }
+
+    #[test]
+    fn slugs() {
+        assert_eq!(
+            slug("The Grand Intelligence: Gold!"),
+            "the-grand-intelligence-gold"
+        );
+        assert_eq!(slug("  ***  "), "mod");
+        assert_eq!(slug("Ünïcode"), "n-code");
+    }
+}
+
+/// Checks the heuristics against real mods listed in
+/// `tests/mod-corpus.json`: download URL, SHA-256 and the expected result.
+/// The archives are never committed; missing ones are downloaded once into
+/// `BLOOGBASE_MOD_CACHE` (default `.local/mods`).
+///
+/// `cargo test corpus -- --ignored --nocapture`
+/// `BLOOGBASE_CORPUS_UPDATE=1 cargo test corpus -- --ignored` rewrites the
+/// expectations from the current results (review the diff!).
+#[cfg(test)]
+mod corpus {
+    use std::path::PathBuf;
+    use std::time::Duration;
+
+    use super::*;
+    use crate::downloads;
+
+    const MANIFEST: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/mod-corpus.json");
+
+    #[derive(Debug, Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Manifest {
+        #[serde(rename = "_comment")]
+        comment: String,
+        mods: Vec<Entry>,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Entry {
+        url: String,
+        #[serde(default)]
+        sha256: String,
+        #[serde(flatten)]
+        expect: Option<Expected>,
+    }
+
+    /// What `inspect` should report: the game, the name, and the default recipe.
+    #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Expected {
+        game_id: String,
+        name: String,
+        recipe: Recipe,
+        version_ids: Vec<String>,
+        confident: bool,
+    }
+
+    impl From<&ModInfo> for Expected {
+        fn from(info: &ModInfo) -> Self {
+            Expected {
+                game_id: info.game_id.clone(),
+                name: info.name.clone(),
+                recipe: info.recipes[0].recipe.clone(),
+                version_ids: info.recipes[0].version_ids.clone(),
+                confident: info.confident,
+            }
+        }
+    }
+
+    fn cache_dir() -> PathBuf {
+        std::env::var_os("BLOOGBASE_MOD_CACHE")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../.local/mods"))
+    }
+
+    /// The cached archive, downloaded first if missing. Downloads are spaced
+    /// out so the community's file server isn't hammered.
+    async fn archive(entry: &Entry) -> std::result::Result<PathBuf, String> {
+        let file = entry.url.rsplit('/').next().unwrap_or_default();
+        let path = cache_dir().join(file);
+        if !path.is_file() {
+            if entry.sha256.is_empty() {
+                return Err("not cached and no sha256 to verify a download".into());
+            }
+            eprintln!("downloading {}", entry.url);
+            downloads::fetch(&entry.url, &entry.sha256, 0, &path, &|_, _| {})
+                .await
+                .map_err(|e| e.to_string())?;
+            tokio::time::sleep(Duration::from_secs(1)).await;
+        }
+        Ok(path)
+    }
+
+    #[tokio::test]
+    #[ignore = "downloads real mods on first run"]
+    async fn corpus_matches_expectations() {
+        let update = std::env::var_os("BLOOGBASE_CORPUS_UPDATE").is_some();
+        let mut manifest: Manifest =
+            serde_json::from_str(&fs::read_to_string(MANIFEST).unwrap()).unwrap();
+        let mut failures = Vec::new();
+
+        for entry in &mut manifest.mods {
+            let path = match archive(entry).await {
+                Ok(p) => p,
+                Err(e) => {
+                    failures.push(format!("{}: {e}", entry.url));
+                    continue;
+                }
+            };
+            let hash = sha256_hex(&fs::read(&path).unwrap());
+            if entry.sha256.is_empty() && update {
+                entry.sha256 = hash.clone();
+            }
+            if !hash.eq_ignore_ascii_case(&entry.sha256) {
+                failures.push(format!("{}: cached file has sha256 {hash}", path.display()));
+                continue;
+            }
+            let actual = match inspect(&path) {
+                Ok(info) => Expected::from(&info),
+                Err(e) => {
+                    failures.push(format!("{}: {e}", entry.url));
+                    continue;
+                }
+            };
+            if update {
+                entry.expect = Some(actual);
+            } else if entry.expect.as_ref() != Some(&actual) {
+                failures.push(format!(
+                    "{}\n  expected {:?}\n  actual   {actual:?}",
+                    entry.url, entry.expect
+                ));
+            }
+        }
+
+        if update {
+            fs::write(
+                MANIFEST,
+                serde_json::to_string_pretty(&manifest).unwrap() + "\n",
+            )
+            .unwrap();
+            eprintln!("updated {MANIFEST}");
+        }
+        assert!(failures.is_empty(), "{}", failures.join("\n"));
+        eprintln!("{} mods as expected", manifest.mods.len());
+    }
+}

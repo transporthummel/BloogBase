@@ -35,7 +35,9 @@ const keen5: Game = {
   requiredFiles: [],
   saves: [],
   stateFiles: [],
-  versions: [{ id: "keen5-1.4-ega", label: "v1.4 EGA", files: {}, shareware: false }],
+  versions: [
+    { id: "keen5-1.4-ega", label: "v1.4 EGA", files: {}, shareware: false, original: null },
+  ],
 };
 
 const profile: Profile = {

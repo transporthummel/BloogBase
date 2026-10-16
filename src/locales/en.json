@@ -74,6 +74,8 @@
     "busy": "That's already in progress.",
     "alreadyRunning": "This game is already running.",
     "invalidLocation": "BloogBase can't keep its data there ({{message}}).",
+    "noModFound": "No Commander Keen mod was found there.",
+    "incompatibleInstall": "The mod doesn’t fit that game ({{message}}).",
     "generic": "Something went wrong: {{message}}"
   },
   "jobs": {
@@ -146,5 +148,50 @@
       "ready": "Everything is ready. Have fun!",
       "open": "Open my library"
     }
+  },
+  "common": {
+    "cancel": "Cancel"
+  },
+  "mods": {
+    "add": "Add mod",
+    "addTitle": "Add a mod",
+    "addHint": "Choose a mod the way you downloaded it: a ZIP file or an unpacked folder. BloogBase finds out which game it is for and how to start it.",
+    "chooseZip": "Choose ZIP file…",
+    "chooseFolder": "Choose folder…",
+    "inspecting": "Looking at the mod…",
+    "name": "Name",
+    "forGame": "Game",
+    "madeFor": "Made for",
+    "details": "Details",
+    "files": "Files",
+    "by": "by {{authors}}",
+    "version": "version {{version}}",
+    "startAdvanced": "How it starts (advanced)",
+    "helpTitle": "We need your help",
+    "helpHint": "This mod can be started in more than one way. If you are not sure, keep the first one; the mod’s readme may tell you more.",
+    "recipe": {
+      "patch": "Load the mod’s patch",
+      "program": "Run the mod’s own program",
+      "batch": "Run the mod’s start file",
+      "episode": "Start the original game with the mod’s files"
+    },
+    "from": "suggested by {{file}}",
+    "missingGame": "This mod needs {{game}}. Add it from Steam, GOG or a folder first.",
+    "missingGame_version": "This mod needs {{game}} ({{versions}}). Add it from Steam, GOG or a folder first.",
+    "playOn": "Play with",
+    "versionUnchecked": "BloogBase doesn’t know this version of the game, so it can’t check whether the mod fits. Give it a try!",
+    "assumedVersion": "This mod doesn’t say which version of the game it needs. Most mods for this episode are made for {{version}}, but yours is {{yours}}, so it may not work properly.",
+    "modifiedGame": "This copy of the game was changed (for example, its copy protection was removed). Mods that patch the game are usually made for the original and may not work with it.",
+    "install": "Install",
+    "installing": "Installing…",
+    "installed": "{{name}} is ready to play.",
+    "badge": "Mod",
+    "new": "New",
+    "remove": "Remove",
+    "removeNamed": "Remove {{name}}",
+    "removeTitle": "Remove {{name}}?",
+    "removeHint": "The mod’s files are deleted. The game itself stays in your library.",
+    "keepSaves_one": "Keep the saved game as a backup",
+    "keepSaves_other": "Keep the {{count}} saved games as a backup"
   }
 }

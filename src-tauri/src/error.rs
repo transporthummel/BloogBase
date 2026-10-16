@@ -45,6 +45,10 @@ pub enum Error {
     NotFound(String),
     #[error("can't store data there: {0}")]
     InvalidLocation(String),
+    #[error("no Commander Keen mod found")]
+    NoModFound,
+    #[error("this mod doesn't fit that game: {0}")]
+    IncompatibleInstall(String),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -70,6 +74,8 @@ impl Error {
             Error::AlreadyRunning => ErrorKind::AlreadyRunning,
             Error::NotFound(_) => ErrorKind::NotFound,
             Error::InvalidLocation(_) => ErrorKind::InvalidLocation,
+            Error::NoModFound => ErrorKind::NoModFound,
+            Error::IncompatibleInstall(_) => ErrorKind::IncompatibleInstall,
         }
     }
 }
@@ -93,6 +99,8 @@ pub enum ErrorKind {
     AlreadyRunning,
     NotFound,
     InvalidLocation,
+    NoModFound,
+    IncompatibleInstall,
 }
 
 /// The error shape every command returns to the frontend.

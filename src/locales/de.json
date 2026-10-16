@@ -74,6 +74,8 @@
     "busy": "Das läuft bereits.",
     "alreadyRunning": "Dieses Spiel läuft bereits.",
     "invalidLocation": "BloogBase kann seine Daten dort nicht speichern ({{message}}).",
+    "noModFound": "Dort wurde keine Commander-Keen-Mod gefunden.",
+    "incompatibleInstall": "Die Mod passt nicht zu diesem Spiel ({{message}}).",
     "generic": "Etwas ist schiefgelaufen: {{message}}"
   },
   "jobs": {
@@ -146,5 +148,50 @@
       "ready": "Alles ist bereit. Viel Spaß!",
       "open": "Zur Bibliothek"
     }
+  },
+  "common": {
+    "cancel": "Abbrechen"
+  },
+  "mods": {
+    "add": "Mod hinzufügen",
+    "addTitle": "Mod hinzufügen",
+    "addHint": "Wähle eine Mod so, wie du sie heruntergeladen hast: als ZIP-Datei oder entpackten Ordner. BloogBase findet heraus, zu welchem Spiel sie gehört und wie sie startet.",
+    "chooseZip": "ZIP-Datei wählen…",
+    "chooseFolder": "Ordner wählen…",
+    "inspecting": "Mod wird untersucht…",
+    "name": "Name",
+    "forGame": "Spiel",
+    "madeFor": "Gemacht für",
+    "details": "Details",
+    "files": "Dateien",
+    "by": "von {{authors}}",
+    "version": "Version {{version}}",
+    "startAdvanced": "Wie sie startet (für Fortgeschrittene)",
+    "helpTitle": "Wir brauchen deine Hilfe",
+    "helpHint": "Diese Mod lässt sich auf mehrere Arten starten. Wenn du unsicher bist, nimm die erste; die Readme der Mod verrät vielleicht mehr.",
+    "recipe": {
+      "patch": "Patch der Mod laden",
+      "program": "Eigenes Programm der Mod starten",
+      "batch": "Startdatei der Mod ausführen",
+      "episode": "Originalspiel mit den Dateien der Mod starten"
+    },
+    "from": "vorgeschlagen von {{file}}",
+    "missingGame": "Diese Mod braucht {{game}}. Füge es zuerst von Steam, GOG oder aus einem Ordner hinzu.",
+    "missingGame_version": "Diese Mod braucht {{game}} ({{versions}}). Füge es zuerst von Steam, GOG oder aus einem Ordner hinzu.",
+    "playOn": "Spielen mit",
+    "versionUnchecked": "BloogBase kennt diese Version des Spiels nicht und kann daher nicht prüfen, ob die Mod passt. Probier es einfach aus!",
+    "assumedVersion": "Diese Mod gibt nicht an, welche Spielversion sie braucht. Die meisten Mods für diese Episode sind für {{version}} gemacht, deine ist {{yours}} – sie läuft deshalb eventuell nicht richtig.",
+    "modifiedGame": "Diese Kopie des Spiels wurde verändert (zum Beispiel wurde der Kopierschutz entfernt). Mods, die das Spiel patchen, sind meist für das Original gemacht und laufen damit eventuell nicht.",
+    "install": "Installieren",
+    "installing": "Wird installiert…",
+    "installed": "{{name}} ist bereit zum Spielen.",
+    "badge": "Mod",
+    "new": "Neu",
+    "remove": "Entfernen",
+    "removeNamed": "{{name}} entfernen",
+    "removeTitle": "{{name}} entfernen?",
+    "removeHint": "Die Dateien der Mod werden gelöscht. Das Spiel selbst bleibt in deiner Bibliothek.",
+    "keepSaves_one": "Den Spielstand als Sicherung behalten",
+    "keepSaves_other": "Die {{count}} Spielstände als Sicherung behalten"
   }
 }

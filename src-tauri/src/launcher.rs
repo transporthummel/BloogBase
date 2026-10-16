@@ -21,6 +21,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::catalog::{self, Engine};
+use crate::compose;
 use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::library::now;
@@ -100,7 +101,17 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
     for dir in [&layers.upper, &dirs.config, &dirs.capture] {
         fs::create_dir_all(dir)?;
     }
-    let exe = profiles::find_executable(game, profile.version_id.as_deref(), &layers.lower)?;
+    let (lower, command) = match &layers.mod_layer {
+        None => (layers.lower.clone(), None),
+        Some(m) => (
+            compose::ensure(paths, db, profile_id, &layers.lower, &m.files, &m.recipe)?,
+            m.recipe.command(),
+        ),
+    };
+    let command = match command {
+        Some(c) => c,
+        None => profiles::find_executable(game, profile.version_id.as_deref(), &lower)?,
+    };
 
     let (engine, defaults) = default_conf(game.engine);
     let default_path = paths.default_conf(engine);
@@ -125,9 +136,9 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
                 rel(&dirs.override_conf),
                 rel(&dirs.launch_conf),
             ],
-            &rel(&layers.lower),
+            &rel(&lower),
             &rel(&layers.upper),
-            &exe,
+            &command,
         ),
         cwd: paths.root.clone(),
         log: paths.logs.join(format!("dosbox-{profile_id}.log")),
@@ -157,7 +168,7 @@ fn launch_conf(capture: &str) -> String {
     )
 }
 
-fn dosbox_args(confs: &[String], lower: &str, upper: &str, exe: &str) -> Vec<String> {
+fn dosbox_args(confs: &[String], lower: &str, upper: &str, command: &str) -> Vec<String> {
     let mut args: Vec<String> = vec!["--noprimaryconf".into(), "--nolocalconf".into()];
     for conf in confs {
         args.push("--conf".into());
@@ -168,7 +179,7 @@ fn dosbox_args(confs: &[String], lower: &str, upper: &str, exe: &str) -> Vec<Str
         format!("mount C \"{lower}\""),
         format!("mount C \"{upper}\" -t overlay"),
         "C:".into(),
-        exe.to_string(),
+        command.to_string(),
         "exit".into(),
     ] {
         args.push("-c".into());
@@ -344,6 +355,58 @@ mod tests {
     }
 
     #[test]
+    fn mod_profile_runs_recipe_on_composed_layer() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("mod");
+        write_folder(
+            &src,
+            &[
+                ("PLAY.BAT", b"ck4patch mod.pat"),
+                ("CK4PATCH.EXE", b"p"),
+                ("MOD.PAT", b"%ext ck4"),
+                ("gamemaps.ck4", b"new"),
+            ],
+        );
+        let info = crate::mods::inspect(&src).unwrap();
+        let m = crate::mods::install(
+            &paths,
+            &db,
+            &crate::mods::InstallModRequest {
+                path: src.display().to_string(),
+                name: "My Mod".into(),
+                recipe: info.recipes[0].recipe.clone(),
+                install_id: "keen4-1".into(),
+            },
+        )
+        .unwrap();
+        assert_eq!(profiles::list(&db, |_| false).unwrap()[1].label, "My Mod");
+
+        let spec = prepare(&paths, &db, &m.profile_id).unwrap();
+        let composed = paths.composed("my-mod");
+        let tail: Vec<&str> = spec
+            .args
+            .iter()
+            .rev()
+            .take(10)
+            .rev()
+            .map(String::as_str)
+            .collect();
+        let lower = format!(
+            "mount C \"{}\"",
+            composed.strip_prefix(&paths.root).unwrap().display()
+        );
+        assert_eq!(tail[1], lower);
+        assert_eq!(tail[7], "CK4PATCH.EXE MOD.PAT");
+        assert_eq!(fs::read(composed.join("gamemaps.ck4")).unwrap(), b"new");
+        assert!(composed.join("KEEN4E.EXE").is_file());
+        let names: Vec<String> = fs::read_dir(&composed)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        assert!(!names.contains(&"GAMEMAPS.CK4".to_string()));
+    }
+
+    #[test]
     fn sessions_are_tracked() {
         let (_tmp, _paths, db) = setup();
         let id = start_session(&db, "keen4-1", 100).unwrap();
@@ -411,5 +474,136 @@ mod e2e {
         let secs = finish(&db, session, None).unwrap();
         assert!(secs >= 8);
         eprintln!("log: {}", spec.log.display());
+    }
+}
+
+/// Manual check that real mods start: imports every game folder in
+/// `.local/games`, installs every mod in `.local/mods` on each install it
+/// fits, runs it in DOSBox for a few seconds and saves a screenshot to
+/// `target/e2e-mods/shots/`.
+/// `BLOOGBASE_E2E_DOSBOX=<dosbox.exe> cargo test e2e_mods -- --ignored --nocapture --test-threads=1`
+#[cfg(all(test, windows))]
+mod e2e_mods {
+    use std::time::Duration;
+
+    use super::*;
+    use crate::{library, mods};
+
+    /// Captures only the DOSBox window (via `PrintWindow`, so nothing else on
+    /// the desktop ends up in the image).
+    fn screenshot(pid: u32, path: &Path) {
+        const SCRIPT: &str = r#"
+Add-Type -AssemblyName System.Drawing
+Add-Type @'
+using System; using System.Runtime.InteropServices;
+public class Win {
+  [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
+  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
+  [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr dc, uint flags);
+  public struct RECT { public int L, T, R, B; }
+}
+'@
+[Win]::SetProcessDPIAware() | Out-Null
+$h = (Get-Process -Id $env:SHOT_PID).MainWindowHandle
+if ($h -eq 0) { exit 1 }
+$r = New-Object Win+RECT
+[Win]::GetWindowRect($h, [ref]$r) | Out-Null
+$bmp = New-Object System.Drawing.Bitmap ($r.R - $r.L), ($r.B - $r.T)
+$g = [System.Drawing.Graphics]::FromImage($bmp)
+$dc = $g.GetHdc(); [Win]::PrintWindow($h, $dc, 2) | Out-Null; $g.ReleaseHdc($dc)
+$bmp.Save($env:SHOT_PATH)
+"#;
+        let _ = Command::new("powershell")
+            .args(["-NoProfile", "-Command", SCRIPT])
+            .env("SHOT_PID", pid.to_string())
+            .env("SHOT_PATH", path)
+            .status();
+    }
+
+    fn sorted_entries(dir: &Path) -> Vec<PathBuf> {
+        let mut v: Vec<_> = fs::read_dir(dir)
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .collect();
+        v.sort();
+        v
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    #[ignore = "opens DOSBox windows"]
+    async fn e2e_mods_start() {
+        let local = Path::new(env!("CARGO_MANIFEST_DIR")).join("../.local");
+        let dosbox = std::env::var("BLOOGBASE_E2E_DOSBOX").expect("set BLOOGBASE_E2E_DOSBOX");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("target/e2e-mods");
+        let _ = fs::remove_dir_all(&root);
+        let paths = AppPaths::new(&root);
+        paths.ensure().unwrap();
+        let shots = root.join("shots");
+        fs::create_dir_all(&shots).unwrap();
+        let db = Db::open(&paths.database).unwrap();
+        let rt = runtime::set_custom(&db, Some(Path::new(&dosbox)))
+            .unwrap()
+            .active
+            .unwrap();
+
+        for game in sorted_entries(&local.join("games")) {
+            match library::import(&paths, &db, &game) {
+                Ok(found) => {
+                    for i in found {
+                        eprintln!("game {}: {} {:?}", game.display(), i.id, i.version_id);
+                    }
+                }
+                Err(e) => eprintln!("game {}: {e}", game.display()),
+            }
+        }
+        let installs = library::list(&db).unwrap();
+
+        for zip in sorted_entries(&local.join("mods")) {
+            let name = zip.file_stem().unwrap().to_string_lossy().into_owned();
+            let info = match mods::inspect(&zip) {
+                Ok(i) => i,
+                Err(e) => {
+                    eprintln!("{name}: inspect failed: {e}");
+                    continue;
+                }
+            };
+            let mut tried = false;
+            for install in installs.iter().filter(|i| i.game_id == info.game_id) {
+                let request = mods::InstallModRequest {
+                    path: zip.display().to_string(),
+                    name: String::new(),
+                    recipe: info.recipes[0].recipe.clone(),
+                    install_id: install.id.clone(),
+                };
+                let m = match mods::install(&paths, &db, &request) {
+                    Ok(m) => m,
+                    Err(e) => {
+                        eprintln!("{name} on {}: refused: {e}", install.id);
+                        continue;
+                    }
+                };
+                tried = true;
+                let spec = prepare(&paths, &db, &m.profile_id).unwrap();
+                let (mut child, session) = spawn(&rt, &spec, &db, &m.profile_id).unwrap();
+                tokio::time::sleep(Duration::from_secs(7)).await;
+                let exited = child.try_wait().unwrap();
+                if let (None, Some(pid)) = (exited, child.id()) {
+                    screenshot(pid, &shots.join(format!("{}.png", m.profile_id)));
+                }
+                let _ = child.kill().await;
+                finish(&db, session, None).unwrap();
+                let outcome = match exited {
+                    None => "running".to_string(),
+                    Some(s) => format!("EXITED EARLY ({s})"),
+                };
+                eprintln!(
+                    "{name} on {} ({:?}): {outcome} -> shots/{}.png",
+                    install.id, install.version_id, m.profile_id
+                );
+            }
+            if !tried {
+                eprintln!("{name}: no fitting install");
+            }
+        }
     }
 }

@@ -26,7 +26,14 @@
       "requiredFiles": ["EGAHEAD.CK2", "EGALATCH.CK2", "EGASPRIT.CK2", "LEVEL01.CK2"],
       "saves": ["SAVED?.CK2"],
       "stateFiles": ["CTLPANEL.CK2", "SCORES.CK2"],
-      "versions": []
+      "versions": [
+        {
+          "id": "keen2-1.31",
+          "label": "v1.31",
+          "files": { "KEEN2.EXE": "01a05a1584c4245dbf14b4de74bcc10205d4b0944b891ad9b24d01a33f93b966" },
+          "shareware": false
+        }
+      ]
     },
     {
       "id": "keen3",
@@ -36,12 +43,20 @@
       "requiredFiles": ["EGAHEAD.CK3", "EGALATCH.CK3", "EGASPRIT.CK3", "LEVEL01.CK3"],
       "saves": ["SAVED?.CK3"],
       "stateFiles": ["CTLPANEL.CK3", "SCORES.CK3"],
-      "versions": []
+      "versions": [
+        {
+          "id": "keen3-1.31",
+          "label": "v1.31",
+          "files": { "KEEN3.EXE": "ce240fee9e23e0c359492ce3d247a29cd2309b1b9822d0267e587df5838c9047" },
+          "shareware": false
+        }
+      ]
     },
     {
       "id": "keen4",
       "title": "Commander Keen 4: Secret of the Oracle",
       "engine": "galaxy",
+      "moddingVersion": "keen4-1.4-ega",
       "executables": ["KEEN4E.EXE", "KEEN4C.EXE"],
       "requiredFiles": ["GAMEMAPS.CK4", "AUDIO.CK4"],
       "saves": ["SAVEGAM?.CK4"],
@@ -59,6 +74,7 @@
       "id": "keen5",
       "title": "Commander Keen 5: The Armageddon Machine",
       "engine": "galaxy",
+      "moddingVersion": "keen5-1.4-ega",
       "executables": ["KEEN5E.EXE", "KEEN5C.EXE"],
       "requiredFiles": ["GAMEMAPS.CK5", "AUDIO.CK5"],
       "saves": ["SAVEGAM?.CK5"],
@@ -76,11 +92,32 @@
       "id": "keen6",
       "title": "Commander Keen 6: Aliens Ate My Baby Sitter!",
       "engine": "galaxy",
+      "moddingVersion": "keen6-1.4-ega",
       "executables": ["KEEN6E.EXE", "KEEN6C.EXE", "KEEN6.EXE"],
       "requiredFiles": ["GAMEMAPS.CK6", "AUDIO.CK6"],
       "saves": ["SAVEGAM?.CK6"],
       "stateFiles": ["CONFIG.CK6"],
-      "versions": []
+      "versions": [
+        {
+          "id": "keen6-1.0",
+          "label": "v1.0",
+          "files": { "KEEN6.EXE": "d599f678649ba06955ebd3fbb3c27a0f9a8d2e8f30ccdd4480b9763e9d3fb939" },
+          "shareware": false
+        },
+        {
+          "id": "keen6-1.0-nocp",
+          "label": "v1.0 (no copy protection)",
+          "files": { "KEEN6C.EXE": "050dadf0c1902fcf9c7288e2a704057bd5ec2159388d3900a0f13ab326b134a3" },
+          "shareware": false,
+          "original": "keen6-1.0"
+        },
+        {
+          "id": "keen6-1.4-ega",
+          "label": "v1.4 EGA",
+          "files": { "KEEN6.EXE": "f1b19d231eb3ba84c90c724b25607adcf4a245d58677a023e2cece127410b943" },
+          "shareware": false
+        }
+      ]
     },
     {
       "id": "kdreams",

@@ -18,6 +18,13 @@ export const commands = {
 	 *  `PlaySessionEnded` when it exits.
 	 */
 	launchProfile: (profileId: string) => typedError<null, CommandError>(__TAURI_INVOKE("launch_profile", { profileId })),
+	/**  Looks at a folder or ZIP and reports the mod found in it, for the user to confirm. */
+	inspectMod: (path: string) => typedError<ModInfo, CommandError>(__TAURI_INVOKE("inspect_mod", { path })),
+	/**  Installs a mod inspected with `inspect_mod` and creates its play profile. */
+	installMod: (request: InstallModRequest) => typedError<Mod, CommandError>(__TAURI_INVOKE("install_mod", { request })),
+	listMods: () => typedError<Mod[], CommandError>(__TAURI_INVOKE("list_mods")),
+	/**  Removes a mod and its profile; `keep_saves` archives the saves first. */
+	deleteMod: (modId: string, keepSaves: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("delete_mod", { modId, keepSaves })),
 	runtimeStatus: () => typedError<RuntimeStatus, CommandError>(__TAURI_INVOKE("runtime_status")),
 	/**  Starts downloading and installing the pinned DOSBox Staging build. */
 	installRuntime: () => __TAURI_INVOKE<Job>("install_runtime"),
@@ -70,7 +77,7 @@ export type CommandError = {
 export type Engine = "vorticons" | "galaxy" | "dreams";
 
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
-export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation";
+export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "noModFound" | "incompatibleInstall";
 
 export type FoundGame = {
 	gameId: string,
@@ -101,6 +108,12 @@ export type Game = {
 	/**  Patterns for other files the game writes (config, high scores). */
 	stateFiles: string[],
 	versions: GameVersion[],
+	/**
+	 *  The release most mods are made for, when the community settled on
+	 *  one (Keen 4-6: v1.4 EGA). Mods that don't say which version they
+	 *  need are assumed to need this one.
+	 */
+	moddingVersion?: string | null,
 };
 
 export type GameVersion = {
@@ -111,6 +124,12 @@ export type GameVersion = {
 	shareware: boolean,
 	/**  Program to launch instead of the episode executable. */
 	start?: string | null,
+	/**
+	 *  For releases changed by a third party (e.g. copy protection
+	 *  removed): the version they were made from. Mods for that version
+	 *  are offered, but patches may not fit.
+	 */
+	original?: string | null,
 };
 
 export type Install = {
@@ -122,6 +141,16 @@ export type Install = {
 	path: string,
 	/**  Unix epoch seconds. */
 	addedAt: number,
+};
+
+export type InstallModRequest = {
+	/**  The folder or ZIP passed to [`inspect`]. */
+	path: string,
+	name: string,
+	/**  One of the recipes [`inspect`] offered. */
+	recipe: Recipe,
+	/**  The install the mod is played on. */
+	installId: string,
 };
 
 export type InstallSource = "folder" | "zip" | "download" | "steam" | "gog";
@@ -149,6 +178,37 @@ export type JobPhase = "downloading" | "installing" | "done" | "failed";
 /**  Sent whenever a job starts, makes progress or finishes. */
 export type JobUpdated = Job;
 
+export type Mod = {
+	id: string,
+	gameId: string,
+	name: string,
+	authors: string[],
+	version: string | null,
+	recipe: Recipe,
+	source: ModSource,
+	/**  Unix epoch seconds. */
+	addedAt: number,
+	/**  The play profile created for the mod. */
+	profileId: string,
+};
+
+/**  What [`inspect`] found, for the user to confirm. */
+export type ModInfo = {
+	name: string,
+	authors: string[],
+	version: string | null,
+	/**  `YYYY-MM-DD`, when known. */
+	released: string | null,
+	gameId: string,
+	/**  Ways to start the mod, best first. */
+	recipes: RecipeOption[],
+	/**  False when the user should pick from `recipes`. */
+	confident: boolean,
+	fileCount: number,
+};
+
+export type ModSource = "index" | "keenwiki" | "manual";
+
 export type PlaySessionEnded = {
 	profileId: string,
 	exitCode: number | null,
@@ -169,6 +229,29 @@ export type Profile = {
 	lastPlayedAt: number | null,
 	saveCount: number,
 	running: boolean,
+};
+
+export type Recipe = 
+/**  Run the episode's patcher with a patch file. */
+{ type: "patch"; patcher: string; patch: string; args: string[] } | 
+/**  Run a program the mod ships. */
+{ type: "program"; program: string; args: string[] } | 
+/**  Run a batch file the mod ships. */
+{ type: "batch"; file: string } | 
+/**  Run the original episode executable on top of the mod's files. */
+{ type: "episode" };
+
+export type RecipeOption = {
+	recipe: Recipe,
+	/**  The file that suggested this recipe, e.g. `PLAY.BAT`. */
+	origin: string,
+	/**  Versions the patch file names, e.g. `1.4`. */
+	gameVersions: string[],
+	/**
+	 *  Catalog versions matching `game_versions`. Empty when any version
+	 *  may do, or the catalog doesn't know the named versions.
+	 */
+	versionIds: string[],
 };
 
 export type Runtime = {

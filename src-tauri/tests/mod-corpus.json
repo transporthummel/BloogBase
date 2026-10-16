@@ -1,0 +1,352 @@
+{
+  "_comment": "Real mods for the corpus test in src/mods.rs. Archives are downloaded from their original source, never committed.",
+  "mods": [
+    {
+      "url": "https://files.shikadi.net/keenwiki/Packs/Keen6/l.alopex.back_to_fribbulus_xax_v1.0.k6.2024-10-03.zip",
+      "sha256": "7f067dda1eb88aa43750ee146f3f5ae464f50bfc53df27fa770c91b1ced7cb0a",
+      "gameId": "keen6",
+      "name": "Back to Fribbulus Xax",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK6PATCH.EXE",
+        "patch": "abiathar.pat",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/Packs/Keen5/l.darkale.the_ultra_omegamatic_v2.0.k5.2020-09-08.zip",
+      "sha256": "82c72a2ac9967e1558b2f4bf6aa88bc5a513eb05dd7e0433d7ca247c5e6048f4",
+      "gameId": "keen5",
+      "name": "The Ultra Omegamatic",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK5PATCH.EXE",
+        "patch": "Keen13.PAT",
+        "args": []
+      },
+      "versionIds": [
+        "keen5-1.4-ega"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/Packs/Keen4/l.nisaba.buried_in_oblivion_v.1.4.k4.2020-10-10.zip",
+      "sha256": "ebc3a2abd229c0284866b1534f70b5f24c1beeaf065badb427e14493677146d2",
+      "gameId": "keen4",
+      "name": "Buried in Oblivion",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK4PATCH.EXE",
+        "patch": "pat.pat",
+        "args": []
+      },
+      "versionIds": [
+        "keen4-1.4-ega"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/Packs/Keen1/l.shikadi.k1.2008-02-14.zip",
+      "sha256": "cbe7f6f9eb271aac607fb69caed665e6e56a7362063f6726ee8bfd36256aea88",
+      "gameId": "keen1",
+      "name": "Shikadi Level Pack",
+      "recipe": {
+        "type": "episode"
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/Packs/Keen2/l.vortlike.inside_the_vorticon_hyve_v1.0.k2.2025-02-11.zip",
+      "sha256": "e9c7790eeaabeb73a5b7e1cad40306666bb283548293c95aacd4eebaa9e8794e",
+      "gameId": "keen2",
+      "name": "Inside the Vorticon Hyve",
+      "recipe": {
+        "type": "episode"
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.88vega.fireblaze_curse_of_the_dragonlords.k1.2018-11-18.zip",
+      "sha256": "542f21e02f7047126b741ae88fdf1908adde81bb126b3f764b514e9cec1ff71a",
+      "gameId": "keen1",
+      "name": "Fireblaze Curse of the Dragonlords",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK1PATCH.exe",
+        "patch": "fire.pat",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.benvolio.bunny_basher_3.k1.2022-04-15.zip",
+      "sha256": "8f4c8d4098bd79dd6b4ca192e4e4edefe1ff837098618ad8c94a18ebaea59982",
+      "gameId": "keen1",
+      "name": "Bunny Basher 3",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK1PATCH.EXE",
+        "patch": "EasterBB.CK1",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen4/m.ceilick.the_keys_of_krodacia_v2.0.k4.2009-03-14.zip",
+      "sha256": "95f516ec50063d02222d22ab048d88cffaeeda1fa1f331bfc7512fea578518a3",
+      "gameId": "keen4",
+      "name": "The Keys of Krodacia",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK4PATCH.EXE",
+        "patch": "KEEN7.pat",
+        "args": []
+      },
+      "versionIds": [
+        "keen4-1.4-ega"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen4/m.dave216.aurora_bliss_v.1.2.k4.2023-08-23.zip",
+      "sha256": "0140e4531f2f9953ad7deac3e2dee24eb3d67b270781a753c3ab753a4d02b271",
+      "gameId": "keen4",
+      "name": "Aurora Bliss",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK4PATCH.EXE",
+        "patch": "abiathar.pat",
+        "args": []
+      },
+      "versionIds": [
+        "keen4-1.4-ega"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen5/m.dave216.canmores_redemption_v.1.0.2.k5.2023-07-30.zip",
+      "sha256": "f94593557fffd1828681fdac5b65bd51522d48e2f5ce18067d70d58682dca6e3",
+      "gameId": "keen5",
+      "name": "Canmores Redemption",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK5PATCH.EXE",
+        "patch": "abiathar.pat",
+        "args": []
+      },
+      "versionIds": [
+        "keen5-1.4-ega"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen5/m.gridlock.the_alphamatic_v2.0.k5.2021-03-14.zip",
+      "sha256": "6a32eea4893b036aac9e057450a9abe6f063119c5bb78fdbc572d764b487103a",
+      "gameId": "keen5",
+      "name": "The Alphamatic",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK5PATCH.EXE",
+        "patch": "Patch5.pat",
+        "args": []
+      },
+      "versionIds": [
+        "keen5-1.4-ega"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/keend/m.levellass.candy_dreams.kd.2009-10-27.zip",
+      "sha256": "11f834ef41afc38748175ad840ceb7957203dd017cf40895df211a7a831af131",
+      "gameId": "kdreams",
+      "name": "Candy Dreams",
+      "recipe": {
+        "type": "patch",
+        "patcher": "KDRPATCH.EXE",
+        "patch": "KEEND.PAT",
+        "args": [
+          "/detour",
+          "/comp"
+        ]
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen4/m.levellass.keenball.k4.2019-03-14.zip",
+      "sha256": "5f251f3809dc3de144e1f783066a9120d8fc75c6a24f2c21c72df21df61bdca6",
+      "gameId": "keen4",
+      "name": "Keenball",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK4PATCH.EXE",
+        "patch": "PAT.PAT",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen3/m.levellass.ye_olde_pirate_modde.k3.2013-07-15.zip",
+      "sha256": "38b82fdd898acdda61709c01b76e8b4c7eaf2848134f2e7599093cb5d96fe079",
+      "gameId": "keen3",
+      "name": "Ye Olde Pirate Modde",
+      "recipe": {
+        "type": "batch",
+        "file": "Pirates.bat"
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen6/m.ny00123.aliens_ate_my_babysitter_again_v1.5.k6.2024-12-30.zip",
+      "sha256": "4372cc03bed6612d0e73338cbabb25374c7ae9094c775e24f94af59fc96f0437",
+      "gameId": "keen6",
+      "name": "Aliens Ate My Babysitter Again",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK6PATCH.EXE",
+        "patch": "AAMBA.PAT",
+        "args": []
+      },
+      "versionIds": [
+        "keen6-1.4-ega"
+      ],
+      "confident": false
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen3/m.shikadi.simulator_keen.v.1.1.k3.2023-03-25.zip",
+      "sha256": "05a4b4d2a7671cc13e03f673bb4404a108d79432a617d5ec8682532791b5b7ed",
+      "gameId": "keen3",
+      "name": "Simulator Keen",
+      "recipe": {
+        "type": "batch",
+        "file": "play.bat"
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.shikadi.swan_song.k1.2016-07-20.zip",
+      "sha256": "9cad295b6eefebf7b2d97414484741d62b3444495178fee8e011dafc93226213",
+      "gameId": "keen1",
+      "name": "Swan Song",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK1PATCH.EXE",
+        "patch": "Start.pat",
+        "args": []
+      },
+      "versionIds": [
+        "keen1-1.31"
+      ],
+      "confident": false
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen3/m.stupidbunny.bobrick_tower.k3.2012-03-14.zip",
+      "sha256": "8c68bed9421e02f5559d6fff30901c1e5521e4e404a40b7eeaa7c68c40b88da1",
+      "gameId": "keen3",
+      "name": "Bobrick Tower",
+      "recipe": {
+        "type": "batch",
+        "file": "BTOWER.BAT"
+      },
+      "versionIds": [],
+      "confident": false
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/keend/m.szemigi.another_helping_of_veggies_v1.2.kd.2021-10-15.zip",
+      "sha256": "0410ec862bfe8151926ebb25ac68d28df559a8a7f86393a9dd4e936b10f1fd0a",
+      "gameId": "kdreams",
+      "name": "Another Helping of Veggies",
+      "recipe": {
+        "type": "patch",
+        "patcher": "KDRPATCH.EXE",
+        "patch": "KDREAMS2.PAT",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen2/m.szemigi.keen_2_gold_edition.k2.2017-12-24.zip",
+      "sha256": "4d25d5f8c4ef1260e3ddbf28ef42b3faa5136b1dd1fcbd7390053155ec3eb86b",
+      "gameId": "keen2",
+      "name": "Keen 2 Gold Edition",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK2PATCH.EXE",
+        "patch": "CK2GOLD.PAT",
+        "args": []
+      },
+      "versionIds": [
+        "keen2-1.31"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen6/m.szemigi.mirror_menace.k6.2014-10-01.zip",
+      "sha256": "67f9ad6edce53c75cd943dd7ade29a0ee88db68e5296e39d4d9058700613deed",
+      "gameId": "keen6",
+      "name": "Mirror Menace",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK6PATCH.EXE",
+        "patch": "Keen10.pat",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/keend/m.szemigi.the_grand_intelligence_gold.kd.2015-11-02.zip",
+      "sha256": "06a9520b8dd96c1179b977b340a99ac5e64b722b4de17a93b1326cd923c90c4b",
+      "gameId": "kdreams",
+      "name": "The Grand Intelligence Gold",
+      "recipe": {
+        "type": "patch",
+        "patcher": "KDRPATCH.EXE",
+        "patch": "MartGold.pat",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen2/m.troublesomekeen.the_electromagnet.k2.2015-03-14.zip",
+      "sha256": "8d1202d562b3d09ed36be7967500babc0b6faf05fde0d1387c923152e32ccd61",
+      "gameId": "keen2",
+      "name": "The Electromagnet",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK2PATCH.EXE",
+        "patch": "pat.pat",
+        "args": []
+      },
+      "versionIds": [
+        "keen2-1.31"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen5/m.viler.keen5c16.k5.2016-07-16.zip",
+      "sha256": "939be7db71f58279ec49ca1d48b2ff7a97e64f1a00795907c54006b050e90f90",
+      "gameId": "keen5",
+      "name": "Keen5c16",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK5PATCH.EXE",
+        "patch": "KEEN5C16.PAT",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    }
+  ]
+}

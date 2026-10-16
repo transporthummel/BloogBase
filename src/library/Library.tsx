@@ -1,16 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FileArchive, FolderOpen, Play } from "lucide-react";
-import { useEffect } from "react";
+import { FileArchive, FolderOpen, Play, Puzzle, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, events, type Game, type Profile } from "../bindings";
+import { commands, events, type Game, type Mod, type Profile } from "../bindings";
 import { useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatDate, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
-import { profilesKey } from "./queries";
+import { AddModDialog } from "../mods/AddModDialog";
+import { RemoveModDialog } from "../mods/RemoveModDialog";
+import { installsKey, profilesKey } from "./queries";
 import { getSetupStep } from "../preferences";
 import { useRuntimeStatus } from "../runtime/queries";
 import { useSetupStatus } from "../setup/queries";
@@ -31,6 +33,9 @@ export function Library() {
     queryFn: () => unwrap(commands.listProfiles()),
   });
   const runtime = useRuntimeStatus();
+  const [addingMod, setAddingMod] = useState(false);
+  const [installedMod, setInstalledMod] = useState<Mod | null>(null);
+  const [removing, setRemoving] = useState<(Profile & { modId: string }) | null>(null);
 
   useEffect(() => {
     const unlisten = events.playSessionEnded.listen(() =>
@@ -43,7 +48,10 @@ export function Library() {
 
   const importGames = useMutation({
     mutationFn: (path: string) => unwrap(commands.importGames(path)),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: profilesKey }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: profilesKey });
+      queryClient.invalidateQueries({ queryKey: installsKey });
+    },
   });
 
   const launch = useMutation({
@@ -82,7 +90,41 @@ export function Library() {
 
   return (
     <>
-      <PageHeader title={t("library.title")} actions={!empty && importButtons} />
+      <PageHeader
+        title={t("library.title")}
+        actions={
+          !empty && (
+            <>
+              <Button onClick={() => setAddingMod(true)}>
+                <Puzzle className="size-4" aria-hidden />
+                {t("mods.add")}
+              </Button>
+              {importButtons}
+            </>
+          )
+        }
+      />
+      {addingMod && (
+        <AddModDialog
+          onClose={() => setAddingMod(false)}
+          onInstalled={(mod) => {
+            setAddingMod(false);
+            setInstalledMod(mod);
+            queryClient.invalidateQueries({ queryKey: profilesKey });
+          }}
+        />
+      )}
+      {removing && (
+        <RemoveModDialog
+          profile={removing}
+          onClose={() => setRemoving(null)}
+          onRemoved={() => {
+            setRemoving(null);
+            setInstalledMod(null);
+            queryClient.invalidateQueries({ queryKey: profilesKey });
+          }}
+        />
+      )}
 
       <div className="mb-4 grid gap-3">
         {needsRuntime && (
@@ -106,6 +148,7 @@ export function Library() {
         {importGames.isSuccess && (
           <Notice>{t("library.imported", { count: importGames.data.length })}</Notice>
         )}
+        {installedMod && <Notice>{t("mods.installed", { name: installedMod.name })}</Notice>}
         {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
       </div>
 
@@ -124,6 +167,11 @@ export function Library() {
               game={gameById.get(profile.gameId)}
               canPlay={!!runtime.data?.active && !launch.isPending}
               onPlay={() => launch.mutate(profile.id)}
+              onRemove={
+                profile.modId === null
+                  ? undefined
+                  : () => setRemoving({ ...profile, modId: profile.modId! })
+              }
             />
           </li>
         ))}
@@ -143,11 +191,14 @@ function ProfileCard({
   game,
   canPlay,
   onPlay,
+  onRemove,
 }: {
   profile: Profile;
   game?: Game;
   canPlay: boolean;
   onPlay: () => void;
+  /** Only mods can be removed for now. */
+  onRemove?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
@@ -164,8 +215,13 @@ function ProfileCard({
         {episode}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-3">
-        <h2 className="text-sm leading-tight font-semibold">{profile.label}</h2>
-        <div>
+        <div className="grid gap-0.5">
+          <h2 className="text-sm leading-tight font-semibold">{profile.label}</h2>
+          {profile.modId !== null && game && <p className="text-xs text-muted">{game.title}</p>}
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
+          {profile.modId !== null && profile.sessionCount === 0 && <Badge>{t("mods.new")}</Badge>}
           <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>
         </div>
         <dl className="grid gap-0.5 text-xs text-muted">
@@ -188,15 +244,29 @@ function ProfileCard({
           <dt className="sr-only">{t("library.saveCountLabel")}</dt>
           <dd>{t("library.saveCount", { count: profile.saveCount })}</dd>
         </dl>
-        <Button
-          className="mt-auto"
-          onClick={onPlay}
-          disabled={!canPlay || profile.running}
-          aria-label={t("library.playGame", { game: profile.label })}
-        >
-          <Play className="size-4" aria-hidden />
-          {profile.running ? t("library.running") : t("library.play")}
-        </Button>
+        <div className="mt-auto flex gap-2">
+          <Button
+            className="flex-1"
+            onClick={onPlay}
+            disabled={!canPlay || profile.running}
+            aria-label={t("library.playGame", { game: profile.label })}
+          >
+            <Play className="size-4" aria-hidden />
+            {profile.running ? t("library.running") : t("library.play")}
+          </Button>
+          {onRemove && (
+            <Button
+              variant="ghost"
+              className="px-2"
+              onClick={onRemove}
+              disabled={profile.running}
+              aria-label={t("mods.removeNamed", { name: profile.label })}
+              title={t("mods.remove")}
+            >
+              <Trash2 className="size-4" aria-hidden />
+            </Button>
+          )}
+        </div>
       </div>
     </Card>
   );

@@ -29,6 +29,11 @@ pub struct Game {
     /// Patterns for other files the game writes (config, high scores).
     pub state_files: Vec<String>,
     pub versions: Vec<GameVersion>,
+    /// The release most mods are made for, when the community settled on
+    /// one (Keen 4-6: v1.4 EGA). Mods that don't say which version they
+    /// need are assumed to need this one.
+    #[serde(default)]
+    pub modding_version: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Type)]
@@ -42,6 +47,11 @@ pub struct GameVersion {
     /// Program to launch instead of the episode executable.
     #[serde(default)]
     pub start: Option<String>,
+    /// For releases changed by a third party (e.g. copy protection
+    /// removed): the version they were made from. Mods for that version
+    /// are offered, but patches may not fit.
+    #[serde(default)]
+    pub original: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -117,8 +127,24 @@ mod tests {
         );
         for g in games() {
             assert!(!g.executables.is_empty(), "{}", g.id);
+            if let Some(m) = &g.modding_version {
+                assert!(
+                    g.versions.iter().any(|v| v.id == *m),
+                    "{} names unknown {m}",
+                    g.id
+                );
+            }
             for v in &g.versions {
                 assert!(v.id.starts_with(&g.id), "{}", v.id);
+                if let Some(original) = &v.original {
+                    assert!(
+                        g.versions
+                            .iter()
+                            .any(|o| o.id == *original && o.original.is_none()),
+                        "{} names unknown original {original}",
+                        v.id
+                    );
+                }
                 for (file, hash) in &v.files {
                     assert!(
                         g.executables.contains(file),

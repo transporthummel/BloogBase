@@ -14,6 +14,7 @@ use crate::error::{CommandResult, Error, Result};
 use crate::jobs::{self, Job, JobKind, Jobs};
 use crate::launcher::{self, PlaySessionEnded, Running};
 use crate::library::{self, Install};
+use crate::mods::{self, InstallModRequest, Mod, ModInfo};
 use crate::paths::{self, AppPaths};
 use crate::profiles::{self, Profile};
 use crate::runtime::{self, RuntimeStatus};
@@ -132,6 +133,41 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
         .emit(&app);
     });
     Ok(())
+}
+
+/// Looks at a folder or ZIP and reports the mod found in it, for the user to confirm.
+#[tauri::command]
+#[specta::specta]
+pub async fn inspect_mod(path: String) -> CommandResult<ModInfo> {
+    blocking(move || mods::inspect(Path::new(&path))).await
+}
+
+/// Installs a mod inspected with `inspect_mod` and creates its play profile.
+#[tauri::command]
+#[specta::specta]
+pub async fn install_mod(app: AppHandle, request: InstallModRequest) -> CommandResult<Mod> {
+    blocking(move || mods::install(&app.state::<AppPaths>(), &app.state::<Db>(), &request)).await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn list_mods(db: State<'_, Db>) -> CommandResult<Vec<Mod>> {
+    Ok(mods::list(&db)?)
+}
+
+/// Removes a mod and its profile; `keep_saves` archives the saves first.
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_mod(app: AppHandle, mod_id: String, keep_saves: bool) -> CommandResult<()> {
+    // The profile id equals the mod id; claiming it keeps a launch from racing the removal.
+    app.state::<Running>().claim(&mod_id)?;
+    let a = app.clone();
+    let id = mod_id.clone();
+    let result =
+        blocking(move || mods::delete(&a.state::<AppPaths>(), &a.state::<Db>(), &id, keep_saves))
+            .await;
+    app.state::<Running>().release(&mod_id);
+    result
 }
 
 #[tauri::command]

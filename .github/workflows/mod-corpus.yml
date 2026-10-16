@@ -1,0 +1,45 @@
+name: Mod corpus
+
+# Checks mod detection against real mods (src-tauri/tests/mod-corpus.json).
+# Weekly rather than on every push: the archives come from the community's
+# file server, so they are cached and only fetched when the list changes.
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - src-tauri/tests/mod-corpus.json
+
+env:
+  CARGO_TERM_COLOR: always
+  BLOOGBASE_MOD_CACHE: ${{ github.workspace }}/mod-cache
+
+jobs:
+  corpus:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/cache@v4
+        with:
+          path: mod-cache
+          key: mod-corpus-${{ hashFiles('src-tauri/tests/mod-corpus.json') }}
+          restore-keys: mod-corpus-
+
+      - name: Corpus test
+        working-directory: src-tauri
+        run: cargo test --lib corpus -- --ignored --nocapture

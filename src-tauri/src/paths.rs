@@ -130,6 +130,11 @@ impl AppPaths {
         self.configs.join("defaults").join(format!("{engine}.conf"))
     }
 
+    /// A mod profile's lower layer: base files with the mod on top (§4.2).
+    pub fn composed(&self, profile_id: &str) -> PathBuf {
+        self.cache.join("composed").join(profile_id)
+    }
+
     pub fn global_override_conf(&self) -> PathBuf {
         self.configs.join("global-override.conf")
     }

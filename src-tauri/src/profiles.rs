@@ -12,6 +12,7 @@ use crate::catalog::{self, Game, glob_match};
 use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::overlay_view;
+use crate::recipe::Recipe;
 
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -34,17 +35,28 @@ pub struct Profile {
 /// Where a profile's files live on disk.
 #[derive(Debug, Clone)]
 pub struct Layers {
-    /// What DOSBox mounts as C: below the overlay.
+    /// What DOSBox mounts as C: below the overlay. For a mod profile, the
+    /// install's base files, which still need the mod composed on top.
     pub lower: PathBuf,
     /// The overlay: the profile's persistent `state/` directory.
     pub upper: PathBuf,
+    pub mod_layer: Option<ModLayer>,
+}
+
+/// The mod of a mod profile.
+#[derive(Debug, Clone)]
+pub struct ModLayer {
+    pub files: PathBuf,
+    pub recipe: Recipe,
 }
 
 const SELECT: &str = "
-    SELECT p.id, p.install_id, i.game_id, i.version_id, p.mod_id, i.label,
-           s.session_count, s.play_seconds, s.last_played_at, p.state_path, i.path
+    SELECT p.id, p.install_id, i.game_id, i.version_id, p.mod_id, COALESCE(m.name, i.label),
+           s.session_count, s.play_seconds, s.last_played_at, p.state_path, i.path,
+           m.path, m.recipe_json
     FROM profiles p
     JOIN installs i ON i.id = p.install_id
+    LEFT JOIN mods m ON m.id = p.mod_id
     JOIN profile_stats s ON s.profile_id = p.id";
 
 struct ProfileRow {
@@ -55,6 +67,13 @@ struct ProfileRow {
 fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
     let install_path: String = r.get(10)?;
     let state_path: String = r.get(9)?;
+    let mod_path: Option<String> = r.get(11)?;
+    let recipe: Option<String> = r.get(12)?;
+    let mod_layer = mod_path.zip(recipe).map(|(path, recipe)| ModLayer {
+        files: Path::new(&path).join("files"),
+        // Written by `mods::install`; an unreadable one falls back to the episode.
+        recipe: serde_json::from_str(&recipe).unwrap_or(Recipe::Episode),
+    });
     Ok(ProfileRow {
         profile: Profile {
             id: r.get(0)?,
@@ -72,6 +91,7 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
         layers: Layers {
             lower: Path::new(&install_path).join("base"),
             upper: PathBuf::from(state_path),
+            mod_layer,
         },
     })
 }
@@ -82,7 +102,7 @@ pub fn list(db: &Db, is_running: impl Fn(&str) -> bool) -> Result<Vec<Profile>> 
     let rows: Vec<ProfileRow> = {
         let conn = db.conn();
         let mut stmt = conn.prepare(&format!(
-            "{SELECT} ORDER BY s.last_played_at IS NULL, s.last_played_at DESC, i.added_at, p.id"
+            "{SELECT} ORDER BY s.last_played_at IS NULL, s.last_played_at DESC, p.created_at, p.id"
         ))?;
         stmt.query_map([], from_row)?
             .collect::<rusqlite::Result<_>>()?
@@ -108,16 +128,18 @@ pub fn get(db: &Db, id: &str) -> Result<(Profile, Layers)> {
         .query_row(&format!("{SELECT} WHERE p.id = ?1"), [id], from_row)
         .optional()?
         .ok_or_else(|| Error::NotFound(format!("profile {id}")))?;
-    if row.profile.mod_id.is_some() {
-        // Composed lower layers for mods arrive with the mod pipeline (M4).
-        return Err(Error::NotFound(format!("mod support for profile {id}")));
-    }
     Ok((row.profile, row.layers))
 }
 
-/// Saves as DOS sees them: through the overlay, in the drive root.
+/// Saves as DOS sees them: through the overlay, in the drive root. For mods,
+/// the mod's files stand in for the composed layer, which may not exist yet;
+/// base files never hold saves (§4.4).
 fn count_saves(game: &Game, layers: &Layers) -> Result<u32> {
-    Ok(overlay_view::list(&layers.lower, &layers.upper)?
+    let lower = layers
+        .mod_layer
+        .as_ref()
+        .map_or(&layers.lower, |m| &m.files);
+    Ok(overlay_view::list(lower, &layers.upper)?
         .iter()
         .filter(|e| !e.path.contains('/') && game.saves.iter().any(|p| glob_match(p, &e.path)))
         .count() as u32)

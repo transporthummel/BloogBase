@@ -15,6 +15,8 @@ const translated: ErrorKind[] = [
   "busy",
   "alreadyRunning",
   "invalidLocation",
+  "noModFound",
+  "incompatibleInstall",
 ];
 
 export function errorMessage(t: TFunction, err: unknown): string {

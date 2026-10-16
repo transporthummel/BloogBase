@@ -1,5 +1,6 @@
 mod catalog;
 mod commands;
+mod compose;
 mod db;
 mod detect;
 mod downloads;
@@ -7,9 +8,11 @@ mod error;
 mod jobs;
 mod launcher;
 mod library;
+mod mods;
 mod overlay_view;
 mod paths;
 mod profiles;
+mod recipe;
 mod runtime;
 mod settings;
 mod shareware;
@@ -38,6 +41,10 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::import_games,
             commands::list_profiles,
             commands::launch_profile,
+            commands::inspect_mod,
+            commands::install_mod,
+            commands::list_mods,
+            commands::delete_mod,
             commands::runtime_status,
             commands::install_runtime,
             commands::set_custom_runtime,

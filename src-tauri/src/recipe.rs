@@ -1,0 +1,581 @@
+//! Launch recipes: how a mod is started, and the heuristics that guess it from
+//! the files a mod ships (PLAN.md §9.1, §9.2 step 4).
+//!
+//! Most mods ship a batch file that runs the episode's patcher (`CK4PATCH`,
+//! `KDRPATCH`, ...) with a `.pat` file, so batch files are the strongest hint.
+
+use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
+use specta::Type;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum Recipe {
+    /// Run the episode's patcher with a patch file.
+    Patch {
+        patcher: String,
+        patch: String,
+        args: Vec<String>,
+    },
+    /// Run a program the mod ships.
+    Program { program: String, args: Vec<String> },
+    /// Run a batch file the mod ships.
+    Batch { file: String },
+    /// Run the original episode executable on top of the mod's files.
+    Episode,
+}
+
+impl Recipe {
+    /// The DOS command line, or `None` for [`Recipe::Episode`], whose
+    /// executable depends on the install.
+    pub fn command(&self) -> Option<String> {
+        let join = |first: &str, args: &[String]| {
+            std::iter::once(first)
+                .chain(args.iter().map(String::as_str))
+                .collect::<Vec<_>>()
+                .join(" ")
+        };
+        match self {
+            Recipe::Patch {
+                patcher,
+                patch,
+                args,
+            } => Some(join(&format!("{patcher} {patch}"), args)),
+            Recipe::Program { program, args } => Some(join(program, args)),
+            Recipe::Batch { file } => Some(file.clone()),
+            Recipe::Episode => None,
+        }
+    }
+
+    /// The patch file, whose `%version` lines say which game versions fit.
+    pub fn patch_file(&self) -> Option<&str> {
+        match self {
+            Recipe::Patch { patch, .. } => Some(patch),
+            _ => None,
+        }
+    }
+}
+
+/// A recipe the heuristics consider, with the file that suggested it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Candidate {
+    pub recipe: Recipe,
+    /// e.g. `PLAY.BAT` or `FIRE.PAT`; empty for the episode fallback.
+    pub origin: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Guess {
+    /// Best first; never empty.
+    pub candidates: Vec<Candidate>,
+    /// False when several equally good candidates exist and the user should pick.
+    pub confident: bool,
+}
+
+/// Programs that come with mods but don't start them.
+const TOOLS: &[&str] = &[
+    "UNLZEXE", "LZEXE", "TSRMUSIC", "LIST", "PKUNZIP", "SETUP", "INSTALL",
+];
+
+/// Batch files with these names are tried first.
+const PREFERRED_BATCH: &[&str] = &["PLAY", "START", "RUN", "GO"];
+
+/// Guesses the recipe from the files in the mod root. `names` are the bare
+/// file names there; `read` returns a file's text; `episode_exes` are the
+/// catalog executables of the target game.
+pub fn guess(
+    names: &[String],
+    read: impl Fn(&str) -> Option<String>,
+    episode_exes: &[String],
+) -> Guess {
+    let by_upper: HashMap<String, &str> = names
+        .iter()
+        .map(|n| (n.to_ascii_uppercase(), n.as_str()))
+        .collect();
+    let resolve = |token: &str, exts: &[&str]| -> Option<String> {
+        let token = token
+            .trim_start_matches(".\\")
+            .trim_start_matches("C:\\")
+            .to_ascii_uppercase();
+        if let Some(n) = by_upper.get(&token)
+            && exts
+                .iter()
+                .any(|e| *e == "*" || token.ends_with(&format!(".{e}")))
+        {
+            return Some(n.to_string());
+        }
+        exts.iter()
+            .find_map(|e| by_upper.get(&format!("{token}.{e}")))
+            .map(|n| n.to_string())
+    };
+    let is_patcher = |name: &str| is_patcher(name);
+    // With or without extension, as batch files spell it.
+    let is_episode_exe = |name: &str| {
+        episode_exes
+            .iter()
+            .any(|e| e.eq_ignore_ascii_case(name) || stem(e).eq_ignore_ascii_case(name))
+    };
+
+    let mut batches: Vec<&String> = names.iter().filter(|n| has_ext(n, "BAT")).collect();
+    batches.sort_by_key(|n| {
+        let stem = stem(n).to_ascii_uppercase();
+        (
+            PREFERRED_BATCH
+                .iter()
+                .position(|p| *p == stem)
+                .unwrap_or(PREFERRED_BATCH.len()),
+            stem,
+        )
+    });
+
+    // Tier 1: what the batch files run, in the order above. One we can't
+    // reduce to a single command runs as it is.
+    let mut from_batches = Vec::new();
+    let mut seen: Vec<Vec<Vec<String>>> = Vec::new();
+    for bat in batches {
+        let commands = read(bat).map(|t| batch_commands(&t)).unwrap_or_default();
+        // Mods often ship the same batch file under two names.
+        let key: Vec<Vec<String>> = commands
+            .iter()
+            .map(|c| c.iter().map(|w| w.to_ascii_uppercase()).collect())
+            .collect();
+        if seen.contains(&key) {
+            continue;
+        }
+        seen.push(key);
+        let recipe = match commands.as_slice() {
+            [] => continue,
+            [cmd] => single_command(cmd, &resolve, &is_patcher, &is_episode_exe),
+            _ => None,
+        };
+        from_batches.push(Candidate {
+            recipe: recipe.unwrap_or_else(|| Recipe::Batch { file: bat.clone() }),
+            origin: bat.clone(),
+        });
+    }
+
+    // Tier 2: patch files next to a patcher that no batch file uses, largest first.
+    let used: Vec<&str> = from_batches
+        .iter()
+        .filter_map(|c| c.recipe.patch_file())
+        .collect();
+    let patcher = names.iter().find(|n| is_patcher(n));
+    let mut patches = Vec::new();
+    if let Some(patcher) = patcher {
+        let mut pats: Vec<(&String, usize)> = names
+            .iter()
+            .filter(|n| has_ext(n, "PAT") && !used.contains(&n.as_str()))
+            .map(|n| (n, read(n).map_or(0, |t| t.len())))
+            .collect();
+        pats.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
+        for (pat, _) in pats {
+            patches.push(Candidate {
+                recipe: Recipe::Patch {
+                    patcher: patcher.clone(),
+                    patch: pat.clone(),
+                    args: Vec::new(),
+                },
+                origin: pat.clone(),
+            });
+        }
+    }
+
+    // Tier 3: a program of the mod's own.
+    let programs: Vec<Candidate> = names
+        .iter()
+        .filter(|n| has_ext(n, "EXE") || has_ext(n, "COM"))
+        .filter(|n| !is_patcher(n) && !is_episode_exe(n))
+        .filter(|n| !TOOLS.contains(&stem(n).to_ascii_uppercase().as_str()))
+        .map(|n| Candidate {
+            recipe: Recipe::Program {
+                program: n.clone(),
+                args: Vec::new(),
+            },
+            origin: n.clone(),
+        })
+        .collect();
+
+    let from_batches = dedup(from_batches);
+    let patches = dedup(patches);
+    let tiers: [Vec<Candidate>; 3] = [
+        from_batches,
+        patches,
+        if patcher.is_none() {
+            programs
+        } else {
+            Vec::new()
+        },
+    ];
+    let confident = tiers
+        .iter()
+        .find(|t| !t.is_empty())
+        .is_none_or(|t| t.len() == 1);
+
+    let mut candidates: Vec<Candidate> = Vec::new();
+    for c in tiers.into_iter().flatten() {
+        if !candidates.iter().any(|x| x.recipe == c.recipe) {
+            candidates.push(c);
+        }
+    }
+    if (patcher.is_none() || candidates.is_empty())
+        && !candidates.iter().any(|c| c.recipe == Recipe::Episode)
+    {
+        candidates.push(Candidate {
+            recipe: Recipe::Episode,
+            origin: String::new(),
+        });
+    }
+    Guess {
+        candidates,
+        confident,
+    }
+}
+
+fn single_command(
+    cmd: &[String],
+    resolve: &impl Fn(&str, &[&str]) -> Option<String>,
+    is_patcher: &impl Fn(&str) -> bool,
+    is_episode_exe: &impl Fn(&str) -> bool,
+) -> Option<Recipe> {
+    let args = &cmd[1..];
+    // The episode executable comes from the install, so it needn't be in the mod.
+    if is_episode_exe(&cmd[0]) && args.is_empty() {
+        return Some(Recipe::Episode);
+    }
+    let program = resolve(&cmd[0], &["EXE", "COM"])?;
+    if is_patcher(&program) {
+        // Usually `.PAT`, but any file will do (e.g. `EASTERBB.CK1`).
+        let patch = resolve(args.first()?, &["PAT", "*"])?;
+        return Some(Recipe::Patch {
+            patcher: program,
+            patch,
+            args: args[1..].to_vec(),
+        });
+    }
+    Some(Recipe::Program {
+        program,
+        args: args.to_vec(),
+    })
+}
+
+fn dedup(list: Vec<Candidate>) -> Vec<Candidate> {
+    let mut out: Vec<Candidate> = Vec::new();
+    for c in list {
+        if !out.iter().any(|x| x.recipe == c.recipe) {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// Batch commands that only change what the screen shows.
+const COSMETIC: &[&str] = &[
+    "ECHO", "REM", "PAUSE", "CLS", "EXIT", "TYPE", "COLOR", "MODE",
+];
+
+/// The commands of a batch file that start something, split into words.
+/// Comments and screen output are left out.
+pub fn batch_commands(text: &str) -> Vec<Vec<String>> {
+    // DOS editors end files with Ctrl-Z.
+    let text = text.split('').next().unwrap_or("");
+    text.lines()
+        .map(|l| l.trim().trim_start_matches('@').trim())
+        .filter(|l| !l.is_empty() && !l.starts_with("::"))
+        .filter_map(|l| {
+            let words: Vec<String> = l.split_whitespace().map(str::to_string).collect();
+            let first = words[0].to_ascii_uppercase();
+            let skip = COSMETIC.contains(&first.as_str()) || first.starts_with("ECHO.");
+            (!skip).then_some(words)
+        })
+        .collect()
+}
+
+/// `%version` values of a patch file, e.g. `["1.4"]`.
+/// A version whose section says `%abort` is named only to refuse it.
+pub fn patch_versions(text: &str) -> Vec<String> {
+    let mut named: Vec<String> = Vec::new();
+    let mut aborted: Vec<String> = Vec::new();
+    let mut current: Option<String> = None;
+    for line in text.lines() {
+        let mut words = line.split_whitespace();
+        let Some(first) = words.next() else { continue };
+        if first.eq_ignore_ascii_case("%version") {
+            current = words.next().map(str::to_string);
+            if let Some(v) = &current
+                && !named.contains(v)
+            {
+                named.push(v.clone());
+            }
+        } else if first.eq_ignore_ascii_case("%abort") {
+            aborted.extend(current.clone());
+        } else if first.eq_ignore_ascii_case("%end") {
+            break;
+        }
+    }
+    named.retain(|v| !aborted.contains(v));
+    named
+}
+
+/// The `%ext` of a patch file, upper case, e.g. `CK4`.
+pub fn patch_ext(text: &str) -> Option<String> {
+    patch_directives(text, "%ext")
+        .next()
+        .map(|e| e.to_ascii_uppercase())
+}
+
+fn patch_directives<'a>(text: &'a str, name: &'a str) -> impl Iterator<Item = String> + 'a {
+    text.lines().filter_map(move |l| {
+        let mut words = l.split_whitespace();
+        let first = words.next()?;
+        if !first.eq_ignore_ascii_case(name) {
+            return None;
+        }
+        words.next().map(str::to_string)
+    })
+}
+
+/// `CK1PATCH.EXE` ... `CK6PATCH.EXE`, `KDRPATCH.EXE`.
+pub fn is_patcher(name: &str) -> bool {
+    patcher_game(name).is_some()
+}
+
+/// The game a patcher belongs to.
+pub fn patcher_game(name: &str) -> Option<&'static str> {
+    if !(has_ext(name, "EXE") || has_ext(name, "COM")) {
+        return None;
+    }
+    Some(match stem(name).to_ascii_uppercase().as_str() {
+        "CK1PATCH" => "keen1",
+        "CK2PATCH" => "keen2",
+        "CK3PATCH" => "keen3",
+        "CK4PATCH" => "keen4",
+        "CK5PATCH" => "keen5",
+        "CK6PATCH" => "keen6",
+        "KDRPATCH" => "kdreams",
+        _ => return None,
+    })
+}
+
+pub fn has_ext(name: &str, ext: &str) -> bool {
+    name.rsplit_once('.')
+        .is_some_and(|(_, e)| e.eq_ignore_ascii_case(ext))
+}
+
+fn stem(name: &str) -> &str {
+    name.rsplit_once('.').map_or(name, |(s, _)| s)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn run(files: &[(&str, &str)]) -> Guess {
+        let names: Vec<String> = files.iter().map(|(n, _)| n.to_string()).collect();
+        let read = |n: &str| {
+            files
+                .iter()
+                .find(|(f, _)| *f == n)
+                .map(|(_, t)| t.to_string())
+        };
+        guess(&names, read, &["KEEN4E.EXE".into(), "KEEN4C.EXE".into()])
+    }
+
+    fn patch(patcher: &str, patch: &str, args: &[&str]) -> Recipe {
+        Recipe::Patch {
+            patcher: patcher.into(),
+            patch: patch.into(),
+            args: args.iter().map(|a| a.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn batch_with_patcher_wins_and_identical_batches_merge() {
+        let g = run(&[
+            (
+                "AURORA.bat",
+                "@echo off\r\nREM Abiathar\r\nCK4PATCH.EXE abiathar.pat\r\n",
+            ),
+            ("play.bat", "@echo off\nck4patch abiathar.pat\npause\n"),
+            ("CK4PATCH.EXE", ""),
+            ("abiathar.pat", "%ext ck4\n%version 1.4\n"),
+            ("KEEN4E.EXE", ""),
+        ]);
+        assert!(g.confident);
+        assert_eq!(g.candidates.len(), 1);
+        assert_eq!(
+            g.candidates[0].recipe,
+            patch("CK4PATCH.EXE", "abiathar.pat", &[])
+        );
+        assert_eq!(g.candidates[0].origin, "play.bat");
+    }
+
+    #[test]
+    fn disagreeing_batches_ask_the_user() {
+        let g = run(&[
+            ("BTOWER.BAT", "tsrmusic.com\nck3patch btower.pat -nowait"),
+            ("BTRNOMUS.bat", "ck3patch btrnomus.pat -nowait"),
+            ("CK3PATCH.exe", ""),
+            ("TSRMUSIC.com", ""),
+            ("btower.pat", "%ext ck3"),
+            ("btrnomus.pat", "%ext ck3"),
+        ]);
+        assert!(!g.confident);
+        let recipes: Vec<_> = g.candidates.iter().map(|c| c.recipe.clone()).collect();
+        assert_eq!(
+            recipes,
+            [
+                Recipe::Batch {
+                    file: "BTOWER.BAT".into()
+                },
+                patch("CK3PATCH.exe", "btrnomus.pat", &["-nowait"]),
+                patch("CK3PATCH.exe", "btower.pat", &[]),
+            ]
+        );
+        assert_eq!(
+            recipes[1].command().unwrap(),
+            "CK3PATCH.exe btrnomus.pat -nowait"
+        );
+    }
+
+    #[test]
+    fn patch_without_batch_file() {
+        let g = run(&[
+            ("CK4PATCH.EXE", ""),
+            ("MOD.PAT", "%ext ck4\n%patch $1 $2\n%patch $3 $4"),
+            ("tiles.pat", "%ext ck4"),
+        ]);
+        assert!(!g.confident);
+        assert_eq!(
+            g.candidates[0].recipe,
+            patch("CK4PATCH.EXE", "MOD.PAT", &[])
+        );
+        assert_eq!(g.candidates.len(), 2);
+    }
+
+    #[test]
+    fn file_replacement_runs_the_episode() {
+        let g = run(&[("LEVEL01.CK4", ""), ("README.TXT", "")]);
+        assert!(g.confident);
+        assert_eq!(g.candidates[0].recipe, Recipe::Episode);
+        assert_eq!(g.candidates[0].recipe.command(), None);
+
+        let g = run(&[("GO.BAT", "keen4e"), ("GAMEMAPS.CK4", "")]);
+        assert!(g.confident);
+        assert_eq!(
+            g.candidates,
+            [Candidate {
+                recipe: Recipe::Episode,
+                origin: "GO.BAT".into()
+            }]
+        );
+    }
+
+    #[test]
+    fn standalone_program() {
+        let g = run(&[("KEEN7.EXE", ""), ("UNLZEXE.EXE", ""), ("DATA.CK4", "")]);
+        assert!(g.confident);
+        assert_eq!(
+            g.candidates[0].recipe,
+            Recipe::Program {
+                program: "KEEN7.EXE".into(),
+                args: vec![]
+            }
+        );
+        assert_eq!(g.candidates[1].recipe, Recipe::Episode);
+    }
+
+    #[test]
+    fn real_world_batch_quirks() {
+        // Ctrl-Z at the end, screen output, a patch file without .PAT.
+        let g = run(&[
+            (
+                "EASTER.BAT",
+                "echo off
+cls
+type INTRO.CK4
+ck4patch easter.ck4
+",
+            ),
+            ("CK4PATCH.EXE", ""),
+            ("EASTER.CK4", "%ext ck4"),
+        ]);
+        assert!(g.confident);
+        assert_eq!(
+            g.candidates[0].recipe,
+            patch("CK4PATCH.EXE", "EASTER.CK4", &[])
+        );
+
+        // The same batch file under two names counts once.
+        let g = run(&[
+            (
+                "play.bat",
+                "random
+ck4patch p.pat",
+            ),
+            (
+                "start.Bat",
+                "RANDOM
+CK4PATCH P.PAT
+",
+            ),
+            ("RANDOM.EXE", ""),
+            ("CK4PATCH.EXE", ""),
+            ("p.pat", "%ext ck4"),
+        ]);
+        assert!(g.confident);
+        assert_eq!(
+            g.candidates[0].recipe,
+            Recipe::Batch {
+                file: "play.bat".into()
+            }
+        );
+    }
+
+    #[test]
+    fn batch_parsing() {
+        assert_eq!(
+            batch_commands(
+                "@ECHO OFF\r\n:: x\r\nrem y\r\necho. \r\n  cls\r\nKDRPATCH MartGold.pat\r\nPause\r\n"
+            ),
+            [vec!["KDRPATCH".to_string(), "MartGold.pat".into()]]
+        );
+    }
+
+    #[test]
+    fn patch_file_directives() {
+        let text = "#Tile info\n%ext ck2\n%version 1.0\n%patchfile 0x1 a.tli\n%VERSION 1.31\n%version 1.0\n";
+        assert_eq!(patch_versions(text), ["1.0", "1.31"]);
+        assert_eq!(patch_ext(text).as_deref(), Some("CK2"));
+        assert_eq!(patch_ext("# nothing"), None);
+
+        let refusing = "%ext ck6
+%version 1.0
+%abort
+%version 1.4
+%patch $1 $2
+%end
+%version 1.5
+";
+        assert_eq!(patch_versions(refusing), ["1.4"]);
+    }
+
+    #[test]
+    fn patchers() {
+        assert_eq!(patcher_game("ck1patch.exe"), Some("keen1"));
+        assert_eq!(patcher_game("KDRPATCH.EXE"), Some("kdreams"));
+        assert_eq!(patcher_game("CK4PATCH.PAT"), None);
+        assert_eq!(patcher_game("CKPATCH.EXE"), None);
+    }
+
+    #[test]
+    fn recipe_serializes_with_type_tag() {
+        let json = serde_json::to_string(&patch("A.EXE", "B.PAT", &[])).unwrap();
+        assert_eq!(
+            json,
+            r#"{"type":"patch","patcher":"A.EXE","patch":"B.PAT","args":[]}"#
+        );
+        let back: Recipe = serde_json::from_str(r#"{"type":"episode"}"#).unwrap();
+        assert_eq!(back, Recipe::Episode);
+    }
+}
