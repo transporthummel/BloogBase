@@ -1,0 +1,82 @@
+{
+  "$comment": "Game definitions (PLAN.md §5). File names are matched case-insensitively; `?` and `*` are wildcards in saves/stateFiles. Hashes are SHA-256 of the listed files. TODO: confirm all names and add hashes against the Shikadi ModdingWiki.",
+  "games": [
+    {
+      "id": "keen1",
+      "title": "Commander Keen 1: Marooned on Mars",
+      "engine": "vorticons",
+      "executables": ["KEEN1.EXE"],
+      "requiredFiles": ["EGAHEAD.CK1", "EGALATCH.CK1", "EGASPRIT.CK1", "LEVEL01.CK1", "SOUNDS.CK1"],
+      "saves": ["SAVED?.CK1"],
+      "stateFiles": ["CTLPANEL.CK1", "SCORES.CK1"],
+      "versions": []
+    },
+    {
+      "id": "keen2",
+      "title": "Commander Keen 2: The Earth Explodes",
+      "engine": "vorticons",
+      "executables": ["KEEN2.EXE"],
+      "requiredFiles": ["EGAHEAD.CK2", "EGALATCH.CK2", "EGASPRIT.CK2", "LEVEL01.CK2"],
+      "saves": ["SAVED?.CK2"],
+      "stateFiles": ["CTLPANEL.CK2", "SCORES.CK2"],
+      "versions": []
+    },
+    {
+      "id": "keen3",
+      "title": "Commander Keen 3: Keen Must Die!",
+      "engine": "vorticons",
+      "executables": ["KEEN3.EXE"],
+      "requiredFiles": ["EGAHEAD.CK3", "EGALATCH.CK3", "EGASPRIT.CK3", "LEVEL01.CK3"],
+      "saves": ["SAVED?.CK3"],
+      "stateFiles": ["CTLPANEL.CK3", "SCORES.CK3"],
+      "versions": []
+    },
+    {
+      "id": "keen4",
+      "title": "Commander Keen 4: Secret of the Oracle",
+      "engine": "galaxy",
+      "executables": ["KEEN4E.EXE", "KEEN4C.EXE"],
+      "requiredFiles": ["GAMEMAPS.CK4", "AUDIO.CK4"],
+      "saves": ["SAVEGAM?.CK4"],
+      "stateFiles": ["CONFIG.CK4"],
+      "versions": []
+    },
+    {
+      "id": "keen5",
+      "title": "Commander Keen 5: The Armageddon Machine",
+      "engine": "galaxy",
+      "executables": ["KEEN5E.EXE", "KEEN5C.EXE"],
+      "requiredFiles": ["GAMEMAPS.CK5", "AUDIO.CK5"],
+      "saves": ["SAVEGAM?.CK5"],
+      "stateFiles": ["CONFIG.CK5"],
+      "versions": [
+        {
+          "id": "keen5-1.4-ega",
+          "label": "v1.4 EGA",
+          "files": { "KEEN5E.EXE": "77f687268be09763d139a1226a0f4eec191e62181299ff466d54fc232670cf57" },
+          "shareware": false
+        }
+      ]
+    },
+    {
+      "id": "keen6",
+      "title": "Commander Keen 6: Aliens Ate My Baby Sitter!",
+      "engine": "galaxy",
+      "executables": ["KEEN6E.EXE", "KEEN6C.EXE", "KEEN6.EXE"],
+      "requiredFiles": ["GAMEMAPS.CK6", "AUDIO.CK6"],
+      "saves": ["SAVEGAM?.CK6"],
+      "stateFiles": ["CONFIG.CK6"],
+      "versions": []
+    },
+    {
+      "id": "kdreams",
+      "title": "Commander Keen in Keen Dreams",
+      "engine": "dreams",
+      "executables": ["KDREAMS.EXE"],
+      "requiredFiles": ["KDREAMS.MAP", "KDREAMS.AUD"],
+      "saves": ["SAVEGAM?.KDR"],
+      "stateFiles": ["CONFIG.KDR"],
+      "versions": []
+    }
+  ]
+}

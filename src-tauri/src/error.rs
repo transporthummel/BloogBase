@@ -1,5 +1,7 @@
 //! Shared error type for the Rust core and its IPC representation.
 
+use std::path::PathBuf;
+
 use serde::Serialize;
 use specta::Type;
 
@@ -13,6 +15,12 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("Tauri error: {0}")]
     Tauri(#[from] tauri::Error),
+    #[error("archive error: {0}")]
+    Archive(#[from] zip::result::ZipError),
+    #[error("not a folder or ZIP file: {}", .0.display())]
+    UnsupportedSource(PathBuf),
+    #[error("no Commander Keen games found")]
+    NoGamesFound,
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -23,6 +31,9 @@ impl Error {
             Error::Database(_) | Error::Migration(_) => ErrorKind::Database,
             Error::Io(_) => ErrorKind::Io,
             Error::Tauri(_) => ErrorKind::Internal,
+            Error::Archive(_) => ErrorKind::Archive,
+            Error::UnsupportedSource(_) => ErrorKind::UnsupportedSource,
+            Error::NoGamesFound => ErrorKind::NoGamesFound,
         }
     }
 }
@@ -34,6 +45,9 @@ pub enum ErrorKind {
     Database,
     Io,
     Internal,
+    Archive,
+    UnsupportedSource,
+    NoGamesFound,
 }
 
 /// The error shape every command returns to the frontend.

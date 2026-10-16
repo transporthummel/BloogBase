@@ -7,6 +7,10 @@ import { invoke as __TAURI_INVOKE } from "@tauri-apps/api/core";
 /** Commands */
 export const commands = {
 	appInfo: () => typedError<AppInfo, CommandError>(__TAURI_INVOKE("app_info")),
+	listGames: () => __TAURI_INVOKE<Game[]>("list_games"),
+	listInstalls: () => typedError<Install[], CommandError>(__TAURI_INVOKE("list_installs")),
+	/**  Imports all games found in a folder or ZIP file. */
+	importGames: (path: string) => typedError<Install[], CommandError>(__TAURI_INVOKE("import_games", { path })),
 };
 
 /* Types */
@@ -23,8 +27,46 @@ export type CommandError = {
 	message: string,
 };
 
+export type Engine = "vorticons" | "galaxy" | "dreams";
+
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
-export type ErrorKind = "database" | "io" | "internal";
+export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound";
+
+export type Game = {
+	id: string,
+	title: string,
+	engine: Engine,
+	/**  Any one of these must be present. */
+	executables: string[],
+	/**  All of these must be present. */
+	requiredFiles: string[],
+	/**  Patterns for save games. */
+	saves: string[],
+	/**  Patterns for other files the game writes (config, high scores). */
+	stateFiles: string[],
+	versions: GameVersion[],
+};
+
+export type GameVersion = {
+	id: string,
+	label: string,
+	/**  File name → lowercase hex SHA-256. */
+	files: { [key in string]: string },
+	shareware: boolean,
+};
+
+export type Install = {
+	id: string,
+	gameId: string,
+	versionId: string | null,
+	label: string,
+	source: InstallSource,
+	path: string,
+	/**  Unix epoch seconds. */
+	addedAt: number,
+};
+
+export type InstallSource = "folder" | "zip" | "download" | "steam" | "gog";
 
 /* Tauri Specta runtime */
 async function typedError<T, E>(result: Promise<T>): Promise<{ status: "ok"; data: T } | { status: "error"; error: E }> {

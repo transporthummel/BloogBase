@@ -1,7 +1,11 @@
+mod catalog;
 mod commands;
 mod db;
+mod detect;
 mod error;
+mod library;
 mod paths;
+mod source;
 
 use tauri::Manager;
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, log::LevelFilter};
@@ -14,7 +18,12 @@ use crate::paths::AppPaths;
 const BINDINGS_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../src/bindings.ts");
 
 fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
-    tauri_specta::Builder::<tauri::Wry>::new().commands(collect_commands![commands::app_info])
+    tauri_specta::Builder::<tauri::Wry>::new().commands(collect_commands![
+        commands::app_info,
+        commands::list_games,
+        commands::list_installs,
+        commands::import_games,
+    ])
 }
 
 fn export_bindings(builder: &tauri_specta::Builder<tauri::Wry>) {
