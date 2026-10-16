@@ -21,6 +21,26 @@ pub enum Error {
     UnsupportedSource(PathBuf),
     #[error("no Commander Keen games found")]
     NoGamesFound,
+    #[error("network error: {0}")]
+    Network(#[from] reqwest::Error),
+    #[error("download failed: HTTP {0}")]
+    HttpStatus(u16),
+    #[error("checksum mismatch: expected {expected}, got {actual}")]
+    ChecksumMismatch { expected: String, actual: String },
+    #[error("could not extract archive: {0}")]
+    Extract(String),
+    #[error("no DOSBox Staging build available for this platform")]
+    UnsupportedPlatform,
+    #[error("DOSBox is not installed")]
+    RuntimeMissing,
+    #[error("not a usable DOSBox Staging executable: {0}")]
+    InvalidRuntime(String),
+    #[error("already in progress")]
+    Busy,
+    #[error("this game is already running")]
+    AlreadyRunning,
+    #[error("not found: {0}")]
+    NotFound(String),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -34,6 +54,15 @@ impl Error {
             Error::Archive(_) => ErrorKind::Archive,
             Error::UnsupportedSource(_) => ErrorKind::UnsupportedSource,
             Error::NoGamesFound => ErrorKind::NoGamesFound,
+            Error::Network(_) | Error::HttpStatus(_) => ErrorKind::Network,
+            Error::ChecksumMismatch { .. } => ErrorKind::ChecksumMismatch,
+            Error::Extract(_) => ErrorKind::Archive,
+            Error::UnsupportedPlatform => ErrorKind::UnsupportedPlatform,
+            Error::RuntimeMissing => ErrorKind::RuntimeMissing,
+            Error::InvalidRuntime(_) => ErrorKind::InvalidRuntime,
+            Error::Busy => ErrorKind::Busy,
+            Error::AlreadyRunning => ErrorKind::AlreadyRunning,
+            Error::NotFound(_) => ErrorKind::NotFound,
         }
     }
 }
@@ -48,6 +77,14 @@ pub enum ErrorKind {
     Archive,
     UnsupportedSource,
     NoGamesFound,
+    Network,
+    ChecksumMismatch,
+    UnsupportedPlatform,
+    RuntimeMissing,
+    InvalidRuntime,
+    Busy,
+    AlreadyRunning,
+    NotFound,
 }
 
 /// The error shape every command returns to the frontend.

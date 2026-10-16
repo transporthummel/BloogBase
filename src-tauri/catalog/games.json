@@ -74,7 +74,7 @@
       "engine": "dreams",
       "executables": ["KDREAMS.EXE"],
       "requiredFiles": ["KDREAMS.MAP", "KDREAMS.AUD"],
-      "saves": ["SAVEGAM?.KDR"],
+      "saves": ["SAVEGAM?.KDR", "SAVEGM?.KDR"],
       "stateFiles": ["CONFIG.KDR"],
       "versions": []
     }

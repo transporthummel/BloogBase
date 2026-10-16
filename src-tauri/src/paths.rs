@@ -18,6 +18,16 @@ pub struct AppPaths {
     pub logs: PathBuf,
 }
 
+/// Per-profile directories (PLAN.md §4.3).
+#[derive(Debug, Clone)]
+pub struct ProfileDirs {
+    pub config: PathBuf,
+    pub override_conf: PathBuf,
+    /// Written on every launch, never edited by the user.
+    pub launch_conf: PathBuf,
+    pub capture: PathBuf,
+}
+
 impl AppPaths {
     pub fn new(root: impl Into<PathBuf>) -> Self {
         let root = root.into();
@@ -48,6 +58,26 @@ impl AppPaths {
             &self.configs,
             &self.logs,
         ]
+    }
+
+    pub fn profile(&self, id: &str) -> ProfileDirs {
+        let root = self.profiles.join(id);
+        let config = root.join("config");
+        ProfileDirs {
+            override_conf: config.join("override.conf"),
+            launch_conf: root.join("generated").join("launch.conf"),
+            capture: root.join("capture"),
+            config,
+        }
+    }
+
+    /// Shipped per-engine defaults, written out so DOSBox can read them.
+    pub fn default_conf(&self, engine: &str) -> PathBuf {
+        self.configs.join("defaults").join(format!("{engine}.conf"))
+    }
+
+    pub fn global_override_conf(&self) -> PathBuf {
+        self.configs.join("global-override.conf")
     }
 
     /// Creates all top-level directories. Safe to call on every start.

@@ -13,7 +13,43 @@
     "importing": "Importiere…",
     "imported_one": "{{count}} Spiel importiert.",
     "imported_other": "{{count}} Spiele importiert.",
-    "unknownVersion": "Unbekannte Version"
+    "unknownVersion": "Unbekannte Version",
+    "play": "Spielen",
+    "playGame": "{{game}} spielen",
+    "running": "Läuft…",
+    "playTime": "Spielzeit",
+    "neverPlayed": "Noch nicht gespielt",
+    "played": "{{time}} gespielt",
+    "lastPlayed": "Zuletzt gespielt",
+    "lastPlayedOn": "Zuletzt gespielt am {{date}}",
+    "saveCountLabel": "Spielstände",
+    "saveCount_zero": "Keine Spielstände",
+    "saveCount_one": "{{count}} Spielstand",
+    "saveCount_other": "{{count}} Spielstände"
+  },
+  "runtime": {
+    "title": "Spiel-Engine",
+    "neededTitle": "Noch ein Schritt: DOSBox",
+    "needed": "BloogBase startet die Spiele mit DOSBox Staging, einem kostenlosen DOS-Emulator. Er wird einmalig von der offiziellen Website heruntergeladen.",
+    "install": "DOSBox Staging {{version}} herunterladen",
+    "update": "Auf DOSBox Staging {{version}} aktualisieren",
+    "downloading": "Lade DOSBox Staging herunter…",
+    "downloadProgress": "Lade DOSBox Staging herunter… {{received}} von {{total}} MB",
+    "extracting": "Entpacke…",
+    "installed": "DOSBox Staging ist bereit.",
+    "notInstalled": "DOSBox Staging ist noch nicht installiert.",
+    "activeManaged": "Verwendet DOSBox Staging {{version}}, installiert von BloogBase.",
+    "activeCustom": "Verwendet dein eigenes DOSBox Staging {{version}}.",
+    "chooseCustom": "Eigenes DOSBox Staging verwenden…",
+    "useManaged": "Wieder das DOSBox von BloogBase verwenden",
+    "customHint": "Für Fortgeschrittene. Es muss DOSBox Staging sein; andere DOSBox-Versionen können Spielstände nicht getrennt von den Spieldateien speichern.",
+    "chooseInSettings": "Wähle in den Einstellungen ein vorhandenes DOSBox Staging aus."
+  },
+  "time": {
+    "lessThanMinute": "< 1 Min.",
+    "minutes_one": "{{count}} Min.",
+    "minutes_other": "{{count}} Min.",
+    "hoursMinutes": "{{hours}} Std. {{minutes}} Min."
   },
   "settings": {
     "title": "Einstellungen",
@@ -30,7 +66,14 @@
   "errors": {
     "noGamesFound": "Dort wurden keine Commander-Keen-Spiele gefunden.",
     "unsupportedSource": "Bitte wähle einen Ordner oder eine ZIP-Datei.",
-    "archive": "Die ZIP-Datei konnte nicht gelesen werden.",
+    "archive": "Das Archiv konnte nicht gelesen werden.",
+    "network": "Der Download hat nicht geklappt. Bitte prüfe deine Internetverbindung und versuch es noch einmal.",
+    "checksumMismatch": "Die heruntergeladene Datei war beschädigt oder verändert und wurde nicht verwendet. Bitte versuch es noch einmal.",
+    "unsupportedPlatform": "Für dein System gibt es keinen DOSBox-Staging-Download. Du kannst stattdessen eine vorhandene Installation auswählen.",
+    "runtimeMissing": "Zum Spielen wird DOSBox Staging benötigt. Lade es zuerst herunter.",
+    "invalidRuntime": "Das sieht nicht nach DOSBox Staging aus ({{message}}).",
+    "busy": "Das läuft bereits.",
+    "alreadyRunning": "Dieses Spiel läuft bereits.",
     "generic": "Etwas ist schiefgelaufen: {{message}}"
   }
 }

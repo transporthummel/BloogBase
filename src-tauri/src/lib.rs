@@ -3,27 +3,42 @@ mod commands;
 mod db;
 mod detect;
 mod error;
+mod launcher;
 mod library;
+mod overlay_view;
 mod paths;
+mod profiles;
+mod runtime;
 mod source;
 
 use tauri::Manager;
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, log::LevelFilter};
-use tauri_specta::collect_commands;
+use tauri_specta::{collect_commands, collect_events};
 
 use crate::db::Db;
+use crate::launcher::Running;
 use crate::paths::AppPaths;
 
 /// Where the generated TypeScript bindings for commands and events live.
 const BINDINGS_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../src/bindings.ts");
 
 fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
-    tauri_specta::Builder::<tauri::Wry>::new().commands(collect_commands![
-        commands::app_info,
-        commands::list_games,
-        commands::list_installs,
-        commands::import_games,
-    ])
+    tauri_specta::Builder::<tauri::Wry>::new()
+        .commands(collect_commands![
+            commands::app_info,
+            commands::list_games,
+            commands::list_installs,
+            commands::import_games,
+            commands::list_profiles,
+            commands::launch_profile,
+            commands::runtime_status,
+            commands::install_runtime,
+            commands::set_custom_runtime,
+        ])
+        .events(collect_events![
+            runtime::RuntimeInstallProgress,
+            launcher::PlaySessionEnded,
+        ])
 }
 
 fn export_bindings(builder: &tauri_specta::Builder<tauri::Wry>) {
@@ -86,6 +101,7 @@ pub fn run() {
 
             app.manage(paths);
             app.manage(db);
+            app.manage(Running::default());
             Ok(())
         })
         .run(tauri::generate_context!())

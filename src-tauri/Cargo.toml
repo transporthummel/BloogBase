@@ -38,8 +38,10 @@ tauri-plugin-dialog = "2"
 tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
 specta = { version = "=2.0.0-rc.25", features = ["derive"] }
 specta-typescript = "0.0.12"
-tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "fs", "process", "sync", "time"] }
+tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "fs", "io-util", "process", "sync", "time"] }
 reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "stream", "json"] }
+tar = "0.4.46"
+lzma-rs = "0.3.0"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

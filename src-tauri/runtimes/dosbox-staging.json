@@ -1,0 +1,33 @@
+{
+  "$comment": "Pinned DOSBox Staging builds (PLAN.md §2.1). URLs point to the official GitHub releases; sha256 and size are taken from the release assets. `executable` is relative to the extracted folder (the archive's single top-level folder is stripped).",
+  "version": "0.83.0",
+  "downloads": [
+    {
+      "os": "windows",
+      "arch": ["x86_64", "aarch64"],
+      "url": "https://github.com/dosbox-staging/dosbox-staging/releases/download/v0.83.0/dosbox-staging-windows-x64-v0.83.0.zip",
+      "sha256": "725b915e325a6d410ce30a10989fd492fdad07f6611fff40ff77f160478810f4",
+      "size": 37986031,
+      "archive": "zip",
+      "executable": "dosbox.exe"
+    },
+    {
+      "os": "linux",
+      "arch": ["x86_64"],
+      "url": "https://github.com/dosbox-staging/dosbox-staging/releases/download/v0.83.0/dosbox-staging-linux-x86_64-v0.83.0.tar.xz",
+      "sha256": "d3a94f7f1c3e68a47ec88d61145506c7904452adb0c9c5928cb8cfe2331d6c5c",
+      "size": 29377664,
+      "archive": "tarXz",
+      "executable": "dosbox"
+    },
+    {
+      "os": "macos",
+      "arch": ["x86_64", "aarch64"],
+      "url": "https://github.com/dosbox-staging/dosbox-staging/releases/download/v0.83.0/dosbox-staging-macOS-v0.83.0.dmg",
+      "sha256": "d8a771adfb8010fa6b5f7fb5351abfba659273ad01c89f03675a92bdbdae8167",
+      "size": 44531761,
+      "archive": "dmg",
+      "executable": "DOSBox Staging.app/Contents/MacOS/dosbox"
+    }
+  ]
+}

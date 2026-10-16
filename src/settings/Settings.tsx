@@ -1,10 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
+import { open } from "@tauri-apps/plugin-dialog";
+import { FileCog } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands } from "../bindings";
+import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { getTheme, setLanguage, setTheme, type Language, type Theme } from "../preferences";
+import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
+import { useRuntimeMutation, useRuntimeStatus } from "../runtime/queries";
+import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
 
 export function Settings() {
@@ -47,6 +54,7 @@ export function Settings() {
             </select>
           </Field>
         </Section>
+        <RuntimeSection />
         <Section title={t("settings.about")}>
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
             <dt className="text-muted">{t("settings.version")}</dt>
@@ -57,6 +65,66 @@ export function Settings() {
         </Section>
       </div>
     </>
+  );
+}
+
+function RuntimeSection() {
+  const { t } = useTranslation();
+  const status = useRuntimeStatus();
+  const setCustom = useRuntimeMutation((path: string | null) =>
+    unwrap(commands.setCustomRuntime(path)),
+  );
+  const st = status.data;
+  const active = st?.active;
+  const managedOutdated = st?.managed && st.managed.version !== st.pinnedVersion;
+
+  async function chooseCustom() {
+    const path = await open({ title: t("runtime.chooseCustom") });
+    if (path) setCustom.mutate(path);
+  }
+
+  return (
+    <Section title={t("runtime.title")}>
+      <p className="text-sm">
+        {!st
+          ? null
+          : !active
+            ? t("runtime.notInstalled")
+            : active.managed
+              ? t("runtime.activeManaged", { version: active.version })
+              : t("runtime.activeCustom", { version: active.version })}
+      </p>
+      {active && <p className="text-xs break-all text-muted">{active.path}</p>}
+
+      {st?.downloadAvailable && (!st.managed || managedOutdated) && (
+        <InstallRuntimeButton
+          label={
+            st.managed
+              ? t("runtime.update", { version: st.pinnedVersion })
+              : t("runtime.install", { version: st.pinnedVersion })
+          }
+        />
+      )}
+      {st && !st.downloadAvailable && <Notice>{t("errors.unsupportedPlatform")}</Notice>}
+
+      <div className="flex flex-wrap gap-3">
+        <Button variant="secondary" onClick={chooseCustom} disabled={setCustom.isPending}>
+          <FileCog className="size-4" aria-hidden />
+          {t("runtime.chooseCustom")}
+        </Button>
+        {active && !active.managed && (
+          <Button
+            variant="ghost"
+            onClick={() => setCustom.mutate(null)}
+            disabled={setCustom.isPending}
+          >
+            {t("runtime.useManaged")}
+          </Button>
+        )}
+      </div>
+      <p className="text-xs text-muted">{t("runtime.customHint")}</p>
+      {setCustom.error && <Notice tone="error">{errorMessage(t, setCustom.error)}</Notice>}
+    </Section>
   );
 }
 

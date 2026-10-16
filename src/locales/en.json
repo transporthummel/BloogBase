@@ -13,7 +13,43 @@
     "importing": "Importing…",
     "imported_one": "Imported {{count}} game.",
     "imported_other": "Imported {{count}} games.",
-    "unknownVersion": "Unknown version"
+    "unknownVersion": "Unknown version",
+    "play": "Play",
+    "playGame": "Play {{game}}",
+    "running": "Running…",
+    "playTime": "Play time",
+    "neverPlayed": "Not played yet",
+    "played": "Played {{time}}",
+    "lastPlayed": "Last played",
+    "lastPlayedOn": "Last played {{date}}",
+    "saveCountLabel": "Saved games",
+    "saveCount_zero": "No saved games",
+    "saveCount_one": "{{count}} saved game",
+    "saveCount_other": "{{count}} saved games"
+  },
+  "runtime": {
+    "title": "Game engine",
+    "neededTitle": "One more step: DOSBox",
+    "needed": "BloogBase runs the games in DOSBox Staging, a free DOS emulator. It's downloaded once from its official website.",
+    "install": "Download DOSBox Staging {{version}}",
+    "update": "Update to DOSBox Staging {{version}}",
+    "downloading": "Downloading DOSBox Staging…",
+    "downloadProgress": "Downloading DOSBox Staging… {{received}} of {{total}} MB",
+    "extracting": "Unpacking…",
+    "installed": "DOSBox Staging is ready.",
+    "notInstalled": "DOSBox Staging is not installed yet.",
+    "activeManaged": "Using DOSBox Staging {{version}}, installed by BloogBase.",
+    "activeCustom": "Using your own DOSBox Staging {{version}}.",
+    "chooseCustom": "Use my own DOSBox Staging…",
+    "useManaged": "Use BloogBase's DOSBox again",
+    "customHint": "For advanced users. It has to be DOSBox Staging; other DOSBox versions can't keep your saves separate from the game files.",
+    "chooseInSettings": "Choose an existing DOSBox Staging in the settings."
+  },
+  "time": {
+    "lessThanMinute": "< 1 min",
+    "minutes_one": "{{count}} min",
+    "minutes_other": "{{count}} min",
+    "hoursMinutes": "{{hours}} h {{minutes}} min"
   },
   "settings": {
     "title": "Settings",
@@ -30,7 +66,14 @@
   "errors": {
     "noGamesFound": "No Commander Keen games were found there.",
     "unsupportedSource": "Please choose a folder or a ZIP file.",
-    "archive": "The ZIP file could not be read.",
+    "archive": "The archive could not be read.",
+    "network": "The download didn't work. Please check your internet connection and try again.",
+    "checksumMismatch": "The downloaded file was damaged or changed, so it wasn't used. Please try again.",
+    "unsupportedPlatform": "There's no DOSBox Staging download for your system. You can choose an existing installation instead.",
+    "runtimeMissing": "DOSBox Staging is needed to play. Download it first.",
+    "invalidRuntime": "That doesn't look like DOSBox Staging ({{message}}).",
+    "busy": "That's already in progress.",
+    "alreadyRunning": "This game is already running.",
     "generic": "Something went wrong: {{message}}"
   }
 }
