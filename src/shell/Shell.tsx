@@ -26,7 +26,7 @@ export function Shell() {
 
   if (inSetup) {
     return (
-      <main className="bb-starfield min-h-screen overflow-y-auto">
+      <main className="bb-starfield relative min-h-screen overflow-y-auto">
         <Outlet />
       </main>
     );
@@ -53,7 +53,7 @@ export function Shell() {
           <NavItem to="/about" icon={Info} label={t("nav.about")} />
         </div>
       </nav>
-      <main className="min-w-0 flex-1 overflow-y-auto">
+      <main className="relative min-w-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-7xl p-6 xl:p-8">
           {update.data && !updateLater && (
             <div className="mb-6">
