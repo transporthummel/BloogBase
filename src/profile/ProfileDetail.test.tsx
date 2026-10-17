@@ -66,6 +66,7 @@ vi.mock("../bindings", () => {
     "listMods",
     "indexMods",
     "listScreenshots",
+    "profileCover",
     "deleteScreenshot",
     "openCaptureFolder",
   ];
@@ -141,7 +142,7 @@ const ok = <T,>(data: T) => ({ status: "ok" as const, data });
 
 function renderDetail() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
+  return render(
     <QueryClientProvider client={client}>
       <ProfileDetail profileId="keen4-1" />
     </QueryClientProvider>,
@@ -160,6 +161,7 @@ beforeEach(() => {
   vi.mocked(commands.listMods).mockResolvedValue(ok([]));
   vi.mocked(commands.indexMods).mockResolvedValue(ok([]));
   vi.mocked(commands.listScreenshots).mockResolvedValue(ok([]));
+  vi.mocked(commands.profileCover).mockResolvedValue(ok(null));
 });
 
 const aurora: Mod = {
@@ -198,6 +200,24 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   await userEvent.click(screen.getByRole("button", { name: "KeenWiki" }));
   expect(openUrl).toHaveBeenCalledWith(aurora.keenwikiUrl);
   expect(screen.getByText("Sessions").nextSibling).toHaveTextContent("1");
+});
+
+test("the title screen is the picture, else the latest screenshot", async () => {
+  vi.mocked(commands.listScreenshots).mockResolvedValue(ok([shot("image0001.png", 1_700_000_000)]));
+  const { unmount } = renderDetail();
+  expect(
+    await screen.findByRole("img", { name: `Screenshot of ${profile.label}` }),
+  ).toHaveAttribute("src", "asset:///data/profiles/keen4-1/capture/image0001.png");
+  unmount();
+
+  vi.mocked(commands.profileCover).mockResolvedValue(ok("/data/cache/covers/keen4-1.png"));
+  const { container } = renderDetail();
+  await vi.waitFor(() =>
+    expect(container.querySelector("img")).toHaveAttribute(
+      "src",
+      "asset:///data/cache/covers/keen4-1.png",
+    ),
+  );
 });
 
 test("tabs follow the arrow keys", async () => {

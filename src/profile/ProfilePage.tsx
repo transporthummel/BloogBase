@@ -11,6 +11,7 @@ import { errorMessage } from "../errors";
 import { formatDate, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { Cover } from "../library/Cover";
+import { useCover } from "../library/covers";
 import { modsKey, profilesKey } from "../library/queries";
 import { useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
@@ -132,6 +133,7 @@ function Hero({
   });
   const index = useIndexMods();
   const shots = useScreenshots(profile.id);
+  const cover = useCover(profile.id);
 
   const mod = mods.data?.find((m) => m.id === profile.modId);
   const entry = mod?.indexId
@@ -162,17 +164,18 @@ function Hero({
   return (
     <Card className="mb-6 grid md:grid-cols-[minmax(0,20rem)_1fr]">
       <div className="bg-black">
-        {latest ? (
+        {cover.data || cover.isPending || !latest ? (
+          <Cover
+            gameId={profile.gameId}
+            game={game}
+            src={cover.data}
+            className="aspect-[4/3] h-full w-full text-7xl"
+          />
+        ) : (
           <img
             src={screenshotSrc(latest)}
             alt={t("screenshots.alt", { game: profile.label })}
             className="aspect-[4/3] h-full w-full object-cover [image-rendering:pixelated]"
-          />
-        ) : (
-          <Cover
-            gameId={profile.gameId}
-            game={game}
-            className="aspect-[4/3] h-full w-full text-7xl"
           />
         )}
       </div>

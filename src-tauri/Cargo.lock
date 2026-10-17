@@ -381,10 +381,12 @@ dependencies = [
 name = "bloogbase"
 version = "0.1.0"
 dependencies = [
+ "keen-graphics",
  "keen-saves",
  "lzma-rs",
  "minisign",
  "minisign-verify",
+ "png 0.18.1",
  "reqwest",
  "rusqlite",
  "rusqlite_migration",

@@ -6,16 +6,27 @@ const engineColor = {
   dreams: "bg-dreams",
 } as const;
 
-/** Placeholder cover: the episode number on the engine's color. */
+/**
+ * The game's title screen when `src` is given, else a placeholder: the
+ * episode number on the engine's color.
+ */
 export function Cover({
   gameId,
   game,
-  className = "aspect-[3/4] text-5xl",
+  src,
+  className = "aspect-[4/3] text-5xl",
 }: {
   gameId: string;
   game?: Game;
+  src?: string | null;
   className?: string;
 }) {
+  if (src) {
+    // 320x200 pixels shown at 4:3, as on a CRT.
+    return (
+      <img src={src} alt="" className={`object-fill [image-rendering:pixelated] ${className}`} />
+    );
+  }
   const episode = gameId.replace(/^keen/, "").replace(/^kdreams$/, "D");
   return (
     <div

@@ -10,6 +10,7 @@ use tauri_specta::Event;
 
 use crate::backups::{self, Backup, BackupSettings, Contents, Origin};
 use crate::catalog::{self, Game};
+use crate::covers;
 use crate::db::Db;
 use crate::dosconf::{self, ConfigView, ConfigWarning};
 use crate::downloads;
@@ -196,6 +197,20 @@ pub fn delete_screenshot(
 ) -> CommandResult<()> {
     profiles::get(&db, &profile_id)?;
     Ok(screenshots::delete(&paths, &profile_id, &file)?)
+}
+
+/// The profile's title screen as a PNG path, extracted on first use; `None`
+/// keeps the placeholder.
+#[tauri::command]
+#[specta::specta]
+pub async fn profile_cover(app: AppHandle, profile_id: String) -> CommandResult<Option<String>> {
+    blocking(move || {
+        Ok(
+            covers::cover(&app.state::<AppPaths>(), &app.state::<Db>(), &profile_id)?
+                .map(|p| p.display().to_string()),
+        )
+    })
+    .await
 }
 
 /// Opens the folder DOSBox writes screenshots and recordings to.

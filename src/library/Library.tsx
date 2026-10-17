@@ -14,6 +14,7 @@ import { AddModDialog } from "../mods/AddModDialog";
 import { SuggestToIndex } from "../mods/KeenwikiImport";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
 import { Cover } from "./Cover";
+import { useCover } from "./covers";
 import { installsKey, profilesKey } from "./queries";
 import { getSetupStep } from "../preferences";
 import { useRuntimeStatus } from "../runtime/queries";
@@ -216,9 +217,10 @@ function ProfileCard({
 }) {
   const { t, i18n } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
+  const cover = useCover(profile.id);
   return (
     <Card className="flex h-full flex-col">
-      <Cover gameId={profile.gameId} game={game} />
+      <Cover gameId={profile.gameId} game={game} src={cover.data} />
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="grid gap-0.5">
           <h2 className="text-sm leading-tight font-semibold">

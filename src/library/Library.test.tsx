@@ -22,6 +22,7 @@ vi.mock("../bindings", () => {
       installRuntime: vi.fn(),
       listJobs: vi.fn(() => Promise.resolve([])),
       setupStatus: vi.fn(),
+      profileCover: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
     },
     events: { playSessionEnded: event, jobUpdated: event },
   };

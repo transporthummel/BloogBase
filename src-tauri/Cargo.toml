@@ -47,6 +47,8 @@ reqwest = { version = "0.13.5", default-features = false, features = ["rustls", 
 tar = "0.4.46"
 lzma-rs = "0.3.0"
 keen-saves = { path = "keen-saves" }
+keen-graphics = { path = "keen-graphics" }
+png = "0.18"
 tauri-plugin-updater = "2.14.0"
 
 

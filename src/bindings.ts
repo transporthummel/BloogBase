@@ -23,6 +23,11 @@ export const commands = {
 	deleteSave: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_save", { profileId, file })),
 	/**  Screenshots taken in DOSBox, newest first. */
 	listScreenshots: (profileId: string) => typedError<Screenshot[], CommandError>(__TAURI_INVOKE("list_screenshots", { profileId })),
+	/**
+	 *  The profile's title screen as a PNG path, extracted on first use; `None`
+	 *  keeps the placeholder.
+	 */
+	profileCover: (profileId: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("profile_cover", { profileId })),
 	deleteScreenshot: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_screenshot", { profileId, file })),
 	/**  Opens the folder DOSBox writes screenshots and recordings to. */
 	openCaptureFolder: (profileId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_capture_folder", { profileId })),

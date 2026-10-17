@@ -2,6 +2,7 @@ mod backups;
 mod catalog;
 mod commands;
 mod compose;
+mod covers;
 mod db;
 mod detect;
 mod dosconf;
@@ -52,6 +53,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::list_saves,
             commands::delete_save,
             commands::list_screenshots,
+            commands::profile_cover,
             commands::delete_screenshot,
             commands::open_capture_folder,
             commands::list_backups,
@@ -177,6 +179,9 @@ pub fn run() {
             // Screenshots are shown straight from the capture folders.
             app.asset_protocol_scope()
                 .allow_directory(&paths.profiles, true)?;
+            std::fs::create_dir_all(covers::dir(&paths))?;
+            app.asset_protocol_scope()
+                .allow_directory(covers::dir(&paths), false)?;
             app.manage(index);
             app.manage(paths);
             app.manage(db);

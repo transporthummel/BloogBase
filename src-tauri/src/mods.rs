@@ -1131,6 +1131,7 @@ pub fn delete(paths: &AppPaths, db: &Db, mod_id: &str, keep_saves: bool) -> Resu
             tracing::warn!("could not remove {}: {e}", dir.display());
         }
     }
+    crate::covers::remove(paths, &profile_id);
     tracing::info!("removed mod {mod_id} (saves kept: {})", backup.is_some());
     Ok(())
 }

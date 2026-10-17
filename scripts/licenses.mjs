@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = join(root, "src-tauri", "Cargo.toml");
-const OWN = new Set(["bloogbase", "keen-saves"]);
+const OWN = new Set(["bloogbase", "keen-saves", "keen-graphics"]);
 const LICENSE_FILE = /^(licen[cs]e|copying|notice|unlicense)/i;
 
 const options = { cwd: root, encoding: "utf8", maxBuffer: 256 << 20 };
