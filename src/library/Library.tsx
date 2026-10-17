@@ -18,6 +18,7 @@ import { useCover } from "./covers";
 import { installsKey, profilesKey } from "./queries";
 import { getLibrarySort, getSetupStep, setLibrarySort } from "../preferences";
 import { arrange, librarySorts, type LibrarySort } from "./sort";
+import { StatusBar } from "./StatusBar";
 import { useRuntimeStatus } from "../runtime/queries";
 import { useSetupStatus } from "../setup/queries";
 import { Badge } from "../ui/Badge";
@@ -243,6 +244,9 @@ export function Library() {
           );
         })}
       </div>
+      {profiles.data && profiles.data.length > 0 && (
+        <StatusBar profiles={profiles.data} updatedAt={profiles.dataUpdatedAt} />
+      )}
     </>
   );
 }

@@ -13,6 +13,8 @@ export const commands = {
 	/**  Imports all games found in a folder or ZIP file. */
 	importGames: (path: string) => typedError<Install[], CommandError>(__TAURI_INVOKE("import_games", { path })),
 	listProfiles: () => typedError<Profile[], CommandError>(__TAURI_INVOKE("list_profiles")),
+	/**  Disk space per area of the data folder; walks it, so it takes a moment. */
+	storageUsage: () => typedError<StorageUsage, CommandError>(__TAURI_INVOKE("storage_usage")),
 	/**
 	 *  Starts a profile in DOSBox. Returns once the process is running; emits
 	 *  `PlaySessionEnded` when it exits.
@@ -567,6 +569,22 @@ export type SetupStatus = {
 	completed: boolean,
 	/**  Games were imported (e.g. before the wizard existed, or by it). */
 	hasInstalls: boolean,
+};
+
+/**  Sizes in bytes. Floats, as JavaScript numbers can't hold every u64. */
+export type StorageUsage = {
+	/**  The games' own files. */
+	games: number | null,
+	mods: number | null,
+	/**  Saves, configs and screenshots of all profiles. */
+	profiles: number | null,
+	backups: number | null,
+	/**  DOSBox. */
+	runtimes: number | null,
+	/**  Composed mod folders and covers; rebuilt when needed. */
+	cache: number | null,
+	/**  Everything in the data folder, including the database and logs. */
+	total: number | null,
 };
 
 export type Store = "steam" | "gog";

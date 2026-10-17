@@ -28,3 +28,20 @@ export function formatNumber(language: string, n: number): string {
 export function formatMegabytes(bytes: number): string {
   return (bytes / 1024 / 1024).toFixed(1);
 }
+
+/** "850 kB", "48.3 MB", "1.2 GB". */
+export function formatBytes(language: string, bytes: number): string {
+  const units = ["byte", "kilobyte", "megabyte", "gigabyte", "terabyte"];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1000 && unit < units.length - 1) {
+    value /= 1000;
+    unit++;
+  }
+  return new Intl.NumberFormat(language, {
+    style: "unit",
+    unit: units[unit],
+    unitDisplay: "short",
+    maximumFractionDigits: unit < 2 ? 0 : 1,
+  }).format(value);
+}

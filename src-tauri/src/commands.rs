@@ -28,6 +28,7 @@ use crate::saves::{self, SaveFile};
 use crate::screenshots::{self, Screenshot};
 use crate::settings::{self, SetupStatus};
 use crate::shareware::{self, FreeEpisode};
+use crate::storage::{self, StorageUsage};
 use crate::stores::{self, Store, StoreInstall};
 
 /// Where the data folder pointer lives, and the default data folder.
@@ -94,6 +95,13 @@ pub fn list_profiles(
     running: State<'_, Running>,
 ) -> CommandResult<Vec<Profile>> {
     Ok(profiles::list(&db, |id| running.contains(id))?)
+}
+
+/// Disk space per area of the data folder; walks it, so it takes a moment.
+#[tauri::command]
+#[specta::specta]
+pub async fn storage_usage(app: AppHandle) -> CommandResult<StorageUsage> {
+    blocking(move || Ok(storage::usage(&app.state::<AppPaths>()))).await
 }
 
 /// Starts a profile in DOSBox. Returns once the process is running; emits

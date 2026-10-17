@@ -22,6 +22,7 @@ vi.mock("../bindings", () => {
       installRuntime: vi.fn(),
       listJobs: vi.fn(() => Promise.resolve([])),
       setupStatus: vi.fn(),
+      storageUsage: vi.fn(),
       profileCover: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
     },
     events: { playSessionEnded: event, jobUpdated: event },
@@ -74,6 +75,18 @@ function renderLibrary() {
 }
 
 beforeEach(() => {
+  vi.mocked(commands.storageUsage).mockResolvedValue({
+    status: "ok",
+    data: {
+      games: 2e6,
+      mods: 5e5,
+      profiles: 1e4,
+      backups: 0,
+      runtimes: 4e7,
+      cache: 0,
+      total: 42_600_000,
+    },
+  });
   vi.mocked(commands.listGames).mockResolvedValue([keen5]);
   vi.mocked(commands.runtimeStatus).mockResolvedValue({ status: "ok", data: ready });
   vi.mocked(commands.setupStatus).mockResolvedValue({
@@ -105,7 +118,8 @@ test("lists profiles with version and play stats", async () => {
   expect(await screen.findByText(keen5.title)).toBeInTheDocument();
   expect(await screen.findByText("v1.4 EGA")).toBeInTheDocument();
   expect(screen.getByText("Played 1 h 5 min")).toBeInTheDocument();
-  expect(screen.getByText("1 saved game")).toBeInTheDocument();
+  // On the card and in the status bar.
+  expect(screen.getAllByText("1 saved game")).toHaveLength(2);
 });
 
 test("play launches the profile", async () => {
@@ -151,4 +165,19 @@ test("sorting by type groups games and mods and is remembered", async () => {
   expect(within(mods).getByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
   expect(localStorage.getItem("bloogbase.librarySort")).toBe("type");
   localStorage.removeItem("bloogbase.librarySort");
+});
+
+test("the status bar sums up the library and its disk space", async () => {
+  const mod: Profile = { ...profile, id: "aurora", modId: "aurora", label: "Aurora Bliss" };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [mod, profile] });
+  renderLibrary();
+  const bar = await screen.findByRole("contentinfo");
+  expect(within(bar).getByText("1 game")).toBeInTheDocument();
+  expect(within(bar).getByText("1 mod")).toBeInTheDocument();
+  expect(within(bar).getByText("2 h 10 min played")).toBeInTheDocument();
+  expect(within(bar).getByText("2 saved games")).toBeInTheDocument();
+  expect(await within(bar).findByText(/42.6 MB used/)).toHaveAttribute(
+    "title",
+    expect.stringContaining("DOSBox: 40 MB"),
+  );
 });

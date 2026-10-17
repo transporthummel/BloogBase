@@ -40,6 +40,24 @@
     "group": {
       "games": "Games",
       "mods": "Mods"
+    },
+    "status": {
+      "games_one": "{{n}} game",
+      "games_other": "{{n}} games",
+      "mods_one": "{{n}} mod",
+      "mods_other": "{{n}} mods",
+      "played": "{{time}} played",
+      "saves_one": "{{n}} saved game",
+      "saves_other": "{{n}} saved games",
+      "used": "{{size}} used",
+      "area": {
+        "games": "Games",
+        "mods": "Mods",
+        "profiles": "Saves and settings",
+        "backups": "Backups",
+        "runtimes": "DOSBox",
+        "cache": "Cache"
+      }
     }
   },
   "runtime": {

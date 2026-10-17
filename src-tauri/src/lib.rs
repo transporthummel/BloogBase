@@ -24,6 +24,7 @@ mod screenshots;
 mod settings;
 mod shareware;
 mod source;
+mod storage;
 mod stores;
 
 use tauri::Manager;
@@ -49,6 +50,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::list_installs,
             commands::import_games,
             commands::list_profiles,
+            commands::storage_usage,
             commands::launch_profile,
             commands::list_saves,
             commands::delete_save,
