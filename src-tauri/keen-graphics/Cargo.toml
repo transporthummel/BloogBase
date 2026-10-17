@@ -1,0 +1,12 @@
+[package]
+name = "keen-graphics"
+version = "0.1.0"
+description = "Extracts title screens from Commander Keen game files"
+license = "MIT"
+edition = "2024"
+publish = false
+
+[dependencies]
+
+[dev-dependencies]
+png = "0.18"

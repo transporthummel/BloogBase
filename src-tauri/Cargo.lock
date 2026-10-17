@@ -2417,6 +2417,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "keen-graphics"
+version = "0.1.0"
+dependencies = [
+ "png 0.18.1",
+]
+
+[[package]]
 name = "keen-saves"
 version = "0.1.0"
 
