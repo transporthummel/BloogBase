@@ -169,7 +169,11 @@ function Hero({
             className="aspect-[4/3] h-full w-full object-cover [image-rendering:pixelated]"
           />
         ) : (
-          <Cover gameId={profile.gameId} game={game} className="aspect-[4/3] h-full text-7xl" />
+          <Cover
+            gameId={profile.gameId}
+            game={game}
+            className="aspect-[4/3] h-full w-full text-7xl"
+          />
         )}
       </div>
       <div className="grid content-start gap-4 p-5">
