@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ArrowLeft, ExternalLink } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
 import { useGames } from "../catalog";
@@ -24,6 +24,7 @@ import { ConfigPanel } from "./ConfigPanel";
 import { SavesPanel } from "./SavesPanel";
 import { ScreenshotsPanel } from "./ScreenshotsPanel";
 import { screenshotSrc, screenshotsKey, useScreenshots } from "./screenshots";
+import { usePictureWidth } from "./heroPicture";
 import { backupsKey, savesKey } from "./saves";
 
 type Tab = "saves" | "screenshots" | "config";
@@ -134,6 +135,9 @@ function Hero({
   const index = useIndexMods();
   const shots = useScreenshots(profile.id);
   const cover = useCover(profile.id);
+  const cardRef = useRef<HTMLElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const pictureWidth = usePictureWidth(cardRef, textRef);
 
   const mod = mods.data?.find((m) => m.id === profile.modId);
   const entry = mod?.indexId
@@ -162,10 +166,10 @@ function Hero({
   if (added !== undefined) stats.push([t("profile.added"), formatDate(i18n.language, added)]);
 
   return (
-    <Card className="mb-6 grid md:grid-cols-[minmax(0,20rem)_1fr]">
-      {/* Pictures keep 4:3 when the text beside them is taller; only the
-          placeholder grows with it. */}
-      <div className="flex items-center bg-black">
+    <Card ref={cardRef} className="mb-6 flex flex-col md:flex-row">
+      {/* As tall as the text, at 4:3. Where the width limits get in the way,
+          pictures keep 4:3 on black; only the placeholder fills the box. */}
+      <div className="flex shrink-0 items-center bg-black" style={{ width: pictureWidth }}>
         {cover.data || cover.isPending || !latest ? (
           <Cover
             gameId={profile.gameId}
@@ -181,7 +185,7 @@ function Hero({
           />
         )}
       </div>
-      <div className="grid content-start gap-4 p-5">
+      <div ref={textRef} className="grid min-w-0 flex-1 content-start gap-4 p-5">
         <div className="grid gap-2">
           <h1 className="font-pixel text-lg leading-relaxed">{profile.label}</h1>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
