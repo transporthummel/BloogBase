@@ -5,6 +5,7 @@
 //! Defensive like `keen-saves`: files come from any version or mod, so a
 //! file that doesn't match is an error, never a panic.
 //!
+//! - Keen 1-3: the `TITLE` bitmap over the title level ([`vorticons`]).
 //! - Keen 4-6: the most colorful 320x200 picture in EGAGRAPH ([`egagraph`]).
 //! - Keen Dreams 1.13: `TITLESCR` in the Softdisk library `KDREAMS.CMP`
 //!   ([`slib`], [`ilbm`]).
@@ -16,6 +17,7 @@ pub mod huffman;
 pub mod ilbm;
 pub mod lzexe;
 pub mod slib;
+pub mod vorticons;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
@@ -100,6 +102,11 @@ impl Image {
             .flat_map(|&c| EGA_PALETTE[usize::from(c & 15)])
             .collect()
     }
+}
+
+/// The title screen of Keen 1-3 from `EGAHEAD`, `EGALATCH` and `LEVEL90`.
+pub fn vorticons_title(egahead: &[u8], egalatch: &[u8], level90: &[u8]) -> Result<Image, Error> {
+    vorticons::title(egahead, egalatch, level90)
 }
 
 /// The title screen of Keen 4-6 from the game's executable and EGAGRAPH.

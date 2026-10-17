@@ -2,7 +2,7 @@
 //! `corpus` runs against a local folder of them.
 
 use keen_graphics::huffman::Dictionary;
-use keen_graphics::{Image, egagraph::EgaGraph, ilbm, slib};
+use keen_graphics::{Image, egagraph::EgaGraph, ilbm, slib, vorticons};
 
 /// Root: 0 -> 'A', 1 -> node 253; node 253: 0 -> 'B', 1 -> 'C'.
 fn dictionary() -> Vec<u8> {
@@ -132,8 +132,89 @@ fn slib_finds_stored_entries_also_with_sizes_too_large() {
     assert!(slib::entry(b"nonsense", "TITLESCR.LBM").is_err());
 }
 
+/// Packs codes of `width` bits, most significant bit first.
+fn pack(codes: &[(u16, u32)]) -> Vec<u8> {
+    let mut bits: Vec<bool> = Vec::new();
+    for &(code, width) in codes {
+        bits.extend((0..width).rev().map(|i| code >> i & 1 == 1));
+    }
+    bits.chunks(8)
+        .map(|c| {
+            c.iter()
+                .enumerate()
+                .fold(0, |b, (i, &on)| b | u8::from(on) << (7 - i))
+        })
+        .collect()
+}
+
+#[test]
+fn lzw_builds_its_dictionary_from_the_codes() {
+    // A, B, AB, then the entry being defined (ABA), then the end.
+    let mut data = 7u32.to_le_bytes().to_vec();
+    data.extend_from_slice(&12u16.to_le_bytes());
+    data.extend(pack(&[
+        (65, 9),
+        (66, 9),
+        (0x102, 9),
+        (0x104, 9),
+        (0x101, 9),
+    ]));
+    assert_eq!(vorticons::lzw(&data).unwrap(), b"ABABABA");
+    // A code that isn't defined yet.
+    let mut bad = 7u32.to_le_bytes().to_vec();
+    bad.extend_from_slice(&12u16.to_le_bytes());
+    bad.extend(pack(&[(65, 9), (0x1F0, 9)]));
+    assert!(vorticons::lzw(&bad).is_err());
+}
+
+#[test]
+fn vorticons_title_draws_the_bitmap_over_the_level() {
+    // One 16x16 tile at 0 and an 8x1 TITLE bitmap at 32, in four planes.
+    let plane_size = 33u32;
+    let mut head = vec![0u8; 48];
+    head[0..4].copy_from_slice(&plane_size.to_le_bytes());
+    head[8..12].copy_from_slice(&48u32.to_le_bytes()); // bitmap table
+    head[28..30].copy_from_slice(&1u16.to_le_bytes()); // 16x16 tiles
+    head[34..36].copy_from_slice(&1u16.to_le_bytes()); // bitmaps
+    head[36..40].copy_from_slice(&32u32.to_le_bytes());
+    head.extend_from_slice(&1u16.to_le_bytes()); // 1 byte wide
+    head.extend_from_slice(&1u16.to_le_bytes()); // 1 row
+    head.extend_from_slice(&0u32.to_le_bytes());
+    head.extend_from_slice(b"TITLE\0\0\0");
+
+    let mut latch = Vec::new();
+    for plane in 0..4 {
+        // The tile is blue, the bitmap dark grey.
+        latch.extend(vec![if plane == 0 { 0xFF } else { 0 }; 32]);
+        latch.push(if plane == 3 { 0xFF } else { 0 });
+    }
+
+    // A 22x15 level of tile 0: header, the tiles as one run, sprites.
+    let (w, h) = (22u16, 15u16);
+    let words: u32 = 16 + 2 * u32::from(w * h);
+    let mut level = (words * 2).to_le_bytes().to_vec();
+    for word in [w, h, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] {
+        level.extend_from_slice(&word.to_le_bytes());
+    }
+    for word in [0xFEFE, w * h, 0, 0xFEFE, w * h, 0] {
+        level.extend_from_slice(&word.to_le_bytes());
+    }
+
+    let image = keen_graphics::vorticons_title(&head, &latch, &level).unwrap();
+    assert_eq!((image.width, image.height), (320, 200));
+    assert_eq!(image.pixels[0], 1);
+    assert_eq!(
+        &image.pixels[320 + 31..320 + 41],
+        &[1, 8, 8, 8, 8, 8, 8, 8, 8, 1]
+    );
+    assert_eq!(image.pixels[199 * 320 + 319], 1);
+
+    assert!(keen_graphics::vorticons_title(&head, &latch[..100], &level).is_err());
+    assert!(keen_graphics::vorticons_title(&head[..40], &latch, &level).is_err());
+}
+
 /// Checks the real games in `$KEEN_GAMES/<folder>` (game folders as in
-/// `.local/games`): every title is a full 320x200 picture with 16 colors.
+/// `.local/games`): every title is a full, colorful 320x200 picture.
 ///
 /// `KEEN_GAMES=<absolute path> cargo test -p keen-graphics corpus -- --ignored`
 #[test]
@@ -142,6 +223,30 @@ fn corpus() {
     let root = std::path::PathBuf::from(std::env::var("KEEN_GAMES").expect("KEEN_GAMES"));
     let read = |dir: &str, name: &str| std::fs::read(root.join(dir).join(name)).unwrap();
     let titles = [
+        (
+            "keen1",
+            keen_graphics::vorticons_title(
+                &read("keen1", "EGAHEAD.CK1"),
+                &read("keen1", "EGALATCH.CK1"),
+                &read("keen1", "LEVEL90.CK1"),
+            ),
+        ),
+        (
+            "keen2",
+            keen_graphics::vorticons_title(
+                &read("keen2", "EGAHEAD.CK2"),
+                &read("keen2", "EGALATCH.CK2"),
+                &read("keen2", "LEVEL90.CK2"),
+            ),
+        ),
+        (
+            "keen3",
+            keen_graphics::vorticons_title(
+                &read("keen3", "EGAHEAD.CK3"),
+                &read("keen3", "EGALATCH.CK3"),
+                &read("keen3", "LEVEL90.CK3"),
+            ),
+        ),
         (
             "keen4",
             keen_graphics::galaxy_title(
@@ -177,6 +282,12 @@ fn corpus() {
     for (game, title) in titles {
         let image = title.unwrap_or_else(|e| panic!("{game}: {e}"));
         assert_eq!((image.width, image.height), (320, 200), "{game}");
-        assert_eq!(image.color_count(), 16, "{game}");
+        // Keen 1-3 don't need all 16 colors on their title.
+        let colors = if ["keen1", "keen2", "keen3"].contains(&game) {
+            12
+        } else {
+            16
+        };
+        assert!(image.color_count() >= colors, "{game}");
     }
 }

@@ -25,7 +25,16 @@ fn main() {
             .find_map(|d| find(Path::new(d), name))
             .and_then(|p| fs::read(p).ok())
     };
-    let image = if let Some(cmp) = read("KDREAMS.CMP") {
+    let vorticons = ["1", "2", "3"]
+        .into_iter()
+        .find(|n| read(&format!("EGALATCH.CK{n}")).is_some());
+    let image = if let Some(n) = vorticons {
+        keen_graphics::vorticons_title(
+            &read(&format!("EGAHEAD.CK{n}")).expect("EGAHEAD"),
+            &read(&format!("EGALATCH.CK{n}")).unwrap(),
+            &read(&format!("LEVEL90.CK{n}")).expect("LEVEL90"),
+        )
+    } else if let Some(cmp) = read("KDREAMS.CMP") {
         keen_graphics::dreams_title(&cmp)
     } else {
         let n = ["4", "5", "6"]
