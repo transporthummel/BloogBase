@@ -78,7 +78,7 @@ body {
 }
 
 /* Keyboard and controller focus, visible on every interactive element. */
-:focus-visible {
+:focus-visible:not([tabindex="-1"]) {
   outline: 3px solid var(--bb-focus);
   outline-offset: 2px;
 }
@@ -105,4 +105,39 @@ body {
     90px 90px,
     210px 210px,
     150px 150px;
+}
+
+/* Pogo bounce of the Play icon on hover and focus. */
+@keyframes bb-pogo {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+  25% {
+    transform: translateY(1px) scaleY(0.85);
+  }
+  55% {
+    transform: translateY(-4px) scaleY(1.08);
+  }
+}
+
+.bb-pogo:hover .bb-pogo-icon,
+.bb-pogo:focus-visible .bb-pogo-icon {
+  animation: bb-pogo 0.55s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+/* The loading Bloog hops in place. */
+@keyframes bb-hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-25%);
+  }
+}
+
+.bb-hop {
+  animation: bb-hop 0.7s steps(4) infinite;
 }

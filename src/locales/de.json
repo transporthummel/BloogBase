@@ -3,7 +3,8 @@
     "label": "Hauptnavigation",
     "library": "Bibliothek",
     "settings": "Einstellungen",
-    "discover": "Entdecken"
+    "discover": "Entdecken",
+    "about": "Über"
   },
   "library": {
     "title": "Bibliothek",
@@ -66,7 +67,8 @@
     "backups": "Sicherungen",
     "autoBackup": "Spielstände vor jedem Spielstart sichern",
     "keepBackups": "Automatische Sicherungen pro Spiel behalten",
-    "backupsHint": "Selbst angelegte Sicherungen werden nie automatisch gelöscht. BloogBase sichert außerdem vor dem Wiederherstellen oder Löschen eines Spielstands."
+    "backupsHint": "Selbst angelegte Sicherungen werden nie automatisch gelöscht. BloogBase sichert außerdem vor dem Wiederherstellen oder Löschen eines Spielstands.",
+    "aboutMore": "Lizenzen und Danksagungen"
   },
   "errors": {
     "noGamesFound": "Dort wurden keine Commander-Keen-Spiele gefunden.",
@@ -175,7 +177,9 @@
     }
   },
   "common": {
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "loading": "Wird geladen…",
+    "close": "Schließen"
   },
   "mods": {
     "add": "Mod hinzufügen",
@@ -282,7 +286,15 @@
     "back": "Bibliothek",
     "notFound": "Dieses Spiel ist nicht mehr in der Bibliothek.",
     "tabSaves": "Spielstände",
-    "tabConfig": "DOSBox-Einstellungen"
+    "tabConfig": "DOSBox-Einstellungen",
+    "tabs": "Bereiche",
+    "tabScreenshots": "Screenshots",
+    "playTime": "Spielzeit",
+    "sessions": "Spielstarts",
+    "added": "Hinzugefügt",
+    "shareware": "Shareware",
+    "released": "Erschienen {{date}}",
+    "links": "Links"
   },
   "saves": {
     "title": "Spielstände",
@@ -384,5 +396,47 @@
       "syntax": "keine Einstellung (erwartet: name = wert)",
       "noSection": "Einstellung außerhalb einer [Sektion]"
     }
+  },
+  "screenshots": {
+    "hint": "Drücke beim Spielen {{key}}, um einen Screenshot zu machen.",
+    "openFolder": "Ordner öffnen",
+    "emptyTitle": "Noch keine Screenshots",
+    "empty": "Drücke beim Spielen {{key}}, um einen Moment festzuhalten. Deine Screenshots erscheinen dann hier.",
+    "view": "Screenshot vom {{date}}",
+    "alt": "Screenshot von {{game}}",
+    "newer": "Neuerer Screenshot",
+    "older": "Älterer Screenshot",
+    "position": "{{n}} von {{count}}",
+    "delete": "Löschen",
+    "confirmDelete": "Wirklich löschen?"
+  },
+  "about": {
+    "title": "Über BloogBase",
+    "tagline": "Ein gemütliches Zuhause für Commander Keen: die Spiele und die Mods der Community mit einem Klick spielen.",
+    "sourceCode": "Quellcode",
+    "reportProblem": "Problem melden",
+    "fanProject": "Ein inoffizielles Fanprojekt",
+    "trademark": "Commander Keen ist eine Marke von id Software. BloogBase ist ein inoffizielles Fanprojekt und steht in keiner Verbindung zu id Software, ZeniMax Media, Apogee oder Softdisk und wird von ihnen nicht unterstützt. Alle anderen Namen und Marken gehören ihren Inhabern.",
+    "noGameData": "BloogBase enthält keine Spieldaten. Die freien Shareware-Episoden werden unverändert aus öffentlichen Archiven geladen, alles andere stammt aus deinen eigenen Kopien. Mods werden von den Originalquellen ihrer Autoren heruntergeladen.",
+    "thanks": "Danke",
+    "thanksText": "An die Keen-Community, deren Mods, Forschung und Dokumentation das alles erst möglich machen, und an die Mod-Autoren, die auf der Seite jedes Mods genannt sind.",
+    "licenses": "Lizenzen",
+    "license": "BloogBase ist freie Software unter der MIT-Lizenz.",
+    "dosbox": "Die Spiele laufen in <strong>DOSBox Staging</strong> {{version}}. BloogBase lädt es aus den offiziellen Releases herunter und startet es als eigenes Programm. DOSBox Staging ist freie Software unter der GNU General Public License, Version 2 oder später; der Quellcode ist beim DOSBox-Staging-Projekt erhältlich.",
+    "dosboxSource": "Quellcode {{version}}",
+    "fonts": "Schriften: Inter und Press Start 2P, beide unter der SIL Open Font License 1.1. Icons: Lucide (ISC-Lizenz).",
+    "thirdParty": "Open-Source-Lizenzen",
+    "licensesMissing": "Die Lizenzliste wird für Release-Builds erzeugt. Mit pnpm licenses:generate lässt sie sich erstellen."
+  },
+  "updates": {
+    "title": "Updates",
+    "available": "BloogBase {{version}} ist da",
+    "install": "Installieren und neu starten",
+    "later": "Später",
+    "downloading": "Update wird heruntergeladen",
+    "whilePlaying": "Beende zuerst das laufende Spiel; BloogBase startet neu, um das Update abzuschließen.",
+    "check": "Nach Updates suchen",
+    "upToDate": "Du hast die neueste Version.",
+    "checkFailed": "Die Suche nach Updates hat nicht geklappt: {{message}}"
   }
 }

@@ -96,6 +96,8 @@ test("inspects the picked ZIP and installs the mod on the matching game", async 
       name: "Aurora",
       authors: [],
       version: null,
+      description: null,
+      released: null,
       recipe: patch.recipe,
       source: "manual",
       indexId: null,
@@ -260,6 +262,8 @@ test("installs a mod from a KeenWiki page with the page's details", async () => 
       name: "Aurora Bliss",
       authors: ["Dave216"],
       version: "1.0",
+      description: page.description,
+      released: page.released,
       recipe: patch.recipe,
       source: "keenwiki",
       indexId: null,
@@ -299,6 +303,8 @@ test("installs a mod from a KeenWiki page with the page's details", async () => 
       gameId: "keen4",
       authors: ["Dave216"],
       version: "1.0",
+      description: "A Keen 4 mod.",
+      released: page.released,
     },
   });
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());

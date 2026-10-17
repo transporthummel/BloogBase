@@ -20,18 +20,49 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": []
+      }
     }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": [
+      "nsis",
+      "deb",
+      "appimage",
+      "app",
+      "dmg"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "publisher": "transporthummel",
+    "homepage": "https://github.com/transporthummel/BloogBase",
+    "category": "Game",
+    "shortDescription": "A launcher for Commander Keen and its mods",
+    "copyright": "Copyright © 2026 transporthummel. Commander Keen is a trademark of id Software.",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUyNTkwRTE1QjgyNDA5QzUKUldURkNTUzRGUTVaVWpRU3lFTkhVOW5ic0ljdWd1QmJKSjBxVDRGcXNtUFJRNVJTcS91OFVMUTUK",
+      "endpoints": [
+        "https://github.com/transporthummel/BloogBase/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

@@ -24,6 +24,7 @@ use crate::paths::{self, AppPaths};
 use crate::profiles::{self, Profile};
 use crate::runtime::{self, RuntimeStatus};
 use crate::saves::{self, SaveFile};
+use crate::screenshots::{self, Screenshot};
 use crate::settings::{self, SetupStatus};
 use crate::shareware::{self, FreeEpisode};
 use crate::stores::{self, Store, StoreInstall};
@@ -171,6 +172,49 @@ pub async fn delete_save(app: AppHandle, profile_id: String, file: String) -> Co
         saves::delete(paths, db, &id, &file)
     })
     .await
+}
+
+/// Screenshots taken in DOSBox, newest first.
+#[tauri::command]
+#[specta::specta]
+pub fn list_screenshots(
+    paths: State<'_, AppPaths>,
+    db: State<'_, Db>,
+    profile_id: String,
+) -> CommandResult<Vec<Screenshot>> {
+    profiles::get(&db, &profile_id)?;
+    Ok(screenshots::list(&paths, &profile_id)?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn delete_screenshot(
+    paths: State<'_, AppPaths>,
+    db: State<'_, Db>,
+    profile_id: String,
+    file: String,
+) -> CommandResult<()> {
+    profiles::get(&db, &profile_id)?;
+    Ok(screenshots::delete(&paths, &profile_id, &file)?)
+}
+
+/// Opens the folder DOSBox writes screenshots and recordings to.
+#[tauri::command]
+#[specta::specta]
+pub fn open_capture_folder(
+    app: AppHandle,
+    paths: State<'_, AppPaths>,
+    db: State<'_, Db>,
+    profile_id: String,
+) -> CommandResult<()> {
+    use tauri_plugin_opener::OpenerExt;
+    profiles::get(&db, &profile_id)?;
+    let dir = paths.profile(&profile_id).capture;
+    std::fs::create_dir_all(&dir).map_err(Error::from)?;
+    app.opener()
+        .open_path(dir.display().to_string(), None::<&str>)
+        .map_err(|e| Error::from(std::io::Error::other(e.to_string())))?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -490,6 +534,8 @@ pub fn install_index_mod(app: AppHandle, index_id: String, install_id: Option<St
             name: entry.name.clone(),
             authors: entry.authors.clone(),
             version: entry.version.clone(),
+            description: entry.description.clone(),
+            released: entry.released.clone(),
             recipe: entry.recipe.clone(),
             requires: entry.requires.clone(),
             keenwiki_url: entry.links.keenwiki.clone(),

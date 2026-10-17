@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
-import { useNavigate } from "@tanstack/react-router";
-import { FileCog, Wand } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { FileCog, RefreshCw, Wand } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type BackupSettings } from "../bindings";
 import { ConfigEditor } from "../config/ConfigEditor";
 import { configKey } from "../config/queries";
 import { errorMessage } from "../errors";
+import { useAppUpdate, useCheckForUpdate } from "../updates/queries";
+import { UpdateCard } from "../updates/UpdateCard";
 import { unwrap } from "../ipc";
 import {
   getTheme,
@@ -83,6 +85,7 @@ export function Settings() {
             </Button>
           </div>
         </Section>
+        <UpdateSection />
         <Section title={t("settings.about")}>
           <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
             <dt className="text-muted">{t("settings.version")}</dt>
@@ -90,9 +93,46 @@ export function Settings() {
             <dt className="text-muted">{t("settings.dataDir")}</dt>
             <dd className="break-all">{info.data?.dataDir}</dd>
           </dl>
+          <p className="text-sm">
+            <Link to="/about" className="underline underline-offset-2">
+              {t("settings.aboutMore")}
+            </Link>
+          </p>
         </Section>
       </div>
     </>
+  );
+}
+
+function UpdateSection() {
+  const { t } = useTranslation();
+  const update = useAppUpdate({ enabled: false });
+  const checkNow = useCheckForUpdate();
+  return (
+    <Section title={t("updates.title")}>
+      {update.data ? (
+        <UpdateCard update={update.data} />
+      ) : (
+        <>
+          {checkNow.isSuccess && <Notice>{t("updates.upToDate")}</Notice>}
+          {checkNow.isError && (
+            <Notice tone="error">
+              {t("updates.checkFailed", { message: String(checkNow.error) })}
+            </Notice>
+          )}
+          <div>
+            <Button
+              variant="secondary"
+              onClick={() => checkNow.mutate()}
+              disabled={checkNow.isPending}
+            >
+              <RefreshCw className="size-4" aria-hidden />
+              {t("updates.check")}
+            </Button>
+          </div>
+        </>
+      )}
+    </Section>
   );
 }
 

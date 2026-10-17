@@ -3,7 +3,8 @@
     "label": "Main navigation",
     "library": "Library",
     "settings": "Settings",
-    "discover": "Discover"
+    "discover": "Discover",
+    "about": "About"
   },
   "library": {
     "title": "Library",
@@ -66,7 +67,8 @@
     "backups": "Backups",
     "autoBackup": "Back up saves before every game start",
     "keepBackups": "Automatic backups to keep per game",
-    "backupsHint": "Backups you make yourself are never removed automatically. BloogBase also backs up before restoring or deleting a save."
+    "backupsHint": "Backups you make yourself are never removed automatically. BloogBase also backs up before restoring or deleting a save.",
+    "aboutMore": "Licenses and credits"
   },
   "errors": {
     "noGamesFound": "No Commander Keen games were found there.",
@@ -175,7 +177,9 @@
     }
   },
   "common": {
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "close": "Close"
   },
   "mods": {
     "add": "Add mod",
@@ -282,7 +286,15 @@
     "back": "Library",
     "notFound": "This game isn’t in the library any more.",
     "tabSaves": "Saves",
-    "tabConfig": "DOSBox settings"
+    "tabConfig": "DOSBox settings",
+    "tabs": "Sections",
+    "tabScreenshots": "Screenshots",
+    "playTime": "Play time",
+    "sessions": "Sessions",
+    "added": "Added",
+    "shareware": "Shareware",
+    "released": "Released {{date}}",
+    "links": "Links"
   },
   "saves": {
     "title": "Saved games",
@@ -384,5 +396,47 @@
       "syntax": "not a setting (expected name = value)",
       "noSection": "setting outside of a [section]"
     }
+  },
+  "screenshots": {
+    "hint": "Press {{key}} while playing to take a screenshot.",
+    "openFolder": "Open folder",
+    "emptyTitle": "No screenshots yet",
+    "empty": "Press {{key}} while playing to keep a moment. Your screenshots show up here.",
+    "view": "Screenshot from {{date}}",
+    "alt": "Screenshot of {{game}}",
+    "newer": "Newer screenshot",
+    "older": "Older screenshot",
+    "position": "{{n}} of {{count}}",
+    "delete": "Delete",
+    "confirmDelete": "Really delete?"
+  },
+  "about": {
+    "title": "About BloogBase",
+    "tagline": "A friendly home for Commander Keen: play the games and the community's mods with a single click.",
+    "sourceCode": "Source code",
+    "reportProblem": "Report a problem",
+    "fanProject": "An unofficial fan project",
+    "trademark": "Commander Keen is a trademark of id Software. BloogBase is an unofficial fan project and is not affiliated with or endorsed by id Software, ZeniMax Media, Apogee or Softdisk. All other names and trademarks belong to their owners.",
+    "noGameData": "BloogBase contains no game data. The free shareware episodes are downloaded unchanged from public archives; everything else comes from your own copies. Mods are downloaded from their authors' original sources.",
+    "thanks": "Thanks",
+    "thanksText": "To the Keen community, whose mods, research and documentation make all of this possible, and to the mod authors credited on every mod's page.",
+    "licenses": "Licenses",
+    "license": "BloogBase is free software under the MIT license.",
+    "dosbox": "Games run in <strong>DOSBox Staging</strong> {{version}}, which BloogBase downloads from its official releases and starts as a separate program. DOSBox Staging is free software under the GNU General Public License, version 2 or later; its source code is available from the DOSBox Staging project.",
+    "dosboxSource": "Source code {{version}}",
+    "fonts": "Fonts: Inter and Press Start 2P, both under the SIL Open Font License 1.1. Icons: Lucide (ISC license).",
+    "thirdParty": "Open source licenses",
+    "licensesMissing": "The license list is created for release builds. Run pnpm licenses:generate to create it."
+  },
+  "updates": {
+    "title": "Updates",
+    "available": "BloogBase {{version}} is available",
+    "install": "Install and restart",
+    "later": "Later",
+    "downloading": "Downloading the update",
+    "whilePlaying": "Close the running game first; BloogBase restarts to finish the update.",
+    "check": "Check for updates",
+    "upToDate": "You have the newest version.",
+    "checkFailed": "Couldn't check for updates: {{message}}"
   }
 }

@@ -1,9 +1,13 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Compass, LibraryBig, Settings, type LucideIcon } from "lucide-react";
+import { useState } from "react";
+import { Compass, Info, LibraryBig, Settings, type LucideIcon } from "lucide-react";
+import logo from "../assets/logo.jpg";
 import { useTranslation } from "react-i18next";
 import { useIndexEvents } from "../discover/queries";
 import { JobsPanel } from "../jobs/JobsPanel";
 import { useJobEvents } from "../jobs/queries";
+import { useAppUpdate } from "../updates/queries";
+import { UpdateCard } from "../updates/UpdateCard";
 
 /**
  * App frame (PLAN.md §8.2): full sidebar from 1200px, icon rail below. The
@@ -14,6 +18,9 @@ export function Shell() {
   const inSetup = useRouterState({ select: (s) => s.location.pathname === "/setup" });
   useJobEvents();
   useIndexEvents();
+  // Release builds look for a new version once per start.
+  const update = useAppUpdate({ enabled: import.meta.env.PROD });
+  const [updateLater, setUpdateLater] = useState(false);
 
   if (inSetup) {
     return (
@@ -28,21 +35,36 @@ export function Shell() {
         aria-label={t("nav.label")}
         className="flex w-16 shrink-0 flex-col gap-1 border-r border-border bg-surface p-2 xl:w-60 xl:p-3"
       >
-        <div className="mb-4 flex h-12 items-center justify-center font-pixel text-accent xl:justify-start xl:px-2">
+        <Link
+          to="/about"
+          title={t("nav.about")}
+          className="mb-4 flex h-12 items-center justify-center rounded-lg font-pixel text-accent xl:h-auto"
+        >
           <span className="text-sm xl:hidden" aria-hidden>
             BB
           </span>
-          <span className="hidden text-sm xl:inline">BloogBase</span>
-        </div>
+          <img
+            src={logo}
+            alt="BloogBase"
+            className="hidden aspect-[16/9] w-full rounded-lg object-cover xl:block"
+          />
+          <span className="sr-only xl:hidden">BloogBase</span>
+        </Link>
         <NavItem to="/" icon={LibraryBig} label={t("nav.library")} />
         <NavItem to="/discover" icon={Compass} label={t("nav.discover")} />
         <div className="mt-auto grid gap-1">
           <JobsPanel />
           <NavItem to="/settings" icon={Settings} label={t("nav.settings")} />
+          <NavItem to="/about" icon={Info} label={t("nav.about")} />
         </div>
       </nav>
       <main className="min-w-0 flex-1 overflow-y-auto">
         <div className="mx-auto max-w-7xl p-6 xl:p-8">
+          {update.data && !updateLater && (
+            <div className="mb-6">
+              <UpdateCard update={update.data} onLater={() => setUpdateLater(true)} />
+            </div>
+          )}
           <Outlet />
         </div>
       </main>
@@ -55,7 +77,7 @@ function NavItem({
   icon: Icon,
   label,
 }: {
-  to: "/" | "/discover" | "/settings";
+  to: "/" | "/discover" | "/settings" | "/about";
   icon: LucideIcon;
   label: string;
 }) {

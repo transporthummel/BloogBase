@@ -19,6 +19,7 @@ mod profiles;
 mod recipe;
 mod runtime;
 mod saves;
+mod screenshots;
 mod settings;
 mod shareware;
 mod source;
@@ -50,6 +51,9 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::launch_profile,
             commands::list_saves,
             commands::delete_save,
+            commands::list_screenshots,
+            commands::delete_screenshot,
+            commands::open_capture_folder,
             commands::list_backups,
             commands::create_backup,
             commands::backup_saves,
@@ -134,6 +138,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
@@ -169,6 +174,9 @@ pub fn run() {
 
             let index = ModIndex::open(&paths, mod_index::configured_url());
             tracing::info!("mod index source: {}", index.status().url);
+            // Screenshots are shown straight from the capture folders.
+            app.asset_protocol_scope()
+                .allow_directory(&paths.profiles, true)?;
             app.manage(index);
             app.manage(paths);
             app.manage(db);

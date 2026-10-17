@@ -21,6 +21,11 @@ export const commands = {
 	listSaves: (profileId: string) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("list_saves", { profileId })),
 	/**  Deletes a save; it's backed up first. */
 	deleteSave: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_save", { profileId, file })),
+	/**  Screenshots taken in DOSBox, newest first. */
+	listScreenshots: (profileId: string) => typedError<Screenshot[], CommandError>(__TAURI_INVOKE("list_screenshots", { profileId })),
+	deleteScreenshot: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_screenshot", { profileId, file })),
+	/**  Opens the folder DOSBox writes screenshots and recordings to. */
+	openCaptureFolder: (profileId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_capture_folder", { profileId })),
 	listBackups: (profileId: string) => typedError<Backup[], CommandError>(__TAURI_INVOKE("list_backups", { profileId })),
 	/**
 	 *  Backs up one save, or with `file` unset everything the game wrote.
@@ -360,6 +365,9 @@ export type KeenwikiOrigin = {
 	/**  Replace the guessed ones when not empty. */
 	authors: string[],
 	version: string | null,
+	description?: string | null,
+	/**  `YYYY-MM-DD`, when known. */
+	released?: string | null,
 };
 
 export type Links = {
@@ -374,6 +382,9 @@ export type Mod = {
 	name: string,
 	authors: string[],
 	version: string | null,
+	description: string | null,
+	/**  `YYYY-MM-DD`, when known. */
+	released: string | null,
 	recipe: Recipe,
 	source: ModSource,
 	/**  The index entry it was installed from. */
@@ -503,6 +514,16 @@ export type SaveFile = {
 	size: number,
 	/**  `None` if the file couldn't be read as a save of this game. */
 	details: SaveDetails | null,
+};
+
+export type Screenshot = {
+	/**  File name in the capture folder. */
+	file: string,
+	/**  Absolute path, for the asset protocol. */
+	path: string,
+	/**  Unix epoch seconds. */
+	takenAt: number | null,
+	size: number,
 };
 
 export type Setting = {

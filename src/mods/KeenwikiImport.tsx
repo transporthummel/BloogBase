@@ -132,6 +132,8 @@ function WikiCard({
           authors: page.authors,
           // Without one the archive name is used.
           version: chosen.version,
+          description: page.description,
+          released: page.released,
         },
       }),
   });

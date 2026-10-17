@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Compass, FileArchive, FolderOpen, Play, Puzzle, Trash2 } from "lucide-react";
+import { Compass, FileArchive, FolderOpen, Puzzle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type Mod, type Profile } from "../bindings";
@@ -24,6 +24,7 @@ import { Card } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
+import { PlayButton } from "../ui/PlayButton";
 
 export function Library() {
   const { t } = useTranslation();
@@ -266,15 +267,14 @@ function ProfileCard({
           </dd>
         </dl>
         <div className="mt-auto flex gap-2">
-          <Button
+          <PlayButton
             className="flex-1"
             onClick={onPlay}
             disabled={!canPlay || profile.running}
             aria-label={t("library.playGame", { game: profile.label })}
           >
-            <Play className="size-4" aria-hidden />
             {profile.running ? t("library.running") : t("library.play")}
-          </Button>
+          </PlayButton>
           {onRemove && (
             <Button
               variant="ghost"

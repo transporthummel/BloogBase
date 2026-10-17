@@ -106,6 +106,11 @@ pub struct KeenwikiOrigin {
     /// Replace the guessed ones when not empty.
     pub authors: Vec<String>,
     pub version: Option<String>,
+    #[serde(default)]
+    pub description: Option<String>,
+    /// `YYYY-MM-DD`, when known.
+    #[serde(default)]
+    pub released: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]
@@ -116,6 +121,9 @@ pub struct Mod {
     pub name: String,
     pub authors: Vec<String>,
     pub version: Option<String>,
+    pub description: Option<String>,
+    /// `YYYY-MM-DD`, when known.
+    pub released: Option<String>,
     pub recipe: Recipe,
     pub source: ModSource,
     /// The index entry it was installed from.
@@ -491,6 +499,8 @@ struct Stored<'a> {
     name: String,
     authors: Vec<String>,
     version: Option<String>,
+    description: Option<String>,
+    released: Option<String>,
     recipe: Recipe,
     source: ModSource,
     index_id: Option<&'a str>,
@@ -532,6 +542,11 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
                 o.authors.clone()
             },
             version: o.version.clone().or_else(|| analysis.info.version.clone()),
+            description: o.description.clone(),
+            released: o
+                .released
+                .clone()
+                .or_else(|| analysis.info.released.clone()),
             recipe: option.recipe.clone(),
             source: ModSource::Keenwiki,
             index_id: None,
@@ -543,6 +558,8 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             name,
             authors: analysis.info.authors.clone(),
             version: analysis.info.version.clone(),
+            description: None,
+            released: analysis.info.released.clone(),
             recipe: option.recipe.clone(),
             source: ModSource::Manual,
             index_id: None,
@@ -563,6 +580,8 @@ pub struct Curated {
     pub name: String,
     pub authors: Vec<String>,
     pub version: Option<String>,
+    pub description: Option<String>,
+    pub released: Option<String>,
     pub recipe: Recipe,
     /// Catalog versions it works with; empty: any.
     pub requires: Vec<String>,
@@ -603,6 +622,8 @@ pub fn install_curated(
         name: c.name.clone(),
         authors: c.authors.clone(),
         version: c.version.clone(),
+        description: c.description.clone(),
+        released: c.released.clone(),
         recipe: c.recipe.clone(),
         source: ModSource::Index,
         index_id: Some(&c.index_id),
@@ -753,6 +774,8 @@ fn store(
             name: s.name.clone(),
             authors: s.authors.clone(),
             version: s.version.clone(),
+            description: s.description.clone(),
+            released: s.released.clone(),
             recipe: s.recipe.clone(),
             source: s.source,
             index_id: s.index_id.map(str::to_string),
@@ -764,8 +787,9 @@ fn store(
         let tx = conn.transaction()?;
         tx.execute(
             "INSERT INTO mods (id, game_id, index_id, keenwiki_url, name, authors, version,
-                               recipe_json, path, source, source_url, archive_sha256, added_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+                               recipe_json, path, source, source_url, archive_sha256, added_at,
+                               description, released)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
             params![
                 m.id,
                 m.game_id,
@@ -779,7 +803,9 @@ fn store(
                 m.source.as_str(),
                 s.source_url,
                 archive_sha256(source)?,
-                m.added_at
+                m.added_at,
+                m.description,
+                m.released
             ],
         )?;
         tx.execute(
@@ -865,7 +891,8 @@ fn update(
         let tx = conn.transaction()?;
         tx.execute(
             "UPDATE mods SET authors = ?2, version = ?3, recipe_json = ?4, keenwiki_url = ?5,
-                             source_url = ?6, archive_sha256 = ?7
+                             source_url = ?6, archive_sha256 = ?7, description = ?8,
+                             released = ?9
              WHERE id = ?1",
             params![
                 mod_id,
@@ -874,7 +901,9 @@ fn update(
                 serde_json::to_string(&s.recipe).expect("recipes serialize"),
                 s.keenwiki_url,
                 s.source_url,
-                archive_sha256(source)?
+                archive_sha256(source)?,
+                s.description,
+                s.released
             ],
         )?;
         tx.execute(
@@ -960,7 +989,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
     let conn = db.conn();
     let mut stmt = conn.prepare(
         "SELECT m.id, m.game_id, m.name, m.authors, m.version, m.recipe_json, m.source,
-                m.added_at, p.id, m.index_id, m.keenwiki_url
+                m.added_at, p.id, m.index_id, m.keenwiki_url, m.description, m.released
          FROM mods m JOIN profiles p ON p.mod_id = m.id
          ORDER BY m.added_at, m.id",
     )?;
@@ -980,6 +1009,8 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
             profile_id: r.get(8)?,
             index_id: r.get(9)?,
             keenwiki_url: r.get(10)?,
+            description: r.get(11)?,
+            released: r.get(12)?,
         })
     })?;
     Ok(rows.collect::<rusqlite::Result<_>>()?)
@@ -1251,13 +1282,18 @@ mod tests {
             game_id: Some("keen4".into()),
             authors: vec!["Dave216".into()],
             version: Some("1.2".into()),
+            description: Some("Blissful.".into()),
+            released: Some("2012-05-01".into()),
         });
         let m = install(&paths, &db, &req).unwrap();
         assert_eq!(m.source, ModSource::Keenwiki);
         assert_eq!(m.authors, ["Dave216"]);
         assert_eq!(m.version.as_deref(), Some("1.2"));
         assert_eq!(m.keenwiki_url.as_deref(), Some(page));
-        assert_eq!(list(&db).unwrap()[0].keenwiki_url.as_deref(), Some(page));
+        let listed = &list(&db).unwrap()[0];
+        assert_eq!(listed.keenwiki_url.as_deref(), Some(page));
+        assert_eq!(listed.description.as_deref(), Some("Blissful."));
+        assert_eq!(listed.released.as_deref(), Some("2012-05-01"));
 
         let url = reqwest::Url::parse(&index_suggestion(&db, &m.id).unwrap()).unwrap();
         assert_eq!(
@@ -1328,6 +1364,8 @@ mod tests {
             name: "Aurora Bliss".into(),
             authors: vec!["Dave216".into()],
             version: Some("1.2".into()),
+            description: Some("A Keen 4 mod.".into()),
+            released: None,
             recipe,
             requires: vec!["keen4-1.4-ega".into()],
             keenwiki_url: Some("https://keenwiki.shikadi.net/wiki/Aurora_Bliss".into()),

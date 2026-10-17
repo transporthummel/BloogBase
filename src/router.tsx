@@ -1,4 +1,5 @@
 import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { About } from "./about/About";
 import { Discover } from "./discover/Discover";
 import { Library } from "./library/Library";
 import { ProfileRoute } from "./profile/ProfilePage";
@@ -32,6 +33,12 @@ const settingsRoute = createRoute({
   component: Settings,
 });
 
+const aboutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/about",
+  component: About,
+});
+
 const setupRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/setup",
@@ -44,6 +51,7 @@ export const router = createRouter({
     discoverRoute,
     profileRoute,
     settingsRoute,
+    aboutRoute,
     setupRoute,
   ]),
 });

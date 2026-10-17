@@ -4,6 +4,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { CircleCheck, FileArchive, FileCog, FolderOpen, PartyPopper } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import logo from "../assets/logo.jpg";
 import { commands, type FreeEpisode, type StoreInstall } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
@@ -88,6 +89,11 @@ export function WelcomeStep({ next }: StepProps) {
   ];
   return (
     <>
+      <img
+        src={logo}
+        alt=""
+        className="aspect-[16/9] w-full rounded-xl border border-border object-cover shadow-card"
+      />
       <StepHeader title={t("setup.welcome.title")}>
         <p>{t("setup.welcome.intro")}</p>
         <p>{t("setup.welcome.steps")}</p>
