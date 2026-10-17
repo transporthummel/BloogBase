@@ -163,19 +163,21 @@ function Hero({
 
   return (
     <Card className="mb-6 grid md:grid-cols-[minmax(0,20rem)_1fr]">
-      <div className="bg-black">
+      {/* Pictures keep 4:3 when the text beside them is taller; only the
+          placeholder grows with it. */}
+      <div className="flex items-center bg-black">
         {cover.data || cover.isPending || !latest ? (
           <Cover
             gameId={profile.gameId}
             game={game}
             src={cover.data}
-            className="aspect-[4/3] h-full w-full text-7xl"
+            className={`aspect-[4/3] w-full text-7xl ${cover.data ? "" : "h-full"}`}
           />
         ) : (
           <img
             src={screenshotSrc(latest)}
             alt={t("screenshots.alt", { game: profile.label })}
-            className="aspect-[4/3] h-full w-full object-cover [image-rendering:pixelated]"
+            className="aspect-[4/3] w-full object-cover [image-rendering:pixelated]"
           />
         )}
       </div>
