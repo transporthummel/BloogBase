@@ -231,12 +231,19 @@ function ProfileCard({
               {profile.label}
             </Link>
           </h2>
-          {profile.modId !== null && game && <p className="text-xs text-muted">{game.title}</p>}
+          {profile.modId !== null && game && (
+            <p className="text-xs text-muted">
+              {t("mods.baseGame", {
+                game: game.title,
+                version: version?.label ?? t("library.unknownVersion"),
+              })}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-1">
           {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
           {profile.modId !== null && profile.sessionCount === 0 && <Badge>{t("mods.new")}</Badge>}
-          <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>
+          {profile.modId === null && <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>}
         </div>
         <dl className="grid gap-0.5 text-xs text-muted">
           <dt className="sr-only">{t("library.playTime")}</dt>

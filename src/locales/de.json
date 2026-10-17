@@ -215,6 +215,7 @@
     "installing": "Wird installiert…",
     "installed": "{{name}} ist bereit zum Spielen.",
     "badge": "Mod",
+    "baseGame": "Läuft mit {{game}} {{version}}",
     "new": "Neu",
     "remove": "Entfernen",
     "removeNamed": "{{name}} entfernen",

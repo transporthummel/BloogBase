@@ -194,7 +194,7 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   expect(await screen.findByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
   expect(await screen.findByText("by Dave216")).toBeInTheDocument();
   expect(screen.getByText("A colourful journey.")).toBeInTheDocument();
-  expect(screen.getByText(keen4.title)).toBeInTheDocument();
+  expect(screen.getByText(`Runs on ${keen4.title} Unknown version`)).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "KeenWiki" }));
   expect(openUrl).toHaveBeenCalledWith(aurora.keenwikiUrl);
   expect(screen.getByText("Sessions").nextSibling).toHaveTextContent("1");

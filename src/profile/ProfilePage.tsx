@@ -180,10 +180,21 @@ function Hero({
         <div className="grid gap-2">
           <h1 className="font-pixel text-lg leading-relaxed">{profile.label}</h1>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-            {profile.modId !== null && game && <span>{game.title}</span>}
+            {profile.modId !== null && game && (
+              <span>
+                {t("mods.baseGame", {
+                  game: game.title,
+                  version: version?.label ?? t("library.unknownVersion"),
+                })}
+              </span>
+            )}
             {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
-            <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>
-            {version?.shareware && <Badge>{t("profile.shareware")}</Badge>}
+            {profile.modId === null && (
+              <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>
+            )}
+            {profile.modId === null && version?.shareware && (
+              <Badge>{t("profile.shareware")}</Badge>
+            )}
             {mod?.version && <Badge>{t("mods.version", { version: mod.version })}</Badge>}
           </div>
           {mod && mod.authors.length > 0 && (
