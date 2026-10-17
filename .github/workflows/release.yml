@@ -1,6 +1,6 @@
 name: Release
 
-# Builds signed installers for every OS and drafts a GitHub release with
+# Builds installers for every OS (not code-signed, see docs/releasing.md) and drafts a GitHub release with
 # them and the updater manifest (latest.json). Push a tag like v1.0.0;
 # see docs/releasing.md for the secrets this needs.
 on:
@@ -12,8 +12,6 @@ permissions:
 
 env:
   CARGO_TERM_COLOR: always
-  # Secrets can't be used in `if:` directly.
-  HAS_WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE != '' }}
 
 jobs:
   build:
@@ -63,47 +61,25 @@ jobs:
       - name: Collect third-party licenses
         run: pnpm licenses:generate
 
-      # Windows code signing (optional until a certificate exists): imports
-      # the PFX and points the bundler at it.
-      - name: Import Windows certificate
-        if: runner.os == 'Windows' && env.HAS_WINDOWS_CERTIFICATE == 'true'
-        shell: pwsh
-        env:
-          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
-          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-        run: |
-          $pfx = Join-Path $env:RUNNER_TEMP "cert.pfx"
-          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
-          $password = ConvertTo-SecureString $env:WINDOWS_CERTIFICATE_PASSWORD -AsPlainText -Force
-          $cert = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $password
-          Remove-Item $pfx
-          $config = @{ bundle = @{ windows = @{
-            certificateThumbprint = $cert.Thumbprint
-            digestAlgorithm = "sha256"
-            timestampUrl = "http://timestamp.digicert.com"
-          } } } | ConvertTo-Json -Depth 5 -Compress
-          Set-Content -Path src-tauri/tauri.windows-signing.json -Value $config -Encoding utf8
-          "SIGNING_ARGS=--config src-tauri/tauri.windows-signing.json" >> $env:GITHUB_ENV
-
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Signs the updater artifacts (required).
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          # macOS signing and notarization; skipped while these are empty.
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: BloogBase __VERSION__
-          releaseBody: See the assets below to download BloogBase for your system.
+          releaseBody: |
+            Download the file for your system below:
+
+            - **Windows:** `BloogBase_…_x64-setup.exe`. Windows may say it protected your PC because the installer isn't signed: click *More info* → *Run anyway*.
+            - **macOS:** `BloogBase_…_aarch64.dmg` (Apple Silicon) or `…_x64.dmg` (Intel). Drag BloogBase into Applications. The first start is blocked because the app isn't notarized: open *System Settings → Privacy & Security* and click *Open Anyway*.
+            - **Linux:** the `.AppImage` (make it executable and start it) or the `.deb` for Debian/Ubuntu.
+
+            BloogBase updates itself after that.
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true
           # Updater artifacts only here: local builds have no signing key.
-          args: ${{ matrix.args }} --config src-tauri/tauri.release.conf.json ${{ env.SIGNING_ARGS }}
+          args: ${{ matrix.args }} --config src-tauri/tauri.release.conf.json

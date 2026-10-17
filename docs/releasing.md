@@ -17,21 +17,35 @@ updater. Publish the draft by hand after a smoke test.
 
 ## Secrets
 
-| Secret                                                                      | Needed for                                                                                           | Status                                                                                                                                                         |
-| --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `TAURI_SIGNING_PRIVATE_KEY`                                                 | Updater signatures. Without it the workflow fails.                                                   | Key exists locally in `.local/updater-signing/` (no password); public key is in `tauri.conf.json`. Paste the content of `bloogbase-updater.key` as the secret. |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`                                        | Same; empty for the current key.                                                                     | –                                                                                                                                                              |
-| `WINDOWS_CERTIFICATE`, `WINDOWS_CERTIFICATE_PASSWORD`                       | Windows code signing: base64 of a PFX and its password. Skipped while unset (SmartScreen will warn). | No certificate yet.                                                                                                                                            |
-| `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_SIGNING_IDENTITY` | macOS signing (Developer ID Application certificate as base64 .p12).                                 | No Apple developer account yet.                                                                                                                                |
-| `APPLE_ID`, `APPLE_PASSWORD`, `APPLE_TEAM_ID`                               | macOS notarization (app-specific password).                                                          | Same.                                                                                                                                                          |
+| Secret                               | Needed for                                                                                                                               |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `TAURI_SIGNING_PRIVATE_KEY`          | Updater signatures; without it the workflow fails. Paste the content of `.local/updater-signing/bloogbase-updater.key` (exists locally). |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Empty for the current key.                                                                                                               |
 
 Losing the updater key means installed apps can't verify updates any more;
 keep a backup of `.local/updater-signing/` outside the repo.
 
-Unsigned macOS builds only open via right-click → Open (or after
-`xattr -dr com.apple.quarantine BloogBase.app`); unsigned Windows installers
-show a SmartScreen warning. Both are fine for a first community preview, not
-for 1.0.
+## No code signing (decided 2026-10-17)
+
+Paid certificates (Apple Developer Program, Windows code signing) are not
+worth their yearly cost for this project, so the installers are not
+code-signed. The updater signature above is separate and free; it still
+protects updates.
+
+- **Windows:** SmartScreen warns about the unsigned installer ("Windows
+  protected your PC" → _More info_ → _Run anyway_). The warning fades as more
+  people download a release. A free option for later: the
+  [SignPath Foundation](https://signpath.org/) signs open source projects
+  for free once the repo is public (application required).
+- **macOS:** builds are signed ad hoc (`signingIdentity: "-"`), which keeps
+  Apple Silicon from calling the app damaged, but they are not notarized.
+  The first start is blocked; users allow it under _System Settings →
+  Privacy & Security → Open Anyway_ (macOS 15+; older versions: right-click →
+  Open). Auto-updates afterwards install without that step.
+- **Linux:** nothing to sign.
+
+The release notes template in `release.yml` explains these steps, and so
+does the README.
 
 ## Updates
 

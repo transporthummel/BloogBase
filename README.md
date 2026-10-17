@@ -13,6 +13,22 @@ community's mods without unzipping, copying files or editing configs.
   changed.
 - Play time, save details, screenshots and per-game DOSBox settings.
 
+## Installing
+
+Download the newest release for your system from the
+[releases page](https://github.com/transporthummel/BloogBase/releases).
+BloogBase is a free fan project, so its installers aren't signed with paid
+certificates; your system will ask once before the first start:
+
+- **Windows:** if "Windows protected your PC" appears, click _More info_ →
+  _Run anyway_.
+- **macOS:** move BloogBase to Applications and start it. When macOS blocks it,
+  open _System Settings → Privacy & Security_ and click _Open Anyway_.
+- **Linux:** make the `.AppImage` executable and start it, or install the
+  `.deb`.
+
+After that, BloogBase keeps itself up to date.
+
 ## Development
 
 Requirements: Node.js 24, pnpm, Rust (stable) and the

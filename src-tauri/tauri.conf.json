@@ -51,7 +51,8 @@
     "license": "MIT",
     "licenseFile": "../LICENSE",
     "macOS": {
-      "minimumSystemVersion": "11.0"
+      "minimumSystemVersion": "11.0",
+      "signingIdentity": "-"
     }
   },
   "plugins": {
