@@ -1,4 +1,4 @@
-//! The title screen of Keen 1-3: the `TITLE` bitmap drawn over the title
+//! The title screen of Keen 1-3: the title bitmap drawn over the title
 //! level (`LEVEL90`). See
 //! <https://moddingwiki.shikadi.net/wiki/Commander_Keen_1-3_EGA_Header>,
 //! <https://moddingwiki.shikadi.net/wiki/Keen_1-3_LZW_compression> and
@@ -39,21 +39,17 @@ impl<'a> Header<'a> {
         u16::from_le_bytes([self.head[46], self.head[47]]) & LATCH_COMPRESSED != 0
     }
 
-    /// Width in bytes, height and location of the bitmap called `name`.
-    fn bitmap(&self, name: &str) -> Option<(usize, usize, usize)> {
+    /// Width in bytes, height and location of the first bitmap, the title.
+    /// The game picks it by number; mod tools often leave the names blank.
+    fn title(&self) -> Option<(usize, usize, usize)> {
         let table = u32::from_le_bytes(self.head[8..12].try_into().ok()?) as usize;
-        let count = usize::from(u16::from_le_bytes([self.head[34], self.head[35]]));
-        (0..count).find_map(|i| {
-            let e = self.head.get(table + i * 16..table + (i + 1) * 16)?;
-            let entry_name: Vec<u8> = e[8..].iter().copied().take_while(|&b| b != 0).collect();
-            entry_name.eq_ignore_ascii_case(name.as_bytes()).then(|| {
-                (
-                    usize::from(u16::from_le_bytes([e[0], e[1]])),
-                    usize::from(u16::from_le_bytes([e[2], e[3]])),
-                    u32::from_le_bytes([e[4], e[5], e[6], e[7]]) as usize,
-                )
-            })
-        })
+        let count = u16::from_le_bytes([self.head[34], self.head[35]]);
+        let e = self.head.get(table..table + 16).filter(|_| count > 0)?;
+        Some((
+            usize::from(u16::from_le_bytes([e[0], e[1]])),
+            usize::from(u16::from_le_bytes([e[2], e[3]])),
+            u32::from_le_bytes([e[4], e[5], e[6], e[7]]) as usize,
+        ))
     }
 }
 
@@ -84,10 +80,12 @@ pub fn title(egahead: &[u8], egalatch: &[u8], level: &[u8]) -> Result<Image, Err
             }
         }
     }
-    let (w, h, at) = header
-        .bitmap("TITLE")
-        .ok_or(Error::Format("no TITLE bitmap"))?;
-    screen.draw(header.bitmaps + at, w, h, TITLE_AT.0, TITLE_AT.1)?;
+    let (w, h, at) = header.title().ok_or(Error::Format("no title bitmap"))?;
+    // Mods with a bigger title get it in the corner, as far as it fits.
+    let (x, y) = TITLE_AT;
+    let x = if w * 8 + x > WIDTH { 0 } else { x };
+    let y = if h + y > HEIGHT { 0 } else { y };
+    screen.draw(header.bitmaps + at, w, h, x, y)?;
     Ok(Image {
         width: WIDTH,
         height: HEIGHT,
@@ -98,7 +96,7 @@ pub fn title(egahead: &[u8], egalatch: &[u8], level: &[u8]) -> Result<Image, Err
 const WIDTH: usize = 320;
 const HEIGHT: usize = 200;
 
-/// Where the game draws the `TITLE` bitmap. Its "Press F1 for help" sign is
+/// Where the game draws the title bitmap. Its "Press F1 for help" sign is
 /// left out: it sits somewhere else in each episode.
 const TITLE_AT: (usize, usize) = (32, 1);
 
