@@ -130,7 +130,7 @@
       "versions": [
         {
           "id": "kdreams-1.13",
-          "label": "v1.13 Shareware",
+          "label": "v1.13",
           "files": { "KDREAMS.EXE": "574d49b882af9ac15232eadb4c6edce94a35b30d622f6e01f6ae20565f7c5aab" },
           "shareware": true,
           "start": "START.EXE"
