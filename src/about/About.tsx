@@ -17,6 +17,7 @@ export const REPO_URL = "https://github.com/transporthummel/BloogBase";
 const DOSBOX_URL = "https://www.dosbox-staging.org/";
 const DOSBOX_SOURCE = "https://github.com/dosbox-staging/dosbox-staging";
 const GPL_URL = "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html";
+const AUTHOR_URL = "https://pckf.com/memberlist.php?mode=viewprofile&u=16709";
 
 /** Version, credits, licenses and the trademark notice (PLAN.md §13 M8, §14). */
 export function About() {
@@ -39,6 +40,22 @@ export function About() {
         <div className="grid gap-2 p-5">
           <h1 className="sr-only">{t("about.title")}</h1>
           <p>{t("about.tagline")}</p>
+          <p className="text-sm">
+            <Trans
+              i18nKey="about.author"
+              values={{ name: "transporthummel" }}
+              components={{
+                profile: (
+                  <button
+                    type="button"
+                    className="font-semibold text-accent underline-offset-2 hover:underline"
+                    title={t("about.authorProfile")}
+                    onClick={() => openUrl(AUTHOR_URL)}
+                  />
+                ),
+              }}
+            />
+          </p>
           <p className="text-sm text-muted">
             {t("settings.version")}{" "}
             <span className="font-pixel text-xs text-ink">{info.data?.version}</span>

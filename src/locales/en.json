@@ -458,6 +458,8 @@
   "about": {
     "title": "About BloogBase",
     "tagline": "A friendly home for Commander Keen: play the games and the community's mods with a single click.",
+    "author": "Made by <profile>{{name}}</profile>",
+    "authorProfile": "Open profile on the PCKF forum",
     "sourceCode": "Source code",
     "reportProblem": "Report a problem",
     "fanProject": "An unofficial fan project",
