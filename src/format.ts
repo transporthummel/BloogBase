@@ -15,6 +15,16 @@ export function formatDate(language: string, epochSeconds: number): string {
   );
 }
 
+export function formatDateTime(language: string, epochSeconds: number): string {
+  return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }).format(
+    new Date(epochSeconds * 1000),
+  );
+}
+
+export function formatNumber(language: string, n: number): string {
+  return new Intl.NumberFormat(language).format(n);
+}
+
 export function formatMegabytes(bytes: number): string {
   return (bytes / 1024 / 1024).toFixed(1);
 }

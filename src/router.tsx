@@ -1,6 +1,7 @@
 import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 import { Discover } from "./discover/Discover";
 import { Library } from "./library/Library";
+import { ProfileRoute } from "./profile/ProfilePage";
 import { Settings } from "./settings/Settings";
 import { Setup } from "./setup/Setup";
 import { Shell } from "./shell/Shell";
@@ -19,6 +20,12 @@ const discoverRoute = createRoute({
   component: Discover,
 });
 
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profiles/$profileId",
+  component: ProfileRoute,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/settings",
@@ -32,7 +39,13 @@ const setupRoute = createRoute({
 });
 
 export const router = createRouter({
-  routeTree: rootRoute.addChildren([libraryRoute, discoverRoute, settingsRoute, setupRoute]),
+  routeTree: rootRoute.addChildren([
+    libraryRoute,
+    discoverRoute,
+    profileRoute,
+    settingsRoute,
+    setupRoute,
+  ]),
 });
 
 declare module "@tanstack/react-router" {

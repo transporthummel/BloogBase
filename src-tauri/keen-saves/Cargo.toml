@@ -1,0 +1,9 @@
+[package]
+name = "keen-saves"
+version = "0.1.0"
+description = "Reads the details out of Commander Keen saved games"
+license = "MIT"
+edition = "2024"
+publish = false
+
+[dependencies]

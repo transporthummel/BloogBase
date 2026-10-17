@@ -5,21 +5,20 @@
 //! its play profile.
 
 use std::collections::BTreeMap;
-use std::fs::{self, File};
-use std::io::{self, Write};
+use std::fs;
+use std::io;
 use std::path::Path;
 
 use rusqlite::{OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use zip::write::SimpleFileOptions;
 
+use crate::backups::{self, Contents, Reason};
 use crate::catalog::{self, Game};
 use crate::db::Db;
 use crate::detect::sha256_hex;
 use crate::error::{Error, Result};
 use crate::library::{self, Install, now};
-use crate::overlay_view;
 use crate::paths::AppPaths;
 use crate::recipe::{self, Recipe, has_ext, patcher_game};
 use crate::source::{Source, split_dir};
@@ -1071,38 +1070,21 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
 /// Removes a mod with its profile. With `keep_saves`, what the game wrote is
 /// archived into `backups/` first (§9.5).
 pub fn delete(paths: &AppPaths, db: &Db, mod_id: &str, keep_saves: bool) -> Result<()> {
-    let (profile_id, state_path): (String, String) = db
+    let profile_id: String = db
         .conn()
-        .query_row(
-            "SELECT id, state_path FROM profiles WHERE mod_id = ?1",
-            [mod_id],
-            |r| Ok((r.get(0)?, r.get(1)?)),
-        )
+        .query_row("SELECT id FROM profiles WHERE mod_id = ?1", [mod_id], |r| {
+            r.get(0)
+        })
         .optional()?
         .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))?;
-    let state = Path::new(&state_path);
-
     let backup = if keep_saves {
-        backup_state(paths, &profile_id, state)?
+        backups::create(paths, db, &profile_id, Contents::State, Reason::ModRemoved)?
     } else {
         None
     };
     {
         let mut conn = db.conn();
         let tx = conn.transaction()?;
-        if let Some((archive, files)) = &backup {
-            tx.execute(
-                "INSERT INTO save_backups (profile_id, label, archive_path, created_at, files_json)
-                 VALUES (?1, ?2, ?3, ?4, ?5)",
-                params![
-                    profile_id,
-                    "Mod removed",
-                    archive.display().to_string(),
-                    now(),
-                    serde_json::to_string(files).expect("strings serialize")
-                ],
-            )?;
-        }
         tx.execute("DELETE FROM profiles WHERE id = ?1", [&profile_id])?;
         tx.execute("DELETE FROM mods WHERE id = ?1", [mod_id])?;
         tx.commit()?;
@@ -1120,41 +1102,6 @@ pub fn delete(paths: &AppPaths, db: &Db, mod_id: &str, keep_saves: bool) -> Resu
     }
     tracing::info!("removed mod {mod_id} (saves kept: {})", backup.is_some());
     Ok(())
-}
-
-/// Zips the files the game wrote, if any. Returns the archive and its files.
-fn backup_state(
-    paths: &AppPaths,
-    profile_id: &str,
-    state: &Path,
-) -> Result<Option<(std::path::PathBuf, Vec<String>)>> {
-    // Overlay markers only make sense next to the lower layer.
-    let mut files = Vec::new();
-    for entry in walkdir::WalkDir::new(state) {
-        let entry = entry.map_err(io::Error::from)?;
-        let rel = entry
-            .path()
-            .strip_prefix(state)
-            .expect("walkdir yields children");
-        if entry.file_type().is_file()
-            && !overlay_view::is_marker(&entry.file_name().to_string_lossy())
-        {
-            files.push(rel.to_string_lossy().replace('\\', "/"));
-        }
-    }
-    if files.is_empty() {
-        return Ok(None);
-    }
-    let dir = paths.backups.join(profile_id);
-    fs::create_dir_all(&dir)?;
-    let archive = dir.join(format!("{}.zip", now()));
-    let mut zip = zip::ZipWriter::new(File::create(&archive)?);
-    for rel in &files {
-        zip.start_file(rel.as_str(), SimpleFileOptions::default())?;
-        zip.write_all(&fs::read(state.join(rel))?)?;
-    }
-    zip.finish()?;
-    Ok(Some((archive, files)))
 }
 
 #[cfg(test)]
@@ -1265,7 +1212,7 @@ mod tests {
             )
             .unwrap();
         assert_eq!(files, r#"["SAVEGAM0.CK4"]"#);
-        let mut zip = zip::ZipArchive::new(File::open(archive).unwrap()).unwrap();
+        let mut zip = zip::ZipArchive::new(fs::File::open(archive).unwrap()).unwrap();
         assert_eq!(zip.by_index(0).unwrap().name().unwrap(), "SAVEGAM0.CK4");
         assert_eq!(list(&db).unwrap().len(), 1);
 

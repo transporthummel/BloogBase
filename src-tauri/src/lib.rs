@@ -1,8 +1,10 @@
+mod backups;
 mod catalog;
 mod commands;
 mod compose;
 mod db;
 mod detect;
+mod dosconf;
 mod downloads;
 mod error;
 mod jobs;
@@ -16,6 +18,7 @@ mod paths;
 mod profiles;
 mod recipe;
 mod runtime;
+mod saves;
 mod settings;
 mod shareware;
 mod source;
@@ -45,6 +48,20 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::import_games,
             commands::list_profiles,
             commands::launch_profile,
+            commands::list_saves,
+            commands::delete_save,
+            commands::list_backups,
+            commands::create_backup,
+            commands::backup_saves,
+            commands::restore_backup,
+            commands::delete_backup,
+            commands::export_backup,
+            commands::import_backup,
+            commands::backup_settings,
+            commands::set_backup_settings,
+            commands::config_view,
+            commands::save_config,
+            commands::reset_config,
             commands::inspect_mod,
             commands::install_mod,
             commands::list_mods,

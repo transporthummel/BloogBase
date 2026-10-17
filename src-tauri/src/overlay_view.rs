@@ -52,7 +52,6 @@ pub fn list(lower: &Path, upper: &Path) -> Result<Vec<Entry>> {
 
 /// Prepares writing `rel` into the overlay from outside DOSBox (e.g. restoring
 /// a save): removes the deletion marker that would otherwise keep hiding it.
-#[allow(dead_code)] // First caller: save restore (M7).
 pub fn prepare_write(upper: &Path, rel: &str) -> Result<()> {
     let (dir, name) = rel.rsplit_once('/').unwrap_or(("", rel));
     let dir = if dir.is_empty() {

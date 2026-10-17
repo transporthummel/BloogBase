@@ -25,6 +25,8 @@ const translated: ErrorKind[] = [
   "tooLarge",
   "webPage",
   "unsupportedDownload",
+  "noSavesFound",
+  "otherGame",
 ];
 
 export function errorMessage(t: TFunction, err: unknown): string {

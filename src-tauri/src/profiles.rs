@@ -43,6 +43,15 @@ pub struct Layers {
     pub mod_layer: Option<ModLayer>,
 }
 
+impl Layers {
+    /// The lower layer as far as files the game writes are concerned: for
+    /// mods, the mod's own files stand in for the composed layer, which may
+    /// not exist yet; base files never hold saves (§4.4).
+    pub fn view_lower(&self) -> &Path {
+        self.mod_layer.as_ref().map_or(&self.lower, |m| &m.files)
+    }
+}
+
 /// The mod of a mod profile.
 #[derive(Debug, Clone)]
 pub struct ModLayer {
@@ -131,15 +140,9 @@ pub fn get(db: &Db, id: &str) -> Result<(Profile, Layers)> {
     Ok((row.profile, row.layers))
 }
 
-/// Saves as DOS sees them: through the overlay, in the drive root. For mods,
-/// the mod's files stand in for the composed layer, which may not exist yet;
-/// base files never hold saves (§4.4).
+/// Saves as DOS sees them: through the overlay, in the drive root.
 fn count_saves(game: &Game, layers: &Layers) -> Result<u32> {
-    let lower = layers
-        .mod_layer
-        .as_ref()
-        .map_or(&layers.lower, |m| &m.files);
-    Ok(overlay_view::list(lower, &layers.upper)?
+    Ok(overlay_view::list(layers.view_lower(), &layers.upper)?
         .iter()
         .filter(|e| !e.path.contains('/') && game.saves.iter().any(|p| glob_match(p, &e.path)))
         .count() as u32)

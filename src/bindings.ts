@@ -18,6 +18,45 @@ export const commands = {
 	 *  `PlaySessionEnded` when it exits.
 	 */
 	launchProfile: (profileId: string) => typedError<null, CommandError>(__TAURI_INVOKE("launch_profile", { profileId })),
+	listSaves: (profileId: string) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("list_saves", { profileId })),
+	/**  Deletes a save; it's backed up first. */
+	deleteSave: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_save", { profileId, file })),
+	listBackups: (profileId: string) => typedError<Backup[], CommandError>(__TAURI_INVOKE("list_backups", { profileId })),
+	/**
+	 *  Backs up one save, or with `file` unset everything the game wrote.
+	 *  `None` if there was nothing to back up.
+	 */
+	createBackup: (profileId: string, label: string | null, file: string | null) => typedError<{
+	id: number,
+	profileId: string,
+	/**  The user's label; automatic backups have a `reason` instead. */
+	label: string | null,
+	reason: Reason | null,
+	createdAt: number,
+	files: string[],
+	auto: boolean,
+	size: number,
+} | null, CommandError>(__TAURI_INVOKE("create_backup", { profileId, label, file })),
+	backupSaves: (backupId: number) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("backup_saves", { backupId })),
+	/**
+	 *  Restores a backup, or only its `file`, optionally into the slot file
+	 *  `target`. What's there now is backed up first.
+	 */
+	restoreBackup: (backupId: number, file: string | null, target: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("restore_backup", { backupId, file, target })),
+	deleteBackup: (backupId: number) => typedError<null, CommandError>(__TAURI_INVOKE("delete_backup", { backupId })),
+	exportBackup: (backupId: number, path: string) => typedError<null, CommandError>(__TAURI_INVOKE("export_backup", { backupId, path })),
+	/**  Adds a ZIP of saves as a new backup of the profile. */
+	importBackup: (profileId: string, path: string) => typedError<Backup, CommandError>(__TAURI_INVOKE("import_backup", { profileId, path })),
+	backupSettings: () => typedError<BackupSettings, CommandError>(__TAURI_INVOKE("backup_settings")),
+	setBackupSettings: (settings: BackupSettings) => typedError<null, CommandError>(__TAURI_INVOKE("set_backup_settings", { settings })),
+	/**
+	 *  The DOSBox config layers: the global override, and with `profile_id`
+	 *  that profile's layers and the effective result.
+	 */
+	configView: (profileId: string | null) => typedError<ConfigView, CommandError>(__TAURI_INVOKE("config_view", { profileId })),
+	/**  Saves the global override, or a profile's with `profile_id`. */
+	saveConfig: (profileId: string | null, text: string) => typedError<ConfigWarning[], CommandError>(__TAURI_INVOKE("save_config", { profileId, text })),
+	resetConfig: (profileId: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("reset_config", { profileId })),
 	/**  Looks at a folder or ZIP and reports the mod found in it, for the user to confirm. */
 	inspectMod: (path: string) => typedError<ModInfo, CommandError>(__TAURI_INVOKE("inspect_mod", { path })),
 	/**  Installs a mod inspected with `inspect_mod` and creates its play profile. */
@@ -87,12 +126,49 @@ export type AppInfo = {
 	schemaVersion: number,
 };
 
+export type Backup = {
+	id: number,
+	profileId: string,
+	/**  The user's label; automatic backups have a `reason` instead. */
+	label: string | null,
+	reason: Reason | null,
+	createdAt: number,
+	files: string[],
+	auto: boolean,
+	size: number,
+};
+
+export type BackupSettings = {
+	/**  Back up before every launch. */
+	auto: boolean,
+	/**  Automatic backups kept per profile; older ones are removed. */
+	keep: number,
+};
+
 /**  The error shape every command returns to the frontend. */
 export type CommandError = {
 	kind: ErrorKind,
 	/**  Technical message in English, for logs and "details" views. */
 	message: string,
 };
+
+export type ConfigLayer = "defaults" | "global" | "profile" | "launch";
+
+export type ConfigView = {
+	/**  The user's global override. */
+	global: string,
+	globalWarnings: ConfigWarning[],
+	/**  Asked for a profile: its layers and what they add up to. */
+	profile: ProfileConfig | null,
+};
+
+export type ConfigWarning = {
+	/**  1-based. */
+	line: number,
+	kind: WarningKind,
+};
+
+export type Difficulty = "easy" | "normal" | "hard";
 
 export type Download = {
 	version?: string | null,
@@ -105,7 +181,7 @@ export type Download = {
 export type Engine = "vorticons" | "galaxy" | "dreams";
 
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
-export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload";
+export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload" | "noSavesFound" | "otherGame";
 
 export type FoundGame = {
 	gameId: string,
@@ -350,6 +426,20 @@ export type Profile = {
 	running: boolean,
 };
 
+export type ProfileConfig = {
+	/**  BloogBase's defaults for the profile's engine, read-only. */
+	defaults: string,
+	text: string,
+	warnings: ConfigWarning[],
+	effective: Setting[],
+};
+
+/**
+ *  Why BloogBase made a backup on its own. Stored in the label column with
+ *  a prefix no user label gets.
+ */
+export type Reason = "beforeLaunch" | "beforeRestore" | "beforeDelete" | "modRemoved";
+
 export type Recipe = 
 /**  Run the episode's patcher with a patch file. */
 { type: "patch"; patcher: string; patch: string; args: string[] } | 
@@ -392,6 +482,36 @@ export type RuntimeStatus = {
 	downloadAvailable: boolean,
 };
 
+export type SaveDetails = {
+	name: string | null,
+	score: number | null,
+	lives: number | null,
+	ammo: number | null,
+	levelsDone: number | null,
+	difficulty: Difficulty | null,
+	onWorldMap: boolean | null,
+	shipParts: number | null,
+};
+
+export type SaveFile = {
+	/**  File name in the drive root, spelled as on disk. */
+	file: string,
+	/**  The slot as the game numbers it. */
+	slot: number | null,
+	/**  Unix epoch seconds. */
+	modifiedAt: number | null,
+	size: number,
+	/**  `None` if the file couldn't be read as a save of this game. */
+	details: SaveDetails | null,
+};
+
+export type Setting = {
+	section: string,
+	key: string,
+	value: string,
+	layer: ConfigLayer,
+};
+
 export type SetupStatus = {
 	/**  The user finished or skipped the setup wizard. */
 	completed: boolean,
@@ -407,6 +527,14 @@ export type StoreInstall = {
 	path: string,
 	games: FoundGame[],
 };
+
+export type WarningKind = 
+/**  An `[autoexec]` section: BloogBase never runs it. */
+"autoexec" | 
+/**  Neither a section header, a setting nor a comment. */
+"syntax" | 
+/**  A setting before the first section header. */
+"noSection";
 
 export type WikiDownload = {
 	url: string,

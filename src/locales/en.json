@@ -26,7 +26,8 @@
     "saveCountLabel": "Saved games",
     "saveCount_zero": "No saved games",
     "saveCount_one": "{{count}} saved game",
-    "saveCount_other": "{{count}} saved games"
+    "saveCount_other": "{{count}} saved games",
+    "details": "Saves and settings"
   },
   "runtime": {
     "title": "Game engine",
@@ -61,7 +62,11 @@
     "dataDir": "Data folder",
     "setup": "Setup",
     "rerunSetup": "Run setup again",
-    "rerunHint": "Download DOSBox and the free episodes, or add games from Steam and GOG."
+    "rerunHint": "Download DOSBox and the free episodes, or add games from Steam and GOG.",
+    "backups": "Backups",
+    "autoBackup": "Back up saves before every game start",
+    "keepBackups": "Automatic backups to keep per game",
+    "backupsHint": "Backups you make yourself are never removed automatically. BloogBase also backs up before restoring or deleting a save."
   },
   "errors": {
     "noGamesFound": "No Commander Keen games were found there.",
@@ -85,7 +90,9 @@
     "deadLink": "That download link doesn't work any more. Maybe the page lists another one, or the mod has moved.",
     "tooLarge": "The download is far too big for a Commander Keen mod, so it was stopped.",
     "webPage": "The link leads to a web page instead of a file. Open it in your browser, download the mod there and add it as a ZIP file or folder.",
-    "unsupportedDownload": "BloogBase can't open this download yet ({{message}}). Download it in your browser, unpack it and add the folder."
+    "unsupportedDownload": "BloogBase can't open this download yet ({{message}}). Download it in your browser, unpack it and add the folder.",
+    "noSavesFound": "No saved games for this game were found in that file.",
+    "otherGame": "That backup belongs to another game ({{message}})."
   },
   "jobs": {
     "title": "Downloads",
@@ -270,5 +277,112 @@
     "fetch": "Download and check",
     "otherGame": "The KeenWiki page says this mod is for {{page}}, but its files look like {{files}}.",
     "suggest": "Suggest it for the mod list"
+  },
+  "profile": {
+    "back": "Library",
+    "notFound": "This game isn’t in the library any more.",
+    "tabSaves": "Saves",
+    "tabConfig": "DOSBox settings"
+  },
+  "saves": {
+    "title": "Saved games",
+    "empty": "No saved games yet. Save in the game and they show up here.",
+    "locked": "The game is running. Close it to change saves or restore a backup.",
+    "slot": "Slot {{slot}}",
+    "unreadable": "Couldn’t read the details of this save.",
+    "score": "Score {{score}}",
+    "lives_one": "{{count}} life",
+    "lives_other": "{{count}} lives",
+    "ammo_one": "{{count}} shot",
+    "ammo_other": "{{count}} shots",
+    "shipParts_one": "{{count}} of 4 ship parts",
+    "shipParts_other": "{{count}} of 4 ship parts",
+    "levelsDone_one": "{{count}} level done",
+    "levelsDone_other": "{{count}} levels done",
+    "difficulty": {
+      "easy": "Easy",
+      "normal": "Normal",
+      "hard": "Hard"
+    },
+    "savedAt": "Saved {{date}}",
+    "backup": "Back up",
+    "backupNamed": "Back up {{name}}",
+    "delete": "Delete",
+    "deleteNamed": "Delete {{name}}",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteHint": "It’s backed up first, so you can get it back from the backups below.",
+    "deleted": "Save deleted. A backup was kept."
+  },
+  "backups": {
+    "title": "Backups",
+    "empty": "No backups yet.",
+    "label": "Label for the backup",
+    "labelPlaceholder": "Label (optional), e.g. “Before the boss”",
+    "backupAll": "Back up all",
+    "import": "Import…",
+    "auto": "Auto",
+    "manual": "Backup",
+    "files_one": "{{count}} file",
+    "files_other": "{{count}} files",
+    "made": "Backup made.",
+    "nothing": "Nothing to back up yet.",
+    "exported": "Backup exported.",
+    "imported": "Backup imported. Restore it to use the saves.",
+    "restored": "Restored. What was there before was backed up.",
+    "restore": "Restore",
+    "restoreNamed": "Restore {{name}}",
+    "restoreTitle": "Restore “{{name}}”",
+    "restoreOne": "Restore this save",
+    "restoreAll": "Restore everything",
+    "intoSlot": "Into",
+    "replaces": "Replaces {{name}}; it’s backed up first.",
+    "restoreAllHint": "Puts all files of this backup back. Other saves stay.",
+    "restoreAllReplaces_one": "Restoring everything replaces {{count}} current save; it’s backed up first.",
+    "restoreAllReplaces_other": "Restoring everything replaces {{count}} current saves; they’re backed up first.",
+    "otherFiles_one": "One other file (settings or high scores) is restored too.",
+    "otherFiles_other": "{{count}} other files (settings, high scores) are restored too.",
+    "export": "Export",
+    "exportNamed": "Export {{name}}",
+    "delete": "Delete",
+    "deleteNamed": "Delete backup {{name}}",
+    "deleteTitle": "Delete this backup?",
+    "deleteHint": "“{{name}}” from {{date}} will be gone for good.",
+    "reason": {
+      "beforeLaunch": "Before playing",
+      "beforeRestore": "Before restoring",
+      "beforeDelete": "Before deleting a save",
+      "modRemoved": "Mod removed"
+    }
+  },
+  "config": {
+    "globalTitle": "DOSBox settings for all games",
+    "globalHint": "DOSBox Staging settings that apply to every game. Each game can override them on its page.",
+    "globalLink": "Settings for all games",
+    "profileTitle": "Settings for this game",
+    "profileHint": "Only for this game; they win over BloogBase’s defaults and your settings for all games.",
+    "effectiveTitle": "What DOSBox gets",
+    "effectiveHint": "All layers together. The last one that sets a value wins.",
+    "setting": "Setting",
+    "value": "Value",
+    "from": "From",
+    "layer": {
+      "defaults": "BloogBase default",
+      "global": "All games",
+      "profile": "This game",
+      "launch": "BloogBase (fixed)"
+    },
+    "defaultsTitle": "BloogBase’s defaults for this game",
+    "save": "Save",
+    "saved": "Saved. Takes effect on the next start.",
+    "reset": "Reset to default",
+    "resetTitle": "Reset these settings?",
+    "resetHint": "Your changes here are removed and BloogBase’s defaults apply again.",
+    "warnings": "Problems",
+    "line": "Line {{line}}",
+    "warning": {
+      "autoexec": "[autoexec] is ignored, BloogBase starts the game itself",
+      "syntax": "not a setting (expected name = value)",
+      "noSection": "setting outside of a [section]"
+    }
   }
 }

@@ -26,7 +26,8 @@
     "saveCountLabel": "Spielstände",
     "saveCount_zero": "Keine Spielstände",
     "saveCount_one": "{{count}} Spielstand",
-    "saveCount_other": "{{count}} Spielstände"
+    "saveCount_other": "{{count}} Spielstände",
+    "details": "Spielstände und Einstellungen"
   },
   "runtime": {
     "title": "Spiel-Engine",
@@ -61,7 +62,11 @@
     "dataDir": "Datenordner",
     "setup": "Einrichtung",
     "rerunSetup": "Einrichtung erneut starten",
-    "rerunHint": "DOSBox und die kostenlosen Episoden herunterladen oder Spiele von Steam und GOG hinzufügen."
+    "rerunHint": "DOSBox und die kostenlosen Episoden herunterladen oder Spiele von Steam und GOG hinzufügen.",
+    "backups": "Sicherungen",
+    "autoBackup": "Spielstände vor jedem Spielstart sichern",
+    "keepBackups": "Automatische Sicherungen pro Spiel behalten",
+    "backupsHint": "Selbst angelegte Sicherungen werden nie automatisch gelöscht. BloogBase sichert außerdem vor dem Wiederherstellen oder Löschen eines Spielstands."
   },
   "errors": {
     "noGamesFound": "Dort wurden keine Commander-Keen-Spiele gefunden.",
@@ -85,7 +90,9 @@
     "deadLink": "Dieser Download-Link funktioniert nicht mehr. Vielleicht nennt die Seite einen anderen, oder die Mod ist umgezogen.",
     "tooLarge": "Der Download ist viel zu groß für eine Commander-Keen-Mod und wurde abgebrochen.",
     "webPage": "Der Link führt zu einer Webseite statt zu einer Datei. Öffne ihn im Browser, lade die Mod dort herunter und füge sie als ZIP-Datei oder Ordner hinzu.",
-    "unsupportedDownload": "BloogBase kann diesen Download noch nicht öffnen ({{message}}). Lade ihn im Browser herunter, entpacke ihn und füge den Ordner hinzu."
+    "unsupportedDownload": "BloogBase kann diesen Download noch nicht öffnen ({{message}}). Lade ihn im Browser herunter, entpacke ihn und füge den Ordner hinzu.",
+    "noSavesFound": "In dieser Datei wurden keine Spielstände für dieses Spiel gefunden.",
+    "otherGame": "Diese Sicherung gehört zu einem anderen Spiel ({{message}})."
   },
   "jobs": {
     "title": "Downloads",
@@ -270,5 +277,112 @@
     "fetch": "Herunterladen und prüfen",
     "otherGame": "Laut KeenWiki ist diese Mod für {{page}}, ihre Dateien sehen aber nach {{files}} aus.",
     "suggest": "Für die Modliste vorschlagen"
+  },
+  "profile": {
+    "back": "Bibliothek",
+    "notFound": "Dieses Spiel ist nicht mehr in der Bibliothek.",
+    "tabSaves": "Spielstände",
+    "tabConfig": "DOSBox-Einstellungen"
+  },
+  "saves": {
+    "title": "Spielstände",
+    "empty": "Noch keine Spielstände. Speichere im Spiel, dann erscheinen sie hier.",
+    "locked": "Das Spiel läuft. Beende es, um Spielstände zu ändern oder eine Sicherung wiederherzustellen.",
+    "slot": "Platz {{slot}}",
+    "unreadable": "Die Details dieses Spielstands ließen sich nicht lesen.",
+    "score": "Punkte {{score}}",
+    "lives_one": "{{count}} Leben",
+    "lives_other": "{{count}} Leben",
+    "ammo_one": "{{count}} Schuss",
+    "ammo_other": "{{count}} Schuss",
+    "shipParts_one": "{{count}} von 4 Schiffsteilen",
+    "shipParts_other": "{{count}} von 4 Schiffsteilen",
+    "levelsDone_one": "{{count}} Level geschafft",
+    "levelsDone_other": "{{count}} Level geschafft",
+    "difficulty": {
+      "easy": "Leicht",
+      "normal": "Normal",
+      "hard": "Schwer"
+    },
+    "savedAt": "Gespeichert {{date}}",
+    "backup": "Sichern",
+    "backupNamed": "{{name}} sichern",
+    "delete": "Löschen",
+    "deleteNamed": "{{name}} löschen",
+    "deleteTitle": "{{name}} löschen?",
+    "deleteHint": "Der Spielstand wird vorher gesichert und lässt sich unten aus den Sicherungen zurückholen.",
+    "deleted": "Spielstand gelöscht. Eine Sicherung wurde behalten."
+  },
+  "backups": {
+    "title": "Sicherungen",
+    "empty": "Noch keine Sicherungen.",
+    "label": "Bezeichnung der Sicherung",
+    "labelPlaceholder": "Bezeichnung (optional), z. B. „Vor dem Endgegner“",
+    "backupAll": "Alles sichern",
+    "import": "Importieren…",
+    "auto": "Auto",
+    "manual": "Sicherung",
+    "files_one": "{{count}} Datei",
+    "files_other": "{{count}} Dateien",
+    "made": "Sicherung angelegt.",
+    "nothing": "Noch nichts zu sichern.",
+    "exported": "Sicherung exportiert.",
+    "imported": "Sicherung importiert. Stelle sie wieder her, um die Spielstände zu nutzen.",
+    "restored": "Wiederhergestellt. Der vorherige Stand wurde gesichert.",
+    "restore": "Wiederherstellen",
+    "restoreNamed": "{{name}} wiederherstellen",
+    "restoreTitle": "„{{name}}“ wiederherstellen",
+    "restoreOne": "Diesen Spielstand wiederherstellen",
+    "restoreAll": "Alles wiederherstellen",
+    "intoSlot": "Nach",
+    "replaces": "Ersetzt {{name}}; der wird vorher gesichert.",
+    "restoreAllHint": "Legt alle Dateien dieser Sicherung zurück. Andere Spielstände bleiben.",
+    "restoreAllReplaces_one": "Alles wiederherzustellen ersetzt {{count}} aktuellen Spielstand; er wird vorher gesichert.",
+    "restoreAllReplaces_other": "Alles wiederherzustellen ersetzt {{count}} aktuelle Spielstände; sie werden vorher gesichert.",
+    "otherFiles_one": "Eine weitere Datei (Einstellungen oder Highscores) wird ebenfalls zurückgelegt.",
+    "otherFiles_other": "{{count}} weitere Dateien (Einstellungen, Highscores) werden ebenfalls zurückgelegt.",
+    "export": "Exportieren",
+    "exportNamed": "{{name}} exportieren",
+    "delete": "Löschen",
+    "deleteNamed": "Sicherung {{name}} löschen",
+    "deleteTitle": "Diese Sicherung löschen?",
+    "deleteHint": "„{{name}}“ vom {{date}} ist dann endgültig weg.",
+    "reason": {
+      "beforeLaunch": "Vor dem Spielen",
+      "beforeRestore": "Vor dem Wiederherstellen",
+      "beforeDelete": "Vor dem Löschen eines Spielstands",
+      "modRemoved": "Mod entfernt"
+    }
+  },
+  "config": {
+    "globalTitle": "DOSBox-Einstellungen für alle Spiele",
+    "globalHint": "DOSBox-Staging-Einstellungen, die für jedes Spiel gelten. Jedes Spiel kann sie auf seiner Seite überschreiben.",
+    "globalLink": "Einstellungen für alle Spiele",
+    "profileTitle": "Einstellungen für dieses Spiel",
+    "profileHint": "Nur für dieses Spiel; sie gehen BloogBases Vorgaben und deinen Einstellungen für alle Spiele vor.",
+    "effectiveTitle": "Was DOSBox bekommt",
+    "effectiveHint": "Alle Ebenen zusammen. Die letzte, die einen Wert setzt, gewinnt.",
+    "setting": "Einstellung",
+    "value": "Wert",
+    "from": "Aus",
+    "layer": {
+      "defaults": "BloogBase-Vorgabe",
+      "global": "Alle Spiele",
+      "profile": "Dieses Spiel",
+      "launch": "BloogBase (fest)"
+    },
+    "defaultsTitle": "BloogBases Vorgaben für dieses Spiel",
+    "save": "Speichern",
+    "saved": "Gespeichert. Gilt ab dem nächsten Start.",
+    "reset": "Auf Standard zurücksetzen",
+    "resetTitle": "Diese Einstellungen zurücksetzen?",
+    "resetHint": "Deine Änderungen hier werden entfernt und BloogBases Vorgaben gelten wieder.",
+    "warnings": "Probleme",
+    "line": "Zeile {{line}}",
+    "warning": {
+      "autoexec": "[autoexec] wird ignoriert, BloogBase startet das Spiel selbst",
+      "syntax": "keine Einstellung (erwartet: name = wert)",
+      "noSection": "Einstellung außerhalb einer [Sektion]"
+    }
   }
 }

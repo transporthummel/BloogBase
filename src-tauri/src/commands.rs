@@ -8,8 +8,10 @@ use specta::Type;
 use tauri::{AppHandle, Manager, State};
 use tauri_specta::Event;
 
+use crate::backups::{self, Backup, BackupSettings, Contents, Origin};
 use crate::catalog::{self, Game};
 use crate::db::Db;
+use crate::dosconf::{self, ConfigView, ConfigWarning};
 use crate::downloads;
 use crate::error::{CommandResult, Error, Result};
 use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
@@ -21,6 +23,7 @@ use crate::mods::{self, Curated, InstallModRequest, Mod, ModInfo};
 use crate::paths::{self, AppPaths};
 use crate::profiles::{self, Profile};
 use crate::runtime::{self, RuntimeStatus};
+use crate::saves::{self, SaveFile};
 use crate::settings::{self, SetupStatus};
 use crate::shareware::{self, FreeEpisode};
 use crate::stores::{self, Store, StoreInstall};
@@ -101,6 +104,7 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
     let a = app.clone();
     let id = profile_id.clone();
     let started = blocking(move || {
+        backups::before_launch(&a.state::<AppPaths>(), &a.state::<Db>(), &id);
         let spec = launcher::prepare(&a.state::<AppPaths>(), &a.state::<Db>(), &id)?;
         launcher::spawn(&runtime, &spec, &a.state::<Db>(), &id)
     })
@@ -136,6 +140,166 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
         .emit(&app);
     });
     Ok(())
+}
+
+/// Runs `f` with the profile marked as running, so the game can't start
+/// while BloogBase changes its files (§11: locked while running).
+async fn with_profile_locked<T: Send + 'static>(
+    app: &AppHandle,
+    profile_id: &str,
+    f: impl FnOnce(&AppPaths, &Db) -> Result<T> + Send + 'static,
+) -> CommandResult<T> {
+    app.state::<Running>().claim(profile_id)?;
+    let a = app.clone();
+    let result = blocking(move || f(&a.state::<AppPaths>(), &a.state::<Db>())).await;
+    app.state::<Running>().release(profile_id);
+    result
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn list_saves(app: AppHandle, profile_id: String) -> CommandResult<Vec<SaveFile>> {
+    blocking(move || saves::list(&app.state::<Db>(), &profile_id)).await
+}
+
+/// Deletes a save; it's backed up first.
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_save(app: AppHandle, profile_id: String, file: String) -> CommandResult<()> {
+    let id = profile_id.clone();
+    with_profile_locked(&app, &profile_id, move |paths, db| {
+        saves::delete(paths, db, &id, &file)
+    })
+    .await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn list_backups(db: State<'_, Db>, profile_id: String) -> CommandResult<Vec<Backup>> {
+    Ok(backups::list(&db, &profile_id)?)
+}
+
+/// Backs up one save, or with `file` unset everything the game wrote.
+/// `None` if there was nothing to back up.
+#[tauri::command]
+#[specta::specta]
+pub async fn create_backup(
+    app: AppHandle,
+    profile_id: String,
+    label: Option<String>,
+    file: Option<String>,
+) -> CommandResult<Option<Backup>> {
+    let id = profile_id.clone();
+    with_profile_locked(&app, &profile_id, move |paths, db| {
+        let files: Vec<String> = file.into_iter().collect();
+        let contents = if files.is_empty() {
+            Contents::State
+        } else {
+            Contents::Files(&files)
+        };
+        backups::create(paths, db, &id, contents, Origin::User(label.as_deref()))
+    })
+    .await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn backup_saves(app: AppHandle, backup_id: u32) -> CommandResult<Vec<SaveFile>> {
+    blocking(move || backups::saves_in(&app.state::<Db>(), backup_id)).await
+}
+
+/// Restores a backup, or only its `file`, optionally into the slot file
+/// `target`. What's there now is backed up first.
+#[tauri::command]
+#[specta::specta]
+pub async fn restore_backup(
+    app: AppHandle,
+    backup_id: u32,
+    file: Option<String>,
+    target: Option<String>,
+) -> CommandResult<()> {
+    let profile_id = backups::get(&app.state::<Db>(), backup_id)?.profile_id;
+    with_profile_locked(&app, &profile_id, move |paths, db| {
+        backups::restore(paths, db, backup_id, file.as_deref(), target.as_deref())
+    })
+    .await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn delete_backup(db: State<'_, Db>, backup_id: u32) -> CommandResult<()> {
+    Ok(backups::delete(&db, backup_id)?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn export_backup(app: AppHandle, backup_id: u32, path: String) -> CommandResult<()> {
+    blocking(move || backups::export(&app.state::<Db>(), backup_id, Path::new(&path))).await
+}
+
+/// Adds a ZIP of saves as a new backup of the profile.
+#[tauri::command]
+#[specta::specta]
+pub async fn import_backup(
+    app: AppHandle,
+    profile_id: String,
+    path: String,
+) -> CommandResult<Backup> {
+    blocking(move || {
+        backups::import(
+            &app.state::<AppPaths>(),
+            &app.state::<Db>(),
+            &profile_id,
+            Path::new(&path),
+        )
+    })
+    .await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn backup_settings(db: State<'_, Db>) -> CommandResult<BackupSettings> {
+    Ok(backups::get_settings(&db)?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_backup_settings(db: State<'_, Db>, settings: BackupSettings) -> CommandResult<()> {
+    Ok(backups::set_settings(&db, &settings)?)
+}
+
+/// The DOSBox config layers: the global override, and with `profile_id`
+/// that profile's layers and the effective result.
+#[tauri::command]
+#[specta::specta]
+pub fn config_view(
+    paths: State<'_, AppPaths>,
+    db: State<'_, Db>,
+    profile_id: Option<String>,
+) -> CommandResult<ConfigView> {
+    Ok(dosconf::view(&paths, &db, profile_id.as_deref())?)
+}
+
+/// Saves the global override, or a profile's with `profile_id`.
+#[tauri::command]
+#[specta::specta]
+pub fn save_config(
+    paths: State<'_, AppPaths>,
+    db: State<'_, Db>,
+    profile_id: Option<String>,
+    text: String,
+) -> CommandResult<Vec<ConfigWarning>> {
+    Ok(dosconf::save(&paths, &db, profile_id.as_deref(), &text)?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn reset_config(
+    paths: State<'_, AppPaths>,
+    db: State<'_, Db>,
+    profile_id: Option<String>,
+) -> CommandResult<()> {
+    Ok(dosconf::reset(&paths, &db, profile_id.as_deref())?)
 }
 
 /// Looks at a folder or ZIP and reports the mod found in it, for the user to confirm.

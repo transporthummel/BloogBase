@@ -372,6 +372,7 @@ dependencies = [
 name = "bloogbase"
 version = "0.1.0"
 dependencies = [
+ "keen-saves",
  "lzma-rs",
  "minisign",
  "minisign-verify",
@@ -2375,6 +2376,10 @@ dependencies = [
  "serde",
  "serde_json",
 ]
+
+[[package]]
+name = "keen-saves"
+version = "0.1.0"
 
 [[package]]
 name = "keyboard-types"

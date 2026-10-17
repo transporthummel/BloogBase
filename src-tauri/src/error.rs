@@ -65,6 +65,10 @@ pub enum Error {
     WebPage,
     #[error("unsupported download: {0}")]
     UnsupportedDownload(String),
+    #[error("no saved games found")]
+    NoSavesFound,
+    #[error("this backup is from another game: {0}")]
+    OtherGame(String),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -100,6 +104,8 @@ impl Error {
             Error::TooLarge(_) => ErrorKind::TooLarge,
             Error::WebPage => ErrorKind::WebPage,
             Error::UnsupportedDownload(_) => ErrorKind::UnsupportedDownload,
+            Error::NoSavesFound => ErrorKind::NoSavesFound,
+            Error::OtherGame(_) => ErrorKind::OtherGame,
         }
     }
 }
@@ -133,6 +139,8 @@ pub enum ErrorKind {
     TooLarge,
     WebPage,
     UnsupportedDownload,
+    NoSavesFound,
+    OtherGame,
 }
 
 /// The error shape every command returns to the frontend.

@@ -18,6 +18,13 @@ game page and a missing page). When the wiki markup changes, save the page
 again with an honest `User-Agent` (one request per page) and update the
 expectations.
 
+The saved game parser is its own crate (`src-tauri/keen-saves`, part of the
+workspace, so plain `cargo test` runs it). Its fixtures in
+`keen-saves/tests/fixtures/` are real saves made by playing: Keen 1-3 whole
+(92 bytes), Keen 4, Keen 6 and Keen Dreams cut right after the game state, so
+no level data from the games is in the repository. Keen 5 is tested with a
+synthetic save until someone contributes a real one.
+
 ## 2. Mod corpus (CI weekly, or locally)
 
 `src-tauri/tests/mod-corpus.json` lists real mods: their download URL on the

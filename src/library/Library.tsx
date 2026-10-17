@@ -220,7 +220,16 @@ function ProfileCard({
       <Cover gameId={profile.gameId} game={game} />
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="grid gap-0.5">
-          <h2 className="text-sm leading-tight font-semibold">{profile.label}</h2>
+          <h2 className="text-sm leading-tight font-semibold">
+            <Link
+              to="/profiles/$profileId"
+              params={{ profileId: profile.id }}
+              className="hover:underline"
+              title={t("library.details")}
+            >
+              {profile.label}
+            </Link>
+          </h2>
           {profile.modId !== null && game && <p className="text-xs text-muted">{game.title}</p>}
         </div>
         <div className="flex flex-wrap gap-1">
@@ -246,7 +255,15 @@ function ProfileCard({
             </>
           )}
           <dt className="sr-only">{t("library.saveCountLabel")}</dt>
-          <dd>{t("library.saveCount", { count: profile.saveCount })}</dd>
+          <dd>
+            <Link
+              to="/profiles/$profileId"
+              params={{ profileId: profile.id }}
+              className="underline-offset-2 hover:underline"
+            >
+              {t("library.saveCount", { count: profile.saveCount })}
+            </Link>
+          </dd>
         </dl>
         <div className="mt-auto flex gap-2">
           <Button

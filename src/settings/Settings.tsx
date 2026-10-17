@@ -1,10 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useNavigate } from "@tanstack/react-router";
 import { FileCog, Wand } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { commands } from "../bindings";
+import { commands, type BackupSettings } from "../bindings";
+import { ConfigEditor } from "../config/ConfigEditor";
+import { configKey } from "../config/queries";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import {
@@ -64,6 +66,8 @@ export function Settings() {
           </Field>
         </Section>
         <RuntimeSection />
+        <BackupSection />
+        <GlobalConfigSection />
         <Section title={t("settings.setup")}>
           <p className="text-sm text-muted">{t("settings.rerunHint")}</p>
           <div>
@@ -148,6 +152,78 @@ function RuntimeSection() {
       </div>
       <p className="text-xs text-muted">{t("runtime.customHint")}</p>
       {setCustom.error && <Notice tone="error">{errorMessage(t, setCustom.error)}</Notice>}
+    </Section>
+  );
+}
+
+const backupSettingsKey = ["backupSettings"] as const;
+
+function BackupSection() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const settings = useQuery({
+    queryKey: backupSettingsKey,
+    queryFn: () => unwrap(commands.backupSettings()),
+  });
+  const update = useMutation({
+    mutationFn: (s: BackupSettings) => unwrap(commands.setBackupSettings(s)),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: backupSettingsKey }),
+  });
+  const s = settings.data;
+
+  return (
+    <Section title={t("settings.backups")}>
+      {s && (
+        <>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={s.auto}
+              onChange={(e) => update.mutate({ ...s, auto: e.target.checked })}
+            />
+            {t("settings.autoBackup")}
+          </label>
+          <Field label={t("settings.keepBackups")}>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              className={`${selectClass} w-24`}
+              defaultValue={s.keep}
+              onBlur={(e) => {
+                const keep = Math.round(Number(e.target.value));
+                if (keep >= 1 && keep <= 100 && keep !== s.keep) update.mutate({ ...s, keep });
+              }}
+            />
+          </Field>
+          <p className="text-xs text-muted">{t("settings.backupsHint")}</p>
+        </>
+      )}
+      {(settings.error ?? update.error) && (
+        <Notice tone="error">{errorMessage(t, settings.error ?? update.error)}</Notice>
+      )}
+    </Section>
+  );
+}
+
+function GlobalConfigSection() {
+  const { t } = useTranslation();
+  const view = useQuery({
+    queryKey: configKey(null),
+    queryFn: () => unwrap(commands.configView(null)),
+  });
+  return (
+    <Section title={t("config.globalTitle")}>
+      <p className="text-sm text-muted">{t("config.globalHint")}</p>
+      {view.data && (
+        <ConfigEditor
+          profileId={null}
+          text={view.data.global}
+          warnings={view.data.globalWarnings}
+          label={t("config.globalTitle")}
+        />
+      )}
+      {view.error && <Notice tone="error">{errorMessage(t, view.error)}</Notice>}
     </Section>
   );
 }
