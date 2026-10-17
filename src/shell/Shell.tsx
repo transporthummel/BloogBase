@@ -9,6 +9,7 @@ import { useJobEvents } from "../jobs/queries";
 import { hideSplash } from "../splash";
 import { useAppUpdate } from "../updates/queries";
 import { UpdateCard } from "../updates/UpdateCard";
+import { PageFooterContext } from "./pageFooterContext";
 
 /**
  * App frame (PLAN.md §8.2): full sidebar from 1200px, icon rail below. The
@@ -22,6 +23,7 @@ export function Shell() {
   // Release builds look for a new version once per start.
   const update = useAppUpdate({ enabled: import.meta.env.PROD });
   const [updateLater, setUpdateLater] = useState(false);
+  const [footer, setFooter] = useState<HTMLElement | null>(null);
   useEffect(hideSplash, []);
 
   if (inSetup) {
@@ -53,15 +55,19 @@ export function Shell() {
           <NavItem to="/about" icon={Info} label={t("nav.about")} />
         </div>
       </nav>
-      <main className="relative min-w-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-7xl p-6 xl:p-8">
+      <main className="relative flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <div className="mx-auto w-full max-w-7xl flex-1 p-6 xl:p-8">
           {update.data && !updateLater && (
             <div className="mb-6">
               <UpdateCard update={update.data} onLater={() => setUpdateLater(true)} />
             </div>
           )}
-          <Outlet />
+          <PageFooterContext.Provider value={footer}>
+            <Outlet />
+          </PageFooterContext.Provider>
         </div>
+        {/* Pages put full-width bars here (PageFooter). */}
+        <div ref={setFooter} className="sticky bottom-0 empty:hidden" />
       </main>
     </div>
   );

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { commands, type Profile, type StorageUsage } from "../bindings";
 import { formatBytes, formatNumber, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
+import { PageFooter } from "../shell/PageFooter";
 
 const areas: (keyof Omit<StorageUsage, "total">)[] = [
   "games",
@@ -42,19 +43,22 @@ export function StatusBar({ profiles, updatedAt }: { profiles: Profile[]; update
   ];
 
   return (
-    <footer className="sticky bottom-0 -mx-6 mt-8 -mb-6 border-t border-border bg-surface/95 px-6 py-2 text-xs text-muted backdrop-blur xl:-mx-8 xl:-mb-8 xl:px-8">
-      <ul className="flex flex-wrap items-center gap-x-5 gap-y-1">
-        {items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-        {u && (
-          <li className="ml-auto flex items-center gap-1.5" title={parts.join("\n")}>
-            <HardDrive className="size-3.5" aria-hidden />
-            {t("library.status.used", { size: formatBytes(lng, u.total ?? 0) })}
-            <span className="sr-only">({parts.join(", ")})</span>
-          </li>
-        )}
-      </ul>
-    </footer>
+    <PageFooter>
+      <footer className="border-t border-border bg-surface/95 text-xs text-muted backdrop-blur">
+        {/* Lined up with the page content above. */}
+        <ul className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-1 px-6 py-2 xl:px-8">
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+          {u && (
+            <li className="ml-auto flex items-center gap-1.5" title={parts.join("\n")}>
+              <HardDrive className="size-3.5" aria-hidden />
+              {t("library.status.used", { size: formatBytes(lng, u.total ?? 0) })}
+              <span className="sr-only">({parts.join(", ")})</span>
+            </li>
+          )}
+        </ul>
+      </footer>
+    </PageFooter>
   );
 }
