@@ -94,12 +94,7 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
         None => profiles::find_executable(game, profile.version_id.as_deref(), &lower)?,
     };
 
-    let confs = dosconf::ensure(
-        paths,
-        game.engine,
-        profile_id,
-        &relative(&paths.root, &dirs.capture),
-    )?;
+    let confs = dosconf::ensure(paths, game.engine, profile_id)?;
 
     // DOSBox Staging 0.83 crashes on mount paths with non-ASCII characters
     // (e.g. an umlaut in the Windows user name), so DOSBox runs from the data
@@ -267,10 +262,7 @@ mod tests {
                 .contains("[cpu]")
         );
         let launch = fs::read_to_string(&dirs.launch_conf).unwrap();
-        assert!(launch.contains(&format!(
-            "capture_dir = {}",
-            p(&["profiles", "keen4-1", "capture"])
-        )));
+        assert!(launch.contains(&format!("capture_dir = {}", p(&["..", "capture"]))));
         assert!(!launch.contains("[autoexec]"));
         assert!(dirs.capture.is_dir());
     }
