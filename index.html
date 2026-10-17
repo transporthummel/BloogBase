@@ -4,9 +4,65 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BloogBase</title>
+    <!--
+      Boot splash: plain HTML and CSS, so it shows before the app's scripts
+      have loaded. src/splash.ts fades it out once the app is up.
+    -->
+    <style>
+      html {
+        background: #0d0c1d;
+      }
+      #splash {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        background: #0d0c1d;
+        transition: opacity 0.4s ease-out;
+      }
+      #splash.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #splash img {
+        width: min(640px, 80vw);
+        aspect-ratio: 16 / 9;
+        border-radius: 16px;
+        box-shadow: 0 8px 40px rgb(0 0 0 / 0.5);
+      }
+      #splash svg {
+        width: 32px;
+        height: 32px;
+        animation: splash-hop 0.7s steps(4) infinite;
+      }
+      @keyframes splash-hop {
+        50% {
+          transform: translateY(-25%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #splash,
+        #splash svg {
+          animation: none;
+          transition: none;
+        }
+      }
+    </style>
   </head>
 
   <body>
+    <div id="splash" role="status" aria-label="BloogBase is starting">
+      <img src="/src/assets/logo.jpg" alt="" />
+      <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true">
+        <path d="M2 1h4v1h1v4h-1v1h-4v-1h-1v-4h1zM2 7h1v1h-1zM5 7h1v1h-1z" fill="#55ff55" />
+        <path d="M3 2h2v2h-2z" fill="#ffffff" />
+        <path d="M4 3h1v1h-1z" fill="#000000" />
+      </svg>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

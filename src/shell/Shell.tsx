@@ -1,11 +1,12 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Compass, Info, LibraryBig, Settings, type LucideIcon } from "lucide-react";
-import logo from "../assets/logo.jpg";
+import icon from "../assets/icon.png";
 import { useTranslation } from "react-i18next";
 import { useIndexEvents } from "../discover/queries";
 import { JobsPanel } from "../jobs/JobsPanel";
 import { useJobEvents } from "../jobs/queries";
+import { hideSplash } from "../splash";
 import { useAppUpdate } from "../updates/queries";
 import { UpdateCard } from "../updates/UpdateCard";
 
@@ -21,6 +22,7 @@ export function Shell() {
   // Release builds look for a new version once per start.
   const update = useAppUpdate({ enabled: import.meta.env.PROD });
   const [updateLater, setUpdateLater] = useState(false);
+  useEffect(hideSplash, []);
 
   if (inSetup) {
     return (
@@ -38,17 +40,10 @@ export function Shell() {
         <Link
           to="/about"
           title={t("nav.about")}
-          className="mb-4 flex h-12 items-center justify-center rounded-lg font-pixel text-accent xl:h-auto"
+          className="mb-4 flex h-12 items-center justify-center gap-3 rounded-lg xl:justify-start xl:px-1"
         >
-          <span className="text-sm xl:hidden" aria-hidden>
-            BB
-          </span>
-          <img
-            src={logo}
-            alt="BloogBase"
-            className="hidden aspect-[16/9] w-full rounded-lg object-cover xl:block"
-          />
-          <span className="sr-only xl:hidden">BloogBase</span>
+          <img src={icon} alt="" className="size-10 shrink-0" />
+          <span className="sr-only font-pixel text-xs text-accent xl:not-sr-only">BloogBase</span>
         </Link>
         <NavItem to="/" icon={LibraryBig} label={t("nav.library")} />
         <NavItem to="/discover" icon={Compass} label={t("nav.discover")} />
