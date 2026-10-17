@@ -1,6 +1,8 @@
 // Per-device UI preferences. Kept in localStorage for now; they move to the
 // settings table once a settings screen needs to share them with the backend.
 
+import { librarySorts, type LibrarySort } from "./library/sort";
+
 export type Theme = "dark" | "light" | "system";
 export type Language = "en" | "de";
 
@@ -63,4 +65,15 @@ export function getSetupStep(): string | null {
 
 export function setSetupStep(step: string | null) {
   write(SETUP_STEP_KEY, step);
+}
+
+const LIBRARY_SORT_KEY = "bloogbase.librarySort";
+
+export function getLibrarySort(): LibrarySort {
+  const value = read(LIBRARY_SORT_KEY);
+  return librarySorts.find((s) => s === value) ?? "recent";
+}
+
+export function setLibrarySort(sort: LibrarySort) {
+  write(LIBRARY_SORT_KEY, sort);
 }

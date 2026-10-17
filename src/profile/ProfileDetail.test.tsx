@@ -97,6 +97,7 @@ const profile: Profile = {
   sessionCount: 1,
   playSeconds: 60,
   lastPlayedAt: 1_700_000_000,
+  addedAt: 1_690_000_000,
   saveCount: 2,
   running: false,
 };

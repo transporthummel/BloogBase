@@ -28,6 +28,8 @@ pub struct Profile {
     pub play_seconds: u32,
     /// Unix epoch seconds.
     pub last_played_at: Option<u32>,
+    /// Unix epoch seconds.
+    pub added_at: u32,
     pub save_count: u32,
     pub running: bool,
 }
@@ -62,7 +64,7 @@ pub struct ModLayer {
 const SELECT: &str = "
     SELECT p.id, p.install_id, i.game_id, i.version_id, p.mod_id, COALESCE(m.name, i.label),
            s.session_count, s.play_seconds, s.last_played_at, p.state_path, i.path,
-           m.path, m.recipe_json
+           m.path, m.recipe_json, p.created_at
     FROM profiles p
     JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id
@@ -94,6 +96,7 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             session_count: r.get(6)?,
             play_seconds: r.get(7)?,
             last_played_at: r.get(8)?,
+            added_at: r.get(13)?,
             save_count: 0,
             running: false,
         },

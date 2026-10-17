@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { commands, type Game, type Profile, type RuntimeStatus } from "../bindings";
@@ -51,6 +51,7 @@ const profile: Profile = {
   sessionCount: 2,
   playSeconds: 3900,
   lastPlayedAt: 1_700_000_000,
+  addedAt: 1_690_000_000,
   saveCount: 1,
   running: false,
 };
@@ -137,4 +138,17 @@ test("shows a translated error", async () => {
   });
   renderLibrary();
   expect(await screen.findByRole("alert")).toHaveTextContent("No Commander Keen games");
+});
+
+test("sorting by type groups games and mods and is remembered", async () => {
+  const mod: Profile = { ...profile, id: "aurora", modId: "aurora", label: "Aurora Bliss" };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [mod, profile] });
+  renderLibrary();
+  await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Sort" }), "type");
+  const games = screen.getByRole("region", { name: "Games" });
+  expect(within(games).getByRole("heading", { name: keen5.title })).toBeInTheDocument();
+  const mods = screen.getByRole("region", { name: "Mods" });
+  expect(within(mods).getByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
+  expect(localStorage.getItem("bloogbase.librarySort")).toBe("type");
+  localStorage.removeItem("bloogbase.librarySort");
 });

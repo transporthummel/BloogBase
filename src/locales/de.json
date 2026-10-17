@@ -28,7 +28,19 @@
     "saveCount_zero": "Keine Spielstände",
     "saveCount_one": "{{count}} Spielstand",
     "saveCount_other": "{{count}} Spielstände",
-    "details": "Spielstände und Einstellungen"
+    "details": "Spielstände und Einstellungen",
+    "sortBy": "Sortieren",
+    "sort": {
+      "recent": "Zuletzt gespielt",
+      "name": "Alphabetisch",
+      "added": "Zuletzt hinzugefügt",
+      "game": "Nach Spiel gruppiert",
+      "type": "Nach Typ gruppiert"
+    },
+    "group": {
+      "games": "Spiele",
+      "mods": "Mods"
+    }
   },
   "runtime": {
     "title": "Spiel-Engine",

@@ -16,7 +16,8 @@ import { RemoveModDialog } from "../mods/RemoveModDialog";
 import { Cover } from "./Cover";
 import { useCover } from "./covers";
 import { installsKey, profilesKey } from "./queries";
-import { getSetupStep } from "../preferences";
+import { getLibrarySort, getSetupStep, setLibrarySort } from "../preferences";
+import { arrange, librarySorts, type LibrarySort } from "./sort";
 import { useRuntimeStatus } from "../runtime/queries";
 import { useSetupStatus } from "../setup/queries";
 import { Badge } from "../ui/Badge";
@@ -28,7 +29,7 @@ import { PageHeader } from "../ui/PageHeader";
 import { PlayButton } from "../ui/PlayButton";
 
 export function Library() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const games = useGames();
   const setup = useSetupStatus();
@@ -40,6 +41,7 @@ export function Library() {
   const [addingMod, setAddingMod] = useState(false);
   const [installedMod, setInstalledMod] = useState<Mod | null>(null);
   const [removing, setRemoving] = useState<(Profile & { modId: string }) | null>(null);
+  const [sort, setSort] = useState(getLibrarySort);
 
   useEffect(() => {
     const unlisten = events.playSessionEnded.listen(() =>
@@ -91,6 +93,7 @@ export function Library() {
   const error = importGames.error ?? launch.error ?? profiles.error;
   const empty = profiles.data?.length === 0;
   const needsRuntime = !empty && runtime.data && !runtime.data.active;
+  const groups = arrange(profiles.data ?? [], sort, games.data ?? [], i18n.language);
 
   return (
     <>
@@ -180,23 +183,66 @@ export function Library() {
         </EmptyState>
       )}
 
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-4">
-        {profiles.data?.map((profile) => (
-          <li key={profile.id}>
-            <ProfileCard
-              profile={profile}
-              game={gameById.get(profile.gameId)}
-              canPlay={!!runtime.data?.active && !launch.isPending}
-              onPlay={() => launch.mutate(profile.id)}
-              onRemove={
-                profile.modId === null
-                  ? undefined
-                  : () => setRemoving({ ...profile, modId: profile.modId! })
-              }
-            />
-          </li>
-        ))}
-      </ul>
+      {profiles.data && profiles.data.length > 0 && (
+        <div className="mb-4 flex justify-end">
+          <label className="flex items-center gap-2 text-sm text-muted">
+            {t("library.sortBy")}
+            <select
+              className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-ink"
+              value={sort}
+              onChange={(e) => {
+                const value = e.target.value as LibrarySort;
+                setSort(value);
+                setLibrarySort(value);
+              }}
+            >
+              {librarySorts.map((s) => (
+                <option key={s} value={s}>
+                  {t(`library.sort.${s}`)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+
+      <div className="grid gap-8">
+        {groups.map((group) => {
+          const grouped = group.key !== "all";
+          const title =
+            group.key === "games" || group.key === "mods"
+              ? t(`library.group.${group.key}`)
+              : (gameById.get(group.key)?.title ?? group.key);
+          return (
+            <section key={group.key} aria-label={grouped ? title : undefined}>
+              {grouped && (
+                <h2 className="mb-3 font-semibold">
+                  {title}{" "}
+                  <span className="text-sm font-normal text-muted">{group.profiles.length}</span>
+                </h2>
+              )}
+              <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-4">
+                {group.profiles.map((profile) => (
+                  <li key={profile.id}>
+                    <ProfileCard
+                      profile={profile}
+                      game={gameById.get(profile.gameId)}
+                      heading={grouped ? "h3" : "h2"}
+                      canPlay={!!runtime.data?.active && !launch.isPending}
+                      onPlay={() => launch.mutate(profile.id)}
+                      onRemove={
+                        profile.modId === null
+                          ? undefined
+                          : () => setRemoving({ ...profile, modId: profile.modId! })
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+      </div>
     </>
   );
 }
@@ -204,12 +250,15 @@ export function Library() {
 function ProfileCard({
   profile,
   game,
+  heading: Heading,
   canPlay,
   onPlay,
   onRemove,
 }: {
   profile: Profile;
   game?: Game;
+  /** h3 under a group heading. */
+  heading: "h2" | "h3";
   canPlay: boolean;
   onPlay: () => void;
   /** Only mods can be removed for now. */
@@ -223,7 +272,7 @@ function ProfileCard({
       <Cover gameId={profile.gameId} game={game} src={cover.data} />
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="grid gap-0.5">
-          <h2 className="text-sm leading-tight font-semibold">
+          <Heading className="text-sm leading-tight font-semibold">
             <Link
               to="/profiles/$profileId"
               params={{ profileId: profile.id }}
@@ -232,7 +281,7 @@ function ProfileCard({
             >
               {profile.label}
             </Link>
-          </h2>
+          </Heading>
           {profile.modId !== null && game && (
             <p className="text-xs text-muted">
               {t("mods.baseGame", {

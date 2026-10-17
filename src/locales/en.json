@@ -28,7 +28,19 @@
     "saveCount_zero": "No saved games",
     "saveCount_one": "{{count}} saved game",
     "saveCount_other": "{{count}} saved games",
-    "details": "Saves and settings"
+    "details": "Saves and settings",
+    "sortBy": "Sort",
+    "sort": {
+      "recent": "Last played",
+      "name": "Alphabetical",
+      "added": "Recently added",
+      "game": "Grouped by game",
+      "type": "Grouped by type"
+    },
+    "group": {
+      "games": "Games",
+      "mods": "Mods"
+    }
   },
   "runtime": {
     "title": "Game engine",

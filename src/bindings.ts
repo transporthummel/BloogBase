@@ -460,6 +460,8 @@ export type Profile = {
 	playSeconds: number,
 	/**  Unix epoch seconds. */
 	lastPlayedAt: number | null,
+	/**  Unix epoch seconds. */
+	addedAt: number,
 	saveCount: number,
 	running: boolean,
 };
