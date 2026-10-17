@@ -68,7 +68,20 @@
     "autoBackup": "Spielstände vor jedem Spielstart sichern",
     "keepBackups": "Automatische Sicherungen pro Spiel behalten",
     "backupsHint": "Selbst angelegte Sicherungen werden nie automatisch gelöscht. BloogBase sichert außerdem vor dem Wiederherstellen oder Löschen eines Spielstands.",
-    "aboutMore": "Lizenzen und Danksagungen"
+    "aboutMore": "Lizenzen und Danksagungen",
+    "display": "Bild",
+    "displayOption": {
+      "fullscreen": "Spiele im Vollbild starten",
+      "crt": "Röhrenmonitor-Effekt (CRT)",
+      "vsync": "Bildrisse beim Scrollen vermeiden (VSync)"
+    },
+    "displayHint": {
+      "fullscreen": "Mit Alt+Enter wechselst du jederzeit zwischen Fenster und Vollbild.",
+      "crt": "Zeigt die Spiele wie auf einem Monitor von damals, mit Zeilen und weichen Pixeln. Ausgeschaltet bleiben die Pixel scharf.",
+      "vsync": "Hilft, wenn das Bild beim Laufen horizontal zerreißt. Die Steuerung reagiert dann minimal verzögert; bei Monitoren mit FreeSync oder G-Sync nicht nötig.",
+      "all": "Gilt für alle Spiele ab dem nächsten Start. Einzelne Spiele kannst du auf ihrer Seite unter „DOSBox-Einstellungen“ abweichend einstellen."
+    },
+    "displayOverridden": "Wird von deinen DOSBox-Einstellungen für alle Spiele (unten) festgelegt."
   },
   "errors": {
     "noGamesFound": "Dort wurden keine Commander-Keen-Spiele gefunden.",
@@ -380,6 +393,7 @@
     "from": "Aus",
     "layer": {
       "defaults": "BloogBase-Vorgabe",
+      "options": "Bild-Einstellungen",
       "global": "Alle Spiele",
       "profile": "Dieses Spiel",
       "launch": "BloogBase (fest)"

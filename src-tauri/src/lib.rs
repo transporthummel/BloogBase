@@ -65,6 +65,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::import_backup,
             commands::backup_settings,
             commands::set_backup_settings,
+            commands::display_options,
+            commands::set_display_options,
             commands::config_view,
             commands::save_config,
             commands::reset_config,

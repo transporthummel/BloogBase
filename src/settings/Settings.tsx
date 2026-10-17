@@ -4,7 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { FileCog, RefreshCw, Wand } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type BackupSettings } from "../bindings";
+import { commands, type BackupSettings, type DisplayOptions } from "../bindings";
 import { ConfigEditor } from "../config/ConfigEditor";
 import { configKey } from "../config/queries";
 import { errorMessage } from "../errors";
@@ -68,6 +68,7 @@ export function Settings() {
           </Field>
         </Section>
         <RuntimeSection />
+        <DisplaySection />
         <BackupSection />
         <GlobalConfigSection />
         <Section title={t("settings.setup")}>
@@ -192,6 +193,55 @@ function RuntimeSection() {
       </div>
       <p className="text-xs text-muted">{t("runtime.customHint")}</p>
       {setCustom.error && <Notice tone="error">{errorMessage(t, setCustom.error)}</Notice>}
+    </Section>
+  );
+}
+
+// Under "config" so saving the DOSBox settings refreshes what they override.
+const displayOptionsKey = ["config", "display"] as const;
+
+/** Simple DOSBox options for all games, so nobody needs to know DOSBox. */
+export function DisplaySection() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const view = useQuery({
+    queryKey: displayOptionsKey,
+    queryFn: () => unwrap(commands.displayOptions()),
+  });
+  const update = useMutation({
+    mutationFn: (o: DisplayOptions) => unwrap(commands.setDisplayOptions(o)),
+    // Also the per-game views of what DOSBox gets.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["config"] }),
+  });
+  const v = view.data;
+  const options: (keyof DisplayOptions)[] = ["fullscreen", "crt", "vsync"];
+
+  return (
+    <Section title={t("settings.display")}>
+      {v &&
+        options.map((name) => {
+          const overridden = v.overridden.includes(name);
+          return (
+            <div key={name} className="grid gap-1">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={v.options[name]}
+                  disabled={overridden || update.isPending}
+                  onChange={(e) => update.mutate({ ...v.options, [name]: e.target.checked })}
+                />
+                {t(`settings.displayOption.${name}`)}
+              </label>
+              <p className="ml-6 text-xs text-muted">
+                {overridden ? t("settings.displayOverridden") : t(`settings.displayHint.${name}`)}
+              </p>
+            </div>
+          );
+        })}
+      {v && <p className="text-xs text-muted">{t("settings.displayHint.all")}</p>}
+      {(view.error ?? update.error) && (
+        <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
+      )}
     </Section>
   );
 }

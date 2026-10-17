@@ -59,6 +59,9 @@ export const commands = {
 	importBackup: (profileId: string, path: string) => typedError<Backup, CommandError>(__TAURI_INVOKE("import_backup", { profileId, path })),
 	backupSettings: () => typedError<BackupSettings, CommandError>(__TAURI_INVOKE("backup_settings")),
 	setBackupSettings: (settings: BackupSettings) => typedError<null, CommandError>(__TAURI_INVOKE("set_backup_settings", { settings })),
+	/**  The simple display options on the settings page. */
+	displayOptions: () => typedError<DisplayOptionsView, CommandError>(__TAURI_INVOKE("display_options")),
+	setDisplayOptions: (options: DisplayOptions) => typedError<null, CommandError>(__TAURI_INVOKE("set_display_options", { options })),
 	/**
 	 *  The DOSBox config layers: the global override, and with `profile_id`
 	 *  that profile's layers and the effective result.
@@ -162,7 +165,7 @@ export type CommandError = {
 	message: string,
 };
 
-export type ConfigLayer = "defaults" | "global" | "profile" | "launch";
+export type ConfigLayer = "defaults" | "options" | "global" | "profile" | "launch";
 
 export type ConfigView = {
 	/**  The user's global override. */
@@ -179,6 +182,25 @@ export type ConfigWarning = {
 };
 
 export type Difficulty = "easy" | "normal" | "hard";
+
+/**
+ *  The simple options on the settings page, for all games. Written as their
+ *  own layer right after the defaults, so the user's own DOSBox settings
+ *  still win.
+ */
+export type DisplayOptions = {
+	fullscreen: boolean,
+	/**  Staging's adaptive CRT shader; off is its sharp shader. */
+	crt: boolean,
+	/**  Against tearing while scrolling, at the cost of a little input lag. */
+	vsync: boolean,
+};
+
+export type DisplayOptionsView = {
+	options: DisplayOptions,
+	/**  Options the user's own DOSBox settings for all games override. */
+	overridden: string[],
+};
 
 export type Download = {
 	version?: string | null,

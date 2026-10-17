@@ -94,7 +94,7 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
         None => profiles::find_executable(game, profile.version_id.as_deref(), &lower)?,
     };
 
-    let confs = dosconf::ensure(paths, game.engine, profile_id)?;
+    let confs = dosconf::ensure(paths, game.engine, &dosconf::options(db)?, profile_id)?;
 
     // DOSBox Staging 0.83 crashes on mount paths with non-ASCII characters
     // (e.g. an umlaut in the Windows user name), so DOSBox runs from the data
@@ -104,6 +104,7 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
         args: dosbox_args(
             &[
                 rel(&confs.defaults),
+                rel(&confs.options),
                 rel(&confs.global),
                 rel(&confs.profile),
                 rel(&confs.launch),
@@ -227,6 +228,8 @@ mod tests {
             "--conf",
             &p(&["configs", "defaults", "galaxy.conf"]),
             "--conf",
+            &p(&["configs", "options.conf"]),
+            "--conf",
             &p(&["configs", "global-override.conf"]),
             "--conf",
             &p(&["profiles", "keen4-1", "config", "override.conf"]),
@@ -252,7 +255,7 @@ mod tests {
         .collect();
         assert_eq!(spec.args, expected);
         assert_eq!(spec.cwd, paths.root);
-        for conf in spec.args.iter().skip(3).step_by(2).take(4) {
+        for conf in spec.args.iter().skip(3).step_by(2).take(5) {
             assert!(paths.root.join(conf).is_file(), "{conf}");
         }
 

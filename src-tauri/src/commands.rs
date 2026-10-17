@@ -327,6 +327,36 @@ pub fn set_backup_settings(db: State<'_, Db>, settings: BackupSettings) -> Comma
     Ok(backups::set_settings(&db, &settings)?)
 }
 
+#[derive(Debug, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct DisplayOptionsView {
+    pub options: dosconf::DisplayOptions,
+    /// Options the user's own DOSBox settings for all games override.
+    pub overridden: Vec<String>,
+}
+
+/// The simple display options on the settings page.
+#[tauri::command]
+#[specta::specta]
+pub fn display_options(
+    paths: State<'_, AppPaths>,
+    db: State<'_, Db>,
+) -> CommandResult<DisplayOptionsView> {
+    Ok(DisplayOptionsView {
+        options: dosconf::options(&db)?,
+        overridden: dosconf::overridden_options(&paths)?,
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_display_options(
+    db: State<'_, Db>,
+    options: dosconf::DisplayOptions,
+) -> CommandResult<()> {
+    Ok(dosconf::set_options(&db, &options)?)
+}
+
 /// The DOSBox config layers: the global override, and with `profile_id`
 /// that profile's layers and the effective result.
 #[tauri::command]

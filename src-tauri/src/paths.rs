@@ -135,6 +135,11 @@ impl AppPaths {
         self.cache.join("composed").join(profile_id)
     }
 
+    /// The options from the settings page, as a config layer.
+    pub fn options_conf(&self) -> PathBuf {
+        self.configs.join("options.conf")
+    }
+
     pub fn global_override_conf(&self) -> PathBuf {
         self.configs.join("global-override.conf")
     }

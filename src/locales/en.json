@@ -68,7 +68,20 @@
     "autoBackup": "Back up saves before every game start",
     "keepBackups": "Automatic backups to keep per game",
     "backupsHint": "Backups you make yourself are never removed automatically. BloogBase also backs up before restoring or deleting a save.",
-    "aboutMore": "Licenses and credits"
+    "aboutMore": "Licenses and credits",
+    "display": "Display",
+    "displayOption": {
+      "fullscreen": "Start games in fullscreen",
+      "crt": "CRT monitor effect",
+      "vsync": "Prevent tearing while scrolling (VSync)"
+    },
+    "displayHint": {
+      "fullscreen": "Press Alt+Enter at any time to switch between window and fullscreen.",
+      "crt": "Shows the games as on a monitor of the time, with scanlines and soft pixels. Turned off, pixels stay sharp.",
+      "vsync": "Helps if the picture tears horizontally while moving. Controls then react a tiny bit later; not needed on FreeSync or G-Sync monitors.",
+      "all": "Applies to all games from their next start. Single games can differ on their page under “DOSBox settings”."
+    },
+    "displayOverridden": "Set by your DOSBox settings for all games (below)."
   },
   "errors": {
     "noGamesFound": "No Commander Keen games were found there.",
@@ -380,6 +393,7 @@
     "from": "From",
     "layer": {
       "defaults": "BloogBase default",
+      "options": "Display options",
       "global": "All games",
       "profile": "This game",
       "launch": "BloogBase (fixed)"
