@@ -1,6 +1,7 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { LibraryBig, Settings, type LucideIcon } from "lucide-react";
+import { Compass, LibraryBig, Settings, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useIndexEvents } from "../discover/queries";
 import { JobsPanel } from "../jobs/JobsPanel";
 import { useJobEvents } from "../jobs/queries";
 
@@ -12,6 +13,7 @@ export function Shell() {
   const { t } = useTranslation();
   const inSetup = useRouterState({ select: (s) => s.location.pathname === "/setup" });
   useJobEvents();
+  useIndexEvents();
 
   if (inSetup) {
     return (
@@ -33,6 +35,7 @@ export function Shell() {
           <span className="hidden text-sm xl:inline">BloogBase</span>
         </div>
         <NavItem to="/" icon={LibraryBig} label={t("nav.library")} />
+        <NavItem to="/discover" icon={Compass} label={t("nav.discover")} />
         <div className="mt-auto grid gap-1">
           <JobsPanel />
           <NavItem to="/settings" icon={Settings} label={t("nav.settings")} />
@@ -52,7 +55,7 @@ function NavItem({
   icon: Icon,
   label,
 }: {
-  to: "/" | "/settings";
+  to: "/" | "/discover" | "/settings";
   icon: LucideIcon;
   label: string;
 }) {

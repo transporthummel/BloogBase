@@ -12,7 +12,9 @@ import { unwrap } from "../ipc";
 import { JobList, JobRow } from "../jobs/JobList";
 import { useJobLabel } from "../jobs/label";
 import { isFinished, useJobs, useStartJob } from "../jobs/queries";
-import { profilesKey } from "../library/queries";
+import { compare, fitting, type Owned } from "../discover/fit";
+import { useIndexMods, useIndexStatus } from "../discover/queries";
+import { installsKey, profilesKey } from "../library/queries";
 import { setLanguage, type Language } from "../preferences";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { useRuntimeMutation, useRuntimeStatus } from "../runtime/queries";
@@ -443,6 +445,102 @@ export function OwnedStep({ next, back }: StepProps) {
         {count > 0 ? (
           <Button onClick={() => importStores.mutate()} disabled={importStores.isPending}>
             {t("setup.owned.import", { count })}
+          </Button>
+        ) : (
+          <Button onClick={next}>{t("setup.next")}</Button>
+        )}
+      </Footer>
+    </>
+  );
+}
+
+// 6. Try a mod -----------------------------------------------------------
+
+/** Featured index mods that work with what the user has, or will have once
+ * the free episodes are downloaded. */
+export function ModsStep({ next, back }: StepProps) {
+  const { t } = useTranslation();
+  const games = useGames().data ?? [];
+  const status = useIndexStatus().data;
+  const mods = useIndexMods();
+  const installs = useQuery({
+    queryKey: installsKey,
+    queryFn: () => unwrap(commands.listInstalls()),
+  });
+  const episodes = useFreeEpisodes();
+  const jobs = useJobs().data ?? [];
+  const start = useStartJob((indexId: string) => commands.installIndexMod(indexId, null));
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+
+  const coming: Owned[] = (episodes.data ?? [])
+    .filter((e) =>
+      jobs.some((j) => j.kind === "shareware" && j.subject === e.gameId && j.phase !== "failed"),
+    )
+    .map((e) => ({ gameId: e.gameId, versionId: e.versionId }));
+  const owned: Owned[] = [...(installs.data ?? []), ...coming];
+  const queued = (id: string) => jobs.some((j) => j.kind === "mod" && j.subject === id);
+  const suggestions = (mods.data ?? [])
+    .filter((m) => m.entry.featured && !m.modId && fitting(m.entry, owned, games).length > 0)
+    .sort((a, b) => compare("featured")(a.entry, b.entry))
+    .slice(0, 6);
+  const toStart = suggestions.filter((m) => picked.has(m.entry.id) && !queued(m.entry.id));
+  const loading = status && status.checkedAt === null && !status.error && status.modCount === 0;
+
+  function toggle(id: string) {
+    const set = new Set(picked);
+    if (set.has(id)) set.delete(id);
+    else set.add(id);
+    setPicked(set);
+  }
+
+  async function install() {
+    for (const m of toStart) await start.mutateAsync(m.entry.id);
+    next();
+  }
+
+  return (
+    <>
+      <StepHeader title={t("setup.mods.title")}>
+        <p>{t("setup.mods.intro")}</p>
+      </StepHeader>
+      {loading && <Notice>{t("setup.mods.loading")}</Notice>}
+      {!loading && suggestions.length === 0 && <p className="text-sm">{t("setup.mods.none")}</p>}
+      <ul className="grid gap-3">
+        {suggestions.map(({ entry }) => (
+          <li key={entry.id} className="rounded-lg border border-border p-3">
+            <label className="flex items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 accent-[var(--bb-accent)]"
+                checked={queued(entry.id) || picked.has(entry.id)}
+                disabled={queued(entry.id)}
+                onChange={() => toggle(entry.id)}
+              />
+              <span className="grid gap-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold">{entry.name}</span>
+                  <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
+                </span>
+                <span className="text-xs text-muted">
+                  {gameTitle(games, entry.game)}
+                  {entry.authors.length > 0 &&
+                    ` · ${t("mods.by", { authors: entry.authors.join(", ") })}`}
+                </span>
+                {entry.description && <span className="text-muted">{entry.description}</span>}
+              </span>
+            </label>
+          </li>
+        ))}
+      </ul>
+      {suggestions.length > 0 && <p className="text-xs text-muted">{t("setup.mods.later")}</p>}
+      {status?.error && !loading && suggestions.length === 0 && (
+        <Notice tone="error">{errorMessage(t, status.error)}</Notice>
+      )}
+      {start.error && <Notice tone="error">{errorMessage(t, start.error)}</Notice>}
+      <Footer back={back} skip={toStart.length > 0 ? next : undefined}>
+        {toStart.length > 0 ? (
+          <Button onClick={install} disabled={start.isPending}>
+            {t("setup.mods.install", { count: toStart.length })}
           </Button>
         ) : (
           <Button onClick={next}>{t("setup.next")}</Button>

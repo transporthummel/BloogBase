@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FileArchive, FolderOpen, Play, Puzzle, Trash2 } from "lucide-react";
+import { Compass, FileArchive, FolderOpen, Play, Puzzle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type Mod, type Profile } from "../bindings";
@@ -12,6 +12,7 @@ import { unwrap } from "../ipc";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { AddModDialog } from "../mods/AddModDialog";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
+import { Cover } from "./Cover";
 import { installsKey, profilesKey } from "./queries";
 import { getSetupStep } from "../preferences";
 import { useRuntimeStatus } from "../runtime/queries";
@@ -95,7 +96,14 @@ export function Library() {
         actions={
           !empty && (
             <>
-              <Button onClick={() => setAddingMod(true)}>
+              <Link
+                to="/discover"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink shadow-card transition hover:brightness-110"
+              >
+                <Compass className="size-4" aria-hidden />
+                {t("discover.find")}
+              </Link>
+              <Button variant="secondary" onClick={() => setAddingMod(true)}>
                 <Puzzle className="size-4" aria-hidden />
                 {t("mods.add")}
               </Button>
@@ -180,12 +188,6 @@ export function Library() {
   );
 }
 
-const engineColor = {
-  vorticons: "bg-vorticons",
-  galaxy: "bg-galaxy",
-  dreams: "bg-dreams",
-} as const;
-
 function ProfileCard({
   profile,
   game,
@@ -202,18 +204,9 @@ function ProfileCard({
 }) {
   const { t, i18n } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
-  // Placeholder cover: episode number on the engine's color.
-  const episode = profile.gameId.replace(/^keen/, "").replace(/^kdreams$/, "D");
   return (
     <Card className="flex h-full flex-col">
-      <div
-        className={`flex aspect-[3/4] items-center justify-center font-pixel text-5xl text-white/90 ${
-          game ? engineColor[game.engine] : "bg-surface-raised"
-        }`}
-        aria-hidden
-      >
-        {episode}
-      </div>
+      <Cover gameId={profile.gameId} game={game} />
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="grid gap-0.5">
           <h2 className="text-sm leading-tight font-semibold">{profile.label}</h2>

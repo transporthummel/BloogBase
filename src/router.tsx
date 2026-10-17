@@ -1,4 +1,5 @@
 import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { Discover } from "./discover/Discover";
 import { Library } from "./library/Library";
 import { Settings } from "./settings/Settings";
 import { Setup } from "./setup/Setup";
@@ -10,6 +11,12 @@ const libraryRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   component: Library,
+});
+
+const discoverRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/discover",
+  component: Discover,
 });
 
 const settingsRoute = createRoute({
@@ -25,7 +32,7 @@ const setupRoute = createRoute({
 });
 
 export const router = createRouter({
-  routeTree: rootRoute.addChildren([libraryRoute, settingsRoute, setupRoute]),
+  routeTree: rootRoute.addChildren([libraryRoute, discoverRoute, settingsRoute, setupRoute]),
 });
 
 declare module "@tanstack/react-router" {

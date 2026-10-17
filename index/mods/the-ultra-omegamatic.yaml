@@ -1,0 +1,23 @@
+id: the-ultra-omegamatic
+name: The Ultra Omegamatic
+game: keen5
+requires: [keen5-1.4-ega]
+authors: [DarkAle]
+version: "2.0"
+released: 2020-04-21
+updated: 2020-09-08
+added: 2026-10-17
+type: levelpack
+description: Keen 5 levels inspired by the design and map of The Alphamatic. Version 2.0 adds new graphics and a Megarocket level.
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Ultra_Omegamatic
+  pckf: https://pckf.com/viewtopic.php?f=4&t=6802
+downloads:
+  - version: "2.0"
+    url: https://files.shikadi.net/keenwiki/Packs/Keen5/l.darkale.the_ultra_omegamatic_v2.0.k5.2020-09-08.zip
+    sha256: 82c72a2ac9967e1558b2f4bf6aa88bc5a513eb05dd7e0433d7ca247c5e6048f4
+    size: 600440
+recipe:
+  type: patch
+  patcher: CK5PATCH.EXE
+  patch: Keen13.PAT

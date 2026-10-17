@@ -1,0 +1,97 @@
+name: Mod index
+
+# Checks the mod index (index/mods/*.yaml) on every change, and weekly for
+# dead links. Publishing to GitHub Pages is off until the repository
+# variable INDEX_PUBLISH is "true" (see index/README.md).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index/**
+      - src-tauri/catalog/games.json
+      - .github/workflows/index.yml
+  pull_request:
+    paths:
+      - index/**
+      - src-tauri/catalog/games.json
+      - .github/workflows/index.yml
+  schedule:
+    - cron: "41 4 * * 2"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: index/tool
+
+      # Downloads are cached by hash, so the community's file server only
+      # sees a request when an entry is new or changed.
+      - uses: actions/cache@v4
+        with:
+          path: index-cache
+          key: index-downloads-${{ hashFiles('index/mods/**') }}
+          restore-keys: index-downloads-
+
+      - name: Tool
+        working-directory: index/tool
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
+
+      - name: Entries and downloads
+        working-directory: index/tool
+        # The weekly run also asks the servers whether cached files are still there.
+        run: >-
+          cargo run --release -- check --download --cache "$GITHUB_WORKSPACE/index-cache"
+          ${{ github.event_name == 'schedule' && '--links' || '' }}
+
+  publish:
+    needs: check
+    if: >-
+      vars.INDEX_PUBLISH == 'true' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}index/index.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: index/tool
+
+      - name: Build and sign
+        working-directory: index/tool
+        env:
+          INDEX_MINISIGN_KEY: ${{ secrets.INDEX_MINISIGN_KEY }}
+        # The commit time keeps rebuilds of the same commit identical.
+        run: |
+          cargo run --release -- build --out "$GITHUB_WORKSPACE/site/index" \
+            --generated-at "$(git log -1 --format=%ct)"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -86,6 +86,7 @@ test("inspects the picked ZIP and installs the mod on the matching game", async 
       version: null,
       recipe: patch.recipe,
       source: "manual",
+      indexId: null,
       addedAt: 0,
       profileId: "aurora-bliss",
     }),

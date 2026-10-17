@@ -1,0 +1,19 @@
+id: keenball
+name: Keenball
+game: keen4
+requires: [keen4-1.4-ega]
+authors: [Levellass]
+released: 2019-03-14
+added: 2026-10-17
+type: conversion
+description: "Keen 4 turned into a mix of pinball and snooker, aimed with a new crosshair."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keenball
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.levellass.keenball.k4.2019-03-14.zip
+    sha256: 5f251f3809dc3de144e1f783066a9120d8fc75c6a24f2c21c72df21df61bdca6
+    size: 246586
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: PAT.PAT

@@ -1,0 +1,20 @@
+id: fireblaze-curse-of-the-dragonlords
+name: "Fireblaze: Curse of the Dragonlords"
+game: keen1
+authors: ["88vega"]
+released: 2018-11-18
+added: 2026-10-17
+type: episode
+description: A medieval Keen 1 adventure in the Elven Kingdom of Vestele.
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Fireblaze
+  pckf: https://pckf.com/viewtopic.php?f=4&t=4760
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.88vega.fireblaze_curse_of_the_dragonlords.k1.2018-11-18.zip
+    sha256: 542f21e02f7047126b741ae88fdf1908adde81bb126b3f764b514e9cec1ff71a
+    size: 132051
+recipe:
+  type: patch
+  patcher: CK1PATCH.exe
+  patch: fire.pat
+featured: true

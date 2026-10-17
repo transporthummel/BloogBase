@@ -2,7 +2,8 @@
   "nav": {
     "label": "Main navigation",
     "library": "Library",
-    "settings": "Settings"
+    "settings": "Settings",
+    "discover": "Discover"
   },
   "library": {
     "title": "Library",
@@ -76,7 +77,9 @@
     "invalidLocation": "BloogBase can't keep its data there ({{message}}).",
     "noModFound": "No Commander Keen mod was found there.",
     "incompatibleInstall": "The mod doesn’t fit that game ({{message}}).",
-    "generic": "Something went wrong: {{message}}"
+    "generic": "Something went wrong: {{message}}",
+    "missingGame": "This mod needs {{message}}. Add it to your library first.",
+    "badSignature": "The mod list couldn't be verified, so it wasn't used."
   },
   "jobs": {
     "title": "Downloads",
@@ -147,6 +150,15 @@
       "running": "Downloads keep running in the background. Your games show up in the library as soon as they're ready.",
       "ready": "Everything is ready. Have fun!",
       "open": "Open my library"
+    },
+    "mods": {
+      "title": "Try a mod",
+      "intro": "Fans have made many new adventures for Commander Keen. These work with your games:",
+      "loading": "Loading the mod list…",
+      "none": "There are no suggestions for your games right now. Once you have a game, you'll find mods under Discover.",
+      "later": "You'll find many more under Discover.",
+      "install_one": "Install {{count}} mod",
+      "install_other": "Install {{count}} mods"
     }
   },
   "common": {
@@ -193,5 +205,46 @@
     "removeHint": "The mod’s files are deleted. The game itself stays in your library.",
     "keepSaves_one": "Keep the saved game as a backup",
     "keepSaves_other": "Keep the {{count}} saved games as a backup"
+  },
+  "discover": {
+    "title": "Discover",
+    "find": "Find mods",
+    "refresh": "Check for new mods",
+    "status_one": "{{count}} mod · checked {{date}}",
+    "status_other": "{{count}} mods · checked {{date}}",
+    "neverChecked": "The mod list hasn't been loaded yet.",
+    "hidden_one": "Update BloogBase to see {{count}} more mod.",
+    "hidden_other": "Update BloogBase to see {{count}} more mods.",
+    "offline": "Showing the mod list from your last visit. {{message}}",
+    "search": "Search mods",
+    "game": "Game",
+    "allGames": "All games",
+    "type": "Type",
+    "allKinds": "All types",
+    "sort": "Sort by",
+    "sortBy": {
+      "featured": "Recommended",
+      "newest": "Newest",
+      "name": "Name"
+    },
+    "playable": "Works with my games",
+    "emptyTitle": "No mods yet",
+    "empty": "The mod list couldn't be loaded. Check your internet connection and try again.",
+    "noMatch": "No mods match these filters.",
+    "kind": {
+      "episode": "Adventure",
+      "levelpack": "Level pack",
+      "conversion": "Something new"
+    },
+    "featured": "Recommended",
+    "installed": "Installed",
+    "updateBadge": "Update",
+    "homepage": "Website",
+    "playInLibrary": "Play it in your library",
+    "update": "Update",
+    "updateTo": "Update to version {{version}}",
+    "needs": "Needs {{game}}.",
+    "needs_version": "Needs {{game}} ({{versions}}).",
+    "install": "Install ({{size}} MB)"
   }
 }

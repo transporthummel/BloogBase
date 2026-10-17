@@ -48,6 +48,16 @@ impl Recipe {
         }
     }
 
+    /// Files the recipe runs; they have to be in the mod's root.
+    pub fn files(&self) -> Vec<&str> {
+        match self {
+            Recipe::Patch { patcher, patch, .. } => vec![patcher, patch],
+            Recipe::Program { program, .. } => vec![program],
+            Recipe::Batch { file } => vec![file],
+            Recipe::Episode => vec![],
+        }
+    }
+
     /// The patch file, whose `%version` lines say which game versions fit.
     pub fn patch_file(&self) -> Option<&str> {
         match self {

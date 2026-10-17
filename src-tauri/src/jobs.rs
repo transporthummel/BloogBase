@@ -20,6 +20,8 @@ pub enum JobKind {
     Runtime,
     /// Downloading a free episode; the subject is the game id.
     Shareware,
+    /// Installing or updating a mod from the index; the subject is its index id.
+    Mod,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
@@ -95,6 +97,13 @@ impl Jobs {
         let job = jobs.iter_mut().find(|j| j.id == id)?;
         f(job);
         Some(job.clone())
+    }
+
+    /// Whether this work is in progress.
+    pub fn is_running(&self, kind: JobKind, subject: Option<&str>) -> bool {
+        self.lock()
+            .iter()
+            .any(|j| j.kind == kind && j.subject.as_deref() == subject && !j.phase.finished())
     }
 
     /// Forgets finished jobs.

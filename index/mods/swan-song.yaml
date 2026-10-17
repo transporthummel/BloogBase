@@ -1,0 +1,21 @@
+id: swan-song
+name: Swan Song
+game: keen1
+requires: [keen1-1.31]
+authors: [Shikadi]
+released: 2016-07-20
+added: 2026-10-17
+type: episode
+description: "A standalone Keen 1 mod, released in 2016."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Swan_Song
+  pckf: https://pckf.com/viewtopic.php?f=4&t=3696
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.shikadi.swan_song.k1.2016-07-20.zip
+    sha256: 9cad295b6eefebf7b2d97414484741d62b3444495178fee8e011dafc93226213
+    size: 385784
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: Start.pat
+featured: true

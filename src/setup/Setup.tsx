@@ -14,14 +14,15 @@ import {
   DoneStep,
   EngineStep,
   EpisodesStep,
+  ModsStep,
   OwnedStep,
   StorageStep,
   WelcomeStep,
   type StepProps,
 } from "./steps";
 
-/** Wizard steps 1–5 and 7 of PLAN.md §7; "Try a mod" (6) arrives with the mod index. */
-const STEPS = ["welcome", "storage", "engine", "episodes", "owned", "done"] as const;
+/** The wizard steps of PLAN.md §7. */
+const STEPS = ["welcome", "storage", "engine", "episodes", "owned", "mods", "done"] as const;
 type Step = (typeof STEPS)[number];
 
 const components: Record<Step, (props: StepProps) => ReactNode> = {
@@ -30,6 +31,7 @@ const components: Record<Step, (props: StepProps) => ReactNode> = {
   engine: EngineStep,
   episodes: EpisodesStep,
   owned: OwnedStep,
+  mods: ModsStep,
   done: DoneStep,
 };
 

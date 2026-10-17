@@ -1,0 +1,20 @@
+id: keen-2-gold-edition
+name: Keen 2 Gold Edition
+game: keen2
+requires: [keen2-1.31]
+authors: [szemi]
+released: 2017-12-24
+added: 2026-10-17
+type: episode
+description: "A bug-fixed Keen 2 with a few gameplay tweaks, plus 16 new levels next to the corrected originals."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_2_Gold_Edition
+  pckf: https://pckf.com/viewtopic.php?f=4&t=4208
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.szemigi.keen_2_gold_edition.k2.2017-12-24.zip
+    sha256: 4d25d5f8c4ef1260e3ddbf28ef42b3faa5136b1dd1fcbd7390053155ec3eb86b
+    size: 122440
+recipe:
+  type: patch
+  patcher: CK2PATCH.EXE
+  patch: CK2GOLD.PAT

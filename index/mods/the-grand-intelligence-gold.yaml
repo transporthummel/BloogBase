@@ -1,0 +1,20 @@
+id: the-grand-intelligence-gold
+name: The Grand Intelligence Gold
+game: kdreams
+authors: [Szemigi]
+released: 2015-11-01
+updated: 2015-11-02
+added: 2026-10-17
+type: episode
+description: "Sixteen Keen Dreams levels that bring together the earlier Grand Intelligence mods, played one after another without a world map."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Grand_Intelligence_Gold
+  pckf: https://pckf.com/viewtopic.php?t=3472
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/keend/m.szemigi.the_grand_intelligence_gold.kd.2015-11-02.zip
+    sha256: 06a9520b8dd96c1179b977b340a99ac5e64b722b4de17a93b1326cd923c90c4b
+    size: 240674
+recipe:
+  type: patch
+  patcher: KDRPATCH.EXE
+  patch: MartGold.pat

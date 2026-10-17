@@ -1,0 +1,22 @@
+id: back-to-fribbulus-xax
+name: Back to Fribbulus Xax
+game: keen6
+requires: [keen6-1.4-ega]
+authors: [Alopex]
+version: "1.0"
+released: 2024-10-03
+added: 2026-10-17
+type: levelpack
+description: A tough Keen 6 level pack set on Blooggus.
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Back_to_Fribbulus_Xax
+  pckf: https://pckf.com/viewtopic.php?t=13913
+downloads:
+  - version: "1.0"
+    url: https://files.shikadi.net/keenwiki/Packs/Keen6/l.alopex.back_to_fribbulus_xax_v1.0.k6.2024-10-03.zip
+    sha256: 7f067dda1eb88aa43750ee146f3f5ae464f50bfc53df27fa770c91b1ced7cb0a
+    size: 448355
+recipe:
+  type: patch
+  patcher: CK6PATCH.EXE
+  patch: abiathar.pat

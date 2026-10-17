@@ -17,6 +17,8 @@ const translated: ErrorKind[] = [
   "invalidLocation",
   "noModFound",
   "incompatibleInstall",
+  "missingGame",
+  "badSignature",
 ];
 
 export function errorMessage(t: TFunction, err: unknown): string {

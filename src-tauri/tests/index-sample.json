@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": 1760000000,
+  "mods": [
+    {
+      "id": "sample-levels",
+      "name": "Sample Levels",
+      "game": "keen1",
+      "requires": [],
+      "authors": [
+        "Someone"
+      ],
+      "added": "2026-10-02",
+      "type": "levelpack",
+      "links": {},
+      "downloads": [
+        {
+          "url": "https://example.com/levels.zip",
+          "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "size": 99
+        }
+      ],
+      "recipe": {
+        "type": "episode"
+      },
+      "tags": [],
+      "featured": false,
+      "minAppVersion": "9.0.0"
+    },
+    {
+      "id": "sample-patch",
+      "name": "Sample Patch Mod",
+      "game": "keen4",
+      "requires": [
+        "keen4-1.4-ega"
+      ],
+      "authors": [
+        "Someone",
+        "Someone Else"
+      ],
+      "version": "1.2",
+      "released": "2023-08-23",
+      "updated": "2024-01-02",
+      "added": "2026-10-01",
+      "type": "episode",
+      "description": "A made-up mod for tests.",
+      "links": {
+        "keenwiki": "https://keenwiki.shikadi.net/wiki/Sample",
+        "pckf": "https://pckf.com/viewtopic.php?t=1"
+      },
+      "downloads": [
+        {
+          "version": "1.2",
+          "url": "https://example.com/sample-1.2.zip",
+          "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "size": 1234
+        }
+      ],
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK4PATCH.EXE",
+        "patch": "SAMPLE.PAT",
+        "args": []
+      },
+      "tags": [
+        "new-graphics"
+      ],
+      "featured": true
+    }
+  ]
+}

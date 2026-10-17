@@ -1,0 +1,13 @@
+id: sample-levels
+name: Sample Levels
+game: keen1
+authors: [Someone]
+added: 2026-10-02
+type: levelpack
+downloads:
+  - url: https://example.com/levels.zip
+    sha256: 2222222222222222222222222222222222222222222222222222222222222222
+    size: 99
+recipe:
+  type: episode
+minAppVersion: 9.0.0

@@ -25,6 +25,17 @@ export const commands = {
 	listMods: () => typedError<Mod[], CommandError>(__TAURI_INVOKE("list_mods")),
 	/**  Removes a mod and its profile; `keep_saves` archives the saves first. */
 	deleteMod: (modId: string, keepSaves: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("delete_mod", { modId, keepSaves })),
+	indexStatus: () => __TAURI_INVOKE<IndexStatus>("index_status"),
+	/**  Checks for a new mod index; `force` even if the last check was recent. */
+	refreshIndex: (force: boolean) => __TAURI_INVOKE<IndexStatus>("refresh_index", { force }),
+	/**  The mods in the index, with what's installed already. */
+	indexMods: () => typedError<IndexMod[], CommandError>(__TAURI_INVOKE("index_mods")),
+	/**
+	 *  Downloads a mod from the index and installs it, or updates it when it's
+	 *  installed already. Without `install_id` it goes on the best fitting game,
+	 *  once a free episode for it has finished downloading.
+	 */
+	installIndexMod: (indexId: string, installId: string | null) => __TAURI_INVOKE<Job>("install_index_mod", { indexId, installId }),
 	runtimeStatus: () => typedError<RuntimeStatus, CommandError>(__TAURI_INVOKE("runtime_status")),
 	/**  Starts downloading and installing the pinned DOSBox Staging build. */
 	installRuntime: () => __TAURI_INVOKE<Job>("install_runtime"),
@@ -55,6 +66,7 @@ export const commands = {
 
 /** Events */
 export const events = {
+	indexUpdated: makeEvent<IndexUpdated>("index-updated"),
 	jobUpdated: makeEvent<JobUpdated>("job-updated"),
 	playSessionEnded: makeEvent<PlaySessionEnded>("play-session-ended"),
 };
@@ -74,10 +86,18 @@ export type CommandError = {
 	message: string,
 };
 
+export type Download = {
+	version?: string | null,
+	url: string,
+	sha256: string,
+	/**  Bytes. */
+	size: number,
+};
+
 export type Engine = "vorticons" | "galaxy" | "dreams";
 
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
-export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "noModFound" | "incompatibleInstall";
+export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature";
 
 export type FoundGame = {
 	gameId: string,
@@ -132,6 +152,55 @@ export type GameVersion = {
 	original?: string | null,
 };
 
+export type IndexEntry = {
+	id: string,
+	name: string,
+	/**  Catalog game id. */
+	game: string,
+	/**  Catalog versions the mod works with; empty: any. */
+	requires: string[],
+	authors: string[],
+	version?: string | null,
+	released?: string | null,
+	updated?: string | null,
+	/**  When it joined the index, `YYYY-MM-DD`. */
+	added: string,
+	type: ModKind,
+	description?: string | null,
+	links: Links,
+	/**  Newest first. */
+	downloads: Download[],
+	recipe: Recipe,
+	tags?: string[],
+	featured?: boolean,
+	minAppVersion?: string | null,
+};
+
+/**  An index entry with what the library knows about it. */
+export type IndexMod = {
+	entry: IndexEntry,
+	/**  The installed mod made from this entry. */
+	modId: string | null,
+	/**  Installed, but the index has a different download now. */
+	updateAvailable: boolean,
+};
+
+export type IndexStatus = {
+	url: string,
+	/**  Unix seconds of the last successful check. */
+	checkedAt: number | null,
+	/**  When the index in use was built. */
+	generatedAt: number | null,
+	modCount: number,
+	/**  Entries only a newer BloogBase can show. */
+	hiddenCount: number,
+	/**  Why the last check failed; the cached index stays in use. */
+	error: CommandError | null,
+};
+
+/**  Sent after every check of the index, successful or not. */
+export type IndexUpdated = IndexStatus;
+
 export type Install = {
 	id: string,
 	gameId: string,
@@ -171,12 +240,20 @@ export type JobKind =
 /**  Downloading DOSBox Staging. */
 "runtime" | 
 /**  Downloading a free episode; the subject is the game id. */
-"shareware";
+"shareware" | 
+/**  Installing or updating a mod from the index; the subject is its index id. */
+"mod";
 
 export type JobPhase = "downloading" | "installing" | "done" | "failed";
 
 /**  Sent whenever a job starts, makes progress or finishes. */
 export type JobUpdated = Job;
+
+export type Links = {
+	keenwiki?: string | null,
+	pckf?: string | null,
+	homepage?: string | null,
+};
 
 export type Mod = {
 	id: string,
@@ -186,6 +263,8 @@ export type Mod = {
 	version: string | null,
 	recipe: Recipe,
 	source: ModSource,
+	/**  The index entry it was installed from. */
+	indexId: string | null,
 	/**  Unix epoch seconds. */
 	addedAt: number,
 	/**  The play profile created for the mod. */
@@ -206,6 +285,8 @@ export type ModInfo = {
 	confident: boolean,
 	fileCount: number,
 };
+
+export type ModKind = "episode" | "levelpack" | "conversion";
 
 export type ModSource = "index" | "keenwiki" | "manual";
 

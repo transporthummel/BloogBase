@@ -58,3 +58,17 @@ BLOOGBASE_E2E_DOSBOX=<path to dosbox.exe> \
 Screenshots land in `src-tauri/target/e2e-mods/shots/`. Look at them: "running"
 only means DOSBox was still open after seven seconds. A mod patched onto the
 wrong game version can still be running, just showing garbage.
+
+## Mod index
+
+The index (`index/`, see `index/README.md`) has its own checks:
+
+```sh
+pnpm index:check                       # entries + downloads (cached in .local/mods/index-cache)
+cd index/tool && cargo test            # the tool itself
+```
+
+CI (`.github/workflows/index.yml`) runs both on every change to `index/` and
+weekly, then also asking the servers whether each download still exists. The
+app side (signature, cache, ETag, install from the index) is covered by the
+unit tests in `src-tauri/src/mod_index.rs` and `src-tauri/src/mods.rs`.

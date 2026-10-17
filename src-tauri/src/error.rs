@@ -49,6 +49,10 @@ pub enum Error {
     NoModFound,
     #[error("this mod doesn't fit that game: {0}")]
     IncompatibleInstall(String),
+    #[error("this mod needs {0}")]
+    MissingGame(String),
+    #[error("the mod index isn't signed correctly: {0}")]
+    BadSignature(String),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -76,6 +80,8 @@ impl Error {
             Error::InvalidLocation(_) => ErrorKind::InvalidLocation,
             Error::NoModFound => ErrorKind::NoModFound,
             Error::IncompatibleInstall(_) => ErrorKind::IncompatibleInstall,
+            Error::MissingGame(_) => ErrorKind::MissingGame,
+            Error::BadSignature(_) => ErrorKind::BadSignature,
         }
     }
 }
@@ -101,6 +107,8 @@ pub enum ErrorKind {
     InvalidLocation,
     NoModFound,
     IncompatibleInstall,
+    MissingGame,
+    BadSignature,
 }
 
 /// The error shape every command returns to the frontend.
@@ -115,6 +123,13 @@ pub struct CommandError {
 impl From<Error> for CommandError {
     fn from(err: Error) -> Self {
         tracing::error!("command failed: {err}");
+        CommandError::from_quiet(err)
+    }
+}
+
+impl CommandError {
+    /// For failures that were already logged, e.g. as a warning.
+    pub fn from_quiet(err: Error) -> Self {
         CommandError {
             kind: err.kind(),
             message: err.to_string(),

@@ -1,0 +1,24 @@
+id: the-keys-of-krodacia
+name: The Keys of Krodacia
+game: keen4
+requires: [keen4-1.4-ega]
+authors: [Ceilick]
+version: "2.0"
+released: 2006-06-27
+updated: 2009-03-14
+added: 2026-10-17
+type: episode
+description: "One of the first full-length Keen 4 mods and the start of an unofficial trilogy, with music by KeenRush. Version 2.0 adds new music, extras and fixes."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Keys_of_Krodacia
+  pckf: https://pckf.com/viewtopic.php?t=566
+downloads:
+  - version: "2.0"
+    url: https://files.shikadi.net/keenwiki/mods/Keen4/m.ceilick.the_keys_of_krodacia_v2.0.k4.2009-03-14.zip
+    sha256: 95f516ec50063d02222d22ab048d88cffaeeda1fa1f331bfc7512fea578518a3
+    size: 670695
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: KEEN7.pat
+featured: true

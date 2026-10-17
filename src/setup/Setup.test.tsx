@@ -2,7 +2,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
-import { commands, type Game, type Job, type RuntimeStatus } from "../bindings";
+import {
+  commands,
+  type Game,
+  type IndexEntry,
+  type IndexMod,
+  type Job,
+  type RuntimeStatus,
+} from "../bindings";
 import { getSetupStep, setSetupStep } from "../preferences";
 import { Setup } from "./Setup";
 
@@ -27,8 +34,12 @@ vi.mock("../bindings", () => {
       scanStores: vi.fn(),
       importStoreGames: vi.fn(),
       importGames: vi.fn(),
+      listInstalls: vi.fn(),
+      indexStatus: vi.fn(),
+      indexMods: vi.fn(),
+      installIndexMod: vi.fn(),
     },
-    events: { jobUpdated: event },
+    events: { jobUpdated: event, indexUpdated: event },
   };
 });
 
@@ -87,7 +98,34 @@ beforeEach(() => {
     data: { version: "0.1.0", dataDir: "/data", defaultDataDir: "/data", schemaVersion: 2 },
   });
   vi.mocked(commands.completeSetup).mockResolvedValue({ status: "ok", data: null });
+  vi.mocked(commands.listInstalls).mockResolvedValue({ status: "ok", data: [] });
+  vi.mocked(commands.indexStatus).mockResolvedValue({
+    url: "x",
+    checkedAt: 1,
+    generatedAt: 1,
+    modCount: 0,
+    hiddenCount: 0,
+    error: null,
+  });
+  vi.mocked(commands.indexMods).mockResolvedValue({ status: "ok", data: [] });
 });
+
+const indexMod = (id: string, gameId: string, requires: string[]): IndexMod => {
+  const entry: IndexEntry = {
+    id,
+    name: id,
+    game: gameId,
+    requires,
+    authors: ["someone"],
+    added: "2026-01-01",
+    type: "episode",
+    links: {},
+    downloads: [{ url: "https://x/y.zip", sha256: "00", size: 1 }],
+    recipe: { type: "episode" },
+    featured: true,
+  };
+  return { entry, modId: null, updateAvailable: false };
+};
 
 test("walks through all steps, skipping each, and finishes", async () => {
   vi.mocked(commands.freeEpisodes).mockResolvedValue({ status: "ok", data: [] });
@@ -104,6 +142,8 @@ test("walks through all steps, skipping each, and finishes", async () => {
   await screen.findByRole("heading", { name: "Free episodes" });
   await user.click(screen.getByRole("button", { name: "Next" }));
   await screen.findByText(/No Commander Keen games from Steam or GOG/);
+  await user.click(screen.getByRole("button", { name: "Next" }));
+  await screen.findByRole("heading", { name: "Try a mod" });
   await user.click(screen.getByRole("button", { name: "Next" }));
   await user.click(await screen.findByRole("button", { name: "Open my library" }));
 
@@ -158,5 +198,40 @@ test("imports the games found in Steam and GOG folders", async () => {
     "C:/Steam/steamapps/common/Commander Keen",
     ["keen4"],
   );
+  expect(await screen.findByRole("heading", { name: "Try a mod" })).toBeInTheDocument();
+});
+
+test("suggests featured mods for games on their way and queues the picked ones", async () => {
+  setSetupStep("mods");
+  vi.mocked(commands.freeEpisodes).mockResolvedValue({
+    status: "ok",
+    data: [{ gameId: "keen1", versionId: "keen1-1.31", size: 1, installed: false }],
+  });
+  vi.mocked(commands.listJobs).mockResolvedValue([job("keen1")]);
+  vi.mocked(commands.indexMods).mockResolvedValue({
+    status: "ok",
+    data: [
+      indexMod("for-keen1", "keen1", ["keen1-1.31"]),
+      indexMod("for-keen4", "keen4", []),
+      {
+        ...indexMod("not-featured", "keen1", []),
+        entry: {
+          ...indexMod("x", "keen1", []).entry,
+          id: "not-featured",
+          name: "not-featured",
+          featured: false,
+        },
+      },
+    ],
+  });
+  vi.mocked(commands.installIndexMod).mockResolvedValue({ ...job("for-keen1"), kind: "mod" });
+  renderSetup();
+  const user = userEvent.setup();
+
+  await user.click(await screen.findByRole("checkbox", { name: /for-keen1/ }));
+  expect(screen.queryByText("for-keen4")).not.toBeInTheDocument();
+  expect(screen.queryByText("not-featured")).not.toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Install 1 mod" }));
+  expect(commands.installIndexMod).toHaveBeenCalledWith("for-keen1", null);
   expect(await screen.findByRole("heading", { name: "All set!" })).toBeInTheDocument();
 });

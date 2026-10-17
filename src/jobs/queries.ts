@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { commands, events, type Job, type JobKind } from "../bindings";
-import { profilesKey } from "../library/queries";
+import { indexModsKey } from "../discover/queries";
+import { installsKey, profilesKey } from "../library/queries";
 import { runtimeKey } from "../runtime/queries";
 import { freeEpisodesKey } from "../setup/queries";
 
@@ -40,7 +41,12 @@ export function useJobEvents() {
       if (job.kind === "runtime") client.invalidateQueries({ queryKey: runtimeKey });
       if (job.kind === "shareware") {
         client.invalidateQueries({ queryKey: profilesKey });
+        client.invalidateQueries({ queryKey: installsKey });
         client.invalidateQueries({ queryKey: freeEpisodesKey });
+      }
+      if (job.kind === "mod") {
+        client.invalidateQueries({ queryKey: profilesKey });
+        client.invalidateQueries({ queryKey: indexModsKey });
       }
     });
     return () => {

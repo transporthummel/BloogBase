@@ -10,11 +10,13 @@ use tauri_specta::Event;
 
 use crate::catalog::{self, Game};
 use crate::db::Db;
+use crate::downloads;
 use crate::error::{CommandResult, Error, Result};
-use crate::jobs::{self, Job, JobKind, Jobs};
+use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
 use crate::launcher::{self, PlaySessionEnded, Running};
 use crate::library::{self, Install};
-use crate::mods::{self, InstallModRequest, Mod, ModInfo};
+use crate::mod_index::{self, IndexMod, IndexStatus, IndexUpdated, ModIndex};
+use crate::mods::{self, Curated, InstallModRequest, Mod, ModInfo};
 use crate::paths::{self, AppPaths};
 use crate::profiles::{self, Profile};
 use crate::runtime::{self, RuntimeStatus};
@@ -168,6 +170,96 @@ pub async fn delete_mod(app: AppHandle, mod_id: String, keep_saves: bool) -> Com
             .await;
     app.state::<Running>().release(&mod_id);
     result
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn index_status(index: State<'_, ModIndex>) -> IndexStatus {
+    index.status()
+}
+
+/// Checks for a new mod index; `force` even if the last check was recent.
+#[tauri::command]
+#[specta::specta]
+pub async fn refresh_index(app: AppHandle, force: bool) -> IndexStatus {
+    let status = app.state::<ModIndex>().refresh(force).await;
+    let _ = IndexUpdated(status.clone()).emit(&app);
+    status
+}
+
+/// The mods in the index, with what's installed already.
+#[tauri::command]
+#[specta::specta]
+pub fn index_mods(index: State<'_, ModIndex>, db: State<'_, Db>) -> CommandResult<Vec<IndexMod>> {
+    Ok(mod_index::list(&index, &db)?)
+}
+
+/// Downloads a mod from the index and installs it, or updates it when it's
+/// installed already. Without `install_id` it goes on the best fitting game,
+/// once a free episode for it has finished downloading.
+#[tauri::command]
+#[specta::specta]
+pub fn install_index_mod(app: AppHandle, index_id: String, install_id: Option<String>) -> Job {
+    let a = app.clone();
+    let id = index_id.clone();
+    jobs::start(&app, JobKind::Mod, Some(index_id), |report| async move {
+        let entry = a
+            .state::<ModIndex>()
+            .entry(&id)
+            .ok_or_else(|| Error::NotFound(format!("{id} in the mod index")))?;
+        let download = entry.downloads[0].clone();
+        let size = u64::from(download.size);
+        let archive = a
+            .state::<AppPaths>()
+            .cache
+            .join("downloads")
+            .join(format!("index-{id}.zip"));
+        downloads::fetch(&download.url, &download.sha256, size, &archive, &|r, t| {
+            report.progress(JobPhase::Downloading, r, t)
+        })
+        .await?;
+        report.progress(JobPhase::Installing, size, size);
+        // Right after the setup wizard the game may still be on its way.
+        while a
+            .state::<Jobs>()
+            .is_running(JobKind::Shareware, Some(&entry.game))
+        {
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        }
+
+        let curated = Curated {
+            index_id: entry.id.clone(),
+            game_id: entry.game.clone(),
+            name: entry.name.clone(),
+            authors: entry.authors.clone(),
+            version: entry.version.clone(),
+            recipe: entry.recipe.clone(),
+            requires: entry.requires.clone(),
+            keenwiki_url: entry.links.keenwiki.clone(),
+            url: download.url.clone(),
+        };
+        let b = a.clone();
+        let file = archive.clone();
+        let result = tauri::async_runtime::spawn_blocking(move || {
+            let (paths, db, running) =
+                (b.state::<AppPaths>(), b.state::<Db>(), b.state::<Running>());
+            // An update must not swap files under a running game.
+            let existing = mods::find_by_index(&db, &curated.index_id)?;
+            if let Some(m) = &existing {
+                running.claim(m)?;
+            }
+            let result = mods::install_curated(&paths, &db, &file, &curated, install_id.as_deref());
+            if let Some(m) = &existing {
+                running.release(m);
+            }
+            result
+        })
+        .await
+        .map_err(Error::from)
+        .and_then(|r| r);
+        let _ = std::fs::remove_file(&archive);
+        result.map(drop)
+    })
 }
 
 #[tauri::command]

@@ -1,0 +1,23 @@
+id: the-alphamatic
+name: The Alphamatic
+game: keen5
+requires: [keen5-1.4-ega]
+authors: [Gridlock]
+version: "2.0"
+released: 2017-07-04
+updated: 2021-03-14
+added: 2026-10-17
+type: episode
+description: A Keen 5 sequel to Atroxian Realm. Version 2.0 adds more secret levels.
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Alphamatic
+  pckf: https://pckf.com/viewtopic.php?f=4&t=4086
+downloads:
+  - version: "2.0"
+    url: https://files.shikadi.net/keenwiki/mods/Keen5/m.gridlock.the_alphamatic_v2.0.k5.2021-03-14.zip
+    sha256: 6a32eea4893b036aac9e057450a9abe6f063119c5bb78fdbc572d764b487103a
+    size: 993455
+recipe:
+  type: patch
+  patcher: CK5PATCH.EXE
+  patch: Patch5.pat

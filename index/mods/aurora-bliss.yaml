@@ -1,0 +1,24 @@
+id: aurora-bliss
+name: Aurora Bliss
+game: keen4
+requires: [keen4-1.4-ega]
+authors: [Dave216]
+version: "1.2"
+released: 2022-08-01
+updated: 2023-08-23
+added: 2026-10-17
+type: episode
+description: A full Keen 4 adventure. Clues hidden throughout the game unlock a secret epilogue.
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Aurora_Bliss
+  pckf: https://pckf.com/viewtopic.php?t=13985
+downloads:
+  - version: "1.2"
+    url: https://files.shikadi.net/keenwiki/mods/Keen4/m.dave216.aurora_bliss_v.1.2.k4.2023-08-23.zip
+    sha256: 0140e4531f2f9953ad7deac3e2dee24eb3d67b270781a753c3ab753a4d02b271
+    size: 4822659
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: abiathar.pat
+featured: true

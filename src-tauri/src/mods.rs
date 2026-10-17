@@ -103,6 +103,8 @@ pub struct Mod {
     pub version: Option<String>,
     pub recipe: Recipe,
     pub source: ModSource,
+    /// The index entry it was installed from.
+    pub index_id: Option<String>,
     /// Unix epoch seconds.
     #[specta(type = u32)]
     pub added_at: i64,
@@ -467,6 +469,21 @@ fn title_case(s: &str) -> String {
         .join(" ")
 }
 
+/// What gets stored for a mod, whatever its source.
+struct Stored<'a> {
+    name: String,
+    authors: Vec<String>,
+    version: Option<String>,
+    recipe: Recipe,
+    source: ModSource,
+    index_id: Option<&'a str>,
+    keenwiki_url: Option<&'a str>,
+    /// The picked folder or ZIP, or the download URL.
+    source_url: &'a str,
+    /// Name for the kept copy of the archive; default: its own.
+    archive_name: Option<&'a str>,
+}
+
 /// Installs a mod and creates its play profile on `install_id`.
 pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod> {
     let path = Path::new(&req.path);
@@ -488,31 +505,207 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
         "" => analysis.info.name.clone(),
         n => n.to_string(),
     };
-    let id = reserve_id(paths, &name)?;
+    let stored = Stored {
+        name,
+        authors: analysis.info.authors.clone(),
+        version: analysis.info.version.clone(),
+        recipe: option.recipe.clone(),
+        source: ModSource::Manual,
+        index_id: None,
+        keenwiki_url: None,
+        source_url: &req.path,
+        archive_name: None,
+    };
+    store(paths, db, &source, &analysis, &stored, &target)
+}
+
+/// A mod as the index describes it. Its recipe is used as is: a curated
+/// recipe always beats the heuristics (§9.2 step 4).
+#[derive(Debug, Clone)]
+pub struct Curated {
+    pub index_id: String,
+    pub game_id: String,
+    pub name: String,
+    pub authors: Vec<String>,
+    pub version: Option<String>,
+    pub recipe: Recipe,
+    /// Catalog versions it works with; empty: any.
+    pub requires: Vec<String>,
+    pub keenwiki_url: Option<String>,
+    pub url: String,
+}
+
+/// Installs a downloaded index mod, or updates it when it's installed
+/// already. Without `install_id` the best fitting game is used.
+pub fn install_curated(
+    paths: &AppPaths,
+    db: &Db,
+    archive: &Path,
+    c: &Curated,
+    install_id: Option<&str>,
+) -> Result<Mod> {
+    let source = Source::open(archive)?;
+    let analysis = analyze(&source, archive)?;
+    if analysis.info.game_id != c.game_id {
+        return Err(Error::UnexpectedContent(format!(
+            "the download looks like a mod for {}, not {}",
+            analysis.info.game_id, c.game_id
+        )));
+    }
+    let in_root: Vec<&str> = analysis
+        .files
+        .iter()
+        .filter(|f| split_dir(f).0 == analysis.root)
+        .map(|f| split_dir(f).1)
+        .collect();
+    for file in c.recipe.files() {
+        if !in_root.iter().any(|n| n.eq_ignore_ascii_case(file)) {
+            return Err(Error::UnexpectedContent(format!("{file} is missing")));
+        }
+    }
+
+    let stored = Stored {
+        name: c.name.clone(),
+        authors: c.authors.clone(),
+        version: c.version.clone(),
+        recipe: c.recipe.clone(),
+        source: ModSource::Index,
+        index_id: Some(&c.index_id),
+        keenwiki_url: c.keenwiki_url.as_deref(),
+        source_url: &c.url,
+        archive_name: c.url.rsplit('/').next().filter(|n| !n.is_empty()),
+    };
+    if let Some(mod_id) = find_by_index(db, &c.index_id)? {
+        return update(paths, db, &mod_id, &source, &analysis, &stored, c);
+    }
+
+    let game =
+        catalog::game(&c.game_id).ok_or_else(|| Error::NotFound(format!("game {}", c.game_id)))?;
+    let fitting: Vec<Install> = library::list(db)?
+        .into_iter()
+        .filter(|i| fits_curated(game, &c.requires, i))
+        .collect();
+    let target = match install_id {
+        Some(id) => fitting
+            .into_iter()
+            .find(|i| i.id == id)
+            .ok_or_else(|| Error::IncompatibleInstall(format!("{id} can't play {}", c.name)))?,
+        None => fitting
+            .into_iter()
+            .min_by_key(|i| fit_rank(game, &c.requires, i))
+            .ok_or_else(|| Error::MissingGame(needed_game(game, &c.requires)))?,
+    };
+    store(paths, db, &source, &analysis, &stored, &target)
+}
+
+/// The installed mod made from an index entry.
+pub fn find_by_index(db: &Db, index_id: &str) -> Result<Option<String>> {
+    Ok(db
+        .conn()
+        .query_row(
+            "SELECT id FROM mods WHERE index_id = ?1 ORDER BY added_at LIMIT 1",
+            [index_id],
+            |r| r.get(0),
+        )
+        .optional()?)
+}
+
+/// Whether a curated mod can be played on `install`. Like [`check_install`],
+/// unknown versions get the benefit of the doubt.
+pub fn fits_curated(game: &Game, requires: &[String], install: &Install) -> bool {
+    install.game_id == game.id
+        && (requires.is_empty()
+            || match &install.version_id {
+                None => true,
+                Some(v) => {
+                    requires.contains(v) || original(game, v).is_some_and(|o| requires.contains(o))
+                }
+            })
+}
+
+fn original<'a>(game: &'a Game, version_id: &str) -> Option<&'a String> {
+    game.versions
+        .iter()
+        .find(|v| v.id == version_id)
+        .and_then(|v| v.original.as_ref())
+}
+
+/// Lower is better: an original release, a third-party build of it, an
+/// unknown version.
+fn fit_rank(game: &Game, requires: &[String], install: &Install) -> u8 {
+    match &install.version_id {
+        Some(v) if original(game, v).is_some() => 1,
+        Some(v) if requires.is_empty() || requires.contains(v) => 0,
+        Some(_) => 1,
+        None => 2,
+    }
+}
+
+/// e.g. `Commander Keen 4: Secret of the Oracle (v1.4 EGA)`.
+fn needed_game(game: &Game, requires: &[String]) -> String {
+    let labels: Vec<&str> = game
+        .versions
+        .iter()
+        .filter(|v| requires.contains(&v.id))
+        .map(|v| v.label.as_str())
+        .collect();
+    if labels.is_empty() {
+        game.title.clone()
+    } else {
+        format!("{} ({})", game.title, labels.join(", "))
+    }
+}
+
+/// Copies the mod's files (and the archive) into `staging`.
+fn stage(
+    source: &Source,
+    analysis: &Analysis,
+    staging: &Path,
+    archive_name: Option<&str>,
+) -> Result<()> {
+    let _ = fs::remove_dir_all(staging);
+    fs::create_dir_all(staging.join("files"))?;
+    for rel in &analysis.files {
+        let inner = if analysis.root.is_empty() {
+            rel.as_str()
+        } else {
+            &rel[analysis.root.len() + 1..]
+        };
+        source.copy_to(rel, &staging.join("files").join(inner))?;
+    }
+    if let Source::Zip(zip) = source {
+        fs::create_dir_all(staging.join("source"))?;
+        let name = archive_name
+            .map(std::ffi::OsStr::new)
+            .unwrap_or_else(|| zip.file_name().expect("a file"));
+        fs::copy(zip, staging.join("source").join(name))?;
+    }
+    Ok(())
+}
+
+fn archive_sha256(source: &Source) -> Result<Option<String>> {
+    Ok(match source {
+        Source::Zip(zip) => Some(sha256_hex(&fs::read(zip)?)),
+        Source::Folder(_) => None,
+    })
+}
+
+/// Stores a new mod with its play profile on `target`.
+fn store(
+    paths: &AppPaths,
+    db: &Db,
+    source: &Source,
+    analysis: &Analysis,
+    s: &Stored,
+    target: &Install,
+) -> Result<Mod> {
+    let id = reserve_id(paths, &s.name)?;
     let mod_dir = paths.mods.join(&id);
     let profile_dir = paths.profiles.join(&id);
     let staging = paths.cache.join(format!("mod-{id}"));
 
     let result = (|| {
-        let _ = fs::remove_dir_all(&staging);
-        fs::create_dir_all(staging.join("files"))?;
-        for rel in &analysis.files {
-            let inner = if analysis.root.is_empty() {
-                rel.as_str()
-            } else {
-                &rel[analysis.root.len() + 1..]
-            };
-            source.copy_to(rel, &staging.join("files").join(inner))?;
-        }
-        if let Source::Zip(zip) = &source {
-            fs::create_dir_all(staging.join("source"))?;
-            fs::copy(
-                zip,
-                staging
-                    .join("source")
-                    .join(zip.file_name().expect("a file")),
-            )?;
-        }
+        stage(source, analysis, &staging, s.archive_name)?;
         fs::create_dir_all(profile_dir.join("state"))?;
         for entry in fs::read_dir(&staging)? {
             let entry = entry?;
@@ -522,35 +715,34 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
         let m = Mod {
             id: id.clone(),
             game_id: analysis.info.game_id.clone(),
-            name,
-            authors: analysis.info.authors.clone(),
-            version: analysis.info.version.clone(),
-            recipe: option.recipe.clone(),
-            source: ModSource::Manual,
+            name: s.name.clone(),
+            authors: s.authors.clone(),
+            version: s.version.clone(),
+            recipe: s.recipe.clone(),
+            source: s.source,
+            index_id: s.index_id.map(str::to_string),
             added_at: now(),
             profile_id: id.clone(),
-        };
-        let archive_sha256 = match &source {
-            Source::Zip(zip) => Some(sha256_hex(&fs::read(zip)?)),
-            Source::Folder(_) => None,
         };
         let mut conn = db.conn();
         let tx = conn.transaction()?;
         tx.execute(
-            "INSERT INTO mods (id, game_id, name, authors, version, recipe_json, path, source,
-                               source_url, archive_sha256, added_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            "INSERT INTO mods (id, game_id, index_id, keenwiki_url, name, authors, version,
+                               recipe_json, path, source, source_url, archive_sha256, added_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 m.id,
                 m.game_id,
+                s.index_id,
+                s.keenwiki_url,
                 m.name,
                 serde_json::to_string(&m.authors).expect("strings serialize"),
                 m.version,
                 serde_json::to_string(&m.recipe).expect("recipes serialize"),
                 mod_dir.display().to_string(),
                 m.source.as_str(),
-                req.path,
-                archive_sha256,
+                s.source_url,
+                archive_sha256(source)?,
                 m.added_at
             ],
         )?;
@@ -585,6 +777,84 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
         }
     }
     result
+}
+
+/// Replaces an installed index mod's files with a new download. Saves stay
+/// untouched; the composed layer is rebuilt on the next launch.
+fn update(
+    paths: &AppPaths,
+    db: &Db,
+    mod_id: &str,
+    source: &Source,
+    analysis: &Analysis,
+    s: &Stored,
+    c: &Curated,
+) -> Result<Mod> {
+    let install_id: String = db.conn().query_row(
+        "SELECT install_id FROM profiles WHERE mod_id = ?1",
+        [mod_id],
+        |r| r.get(0),
+    )?;
+    let game =
+        catalog::game(&c.game_id).ok_or_else(|| Error::NotFound(format!("game {}", c.game_id)))?;
+    let fits = library::list(db)?
+        .iter()
+        .any(|i| i.id == install_id && fits_curated(game, &c.requires, i));
+    if !fits {
+        return Err(Error::IncompatibleInstall(format!(
+            "the new version needs {}",
+            needed_game(game, &c.requires)
+        )));
+    }
+
+    let staging = paths.cache.join(format!("mod-{mod_id}-update"));
+    let mod_dir = paths.mods.join(mod_id);
+    let result: Result<()> = (|| {
+        stage(source, analysis, &staging, s.archive_name)?;
+        for part in ["files", "source"] {
+            let live = mod_dir.join(part);
+            let old = staging.join(format!("old-{part}"));
+            let new = staging.join(part);
+            if live.exists() {
+                fs::rename(&live, &old)?;
+            }
+            if new.exists()
+                && let Err(e) = fs::rename(&new, &live)
+            {
+                let _ = fs::rename(&old, &live);
+                return Err(e.into());
+            }
+        }
+        let mut conn = db.conn();
+        let tx = conn.transaction()?;
+        tx.execute(
+            "UPDATE mods SET authors = ?2, version = ?3, recipe_json = ?4, keenwiki_url = ?5,
+                             source_url = ?6, archive_sha256 = ?7
+             WHERE id = ?1",
+            params![
+                mod_id,
+                serde_json::to_string(&s.authors).expect("strings serialize"),
+                s.version,
+                serde_json::to_string(&s.recipe).expect("recipes serialize"),
+                s.keenwiki_url,
+                s.source_url,
+                archive_sha256(source)?
+            ],
+        )?;
+        tx.execute(
+            "UPDATE profiles SET composed_hash = NULL WHERE mod_id = ?1",
+            [mod_id],
+        )?;
+        tx.commit()?;
+        Ok(())
+    })();
+    let _ = fs::remove_dir_all(&staging);
+    result?;
+    tracing::info!("updated mod {mod_id} to {:?}", s.version);
+    list(db)?
+        .into_iter()
+        .find(|m| m.id == mod_id)
+        .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))
 }
 
 /// Whether the mod can be played on `install`. Installs of an unknown
@@ -654,7 +924,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
     let conn = db.conn();
     let mut stmt = conn.prepare(
         "SELECT m.id, m.game_id, m.name, m.authors, m.version, m.recipe_json, m.source,
-                m.added_at, p.id
+                m.added_at, p.id, m.index_id
          FROM mods m JOIN profiles p ON p.mod_id = m.id
          ORDER BY m.added_at, m.id",
     )?;
@@ -672,6 +942,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
             source: ModSource::parse(&source).expect("valid mod source"),
             added_at: r.get(7)?,
             profile_id: r.get(8)?,
+            index_id: r.get(9)?,
         })
     })?;
     Ok(rows.collect::<rusqlite::Result<_>>()?)
@@ -919,6 +1190,153 @@ mod tests {
         assert!(check_install("keen4", &cga, &i).is_err());
         i.version_id = None;
         check_install("keen4", &cga, &i).unwrap();
+    }
+
+    fn curated(recipe: Recipe) -> Curated {
+        Curated {
+            index_id: "aurora-bliss".into(),
+            game_id: "keen4".into(),
+            name: "Aurora Bliss".into(),
+            authors: vec!["Dave216".into()],
+            version: Some("1.2".into()),
+            recipe,
+            requires: vec!["keen4-1.4-ega".into()],
+            keenwiki_url: Some("https://keenwiki.shikadi.net/wiki/Aurora_Bliss".into()),
+            url: "https://example.com/m.dave216.aurora.zip".into(),
+        }
+    }
+
+    fn aurora_patch(args: &[&str]) -> Recipe {
+        Recipe::Patch {
+            patcher: "CK4PATCH.EXE".into(),
+            patch: "ABIATHAR.PAT".into(),
+            args: args.iter().map(|a| a.to_string()).collect(),
+        }
+    }
+
+    #[test]
+    fn curated_install_uses_the_index_recipe_and_updates_in_place() {
+        let (tmp, paths, db) = setup();
+        let zip = tmp.path().join("index-aurora-bliss.zip");
+        write_zip(&zip, AURORA);
+        let c = curated(aurora_patch(&["/nocheck"]));
+        let m = install_curated(&paths, &db, &zip, &c, None).unwrap();
+        assert_eq!(m.id, "aurora-bliss");
+        assert_eq!(m.recipe, c.recipe);
+        assert_eq!(m.source, ModSource::Index);
+        assert_eq!(m.index_id.as_deref(), Some("aurora-bliss"));
+        assert!(
+            paths
+                .mods
+                .join("aurora-bliss/source/m.dave216.aurora.zip")
+                .is_file()
+        );
+        let (url, wiki): (String, String) = db
+            .conn()
+            .query_row("SELECT source_url, keenwiki_url FROM mods", [], |r| {
+                Ok((r.get(0)?, r.get(1)?))
+            })
+            .unwrap();
+        assert_eq!(url, c.url);
+        assert!(wiki.ends_with("Aurora_Bliss"));
+
+        // A new version: same mod and profile, new files, saves kept.
+        let state = paths.profiles.join("aurora-bliss/state/SAVEGAM0.CK4");
+        fs::write(&state, b"save").unwrap();
+        let mut v2: Vec<(&str, &[u8])> = AURORA.to_vec();
+        v2[3] = ("Aurora/GAMEMAPS.CK4", b"better maps");
+        write_zip(&zip, &v2);
+        let c2 = Curated {
+            version: Some("1.3".into()),
+            ..c.clone()
+        };
+        let updated = install_curated(&paths, &db, &zip, &c2, None).unwrap();
+        assert_eq!(updated.id, "aurora-bliss");
+        assert_eq!(updated.version.as_deref(), Some("1.3"));
+        assert_eq!(list(&db).unwrap().len(), 1);
+        assert_eq!(
+            fs::read(paths.mods.join("aurora-bliss/files/GAMEMAPS.CK4")).unwrap(),
+            b"better maps"
+        );
+        assert_eq!(fs::read(&state).unwrap(), b"save");
+        let (sha, composed): (String, Option<String>) = db
+            .conn()
+            .query_row(
+                "SELECT m.archive_sha256, p.composed_hash FROM mods m JOIN profiles p ON p.mod_id = m.id",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(sha, sha256_hex(&fs::read(&zip).unwrap()));
+        assert_eq!(composed, None);
+        assert!(!paths.cache.join("mod-aurora-bliss-update").exists());
+    }
+
+    #[test]
+    fn curated_install_checks_the_download_and_the_library() {
+        let (tmp, paths, db) = setup();
+        let zip = tmp.path().join("index-x.zip");
+        write_zip(&zip, AURORA);
+        let missing = curated(Recipe::Batch {
+            file: "START.BAT".into(),
+        });
+        assert!(matches!(
+            install_curated(&paths, &db, &zip, &missing, None),
+            Err(Error::UnexpectedContent(_))
+        ));
+        let other_game = Curated {
+            game_id: "keen5".into(),
+            ..curated(aurora_patch(&[]))
+        };
+        assert!(matches!(
+            install_curated(&paths, &db, &zip, &other_game, None),
+            Err(Error::UnexpectedContent(_))
+        ));
+
+        let k5 = tmp.path().join("k5.zip");
+        write_zip(&k5, &[("GAMEMAPS.CK5", b""), ("LEVEL.CK5", b"")]);
+        let needs_k5 = Curated {
+            game_id: "keen5".into(),
+            requires: vec!["keen5-1.4-ega".into()],
+            ..curated(Recipe::Episode)
+        };
+        match install_curated(&paths, &db, &k5, &needs_k5, None) {
+            Err(Error::MissingGame(what)) => assert!(what.ends_with("(v1.4 EGA)"), "{what}"),
+            other => panic!("{other:?}"),
+        }
+        assert!(matches!(
+            install_curated(&paths, &db, &zip, &curated(aurora_patch(&[])), Some("nope")),
+            Err(Error::IncompatibleInstall(_))
+        ));
+        assert_eq!(fs::read_dir(&paths.mods).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn curated_versions_and_ranking() {
+        let k6 = catalog::game("keen6").unwrap();
+        let install = |v: Option<&str>| Install {
+            id: "i".into(),
+            game_id: "keen6".into(),
+            version_id: v.map(str::to_string),
+            label: String::new(),
+            source: library::InstallSource::Folder,
+            path: String::new(),
+            added_at: 0,
+        };
+        let v10 = vec!["keen6-1.0".to_string()];
+        let v14 = vec!["keen6-1.4-ega".to_string()];
+        assert!(fits_curated(k6, &v10, &install(Some("keen6-1.0-nocp"))));
+        assert!(!fits_curated(k6, &v14, &install(Some("keen6-1.0-nocp"))));
+        assert!(fits_curated(k6, &v14, &install(None)));
+        assert!(fits_curated(k6, &[], &install(Some("keen6-1.0"))));
+        assert!(!fits_curated(
+            catalog::game("keen4").unwrap(),
+            &[],
+            &install(None)
+        ));
+        let rank = |v| fit_rank(k6, &v10, &install(v));
+        assert!(rank(Some("keen6-1.0")) < rank(Some("keen6-1.0-nocp")));
+        assert!(rank(Some("keen6-1.0-nocp")) < rank(None));
     }
 
     #[test]

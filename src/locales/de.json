@@ -2,7 +2,8 @@
   "nav": {
     "label": "Hauptnavigation",
     "library": "Bibliothek",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "discover": "Entdecken"
   },
   "library": {
     "title": "Bibliothek",
@@ -76,7 +77,9 @@
     "invalidLocation": "BloogBase kann seine Daten dort nicht speichern ({{message}}).",
     "noModFound": "Dort wurde keine Commander-Keen-Mod gefunden.",
     "incompatibleInstall": "Die Mod passt nicht zu diesem Spiel ({{message}}).",
-    "generic": "Etwas ist schiefgelaufen: {{message}}"
+    "generic": "Etwas ist schiefgelaufen: {{message}}",
+    "missingGame": "Diese Mod braucht {{message}}. Füge es zuerst deiner Bibliothek hinzu.",
+    "badSignature": "Die Mod-Liste konnte nicht überprüft werden und wurde deshalb nicht verwendet."
   },
   "jobs": {
     "title": "Downloads",
@@ -147,6 +150,15 @@
       "running": "Die Downloads laufen im Hintergrund weiter. Deine Spiele erscheinen in der Bibliothek, sobald sie bereit sind.",
       "ready": "Alles ist bereit. Viel Spaß!",
       "open": "Zur Bibliothek"
+    },
+    "mods": {
+      "title": "Probier eine Mod aus",
+      "intro": "Fans haben viele neue Abenteuer für Commander Keen gebaut. Diese laufen mit deinen Spielen:",
+      "loading": "Mod-Liste wird geladen…",
+      "none": "Für deine Spiele gibt es gerade keine Vorschläge. Sobald du ein Spiel hast, findest du Mods unter „Entdecken“.",
+      "later": "Viele weitere findest du unter „Entdecken“.",
+      "install_one": "{{count}} Mod installieren",
+      "install_other": "{{count}} Mods installieren"
     }
   },
   "common": {
@@ -193,5 +205,46 @@
     "removeHint": "Die Dateien der Mod werden gelöscht. Das Spiel selbst bleibt in deiner Bibliothek.",
     "keepSaves_one": "Den Spielstand als Sicherung behalten",
     "keepSaves_other": "Die {{count}} Spielstände als Sicherung behalten"
+  },
+  "discover": {
+    "title": "Entdecken",
+    "find": "Mods finden",
+    "refresh": "Nach neuen Mods suchen",
+    "status_one": "{{count}} Mod · geprüft am {{date}}",
+    "status_other": "{{count}} Mods · geprüft am {{date}}",
+    "neverChecked": "Die Mod-Liste wurde noch nicht geladen.",
+    "hidden_one": "Aktualisiere BloogBase, um {{count}} weitere Mod zu sehen.",
+    "hidden_other": "Aktualisiere BloogBase, um {{count}} weitere Mods zu sehen.",
+    "offline": "Du siehst die Mod-Liste von deinem letzten Besuch. {{message}}",
+    "search": "Mods durchsuchen",
+    "game": "Spiel",
+    "allGames": "Alle Spiele",
+    "type": "Art",
+    "allKinds": "Alle Arten",
+    "sort": "Sortieren nach",
+    "sortBy": {
+      "featured": "Empfohlen",
+      "newest": "Neueste",
+      "name": "Name"
+    },
+    "playable": "Passt zu meinen Spielen",
+    "emptyTitle": "Noch keine Mods",
+    "empty": "Die Mod-Liste konnte nicht geladen werden. Prüfe deine Internetverbindung und versuche es noch einmal.",
+    "noMatch": "Keine Mods passen zu diesen Filtern.",
+    "kind": {
+      "episode": "Abenteuer",
+      "levelpack": "Level-Paket",
+      "conversion": "Etwas ganz Neues"
+    },
+    "featured": "Empfohlen",
+    "installed": "Installiert",
+    "updateBadge": "Update",
+    "homepage": "Website",
+    "playInLibrary": "In deiner Bibliothek spielen",
+    "update": "Aktualisieren",
+    "updateTo": "Auf Version {{version}} aktualisieren",
+    "needs": "Braucht {{game}}.",
+    "needs_version": "Braucht {{game}} ({{versions}}).",
+    "install": "Installieren ({{size}} MB)"
   }
 }

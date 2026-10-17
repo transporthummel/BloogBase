@@ -8,6 +8,7 @@ mod error;
 mod jobs;
 mod launcher;
 mod library;
+mod mod_index;
 mod mods;
 mod overlay_view;
 mod paths;
@@ -21,12 +22,14 @@ mod stores;
 
 use tauri::Manager;
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, log::LevelFilter};
+use tauri_specta::Event;
 use tauri_specta::{collect_commands, collect_events};
 
 use crate::commands::DataLocation;
 use crate::db::Db;
 use crate::jobs::Jobs;
 use crate::launcher::Running;
+use crate::mod_index::{IndexUpdated, ModIndex};
 use crate::paths::AppPaths;
 
 /// Where the generated TypeScript bindings for commands and events live.
@@ -45,6 +48,10 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::install_mod,
             commands::list_mods,
             commands::delete_mod,
+            commands::index_status,
+            commands::refresh_index,
+            commands::index_mods,
+            commands::install_index_mod,
             commands::runtime_status,
             commands::install_runtime,
             commands::set_custom_runtime,
@@ -61,7 +68,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         ])
         .events(collect_events![
             jobs::JobUpdated,
-            launcher::PlaySessionEnded
+            launcher::PlaySessionEnded,
+            mod_index::IndexUpdated
         ])
 }
 
@@ -113,10 +121,12 @@ pub fn run() {
                 config_dir: app.path().app_config_dir()?,
                 default_root: app.path().app_data_dir()?,
             };
-            let mut paths = AppPaths::new(paths::resolve_root(
-                &location.config_dir,
-                location.default_root.clone(),
-            ));
+            // `BLOOGBASE_DATA_DIR` keeps tests away from the real data.
+            let root = match std::env::var_os("BLOOGBASE_DATA_DIR") {
+                Some(dir) if !dir.is_empty() => std::path::PathBuf::from(dir),
+                _ => paths::resolve_root(&location.config_dir, location.default_root.clone()),
+            };
+            let mut paths = AppPaths::new(root);
             if let Err(err) = paths.ensure() {
                 // E.g. on a removed USB drive: better to start with the
                 // default folder than not at all. Logging isn't up yet.
@@ -136,11 +146,24 @@ pub fn run() {
             let db = Db::open(&paths.database)?;
             tracing::info!("database ready, schema version {}", db.schema_version()?);
 
+            let index = ModIndex::open(&paths, mod_index::configured_url());
+            tracing::info!("mod index source: {}", index.status().url);
+            app.manage(index);
             app.manage(paths);
             app.manage(db);
             app.manage(Running::default());
             app.manage(Jobs::default());
             app.manage(location);
+
+            // On start and every few hours (§10.2); usually a 304.
+            let handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                loop {
+                    let status = handle.state::<ModIndex>().refresh(false).await;
+                    let _ = IndexUpdated(status).emit(&handle);
+                    tokio::time::sleep(mod_index::REFRESH_EVERY).await;
+                }
+            });
             Ok(())
         })
         .run(tauri::generate_context!())
