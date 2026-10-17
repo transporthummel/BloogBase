@@ -36,6 +36,14 @@ export const commands = {
 	 *  once a free episode for it has finished downloading.
 	 */
 	installIndexMod: (indexId: string, installId: string | null) => __TAURI_INVOKE<Job>("install_index_mod", { indexId, installId }),
+	lookupKeenwiki: (url: string) => typedError<KeenwikiLookup, CommandError>(__TAURI_INVOKE("lookup_keenwiki", { url })),
+	/**
+	 *  Downloads one of a KeenWiki page's links and inspects it. `game_id` is
+	 *  the page's episode, used when the files don't tell.
+	 */
+	downloadKeenwikiMod: (url: string, gameId: string | null) => typedError<KeenwikiDownload, CommandError>(__TAURI_INVOKE("download_keenwiki_mod", { url, gameId })),
+	/**  A GitHub link suggesting a KeenWiki mod for the index, with a draft entry. */
+	indexSuggestionUrl: (modId: string) => typedError<string, CommandError>(__TAURI_INVOKE("index_suggestion_url", { modId })),
 	runtimeStatus: () => typedError<RuntimeStatus, CommandError>(__TAURI_INVOKE("runtime_status")),
 	/**  Starts downloading and installing the pinned DOSBox Staging build. */
 	installRuntime: () => __TAURI_INVOKE<Job>("install_runtime"),
@@ -97,7 +105,7 @@ export type Download = {
 export type Engine = "vorticons" | "galaxy" | "dreams";
 
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
-export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature";
+export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload";
 
 export type FoundGame = {
 	gameId: string,
@@ -220,6 +228,8 @@ export type InstallModRequest = {
 	recipe: Recipe,
 	/**  The install the mod is played on. */
 	installId: string,
+	/**  Set when the mod came from a KeenWiki page. */
+	keenwiki?: KeenwikiOrigin | null,
 };
 
 export type InstallSource = "folder" | "zip" | "download" | "steam" | "gog";
@@ -249,6 +259,33 @@ export type JobPhase = "downloading" | "installing" | "done" | "failed";
 /**  Sent whenever a job starts, makes progress or finishes. */
 export type JobUpdated = Job;
 
+/**  A downloaded KeenWiki mod, ready for `install_mod`. */
+export type KeenwikiDownload = {
+	path: string,
+	info: ModInfo,
+};
+
+/**
+ *  What a pasted KeenWiki link leads to: the curated index entry for that
+ *  page if there is one (§9.3 step 2), otherwise what the page says.
+ */
+export type KeenwikiLookup = {
+	pageUrl: string,
+	indexId: string | null,
+	page: WikiMod | null,
+};
+
+/**  Where a KeenWiki mod came from, and what its page says. */
+export type KeenwikiOrigin = {
+	pageUrl: string,
+	downloadUrl: string,
+	/**  The page's "Modded episode", for archives that don't tell. */
+	gameId: string | null,
+	/**  Replace the guessed ones when not empty. */
+	authors: string[],
+	version: string | null,
+};
+
 export type Links = {
 	keenwiki?: string | null,
 	pckf?: string | null,
@@ -265,6 +302,7 @@ export type Mod = {
 	source: ModSource,
 	/**  The index entry it was installed from. */
 	indexId: string | null,
+	keenwikiUrl: string | null,
 	/**  Unix epoch seconds. */
 	addedAt: number,
 	/**  The play profile created for the mod. */
@@ -368,6 +406,37 @@ export type StoreInstall = {
 	store: Store,
 	path: string,
 	games: FoundGame[],
+};
+
+export type WikiDownload = {
+	url: string,
+	/**  The link text, e.g. `newest` or `v.1.0`. */
+	label: string,
+	/**  Text after the link, e.g. `v.2.0` or `less buggy`. */
+	note: string | null,
+	/**  From the label or the note, e.g. `2.0`. */
+	version: string | null,
+};
+
+/**  What a KeenWiki mod page says about the mod. */
+export type WikiMod = {
+	pageUrl: string,
+	name: string,
+	/**  Catalog game id from "Modded episode". */
+	gameId: string | null,
+	authors: string[],
+	/**  e.g. `Complete`, `Beta`. */
+	status: string | null,
+	/**  As written on the page, usually `YYYY-MM-DD`. */
+	released: string | null,
+	updated: string | null,
+	levels: string | null,
+	/**  The first discussion thread, usually on PCKF. */
+	discussion: string | null,
+	description: string | null,
+	credits: string[],
+	/**  As listed; the first one is the newest. */
+	downloads: WikiDownload[],
 };
 
 /* Tauri Specta runtime */

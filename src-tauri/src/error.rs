@@ -53,6 +53,18 @@ pub enum Error {
     MissingGame(String),
     #[error("the mod index isn't signed correctly: {0}")]
     BadSignature(String),
+    #[error("not a KeenWiki page link: {0}")]
+    NotKeenWikiLink(String),
+    #[error("that KeenWiki page doesn't describe a mod")]
+    NotAModPage,
+    #[error("the download link is dead (HTTP {0})")]
+    DeadLink(u16),
+    #[error("bigger than {0} bytes")]
+    TooLarge(u64),
+    #[error("the link leads to a web page, not a download")]
+    WebPage,
+    #[error("unsupported download: {0}")]
+    UnsupportedDownload(String),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -82,6 +94,12 @@ impl Error {
             Error::IncompatibleInstall(_) => ErrorKind::IncompatibleInstall,
             Error::MissingGame(_) => ErrorKind::MissingGame,
             Error::BadSignature(_) => ErrorKind::BadSignature,
+            Error::NotKeenWikiLink(_) => ErrorKind::NotKeenWikiLink,
+            Error::NotAModPage => ErrorKind::NotAModPage,
+            Error::DeadLink(_) => ErrorKind::DeadLink,
+            Error::TooLarge(_) => ErrorKind::TooLarge,
+            Error::WebPage => ErrorKind::WebPage,
+            Error::UnsupportedDownload(_) => ErrorKind::UnsupportedDownload,
         }
     }
 }
@@ -109,6 +127,12 @@ pub enum ErrorKind {
     IncompatibleInstall,
     MissingGame,
     BadSignature,
+    NotKeenWikiLink,
+    NotAModPage,
+    DeadLink,
+    TooLarge,
+    WebPage,
+    UnsupportedDownload,
 }
 
 /// The error shape every command returns to the frontend.

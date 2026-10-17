@@ -91,6 +91,22 @@ pub struct InstallModRequest {
     pub recipe: Recipe,
     /// The install the mod is played on.
     pub install_id: String,
+    /// Set when the mod came from a KeenWiki page.
+    #[serde(default)]
+    pub keenwiki: Option<KeenwikiOrigin>,
+}
+
+/// Where a KeenWiki mod came from, and what its page says.
+#[derive(Debug, Clone, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct KeenwikiOrigin {
+    pub page_url: String,
+    pub download_url: String,
+    /// The page's "Modded episode", for archives that don't tell.
+    pub game_id: Option<String>,
+    /// Replace the guessed ones when not empty.
+    pub authors: Vec<String>,
+    pub version: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]
@@ -105,6 +121,7 @@ pub struct Mod {
     pub source: ModSource,
     /// The index entry it was installed from.
     pub index_id: Option<String>,
+    pub keenwiki_url: Option<String>,
     /// Unix epoch seconds.
     #[specta(type = u32)]
     pub added_at: i64,
@@ -121,11 +138,12 @@ struct Analysis {
     info: ModInfo,
 }
 
-pub fn inspect(path: &Path) -> Result<ModInfo> {
-    Ok(analyze(&Source::open(path)?, path)?.info)
+/// `game_hint` is used when neither the files nor the archive name tell.
+pub fn inspect(path: &Path, game_hint: Option<&str>) -> Result<ModInfo> {
+    Ok(analyze(&Source::open(path)?, path, game_hint)?.info)
 }
 
-fn analyze(source: &Source, path: &Path) -> Result<Analysis> {
+fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Analysis> {
     let files: Vec<String> = source
         .files()?
         .into_iter()
@@ -155,7 +173,7 @@ fn analyze(source: &Source, path: &Path) -> Result<Analysis> {
     };
 
     let meta = guess_metadata(path, &root);
-    let game = find_game(&names, &read, meta.episode).ok_or(Error::NoModFound)?;
+    let game = find_game(&names, &read, meta.episode.or(game_hint)).ok_or(Error::NoModFound)?;
 
     // Pristine game executables would hide the install's own version.
     let mut pristine = Vec::new();
@@ -488,7 +506,8 @@ struct Stored<'a> {
 pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod> {
     let path = Path::new(&req.path);
     let source = Source::open(path)?;
-    let analysis = analyze(&source, path)?;
+    let origin = req.keenwiki.as_ref();
+    let analysis = analyze(&source, path, origin.and_then(|o| o.game_id.as_deref()))?;
     let option = analysis
         .info
         .recipes
@@ -505,16 +524,33 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
         "" => analysis.info.name.clone(),
         n => n.to_string(),
     };
-    let stored = Stored {
-        name,
-        authors: analysis.info.authors.clone(),
-        version: analysis.info.version.clone(),
-        recipe: option.recipe.clone(),
-        source: ModSource::Manual,
-        index_id: None,
-        keenwiki_url: None,
-        source_url: &req.path,
-        archive_name: None,
+    let stored = match origin {
+        Some(o) => Stored {
+            name,
+            authors: if o.authors.is_empty() {
+                analysis.info.authors.clone()
+            } else {
+                o.authors.clone()
+            },
+            version: o.version.clone().or_else(|| analysis.info.version.clone()),
+            recipe: option.recipe.clone(),
+            source: ModSource::Keenwiki,
+            index_id: None,
+            keenwiki_url: Some(&o.page_url),
+            source_url: &o.download_url,
+            archive_name: None,
+        },
+        None => Stored {
+            name,
+            authors: analysis.info.authors.clone(),
+            version: analysis.info.version.clone(),
+            recipe: option.recipe.clone(),
+            source: ModSource::Manual,
+            index_id: None,
+            keenwiki_url: None,
+            source_url: &req.path,
+            archive_name: None,
+        },
     };
     store(paths, db, &source, &analysis, &stored, &target)
 }
@@ -545,7 +581,7 @@ pub fn install_curated(
     install_id: Option<&str>,
 ) -> Result<Mod> {
     let source = Source::open(archive)?;
-    let analysis = analyze(&source, archive)?;
+    let analysis = analyze(&source, archive, Some(&c.game_id))?;
     if analysis.info.game_id != c.game_id {
         return Err(Error::UnexpectedContent(format!(
             "the download looks like a mod for {}, not {}",
@@ -721,6 +757,7 @@ fn store(
             recipe: s.recipe.clone(),
             source: s.source,
             index_id: s.index_id.map(str::to_string),
+            keenwiki_url: s.keenwiki_url.map(str::to_string),
             added_at: now(),
             profile_id: id.clone(),
         };
@@ -924,7 +961,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
     let conn = db.conn();
     let mut stmt = conn.prepare(
         "SELECT m.id, m.game_id, m.name, m.authors, m.version, m.recipe_json, m.source,
-                m.added_at, p.id, m.index_id
+                m.added_at, p.id, m.index_id, m.keenwiki_url
          FROM mods m JOIN profiles p ON p.mod_id = m.id
          ORDER BY m.added_at, m.id",
     )?;
@@ -943,9 +980,92 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
             added_at: r.get(7)?,
             profile_id: r.get(8)?,
             index_id: r.get(9)?,
+            keenwiki_url: r.get(10)?,
         })
     })?;
     Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
+/// A link to a prefilled GitHub issue suggesting a KeenWiki mod for the
+/// index (§9.3), with a draft entry built from what was installed.
+pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
+    let m = list(db)?
+        .into_iter()
+        .find(|m| m.id == mod_id)
+        .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))?;
+    let (source_url, sha256, path): (Option<String>, Option<String>, String) =
+        db.conn().query_row(
+            "SELECT source_url, archive_sha256, path FROM mods WHERE id = ?1",
+            [mod_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )?;
+    let Mod {
+        name,
+        game_id,
+        authors,
+        version,
+        recipe,
+        keenwiki_url,
+        ..
+    } = m;
+    let size = fs::read_dir(Path::new(&path).join("source"))
+        .ok()
+        .and_then(|mut d| d.next())
+        .and_then(|e| e.ok()?.metadata().ok())
+        .map(|m| m.len());
+
+    // JSON scalars and arrays are valid YAML.
+    fn json(v: &impl Serialize) -> String {
+        serde_json::to_string(v).expect("plain values serialize")
+    }
+    let recipe = serde_json::to_value(&recipe).expect("recipes serialize");
+    let mut yaml = format!(
+        "id: {}\nname: {}\ngame: {game_id}\nrequires: []\nauthors: {}\n",
+        slug(&name),
+        json(&name),
+        json(&authors)
+    );
+    if let Some(v) = &version {
+        yaml += &format!("version: {}\n", json(v));
+    }
+    yaml += "type: episode  # episode | levelpack | conversion\nlinks:\n";
+    if let Some(url) = &keenwiki_url {
+        yaml += &format!("  keenwiki: {url}\n");
+    }
+    yaml += "downloads:\n";
+    yaml += &format!(
+        "  - url: {}\n    sha256: {}\n",
+        source_url.as_deref().unwrap_or(""),
+        sha256.as_deref().unwrap_or("")
+    );
+    if let Some(v) = &version {
+        yaml += &format!("    version: {}\n", json(v));
+    }
+    if let Some(size) = size {
+        yaml += &format!("    size: {size}\n");
+    }
+    yaml += "recipe:\n";
+    if let serde_json::Value::Object(fields) = &recipe {
+        for (key, value) in fields {
+            yaml += &format!("  {key}: {value}\n");
+        }
+    }
+
+    let body = format!(
+        "BloogBase installed this mod from KeenWiki and it could go into the index.\n\n\
+         Page: {}\n\nDraft entry (please check the recipe, `requires`, `type` and the dates):\n\n\
+         ```yaml\n{yaml}```\n",
+        keenwiki_url.as_deref().unwrap_or("-"),
+    );
+    let url = reqwest::Url::parse_with_params(
+        concat!(env!("CARGO_PKG_REPOSITORY"), "/issues/new"),
+        [
+            ("title", format!("Index suggestion: {name}")),
+            ("body", body),
+        ],
+    )
+    .expect("valid URL");
+    Ok(url.to_string())
 }
 
 /// Removes a mod with its profile. With `keep_saves`, what the game wrote is
@@ -1073,6 +1193,7 @@ mod tests {
             name: String::new(),
             recipe,
             install_id: "keen4-1".into(),
+            keenwiki: None,
         }
     }
 
@@ -1083,7 +1204,7 @@ mod tests {
             .path()
             .join("m.dave216.aurora_bliss_v.1.2.k4.2023-08-23.zip");
         write_zip(&zip, AURORA);
-        let info = inspect(&zip).unwrap();
+        let info = inspect(&zip, None).unwrap();
         assert_eq!(info.name, "Aurora Bliss");
         assert_eq!(info.authors, ["dave216"]);
         assert_eq!(info.version.as_deref(), Some("1.2"));
@@ -1111,7 +1232,7 @@ mod tests {
         let (tmp, paths, db) = setup();
         let zip = tmp.path().join("aurora.zip");
         write_zip(&zip, AURORA);
-        let info = inspect(&zip).unwrap();
+        let info = inspect(&zip, None).unwrap();
         assert_eq!(info.name, "Aurora");
 
         // The fake Keen 4 has an unknown version, which is allowed.
@@ -1157,11 +1278,72 @@ mod tests {
     }
 
     #[test]
+    fn keenwiki_install_keeps_the_page_and_can_be_suggested() {
+        let (tmp, paths, db) = setup();
+        let zip = tmp.path().join("aurora.zip");
+        // A patch without `%ext` and no patcher: nothing names the episode.
+        write_zip(
+            &zip,
+            &[(
+                "Aurora/MOD.PAT",
+                b"%version 1.4
+",
+            )],
+        );
+        assert!(matches!(inspect(&zip, None), Err(Error::NoModFound)));
+        let info = inspect(&zip, Some("keen4")).unwrap();
+        assert_eq!(info.game_id, "keen4");
+
+        let page = "https://keenwiki.shikadi.net/wiki/Aurora_Bliss";
+        let download = "https://files.shikadi.net/keenwiki/mods/Keen4/aurora.zip";
+        let mut req = request(&zip, info.recipes[0].recipe.clone());
+        req.name = "Aurora Bliss".into();
+        req.keenwiki = Some(KeenwikiOrigin {
+            page_url: page.into(),
+            download_url: download.into(),
+            game_id: Some("keen4".into()),
+            authors: vec!["Dave216".into()],
+            version: Some("1.2".into()),
+        });
+        let m = install(&paths, &db, &req).unwrap();
+        assert_eq!(m.source, ModSource::Keenwiki);
+        assert_eq!(m.authors, ["Dave216"]);
+        assert_eq!(m.version.as_deref(), Some("1.2"));
+        assert_eq!(m.keenwiki_url.as_deref(), Some(page));
+        assert_eq!(list(&db).unwrap()[0].keenwiki_url.as_deref(), Some(page));
+
+        let url = reqwest::Url::parse(&index_suggestion(&db, &m.id).unwrap()).unwrap();
+        assert_eq!(
+            url.as_str().split('?').next(),
+            Some("https://github.com/transporthummel/BloogBase/issues/new")
+        );
+        let query: BTreeMap<_, _> = url.query_pairs().collect();
+        assert_eq!(query["title"], "Index suggestion: Aurora Bliss");
+        let body = &query["body"];
+        let sha = sha256_hex(&fs::read(&zip).unwrap());
+        for line in [
+            "id: aurora-bliss\n",
+            "name: \"Aurora Bliss\"\n",
+            "game: keen4\n",
+            "authors: [\"Dave216\"]\n",
+            &format!("  keenwiki: {page}\n"),
+            &format!("  - url: {download}\n    sha256: {sha}\n    version: \"1.2\"\n"),
+            "recipe:\n  type: \"episode\"\n",
+        ] {
+            assert!(body.contains(line), "{line} missing in\n{body}");
+        }
+        assert!(matches!(
+            index_suggestion(&db, "nope"),
+            Err(Error::NotFound(_))
+        ));
+    }
+
+    #[test]
     fn refuses_other_games_and_versions() {
         let (tmp, paths, db) = setup();
         let src = tmp.path().join("k5mod");
         write_folder(&src, &[("LEVEL.CK5", b""), ("GAMEMAPS.CK5", b"")]);
-        let info = inspect(&src).unwrap();
+        let info = inspect(&src, None).unwrap();
         assert_eq!(info.game_id, "keen5");
         let err = install(&paths, &db, &request(&src, Recipe::Episode)).unwrap_err();
         assert!(matches!(err, Error::IncompatibleInstall(_)));
@@ -1354,7 +1536,7 @@ mod tests {
     fn nothing_moddy() {
         let tmp = tempfile::tempdir().unwrap();
         write_folder(tmp.path(), &[("README.TXT", b"")]);
-        assert!(matches!(inspect(tmp.path()), Err(Error::NoModFound)));
+        assert!(matches!(inspect(tmp.path(), None), Err(Error::NoModFound)));
     }
 
     #[test]
@@ -1368,7 +1550,7 @@ mod tests {
                 ("KDRPATCH.EXE", b""),
             ],
         );
-        let a = analyze(&Source::open(tmp.path()).unwrap(), tmp.path()).unwrap();
+        let a = analyze(&Source::open(tmp.path()).unwrap(), tmp.path(), None).unwrap();
         assert!(a.files.contains(&"KDREAMS.EXE".to_string()));
         assert_eq!(a.info.game_id, "kdreams");
     }
@@ -1560,7 +1742,7 @@ mod corpus {
                 failures.push(format!("{}: cached file has sha256 {hash}", path.display()));
                 continue;
             }
-            let actual = match inspect(&path) {
+            let actual = match inspect(&path, None) {
                 Ok(info) => Expected::from(&info),
                 Err(e) => {
                     failures.push(format!("{}: {e}", entry.url));

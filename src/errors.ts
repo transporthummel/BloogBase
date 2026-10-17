@@ -19,6 +19,12 @@ const translated: ErrorKind[] = [
   "incompatibleInstall",
   "missingGame",
   "badSignature",
+  "notKeenWikiLink",
+  "notAModPage",
+  "deadLink",
+  "tooLarge",
+  "webPage",
+  "unsupportedDownload",
 ];
 
 export function errorMessage(t: TFunction, err: unknown): string {

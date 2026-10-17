@@ -6,6 +6,7 @@ mod detect;
 mod downloads;
 mod error;
 mod jobs;
+mod keenwiki;
 mod launcher;
 mod library;
 mod mod_index;
@@ -52,6 +53,9 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::refresh_index,
             commands::index_mods,
             commands::install_index_mod,
+            commands::lookup_keenwiki,
+            commands::download_keenwiki_mod,
+            commands::index_suggestion_url,
             commands::runtime_status,
             commands::install_runtime,
             commands::set_custom_runtime,

@@ -12,6 +12,12 @@ cd src-tauri && cargo test
 
 They use small synthetic fixtures and need nothing else.
 
+The KeenWiki parser (`src-tauri/src/keenwiki.rs`) is tested against saved
+pages in `src-tauri/tests/keenwiki/` (fetched 2026-10-17: several mod pages, a
+game page and a missing page). When the wiki markup changes, save the page
+again with an honest `User-Agent` (one request per page) and update the
+expectations.
+
 ## 2. Mod corpus (CI weekly, or locally)
 
 `src-tauri/tests/mod-corpus.json` lists real mods: their download URL on the

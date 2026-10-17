@@ -11,6 +11,7 @@ import { formatDate, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { AddModDialog } from "../mods/AddModDialog";
+import { SuggestToIndex } from "../mods/KeenwikiImport";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
 import { Cover } from "./Cover";
 import { installsKey, profilesKey } from "./queries";
@@ -156,7 +157,17 @@ export function Library() {
         {importGames.isSuccess && (
           <Notice>{t("library.imported", { count: importGames.data.length })}</Notice>
         )}
-        {installedMod && <Notice>{t("mods.installed", { name: installedMod.name })}</Notice>}
+        {installedMod && (
+          <Notice>
+            {t("mods.installed", { name: installedMod.name })}
+            {installedMod.source === "keenwiki" && (
+              <>
+                {" "}
+                <SuggestToIndex modId={installedMod.id} />
+              </>
+            )}
+          </Notice>
+        )}
         {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
       </div>
 

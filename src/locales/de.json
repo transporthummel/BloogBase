@@ -79,7 +79,13 @@
     "incompatibleInstall": "Die Mod passt nicht zu diesem Spiel ({{message}}).",
     "generic": "Etwas ist schiefgelaufen: {{message}}",
     "missingGame": "Diese Mod braucht {{message}}. Füge es zuerst deiner Bibliothek hinzu.",
-    "badSignature": "Die Mod-Liste konnte nicht überprüft werden und wurde deshalb nicht verwendet."
+    "badSignature": "Die Mod-Liste konnte nicht überprüft werden und wurde deshalb nicht verwendet.",
+    "notKeenWikiLink": "Bitte füge einen Link zu einer Mod-Seite auf keenwiki.shikadi.net ein, z. B. https://keenwiki.shikadi.net/wiki/The_Alphamatic.",
+    "notAModPage": "Diese KeenWiki-Seite beschreibt keine Mod.",
+    "deadLink": "Dieser Download-Link funktioniert nicht mehr. Vielleicht nennt die Seite einen anderen, oder die Mod ist umgezogen.",
+    "tooLarge": "Der Download ist viel zu groß für eine Commander-Keen-Mod und wurde abgebrochen.",
+    "webPage": "Der Link führt zu einer Webseite statt zu einer Datei. Öffne ihn im Browser, lade die Mod dort herunter und füge sie als ZIP-Datei oder Ordner hinzu.",
+    "unsupportedDownload": "BloogBase kann diesen Download noch nicht öffnen ({{message}}). Lade ihn im Browser herunter, entpacke ihn und füge den Ordner hinzu."
   },
   "jobs": {
     "title": "Downloads",
@@ -167,7 +173,7 @@
   "mods": {
     "add": "Mod hinzufügen",
     "addTitle": "Mod hinzufügen",
-    "addHint": "Wähle eine Mod so, wie du sie heruntergeladen hast: als ZIP-Datei oder entpackten Ordner. BloogBase findet heraus, zu welchem Spiel sie gehört und wie sie startet.",
+    "addHint": "Oder wähle eine Mod, die du selbst heruntergeladen hast: als ZIP-Datei oder entpackten Ordner. BloogBase findet heraus, zu welchem Spiel sie gehört und wie sie startet.",
     "chooseZip": "ZIP-Datei wählen…",
     "chooseFolder": "Ordner wählen…",
     "inspecting": "Mod wird untersucht…",
@@ -246,5 +252,23 @@
     "needs": "Braucht {{game}}.",
     "needs_version": "Braucht {{game}} ({{versions}}).",
     "install": "Installieren ({{size}} MB)"
+  },
+  "keenwiki": {
+    "label": "KeenWiki-Link",
+    "lookUp": "Nachsehen",
+    "looking": "Die KeenWiki-Seite wird gelesen …",
+    "inIndex": "Diese Mod steht in der BloogBase-Modliste, ist getestet und bereit zur Installation:",
+    "authors": "Autor(en)",
+    "status": "Status",
+    "released": "Erschienen",
+    "updated": "Letztes Update",
+    "levels": "Level",
+    "discussion": "Diskussion",
+    "download": "Download",
+    "noDownload": "Diese Seite hat keinen Download-Link. Lade die Mod im Browser herunter und füge sie als ZIP-Datei oder Ordner hinzu.",
+    "downloading": "Die Mod wird heruntergeladen und geprüft …",
+    "fetch": "Herunterladen und prüfen",
+    "otherGame": "Laut KeenWiki ist diese Mod für {{page}}, ihre Dateien sehen aber nach {{files}} aus.",
+    "suggest": "Für die Modliste vorschlagen"
   }
 }

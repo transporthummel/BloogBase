@@ -367,7 +367,7 @@ mod tests {
                 ("gamemaps.ck4", b"new"),
             ],
         );
-        let info = crate::mods::inspect(&src).unwrap();
+        let info = crate::mods::inspect(&src, None).unwrap();
         let m = crate::mods::install(
             &paths,
             &db,
@@ -376,6 +376,7 @@ mod tests {
                 name: "My Mod".into(),
                 recipe: info.recipes[0].recipe.clone(),
                 install_id: "keen4-1".into(),
+                keenwiki: None,
             },
         )
         .unwrap();
@@ -560,7 +561,7 @@ $bmp.Save($env:SHOT_PATH)
 
         for zip in sorted_entries(&local.join("mods")) {
             let name = zip.file_stem().unwrap().to_string_lossy().into_owned();
-            let info = match mods::inspect(&zip) {
+            let info = match mods::inspect(&zip, None) {
                 Ok(i) => i,
                 Err(e) => {
                     eprintln!("{name}: inspect failed: {e}");
@@ -574,6 +575,7 @@ $bmp.Save($env:SHOT_PATH)
                     name: String::new(),
                     recipe: info.recipes[0].recipe.clone(),
                     install_id: install.id.clone(),
+                    keenwiki: None,
                 };
                 let m = match mods::install(&paths, &db, &request) {
                     Ok(m) => m,

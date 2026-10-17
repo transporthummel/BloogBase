@@ -1,0 +1,771 @@
+//! KeenWiki link import (PLAN.md §9.3): reads a single mod page and finds
+//! what to download.
+//!
+//! Politeness rules: only on the user's request, one page per request,
+//! cached for a day, honest `User-Agent`, and only the normal `/wiki/` HTML
+//! (robots.txt disallows `/w/index.php?`). The parser only looks at the mod
+//! infobox, the first paragraph and the "Credits" section; it's covered by
+//! saved pages in `tests/keenwiki/` because wiki markup can change.
+
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
+
+use reqwest::Url;
+use scraper::{ElementRef, Html, Node, Selector};
+use serde::{Deserialize, Serialize};
+use specta::Type;
+
+use crate::detect::sha256_hex;
+use crate::downloads::{self, USER_AGENT};
+use crate::error::{Error, Result};
+
+pub const HOST: &str = "keenwiki.shikadi.net";
+
+/// A page is fetched again at most once a day.
+const CACHE_FOR: Duration = Duration::from_secs(24 * 60 * 60);
+
+/// Mod pages are ~50 KB.
+const MAX_PAGE: usize = 4 * 1024 * 1024;
+
+/// Far more than any Keen mod.
+const MAX_DOWNLOAD: u64 = 256 * 1024 * 1024;
+
+/// Namespaces that never hold mod pages.
+const NAMESPACES: &[&str] = &[
+    "special",
+    "file",
+    "image",
+    "media",
+    "user",
+    "category",
+    "template",
+    "help",
+    "talk",
+    "mediawiki",
+    "property",
+    "module",
+    "keenwiki",
+];
+
+/// What a KeenWiki mod page says about the mod.
+#[derive(Debug, Clone, PartialEq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct WikiMod {
+    pub page_url: String,
+    pub name: String,
+    /// Catalog game id from "Modded episode".
+    pub game_id: Option<String>,
+    pub authors: Vec<String>,
+    /// e.g. `Complete`, `Beta`.
+    pub status: Option<String>,
+    /// As written on the page, usually `YYYY-MM-DD`.
+    pub released: Option<String>,
+    pub updated: Option<String>,
+    pub levels: Option<String>,
+    /// The first discussion thread, usually on PCKF.
+    pub discussion: Option<String>,
+    pub description: Option<String>,
+    pub credits: Vec<String>,
+    /// As listed; the first one is the newest.
+    pub downloads: Vec<WikiDownload>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct WikiDownload {
+    pub url: String,
+    /// The link text, e.g. `newest` or `v.1.0`.
+    pub label: String,
+    /// Text after the link, e.g. `v.2.0` or `less buggy`.
+    pub note: Option<String>,
+    /// From the label or the note, e.g. `2.0`.
+    pub version: Option<String>,
+}
+
+/// The canonical page URL for a pasted link, e.g.
+/// `keenwiki.shikadi.net/wiki/the_Alphamatic#Credits` →
+/// `https://keenwiki.shikadi.net/wiki/The_Alphamatic`.
+pub fn page_url(input: &str) -> Result<String> {
+    let input = input.trim();
+    let bad = || Error::NotKeenWikiLink(input.to_string());
+    let with_scheme = if input.contains("://") {
+        input.to_string()
+    } else {
+        format!("https://{input}")
+    };
+    let url = Url::parse(&with_scheme).map_err(|_| bad())?;
+    let host = url.host_str().unwrap_or("").to_ascii_lowercase();
+    if !matches!(url.scheme(), "http" | "https") || host != HOST {
+        return Err(bad());
+    }
+    let title = url
+        .path()
+        .strip_prefix("/wiki/")
+        .ok_or_else(bad)?
+        .replace("%20", "_");
+    let title = title.trim_matches('_');
+    let namespace = title.split_once(':').or_else(|| title.split_once("%3A"));
+    if title.is_empty()
+        || namespace.is_some_and(|(ns, _)| {
+            let ns = ns.to_ascii_lowercase();
+            NAMESPACES.contains(&ns.as_str()) || ns.ends_with("_talk")
+        })
+    {
+        return Err(bad());
+    }
+    // MediaWiki titles start with a capital letter.
+    let mut chars = title.chars();
+    let first = chars.next().expect("not empty").to_uppercase();
+    Ok(format!("https://{HOST}/wiki/{first}{}", chars.as_str()))
+}
+
+/// Whether two links point at the same page.
+pub fn same_page(a: &str, b: &str) -> bool {
+    matches!((page_url(a), page_url(b)), (Ok(a), Ok(b)) if a == b)
+}
+
+/// The page's HTML, from the cache when it's fresh.
+pub async fn fetch(cache_dir: &Path, page_url: &str) -> Result<String> {
+    let file = cache_dir.join(format!("{}.html", &sha256_hex(page_url.as_bytes())[..16]));
+    let fresh = fs::metadata(&file)
+        .and_then(|m| m.modified())
+        .ok()
+        .and_then(|t| t.elapsed().ok())
+        .is_some_and(|age| age < CACHE_FOR);
+    if fresh && let Ok(html) = fs::read_to_string(&file) {
+        return Ok(html);
+    }
+
+    tracing::info!("fetching {page_url}");
+    let client = reqwest::Client::builder().user_agent(USER_AGENT).build()?;
+    let resp = client.get(page_url).send().await?;
+    // MediaWiki answers pages that don't exist with 404.
+    if resp.status().as_u16() == 404 {
+        return Err(Error::NotAModPage);
+    }
+    if !resp.status().is_success() {
+        return Err(Error::HttpStatus(resp.status().as_u16()));
+    }
+    let body = resp.bytes().await?;
+    if body.len() > MAX_PAGE {
+        return Err(Error::TooLarge(MAX_PAGE as u64));
+    }
+    let html = String::from_utf8_lossy(&body).into_owned();
+    fs::create_dir_all(cache_dir)?;
+    fs::write(&file, &html)?;
+    Ok(html)
+}
+
+fn selector(s: &str) -> Selector {
+    Selector::parse(s).expect("valid selector")
+}
+
+/// Text with collapsed whitespace.
+fn text(el: ElementRef) -> String {
+    el.text()
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn non_empty(s: String) -> Option<String> {
+    (!s.is_empty()).then_some(s)
+}
+
+pub fn parse(html: &str, page_url: &str) -> Result<WikiMod> {
+    let doc = Html::parse_document(html);
+    let infobox = doc
+        .select(&selector(".infobox"))
+        .next()
+        .ok_or(Error::NotAModPage)?;
+    let rows: Vec<(String, ElementRef)> = infobox
+        .select(&selector("tr"))
+        .filter_map(|tr| {
+            let th = tr.select(&selector("th")).next()?;
+            let td = tr.select(&selector("td")).next()?;
+            Some((text(th), td))
+        })
+        .collect();
+    let row = |label: &str| {
+        rows.iter()
+            .find(|(l, _)| l.eq_ignore_ascii_case(label))
+            .map(|(_, td)| *td)
+    };
+    let row_text = |label: &str| row(label).map(text).and_then(non_empty);
+    // Game pages have an infobox too, without this row.
+    let episode = row("Modded episode").ok_or(Error::NotAModPage)?;
+
+    let name = infobox
+        .select(&selector("[itemprop=name]"))
+        .next()
+        .or_else(|| doc.select(&selector("#firstHeading")).next())
+        .map(text)
+        .and_then(non_empty)
+        .unwrap_or_else(|| {
+            page_url
+                .rsplit('/')
+                .next()
+                .unwrap_or("Mod")
+                .replace('_', " ")
+        });
+    let authors = row_text("Author(s)")
+        .map(|t| split_names(&t))
+        .unwrap_or_default();
+    let discussion = row("Discussion(s)").and_then(|td| {
+        td.select(&selector("a[href]"))
+            .filter_map(|a| a.value().attr("href"))
+            .find(|h| h.starts_with("http"))
+            .map(str::to_string)
+    });
+    let base = Url::parse(page_url).ok();
+    let mut downloads = row("Download")
+        .map(|td| parse_downloads(td, base.as_ref()))
+        .unwrap_or_default();
+    if downloads.is_empty()
+        && let Some(url) = infobox
+            .select(&selector("meta[itemprop=downloadUrl]"))
+            .find_map(|m| m.value().attr("content"))
+    {
+        downloads.push(WikiDownload {
+            url: url.replace("&#58;", ":"),
+            label: "newest".into(),
+            note: None,
+            version: None,
+        });
+    }
+
+    Ok(WikiMod {
+        page_url: page_url.to_string(),
+        name,
+        game_id: game_of(&text(episode)).map(str::to_string),
+        authors,
+        status: row_text("Status"),
+        released: row_text("Release date"),
+        updated: row_text("Latest update"),
+        levels: row_text("Number of levels"),
+        discussion,
+        description: doc
+            .select(&selector(".mw-parser-output > p"))
+            .map(text)
+            .find(|t| !t.is_empty()),
+        credits: credits(&doc),
+        downloads,
+    })
+}
+
+/// `Keen 5` → `keen5`, `Keen Dreams` → `kdreams`.
+fn game_of(episode: &str) -> Option<&'static str> {
+    let e = episode.to_ascii_lowercase();
+    if e.contains("dreams") {
+        return Some("kdreams");
+    }
+    let digit = e.split("keen").nth(1)?.trim().chars().next()?;
+    Some(match digit {
+        '1' => "keen1",
+        '2' => "keen2",
+        '3' => "keen3",
+        '4' => "keen4",
+        '5' => "keen5",
+        '6' => "keen6",
+        _ => return None,
+    })
+}
+
+fn split_names(s: &str) -> Vec<String> {
+    s.replace(" & ", ",")
+        .replace(" and ", ",")
+        .split(',')
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
+/// Links in the "Download" cell, one per line: `<a>label</a> note<br>`.
+fn parse_downloads(td: ElementRef, base: Option<&Url>) -> Vec<WikiDownload> {
+    let mut out: Vec<WikiDownload> = Vec::new();
+    let mut note = String::new();
+    let finish = |out: &mut Vec<WikiDownload>, note: &mut String| {
+        if let Some(d) = out.last_mut()
+            && d.note.is_none()
+        {
+            let n = note.split_whitespace().collect::<Vec<_>>().join(" ");
+            let n = n
+                .strip_prefix('(')
+                .and_then(|n| n.strip_suffix(')'))
+                .unwrap_or(&n);
+            d.note = non_empty(n.to_string());
+            d.version = version_in(&d.label).or_else(|| d.note.as_deref().and_then(version_in));
+        }
+        note.clear();
+    };
+    for node in td.children() {
+        match node.value() {
+            Node::Element(e) if e.name() == "a" => {
+                finish(&mut out, &mut note);
+                let href = e.attr("href").unwrap_or("");
+                let url = match base {
+                    Some(b) => b.join(href).ok(),
+                    None => Url::parse(href).ok(),
+                };
+                if let Some(url) = url.filter(|u| matches!(u.scheme(), "http" | "https"))
+                    && !out.iter().any(|d| d.url == url.as_str())
+                {
+                    out.push(WikiDownload {
+                        url: url.to_string(),
+                        label: text(ElementRef::wrap(node).expect("an element")),
+                        note: None,
+                        version: None,
+                    });
+                }
+            }
+            Node::Element(e) if e.name() == "br" => finish(&mut out, &mut note),
+            Node::Text(t) => note.push_str(t),
+            _ => {}
+        }
+    }
+    finish(&mut out, &mut note);
+    out
+}
+
+/// `v.1.2`, `v1.2`, `version 1.2` → `1.2`.
+fn version_in(s: &str) -> Option<String> {
+    let lower = s.to_ascii_lowercase();
+    lower.match_indices('v').find_map(|(i, _)| {
+        let before = lower[..i].chars().next_back();
+        if before.is_some_and(|c| c.is_ascii_alphanumeric()) {
+            return None;
+        }
+        let rest = &lower[i + 1..];
+        let rest = rest.strip_prefix("ersion").unwrap_or(rest);
+        let rest = rest.trim_start_matches(['.', ' ']);
+        let v: String = rest
+            .chars()
+            .take_while(|c| c.is_ascii_digit() || *c == '.')
+            .collect();
+        let v = v.trim_end_matches('.');
+        (v.starts_with(|c: char| c.is_ascii_digit())).then(|| v.to_string())
+    })
+}
+
+/// The list items of the "Credits" section.
+fn credits(doc: &Html) -> Vec<String> {
+    let Some(heading) = doc
+        .select(&selector(".mw-parser-output > h2"))
+        .find(|h| h.select(&selector("#Credits")).next().is_some())
+    else {
+        return Vec::new();
+    };
+    heading
+        .next_siblings()
+        .filter_map(ElementRef::wrap)
+        .take_while(|e| e.value().name() != "h2")
+        .flat_map(|e| e.select(&selector("li")).map(text).collect::<Vec<_>>())
+        .filter(|t| !t.is_empty())
+        .collect()
+}
+
+/// Downloads a mod archive into the empty folder `dir`. The file keeps its
+/// name (KeenWiki archive names carry metadata) and gets a `.zip` extension
+/// if it is one.
+pub async fn download(dir: &Path, url: &str) -> Result<PathBuf> {
+    let parsed = Url::parse(url).map_err(|_| Error::UnsupportedDownload(url.into()))?;
+    if !matches!(parsed.scheme(), "http" | "https") {
+        return Err(Error::UnsupportedDownload(url.into()));
+    }
+    let _ = fs::remove_dir_all(dir);
+    fs::create_dir_all(dir)?;
+    let raw = dir.join("download");
+    let fetched = downloads::fetch_unverified(url, MAX_DOWNLOAD, &raw).await?;
+
+    let mut head = [0u8; 512];
+    let n = {
+        use std::io::Read;
+        fs::File::open(&raw)?.read(&mut head)?
+    };
+    match sniff(&head[..n]) {
+        Kind::Zip => {}
+        other => {
+            let _ = fs::remove_file(&raw);
+            return Err(match other {
+                Kind::WebPage => Error::WebPage,
+                Kind::Rar => Error::UnsupportedDownload("RAR archive".into()),
+                Kind::SevenZip => Error::UnsupportedDownload("7z archive".into()),
+                Kind::Exe => Error::UnsupportedDownload("EXE file".into()),
+                Kind::Zip | Kind::Other => Error::UnsupportedDownload("unknown file type".into()),
+            });
+        }
+    }
+
+    let name = fetched.file_name.unwrap_or_else(|| {
+        Url::parse(&fetched.final_url)
+            .ok()
+            .and_then(|u| u.path_segments()?.next_back().map(str::to_string))
+            .unwrap_or_default()
+    });
+    let name: String = name
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || "._-".contains(c) {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let name = name.trim_matches(['.', '_']).to_string();
+    let mut name = if name.is_empty() {
+        "mod".to_string()
+    } else {
+        name
+    };
+    if !name.to_ascii_lowercase().ends_with(".zip") {
+        name.push_str(".zip");
+    }
+    let path = dir.join(name);
+    fs::rename(&raw, &path)?;
+    tracing::info!(
+        "downloaded {url} ({} bytes, sha256 {})",
+        fetched.size,
+        fetched.sha256
+    );
+    Ok(path)
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum Kind {
+    Zip,
+    Rar,
+    SevenZip,
+    Exe,
+    WebPage,
+    Other,
+}
+
+fn sniff(head: &[u8]) -> Kind {
+    let trimmed = head.trim_ascii_start();
+    if head.starts_with(b"PK\x03\x04") || head.starts_with(b"PK\x05\x06") {
+        Kind::Zip
+    } else if head.starts_with(b"Rar!") {
+        Kind::Rar
+    } else if head.starts_with(b"7z\xBC\xAF\x27\x1C") {
+        Kind::SevenZip
+    } else if head.starts_with(b"MZ") {
+        Kind::Exe
+    } else if trimmed.starts_with(b"<") {
+        Kind::WebPage
+    } else {
+        Kind::Other
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::{BufRead, BufReader, Write};
+    use std::net::TcpListener;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use super::*;
+
+    fn fixture(name: &str) -> WikiMod {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/keenwiki")
+            .join(format!("{name}.html"));
+        let html = fs::read_to_string(path).unwrap();
+        parse(&html, &format!("https://{HOST}/wiki/{name}")).unwrap()
+    }
+
+    #[test]
+    fn page_urls_are_canonical() {
+        let ok = "https://keenwiki.shikadi.net/wiki/The_Alphamatic";
+        for input in [
+            ok,
+            "  http://keenwiki.shikadi.net/wiki/The_Alphamatic#Credits ",
+            "keenwiki.shikadi.net/wiki/the_Alphamatic",
+            "https://KeenWiki.Shikadi.net/wiki/The%20Alphamatic?foo=1",
+        ] {
+            assert_eq!(page_url(input).unwrap(), ok, "{input}");
+        }
+        assert!(same_page(ok, "keenwiki.shikadi.net/wiki/the_Alphamatic"));
+        assert!(!same_page(ok, "https://keenwiki.shikadi.net/wiki/Keenball"));
+    }
+
+    #[test]
+    fn other_links_are_refused() {
+        for input in [
+            "",
+            "https://example.com/wiki/The_Alphamatic",
+            "https://keenwiki.shikadi.net.evil.com/wiki/X",
+            "https://keenwiki.shikadi.net/w/index.php?title=The_Alphamatic&action=raw",
+            "https://keenwiki.shikadi.net/wiki/",
+            "https://keenwiki.shikadi.net/wiki/Special:Random",
+            "https://keenwiki.shikadi.net/wiki/User:Gridlock",
+            "https://keenwiki.shikadi.net/wiki/File:The_Alphamatic.png",
+            "https://keenwiki.shikadi.net/wiki/User_talk:Gridlock",
+            "ftp://keenwiki.shikadi.net/wiki/X",
+        ] {
+            assert!(
+                matches!(page_url(input), Err(Error::NotKeenWikiLink(_))),
+                "{input}"
+            );
+        }
+        // A colon alone doesn't make a namespace.
+        assert!(page_url("https://keenwiki.shikadi.net/wiki/Keen_7:_Foo").is_ok());
+    }
+
+    #[test]
+    fn parses_a_mod_with_several_versions() {
+        let m = fixture("The_Alphamatic");
+        assert_eq!(m.name, "The Alphamatic");
+        assert_eq!(m.game_id.as_deref(), Some("keen5"));
+        assert_eq!(m.authors, ["Gridlock"]);
+        assert_eq!(m.status.as_deref(), Some("Complete"));
+        assert_eq!(m.released.as_deref(), Some("2017-07-04"));
+        assert_eq!(m.updated.as_deref(), Some("2026-03-14"));
+        assert_eq!(m.levels.as_deref(), Some("25"));
+        assert_eq!(
+            m.discussion.as_deref(),
+            Some("https://pckf.com/viewtopic.php?f=4&t=4086")
+        );
+        assert!(
+            m.description
+                .as_deref()
+                .unwrap()
+                .starts_with("The Alphamatic is a Keen 5 mod released on the Fourth of July 2017")
+        );
+        assert_eq!(m.credits.len(), 5);
+        assert_eq!(m.credits[0], "Creator: Gridlock");
+        assert_eq!(
+            m.downloads,
+            [
+                WikiDownload {
+                    url: "https://files.shikadi.net/keenwiki/mods/Keen5/m.gridlock.the_alphamatic_v2.0.k5.2021-03-14.zip".into(),
+                    label: "newest".into(),
+                    note: Some("v.2.0".into()),
+                    version: Some("2.0".into()),
+                },
+                WikiDownload {
+                    url: "https://files.shikadi.net/keenwiki/mods/Keen5/m.gridlock.the_alphamatic_v1.0.k5.2017-07-04.zip".into(),
+                    label: "v.1.0".into(),
+                    note: None,
+                    version: Some("1.0".into()),
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn parses_a_long_version_list() {
+        let m = fixture("Buried_in_Oblivion");
+        assert_eq!(m.game_id.as_deref(), Some("keen4"));
+        assert!(m.downloads.len() >= 4, "{:?}", m.downloads);
+        assert_eq!(m.downloads[0].version.as_deref(), Some("1.4"));
+        assert_eq!(m.downloads[1].label, "v.1.3");
+        assert_eq!(m.downloads[1].note.as_deref(), Some("2019"));
+        assert_eq!(m.downloads[1].version.as_deref(), Some("1.3"));
+    }
+
+    #[test]
+    fn parses_keen_dreams_with_a_mirror() {
+        let m = fixture("Candy_Dreams");
+        assert_eq!(m.game_id.as_deref(), Some("kdreams"));
+        assert_eq!(m.status.as_deref(), Some("Alpha"));
+        assert_eq!(m.updated, None);
+        let labels: Vec<&str> = m.downloads.iter().map(|d| d.label.as_str()).collect();
+        assert_eq!(labels, ["newest", "Mirror Download"]);
+        assert_eq!(
+            m.downloads[1].url,
+            "http://levellord.rewound.net/KDREAMS.zip"
+        );
+    }
+
+    #[test]
+    fn parses_several_authors_and_variants() {
+        let m = fixture("Ye_Olde_Pirate_Modde");
+        assert_eq!(m.game_id.as_deref(), Some("keen3"));
+        assert_eq!(m.authors, ["Levellass", "Ceilick"]);
+        assert_eq!(m.downloads[1].label, "without music");
+        assert_eq!(m.downloads[1].note.as_deref(), Some("less buggy"));
+        assert_eq!(m.downloads[1].version, None);
+    }
+
+    #[test]
+    fn parses_a_single_download() {
+        let m = fixture("Keenball");
+        assert_eq!(m.game_id.as_deref(), Some("keen4"));
+        assert_eq!(m.status.as_deref(), Some("Beta"));
+        assert_eq!(m.downloads.len(), 1);
+        assert_eq!(m.downloads[0].note, None);
+        assert_eq!(
+            m.discussion.as_deref(),
+            Some("https://keenmodding.org/viewtopic.php?f=13&t=3224")
+        );
+    }
+
+    #[test]
+    fn game_and_missing_pages_are_not_mods() {
+        for name in ["Keen_4", "Missing_Page"] {
+            let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("tests/keenwiki")
+                .join(format!("{name}.html"));
+            let html = fs::read_to_string(path).unwrap();
+            assert!(
+                matches!(parse(&html, "https://x/wiki/X"), Err(Error::NotAModPage)),
+                "{name}"
+            );
+        }
+    }
+
+    #[test]
+    fn episodes_map_to_games() {
+        assert_eq!(game_of("Keen 1"), Some("keen1"));
+        assert_eq!(game_of("Commander Keen 6"), Some("keen6"));
+        assert_eq!(game_of("Keen Dreams"), Some("kdreams"));
+        assert_eq!(game_of("Keen 9"), None);
+        assert_eq!(game_of("Other"), None);
+    }
+
+    #[test]
+    fn versions_in_labels() {
+        assert_eq!(version_in("v.1.2").as_deref(), Some("1.2"));
+        assert_eq!(version_in("v1.0.2").as_deref(), Some("1.0.2"));
+        assert_eq!(version_in("Version 3").as_deref(), Some("3"));
+        assert_eq!(version_in("(v. 2.0)").as_deref(), Some("2.0"));
+        assert_eq!(version_in("newest"), None);
+        assert_eq!(version_in("Mirror Download"), None);
+        assert_eq!(version_in("dev build"), None);
+    }
+
+    /// Answers `GET /<path>` with the route's raw response head and body.
+    fn serve(routes: Vec<(&'static str, String, Vec<u8>)>) -> (String, Arc<AtomicUsize>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let base = format!("http://{}", listener.local_addr().unwrap());
+        let hits = Arc::new(AtomicUsize::new(0));
+        let count = hits.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let mut stream = stream.unwrap();
+                let mut reader = BufReader::new(stream.try_clone().unwrap());
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                loop {
+                    let mut h = String::new();
+                    reader.read_line(&mut h).unwrap();
+                    if h.trim().is_empty() {
+                        break;
+                    }
+                }
+                count.fetch_add(1, Ordering::SeqCst);
+                let path = line.split_whitespace().nth(1).unwrap_or("");
+                let (head, body) = routes
+                    .iter()
+                    .find(|(p, ..)| *p == path)
+                    .map(|(_, h, b)| (h.clone(), b.clone()))
+                    .unwrap_or(("HTTP/1.1 404 Not Found".into(), Vec::new()));
+                let _ = stream.write_all(
+                    format!("{head}\r\nContent-Length: {}\r\n\r\n", body.len()).as_bytes(),
+                );
+                let _ = stream.write_all(&body);
+            }
+        });
+        (base, hits)
+    }
+
+    #[tokio::test]
+    async fn downloads_zips_and_explains_everything_else() {
+        let mut zip = Vec::new();
+        {
+            let mut w = zip::ZipWriter::new(std::io::Cursor::new(&mut zip));
+            w.start_file("MOD.CK4", zip::write::SimpleFileOptions::default())
+                .unwrap();
+            w.write_all(b"x").unwrap();
+            w.finish().unwrap();
+        }
+        let ok = "HTTP/1.1 200 OK".to_string();
+        let (base, _) = serve(vec![
+            ("/m.a.mod.k4.2020-01-01.zip", ok.clone(), zip.clone()),
+            (
+                "/dl",
+                format!("{ok}\r\nContent-Disposition: attachment; filename=\"My Mod.ZIP\""),
+                zip.clone(),
+            ),
+            (
+                "/r",
+                "HTTP/1.1 302 Found\r\nLocation: /files/thing".into(),
+                Vec::new(),
+            ),
+            ("/files/thing", ok.clone(), zip.clone()),
+            (
+                "/page",
+                ok.clone(),
+                b"<!DOCTYPE html><html>login</html>".to_vec(),
+            ),
+            ("/rar", ok.clone(), b"Rar!\x1a\x07\x00".to_vec()),
+        ]);
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("dl");
+
+        let path = download(&dir, &format!("{base}/m.a.mod.k4.2020-01-01.zip"))
+            .await
+            .unwrap();
+        assert_eq!(path, dir.join("m.a.mod.k4.2020-01-01.zip"));
+        assert_eq!(fs::read(&path).unwrap(), zip);
+        // Each download starts from an empty folder.
+        let path = download(&dir, &format!("{base}/dl")).await.unwrap();
+        assert_eq!(path, dir.join("My_Mod.ZIP"));
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 1);
+        let path = download(&dir, &format!("{base}/r")).await.unwrap();
+        assert_eq!(path, dir.join("thing.zip"));
+
+        let err = |e: Error| format!("{e:?}");
+        assert_eq!(
+            err(download(&dir, &format!("{base}/page")).await.unwrap_err()),
+            "WebPage"
+        );
+        assert_eq!(
+            err(download(&dir, &format!("{base}/rar")).await.unwrap_err()),
+            "UnsupportedDownload(\"RAR archive\")"
+        );
+        assert_eq!(
+            err(download(&dir, &format!("{base}/gone")).await.unwrap_err()),
+            "DeadLink(404)"
+        );
+        assert!(matches!(
+            download(&dir, "file:///etc/passwd").await,
+            Err(Error::UnsupportedDownload(_))
+        ));
+        assert_eq!(fs::read_dir(&dir).unwrap().count(), 0);
+    }
+
+    #[tokio::test]
+    async fn pages_are_cached_and_missing_ones_are_not_mods() {
+        let html =
+            fs::read(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/keenwiki/Keenball.html"))
+                .unwrap();
+        let (base, hits) = serve(vec![("/wiki/Keenball", "HTTP/1.1 200 OK".into(), html)]);
+        let tmp = tempfile::tempdir().unwrap();
+        let url = format!("{base}/wiki/Keenball");
+        let first = fetch(tmp.path(), &url).await.unwrap();
+        let second = fetch(tmp.path(), &url).await.unwrap();
+        assert_eq!(first, second);
+        assert_eq!(hits.load(Ordering::SeqCst), 1);
+        assert_eq!(parse(&first, &url).unwrap().name, "Keenball");
+        assert!(matches!(
+            fetch(tmp.path(), &format!("{base}/wiki/Nope")).await,
+            Err(Error::NotAModPage)
+        ));
+    }
+
+    #[test]
+    fn downloads_are_sniffed() {
+        assert_eq!(sniff(b"PK\x03\x04rest"), Kind::Zip);
+        assert_eq!(sniff(b"Rar!\x1a\x07"), Kind::Rar);
+        assert_eq!(sniff(b"7z\xBC\xAF\x27\x1C"), Kind::SevenZip);
+        assert_eq!(sniff(b"MZ\x90\x00"), Kind::Exe);
+        assert_eq!(sniff(b"\r\n <!DOCTYPE html>"), Kind::WebPage);
+        assert_eq!(sniff(b"hello"), Kind::Other);
+    }
+}

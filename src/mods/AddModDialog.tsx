@@ -3,18 +3,19 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { FileArchive, FolderOpen } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Install, type Mod, type ModInfo } from "../bindings";
-import { useGames } from "../catalog";
+import { commands, type Install, type KeenwikiOrigin, type Mod, type ModInfo } from "../bindings";
+import { gameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { installsKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
+import { KeenwikiImport, type Downloaded } from "./KeenwikiImport";
 import { RecipeLabel } from "./RecipeLabel";
 import { fits } from "./recipes";
 
-/** Pick a mod (folder or ZIP), confirm what was detected, install it. */
+/** Get a mod (KeenWiki link, folder or ZIP), confirm what was detected, install it. */
 export function AddModDialog({
   onClose,
   onInstalled,
@@ -24,6 +25,7 @@ export function AddModDialog({
 }) {
   const { t } = useTranslation();
   const [path, setPath] = useState<string | null>(null);
+  const [fromWiki, setFromWiki] = useState<Downloaded | null>(null);
 
   const inspect = useMutation({
     mutationFn: (p: string) => unwrap(commands.inspectMod(p)),
@@ -40,10 +42,19 @@ export function AddModDialog({
 
   return (
     <Dialog title={t("mods.addTitle")} onClose={onClose}>
-      {path && inspect.data ? (
+      {fromWiki ? (
+        <Confirm
+          path={fromWiki.path}
+          info={fromWiki.info}
+          origin={fromWiki.origin}
+          onCancel={onClose}
+          onInstalled={onInstalled}
+        />
+      ) : path && inspect.data ? (
         <Confirm path={path} info={inspect.data} onCancel={onClose} onInstalled={onInstalled} />
       ) : (
         <>
+          <KeenwikiImport disabled={inspect.isPending} onDownloaded={setFromWiki} />
           <p className="text-sm text-muted">{t("mods.addHint")}</p>
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => pick("zip")} disabled={inspect.isPending}>
@@ -71,11 +82,14 @@ export function AddModDialog({
 function Confirm({
   path,
   info,
+  origin = null,
   onCancel,
   onInstalled,
 }: {
   path: string;
   info: ModInfo;
+  /** Set for a mod from a KeenWiki page, whose details win over the guesses. */
+  origin?: KeenwikiOrigin | null;
   onCancel: () => void;
   onInstalled: (mod: Mod) => void;
 }) {
@@ -116,13 +130,23 @@ function Confirm({
 
   const install = useMutation({
     mutationFn: () =>
-      unwrap(commands.installMod({ path, name, recipe: option.recipe, installId: target!.id })),
+      unwrap(
+        commands.installMod({
+          path,
+          name,
+          recipe: option.recipe,
+          installId: target!.id,
+          keenwiki: origin,
+        }),
+      ),
     onSuccess: onInstalled,
   });
 
+  const authors = origin?.authors.length ? origin.authors : info.authors;
+  const version = origin?.version ?? info.version;
   const details = [
-    info.authors.length > 0 && t("mods.by", { authors: info.authors.join(", ") }),
-    info.version && t("mods.version", { version: info.version }),
+    authors.length > 0 && t("mods.by", { authors: authors.join(", ") }),
+    version && t("mods.version", { version }),
     info.released,
   ].filter(Boolean);
 
@@ -177,6 +201,14 @@ function Confirm({
           </fieldset>
         ))}
 
+      {origin?.gameId && origin.gameId !== info.gameId && (
+        <Notice>
+          {t("keenwiki.otherGame", {
+            page: gameTitle(games.data, origin.gameId),
+            files: gameTitle(games.data, info.gameId),
+          })}
+        </Notice>
+      )}
       {installs.data && candidates.length === 0 && (
         <Notice tone="error">
           {t("mods.missingGame", {

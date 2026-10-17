@@ -13,6 +13,7 @@ use crate::db::Db;
 use crate::downloads;
 use crate::error::{CommandResult, Error, Result};
 use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
+use crate::keenwiki::{self, WikiMod};
 use crate::launcher::{self, PlaySessionEnded, Running};
 use crate::library::{self, Install};
 use crate::mod_index::{self, IndexMod, IndexStatus, IndexUpdated, ModIndex};
@@ -141,14 +142,24 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
 #[tauri::command]
 #[specta::specta]
 pub async fn inspect_mod(path: String) -> CommandResult<ModInfo> {
-    blocking(move || mods::inspect(Path::new(&path))).await
+    blocking(move || mods::inspect(Path::new(&path), None)).await
 }
 
 /// Installs a mod inspected with `inspect_mod` and creates its play profile.
 #[tauri::command]
 #[specta::specta]
 pub async fn install_mod(app: AppHandle, request: InstallModRequest) -> CommandResult<Mod> {
-    blocking(move || mods::install(&app.state::<AppPaths>(), &app.state::<Db>(), &request)).await
+    blocking(move || {
+        let paths = app.state::<AppPaths>();
+        let m = mods::install(&paths, &app.state::<Db>(), &request)?;
+        // The mod keeps its own copy of the archive.
+        let downloads = keenwiki_downloads(&paths);
+        if Path::new(&request.path).starts_with(&downloads) {
+            let _ = std::fs::remove_dir_all(&downloads);
+        }
+        Ok(m)
+    })
+    .await
 }
 
 #[tauri::command]
@@ -170,6 +181,88 @@ pub async fn delete_mod(app: AppHandle, mod_id: String, keep_saves: bool) -> Com
             .await;
     app.state::<Running>().release(&mod_id);
     result
+}
+
+/// What a pasted KeenWiki link leads to: the curated index entry for that
+/// page if there is one (§9.3 step 2), otherwise what the page says.
+#[derive(Debug, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct KeenwikiLookup {
+    pub page_url: String,
+    pub index_id: Option<String>,
+    pub page: Option<WikiMod>,
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn lookup_keenwiki(app: AppHandle, url: String) -> CommandResult<KeenwikiLookup> {
+    let page_url = keenwiki::page_url(&url)?;
+    let in_index = |page: &str| {
+        app.state::<ModIndex>()
+            .entries()
+            .into_iter()
+            .find(|e| {
+                e.links
+                    .keenwiki
+                    .as_deref()
+                    .is_some_and(|k| keenwiki::same_page(k, page))
+            })
+            .map(|e| e.id)
+    };
+    if let Some(id) = in_index(&page_url) {
+        return Ok(KeenwikiLookup {
+            page_url,
+            index_id: Some(id),
+            page: None,
+        });
+    }
+    let cache = app.state::<AppPaths>().cache.join("keenwiki");
+    let html = keenwiki::fetch(&cache, &page_url).await?;
+    let page = keenwiki::parse(&html, &page_url)?;
+    Ok(KeenwikiLookup {
+        page_url,
+        // The page may have been reached under another name.
+        index_id: in_index(&page.page_url),
+        page: Some(page),
+    })
+}
+
+/// A downloaded KeenWiki mod, ready for `install_mod`.
+#[derive(Debug, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct KeenwikiDownload {
+    pub path: String,
+    pub info: ModInfo,
+}
+
+/// Downloads one of a KeenWiki page's links and inspects it. `game_id` is
+/// the page's episode, used when the files don't tell.
+#[tauri::command]
+#[specta::specta]
+pub async fn download_keenwiki_mod(
+    app: AppHandle,
+    url: String,
+    game_id: Option<String>,
+) -> CommandResult<KeenwikiDownload> {
+    let dir = keenwiki_downloads(&app.state::<AppPaths>());
+    let path = keenwiki::download(&dir, &url).await?;
+    let p = path.clone();
+    let info = blocking(move || mods::inspect(&p, game_id.as_deref())).await?;
+    Ok(KeenwikiDownload {
+        path: path.display().to_string(),
+        info,
+    })
+}
+
+fn keenwiki_downloads(paths: &AppPaths) -> PathBuf {
+    paths.cache.join("downloads").join("keenwiki")
+}
+
+/// A GitHub link suggesting a KeenWiki mod for the index, with a draft entry.
+#[tauri::command]
+#[specta::specta]
+pub fn index_suggestion_url(db: State<'_, Db>, mod_id: String) -> CommandResult<String> {
+    Ok(mods::index_suggestion(&db, &mod_id)?)
 }
 
 #[tauri::command]

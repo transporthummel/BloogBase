@@ -79,7 +79,13 @@
     "incompatibleInstall": "The mod doesn’t fit that game ({{message}}).",
     "generic": "Something went wrong: {{message}}",
     "missingGame": "This mod needs {{message}}. Add it to your library first.",
-    "badSignature": "The mod list couldn't be verified, so it wasn't used."
+    "badSignature": "The mod list couldn't be verified, so it wasn't used.",
+    "notKeenWikiLink": "Please paste a link to a mod page on keenwiki.shikadi.net, like https://keenwiki.shikadi.net/wiki/The_Alphamatic.",
+    "notAModPage": "That KeenWiki page doesn't describe a mod.",
+    "deadLink": "That download link doesn't work any more. Maybe the page lists another one, or the mod has moved.",
+    "tooLarge": "The download is far too big for a Commander Keen mod, so it was stopped.",
+    "webPage": "The link leads to a web page instead of a file. Open it in your browser, download the mod there and add it as a ZIP file or folder.",
+    "unsupportedDownload": "BloogBase can't open this download yet ({{message}}). Download it in your browser, unpack it and add the folder."
   },
   "jobs": {
     "title": "Downloads",
@@ -167,7 +173,7 @@
   "mods": {
     "add": "Add mod",
     "addTitle": "Add a mod",
-    "addHint": "Choose a mod the way you downloaded it: a ZIP file or an unpacked folder. BloogBase finds out which game it is for and how to start it.",
+    "addHint": "Or choose a mod you downloaded yourself: a ZIP file or an unpacked folder. BloogBase finds out which game it is for and how to start it.",
     "chooseZip": "Choose ZIP file…",
     "chooseFolder": "Choose folder…",
     "inspecting": "Looking at the mod…",
@@ -246,5 +252,23 @@
     "needs": "Needs {{game}}.",
     "needs_version": "Needs {{game}} ({{versions}}).",
     "install": "Install ({{size}} MB)"
+  },
+  "keenwiki": {
+    "label": "KeenWiki link",
+    "lookUp": "Look up",
+    "looking": "Reading the KeenWiki page…",
+    "inIndex": "This mod is in the BloogBase mod list, tested and ready to install:",
+    "authors": "Author(s)",
+    "status": "Status",
+    "released": "Released",
+    "updated": "Latest update",
+    "levels": "Levels",
+    "discussion": "Discussion",
+    "download": "Download",
+    "noDownload": "This page has no download link. Download the mod in your browser and add it as a ZIP file or folder.",
+    "downloading": "Downloading and checking the mod…",
+    "fetch": "Download and check",
+    "otherGame": "The KeenWiki page says this mod is for {{page}}, but its files look like {{files}}.",
+    "suggest": "Suggest it for the mod list"
   }
 }
