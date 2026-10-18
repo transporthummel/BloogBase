@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/logo.png" alt="BloogBase" width="640"></p>
 
-**BloogBase** is a friendly home for Commander Keen: a desktop launcher for
+**BloogBase** is a cozy home for Commander Keen: a desktop launcher for
 Windows, macOS and Linux that lets anyone play the Keen games and the
 community's mods without unzipping, copying files or editing configs.
 
