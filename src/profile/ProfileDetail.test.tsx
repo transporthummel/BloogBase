@@ -19,8 +19,10 @@ import { slotFiles } from "./saves";
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn(), save: vi.fn() }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ convertFileSrc: (p: string) => `asset://${p}` }));
+const navigate = vi.hoisted(() => vi.fn());
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
+  useNavigate: () => navigate,
   useParams: vi.fn(),
 }));
 // CodeMirror needs layout APIs jsdom lacks; a textarea stands in.
@@ -66,6 +68,7 @@ vi.mock("../bindings", () => {
     "listMods",
     "modReadme",
     "openModFolder",
+    "deleteMod",
     "indexMods",
     "listScreenshots",
     "profileCover",
@@ -217,6 +220,27 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   vi.mocked(commands.openModFolder).mockResolvedValue(ok(null));
   await userEvent.click(screen.getByRole("button", { name: "Open mod folder" }));
   expect(commands.openModFolder).toHaveBeenCalledWith("aurora-bliss");
+});
+
+test("a mod is removed from its page, keeping saves unless unticked", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
+  );
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  vi.mocked(commands.deleteMod).mockResolvedValue(ok(null));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "Remove Aurora Bliss" }));
+  const dialog = screen.getByRole("dialog");
+  await userEvent.click(within(dialog).getByRole("checkbox"));
+  await userEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
+  expect(commands.deleteMod).toHaveBeenCalledWith("aurora-bliss", false);
+  expect(navigate).toHaveBeenCalledWith({ to: "/" });
+});
+
+test("games have no remove button", async () => {
+  renderDetail();
+  await screen.findByRole("heading", { name: keen4.title });
+  expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
 });
 
 test("a mod's README is the first tab, shown as text with links opening outside", async () => {

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ArrowLeft, ExternalLink, FolderOpen } from "lucide-react";
+import { ArrowLeft, ExternalLink, FolderOpen, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
@@ -14,6 +14,7 @@ import { Cover } from "../library/Cover";
 import { useCover } from "../library/covers";
 import { modsKey, profilesKey } from "../library/queries";
 import { Authors } from "../mods/Authors";
+import { RemoveModDialog } from "../mods/RemoveModDialog";
 import { useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -154,6 +155,9 @@ function Hero({
   const openFolder = useMutation({
     mutationFn: (modId: string) => unwrap(commands.openModFolder(modId)),
   });
+  const [removing, setRemoving] = useState(false);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const mod = mods.data?.find((m) => m.id === profile.modId);
   const entry = mod?.indexId
@@ -266,12 +270,34 @@ function Hero({
             {profile.running ? t("library.running") : t("library.play")}
           </PlayButton>
           {mod && (
-            <Button variant="secondary" onClick={() => openFolder.mutate(mod.id)}>
-              <FolderOpen className="size-4" aria-hidden />
-              {t("profile.openModFolder")}
-            </Button>
+            <>
+              <Button variant="secondary" onClick={() => openFolder.mutate(mod.id)}>
+                <FolderOpen className="size-4" aria-hidden />
+                {t("profile.openModFolder")}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setRemoving(true)}
+                disabled={profile.running}
+                aria-label={t("mods.removeNamed", { name: profile.label })}
+              >
+                <Trash2 className="size-4" aria-hidden />
+                {t("mods.remove")}
+              </Button>
+            </>
           )}
         </div>
+        {removing && profile.modId !== null && (
+          <RemoveModDialog
+            profile={{ ...profile, modId: profile.modId }}
+            onClose={() => setRemoving(false)}
+            onRemoved={() => {
+              queryClient.invalidateQueries({ queryKey: profilesKey });
+              queryClient.invalidateQueries({ queryKey: modsKey });
+              navigate({ to: "/" });
+            }}
+          />
+        )}
         <FiringNote profileId={profile.id} />
         {openFolder.error && <Notice tone="error">{errorMessage(t, openFolder.error)}</Notice>}
       </div>

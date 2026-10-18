@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Compass, FileArchive, FolderOpen, Puzzle, Trash2 } from "lucide-react";
+import { Compass, FileArchive, FolderOpen, Puzzle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type Mod, type Profile } from "../bindings";
@@ -12,7 +12,6 @@ import { unwrap } from "../ipc";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { AddModDialog } from "../mods/AddModDialog";
 import { SuggestToIndex } from "../mods/KeenwikiImport";
-import { RemoveModDialog } from "../mods/RemoveModDialog";
 import { Cover } from "./Cover";
 import { useCover } from "./covers";
 import { installsKey, profilesKey } from "./queries";
@@ -41,7 +40,6 @@ export function Library() {
   const runtime = useRuntimeStatus();
   const [addingMod, setAddingMod] = useState(false);
   const [installedMod, setInstalledMod] = useState<Mod | null>(null);
-  const [removing, setRemoving] = useState<(Profile & { modId: string }) | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
 
   useEffect(() => {
@@ -125,17 +123,6 @@ export function Library() {
           onInstalled={(mod) => {
             setAddingMod(false);
             setInstalledMod(mod);
-            queryClient.invalidateQueries({ queryKey: profilesKey });
-          }}
-        />
-      )}
-      {removing && (
-        <RemoveModDialog
-          profile={removing}
-          onClose={() => setRemoving(null)}
-          onRemoved={() => {
-            setRemoving(null);
-            setInstalledMod(null);
             queryClient.invalidateQueries({ queryKey: profilesKey });
           }}
         />
@@ -231,11 +218,6 @@ export function Library() {
                       heading={grouped ? "h3" : "h2"}
                       canPlay={!!runtime.data?.active && !launch.isPending}
                       onPlay={() => launch.mutate(profile.id)}
-                      onRemove={
-                        profile.modId === null
-                          ? undefined
-                          : () => setRemoving({ ...profile, modId: profile.modId! })
-                      }
                     />
                   </li>
                 ))}
@@ -257,7 +239,6 @@ function ProfileCard({
   heading: Heading,
   canPlay,
   onPlay,
-  onRemove,
 }: {
   profile: Profile;
   game?: Game;
@@ -265,8 +246,6 @@ function ProfileCard({
   heading: "h2" | "h3";
   canPlay: boolean;
   onPlay: () => void;
-  /** Only mods can be removed for now. */
-  onRemove?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
@@ -347,18 +326,6 @@ function ProfileCard({
           >
             {profile.running ? t("library.running") : t("library.play")}
           </PlayButton>
-          {onRemove && (
-            <Button
-              variant="ghost"
-              className="px-2"
-              onClick={onRemove}
-              disabled={profile.running}
-              aria-label={t("mods.removeNamed", { name: profile.label })}
-              title={t("mods.remove")}
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </Button>
-          )}
         </div>
       </div>
     </Card>
