@@ -74,6 +74,8 @@ export const commands = {
 	resetConfig: (profileId: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("reset_config", { profileId })),
 	/**  Looks at a folder or ZIP and reports the mod found in it, for the user to confirm. */
 	inspectMod: (path: string) => typedError<ModInfo, CommandError>(__TAURI_INVOKE("inspect_mod", { path })),
+	/**  Whether a folder or ZIP dropped on the window holds games or a mod. */
+	inspectDropped: (path: string) => typedError<Dropped, CommandError>(__TAURI_INVOKE("inspect_dropped", { path })),
 	/**  Installs a mod inspected with `inspect_mod` and creates its play profile. */
 	installMod: (request: InstallModRequest) => typedError<Mod, CommandError>(__TAURI_INVOKE("install_mod", { request })),
 	listMods: () => typedError<Mod[], CommandError>(__TAURI_INVOKE("list_mods")),
@@ -219,6 +221,9 @@ export type Download = {
 	/**  Bytes. */
 	size: number,
 };
+
+/**  What a folder or ZIP dropped on the window holds. */
+export type Dropped = { kind: "games" } | { kind: "mod"; info: ModInfo } | { kind: "nothing" };
 
 export type Engine = "vorticons" | "galaxy" | "dreams";
 

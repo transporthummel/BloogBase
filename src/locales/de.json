@@ -224,6 +224,12 @@
     "loading": "Wird geladen…",
     "close": "Schließen"
   },
+  "drop": {
+    "hint": "Lass Ordner oder ZIP-Dateien mit Spielen oder Mods hier fallen, um sie hinzuzufügen.",
+    "working": "Schaue mir an, was du fallen gelassen hast…",
+    "title": "Zur Bibliothek hinzugefügt",
+    "nothing": "Dort wurde weder ein Commander-Keen-Spiel noch eine Mod gefunden."
+  },
   "mods": {
     "add": "Mod hinzufügen",
     "addTitle": "Mod hinzufügen",

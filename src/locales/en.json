@@ -224,6 +224,12 @@
     "loading": "Loading…",
     "close": "Close"
   },
+  "drop": {
+    "hint": "Drop folders or ZIP files with games or mods to add them.",
+    "working": "Looking at what you dropped…",
+    "title": "Added to your library",
+    "nothing": "Neither a Commander Keen game nor a mod was found there."
+  },
   "mods": {
     "add": "Add mod",
     "addTitle": "Add a mod",

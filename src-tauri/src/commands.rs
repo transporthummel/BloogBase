@@ -20,7 +20,7 @@ use crate::keenwiki::{self, WikiMod};
 use crate::launcher::{self, PlaySessionEnded, Running};
 use crate::library::{self, Install};
 use crate::mod_index::{self, IndexMod, IndexStatus, IndexUpdated, ModIndex};
-use crate::mods::{self, Curated, InstallModRequest, Mod, ModInfo};
+use crate::mods::{self, Curated, Dropped, InstallModRequest, Mod, ModInfo};
 use crate::paths::{self, AppPaths};
 use crate::profiles::{self, Profile};
 use crate::readme::{self, Readme};
@@ -425,6 +425,13 @@ pub fn reset_config(
 #[specta::specta]
 pub async fn inspect_mod(path: String) -> CommandResult<ModInfo> {
     blocking(move || mods::inspect(Path::new(&path), None)).await
+}
+
+/// Whether a folder or ZIP dropped on the window holds games or a mod.
+#[tauri::command]
+#[specta::specta]
+pub async fn inspect_dropped(path: String) -> CommandResult<Dropped> {
+    blocking(move || mods::classify(Path::new(&path))).await
 }
 
 /// Installs a mod inspected with `inspect_mod` and creates its play profile.

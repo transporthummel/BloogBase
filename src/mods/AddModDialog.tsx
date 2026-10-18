@@ -17,9 +17,12 @@ import { fits } from "./recipes";
 
 /** Get a mod (KeenWiki link, folder or ZIP), confirm what was detected, install it. */
 export function AddModDialog({
+  dropped,
   onClose,
   onInstalled,
 }: {
+  /** A folder or ZIP dropped on the window and inspected already. */
+  dropped?: { path: string; info: ModInfo };
   onClose: () => void;
   onInstalled: (mod: Mod) => void;
 }) {
@@ -42,7 +45,14 @@ export function AddModDialog({
 
   return (
     <Dialog title={t("mods.addTitle")} onClose={onClose}>
-      {fromWiki ? (
+      {dropped ? (
+        <Confirm
+          path={dropped.path}
+          info={dropped.info}
+          onCancel={onClose}
+          onInstalled={onInstalled}
+        />
+      ) : fromWiki ? (
         <Confirm
           path={fromWiki.path}
           info={fromWiki.info}

@@ -5,6 +5,7 @@ import icon from "../assets/icon.png";
 import { useTranslation } from "react-i18next";
 import { useIndexEvents } from "../discover/queries";
 import { JobsPanel } from "../jobs/JobsPanel";
+import { DropImport } from "../library/DropImport";
 import { useJobEvents } from "../jobs/queries";
 import { hideSplash } from "../splash";
 import { useAppUpdate } from "../updates/queries";
@@ -35,6 +36,7 @@ export function Shell() {
   }
   return (
     <div className="flex h-screen">
+      <DropImport />
       <nav
         aria-label={t("nav.label")}
         className="flex w-16 shrink-0 flex-col gap-1 border-r border-border bg-surface p-2 xl:w-60 xl:p-3"

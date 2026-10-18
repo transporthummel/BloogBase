@@ -16,7 +16,7 @@ use specta::Type;
 use crate::backups::{self, Contents, Reason};
 use crate::catalog::{self, Game};
 use crate::db::Db;
-use crate::detect::sha256_hex;
+use crate::detect::{detect, sha256_hex};
 use crate::error::{Error, Result};
 use crate::library::{self, Install, now};
 use crate::paths::AppPaths;
@@ -153,6 +153,42 @@ struct Analysis {
 /// `game_hint` is used when neither the files nor the archive name tell.
 pub fn inspect(path: &Path, game_hint: Option<&str>) -> Result<ModInfo> {
     Ok(analyze(&Source::open(path)?, path, game_hint)?.info)
+}
+
+/// What a folder or ZIP dropped on the window holds.
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum Dropped {
+    Games,
+    Mod { info: ModInfo },
+    Nothing,
+}
+
+/// Tells games from a mod. Game detection goes by file names, and many mods
+/// ship the game's files, often with their own executable. So whatever starts
+/// through a patch or a batch file is a mod, even where a game is detected.
+pub fn classify(path: &Path) -> Result<Dropped> {
+    let source = Source::open(path)?;
+    let game = !detect(&source)?.is_empty();
+    let analysis = match analyze(&source, path, None) {
+        Ok(a) => Some(a.info),
+        Err(Error::NoModFound) => None,
+        Err(e) => return Err(e),
+    };
+    Ok(decide(game, analysis))
+}
+
+fn decide(game: bool, info: Option<ModInfo>) -> Dropped {
+    let started_by_mod = info.as_ref().is_some_and(|i| {
+        i.recipes
+            .first()
+            .is_some_and(|o| matches!(o.recipe, Recipe::Patch { .. } | Recipe::Batch { .. }))
+    });
+    match info {
+        _ if game && !started_by_mod => Dropped::Games,
+        Some(info) => Dropped::Mod { info },
+        None => Dropped::Nothing,
+    }
 }
 
 fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Analysis> {
@@ -1558,6 +1594,61 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         write_folder(tmp.path(), &[("README.TXT", b"")]);
         assert!(matches!(inspect(tmp.path(), None), Err(Error::NoModFound)));
+    }
+
+    #[test]
+    fn dropped_things_are_told_apart() {
+        let tmp = tempfile::tempdir().unwrap();
+        let zip = tmp.path().join("aurora.zip");
+        write_zip(&zip, AURORA);
+        let Dropped::Mod { info: patched } = classify(&zip).unwrap() else {
+            panic!("not a mod");
+        };
+        // A game of a version the catalog doesn't know is still a game…
+        let game = tmp.path().join("k4");
+        write_folder(&game, KEEN4);
+        assert!(matches!(classify(&game).unwrap(), Dropped::Games));
+        // …but the game's files with a patch are a mod.
+        let modded = tmp.path().join("k4mod");
+        write_folder(&modded, KEEN4);
+        write_folder(
+            &modded,
+            &[
+                ("CK4PATCH.EXE", b"patcher"),
+                ("MOD.PAT", b"%ext ck4\n%version 1.4\n"),
+            ],
+        );
+        assert!(matches!(classify(&modded).unwrap(), Dropped::Mod { .. }));
+        let empty = tmp.path().join("empty");
+        write_folder(&empty, &[("README.TXT", b"")]);
+        assert!(matches!(classify(&empty).unwrap(), Dropped::Nothing));
+        let text = tmp.path().join("notes.txt");
+        fs::write(&text, "").unwrap();
+        assert!(matches!(classify(&text), Err(Error::UnsupportedSource(_))));
+
+        let with = |recipe| ModInfo {
+            recipes: vec![RecipeOption {
+                recipe,
+                origin: "x".into(),
+                game_versions: vec![],
+                version_ids: vec![],
+            }],
+            ..patched.clone()
+        };
+        let batch = with(Recipe::Batch {
+            file: "PLAY.BAT".into(),
+        });
+        assert!(matches!(decide(true, Some(batch)), Dropped::Mod { .. }));
+        assert!(matches!(
+            decide(true, Some(with(Recipe::Episode))),
+            Dropped::Games
+        ));
+        assert!(matches!(decide(true, None), Dropped::Games));
+        assert!(matches!(
+            decide(false, Some(with(Recipe::Episode))),
+            Dropped::Mod { .. }
+        ));
+        assert!(matches!(decide(false, None), Dropped::Nothing));
     }
 
     #[test]
