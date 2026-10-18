@@ -273,7 +273,17 @@ function ProfileCard({
   const cover = useCover(profile.id);
   return (
     <Card className="flex h-full flex-col">
-      <Cover gameId={profile.gameId} game={game} src={cover.data} />
+      {/* A second way to the same page for the mouse; the title link below
+          is the one for keyboards and screen readers. */}
+      <Link
+        to="/profiles/$profileId"
+        params={{ profileId: profile.id }}
+        tabIndex={-1}
+        aria-hidden
+        className="block transition hover:brightness-110"
+      >
+        <Cover gameId={profile.gameId} game={game} src={cover.data} />
+      </Link>
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="grid gap-0.5">
           <Heading className="text-sm leading-tight font-semibold">
