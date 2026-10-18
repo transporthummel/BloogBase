@@ -17,6 +17,7 @@ mod mods;
 mod overlay_view;
 mod paths;
 mod profiles;
+mod readme;
 mod recipe;
 mod runtime;
 mod saves;
@@ -75,6 +76,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::inspect_mod,
             commands::install_mod,
             commands::list_mods,
+            commands::mod_readme,
             commands::delete_mod,
             commands::index_status,
             commands::refresh_index,

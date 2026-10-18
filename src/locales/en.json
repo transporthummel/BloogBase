@@ -329,6 +329,7 @@
   "profile": {
     "back": "Library",
     "notFound": "This game isn’t in the library any more.",
+    "tabReadme": "Readme",
     "tabSaves": "Saves",
     "tabConfig": "DOSBox settings",
     "tabs": "Sections",
@@ -441,6 +442,9 @@
       "syntax": "not a setting (expected name = value)",
       "noSection": "setting outside of a [section]"
     }
+  },
+  "readme": {
+    "file": "File:"
   },
   "screenshots": {
     "hint": "Press {{key}} while playing to take a screenshot.",

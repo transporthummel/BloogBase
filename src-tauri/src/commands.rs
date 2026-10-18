@@ -23,6 +23,7 @@ use crate::mod_index::{self, IndexMod, IndexStatus, IndexUpdated, ModIndex};
 use crate::mods::{self, Curated, InstallModRequest, Mod, ModInfo};
 use crate::paths::{self, AppPaths};
 use crate::profiles::{self, Profile};
+use crate::readme::{self, Readme};
 use crate::runtime::{self, RuntimeStatus};
 use crate::saves::{self, SaveFile};
 use crate::screenshots::{self, Screenshot};
@@ -427,6 +428,13 @@ pub async fn install_mod(app: AppHandle, request: InstallModRequest) -> CommandR
 #[specta::specta]
 pub fn list_mods(db: State<'_, Db>) -> CommandResult<Vec<Mod>> {
     Ok(mods::list(&db)?)
+}
+
+/// The README shipped with a mod, as plain text; `None` when it has none.
+#[tauri::command]
+#[specta::specta]
+pub async fn mod_readme(app: AppHandle, mod_id: String) -> CommandResult<Option<Readme>> {
+    blocking(move || readme::for_mod(&app.state::<AppPaths>(), &app.state::<Db>(), &mod_id)).await
 }
 
 /// Removes a mod and its profile; `keep_saves` archives the saves first.

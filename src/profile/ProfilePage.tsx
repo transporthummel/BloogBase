@@ -21,13 +21,15 @@ import { Notice } from "../ui/Notice";
 import { PlayButton } from "../ui/PlayButton";
 import { Tabs } from "../ui/Tabs";
 import { ConfigPanel } from "./ConfigPanel";
+import { ReadmePanel } from "./ReadmePanel";
+import { useReadme } from "./readme";
 import { SavesPanel } from "./SavesPanel";
 import { ScreenshotsPanel } from "./ScreenshotsPanel";
 import { screenshotSrc, screenshotsKey, useScreenshots } from "./screenshots";
 import { usePictureWidth } from "./heroPicture";
 import { backupsKey, savesKey } from "./saves";
 
-type Tab = "saves" | "screenshots" | "config";
+type Tab = "readme" | "saves" | "screenshots" | "config";
 
 export function ProfileRoute() {
   const { profileId } = useParams({ from: "/profiles/$profileId" });
@@ -44,7 +46,8 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
     queryKey: profilesKey,
     queryFn: () => unwrap(commands.listProfiles()),
   });
-  const [tab, setTab] = useState<Tab>("saves");
+  // Until the player picks one: the README if the mod has one, else saves.
+  const [picked, setTab] = useState<Tab | null>(null);
 
   useEffect(() => {
     // The game may have saved, made an automatic backup before, or the
@@ -70,6 +73,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
 
   const profile = profiles.data?.find((p) => p.id === profileId);
   const game = games.data?.find((g) => g.id === profile?.gameId);
+  const readme = useReadme(profile?.modId ?? null);
 
   if (profiles.data && !profile) {
     return (
@@ -81,10 +85,14 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   }
 
   const tabs: { id: Tab; label: string }[] = [
+    ...(readme.data ? [{ id: "readme" as const, label: t("profile.tabReadme") }] : []),
     { id: "saves", label: t("profile.tabSaves") },
     { id: "screenshots", label: t("profile.tabScreenshots") },
     { id: "config", label: t("profile.tabConfig") },
   ];
+  const tab = tabs.find((x) => x.id === picked)?.id ?? tabs[0].id;
+  // Wait for the README so the first tab doesn't change under the player.
+  const tabsReady = !(profile?.modId && readme.isPending);
 
   return (
     <>
@@ -103,13 +111,16 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
         </div>
       )}
 
-      <Tabs tabs={tabs} selected={tab} onSelect={setTab} label={t("profile.tabs")}>
-        <div className={tab === "screenshots" ? "" : "max-w-3xl"}>
-          {profile && tab === "saves" && <SavesPanel profile={profile} game={game} />}
-          {profile && tab === "screenshots" && <ScreenshotsPanel profile={profile} />}
-          {profile && tab === "config" && <ConfigPanel profileId={profile.id} />}
-        </div>
-      </Tabs>
+      {profile && tabsReady && (
+        <Tabs tabs={tabs} selected={tab} onSelect={setTab} label={t("profile.tabs")}>
+          <div className={tab === "screenshots" ? "" : "max-w-3xl"}>
+            {readme.data && tab === "readme" && <ReadmePanel readme={readme.data} />}
+            {tab === "saves" && <SavesPanel profile={profile} game={game} />}
+            {tab === "screenshots" && <ScreenshotsPanel profile={profile} />}
+            {tab === "config" && <ConfigPanel profileId={profile.id} />}
+          </div>
+        </Tabs>
+      )}
     </>
   );
 }

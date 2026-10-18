@@ -77,6 +77,12 @@ export const commands = {
 	/**  Installs a mod inspected with `inspect_mod` and creates its play profile. */
 	installMod: (request: InstallModRequest) => typedError<Mod, CommandError>(__TAURI_INVOKE("install_mod", { request })),
 	listMods: () => typedError<Mod[], CommandError>(__TAURI_INVOKE("list_mods")),
+	/**  The README shipped with a mod, as plain text; `None` when it has none. */
+	modReadme: (modId: string) => typedError<{
+	/**  Path of the file inside the mod or its archive. */
+	file: string,
+	text: string,
+} | null, CommandError>(__TAURI_INVOKE("mod_readme", { modId })),
 	/**  Removes a mod and its profile; `keep_saves` archives the saves first. */
 	deleteMod: (modId: string, keepSaves: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("delete_mod", { modId, keepSaves })),
 	indexStatus: () => __TAURI_INVOKE<IndexStatus>("index_status"),
@@ -474,6 +480,12 @@ export type ProfileConfig = {
 	text: string,
 	warnings: ConfigWarning[],
 	effective: Setting[],
+};
+
+export type Readme = {
+	/**  Path of the file inside the mod or its archive. */
+	file: string,
+	text: string,
 };
 
 /**

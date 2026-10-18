@@ -329,6 +329,7 @@
   "profile": {
     "back": "Bibliothek",
     "notFound": "Dieses Spiel ist nicht mehr in der Bibliothek.",
+    "tabReadme": "Liesmich",
     "tabSaves": "Spielstände",
     "tabConfig": "DOSBox-Einstellungen",
     "tabs": "Bereiche",
@@ -441,6 +442,9 @@
       "syntax": "keine Einstellung (erwartet: name = wert)",
       "noSection": "Einstellung außerhalb einer [Sektion]"
     }
+  },
+  "readme": {
+    "file": "Datei:"
   },
   "screenshots": {
     "hint": "Drücke beim Spielen {{key}}, um einen Screenshot zu machen.",
