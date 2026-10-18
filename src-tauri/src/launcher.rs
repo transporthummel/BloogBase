@@ -25,6 +25,7 @@ use crate::compose;
 use crate::db::Db;
 use crate::dosconf;
 use crate::error::{Error, Result};
+use crate::firing;
 use crate::library::now;
 use crate::paths::AppPaths;
 use crate::profiles;
@@ -82,11 +83,12 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
     for dir in [&layers.upper, &dirs.config, &dirs.capture] {
         fs::create_dir_all(dir)?;
     }
+    let firing = (firing::supports(&game.id) && firing::enabled(db)?).then_some(game);
     let (lower, command) = match &layers.mod_layer {
-        None => (layers.lower.clone(), None),
-        Some(m) => (
-            compose::ensure(paths, db, profile_id, &layers.lower, &m.files, &m.recipe)?,
-            m.recipe.command(),
+        None if firing.is_none() => (layers.lower.clone(), None),
+        m => (
+            compose::ensure(paths, db, profile_id, &layers.lower, m.as_ref(), firing)?,
+            m.as_ref().and_then(|m| m.recipe.command()),
         ),
     };
     let command = match command {
@@ -292,6 +294,40 @@ mod tests {
             fs::read_to_string(paths.default_conf("galaxy")).unwrap(),
             include_str!("../configs/galaxy.conf")
         );
+    }
+
+    #[test]
+    fn one_button_firing_patches_a_copy_of_keen_1_3() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("k1");
+        let exe = firing::tests::exe();
+        write_folder(
+            &src,
+            &[
+                ("KEEN1.EXE", &exe),
+                ("EGAHEAD.CK1", b"h"),
+                ("EGALATCH.CK1", b"l"),
+                ("EGASPRIT.CK1", b"s"),
+                ("LEVEL01.CK1", b"1"),
+                ("SOUNDS.CK1", b"a"),
+            ],
+        );
+        library::import(&paths, &db, &src).unwrap();
+        firing::set_enabled(&db, true).unwrap();
+
+        let mount = |id: &str| prepare(&paths, &db, id).unwrap().args[14].clone();
+        // Keen 4 has no such patch: it still runs from the install.
+        assert!(mount("keen4-1").contains(&relative(&paths.root, &paths.library)));
+        assert!(mount("keen1-1").contains(&relative(&paths.root, &paths.composed("keen1-1"))));
+        let patched = fs::read(paths.composed("keen1-1").join("KEEN1.EXE")).unwrap();
+        assert_ne!(patched, exe);
+        assert_eq!(
+            fs::read(paths.library.join("keen1-1/base/KEEN1.EXE")).unwrap(),
+            exe
+        );
+
+        firing::set_enabled(&db, false).unwrap();
+        assert!(mount("keen1-1").contains(&relative(&paths.root, &paths.library)));
     }
 
     #[test]

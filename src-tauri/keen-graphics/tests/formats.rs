@@ -2,7 +2,7 @@
 //! `corpus` runs against a local folder of them.
 
 use keen_graphics::huffman::Dictionary;
-use keen_graphics::{Image, egagraph::EgaGraph, ilbm, slib, vorticons};
+use keen_graphics::{Image, egagraph::EgaGraph, ilbm, lzexe, slib, vorticons};
 
 /// Root: 0 -> 'A', 1 -> node 253; node 253: 0 -> 'B', 1 -> 'C'.
 fn dictionary() -> Vec<u8> {
@@ -290,4 +290,49 @@ fn corpus() {
         };
         assert!(image.color_count() >= colors, "{game}");
     }
+}
+
+#[test]
+fn lzexe_unpacks_to_a_runnable_executable() {
+    let word = |w: u16| w.to_le_bytes();
+    // Load image: the packed bytes (literals "AB", then the end mark), and
+    // in the next paragraph the unpacker's segment.
+    let mut image = vec![0x0B, 0x00, b'A', b'B', 0x00, 0x00, 0x00];
+    image.resize(16, 0);
+    // Original IP, CS, SP, SS; packed size; growth; unpacker size; checksum.
+    for w in [0x10, 0x20, 0x80, 0x30, 1, 0x40, 0x160, 0] {
+        image.extend(word(w));
+    }
+    image.resize(16 + 0x158, 0x90);
+    // Relocations: 5, then +0x20, then a 0xFFF0 jump and +1, then the end.
+    image.extend([5, 0x20, 0, 0, 0, 1, 0, 1, 0]);
+
+    let mut exe = vec![0u8; 0x20];
+    exe[..2].copy_from_slice(b"MZ");
+    exe[8..10].copy_from_slice(&word(2)); // header paragraphs
+    exe[0xA..0xC].copy_from_slice(&word(0x100)); // minimum memory
+    exe[0xC..0xE].copy_from_slice(&word(0xFFFF));
+    exe[0x16..0x18].copy_from_slice(&word(1)); // CS: the unpacker
+    exe[0x1C..0x20].copy_from_slice(b"LZ91");
+    exe.extend(image);
+
+    let out = lzexe::unpack_exe(&exe).unwrap();
+    let field = |i: usize| u16::from_le_bytes([out[i * 2], out[i * 2 + 1]]);
+    assert_eq!(out.len(), 0x200 + 2);
+    assert_eq!(&out[0x200..], b"AB");
+    assert_eq!(field(0), 0x5A4D);
+    assert_eq!((field(1), field(2)), (2, 2)); // bytes in the last page, pages
+    assert_eq!((field(3), field(4)), (3, 0x20)); // relocations, header paragraphs
+    assert_eq!(field(5), 0x100 - (0x40 + 0x16 + 9));
+    assert_eq!(field(6), 0xFFFF);
+    assert_eq!(
+        (field(7), field(8), field(10), field(11)),
+        (0x30, 0x80, 0x10, 0x20)
+    );
+    assert_eq!(field(12), 0x1C);
+    let relocs: Vec<u16> = (0..6).map(|i| field(0xE + i)).collect();
+    assert_eq!(relocs, [5, 0, 5, 2, 6, 0x1001]);
+
+    // Unpacked executables stay as they are.
+    assert_eq!(lzexe::unpack_exe(&out).unwrap(), out);
 }

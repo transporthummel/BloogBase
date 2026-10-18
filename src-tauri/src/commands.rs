@@ -15,6 +15,7 @@ use crate::db::Db;
 use crate::dosconf::{self, ConfigView, ConfigWarning};
 use crate::downloads;
 use crate::error::{CommandResult, Error, Result};
+use crate::firing::{self, Firing};
 use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
 use crate::keenwiki::{self, WikiMod};
 use crate::launcher::{self, PlaySessionEnded, Running};
@@ -24,6 +25,7 @@ use crate::mods::{self, Curated, Dropped, InstallModRequest, Mod, ModInfo};
 use crate::paths::{self, AppPaths};
 use crate::profiles::{self, Profile};
 use crate::readme::{self, Readme};
+use crate::recipe::Recipe;
 use crate::runtime::{self, RuntimeStatus};
 use crate::saves::{self, SaveFile};
 use crate::screenshots::{self, Screenshot};
@@ -384,6 +386,40 @@ pub fn set_display_options(
     options: dosconf::DisplayOptions,
 ) -> CommandResult<()> {
     Ok(dosconf::set_options(&db, &options)?)
+}
+
+/// Whether Keen 1-3 fire with Space, from the settings page.
+#[tauri::command]
+#[specta::specta]
+pub fn one_button_firing(db: State<'_, Db>) -> CommandResult<bool> {
+    Ok(firing::enabled(&db)?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_one_button_firing(db: State<'_, Db>, on: bool) -> CommandResult<()> {
+    Ok(firing::set_enabled(&db, on)?)
+}
+
+/// Where a profile stands with one-button firing, whether it's on or not;
+/// `None` for games without it.
+#[tauri::command]
+#[specta::specta]
+pub fn profile_firing(db: State<'_, Db>, profile_id: String) -> CommandResult<Option<Firing>> {
+    let (profile, layers) = profiles::get(&db, &profile_id)?;
+    let Some(game) = catalog::game(&profile.game_id) else {
+        return Ok(None);
+    };
+    let recipe = layers.mod_layer.as_ref().map(|m| &m.recipe);
+    let mut dirs = vec![layers.lower.as_path()];
+    if let Some(m) = &layers.mod_layer {
+        dirs.insert(0, &m.files);
+    }
+    Ok(firing::status(
+        game,
+        recipe.unwrap_or(&Recipe::Episode),
+        &dirs,
+    ))
 }
 
 /// The DOSBox config layers: the global override, and with `profile_id`

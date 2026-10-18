@@ -22,6 +22,7 @@ import { Notice } from "../ui/Notice";
 import { PlayButton } from "../ui/PlayButton";
 import { Tabs } from "../ui/Tabs";
 import { ConfigPanel } from "./ConfigPanel";
+import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { ReadmePanel } from "./ReadmePanel";
 import { useReadme } from "./readme";
 import { SavesPanel } from "./SavesPanel";
@@ -271,9 +272,29 @@ function Hero({
             </Button>
           )}
         </div>
+        <FiringNote profileId={profile.id} />
         {openFolder.error && <Notice tone="error">{errorMessage(t, openFolder.error)}</Notice>}
       </div>
     </Card>
+  );
+}
+
+/** How Keen 1-3 shoot here, where it isn't the usual Ctrl and Alt or can't be changed. */
+function FiringNote({ profileId }: { profileId: string }) {
+  const { t } = useTranslation();
+  const enabled = useQuery({
+    queryKey: oneButtonFiringKey,
+    queryFn: () => unwrap(commands.oneButtonFiring()),
+  });
+  const status = useQuery({
+    queryKey: profileFiringKey(profileId),
+    queryFn: () => unwrap(commands.profileFiring(profileId)),
+  });
+  const s = status.data;
+  // A mod's own one-button firing is worth knowing even with the setting off.
+  if (!s || (s !== "builtIn" && !enabled.data)) return null;
+  return (
+    <p className="text-sm text-muted">{t(`profile.firing.${s === "patchable" ? "on" : s}`)}</p>
   );
 }
 

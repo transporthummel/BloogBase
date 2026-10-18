@@ -6,6 +6,7 @@ import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type BackupSettings, type DisplayOptions } from "../bindings";
 import { ConfigEditor } from "../config/ConfigEditor";
+import { oneButtonFiringKey } from "../profile/firing";
 import { configKey } from "../config/queries";
 import { errorMessage } from "../errors";
 import { useAppUpdate, useCheckForUpdate } from "../updates/queries";
@@ -69,6 +70,7 @@ export function Settings() {
         </Section>
         <RuntimeSection />
         <DisplaySection />
+        <ControlsSection />
         <BackupSection />
         <GlobalConfigSection />
         <Section title={t("settings.setup")}>
@@ -241,6 +243,41 @@ export function DisplaySection() {
       {v && <p className="text-xs text-muted">{t("settings.displayHint.all")}</p>}
       {(view.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
+      )}
+    </Section>
+  );
+}
+
+function ControlsSection() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const firing = useQuery({
+    queryKey: oneButtonFiringKey,
+    queryFn: () => unwrap(commands.oneButtonFiring()),
+  });
+  const update = useMutation({
+    mutationFn: (on: boolean) => unwrap(commands.setOneButtonFiring(on)),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: oneButtonFiringKey }),
+  });
+
+  return (
+    <Section title={t("settings.controls")}>
+      {firing.data !== undefined && (
+        <div className="grid gap-1">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={firing.data}
+              disabled={update.isPending}
+              onChange={(e) => update.mutate(e.target.checked)}
+            />
+            {t("settings.oneButtonFiring")}
+          </label>
+          <p className="ml-6 text-xs text-muted">{t("settings.oneButtonFiringHint")}</p>
+        </div>
+      )}
+      {(firing.error ?? update.error) && (
+        <Notice tone="error">{errorMessage(t, firing.error ?? update.error)}</Notice>
       )}
     </Section>
   );

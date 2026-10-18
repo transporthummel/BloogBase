@@ -64,6 +64,23 @@ export const commands = {
 	/**  The simple display options on the settings page. */
 	displayOptions: () => typedError<DisplayOptionsView, CommandError>(__TAURI_INVOKE("display_options")),
 	setDisplayOptions: (options: DisplayOptions) => typedError<null, CommandError>(__TAURI_INVOKE("set_display_options", { options })),
+	/**  Whether Keen 1-3 fire with Space, from the settings page. */
+	oneButtonFiring: () => typedError<boolean, CommandError>(__TAURI_INVOKE("one_button_firing")),
+	setOneButtonFiring: (on: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("set_one_button_firing", { on })),
+	/**
+	 *  Where a profile stands with one-button firing, whether it's on or not;
+	 *  `None` for games without it.
+	 */
+	profileFiring: (profileId: string) => typedError<
+/**  Fires with Ctrl and Alt; the patch fits. */
+"patchable" | 
+/**  Already fires with Space. */
+"builtIn" | 
+/**
+ *  The code isn't as the patch expects: another version, or a mod that
+ *  changed it differently.
+ */
+"unavailable" | null, CommandError>(__TAURI_INVOKE("profile_firing", { profileId })),
 	/**
 	 *  The DOSBox config layers: the global override, and with `profile_id`
 	 *  that profile's layers and the effective result.
@@ -229,6 +246,18 @@ export type Engine = "vorticons" | "galaxy" | "dreams";
 
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
 export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload" | "noSavesFound" | "otherGame";
+
+/**  Where a game or mod stands with the patch. */
+export type Firing = 
+/**  Fires with Ctrl and Alt; the patch fits. */
+"patchable" | 
+/**  Already fires with Space. */
+"builtIn" | 
+/**
+ *  The code isn't as the patch expects: another version, or a mod that
+ *  changed it differently.
+ */
+"unavailable";
 
 export type FoundGame = {
 	gameId: string,

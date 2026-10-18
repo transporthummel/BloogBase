@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -71,6 +71,8 @@ vi.mock("../bindings", () => {
     "profileCover",
     "deleteScreenshot",
     "openCaptureFolder",
+    "oneButtonFiring",
+    "profileFiring",
   ];
   return {
     commands: Object.fromEntries(names.map((n) => [n, vi.fn()])),
@@ -166,6 +168,8 @@ beforeEach(() => {
   vi.mocked(commands.indexMods).mockResolvedValue(ok([]));
   vi.mocked(commands.listScreenshots).mockResolvedValue(ok([]));
   vi.mocked(commands.profileCover).mockResolvedValue(ok(null));
+  vi.mocked(commands.oneButtonFiring).mockResolvedValue(ok(false));
+  vi.mocked(commands.profileFiring).mockResolvedValue(ok(null));
 });
 
 const aurora: Mod = {
@@ -261,6 +265,28 @@ test("games don't look for a README", async () => {
   );
   expect(commands.modReadme).not.toHaveBeenCalled();
   expect(screen.queryByRole("button", { name: "Open mod folder" })).toBeNull();
+});
+
+test("says how Keen 1-3 shoot where the setting or the mod changes it", async () => {
+  vi.mocked(commands.profileFiring).mockResolvedValue(ok("patchable"));
+  renderDetail();
+  await screen.findByRole("heading", { name: keen4.title });
+  expect(commands.profileFiring).toHaveBeenCalledWith("keen4-1");
+  expect(screen.queryByText(/Space/)).toBeNull();
+  cleanup();
+
+  vi.mocked(commands.oneButtonFiring).mockResolvedValue(ok(true));
+  renderDetail();
+  expect(
+    await screen.findByText("Space shoots, Enter opens the status window."),
+  ).toBeInTheDocument();
+  cleanup();
+
+  // A mod's own one-button firing shows with the setting off too.
+  vi.mocked(commands.oneButtonFiring).mockResolvedValue(ok(false));
+  vi.mocked(commands.profileFiring).mockResolvedValue(ok("builtIn"));
+  renderDetail();
+  expect(await screen.findByText("This mod already shoots with Space.")).toBeInTheDocument();
 });
 
 test("the title screen is the picture, else the latest screenshot", async () => {

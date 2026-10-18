@@ -111,7 +111,10 @@
       "vsync": "Helps if the picture tears horizontally while moving. Controls then react a tiny bit later; not needed on FreeSync or G-Sync monitors.",
       "all": "Applies to all games from their next start. Single games can differ on their page under “DOSBox settings”."
     },
-    "displayOverridden": "Set by your DOSBox settings for all games (below)."
+    "displayOverridden": "Set by your DOSBox settings for all games (below).",
+    "controls": "Controls",
+    "oneButtonFiring": "One-button firing in Keen 1–3",
+    "oneButtonFiringHint": "Space shoots instead of Ctrl and Alt together, and Enter opens the status window. Mods that already work this way stay as they are; mods that change the controls differently are left alone. Shooting with a joystick may stop working. Applies from the next start."
   },
   "errors": {
     "noGamesFound": "No Commander Keen games were found there.",
@@ -346,7 +349,12 @@
     "shareware": "Shareware",
     "released": "Released {{date}}",
     "links": "Links",
-    "openModFolder": "Open mod folder"
+    "openModFolder": "Open mod folder",
+    "firing": {
+      "on": "Space shoots, Enter opens the status window.",
+      "builtIn": "This mod already shoots with Space.",
+      "unavailable": "One-button firing isn’t available here: this game or mod changes the controls differently."
+    }
   },
   "saves": {
     "title": "Saved games",

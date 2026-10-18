@@ -8,6 +8,7 @@ mod detect;
 mod dosconf;
 mod downloads;
 mod error;
+mod firing;
 mod jobs;
 mod keenwiki;
 mod launcher;
@@ -70,6 +71,9 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::set_backup_settings,
             commands::display_options,
             commands::set_display_options,
+            commands::one_button_firing,
+            commands::set_one_button_firing,
+            commands::profile_firing,
             commands::config_view,
             commands::save_config,
             commands::reset_config,

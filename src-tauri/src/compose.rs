@@ -1,6 +1,6 @@
-//! Composed lower layers for mod profiles: the install's base files with the
-//! mod's files copied on top (PLAN.md §4.2). Disposable; rebuilt whenever
-//! the inputs change.
+//! Composed lower layers: the install's base files with a mod's files copied
+//! on top (PLAN.md §4.2), and one-button firing patched in where it's on.
+//! Disposable; rebuilt whenever the inputs change.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -12,10 +12,13 @@ use rusqlite::params;
 use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
 
+use crate::catalog::Game;
 use crate::db::Db;
 use crate::detect::hex;
 use crate::error::Result;
+use crate::firing;
 use crate::paths::AppPaths;
+use crate::profiles::ModLayer;
 use crate::recipe::{Recipe, has_ext};
 
 /// Archives inside a mod (extras, sources) are never needed by the game.
@@ -30,19 +33,22 @@ struct Input {
 }
 
 /// Returns the composed directory of `profile_id`, building it if it's
-/// missing or out of date.
+/// missing or out of date. With `firing`, one-button firing is patched in
+/// for that game where it fits.
 pub fn ensure(
     paths: &AppPaths,
     db: &Db,
     profile_id: &str,
     base: &Path,
-    mod_files: &Path,
-    recipe: &Recipe,
+    mod_layer: Option<&ModLayer>,
+    firing: Option<&Game>,
 ) -> Result<PathBuf> {
+    let recipe = mod_layer.map_or(&Recipe::Episode, |m| &m.recipe);
     // Upper-cased path → file. DOS names are case-insensitive, so a mod's
     // `level01.ck1` replaces the base's `LEVEL01.CK1`.
     let mut inputs: BTreeMap<String, Input> = BTreeMap::new();
-    for (root, is_mod) in [(base, false), (mod_files, true)] {
+    let mod_root = mod_layer.map(|m| (m.files.as_path(), true));
+    for (root, is_mod) in std::iter::once((base, false)).chain(mod_root) {
         for input in scan(root)? {
             if is_mod && SKIPPED.iter().any(|e| has_ext(&input.rel, e)) {
                 continue;
@@ -51,7 +57,7 @@ pub fn ensure(
         }
     }
 
-    let hash = composition_hash(&inputs, recipe);
+    let hash = composition_hash(&inputs, recipe, firing.is_some());
     let dir = paths.composed(profile_id);
     let stored: Option<String> = db.conn().query_row(
         "SELECT composed_hash FROM profiles WHERE id = ?1",
@@ -73,6 +79,10 @@ pub fn ensure(
         fs::copy(&input.path, dest)?;
     }
     fs::create_dir_all(&tmp)?;
+    if let Some(game) = firing {
+        let status = firing::apply(game, recipe, &tmp)?;
+        tracing::info!("one-button firing for {profile_id}: {status:?}");
+    }
     match fs::remove_dir_all(&dir) {
         Err(e) if e.kind() != io::ErrorKind::NotFound => return Err(e.into()),
         _ => {}
@@ -115,10 +125,13 @@ fn scan(root: &Path) -> Result<Vec<Input>> {
 
 /// Base and mod files are never modified in place, so names, sizes and
 /// modification times identify them well enough without reading them.
-fn composition_hash(inputs: &BTreeMap<String, Input>, recipe: &Recipe) -> String {
+fn composition_hash(inputs: &BTreeMap<String, Input>, recipe: &Recipe, firing: bool) -> String {
     let mut h = Sha256::new();
     h.update(b"composed v1\n");
     h.update(serde_json::to_string(recipe).expect("recipes serialize"));
+    if firing {
+        h.update(b"\none-button firing v1");
+    }
     for input in inputs.values() {
         h.update(format!(
             "\n{}\t{}\t{}\t{}",
@@ -162,7 +175,11 @@ mod tests {
             ],
         );
 
-        let dir = ensure(&paths, &db, "p", &base, &modf, &Recipe::Episode).unwrap();
+        let episode = ModLayer {
+            files: modf.clone(),
+            recipe: Recipe::Episode,
+        };
+        let dir = ensure(&paths, &db, "p", &base, Some(&episode), None).unwrap();
         assert_eq!(dir, paths.composed("p"));
         let mut names: Vec<String> = fs::read_dir(&dir)
             .unwrap()
@@ -175,17 +192,20 @@ mod tests {
 
         // Unchanged inputs: the directory is reused as is.
         fs::write(dir.join("MARK"), b"").unwrap();
-        ensure(&paths, &db, "p", &base, &modf, &Recipe::Episode).unwrap();
+        ensure(&paths, &db, "p", &base, Some(&episode), None).unwrap();
         assert!(dir.join("MARK").exists());
 
         // A different recipe or changed file rebuilds it.
-        let batch = Recipe::Batch {
-            file: "GO.BAT".into(),
+        let batch = ModLayer {
+            files: modf.clone(),
+            recipe: Recipe::Batch {
+                file: "GO.BAT".into(),
+            },
         };
-        ensure(&paths, &db, "p", &base, &modf, &batch).unwrap();
+        ensure(&paths, &db, "p", &base, Some(&batch), None).unwrap();
         assert!(!dir.join("MARK").exists());
         fs::write(modf.join("NEW.CK1"), b"n").unwrap();
-        ensure(&paths, &db, "p", &base, &modf, &batch).unwrap();
+        ensure(&paths, &db, "p", &base, Some(&batch), None).unwrap();
         assert!(dir.join("NEW.CK1").exists());
         assert!(!paths.cache.join("composed/p.tmp").exists());
     }
