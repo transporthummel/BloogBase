@@ -339,7 +339,8 @@
     "added": "Added",
     "shareware": "Shareware",
     "released": "Released {{date}}",
-    "links": "Links"
+    "links": "Links",
+    "openModFolder": "Open mod folder"
   },
   "saves": {
     "title": "Saved games",

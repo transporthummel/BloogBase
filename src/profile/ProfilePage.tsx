@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, FolderOpen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
@@ -149,6 +149,9 @@ function Hero({
   const cardRef = useRef<HTMLElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const pictureWidth = usePictureWidth(cardRef, textRef);
+  const openFolder = useMutation({
+    mutationFn: (modId: string) => unwrap(commands.openModFolder(modId)),
+  });
 
   const mod = mods.data?.find((m) => m.id === profile.modId);
   const entry = mod?.indexId
@@ -247,7 +250,7 @@ function Hero({
             </div>
           ))}
         </dl>
-        <div>
+        <div className="flex flex-wrap items-center gap-3">
           <PlayButton
             onClick={onPlay}
             disabled={!canPlay || profile.running}
@@ -255,7 +258,14 @@ function Hero({
           >
             {profile.running ? t("library.running") : t("library.play")}
           </PlayButton>
+          {mod && (
+            <Button variant="secondary" onClick={() => openFolder.mutate(mod.id)}>
+              <FolderOpen className="size-4" aria-hidden />
+              {t("profile.openModFolder")}
+            </Button>
+          )}
         </div>
+        {openFolder.error && <Notice tone="error">{errorMessage(t, openFolder.error)}</Notice>}
       </div>
     </Card>
   );

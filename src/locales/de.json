@@ -339,7 +339,8 @@
     "added": "Hinzugefügt",
     "shareware": "Shareware",
     "released": "Erschienen {{date}}",
-    "links": "Links"
+    "links": "Links",
+    "openModFolder": "Mod-Ordner öffnen"
   },
   "saves": {
     "title": "Spielstände",

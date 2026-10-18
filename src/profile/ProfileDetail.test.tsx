@@ -65,6 +65,7 @@ vi.mock("../bindings", () => {
     "resetConfig",
     "listMods",
     "modReadme",
+    "openModFolder",
     "indexMods",
     "listScreenshots",
     "profileCover",
@@ -203,6 +204,9 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   await userEvent.click(screen.getByRole("button", { name: "KeenWiki" }));
   expect(openUrl).toHaveBeenCalledWith(aurora.keenwikiUrl);
   expect(screen.getByText("Sessions").nextSibling).toHaveTextContent("1");
+  vi.mocked(commands.openModFolder).mockResolvedValue(ok(null));
+  await userEvent.click(screen.getByRole("button", { name: "Open mod folder" }));
+  expect(commands.openModFolder).toHaveBeenCalledWith("aurora-bliss");
 });
 
 test("a mod's README is the first tab, shown as text with links opening outside", async () => {
@@ -250,6 +254,7 @@ test("games don't look for a README", async () => {
     "true",
   );
   expect(commands.modReadme).not.toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: "Open mod folder" })).toBeNull();
 });
 
 test("the title screen is the picture, else the latest screenshot", async () => {

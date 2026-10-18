@@ -83,6 +83,8 @@ export const commands = {
 	file: string,
 	text: string,
 } | null, CommandError>(__TAURI_INVOKE("mod_readme", { modId })),
+	/**  Opens the folder with a mod's installed files. */
+	openModFolder: (modId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_folder", { modId })),
 	/**  Removes a mod and its profile; `keep_saves` archives the saves first. */
 	deleteMod: (modId: string, keepSaves: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("delete_mod", { modId, keepSaves })),
 	indexStatus: () => __TAURI_INVOKE<IndexStatus>("index_status"),

@@ -231,10 +231,30 @@ pub fn open_capture_folder(
     db: State<'_, Db>,
     profile_id: String,
 ) -> CommandResult<()> {
-    use tauri_plugin_opener::OpenerExt;
     profiles::get(&db, &profile_id)?;
     let dir = paths.profile(&profile_id).capture;
     std::fs::create_dir_all(&dir).map_err(Error::from)?;
+    open_dir(&app, &dir)
+}
+
+/// Opens the folder with a mod's installed files.
+#[tauri::command]
+#[specta::specta]
+pub fn open_mod_folder(
+    app: AppHandle,
+    paths: State<'_, AppPaths>,
+    db: State<'_, Db>,
+    mod_id: String,
+) -> CommandResult<()> {
+    if !mods::list(&db)?.iter().any(|m| m.id == mod_id) {
+        return Err(Error::NotFound(format!("mod {mod_id}")).into());
+    }
+    open_dir(&app, &paths.mods.join(&mod_id).join("files"))
+}
+
+/// Shows a folder in the system's file manager.
+fn open_dir(app: &AppHandle, dir: &Path) -> CommandResult<()> {
+    use tauri_plugin_opener::OpenerExt;
     app.opener()
         .open_path(dir.display().to_string(), None::<&str>)
         .map_err(|e| Error::from(std::io::Error::other(e.to_string())))?;
