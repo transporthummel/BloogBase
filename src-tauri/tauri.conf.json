@@ -51,6 +51,11 @@
     "copyright": "Copyright © 2026 transporthummel. Commander Keen is a trademark of id Software.",
     "license": "MIT",
     "licenseFile": "../LICENSE",
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico"
+      }
+    },
     "macOS": {
       "minimumSystemVersion": "11.0",
       "signingIdentity": "-"
