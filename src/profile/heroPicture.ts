@@ -3,6 +3,8 @@ import { useLayoutEffect, useState, type RefObject } from "react";
 const REM = 16;
 /** The picture never gets narrower than this... */
 const MIN_PICTURE = 20 * REM;
+/** ...nor wider than this (360px tall at 4:3)... */
+const MAX_PICTURE = 30 * REM;
 /** ...and leaves the text at least this much. */
 const MIN_TEXT = 24 * REM;
 /** Side by side from Tailwind's `md` up; stacked below. */
@@ -28,7 +30,7 @@ export function usePictureWidth(
     const fit = () => {
       if (!media.matches) return setWidth(undefined);
       const wanted = (tx.offsetHeight * 4) / 3;
-      const next = Math.max(MIN_PICTURE, Math.min(wanted, c.clientWidth - MIN_TEXT));
+      const next = Math.max(MIN_PICTURE, Math.min(wanted, MAX_PICTURE, c.clientWidth - MIN_TEXT));
       // A wider picture makes the text taller, and so on; small steps end it.
       setWidth((prev) => (prev !== undefined && Math.abs(prev - next) < 2 ? prev : next));
     };
