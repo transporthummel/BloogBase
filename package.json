@@ -12,6 +12,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:all": "node scripts/test-all.mjs",
     "typecheck": "tsc --noEmit",
     "index:check": "cargo run --quiet --manifest-path index/tool/Cargo.toml -- check --download",
     "index:build": "cargo run --quiet --manifest-path index/tool/Cargo.toml -- build --out index/dist --key .local/index-signing/minisign.key",
