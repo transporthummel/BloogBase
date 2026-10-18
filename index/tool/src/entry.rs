@@ -17,6 +17,9 @@ pub struct Entry {
     #[serde(default)]
     pub requires: Vec<String>,
     pub authors: Vec<String>,
+    /// Author name → their page, e.g. their KeenWiki user page.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub author_links: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     /// `YYYY-MM-DD`
@@ -170,6 +173,14 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
     if entry.authors.is_empty() || entry.authors.iter().any(|a| a.trim().is_empty()) {
         fail("authors must list at least one name".into());
     }
+    for (name, url) in &entry.author_links {
+        if !entry.authors.contains(name) {
+            fail(format!("authorLinks: `{name}` is not one of the authors"));
+        }
+        if !url.starts_with("https://") {
+            fail(format!("authorLinks: {url} must use https"));
+        }
+    }
     for (field, date) in [
         ("released", entry.released.as_deref()),
         ("updated", entry.updated.as_deref()),
@@ -267,6 +278,8 @@ name: Aurora Bliss
 game: keen4
 requires: [keen4-1.4-ega]
 authors: [Dave216]
+authorLinks:
+  Dave216: https://keenwiki.shikadi.net/wiki/User:Dave216
 version: "1.2"
 released: 2023-08-23
 added: 2026-10-17
@@ -326,8 +339,10 @@ recipe:
         e.added = "17.10.2026".into();
         e.downloads[0].sha256 = "abc".into();
         e.links.keenwiki = Some("https://example.com/wiki/x".into());
+        e.author_links
+            .insert("Nobody".into(), "http://example.com".into());
         let p = problems(&e, "other-name", &catalog());
-        assert_eq!(p.len(), 5, "{p:#?}");
+        assert_eq!(p.len(), 7, "{p:#?}");
 
         let mut e = parse(AURORA).unwrap();
         e.requires = vec!["keen4-1.0".into()];

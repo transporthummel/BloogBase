@@ -130,6 +130,7 @@ function WikiCard({
           downloadUrl: chosen.url,
           gameId: page.gameId,
           authors: page.authors,
+          authorLinks: page.authorLinks,
           // Without one the archive name is used.
           version: chosen.version,
           description: page.description,

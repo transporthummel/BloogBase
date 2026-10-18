@@ -3,6 +3,8 @@ name: Keenball
 game: keen4
 requires: [keen4-1.4-ega]
 authors: [Levellass]
+authorLinks:
+  Levellass: https://keenwiki.shikadi.net/wiki/User:Levellass
 released: 2019-03-14
 added: 2026-10-17
 type: conversion

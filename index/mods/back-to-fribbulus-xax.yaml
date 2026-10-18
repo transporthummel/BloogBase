@@ -3,6 +3,8 @@ name: Back to Fribbulus Xax
 game: keen6
 requires: [keen6-1.4-ega]
 authors: [Alopex]
+authorLinks:
+  Alopex: https://keenwiki.shikadi.net/wiki/User:Alopex
 version: "1.0"
 released: 2024-10-03
 added: 2026-10-17

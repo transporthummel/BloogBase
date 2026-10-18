@@ -22,6 +22,7 @@ authors and link back to KeenWiki and PCKF.
    | `game`          | `keen1` … `keen6`, `kdreams`                                                                |
    | `requires`      | Game versions it works with (ids from `src-tauri/catalog/games.json`); leave out for any    |
    | `authors`       | Names as on KeenWiki                                                                        |
+   | `authorLinks`   | Name: page for authors whose name KeenWiki links (their `User:` page); leave out red links  |
    | `version`       | The mod's version, in quotes                                                                |
    | `released`      | First release, `YYYY-MM-DD`; `updated` for the latest one                                   |
    | `added`         | Today: when the entry joined the index (drives the "New" badge)                             |

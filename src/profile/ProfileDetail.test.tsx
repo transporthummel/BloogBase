@@ -172,7 +172,8 @@ const aurora: Mod = {
   id: "aurora-bliss",
   gameId: "keen4",
   name: "Aurora Bliss",
-  authors: ["Dave216"],
+  authors: ["Dave216", "Ceilick"],
+  authorLinks: { Dave216: "https://keenwiki.shikadi.net/wiki/User:Dave216" },
   version: "1.2",
   description: "A colourful journey.",
   released: "2012-05-01",
@@ -198,7 +199,12 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
   renderDetail();
   expect(await screen.findByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
-  expect(await screen.findByText("by Dave216")).toBeInTheDocument();
+  const author = await screen.findByRole("button", { name: "Dave216" });
+  expect(author.parentElement).toHaveTextContent(/^by Dave216, Ceilick$/);
+  // Without a page, a name is plain text.
+  expect(screen.queryByRole("button", { name: "Ceilick" })).toBeNull();
+  await userEvent.click(author);
+  expect(openUrl).toHaveBeenCalledWith("https://keenwiki.shikadi.net/wiki/User:Dave216");
   expect(screen.getByText("A colourful journey.")).toBeInTheDocument();
   expect(screen.getByText(`Runs on ${keen4.title} Unknown version`)).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "KeenWiki" }));

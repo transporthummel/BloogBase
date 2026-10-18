@@ -3,6 +3,8 @@ name: The Ultra Omegamatic
 game: keen5
 requires: [keen5-1.4-ega]
 authors: [DarkAle]
+authorLinks:
+  DarkAle: https://keenwiki.shikadi.net/wiki/User:DarkAle
 version: "2.0"
 released: 2020-04-21
 updated: 2020-09-08

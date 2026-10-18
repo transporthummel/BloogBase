@@ -3,6 +3,8 @@ name: The Keys of Krodacia
 game: keen4
 requires: [keen4-1.4-ega]
 authors: [Ceilick]
+authorLinks:
+  Ceilick: https://keenwiki.shikadi.net/wiki/User:Ceilick
 version: "2.0"
 released: 2006-06-27
 updated: 2009-03-14

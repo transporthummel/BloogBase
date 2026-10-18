@@ -614,6 +614,7 @@ pub fn install_index_mod(app: AppHandle, index_id: String, install_id: Option<St
             game_id: entry.game.clone(),
             name: entry.name.clone(),
             authors: entry.authors.clone(),
+            author_links: entry.author_links.clone(),
             version: entry.version.clone(),
             description: entry.description.clone(),
             released: entry.released.clone(),

@@ -13,6 +13,7 @@ import { unwrap } from "../ipc";
 import { Cover } from "../library/Cover";
 import { useCover } from "../library/covers";
 import { modsKey, profilesKey } from "../library/queries";
+import { Authors } from "../mods/Authors";
 import { useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -221,7 +222,12 @@ function Hero({
             {mod?.version && <Badge>{t("mods.version", { version: mod.version })}</Badge>}
           </div>
           {mod && mod.authors.length > 0 && (
-            <p className="text-sm">{t("mods.by", { authors: mod.authors.join(", ") })}</p>
+            <p className="text-sm">
+              <Authors
+                authors={mod.authors}
+                links={{ ...mod.authorLinks, ...entry?.authorLinks }}
+              />
+            </p>
           )}
           {mod?.released && (
             <p className="text-sm text-muted">{t("profile.released", { date: mod.released })}</p>

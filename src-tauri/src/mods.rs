@@ -105,6 +105,9 @@ pub struct KeenwikiOrigin {
     pub game_id: Option<String>,
     /// Replace the guessed ones when not empty.
     pub authors: Vec<String>,
+    /// Author name → their page.
+    #[serde(default)]
+    pub author_links: BTreeMap<String, String>,
     pub version: Option<String>,
     #[serde(default)]
     pub description: Option<String>,
@@ -120,6 +123,8 @@ pub struct Mod {
     pub game_id: String,
     pub name: String,
     pub authors: Vec<String>,
+    /// Author name → their page, for the authors that have one.
+    pub author_links: BTreeMap<String, String>,
     pub version: Option<String>,
     pub description: Option<String>,
     /// `YYYY-MM-DD`, when known.
@@ -498,6 +503,7 @@ fn title_case(s: &str) -> String {
 struct Stored<'a> {
     name: String,
     authors: Vec<String>,
+    author_links: BTreeMap<String, String>,
     version: Option<String>,
     description: Option<String>,
     released: Option<String>,
@@ -541,6 +547,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             } else {
                 o.authors.clone()
             },
+            author_links: o.author_links.clone(),
             version: o.version.clone().or_else(|| analysis.info.version.clone()),
             description: o.description.clone(),
             released: o
@@ -557,6 +564,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
         None => Stored {
             name,
             authors: analysis.info.authors.clone(),
+            author_links: BTreeMap::new(),
             version: analysis.info.version.clone(),
             description: None,
             released: analysis.info.released.clone(),
@@ -579,6 +587,7 @@ pub struct Curated {
     pub game_id: String,
     pub name: String,
     pub authors: Vec<String>,
+    pub author_links: BTreeMap<String, String>,
     pub version: Option<String>,
     pub description: Option<String>,
     pub released: Option<String>,
@@ -621,6 +630,7 @@ pub fn install_curated(
     let stored = Stored {
         name: c.name.clone(),
         authors: c.authors.clone(),
+        author_links: c.author_links.clone(),
         version: c.version.clone(),
         description: c.description.clone(),
         released: c.released.clone(),
@@ -773,6 +783,7 @@ fn store(
             game_id: analysis.info.game_id.clone(),
             name: s.name.clone(),
             authors: s.authors.clone(),
+            author_links: s.author_links.clone(),
             version: s.version.clone(),
             description: s.description.clone(),
             released: s.released.clone(),
@@ -788,8 +799,8 @@ fn store(
         tx.execute(
             "INSERT INTO mods (id, game_id, index_id, keenwiki_url, name, authors, version,
                                recipe_json, path, source, source_url, archive_sha256, added_at,
-                               description, released)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+                               description, released, author_links)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
             params![
                 m.id,
                 m.game_id,
@@ -805,7 +816,8 @@ fn store(
                 archive_sha256(source)?,
                 m.added_at,
                 m.description,
-                m.released
+                m.released,
+                serde_json::to_string(&m.author_links).expect("strings serialize")
             ],
         )?;
         tx.execute(
@@ -892,7 +904,7 @@ fn update(
         tx.execute(
             "UPDATE mods SET authors = ?2, version = ?3, recipe_json = ?4, keenwiki_url = ?5,
                              source_url = ?6, archive_sha256 = ?7, description = ?8,
-                             released = ?9
+                             released = ?9, author_links = ?10
              WHERE id = ?1",
             params![
                 mod_id,
@@ -903,7 +915,8 @@ fn update(
                 s.source_url,
                 archive_sha256(source)?,
                 s.description,
-                s.released
+                s.released,
+                serde_json::to_string(&s.author_links).expect("strings serialize")
             ],
         )?;
         tx.execute(
@@ -989,7 +1002,8 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
     let conn = db.conn();
     let mut stmt = conn.prepare(
         "SELECT m.id, m.game_id, m.name, m.authors, m.version, m.recipe_json, m.source,
-                m.added_at, p.id, m.index_id, m.keenwiki_url, m.description, m.released
+                m.added_at, p.id, m.index_id, m.keenwiki_url, m.description, m.released,
+                m.author_links
          FROM mods m JOIN profiles p ON p.mod_id = m.id
          ORDER BY m.added_at, m.id",
     )?;
@@ -1002,6 +1016,10 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
             game_id: r.get(1)?,
             name: r.get(2)?,
             authors: serde_json::from_str(&authors).unwrap_or_default(),
+            author_links: r
+                .get::<_, Option<String>>(13)?
+                .and_then(|j| serde_json::from_str(&j).ok())
+                .unwrap_or_default(),
             version: r.get(4)?,
             recipe: serde_json::from_str(&recipe).unwrap_or(Recipe::Episode),
             source: ModSource::parse(&source).expect("valid mod source"),
@@ -1033,6 +1051,7 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
         name,
         game_id,
         authors,
+        author_links,
         version,
         recipe,
         keenwiki_url,
@@ -1055,6 +1074,12 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
         json(&name),
         json(&authors)
     );
+    if !author_links.is_empty() {
+        yaml += "authorLinks:\n";
+        for (name, url) in &author_links {
+            yaml += &format!("  {}: {url}\n", json(name));
+        }
+    }
     if let Some(v) = &version {
         yaml += &format!("version: {}\n", json(v));
     }
@@ -1282,6 +1307,10 @@ mod tests {
             download_url: download.into(),
             game_id: Some("keen4".into()),
             authors: vec!["Dave216".into()],
+            author_links: BTreeMap::from([(
+                "Dave216".into(),
+                "https://keenwiki.shikadi.net/wiki/User:Dave216".into(),
+            )]),
             version: Some("1.2".into()),
             description: Some("Blissful.".into()),
             released: Some("2012-05-01".into()),
@@ -1295,6 +1324,10 @@ mod tests {
         assert_eq!(listed.keenwiki_url.as_deref(), Some(page));
         assert_eq!(listed.description.as_deref(), Some("Blissful."));
         assert_eq!(listed.released.as_deref(), Some("2012-05-01"));
+        assert_eq!(
+            listed.author_links["Dave216"],
+            "https://keenwiki.shikadi.net/wiki/User:Dave216"
+        );
 
         let url = reqwest::Url::parse(&index_suggestion(&db, &m.id).unwrap()).unwrap();
         assert_eq!(
@@ -1310,6 +1343,7 @@ mod tests {
             "name: \"Aurora Bliss\"\n",
             "game: keen4\n",
             "authors: [\"Dave216\"]\n",
+            "authorLinks:\n  \"Dave216\": https://keenwiki.shikadi.net/wiki/User:Dave216\n",
             &format!("  keenwiki: {page}\n"),
             &format!("  - url: {download}\n    sha256: {sha}\n    version: \"1.2\"\n"),
             "recipe:\n  type: \"episode\"\n",
@@ -1364,6 +1398,7 @@ mod tests {
             game_id: "keen4".into(),
             name: "Aurora Bliss".into(),
             authors: vec!["Dave216".into()],
+            author_links: BTreeMap::new(),
             version: Some("1.2".into()),
             description: Some("A Keen 4 mod.".into()),
             released: None,

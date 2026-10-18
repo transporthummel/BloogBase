@@ -7,6 +7,7 @@
 //! infobox, the first paragraph and the "Credits" section; it's covered by
 //! saved pages in `tests/keenwiki/` because wiki markup can change.
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -57,6 +58,9 @@ pub struct WikiMod {
     /// Catalog game id from "Modded episode".
     pub game_id: Option<String>,
     pub authors: Vec<String>,
+    /// Author name → their page, where the page links one (usually
+    /// `User:<name>` on KeenWiki).
+    pub author_links: BTreeMap<String, String>,
     /// e.g. `Complete`, `Beta`.
     pub status: Option<String>,
     /// As written on the page, usually `YYYY-MM-DD`.
@@ -220,6 +224,9 @@ pub fn parse(html: &str, page_url: &str) -> Result<WikiMod> {
             .map(str::to_string)
     });
     let base = Url::parse(page_url).ok();
+    let author_links = row("Author(s)")
+        .map(|td| author_links(td, base.as_ref(), &authors))
+        .unwrap_or_default();
     let mut downloads = row("Download")
         .map(|td| parse_downloads(td, base.as_ref()))
         .unwrap_or_default();
@@ -241,6 +248,7 @@ pub fn parse(html: &str, page_url: &str) -> Result<WikiMod> {
         name,
         game_id: game_of(&text(episode)).map(str::to_string),
         authors,
+        author_links,
         status: row_text("Status"),
         released: row_text("Release date"),
         updated: row_text("Latest update"),
@@ -280,6 +288,32 @@ fn split_names(s: &str) -> Vec<String> {
         .map(str::trim)
         .filter(|n| !n.is_empty())
         .map(str::to_string)
+        .collect()
+}
+
+/// Links to existing pages in the "Author(s)" cell, for names in `authors`.
+/// Red links (pages that don't exist yet) are left out.
+fn author_links(
+    td: ElementRef,
+    base: Option<&Url>,
+    authors: &[String],
+) -> BTreeMap<String, String> {
+    td.select(&selector("a[href]"))
+        .filter(|a| {
+            !a.value()
+                .has_class("new", scraper::CaseSensitivity::CaseSensitive)
+        })
+        .filter_map(|a| {
+            let name = text(a);
+            let href = a.value().attr("href")?;
+            let url = match base {
+                Some(b) => b.join(href).ok()?,
+                None => Url::parse(href).ok()?,
+            };
+            let page = matches!(url.scheme(), "http" | "https")
+                && !url.query_pairs().any(|(k, _)| k == "redlink");
+            (page && authors.contains(&name)).then(|| (name, url.to_string()))
+        })
         .collect()
 }
 
@@ -587,6 +621,19 @@ mod tests {
         let m = fixture("Ye_Olde_Pirate_Modde");
         assert_eq!(m.game_id.as_deref(), Some("keen3"));
         assert_eq!(m.authors, ["Levellass", "Ceilick"]);
+        assert_eq!(
+            m.author_links,
+            BTreeMap::from([
+                (
+                    "Ceilick".to_string(),
+                    "https://keenwiki.shikadi.net/wiki/User:Ceilick".to_string()
+                ),
+                (
+                    "Levellass".to_string(),
+                    "https://keenwiki.shikadi.net/wiki/User:Levellass".to_string()
+                ),
+            ])
+        );
         assert_eq!(m.downloads[1].label, "without music");
         assert_eq!(m.downloads[1].note.as_deref(), Some("less buggy"));
         assert_eq!(m.downloads[1].version, None);
@@ -617,6 +664,29 @@ mod tests {
                 "{name}"
             );
         }
+    }
+
+    #[test]
+    fn author_links_skip_red_links_and_other_names() {
+        let html = r#"<table class="infobox"><tr><th>Modded episode</th><td>Keen 4</td></tr>
+            <tr><th>Author(s)</th><td>
+              <a href="/wiki/User:Nisaba">Nisaba</a>,
+              <a href="/index.php?title=User:Newbie&amp;action=edit&amp;redlink=1" class="new">Newbie</a>,
+              <a href="javascript:alert(1)">Plain</a> &amp; Unlinked
+              <a href="/wiki/Somewhere">see also</a>
+            </td></tr></table>"#;
+        let m = parse(html, &format!("https://{HOST}/wiki/Test")).unwrap();
+        assert_eq!(
+            m.authors,
+            ["Nisaba", "Newbie", "Plain", "Unlinked see also"]
+        );
+        assert_eq!(
+            m.author_links,
+            BTreeMap::from([(
+                "Nisaba".to_string(),
+                format!("https://{HOST}/wiki/User:Nisaba")
+            )])
+        );
     }
 
     #[test]

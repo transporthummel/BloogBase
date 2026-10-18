@@ -4,6 +4,7 @@
 //! The index decides what gets downloaded and run, so anything that isn't
 //! signed by one of [`PUBLIC_KEYS`] is ignored and the cached copy stays.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -48,6 +49,9 @@ pub struct IndexEntry {
     /// Catalog versions the mod works with; empty: any.
     pub requires: Vec<String>,
     pub authors: Vec<String>,
+    /// Author name → their page, for the authors that have one.
+    #[serde(default)]
+    pub author_links: BTreeMap<String, String>,
     #[serde(default)]
     pub version: Option<String>,
     #[serde(default)]

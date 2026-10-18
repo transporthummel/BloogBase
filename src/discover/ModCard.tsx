@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Download, ExternalLink, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Game, type IndexMod, type Install } from "../bindings";
 import { gameTitle } from "../catalog";
@@ -9,6 +9,7 @@ import { formatMegabytes } from "../format";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { Cover } from "../library/Cover";
+import { Authors } from "../mods/Authors";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -30,7 +31,7 @@ export function ModCard({
   const game = games.find((g) => g.id === entry.game);
   const latest = entry.downloads[0];
   const details = [
-    entry.authors.length > 0 && t("mods.by", { authors: entry.authors.join(", ") }),
+    entry.authors.length > 0 && <Authors authors={entry.authors} links={entry.authorLinks} />,
     entry.version && t("mods.version", { version: entry.version }),
     entry.updated ?? entry.released,
   ].filter(Boolean);
@@ -56,7 +57,16 @@ export function ModCard({
           {mod.updateAvailable && <Badge>{t("discover.updateBadge")}</Badge>}
         </div>
         {entry.description && <p className="text-sm">{entry.description}</p>}
-        {details.length > 0 && <p className="text-xs text-muted">{details.join(" · ")}</p>}
+        {details.length > 0 && (
+          <p className="text-xs text-muted">
+            {details.map((d, i) => (
+              <Fragment key={i}>
+                {i > 0 && " · "}
+                {d}
+              </Fragment>
+            ))}
+          </p>
+        )}
         {links.length > 0 && (
           <p className="flex flex-wrap gap-3 text-xs">
             {links.map(([label, url]) => (

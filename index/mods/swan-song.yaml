@@ -3,6 +3,8 @@ name: Swan Song
 game: keen1
 requires: [keen1-1.31]
 authors: [Shikadi]
+authorLinks:
+  Shikadi: https://keenwiki.shikadi.net/wiki/User:Shikadi
 released: 2016-07-20
 added: 2026-10-17
 type: episode

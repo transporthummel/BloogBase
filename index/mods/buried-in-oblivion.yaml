@@ -3,6 +3,8 @@ name: Buried in Oblivion
 game: keen4
 requires: [keen4-1.4-ega]
 authors: [Nisaba]
+authorLinks:
+  Nisaba: https://keenwiki.shikadi.net/wiki/User:Nisaba
 version: "1.4"
 released: 2017-01-01
 updated: 2020-10-10

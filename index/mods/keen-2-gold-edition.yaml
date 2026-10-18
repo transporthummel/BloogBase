@@ -3,6 +3,8 @@ name: Keen 2 Gold Edition
 game: keen2
 requires: [keen2-1.31]
 authors: [szemi]
+authorLinks:
+  szemi: https://keenwiki.shikadi.net/wiki/User:Szemigi
 released: 2017-12-24
 added: 2026-10-17
 type: episode

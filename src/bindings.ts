@@ -286,6 +286,8 @@ export type IndexEntry = {
 	/**  Catalog versions the mod works with; empty: any. */
 	requires: string[],
 	authors: string[],
+	/**  Author name → their page, for the authors that have one. */
+	authorLinks?: { [key in string]: string },
 	version?: string | null,
 	released?: string | null,
 	updated?: string | null,
@@ -401,6 +403,8 @@ export type KeenwikiOrigin = {
 	gameId: string | null,
 	/**  Replace the guessed ones when not empty. */
 	authors: string[],
+	/**  Author name → their page. */
+	authorLinks?: { [key in string]: string },
 	version: string | null,
 	description?: string | null,
 	/**  `YYYY-MM-DD`, when known. */
@@ -418,6 +422,8 @@ export type Mod = {
 	gameId: string,
 	name: string,
 	authors: string[],
+	/**  Author name → their page, for the authors that have one. */
+	authorLinks: { [key in string]: string },
 	version: string | null,
 	description: string | null,
 	/**  `YYYY-MM-DD`, when known. */
@@ -635,6 +641,11 @@ export type WikiMod = {
 	/**  Catalog game id from "Modded episode". */
 	gameId: string | null,
 	authors: string[],
+	/**
+	 *  Author name → their page, where the page links one (usually
+	 *  `User:<name>` on KeenWiki).
+	 */
+	authorLinks: { [key in string]: string },
 	/**  e.g. `Complete`, `Beta`. */
 	status: string | null,
 	/**  As written on the page, usually `YYYY-MM-DD`. */
