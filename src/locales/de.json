@@ -257,8 +257,8 @@
       "episode": "Originalspiel mit den Dateien der Mod starten"
     },
     "from": "vorgeschlagen von {{file}}",
-    "missingGame": "Diese Mod braucht {{game}}. Füge es zuerst von Steam, GOG oder aus einem Ordner hinzu.",
-    "missingGame_version": "Diese Mod braucht {{game}} ({{versions}}). Füge es zuerst von Steam, GOG oder aus einem Ordner hinzu.",
+    "missingGame": "{{game}} ist nicht in deiner Bibliothek. Trotzdem installieren? Spielen kannst du die Mod, sobald das Spiel da ist.",
+    "missingGame_version": "{{game}} ({{versions}}) ist nicht in deiner Bibliothek. Trotzdem installieren? Spielen kannst du die Mod, sobald das Spiel da ist.",
     "playOn": "Spielen mit",
     "versionUnchecked": "BloogBase kennt diese Version des Spiels nicht und kann daher nicht prüfen, ob die Mod passt. Probier es einfach aus!",
     "assumedVersion": "Diese Mod gibt nicht an, welche Spielversion sie braucht. Die meisten Mods für diese Episode sind für {{version}} gemacht, deine ist {{yours}} – sie läuft deshalb eventuell nicht richtig.",
@@ -274,7 +274,11 @@
     "removeTitle": "{{name}} entfernen?",
     "removeHint": "Die Dateien der Mod werden gelöscht. Das Spiel selbst bleibt in deiner Bibliothek.",
     "keepSaves_one": "Den Spielstand als Sicherung behalten",
-    "keepSaves_other": "Die {{count}} Spielstände als Sicherung behalten"
+    "keepSaves_other": "Die {{count}} Spielstände als Sicherung behalten",
+    "installAnyway": "Trotzdem installieren",
+    "waitsFor": "Braucht {{game}}",
+    "gameMissing": "Spiel fehlt",
+    "waitingHint": "Füge {{game}} deiner Bibliothek hinzu, um diese Mod zu spielen."
   },
   "discover": {
     "title": "Entdecken",
@@ -315,7 +319,10 @@
     "updateTo": "Auf Version {{version}} aktualisieren",
     "needs": "Braucht {{game}}.",
     "needs_version": "Braucht {{game}} ({{versions}}).",
-    "install": "Installieren ({{size}} MB)"
+    "install": "Installieren ({{size}} MB)",
+    "installAnyway": "Trotzdem installieren",
+    "withoutGameTitle": "{{name}} ohne Spiel installieren?",
+    "withoutGameHint": "{{game}} ist nicht in deiner Bibliothek. Die Mod wird jetzt installiert und lässt sich spielen, sobald du das Spiel hinzufügst."
   },
   "keenwiki": {
     "label": "KeenWiki-Link",
@@ -354,7 +361,14 @@
       "on": "Space schießt, Enter öffnet das Statusfenster.",
       "builtIn": "Diese Mod schießt schon mit Space.",
       "unavailable": "Schießen mit einer Taste ist hier nicht verfügbar: Dieses Spiel oder diese Mod ändert die Steuerung anders."
-    }
+    },
+    "removeGame": "Deinstallieren",
+    "removeGameNamed": "{{name}} deinstallieren",
+    "removeGameTitle": "{{name}} deinstallieren?",
+    "removeGameHint": "BloogBase löscht seine Kopie des Spiels. Der Ordner oder das Archiv, aus dem du es hinzugefügt hast, bleibt unberührt.",
+    "removeGameMods_one": "Auch die Mod für dieses Spiel deinstallieren",
+    "removeGameMods_other": "Auch die {{count}} Mods für dieses Spiel deinstallieren",
+    "removeGameModsKept": "Sonst wechseln sie auf eine andere Kopie des Spiels oder warten, bis es wieder da ist."
   },
   "saves": {
     "title": "Spielstände",
@@ -423,7 +437,8 @@
       "beforeLaunch": "Vor dem Spielen",
       "beforeRestore": "Vor dem Wiederherstellen",
       "beforeDelete": "Vor dem Löschen eines Spielstands",
-      "modRemoved": "Mod entfernt"
+      "modRemoved": "Mod entfernt",
+      "gameRemoved": "Spiel deinstalliert"
     }
   },
   "config": {

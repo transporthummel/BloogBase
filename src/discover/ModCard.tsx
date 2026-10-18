@@ -13,6 +13,7 @@ import { Authors } from "../mods/Authors";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
 import { fitting, isNew, requiredLabels } from "./fit";
 
@@ -105,8 +106,9 @@ function InstallAction({
   const { entry } = mod;
   const job = useJob("mod", entry.id);
   const start = useStartJob((installId: string | null) =>
-    commands.installIndexMod(entry.id, installId),
+    commands.installIndexMod(entry.id, installId, installId === null),
   );
+  const [confirming, setConfirming] = useState(false);
   const candidates = fitting(entry, installs, games);
   const [installId, setInstallId] = useState<string | null>(null);
   const target = candidates.find((i) => i.id === installId) ?? candidates[0];
@@ -144,14 +146,45 @@ function InstallAction({
   }
   if (candidates.length === 0) {
     const versions = requiredLabels(entry, games);
+    const game = versions.length
+      ? `${gameTitle(games, entry.game)} (${versions.join(", ")})`
+      : gameTitle(games, entry.game);
     return (
-      <Notice>
-        {t("discover.needs", {
-          game: gameTitle(games, entry.game),
-          versions: versions.join(", "),
-          context: versions.length > 0 ? "version" : undefined,
-        })}
-      </Notice>
+      <>
+        {failed}
+        <Notice>
+          {t("discover.needs", {
+            game: gameTitle(games, entry.game),
+            versions: versions.join(", "),
+            context: versions.length > 0 ? "version" : undefined,
+          })}
+        </Notice>
+        <Button variant="secondary" onClick={() => setConfirming(true)} disabled={start.isPending}>
+          <Download className="size-4" aria-hidden />
+          {t("discover.installAnyway")}
+        </Button>
+        {confirming && (
+          <Dialog
+            title={t("discover.withoutGameTitle", { name: entry.name })}
+            onClose={() => setConfirming(false)}
+          >
+            <p className="text-sm text-muted">{t("discover.withoutGameHint", { game })}</p>
+            <div className="flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setConfirming(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                onClick={() => {
+                  setConfirming(false);
+                  start.mutate(null);
+                }}
+              >
+                {t("discover.install", { size: formatMegabytes(size) })}
+              </Button>
+            </div>
+          </Dialog>
+        )}
+      </>
     );
   }
   return (

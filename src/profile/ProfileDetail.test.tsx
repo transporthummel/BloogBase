@@ -69,6 +69,7 @@ vi.mock("../bindings", () => {
     "modReadme",
     "openModFolder",
     "deleteMod",
+    "removeGame",
     "indexMods",
     "listScreenshots",
     "profileCover",
@@ -107,6 +108,7 @@ const profile: Profile = {
   addedAt: 1_690_000_000,
   saveCount: 2,
   running: false,
+  missingGame: null,
 };
 
 const save = (file: string, slot: number, name: string | null): SaveFile => ({
@@ -237,10 +239,52 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   expect(navigate).toHaveBeenCalledWith({ to: "/" });
 });
 
-test("games have no remove button", async () => {
+test("a game is uninstalled from its page, with its mods if asked", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([
+      profile,
+      { ...profile, id: "aurora-bliss", modId: "aurora-bliss", label: "Aurora Bliss" },
+      { ...profile, id: "other", installId: "keen4-2", modId: "other", label: "Other" },
+    ]),
+  );
+  vi.mocked(commands.removeGame).mockResolvedValue(ok(null));
   renderDetail();
-  await screen.findByRole("heading", { name: keen4.title });
+  const user = userEvent.setup();
   expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
+  await user.click(await screen.findByRole("button", { name: `Uninstall ${keen4.title}` }));
+  const dialog = screen.getByRole("dialog");
+  // Only the mod on this copy of the game counts.
+  const withMods = within(dialog).getByRole("checkbox", {
+    name: "Also uninstall the mod played on it",
+  });
+  expect(dialog).toHaveTextContent("Otherwise they move to another copy");
+  await user.click(withMods);
+  await user.click(within(dialog).getByRole("button", { name: "Uninstall" }));
+  expect(commands.removeGame).toHaveBeenCalledWith("keen4-1", true, true);
+  expect(navigate).toHaveBeenCalledWith({ to: "/" });
+});
+
+test("a mod waiting for its game says which one and can't be played", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([
+      {
+        ...profile,
+        installId: null,
+        modId: "aurora-bliss",
+        label: "Aurora Bliss",
+        missingGame: "Commander Keen 4 (v1.4 EGA)",
+      },
+    ]),
+  );
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  renderDetail();
+  expect(await screen.findByText("Needs Commander Keen 4 (v1.4 EGA)")).toBeInTheDocument();
+  expect(
+    screen.getByText("Add Commander Keen 4 (v1.4 EGA) to your library to play this mod."),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Game missing" })).toBeDisabled();
+  expect(screen.queryByText(/^Runs on/)).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Uninstall/ })).toBeNull();
 });
 
 test("a mod's README is the first tab, shown as text with links opening outside", async () => {

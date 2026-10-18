@@ -475,7 +475,7 @@ export function ModsStep({ next, back }: StepProps) {
   });
   const episodes = useFreeEpisodes();
   const jobs = useJobs().data ?? [];
-  const start = useStartJob((indexId: string) => commands.installIndexMod(indexId, null));
+  const start = useStartJob((indexId: string) => commands.installIndexMod(indexId, null, false));
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
   const coming: Owned[] = (episodes.data ?? [])

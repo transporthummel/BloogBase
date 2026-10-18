@@ -83,11 +83,15 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
     for dir in [&layers.upper, &dirs.config, &dirs.capture] {
         fs::create_dir_all(dir)?;
     }
+    let base = layers
+        .lower
+        .as_ref()
+        .ok_or_else(|| Error::MissingGame(profile.missing_game.clone().unwrap_or_default()))?;
     let firing = (firing::supports(&game.id) && firing::enabled(db)?).then_some(game);
     let (lower, command) = match &layers.mod_layer {
-        None if firing.is_none() => (layers.lower.clone(), None),
+        None if firing.is_none() => (base.clone(), None),
         m => (
-            compose::ensure(paths, db, profile_id, &layers.lower, m.as_ref(), firing)?,
+            compose::ensure(paths, db, profile_id, base, m.as_ref(), firing)?,
             m.as_ref().and_then(|m| m.recipe.command()),
         ),
     };
@@ -351,7 +355,7 @@ mod tests {
                 path: src.display().to_string(),
                 name: "My Mod".into(),
                 recipe: info.recipes[0].recipe.clone(),
-                install_id: "keen4-1".into(),
+                install_id: Some("keen4-1".into()),
                 keenwiki: None,
             },
         )
@@ -381,6 +385,13 @@ mod tests {
             .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
             .collect();
         assert!(!names.contains(&"GAMEMAPS.CK4".to_string()));
+
+        // Without its game the mod can't start.
+        crate::library::remove(&paths, &db, "keen4-1", false, false).unwrap();
+        match prepare(&paths, &db, &m.profile_id) {
+            Err(Error::MissingGame(game)) => assert!(game.starts_with("Commander Keen 4")),
+            other => panic!("{other:?}"),
+        }
     }
 
     #[test]
@@ -550,7 +561,7 @@ $bmp.Save($env:SHOT_PATH)
                     path: zip.display().to_string(),
                     name: String::new(),
                     recipe: info.recipes[0].recipe.clone(),
-                    install_id: install.id.clone(),
+                    install_id: Some(install.id.clone()),
                     keenwiki: None,
                 };
                 let m = match mods::install(&paths, &db, &request) {

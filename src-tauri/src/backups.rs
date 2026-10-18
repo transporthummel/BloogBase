@@ -42,6 +42,7 @@ pub enum Reason {
     BeforeRestore,
     BeforeDelete,
     ModRemoved,
+    GameRemoved,
 }
 
 const REASON_PREFIX: &str = "bloogbase:";
@@ -53,6 +54,7 @@ impl Reason {
             Reason::BeforeRestore => "before-restore",
             Reason::BeforeDelete => "before-delete",
             Reason::ModRemoved => "mod-removed",
+            Reason::GameRemoved => "game-removed",
         }
     }
 
@@ -67,6 +69,7 @@ impl Reason {
             Reason::BeforeRestore,
             Reason::BeforeDelete,
             Reason::ModRemoved,
+            Reason::GameRemoved,
         ]
         .into_iter()
         .find(|r| r.key() == key)
@@ -850,6 +853,7 @@ mod tests {
             Reason::BeforeRestore,
             Reason::BeforeDelete,
             Reason::ModRemoved,
+            Reason::GameRemoved,
         ] {
             assert_eq!(
                 Reason::from_label(&format!("{REASON_PREFIX}{}", r.key())),

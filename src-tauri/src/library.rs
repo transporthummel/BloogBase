@@ -9,10 +9,13 @@ use rusqlite::params;
 use serde::Serialize;
 use specta::Type;
 
+use crate::backups::{self, Contents, Reason};
 use crate::catalog;
+use crate::covers;
 use crate::db::Db;
 use crate::detect::{Detection, detect};
 use crate::error::{Error, Result};
+use crate::mods;
 use crate::paths::AppPaths;
 use crate::source::{Source, split_dir};
 
@@ -92,10 +95,15 @@ pub fn import_from(
     if detections.is_empty() {
         return Err(Error::NoGamesFound);
     }
-    detections
+    let installs = detections
         .iter()
         .map(|d| import_one(paths, db, &source, kind, origin, d))
-        .collect()
+        .collect::<Result<Vec<_>>>()?;
+    // Mods waiting for one of these games can be played now.
+    if let Err(e) = mods::rehome(db, None) {
+        tracing::warn!("could not put waiting mods on the new games: {e}");
+    }
+    Ok(installs)
 }
 
 fn import_one(
@@ -197,6 +205,75 @@ fn reserve_id(paths: &AppPaths, game_id: &str) -> Result<String> {
         }
     }
     unreachable!()
+}
+
+/// Uninstalls a game: its files and its play profile, and with `with_mods`
+/// the mods played on it. Other mods move to another install they fit, or
+/// wait for one. With `keep_saves`, saves are archived first (§9.5). What
+/// the game was imported from stays untouched.
+pub fn remove(
+    paths: &AppPaths,
+    db: &Db,
+    install_id: &str,
+    keep_saves: bool,
+    with_mods: bool,
+) -> Result<()> {
+    if !list(db)?.iter().any(|i| i.id == install_id) {
+        return Err(Error::NotFound(format!("install {install_id}")));
+    }
+    let on_it = |mods: bool| -> Result<Vec<String>> {
+        let conn = db.conn();
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {} FROM profiles WHERE install_id = ?1 AND mod_id IS {}NULL",
+            if mods { "mod_id" } else { "id" },
+            if mods { "NOT " } else { "" }
+        ))?;
+        Ok(stmt
+            .query_map([install_id], |r| r.get(0))?
+            .collect::<rusqlite::Result<_>>()?)
+    };
+    if with_mods {
+        for mod_id in on_it(true)? {
+            mods::delete(paths, db, &mod_id, keep_saves)?;
+        }
+    }
+    let game_profiles = on_it(false)?;
+    if keep_saves {
+        for profile_id in &game_profiles {
+            backups::create(paths, db, profile_id, Contents::State, Reason::GameRemoved)?;
+        }
+    }
+    {
+        let mut conn = db.conn();
+        let tx = conn.transaction()?;
+        tx.execute(
+            "DELETE FROM profiles WHERE install_id = ?1 AND mod_id IS NULL",
+            [install_id],
+        )?;
+        tx.execute(
+            "UPDATE profiles SET install_id = NULL, composed_hash = NULL WHERE install_id = ?1",
+            [install_id],
+        )?;
+        tx.execute("DELETE FROM installs WHERE id = ?1", [install_id])?;
+        tx.commit()?;
+    }
+    mods::rehome(db, None)?;
+
+    let mut dirs = vec![paths.library.join(install_id)];
+    for profile_id in &game_profiles {
+        dirs.push(paths.profiles.join(profile_id));
+        dirs.push(paths.composed(profile_id));
+        covers::remove(paths, profile_id);
+    }
+    for dir in dirs {
+        if let Err(e) = fs::remove_dir_all(&dir)
+            && e.kind() != io::ErrorKind::NotFound
+        {
+            tracing::warn!("could not remove {}: {e}", dir.display());
+        }
+    }
+    tracing::info!("removed {install_id} (saves kept: {keep_saves}, mods too: {with_mods})");
+    Ok(())
 }
 
 pub fn list(db: &Db) -> Result<Vec<Install>> {
@@ -360,6 +437,62 @@ mod tests {
         assert!(!paths.library.join("keen4-1").exists());
         assert!(!paths.profiles.join("keen4-1").exists());
         assert!(names(&paths.cache).is_empty());
+    }
+
+    #[test]
+    fn removing_a_game_keeps_saves_and_takes_its_mods_along_if_asked() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("k4");
+        write_folder(&src, KEEN4);
+        import(&paths, &db, &src).unwrap();
+        let level_pack = tmp.path().join("levels");
+        write_folder(&level_pack, &[("GAMEMAPS.CK4", b"maps")]);
+        let info = mods::inspect(&level_pack, None).unwrap();
+        let m = mods::install(
+            &paths,
+            &db,
+            &mods::InstallModRequest {
+                path: level_pack.display().to_string(),
+                name: String::new(),
+                recipe: info.recipes[0].recipe.clone(),
+                install_id: Some("keen4-1".into()),
+                keenwiki: None,
+            },
+        )
+        .unwrap();
+        fs::write(paths.composed("keen4-1").join("x"), b"")
+            .or_else(|_| {
+                fs::create_dir_all(paths.composed("keen4-1"))?;
+                fs::write(paths.composed("keen4-1").join("x"), b"")
+            })
+            .unwrap();
+
+        remove(&paths, &db, "keen4-1", true, true).unwrap();
+        assert!(list(&db).unwrap().is_empty());
+        assert!(mods::list(&db).unwrap().is_empty());
+        for dir in [
+            paths.library.join("keen4-1"),
+            paths.profiles.join("keen4-1"),
+            paths.composed("keen4-1"),
+            paths.mods.join(&m.id),
+        ] {
+            assert!(!dir.exists(), "{}", dir.display());
+        }
+        // The imported folder stays, the saves are archived.
+        assert!(src.join("SAVEGAM0.CK4").is_file());
+        let saved: Vec<String> = db
+            .conn()
+            .prepare("SELECT profile_id FROM save_backups ORDER BY profile_id")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        assert_eq!(saved, ["keen4-1"]);
+        assert!(matches!(
+            remove(&paths, &db, "keen4-1", false, false),
+            Err(Error::NotFound(_))
+        ));
     }
 
     #[test]

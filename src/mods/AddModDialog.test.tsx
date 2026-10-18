@@ -167,18 +167,23 @@ test("asks which recipe to use when unsure", async () => {
   expect(screen.getByText("CK4PATCH.EXE abiathar.pat -nowait")).toBeInTheDocument();
 });
 
-test("explains a missing game instead of installing", async () => {
+test("asks before installing a mod without its game", async () => {
   vi.mocked(commands.inspectMod).mockReturnValue(ok(info));
   vi.mocked(commands.listInstalls).mockReturnValue(ok([{ ...install, gameId: "keen5" }]));
-  renderDialog();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+  vi.mocked(commands.installMod).mockReturnValue(ok({ id: "aurora" } as never));
+  const onInstalled = renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
 
   expect(
     await screen.findByText(
-      "This mod needs Commander Keen 4: Secret of the Oracle (v1.4). Add it from Steam, GOG or a folder first.",
+      "Commander Keen 4: Secret of the Oracle (v1.4) isn’t in your library. Install the mod anyway? You can play it once the game is added.",
     ),
   ).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Install" })).toBeDisabled();
+  expect(screen.queryByRole("button", { name: "Install" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Install anyway" }));
+  expect(commands.installMod).toHaveBeenCalledWith(expect.objectContaining({ installId: null }));
+  await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
 });
 
 test("warns that patch mods may not fit a modified game", async () => {

@@ -145,7 +145,8 @@ function Confirm({
           path,
           name,
           recipe: option.recipe,
-          installId: target!.id,
+          // Without a fitting game, the player agreed to install anyway.
+          installId: target?.id ?? null,
           keenwiki: origin,
         }),
       ),
@@ -165,7 +166,7 @@ function Confirm({
       className="grid gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (target) install.mutate();
+        if (installs.data) install.mutate();
       }}
     >
       <label className="grid gap-1 text-sm">
@@ -220,7 +221,7 @@ function Confirm({
         </Notice>
       )}
       {installs.data && candidates.length === 0 && (
-        <Notice tone="error">
+        <Notice>
           {t("mods.missingGame", {
             game: game?.title ?? info.gameId,
             versions: option.gameVersions.map((v) => `v${v}`).join(", "),
@@ -264,8 +265,12 @@ function Confirm({
         <Button variant="ghost" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={!target || install.isPending}>
-          {install.isPending ? t("mods.installing") : t("mods.install")}
+        <Button type="submit" disabled={!installs.data || install.isPending}>
+          {install.isPending
+            ? t("mods.installing")
+            : target
+              ? t("mods.install")
+              : t("mods.installAnyway")}
         </Button>
       </div>
     </form>

@@ -11,6 +11,7 @@ use specta::Type;
 use crate::catalog::{self, Game, glob_match};
 use crate::db::Db;
 use crate::error::{Error, Result};
+use crate::mods;
 use crate::overlay_view;
 use crate::recipe::Recipe;
 
@@ -18,7 +19,8 @@ use crate::recipe::Recipe;
 #[serde(rename_all = "camelCase")]
 pub struct Profile {
     pub id: String,
-    pub install_id: String,
+    /// `None` for a mod waiting for its game.
+    pub install_id: Option<String>,
     pub game_id: String,
     pub version_id: Option<String>,
     pub mod_id: Option<String>,
@@ -32,14 +34,17 @@ pub struct Profile {
     pub added_at: u32,
     pub save_count: u32,
     pub running: bool,
+    /// The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`.
+    pub missing_game: Option<String>,
 }
 
 /// Where a profile's files live on disk.
 #[derive(Debug, Clone)]
 pub struct Layers {
     /// What DOSBox mounts as C: below the overlay. For a mod profile, the
-    /// install's base files, which still need the mod composed on top.
-    pub lower: PathBuf,
+    /// install's base files, which still need the mod composed on top;
+    /// `None` while a mod waits for its game.
+    pub lower: Option<PathBuf>,
     /// The overlay: the profile's persistent `state/` directory.
     pub upper: PathBuf,
     pub mod_layer: Option<ModLayer>,
@@ -50,7 +55,24 @@ impl Layers {
     /// mods, the mod's own files stand in for the composed layer, which may
     /// not exist yet; base files never hold saves (§4.4).
     pub fn view_lower(&self) -> &Path {
-        self.mod_layer.as_ref().map_or(&self.lower, |m| &m.files)
+        match &self.mod_layer {
+            Some(m) => &m.files,
+            None => self
+                .lower
+                .as_deref()
+                .expect("game profiles have an install"),
+        }
+    }
+
+    /// The folders DOS sees in the drive root, top first: the mod's files
+    /// over the base game's, as far as there are any.
+    pub fn sources(&self) -> Vec<&Path> {
+        self.mod_layer
+            .as_ref()
+            .map(|m| m.files.as_path())
+            .into_iter()
+            .chain(self.lower.as_deref())
+            .collect()
     }
 }
 
@@ -62,11 +84,11 @@ pub struct ModLayer {
 }
 
 const SELECT: &str = "
-    SELECT p.id, p.install_id, i.game_id, i.version_id, p.mod_id, COALESCE(m.name, i.label),
-           s.session_count, s.play_seconds, s.last_played_at, p.state_path, i.path,
-           m.path, m.recipe_json, p.created_at
+    SELECT p.id, p.install_id, COALESCE(i.game_id, m.game_id), i.version_id, p.mod_id,
+           COALESCE(m.name, i.label), s.session_count, s.play_seconds, s.last_played_at,
+           p.state_path, i.path, m.path, m.recipe_json, p.created_at, m.requires_json
     FROM profiles p
-    JOIN installs i ON i.id = p.install_id
+    LEFT JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id
     JOIN profile_stats s ON s.profile_id = p.id";
 
@@ -76,7 +98,17 @@ struct ProfileRow {
 }
 
 fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
-    let install_path: String = r.get(10)?;
+    let install_path: Option<String> = r.get(10)?;
+    let game_id: String = r.get(2)?;
+    let requires: Option<String> = r.get(14)?;
+    let missing_game = match (&install_path, catalog::game(&game_id)) {
+        (Some(_), _) => None,
+        (None, Some(game)) => Some(mods::needed_game(
+            game,
+            mods::parse_requires(requires.as_deref()).as_deref(),
+        )),
+        (None, None) => Some(game_id.clone()),
+    };
     let state_path: String = r.get(9)?;
     let mod_path: Option<String> = r.get(11)?;
     let recipe: Option<String> = r.get(12)?;
@@ -89,7 +121,7 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
         profile: Profile {
             id: r.get(0)?,
             install_id: r.get(1)?,
-            game_id: r.get(2)?,
+            game_id,
             version_id: r.get(3)?,
             mod_id: r.get(4)?,
             label: r.get(5)?,
@@ -99,9 +131,10 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             added_at: r.get(13)?,
             save_count: 0,
             running: false,
+            missing_game,
         },
         layers: Layers {
-            lower: Path::new(&install_path).join("base"),
+            lower: install_path.map(|p| Path::new(&p).join("base")),
             upper: PathBuf::from(state_path),
             mod_layer,
         },
@@ -216,7 +249,7 @@ mod tests {
         assert!(p.running);
 
         let (_, layers) = get(&db, "keen4-1").unwrap();
-        assert_eq!(layers.lower, paths.library.join("keen4-1/base"));
+        assert_eq!(layers.lower, Some(paths.library.join("keen4-1/base")));
         assert_eq!(layers.upper, state);
         assert!(matches!(get(&db, "nope"), Err(Error::NotFound(_))));
     }

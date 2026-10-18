@@ -232,6 +232,6 @@ test("suggests featured mods for games on their way and queues the picked ones",
   expect(screen.queryByText("for-keen4")).not.toBeInTheDocument();
   expect(screen.queryByText("not-featured")).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Install 1 mod" }));
-  expect(commands.installIndexMod).toHaveBeenCalledWith("for-keen1", null);
+  expect(commands.installIndexMod).toHaveBeenCalledWith("for-keen1", null, false);
   expect(await screen.findByRole("heading", { name: "All set!" })).toBeInTheDocument();
 });

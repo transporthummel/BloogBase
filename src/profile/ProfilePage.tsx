@@ -12,7 +12,7 @@ import { formatDate, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { Cover } from "../library/Cover";
 import { useCover } from "../library/covers";
-import { modsKey, profilesKey } from "../library/queries";
+import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Authors } from "../mods/Authors";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
 import { useRuntimeStatus } from "../runtime/queries";
@@ -25,6 +25,7 @@ import { Tabs } from "../ui/Tabs";
 import { ConfigPanel } from "./ConfigPanel";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { ReadmePanel } from "./ReadmePanel";
+import { RemoveGameDialog } from "./RemoveGameDialog";
 import { useReadme } from "./readme";
 import { SavesPanel } from "./SavesPanel";
 import { ScreenshotsPanel } from "./ScreenshotsPanel";
@@ -106,6 +107,10 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
           game={game}
           canPlay={!!runtime.data?.active && !launch.isPending}
           onPlay={() => launch.mutate()}
+          modCount={
+            profiles.data?.filter((p) => p.modId !== null && p.installId === profile.installId)
+              .length ?? 0
+          }
         />
       )}
       {launch.error && (
@@ -134,11 +139,14 @@ function Hero({
   game,
   canPlay,
   onPlay,
+  modCount,
 }: {
   profile: Profile;
   game?: Game;
   canPlay: boolean;
   onPlay: () => void;
+  /** For a game: the mods played on it. */
+  modCount: number;
 }) {
   const { t, i18n } = useTranslation();
   const mods = useQuery({
@@ -209,7 +217,10 @@ function Hero({
         <div className="grid gap-2">
           <h1 className="font-pixel text-lg leading-relaxed">{profile.label}</h1>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-            {profile.modId !== null && game && (
+            {profile.missingGame !== null && (
+              <span>{t("mods.waitsFor", { game: profile.missingGame })}</span>
+            )}
+            {profile.modId !== null && profile.missingGame === null && game && (
               <span>
                 {t("mods.baseGame", {
                   game: game.title,
@@ -264,10 +275,14 @@ function Hero({
         <div className="flex flex-wrap items-center gap-3">
           <PlayButton
             onClick={onPlay}
-            disabled={!canPlay || profile.running}
+            disabled={!canPlay || profile.running || profile.missingGame !== null}
             className="px-6 py-3 text-base"
           >
-            {profile.running ? t("library.running") : t("library.play")}
+            {profile.missingGame !== null
+              ? t("mods.gameMissing")
+              : profile.running
+                ? t("library.running")
+                : t("library.play")}
           </PlayButton>
           {mod && (
             <>
@@ -286,7 +301,35 @@ function Hero({
               </Button>
             </>
           )}
+          {profile.modId === null && (
+            <Button
+              variant="ghost"
+              onClick={() => setRemoving(true)}
+              disabled={profile.running}
+              aria-label={t("profile.removeGameNamed", { name: profile.label })}
+            >
+              <Trash2 className="size-4" aria-hidden />
+              {t("profile.removeGame")}
+            </Button>
+          )}
         </div>
+        {profile.missingGame !== null && (
+          <Notice>{t("mods.waitingHint", { game: profile.missingGame })}</Notice>
+        )}
+        {removing && profile.modId === null && profile.installId !== null && (
+          <RemoveGameDialog
+            profile={profile}
+            installId={profile.installId}
+            modCount={modCount}
+            onClose={() => setRemoving(false)}
+            onRemoved={() => {
+              queryClient.invalidateQueries({ queryKey: profilesKey });
+              queryClient.invalidateQueries({ queryKey: modsKey });
+              queryClient.invalidateQueries({ queryKey: installsKey });
+              navigate({ to: "/" });
+            }}
+          />
+        )}
         {removing && profile.modId !== null && (
           <RemoveModDialog
             profile={{ ...profile, modId: profile.modId }}

@@ -176,7 +176,29 @@ test("shows what each mod needs and installs on the chosen game", async () => {
   const aurora = within(card("Aurora"));
   await user.selectOptions(aurora.getByRole("combobox"), "keen4-b");
   await user.click(aurora.getByRole("button", { name: "Install (2.0 MB)" }));
-  expect(commands.installIndexMod).toHaveBeenCalledWith("Aurora", "keen4-b");
+  expect(commands.installIndexMod).toHaveBeenCalledWith("Aurora", "keen4-b", false);
+});
+
+test("asks before installing a mod without its game", async () => {
+  vi.mocked(commands.installIndexMod).mockResolvedValue({
+    id: 2,
+    kind: "mod",
+    subject: "Fribbulus",
+    phase: "downloading",
+    received: 0,
+    total: 0,
+    error: null,
+  });
+  renderDiscover();
+  const user = userEvent.setup();
+
+  await screen.findByRole("heading", { name: "Fribbulus" });
+  await user.click(within(card("Fribbulus")).getByRole("button", { name: "Install anyway" }));
+  const dialog = screen.getByRole("dialog", { name: "Install Fribbulus without its game?" });
+  expect(dialog).toHaveTextContent("Commander Keen 6 (v1.4 EGA) isn’t in your library.");
+  expect(commands.installIndexMod).not.toHaveBeenCalled();
+  await user.click(within(dialog).getByRole("button", { name: "Install (2.0 MB)" }));
+  expect(commands.installIndexMod).toHaveBeenCalledWith("Fribbulus", null, true);
 });
 
 test("filters by text, type and what the library can play", async () => {

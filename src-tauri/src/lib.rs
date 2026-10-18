@@ -84,6 +84,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::mod_readme,
             commands::open_mod_folder,
             commands::delete_mod,
+            commands::remove_game,
             commands::index_status,
             commands::refresh_index,
             commands::index_mods,

@@ -28,14 +28,9 @@ pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<PathB
     let game = catalog::game(&profile.game_id)
         .ok_or_else(|| Error::NotFound(format!("game {}", profile.game_id)))?;
     let recipe = layers.mod_layer.as_ref().map(|m| &m.recipe);
-    let mut dirs: Vec<&Path> = layers
-        .mod_layer
-        .as_ref()
-        .map(|m| m.files.as_path())
-        .into_iter()
-        .collect();
-    dirs.push(&layers.lower);
-    let files = Files::new(&dirs)?;
+    // A mod waiting for its game may have all it takes; once the game is
+    // there, the changed files make for a new try.
+    let files = Files::new(&layers.sources())?;
 
     let (png, stamp) = cache_files(paths, profile_id);
     let key = files.fingerprint(recipe);

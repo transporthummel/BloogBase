@@ -106,6 +106,11 @@ export const commands = {
 	openModFolder: (modId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_folder", { modId })),
 	/**  Removes a mod and its profile; `keep_saves` archives the saves first. */
 	deleteMod: (modId: string, keepSaves: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("delete_mod", { modId, keepSaves })),
+	/**
+	 *  Uninstalls a game; `with_mods` removes the mods played on it too, else
+	 *  they move to another fitting game or wait for one.
+	 */
+	removeGame: (installId: string, keepSaves: boolean, withMods: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("remove_game", { installId, keepSaves, withMods })),
 	indexStatus: () => __TAURI_INVOKE<IndexStatus>("index_status"),
 	/**  Checks for a new mod index; `force` even if the last check was recent. */
 	refreshIndex: (force: boolean) => __TAURI_INVOKE<IndexStatus>("refresh_index", { force }),
@@ -114,9 +119,10 @@ export const commands = {
 	/**
 	 *  Downloads a mod from the index and installs it, or updates it when it's
 	 *  installed already. Without `install_id` it goes on the best fitting game,
-	 *  once a free episode for it has finished downloading.
+	 *  once a free episode for it has finished downloading; with none,
+	 *  `without_game` lets it wait for one.
 	 */
-	installIndexMod: (indexId: string, installId: string | null) => __TAURI_INVOKE<Job>("install_index_mod", { indexId, installId }),
+	installIndexMod: (indexId: string, installId: string | null, withoutGame: boolean) => __TAURI_INVOKE<Job>("install_index_mod", { indexId, installId, withoutGame }),
 	lookupKeenwiki: (url: string) => typedError<KeenwikiLookup, CommandError>(__TAURI_INVOKE("lookup_keenwiki", { url })),
 	/**
 	 *  Downloads one of a KeenWiki page's links and inspects it. `game_id` is
@@ -380,8 +386,11 @@ export type InstallModRequest = {
 	name: string,
 	/**  One of the recipes [`inspect`] offered. */
 	recipe: Recipe,
-	/**  The install the mod is played on. */
-	installId: string,
+	/**
+	 *  The install the mod is played on; `None` to install it without its
+	 *  game, which it then waits for.
+	 */
+	installId: string | null,
 	/**  Set when the mod came from a KeenWiki page. */
 	keenwiki?: KeenwikiOrigin | null,
 };
@@ -500,7 +509,8 @@ export type PlaySessionEnded = {
 
 export type Profile = {
 	id: string,
-	installId: string,
+	/**  `None` for a mod waiting for its game. */
+	installId: string | null,
 	gameId: string,
 	versionId: string | null,
 	modId: string | null,
@@ -514,6 +524,8 @@ export type Profile = {
 	addedAt: number,
 	saveCount: number,
 	running: boolean,
+	/**  The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`. */
+	missingGame: string | null,
 };
 
 export type ProfileConfig = {
@@ -534,7 +546,7 @@ export type Readme = {
  *  Why BloogBase made a backup on its own. Stored in the label column with
  *  a prefix no user label gets.
  */
-export type Reason = "beforeLaunch" | "beforeRestore" | "beforeDelete" | "modRemoved";
+export type Reason = "beforeLaunch" | "beforeRestore" | "beforeDelete" | "modRemoved" | "gameRemoved";
 
 export type Recipe = 
 /**  Run the episode's patcher with a patch file. */

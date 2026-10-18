@@ -55,6 +55,7 @@ const profile: Profile = {
   addedAt: 1_690_000_000,
   saveCount: 1,
   running: false,
+  missingGame: null,
 };
 
 const runtime = { id: "dosbox-staging-0.83.0", version: "0.83.0", path: "/x", managed: true };
@@ -130,6 +131,24 @@ test("play launches the profile", async () => {
   await vi.waitFor(() => expect(play).toBeEnabled());
   await userEvent.click(play);
   expect(commands.launchProfile).toHaveBeenCalledWith("keen5-1");
+});
+
+test("a mod waiting for its game can't be played", async () => {
+  const waiting: Profile = {
+    ...profile,
+    id: "galactic",
+    installId: null,
+    versionId: null,
+    modId: "galactic",
+    label: "Galactic",
+    missingGame: "Commander Keen 5 (v1.4 EGA)",
+  };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [waiting] });
+  renderLibrary();
+  expect(await screen.findByText("Needs Commander Keen 5 (v1.4 EGA)")).toBeInTheDocument();
+  const play = screen.getByRole("button", { name: "Play Galactic" });
+  expect(play).toHaveTextContent("Game missing");
+  expect(play).toBeDisabled();
 });
 
 test("asks for DOSBox when no runtime is installed", async () => {

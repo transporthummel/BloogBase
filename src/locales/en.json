@@ -257,8 +257,8 @@
       "episode": "Start the original game with the mod’s files"
     },
     "from": "suggested by {{file}}",
-    "missingGame": "This mod needs {{game}}. Add it from Steam, GOG or a folder first.",
-    "missingGame_version": "This mod needs {{game}} ({{versions}}). Add it from Steam, GOG or a folder first.",
+    "missingGame": "{{game}} isn’t in your library. Install the mod anyway? You can play it once the game is added.",
+    "missingGame_version": "{{game}} ({{versions}}) isn’t in your library. Install the mod anyway? You can play it once the game is added.",
     "playOn": "Play with",
     "versionUnchecked": "BloogBase doesn’t know this version of the game, so it can’t check whether the mod fits. Give it a try!",
     "assumedVersion": "This mod doesn’t say which version of the game it needs. Most mods for this episode are made for {{version}}, but yours is {{yours}}, so it may not work properly.",
@@ -274,7 +274,11 @@
     "removeTitle": "Remove {{name}}?",
     "removeHint": "The mod’s files are deleted. The game itself stays in your library.",
     "keepSaves_one": "Keep the saved game as a backup",
-    "keepSaves_other": "Keep the {{count}} saved games as a backup"
+    "keepSaves_other": "Keep the {{count}} saved games as a backup",
+    "installAnyway": "Install anyway",
+    "waitsFor": "Needs {{game}}",
+    "gameMissing": "Game missing",
+    "waitingHint": "Add {{game}} to your library to play this mod."
   },
   "discover": {
     "title": "Discover",
@@ -315,7 +319,10 @@
     "updateTo": "Update to version {{version}}",
     "needs": "Needs {{game}}.",
     "needs_version": "Needs {{game}} ({{versions}}).",
-    "install": "Install ({{size}} MB)"
+    "install": "Install ({{size}} MB)",
+    "installAnyway": "Install anyway",
+    "withoutGameTitle": "Install {{name}} without its game?",
+    "withoutGameHint": "{{game}} isn’t in your library. The mod is installed now and can be played once you add the game."
   },
   "keenwiki": {
     "label": "KeenWiki link",
@@ -354,7 +361,14 @@
       "on": "Space shoots, Enter opens the status window.",
       "builtIn": "This mod already shoots with Space.",
       "unavailable": "One-button firing isn’t available here: this game or mod changes the controls differently."
-    }
+    },
+    "removeGame": "Uninstall",
+    "removeGameNamed": "Uninstall {{name}}",
+    "removeGameTitle": "Uninstall {{name}}?",
+    "removeGameHint": "BloogBase deletes its copy of the game. The folder or archive you added it from stays untouched.",
+    "removeGameMods_one": "Also uninstall the mod played on it",
+    "removeGameMods_other": "Also uninstall the {{count}} mods played on it",
+    "removeGameModsKept": "Otherwise they move to another copy of the game, or wait until it’s back."
   },
   "saves": {
     "title": "Saved games",
@@ -423,7 +437,8 @@
       "beforeLaunch": "Before playing",
       "beforeRestore": "Before restoring",
       "beforeDelete": "Before deleting a save",
-      "modRemoved": "Mod removed"
+      "modRemoved": "Mod removed",
+      "gameRemoved": "Game uninstalled"
     }
   },
   "config": {

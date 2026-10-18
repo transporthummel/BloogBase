@@ -411,14 +411,10 @@ pub fn profile_firing(db: State<'_, Db>, profile_id: String) -> CommandResult<Op
         return Ok(None);
     };
     let recipe = layers.mod_layer.as_ref().map(|m| &m.recipe);
-    let mut dirs = vec![layers.lower.as_path()];
-    if let Some(m) = &layers.mod_layer {
-        dirs.insert(0, &m.files);
-    }
     Ok(firing::status(
         game,
         recipe.unwrap_or(&Recipe::Episode),
-        &dirs,
+        &layers.sources(),
     ))
 }
 
@@ -512,6 +508,44 @@ pub async fn delete_mod(app: AppHandle, mod_id: String, keep_saves: bool) -> Com
         blocking(move || mods::delete(&a.state::<AppPaths>(), &a.state::<Db>(), &id, keep_saves))
             .await;
     app.state::<Running>().release(&mod_id);
+    result
+}
+
+/// Uninstalls a game; `with_mods` removes the mods played on it too, else
+/// they move to another fitting game or wait for one.
+#[tauri::command]
+#[specta::specta]
+pub async fn remove_game(
+    app: AppHandle,
+    install_id: String,
+    keep_saves: bool,
+    with_mods: bool,
+) -> CommandResult<()> {
+    // None of the profiles on it may start or run meanwhile.
+    let affected: Vec<String> = profiles::list(&app.state::<Db>(), |_| false)?
+        .into_iter()
+        .filter(|p| p.install_id.as_deref() == Some(install_id.as_str()))
+        .map(|p| p.id)
+        .collect();
+    let running = app.state::<Running>();
+    for (n, id) in affected.iter().enumerate() {
+        if let Err(e) = running.claim(id) {
+            affected[..n].iter().for_each(|id| running.release(id));
+            return Err(e.into());
+        }
+    }
+    let a = app.clone();
+    let result = blocking(move || {
+        library::remove(
+            &a.state::<AppPaths>(),
+            &a.state::<Db>(),
+            &install_id,
+            keep_saves,
+            with_mods,
+        )
+    })
+    .await;
+    affected.iter().for_each(|id| running.release(id));
     result
 }
 
@@ -621,10 +655,16 @@ pub fn index_mods(index: State<'_, ModIndex>, db: State<'_, Db>) -> CommandResul
 
 /// Downloads a mod from the index and installs it, or updates it when it's
 /// installed already. Without `install_id` it goes on the best fitting game,
-/// once a free episode for it has finished downloading.
+/// once a free episode for it has finished downloading; with none,
+/// `without_game` lets it wait for one.
 #[tauri::command]
 #[specta::specta]
-pub fn install_index_mod(app: AppHandle, index_id: String, install_id: Option<String>) -> Job {
+pub fn install_index_mod(
+    app: AppHandle,
+    index_id: String,
+    install_id: Option<String>,
+    without_game: bool,
+) -> Job {
     let a = app.clone();
     let id = index_id.clone();
     jobs::start(&app, JobKind::Mod, Some(index_id), |report| async move {
@@ -676,7 +716,14 @@ pub fn install_index_mod(app: AppHandle, index_id: String, install_id: Option<St
             if let Some(m) = &existing {
                 running.claim(m)?;
             }
-            let result = mods::install_curated(&paths, &db, &file, &curated, install_id.as_deref());
+            let result = mods::install_curated(
+                &paths,
+                &db,
+                &file,
+                &curated,
+                install_id.as_deref(),
+                without_game,
+            );
             if let Some(m) = &existing {
                 running.release(m);
             }

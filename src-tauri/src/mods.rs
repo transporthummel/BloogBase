@@ -88,8 +88,9 @@ pub struct InstallModRequest {
     pub name: String,
     /// One of the recipes [`inspect`] offered.
     pub recipe: Recipe,
-    /// The install the mod is played on.
-    pub install_id: String,
+    /// The install the mod is played on; `None` to install it without its
+    /// game, which it then waits for.
+    pub install_id: Option<String>,
     /// Set when the mod came from a KeenWiki page.
     #[serde(default)]
     pub keenwiki: Option<KeenwikiOrigin>,
@@ -544,6 +545,8 @@ struct Stored<'a> {
     description: Option<String>,
     released: Option<String>,
     recipe: Recipe,
+    /// Catalog versions it plays on; `None` for any.
+    requires: Option<Vec<String>>,
     source: ModSource,
     index_id: Option<&'a str>,
     keenwiki_url: Option<&'a str>,
@@ -553,7 +556,8 @@ struct Stored<'a> {
     archive_name: Option<&'a str>,
 }
 
-/// Installs a mod and creates its play profile on `install_id`.
+/// Installs a mod and creates its play profile on `install_id`, or without
+/// a game.
 pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod> {
     let path = Path::new(&req.path);
     let source = Source::open(path)?;
@@ -565,11 +569,19 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
         .iter()
         .find(|o| o.recipe == req.recipe)
         .ok_or_else(|| Error::IncompatibleInstall("unknown recipe".into()))?;
-    let target = library::list(db)?
-        .into_iter()
-        .find(|i| i.id == req.install_id)
-        .ok_or_else(|| Error::NotFound(format!("install {}", req.install_id)))?;
-    check_install(&analysis.info.game_id, option, &target)?;
+    let target = match &req.install_id {
+        Some(id) => {
+            let target = library::list(db)?
+                .into_iter()
+                .find(|i| i.id == *id)
+                .ok_or_else(|| Error::NotFound(format!("install {id}")))?;
+            check_install(&analysis.info.game_id, option, &target)?;
+            Some(target)
+        }
+        None => None,
+    };
+    // Like `check_install`: a patch that names versions plays on those only.
+    let requires = (!option.game_versions.is_empty()).then(|| option.version_ids.clone());
 
     let name = match req.name.trim() {
         "" => analysis.info.name.clone(),
@@ -591,6 +603,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
                 .clone()
                 .or_else(|| analysis.info.released.clone()),
             recipe: option.recipe.clone(),
+            requires: requires.clone(),
             source: ModSource::Keenwiki,
             index_id: None,
             keenwiki_url: Some(&o.page_url),
@@ -605,6 +618,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             description: None,
             released: analysis.info.released.clone(),
             recipe: option.recipe.clone(),
+            requires,
             source: ModSource::Manual,
             index_id: None,
             keenwiki_url: None,
@@ -612,7 +626,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             archive_name: None,
         },
     };
-    store(paths, db, &source, &analysis, &stored, &target)
+    store(paths, db, &source, &analysis, &stored, target.as_ref())
 }
 
 /// A mod as the index describes it. Its recipe is used as is: a curated
@@ -635,13 +649,15 @@ pub struct Curated {
 }
 
 /// Installs a downloaded index mod, or updates it when it's installed
-/// already. Without `install_id` the best fitting game is used.
+/// already. Without `install_id` the best fitting game is used; when there
+/// is none, the mod waits for one if `without_game`, else it's an error.
 pub fn install_curated(
     paths: &AppPaths,
     db: &Db,
     archive: &Path,
     c: &Curated,
     install_id: Option<&str>,
+    without_game: bool,
 ) -> Result<Mod> {
     let source = Source::open(archive)?;
     let analysis = analyze(&source, archive, Some(&c.game_id))?;
@@ -671,6 +687,7 @@ pub fn install_curated(
         description: c.description.clone(),
         released: c.released.clone(),
         recipe: c.recipe.clone(),
+        requires: requires(&c.requires),
         source: ModSource::Index,
         index_id: Some(&c.index_id),
         keenwiki_url: c.keenwiki_url.as_deref(),
@@ -683,21 +700,22 @@ pub fn install_curated(
 
     let game =
         catalog::game(&c.game_id).ok_or_else(|| Error::NotFound(format!("game {}", c.game_id)))?;
-    let fitting: Vec<Install> = library::list(db)?
-        .into_iter()
-        .filter(|i| fits_curated(game, &c.requires, i))
-        .collect();
+    let requires = stored.requires.as_deref();
     let target = match install_id {
-        Some(id) => fitting
-            .into_iter()
-            .find(|i| i.id == id)
-            .ok_or_else(|| Error::IncompatibleInstall(format!("{id} can't play {}", c.name)))?,
-        None => fitting
-            .into_iter()
-            .min_by_key(|i| fit_rank(game, &c.requires, i))
-            .ok_or_else(|| Error::MissingGame(needed_game(game, &c.requires)))?,
+        Some(id) => Some(
+            library::list(db)?
+                .into_iter()
+                .find(|i| i.id == id && fits(game, requires, i))
+                .ok_or_else(|| Error::IncompatibleInstall(format!("{id} can't play {}", c.name)))?,
+        ),
+        None => match best_install(db, game, requires)? {
+            None if !without_game => {
+                return Err(Error::MissingGame(needed_game(game, requires)));
+            }
+            target => target,
+        },
     };
-    store(paths, db, &source, &analysis, &stored, &target)
+    store(paths, db, &source, &analysis, &stored, target.as_ref())
 }
 
 /// The installed mod made from an index entry.
@@ -712,17 +730,20 @@ pub fn find_by_index(db: &Db, index_id: &str) -> Result<Option<String>> {
         .optional()?)
 }
 
-/// Whether a curated mod can be played on `install`. Like [`check_install`],
-/// unknown versions get the benefit of the doubt.
-pub fn fits_curated(game: &Game, requires: &[String], install: &Install) -> bool {
+/// An index entry's `requires` as stored: empty means any version.
+fn requires(versions: &[String]) -> Option<Vec<String>> {
+    (!versions.is_empty()).then(|| versions.to_vec())
+}
+
+/// Whether a mod that plays on the `requires` versions (`None`: any) can be
+/// played on `install`. Like [`check_install`], unknown versions get the
+/// benefit of the doubt.
+pub fn fits(game: &Game, requires: Option<&[String]>, install: &Install) -> bool {
     install.game_id == game.id
-        && (requires.is_empty()
-            || match &install.version_id {
-                None => true,
-                Some(v) => {
-                    requires.contains(v) || original(game, v).is_some_and(|o| requires.contains(o))
-                }
-            })
+        && match (requires, &install.version_id) {
+            (None, _) | (_, None) => true,
+            (Some(r), Some(v)) => r.contains(v) || original(game, v).is_some_and(|o| r.contains(o)),
+        }
 }
 
 fn original<'a>(game: &'a Game, version_id: &str) -> Option<&'a String> {
@@ -734,21 +755,29 @@ fn original<'a>(game: &'a Game, version_id: &str) -> Option<&'a String> {
 
 /// Lower is better: an original release, a third-party build of it, an
 /// unknown version.
-fn fit_rank(game: &Game, requires: &[String], install: &Install) -> u8 {
+fn fit_rank(game: &Game, requires: Option<&[String]>, install: &Install) -> u8 {
     match &install.version_id {
         Some(v) if original(game, v).is_some() => 1,
-        Some(v) if requires.is_empty() || requires.contains(v) => 0,
+        Some(v) if requires.is_none_or(|r| r.contains(v)) => 0,
         Some(_) => 1,
         None => 2,
     }
 }
 
+/// The install a mod fits best, if any.
+fn best_install(db: &Db, game: &Game, requires: Option<&[String]>) -> Result<Option<Install>> {
+    Ok(library::list(db)?
+        .into_iter()
+        .filter(|i| fits(game, requires, i))
+        .min_by_key(|i| fit_rank(game, requires, i)))
+}
+
 /// e.g. `Commander Keen 4: Secret of the Oracle (v1.4 EGA)`.
-fn needed_game(game: &Game, requires: &[String]) -> String {
+pub fn needed_game(game: &Game, requires: Option<&[String]>) -> String {
     let labels: Vec<&str> = game
         .versions
         .iter()
-        .filter(|v| requires.contains(&v.id))
+        .filter(|v| requires.is_some_and(|r| r.contains(&v.id)))
         .map(|v| v.label.as_str())
         .collect();
     if labels.is_empty() {
@@ -756,6 +785,52 @@ fn needed_game(game: &Game, requires: &[String]) -> String {
     } else {
         format!("{} ({})", game.title, labels.join(", "))
     }
+}
+
+/// Reads `mods.requires_json`.
+pub fn parse_requires(json: Option<&str>) -> Option<Vec<String>> {
+    json.and_then(|j| serde_json::from_str(j).ok())
+}
+
+/// Puts mods without a game, or with `except` gone, on the install they
+/// fit best; those without one wait for it. Returns the profiles that moved.
+pub fn rehome(db: &Db, except: Option<&str>) -> Result<Vec<String>> {
+    let waiting: Vec<(String, String, Option<String>)> = {
+        let conn = db.conn();
+        let mut stmt = conn.prepare(
+            "SELECT p.id, m.game_id, m.requires_json
+             FROM profiles p JOIN mods m ON m.id = p.mod_id
+             WHERE p.install_id IS NULL OR p.install_id IS ?1",
+        )?;
+        stmt.query_map([except], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?
+            .collect::<rusqlite::Result<_>>()?
+    };
+    let installs: Vec<Install> = library::list(db)?
+        .into_iter()
+        .filter(|i| Some(i.id.as_str()) != except)
+        .collect();
+    let mut moved = Vec::new();
+    for (profile_id, game_id, requires) in waiting {
+        let Some(game) = catalog::game(&game_id) else {
+            continue;
+        };
+        let requires = parse_requires(requires.as_deref());
+        let target = installs
+            .iter()
+            .filter(|i| fits(game, requires.as_deref(), i))
+            .min_by_key(|i| fit_rank(game, requires.as_deref(), i));
+        let target = target.map(|i| i.id.as_str());
+        let changed = db.conn().execute(
+            "UPDATE profiles SET install_id = ?2, composed_hash = NULL
+             WHERE id = ?1 AND install_id IS NOT ?2",
+            params![profile_id, target],
+        )?;
+        if changed > 0 {
+            tracing::info!("mod profile {profile_id} now plays on {target:?}");
+            moved.push(profile_id);
+        }
+    }
+    Ok(moved)
 }
 
 /// Copies the mod's files (and the archive) into `staging`.
@@ -792,14 +867,20 @@ fn archive_sha256(source: &Source) -> Result<Option<String>> {
     })
 }
 
-/// Stores a new mod with its play profile on `target`.
+fn requires_json(s: &Stored) -> Option<String> {
+    s.requires
+        .as_ref()
+        .map(|r| serde_json::to_string(r).expect("strings serialize"))
+}
+
+/// Stores a new mod with its play profile on `target`, or waiting for a game.
 fn store(
     paths: &AppPaths,
     db: &Db,
     source: &Source,
     analysis: &Analysis,
     s: &Stored,
-    target: &Install,
+    target: Option<&Install>,
 ) -> Result<Mod> {
     let id = reserve_id(paths, &s.name)?;
     let mod_dir = paths.mods.join(&id);
@@ -835,8 +916,8 @@ fn store(
         tx.execute(
             "INSERT INTO mods (id, game_id, index_id, keenwiki_url, name, authors, version,
                                recipe_json, path, source, source_url, archive_sha256, added_at,
-                               description, released, author_links)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+                               description, released, author_links, requires_json)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
             params![
                 m.id,
                 m.game_id,
@@ -853,7 +934,8 @@ fn store(
                 m.added_at,
                 m.description,
                 m.released,
-                serde_json::to_string(&m.author_links).expect("strings serialize")
+                serde_json::to_string(&m.author_links).expect("strings serialize"),
+                requires_json(s)
             ],
         )?;
         tx.execute(
@@ -861,7 +943,7 @@ fn store(
              VALUES (?1, ?2, ?1, ?3, ?4)",
             params![
                 m.id,
-                target.id,
+                target.map(|t| &t.id),
                 profile_dir.join("state").display().to_string(),
                 m.added_at
             ],
@@ -873,10 +955,10 @@ fn store(
     let _ = fs::remove_dir_all(&staging);
     match &result {
         Ok(m) => tracing::info!(
-            "installed mod {} for {} on {}: {} files, recipe {:?}",
+            "installed mod {} for {} on {:?}: {} files, recipe {:?}",
             m.id,
             m.game_id,
-            target.id,
+            target.map(|t| &t.id),
             analysis.files.len(),
             m.recipe
         ),
@@ -900,20 +982,22 @@ fn update(
     s: &Stored,
     c: &Curated,
 ) -> Result<Mod> {
-    let install_id: String = db.conn().query_row(
+    let install_id: Option<String> = db.conn().query_row(
         "SELECT install_id FROM profiles WHERE mod_id = ?1",
         [mod_id],
         |r| r.get(0),
     )?;
     let game =
         catalog::game(&c.game_id).ok_or_else(|| Error::NotFound(format!("game {}", c.game_id)))?;
-    let fits = library::list(db)?
-        .iter()
-        .any(|i| i.id == install_id && fits_curated(game, &c.requires, i));
-    if !fits {
+    // A mod still waiting for its game has nothing to fit yet.
+    if let Some(install_id) = &install_id
+        && !library::list(db)?
+            .iter()
+            .any(|i| i.id == *install_id && fits(game, s.requires.as_deref(), i))
+    {
         return Err(Error::IncompatibleInstall(format!(
             "the new version needs {}",
-            needed_game(game, &c.requires)
+            needed_game(game, s.requires.as_deref())
         )));
     }
 
@@ -940,7 +1024,7 @@ fn update(
         tx.execute(
             "UPDATE mods SET authors = ?2, version = ?3, recipe_json = ?4, keenwiki_url = ?5,
                              source_url = ?6, archive_sha256 = ?7, description = ?8,
-                             released = ?9, author_links = ?10
+                             released = ?9, author_links = ?10, requires_json = ?11
              WHERE id = ?1",
             params![
                 mod_id,
@@ -952,7 +1036,8 @@ fn update(
                 archive_sha256(source)?,
                 s.description,
                 s.released,
-                serde_json::to_string(&s.author_links).expect("strings serialize")
+                serde_json::to_string(&s.author_links).expect("strings serialize"),
+                requires_json(s)
             ],
         )?;
         tx.execute(
@@ -965,6 +1050,9 @@ fn update(
     let _ = fs::remove_dir_all(&staging);
     result?;
     tracing::info!("updated mod {mod_id} to {:?}", s.version);
+    if install_id.is_none() {
+        rehome(db, None)?;
+    }
     list(db)?
         .into_iter()
         .find(|m| m.id == mod_id)
@@ -1200,6 +1288,7 @@ pub fn delete(paths: &AppPaths, db: &Db, mod_id: &str, keep_saves: bool) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::profiles;
     use crate::source::testutil::*;
 
     fn setup() -> (tempfile::TempDir, AppPaths, Db) {
@@ -1232,7 +1321,7 @@ mod tests {
             path: path.display().to_string(),
             name: String::new(),
             recipe,
-            install_id: "keen4-1".into(),
+            install_id: Some("keen4-1".into()),
             keenwiki: None,
         }
     }
@@ -1459,7 +1548,7 @@ mod tests {
         let zip = tmp.path().join("index-aurora-bliss.zip");
         write_zip(&zip, AURORA);
         let c = curated(aurora_patch(&["/nocheck"]));
-        let m = install_curated(&paths, &db, &zip, &c, None).unwrap();
+        let m = install_curated(&paths, &db, &zip, &c, None, false).unwrap();
         assert_eq!(m.id, "aurora-bliss");
         assert_eq!(m.recipe, c.recipe);
         assert_eq!(m.source, ModSource::Index);
@@ -1489,7 +1578,7 @@ mod tests {
             version: Some("1.3".into()),
             ..c.clone()
         };
-        let updated = install_curated(&paths, &db, &zip, &c2, None).unwrap();
+        let updated = install_curated(&paths, &db, &zip, &c2, None, false).unwrap();
         assert_eq!(updated.id, "aurora-bliss");
         assert_eq!(updated.version.as_deref(), Some("1.3"));
         assert_eq!(list(&db).unwrap().len(), 1);
@@ -1520,7 +1609,7 @@ mod tests {
             file: "START.BAT".into(),
         });
         assert!(matches!(
-            install_curated(&paths, &db, &zip, &missing, None),
+            install_curated(&paths, &db, &zip, &missing, None, false),
             Err(Error::UnexpectedContent(_))
         ));
         let other_game = Curated {
@@ -1528,7 +1617,7 @@ mod tests {
             ..curated(aurora_patch(&[]))
         };
         assert!(matches!(
-            install_curated(&paths, &db, &zip, &other_game, None),
+            install_curated(&paths, &db, &zip, &other_game, None, false),
             Err(Error::UnexpectedContent(_))
         ));
 
@@ -1539,15 +1628,93 @@ mod tests {
             requires: vec!["keen5-1.4-ega".into()],
             ..curated(Recipe::Episode)
         };
-        match install_curated(&paths, &db, &k5, &needs_k5, None) {
+        match install_curated(&paths, &db, &k5, &needs_k5, None, false) {
             Err(Error::MissingGame(what)) => assert!(what.ends_with("(v1.4 EGA)"), "{what}"),
             other => panic!("{other:?}"),
         }
         assert!(matches!(
-            install_curated(&paths, &db, &zip, &curated(aurora_patch(&[])), Some("nope")),
+            install_curated(
+                &paths,
+                &db,
+                &zip,
+                &curated(aurora_patch(&[])),
+                Some("nope"),
+                false
+            ),
             Err(Error::IncompatibleInstall(_))
         ));
         assert_eq!(fs::read_dir(&paths.mods).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn mods_wait_for_their_game_and_move_when_it_goes() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(tmp.path().join("data"));
+        paths.ensure().unwrap();
+        let db = Db::open_in_memory().unwrap();
+        let zip = tmp.path().join("aurora.zip");
+        write_zip(&zip, AURORA);
+        let info = inspect(&zip, None).unwrap();
+        let req = InstallModRequest {
+            install_id: None,
+            ..request(&zip, info.recipes[0].recipe.clone())
+        };
+        let m = install(&paths, &db, &req).unwrap();
+        let (p, layers) = profiles::get(&db, &m.profile_id).unwrap();
+        assert_eq!((p.install_id, p.game_id.as_str()), (None, "keen4"));
+        assert_eq!(
+            p.missing_game.as_deref(),
+            Some("Commander Keen 4: Secret of the Oracle (v1.4 EGA)")
+        );
+        assert_eq!(layers.lower, None);
+        let k5 = tmp.path().join("k5.zip");
+        write_zip(&k5, &[("GAMEMAPS.CK5", b""), ("LEVEL.CK5", b"")]);
+        let needs_k5 = Curated {
+            game_id: "keen5".into(),
+            requires: vec![],
+            ..curated(Recipe::Episode)
+        };
+        let k5_mod = install_curated(&paths, &db, &k5, &needs_k5, None, true).unwrap();
+        let install_of = |id: &str| profiles::get(&db, id).unwrap().0.install_id;
+        assert_eq!(install_of(&k5_mod.profile_id), None);
+
+        // The game arrives, of an unknown version, which may be the right one.
+        let src = tmp.path().join("k4");
+        write_folder(&src, KEEN4);
+        library::import(&paths, &db, &src).unwrap();
+        assert_eq!(install_of("aurora").as_deref(), Some("keen4-1"));
+        assert_eq!(profiles::get(&db, "aurora").unwrap().0.missing_game, None);
+        assert_eq!(install_of(&k5_mod.profile_id), None);
+
+        // Removing it moves the mod to another copy, else it waits again.
+        library::import(&paths, &db, &src).unwrap();
+        library::remove(&paths, &db, "keen4-1", false, false).unwrap();
+        assert_eq!(install_of("aurora").as_deref(), Some("keen4-2"));
+        library::remove(&paths, &db, "keen4-2", false, false).unwrap();
+        assert_eq!(install_of("aurora"), None);
+        assert!(paths.mods.join("aurora/files/GAMEMAPS.CK4").is_file());
+        assert_eq!(list(&db).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn a_known_version_the_mod_doesnt_name_isnt_used() {
+        let k6 = catalog::game("keen6").unwrap();
+        let install = Install {
+            id: "keen6-1".into(),
+            game_id: "keen6".into(),
+            version_id: Some("keen6-1.4-ega".into()),
+            label: String::new(),
+            source: library::InstallSource::Folder,
+            path: String::new(),
+            added_at: 0,
+        };
+        let requires = parse_requires(Some(r#"["keen6-1.0"]"#));
+        assert!(!fits(k6, requires.as_deref(), &install));
+        assert!(fits(k6, parse_requires(None).as_deref(), &install));
+        assert_eq!(
+            needed_game(k6, requires.as_deref()),
+            format!("{} (v1.0)", k6.title)
+        );
     }
 
     #[test]
@@ -1564,16 +1731,14 @@ mod tests {
         };
         let v10 = vec!["keen6-1.0".to_string()];
         let v14 = vec!["keen6-1.4-ega".to_string()];
-        assert!(fits_curated(k6, &v10, &install(Some("keen6-1.0-nocp"))));
-        assert!(!fits_curated(k6, &v14, &install(Some("keen6-1.0-nocp"))));
-        assert!(fits_curated(k6, &v14, &install(None)));
-        assert!(fits_curated(k6, &[], &install(Some("keen6-1.0"))));
-        assert!(!fits_curated(
-            catalog::game("keen4").unwrap(),
-            &[],
-            &install(None)
-        ));
-        let rank = |v| fit_rank(k6, &v10, &install(v));
+        assert!(fits(k6, Some(&v10), &install(Some("keen6-1.0-nocp"))));
+        assert!(!fits(k6, Some(&v14), &install(Some("keen6-1.0-nocp"))));
+        assert!(fits(k6, Some(&v14), &install(None)));
+        assert!(fits(k6, None, &install(Some("keen6-1.0"))));
+        // A patch naming versions the catalog doesn't know.
+        assert!(!fits(k6, Some(&[]), &install(Some("keen6-1.0"))));
+        assert!(!fits(catalog::game("keen4").unwrap(), None, &install(None)));
+        let rank = |v| fit_rank(k6, Some(&v10), &install(v));
         assert!(rank(Some("keen6-1.0")) < rank(Some("keen6-1.0-nocp")));
         assert!(rank(Some("keen6-1.0-nocp")) < rank(None));
     }

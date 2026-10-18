@@ -275,13 +275,20 @@ function ProfileCard({
               {profile.label}
             </Link>
           </Heading>
-          {profile.modId !== null && game && (
+          {profile.missingGame !== null ? (
             <p className="text-xs text-muted">
-              {t("mods.baseGame", {
-                game: game.title,
-                version: version?.label ?? t("library.unknownVersion"),
-              })}
+              {t("mods.waitsFor", { game: profile.missingGame })}
             </p>
+          ) : (
+            profile.modId !== null &&
+            game && (
+              <p className="text-xs text-muted">
+                {t("mods.baseGame", {
+                  game: game.title,
+                  version: version?.label ?? t("library.unknownVersion"),
+                })}
+              </p>
+            )
           )}
         </div>
         <div className="flex flex-wrap gap-1">
@@ -321,10 +328,14 @@ function ProfileCard({
           <PlayButton
             className="flex-1"
             onClick={onPlay}
-            disabled={!canPlay || profile.running}
+            disabled={!canPlay || profile.running || profile.missingGame !== null}
             aria-label={t("library.playGame", { game: profile.label })}
           >
-            {profile.running ? t("library.running") : t("library.play")}
+            {profile.missingGame !== null
+              ? t("mods.gameMissing")
+              : profile.running
+                ? t("library.running")
+                : t("library.play")}
           </PlayButton>
         </div>
       </div>
