@@ -301,7 +301,7 @@
     "installed": "Installiert",
     "updateBadge": "Update",
     "homepage": "Website",
-    "playInLibrary": "In deiner Bibliothek spielen",
+    "openDetails": "Details & Spielen",
     "update": "Aktualisieren",
     "updateTo": "Auf Version {{version}} aktualisieren",
     "needs": "Braucht {{game}}.",

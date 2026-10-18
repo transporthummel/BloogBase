@@ -109,8 +109,13 @@ function InstallAction({
 
   if (mod.modId && !mod.updateAvailable) {
     return (
-      <Link to="/" className="text-sm text-ink underline underline-offset-2">
-        {t("discover.playInLibrary")}
+      // A mod's play profile has the mod's id.
+      <Link
+        to="/profiles/$profileId"
+        params={{ profileId: mod.modId }}
+        className="text-sm text-ink underline underline-offset-2"
+      >
+        {t("discover.openDetails")}
       </Link>
     );
   }

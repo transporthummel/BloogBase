@@ -15,8 +15,18 @@ import { compare, fitsEntry, isNew } from "./fit";
 
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
-    <a href={to}>{children}</a>
+  Link: ({
+    to,
+    params,
+    children,
+  }: {
+    to: string;
+    params?: Record<string, string>;
+    children: React.ReactNode;
+  }) => (
+    <a href={Object.entries(params ?? {}).reduce((p, [k, v]) => p.replace(`$${k}`, v), to)}>
+      {children}
+    </a>
   ),
 }));
 vi.mock("../bindings", () => ({
@@ -152,7 +162,10 @@ test("shows what each mod needs and installs on the chosen game", async () => {
 
   await screen.findByRole("heading", { name: "Aurora" });
   expect(screen.getByText("4 mods · checked Oct 9, 2025")).toBeInTheDocument();
-  expect(within(card("Krodacia")).getByText("Play it in your library")).toBeInTheDocument();
+  expect(within(card("Krodacia")).getByText("Details & Play")).toHaveAttribute(
+    "href",
+    "/profiles/krodacia",
+  );
   expect(
     within(card("Oblivion")).getByRole("button", { name: "Update to version 1.4" }),
   ).toBeInTheDocument();
