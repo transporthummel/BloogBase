@@ -4,8 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { commands, type Game, type Profile, type RuntimeStatus } from "../bindings";
 import { Library } from "./Library";
+import { profilesKey } from "./queries";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
+vi.mock("@tauri-apps/api/core", () => ({ convertFileSrc: (p: string) => `asset://${p}` }));
 vi.mock("@tanstack/react-router", () => ({
   Link: (props: object) => <a {...props} />,
   Navigate: ({ to }: { to: string }) => <p>redirect to {to}</p>,
@@ -73,6 +75,7 @@ function renderLibrary() {
       <Library />
     </QueryClientProvider>,
   );
+  return client;
 }
 
 beforeEach(() => {
@@ -149,6 +152,26 @@ test("a mod waiting for its game can't be played", async () => {
   const play = screen.getByRole("button", { name: "Play Galactic" });
   expect(play).toHaveTextContent("Game missing");
   expect(play).toBeDisabled();
+});
+
+test("a mod gets its title screen once its game is there", async () => {
+  const waiting: Profile = { ...profile, id: "galactic", installId: null, modId: "galactic" };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [waiting] });
+  const client = renderLibrary();
+  await vi.waitFor(() => expect(commands.profileCover).toHaveBeenCalledTimes(1));
+
+  vi.mocked(commands.profileCover).mockResolvedValue({
+    status: "ok",
+    data: "/covers/galactic.png",
+  });
+  vi.mocked(commands.listProfiles).mockResolvedValue({
+    status: "ok",
+    data: [{ ...waiting, installId: "keen5-1" }],
+  });
+  await client.invalidateQueries({ queryKey: profilesKey });
+  await vi.waitFor(() =>
+    expect(document.querySelector('img[src="asset:///covers/galactic.png"]')).not.toBeNull(),
+  );
 });
 
 test("asks for DOSBox when no runtime is installed", async () => {

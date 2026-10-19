@@ -249,7 +249,7 @@ function ProfileCard({
 }) {
   const { t, i18n } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
-  const cover = useCover(profile.id);
+  const cover = useCover(profile.id, profile.installId);
   return (
     <Card className="flex h-full flex-col">
       {/* A second way to the same page for the mouse; the title link below

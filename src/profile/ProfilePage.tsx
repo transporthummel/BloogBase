@@ -160,7 +160,7 @@ function Hero({
   });
   const index = useIndexMods();
   const shots = useScreenshots(profile.id);
-  const cover = useCover(profile.id);
+  const cover = useCover(profile.id, profile.installId);
   const cardRef = useRef<HTMLElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const pictureWidth = usePictureWidth(cardRef, textRef);
