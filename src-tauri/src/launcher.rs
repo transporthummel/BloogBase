@@ -10,7 +10,7 @@
 //!   and send their DOS commands via `-c`, so no `[autoexec]` from any layer
 //!   ever runs.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -19,6 +19,7 @@ use std::sync::Mutex;
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use tokio::sync::oneshot;
 
 use crate::catalog;
 use crate::compose;
@@ -56,6 +57,57 @@ impl Running {
     fn lock(&self) -> std::sync::MutexGuard<'_, HashSet<String>> {
         self.0.lock().unwrap_or_else(|e| e.into_inner())
     }
+}
+
+/// The games running right now, each with its session and a way to stop
+/// it, so quitting BloogBase can end them or at least their sessions.
+#[derive(Default)]
+pub struct Playing(Mutex<HashMap<String, (i64, oneshot::Sender<()>)>>);
+
+impl Playing {
+    pub fn add(&self, profile_id: &str, session: i64) -> oneshot::Receiver<()> {
+        let (stop, stopped) = oneshot::channel();
+        self.lock().insert(profile_id.to_string(), (session, stop));
+        stopped
+    }
+
+    pub fn remove(&self, profile_id: &str) {
+        self.lock().remove(profile_id);
+    }
+
+    pub fn profile_ids(&self) -> Vec<String> {
+        let mut ids: Vec<String> = self.lock().keys().cloned().collect();
+        ids.sort();
+        ids
+    }
+
+    /// Asks every game to stop; each one's session ends as usual.
+    pub fn stop_all(&self) {
+        for (_, (_, stop)) in self.lock().drain() {
+            let _ = stop.send(());
+        }
+    }
+
+    /// Lets the games run on without BloogBase, ending their sessions now:
+    /// the time played so far counts, whatever comes after doesn't.
+    pub fn abandon_all(&self, db: &Db) {
+        for (profile_id, (session, _)) in self.lock().drain() {
+            if let Err(e) = finish(db, session, None) {
+                tracing::error!("could not end session {session} of {profile_id}: {e}");
+            }
+        }
+    }
+
+    fn lock(&self) -> std::sync::MutexGuard<'_, HashMap<String, (i64, oneshot::Sender<()>)>> {
+        self.0.lock().unwrap_or_else(|e| e.into_inner())
+    }
+}
+
+/// Quitting was asked for while these games run; the frontend asks what to do.
+#[derive(Debug, Clone, Serialize, Deserialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct QuitRequested {
+    pub games: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type, tauri_specta::Event)]
@@ -416,6 +468,29 @@ mod tests {
         running.release("a");
         assert!(!running.contains("a"));
         running.claim("a").unwrap();
+    }
+
+    #[test]
+    fn quitting_stops_games_or_ends_their_sessions() {
+        let (_tmp, _paths, db) = setup();
+        let playing = Playing::default();
+        let mut stopped = playing.add("a", 1);
+        let mut left = playing.add("keen4-1", start_session(&db, "keen4-1", 100).unwrap());
+        assert_eq!(playing.profile_ids(), ["a", "keen4-1"]);
+
+        playing.remove("a");
+        // A game that ended on its own isn't asked to stop.
+        assert!(stopped.try_recv().is_err());
+        playing.abandon_all(&db);
+        assert!(playing.profile_ids().is_empty());
+        assert!(left.try_recv().is_err());
+        let p = &profiles::list(&db, |_| false).unwrap()[0];
+        assert_eq!(p.session_count, 1);
+
+        let mut stopped = playing.add("b", 2);
+        playing.stop_all();
+        assert_eq!(stopped.try_recv(), Ok(()));
+        assert!(playing.profile_ids().is_empty());
     }
 }
 

@@ -520,5 +520,17 @@
     "check": "Check for updates",
     "upToDate": "You have the newest version.",
     "checkFailed": "Couldn't check for updates: {{message}}"
+  },
+  "quit": {
+    "title_one": "A game is still running",
+    "title_other": "Games are still running",
+    "body_one": "{{games}} is still running. If you close BloogBase now, its play time can’t be tracked properly.",
+    "body_other": "{{games}} are still running. If you close BloogBase now, their play time can’t be tracked properly.",
+    "stopGames_one": "Quit the game too",
+    "stopGames_other": "Quit the games too",
+    "stopHint": "Progress you haven’t saved in the game is lost.",
+    "keepHint_one": "The game keeps running; only the time played so far counts.",
+    "keepHint_other": "The games keep running; only the time played so far counts.",
+    "confirm": "Close BloogBase"
   }
 }

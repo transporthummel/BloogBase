@@ -18,7 +18,7 @@ use crate::error::{CommandResult, Error, Result};
 use crate::firing::{self, Firing};
 use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
 use crate::keenwiki::{self, WikiMod};
-use crate::launcher::{self, PlaySessionEnded, Running};
+use crate::launcher::{self, PlaySessionEnded, Playing, Running};
 use crate::library::{self, Install};
 use crate::mod_index::{self, IndexMod, IndexStatus, IndexUpdated, ModIndex};
 use crate::mods::{self, Curated, Dropped, InstallModRequest, Mod, ModInfo};
@@ -130,14 +130,25 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
         }
     };
 
+    let mut stop = app.state::<Playing>().add(&profile_id, session);
     tauri::async_runtime::spawn(async move {
-        let exit_code = match child.wait().await {
+        let status = tokio::select! {
+            status = child.wait() => status,
+            // Quitting BloogBase with the games: the session ends as usual.
+            Ok(()) = &mut stop => {
+                tracing::info!("stopping {profile_id} as BloogBase quits");
+                let _ = child.start_kill();
+                child.wait().await
+            }
+        };
+        let exit_code = match status {
             Ok(status) => status.code(),
             Err(e) => {
                 tracing::error!("lost track of DOSBox for {profile_id}: {e}");
                 None
             }
         };
+        app.state::<Playing>().remove(&profile_id);
         let seconds =
             launcher::finish(&app.state::<Db>(), session, exit_code).unwrap_or_else(|e| {
                 tracing::error!("could not record end of session {session}: {e}");
@@ -876,6 +887,30 @@ pub fn set_data_location(
 #[specta::specta]
 pub fn restart_app(app: AppHandle) {
     app.restart();
+}
+
+/// Quits after [`QuitRequested`](launcher::QuitRequested): with
+/// `stop_games` the running games end first, so their play time counts in
+/// full; otherwise they run on, and only the time played so far counts.
+#[tauri::command]
+#[specta::specta]
+pub async fn quit_app(app: AppHandle, stop_games: bool) {
+    let playing = app.state::<Playing>();
+    if stop_games {
+        let ids = playing.profile_ids();
+        playing.stop_all();
+        // Each session is recorded once its DOSBox has exited.
+        let running = app.state::<Running>();
+        for _ in 0..100 {
+            if !ids.iter().any(|id| running.contains(id)) {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        }
+    } else {
+        playing.abandon_all(&app.state::<Db>());
+    }
+    app.exit(0);
 }
 
 /// Runs file system heavy work off the async runtime.

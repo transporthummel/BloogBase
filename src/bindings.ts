@@ -157,6 +157,12 @@ export const commands = {
 	 */
 	setDataLocation: (path: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("set_data_location", { path })),
 	restartApp: () => __TAURI_INVOKE<void>("restart_app"),
+	/**
+	 *  Quits after [`QuitRequested`](launcher::QuitRequested): with
+	 *  `stop_games` the running games end first, so their play time counts in
+	 *  full; otherwise they run on, and only the time played so far counts.
+	 */
+	quitApp: (stopGames: boolean) => __TAURI_INVOKE<void>("quit_app", { stopGames }),
 };
 
 /** Events */
@@ -164,6 +170,7 @@ export const events = {
 	indexUpdated: makeEvent<IndexUpdated>("index-updated"),
 	jobUpdated: makeEvent<JobUpdated>("job-updated"),
 	playSessionEnded: makeEvent<PlaySessionEnded>("play-session-ended"),
+	quitRequested: makeEvent<QuitRequested>("quit-requested"),
 };
 
 /* Types */
@@ -534,6 +541,11 @@ export type ProfileConfig = {
 	text: string,
 	warnings: ConfigWarning[],
 	effective: Setting[],
+};
+
+/**  Quitting was asked for while these games run; the frontend asks what to do. */
+export type QuitRequested = {
+	games: string[],
 };
 
 export type Readme = {

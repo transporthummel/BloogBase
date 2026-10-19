@@ -37,7 +37,7 @@ use tauri_specta::{collect_commands, collect_events};
 use crate::commands::DataLocation;
 use crate::db::Db;
 use crate::jobs::Jobs;
-use crate::launcher::Running;
+use crate::launcher::{Playing, QuitRequested, Running};
 use crate::mod_index::{IndexUpdated, ModIndex};
 use crate::paths::AppPaths;
 
@@ -105,10 +105,12 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::complete_setup,
             commands::set_data_location,
             commands::restart_app,
+            commands::quit_app,
         ])
         .events(collect_events![
             jobs::JobUpdated,
             launcher::PlaySessionEnded,
+            launcher::QuitRequested,
             mod_index::IndexUpdated
         ])
 }
@@ -199,6 +201,7 @@ pub fn run() {
             app.manage(paths);
             app.manage(db);
             app.manage(Running::default());
+            app.manage(Playing::default());
             app.manage(Jobs::default());
             app.manage(location);
 
@@ -213,8 +216,44 @@ pub fn run() {
             });
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        // Closing the window or quitting (Cmd+Q) while games run asks first;
+        // `quit_app` then exits with a code, which passes.
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event
+                && ask_before_quitting(window.app_handle())
+            {
+                api.prevent_close();
+            }
+        })
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested {
+                code: None, api, ..
+            } = event
+                && ask_before_quitting(app)
+            {
+                api.prevent_exit();
+            }
+        });
+}
+
+/// Whether games are running; if so, tells the frontend to ask what to do.
+fn ask_before_quitting(app: &tauri::AppHandle) -> bool {
+    let Some(playing) = app.try_state::<Playing>() else {
+        return false;
+    };
+    let ids = playing.profile_ids();
+    if ids.is_empty() {
+        return false;
+    }
+    let db = app.state::<Db>();
+    let games = ids
+        .iter()
+        .map(|id| profiles::get(&db, id).map_or_else(|_| id.clone(), |(p, _)| p.label))
+        .collect();
+    let _ = QuitRequested { games }.emit(app);
+    true
 }
 
 #[cfg(test)]

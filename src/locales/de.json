@@ -520,5 +520,17 @@
     "check": "Nach Updates suchen",
     "upToDate": "Du hast die neueste Version.",
     "checkFailed": "Die Suche nach Updates hat nicht geklappt: {{message}}"
+  },
+  "quit": {
+    "title_one": "Ein Spiel läuft noch",
+    "title_other": "Es laufen noch Spiele",
+    "body_one": "{{games}} läuft noch. Wenn du BloogBase jetzt schließt, kann die Spielzeit nicht richtig erfasst werden.",
+    "body_other": "{{games}} laufen noch. Wenn du BloogBase jetzt schließt, kann die Spielzeit nicht richtig erfasst werden.",
+    "stopGames_one": "Das Spiel mit beenden",
+    "stopGames_other": "Die Spiele mit beenden",
+    "stopHint": "Was du im Spiel nicht gespeichert hast, geht verloren.",
+    "keepHint_one": "Das Spiel läuft weiter; gezählt wird nur die Spielzeit bis jetzt.",
+    "keepHint_other": "Die Spiele laufen weiter; gezählt wird nur die Spielzeit bis jetzt.",
+    "confirm": "BloogBase schließen"
   }
 }

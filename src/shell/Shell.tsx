@@ -11,6 +11,7 @@ import { hideSplash } from "../splash";
 import { useAppUpdate } from "../updates/queries";
 import { UpdateCard } from "../updates/UpdateCard";
 import { PageFooterContext } from "./pageFooterContext";
+import { QuitGuard } from "./QuitGuard";
 
 /**
  * App frame (PLAN.md §8.2): full sidebar from 1200px, icon rail below. The
@@ -30,12 +31,14 @@ export function Shell() {
   if (inSetup) {
     return (
       <main className="bb-starfield relative min-h-screen overflow-y-auto">
+        <QuitGuard />
         <Outlet />
       </main>
     );
   }
   return (
     <div className="flex h-screen">
+      <QuitGuard />
       <DropImport />
       <nav
         aria-label={t("nav.label")}
