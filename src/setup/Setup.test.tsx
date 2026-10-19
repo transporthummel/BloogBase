@@ -10,6 +10,7 @@ import {
   type Job,
   type RuntimeStatus,
 } from "../bindings";
+import { unwrap } from "../ipc";
 import { getSetupStep, setSetupStep } from "../preferences";
 import { Setup } from "./Setup";
 
@@ -78,6 +79,7 @@ function renderSetup() {
       <Setup />
     </QueryClientProvider>,
   );
+  return client;
 }
 
 beforeEach(() => {
@@ -150,6 +152,25 @@ test("walks through all steps, skipping each, and finishes", async () => {
   expect(commands.completeSetup).toHaveBeenCalled();
   await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/" }));
   expect(getSetupStep()).toBeNull();
+});
+
+test("skipping setup refreshes the cached status before leaving", async () => {
+  const client = renderSetup();
+  // Fetched by the library before it redirected here; no observer now.
+  await client.prefetchQuery({
+    queryKey: ["setupStatus"],
+    queryFn: () => unwrap(commands.setupStatus()),
+  });
+  vi.mocked(commands.setupStatus).mockResolvedValue({
+    status: "ok",
+    data: { completed: true, hasInstalls: false },
+  });
+  const user = userEvent.setup();
+
+  await user.click(await screen.findByRole("button", { name: "Skip setup" }));
+
+  await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/" }));
+  expect(client.getQueryData(["setupStatus"])).toEqual({ completed: true, hasInstalls: false });
 });
 
 test("downloads the chosen free episodes as jobs", async () => {

@@ -58,7 +58,9 @@ export function Setup() {
     mutationFn: () => unwrap(commands.completeSetup()),
     onSuccess: async () => {
       setSetupStep(null);
-      await client.invalidateQueries({ queryKey: setupStatusKey });
+      // The status query has no observer on most steps; refetch it anyway so
+      // the library doesn't see the stale "not completed" and send us back.
+      await client.invalidateQueries({ queryKey: setupStatusKey, refetchType: "all" });
       navigate({ to: "/" });
     },
   });
