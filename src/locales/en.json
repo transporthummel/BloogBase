@@ -184,7 +184,7 @@
     },
     "episodes": {
       "title": "Free episodes",
-      "intro": "These episodes were released as shareware and are free to play. Mods made for them work right away.",
+      "intro": "Some episodes were also released as shareware. You can play them for free, even if you haven't bought Keen. Mods made for them work right away.",
       "installed": "In your library",
       "owned": "Full version in your library",
       "size": "{{size}} MB",
@@ -194,12 +194,12 @@
     },
     "owned": {
       "title": "Already own Keen?",
-      "intro": "Episodes 2, 3, 5 and 6 were never free. If you bought them on Steam or GOG, BloogBase can add them from there.",
+      "intro": "If you bought Commander Keen on Steam or GOG, BloogBase can add your games from there.",
       "scanning": "Looking for games from Steam and GOG…",
       "noneFound": "No Commander Keen games from Steam or GOG were found on this computer.",
       "imported": "In your library",
       "other": "Have the games somewhere else? Add them from a folder or ZIP file:",
-      "buy": "Where can I buy the other episodes?",
+      "buy": "Where can I buy Commander Keen?",
       "store": {
         "steam": "Steam",
         "gog": "GOG"
