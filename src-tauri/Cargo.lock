@@ -381,6 +381,7 @@ dependencies = [
 name = "bloogbase"
 version = "0.1.0"
 dependencies = [
+ "flate2",
  "keen-graphics",
  "keen-saves",
  "lzma-rs",

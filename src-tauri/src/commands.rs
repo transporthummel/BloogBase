@@ -9,6 +9,7 @@ use tauri::{AppHandle, Manager, State};
 use tauri_specta::Event;
 
 use crate::backups::{self, Backup, BackupSettings, Contents, Origin};
+use crate::captures::{self, Kind, Screenshot, Video};
 use crate::catalog::{self, Game};
 use crate::covers;
 use crate::db::Db;
@@ -28,7 +29,6 @@ use crate::readme::{self, Readme};
 use crate::recipe::Recipe;
 use crate::runtime::{self, RuntimeStatus};
 use crate::saves::{self, SaveFile};
-use crate::screenshots::{self, Screenshot};
 use crate::settings::{self, SetupStatus};
 use crate::shareware::{self, FreeEpisode};
 use crate::storage::{self, StorageUsage};
@@ -206,7 +206,7 @@ pub fn list_screenshots(
     profile_id: String,
 ) -> CommandResult<Vec<Screenshot>> {
     profiles::get(&db, &profile_id)?;
-    Ok(screenshots::list(&paths, &profile_id)?)
+    Ok(captures::screenshots(&paths, &profile_id)?)
 }
 
 #[tauri::command]
@@ -218,7 +218,52 @@ pub fn delete_screenshot(
     file: String,
 ) -> CommandResult<()> {
     profiles::get(&db, &profile_id)?;
-    Ok(screenshots::delete(&paths, &profile_id, &file)?)
+    Ok(captures::delete(
+        &paths,
+        &profile_id,
+        Kind::Screenshot,
+        &file,
+    )?)
+}
+
+/// Videos recorded in DOSBox, newest first.
+#[tauri::command]
+#[specta::specta]
+pub async fn list_videos(app: AppHandle, profile_id: String) -> CommandResult<Vec<Video>> {
+    blocking(move || {
+        profiles::get(&app.state::<Db>(), &profile_id)?;
+        captures::videos(&app.state::<AppPaths>(), &profile_id)
+    })
+    .await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn delete_video(
+    paths: State<'_, AppPaths>,
+    db: State<'_, Db>,
+    profile_id: String,
+    file: String,
+) -> CommandResult<()> {
+    profiles::get(&db, &profile_id)?;
+    Ok(captures::delete(&paths, &profile_id, Kind::Video, &file)?)
+}
+
+/// Plays a video in the system's player; the app can't decode DOSBox's codec.
+#[tauri::command]
+#[specta::specta]
+pub fn open_video(
+    app: AppHandle,
+    paths: State<'_, AppPaths>,
+    db: State<'_, Db>,
+    profile_id: String,
+    file: String,
+) -> CommandResult<()> {
+    profiles::get(&db, &profile_id)?;
+    open_path(
+        &app,
+        &captures::path(&paths, &profile_id, Kind::Video, &file)?,
+    )
 }
 
 /// The profile's title screen as a PNG path, extracted on first use; `None`
@@ -247,7 +292,7 @@ pub fn open_capture_folder(
     profiles::get(&db, &profile_id)?;
     let dir = paths.profile(&profile_id).capture;
     std::fs::create_dir_all(&dir).map_err(Error::from)?;
-    open_dir(&app, &dir)
+    open_path(&app, &dir)
 }
 
 /// Opens the folder with a mod's installed files.
@@ -262,14 +307,14 @@ pub fn open_mod_folder(
     if !mods::list(&db)?.iter().any(|m| m.id == mod_id) {
         return Err(Error::NotFound(format!("mod {mod_id}")).into());
     }
-    open_dir(&app, &paths.mods.join(&mod_id).join("files"))
+    open_path(&app, &paths.mods.join(&mod_id).join("files"))
 }
 
-/// Shows a folder in the system's file manager.
-fn open_dir(app: &AppHandle, dir: &Path) -> CommandResult<()> {
+/// Shows a folder in the system's file manager, or opens a file with its app.
+fn open_path(app: &AppHandle, path: &Path) -> CommandResult<()> {
     use tauri_plugin_opener::OpenerExt;
     app.opener()
-        .open_path(dir.display().to_string(), None::<&str>)
+        .open_path(path.display().to_string(), None::<&str>)
         .map_err(|e| Error::from(std::io::Error::other(e.to_string())))?;
     Ok(())
 }

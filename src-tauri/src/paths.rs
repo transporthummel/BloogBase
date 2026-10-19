@@ -80,6 +80,8 @@ pub struct ProfileDirs {
     /// Written on every launch, never edited by the user.
     pub launch_conf: PathBuf,
     pub capture: PathBuf,
+    /// First frames of the videos in `capture`.
+    pub video_thumbs: PathBuf,
 }
 
 impl AppPaths {
@@ -121,6 +123,7 @@ impl AppPaths {
             override_conf: config.join("override.conf"),
             launch_conf: root.join("generated").join("launch.conf"),
             capture: root.join("capture"),
+            video_thumbs: root.join("generated").join("video-thumbs"),
             config,
         }
     }

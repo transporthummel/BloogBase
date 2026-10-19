@@ -29,18 +29,19 @@ import { RemoveGameDialog } from "./RemoveGameDialog";
 import { useReadme } from "./readme";
 import { SavesPanel } from "./SavesPanel";
 import { ScreenshotsPanel } from "./ScreenshotsPanel";
-import { screenshotSrc, screenshotsKey, useScreenshots } from "./screenshots";
+import { VideosPanel } from "./VideosPanel";
+import { screenshotSrc, screenshotsKey, useScreenshots, videosKey } from "./captures";
 import { usePictureWidth } from "./heroPicture";
 import { backupsKey, savesKey } from "./saves";
 
-type Tab = "readme" | "saves" | "screenshots" | "config";
+type Tab = "readme" | "saves" | "screenshots" | "videos" | "config";
 
 export function ProfileRoute() {
   const { profileId } = useParams({ from: "/profiles/$profileId" });
   return <ProfileDetail profileId={profileId} />;
 }
 
-/** One game or mod: play it, read about it, manage saves, screenshots and settings (§8.3). */
+/** One game or mod: play it, read about it, manage saves, screenshots, videos and settings (§8.3). */
 export function ProfileDetail({ profileId }: { profileId: string }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -55,12 +56,13 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
 
   useEffect(() => {
     // The game may have saved, made an automatic backup before, or the
-    // player took screenshots.
+    // player took screenshots or videos.
     const unlisten = events.playSessionEnded.listen(() => {
       queryClient.invalidateQueries({ queryKey: profilesKey });
       queryClient.invalidateQueries({ queryKey: savesKey(profileId) });
       queryClient.invalidateQueries({ queryKey: backupsKey(profileId) });
       queryClient.invalidateQueries({ queryKey: screenshotsKey(profileId) });
+      queryClient.invalidateQueries({ queryKey: videosKey(profileId) });
     });
     return () => {
       unlisten.then((f) => f());
@@ -92,6 +94,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
     ...(readme.data ? [{ id: "readme" as const, label: t("profile.tabReadme") }] : []),
     { id: "saves", label: t("profile.tabSaves") },
     { id: "screenshots", label: t("profile.tabScreenshots") },
+    { id: "videos", label: t("profile.tabVideos") },
     { id: "config", label: t("profile.tabConfig") },
   ];
   const tab = tabs.find((x) => x.id === picked)?.id ?? tabs[0].id;
@@ -121,10 +124,11 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
 
       {profile && tabsReady && (
         <Tabs tabs={tabs} selected={tab} onSelect={setTab} label={t("profile.tabs")}>
-          <div className={tab === "screenshots" ? "" : "max-w-3xl"}>
+          <div className={tab === "screenshots" || tab === "videos" ? "" : "max-w-3xl"}>
             {readme.data && tab === "readme" && <ReadmePanel readme={readme.data} />}
             {tab === "saves" && <SavesPanel profile={profile} game={game} />}
             {tab === "screenshots" && <ScreenshotsPanel profile={profile} />}
+            {tab === "videos" && <VideosPanel profile={profile} />}
             {tab === "config" && <ConfigPanel profileId={profile.id} />}
           </div>
         </Tabs>

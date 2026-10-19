@@ -352,6 +352,7 @@
     "tabConfig": "DOSBox-Einstellungen",
     "tabs": "Bereiche",
     "tabScreenshots": "Screenshots",
+    "tabVideos": "Videos",
     "playTime": "Spielzeit",
     "sessions": "Spielstarts",
     "added": "Hinzugefügt",
@@ -490,6 +491,16 @@
     "position": "{{n}} von {{count}}",
     "delete": "Löschen",
     "confirmDelete": "Wirklich löschen?"
+  },
+  "videos": {
+    "hint": "Drücke beim Spielen {{key}}, um eine Aufnahme zu starten oder zu beenden.",
+    "emptyTitle": "Noch keine Videos",
+    "empty": "Drücke beim Spielen {{key}}, um eine Aufnahme zu starten, und noch einmal, um sie zu beenden. Deine Videos erscheinen dann hier.",
+    "view": "Video vom {{date}}",
+    "newer": "Neueres Video",
+    "older": "Älteres Video",
+    "play": "Abspielen",
+    "player": "Videos laufen in deinem Videoplayer. DOSBox nimmt sie in einem eigenen Format (ZMBV) auf, das zum Beispiel VLC abspielen kann."
   },
   "about": {
     "title": "Über BloogBase",

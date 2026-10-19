@@ -287,15 +287,24 @@ fn extract(
 }
 
 fn write_png(image: &Image, path: &Path) -> Result<()> {
+    write_rgb_png(
+        image.width as u32,
+        image.height as u32,
+        &image.to_rgb(),
+        path,
+    )
+}
+
+pub fn write_rgb_png(width: u32, height: u32, rgb: &[u8], path: &Path) -> Result<()> {
     let tmp = path.with_extension("tmp");
     {
         let file = io::BufWriter::new(fs::File::create(&tmp)?);
-        let mut encoder = png::Encoder::new(file, image.width as u32, image.height as u32);
+        let mut encoder = png::Encoder::new(file, width, height);
         encoder.set_color(png::ColorType::Rgb);
         encoder.set_depth(png::BitDepth::Eight);
         let mut writer = encoder.write_header().map_err(io::Error::other)?;
         writer
-            .write_image_data(&image.to_rgb())
+            .write_image_data(rgb)
             .and_then(|()| writer.finish())
             .map_err(io::Error::other)?;
     }

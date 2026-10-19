@@ -12,6 +12,7 @@ import {
   type RuntimeStatus,
   type SaveFile,
   type Screenshot,
+  type Video,
 } from "../bindings";
 import { ProfileDetail } from "./ProfilePage";
 import { slotFiles } from "./saves";
@@ -74,6 +75,9 @@ vi.mock("../bindings", () => {
     "listScreenshots",
     "profileCover",
     "deleteScreenshot",
+    "listVideos",
+    "deleteVideo",
+    "openVideo",
     "openCaptureFolder",
     "oneButtonFiring",
     "profileFiring",
@@ -172,6 +176,7 @@ beforeEach(() => {
   vi.mocked(commands.modReadme).mockResolvedValue(ok(null));
   vi.mocked(commands.indexMods).mockResolvedValue(ok([]));
   vi.mocked(commands.listScreenshots).mockResolvedValue(ok([]));
+  vi.mocked(commands.listVideos).mockResolvedValue(ok([]));
   vi.mocked(commands.profileCover).mockResolvedValue(ok(null));
   vi.mocked(commands.oneButtonFiring).mockResolvedValue(ok(false));
   vi.mocked(commands.profileFiring).mockResolvedValue(ok(null));
@@ -420,6 +425,40 @@ test("screenshots open in a viewer and delete after a second click", async () =>
   expect(commands.deleteScreenshot).not.toHaveBeenCalled();
   await userEvent.click(within(dialog).getByRole("button", { name: "Really delete?" }));
   expect(commands.deleteScreenshot).toHaveBeenCalledWith("keen4-1", "image0002.png");
+});
+
+test("videos show their first frame and length, and play outside the app", async () => {
+  const video = (file: string, takenAt: number, thumbnail: string | null): Video => ({
+    file,
+    takenAt,
+    size: 1000,
+    duration: thumbnail ? 75 : null,
+    thumbnail,
+  });
+  vi.mocked(commands.listVideos).mockResolvedValue(
+    ok([
+      video("video0002.avi", 1_700_000_100, null),
+      video("video0001.avi", 1_700_000_000, "/thumbs/video0001.avi.png"),
+    ]),
+  );
+  vi.mocked(commands.openVideo).mockResolvedValue(ok(null));
+  vi.mocked(commands.deleteVideo).mockResolvedValue(ok(null));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("tab", { name: "Videos" }));
+  const tiles = await screen.findAllByRole("button", { name: /^Video from/ });
+  expect(tiles).toHaveLength(2);
+  expect(tiles[1]).toHaveTextContent("1:15");
+  expect(tiles[1].querySelector("img")).toHaveAttribute("src", "asset:///thumbs/video0001.avi.png");
+  expect(tiles[0].querySelector("img")).toBeNull();
+
+  await userEvent.click(tiles[1]);
+  const dialog = screen.getByRole("dialog");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));
+  expect(commands.openVideo).toHaveBeenCalledWith("keen4-1", "video0001.avi");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Newer video" }));
+  await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+  await userEvent.click(within(dialog).getByRole("button", { name: "Really delete?" }));
+  expect(commands.deleteVideo).toHaveBeenCalledWith("keen4-1", "video0002.avi");
 });
 
 test("lists saves with their details and backups", async () => {

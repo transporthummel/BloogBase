@@ -31,6 +31,11 @@ export const commands = {
 	 */
 	profileCover: (profileId: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("profile_cover", { profileId })),
 	deleteScreenshot: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_screenshot", { profileId, file })),
+	/**  Videos recorded in DOSBox, newest first. */
+	listVideos: (profileId: string) => typedError<Video[], CommandError>(__TAURI_INVOKE("list_videos", { profileId })),
+	deleteVideo: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_video", { profileId, file })),
+	/**  Plays a video in the system's player; the app can't decode DOSBox's codec. */
+	openVideo: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_video", { profileId, file })),
 	/**  Opens the folder DOSBox writes screenshots and recordings to. */
 	openCaptureFolder: (profileId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_capture_folder", { profileId })),
 	listBackups: (profileId: string) => typedError<Backup[], CommandError>(__TAURI_INVOKE("list_backups", { profileId })),
@@ -672,6 +677,18 @@ export type StoreInstall = {
 	store: Store,
 	path: string,
 	games: FoundGame[],
+};
+
+export type Video = {
+	/**  File name in the capture folder. */
+	file: string,
+	/**  Unix epoch seconds. */
+	takenAt: number | null,
+	size: number,
+	/**  Seconds; unknown while DOSBox is still recording. */
+	duration: number | null,
+	/**  PNG of the first frame, for the asset protocol. */
+	thumbnail: string | null,
 };
 
 export type WarningKind = 

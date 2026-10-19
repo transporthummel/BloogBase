@@ -1,4 +1,5 @@
 mod backups;
+mod captures;
 mod catalog;
 mod commands;
 mod compose;
@@ -22,7 +23,6 @@ mod readme;
 mod recipe;
 mod runtime;
 mod saves;
-mod screenshots;
 mod settings;
 mod shareware;
 mod source;
@@ -59,6 +59,9 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::list_screenshots,
             commands::profile_cover,
             commands::delete_screenshot,
+            commands::list_videos,
+            commands::delete_video,
+            commands::open_video,
             commands::open_capture_folder,
             commands::list_backups,
             commands::create_backup,
@@ -191,7 +194,8 @@ pub fn run() {
 
             let index = ModIndex::open(&paths, mod_index::configured_url());
             tracing::info!("mod index source: {}", index.status().url);
-            // Screenshots are shown straight from the capture folders.
+            // Screenshots and video thumbnails are shown straight from the
+            // profile folders.
             app.asset_protocol_scope()
                 .allow_directory(&paths.profiles, true)?;
             std::fs::create_dir_all(covers::dir(&paths))?;

@@ -11,7 +11,7 @@ community's mods without unzipping, copying files or editing configs.
 - Every game and mod gets its own play profile: saves are kept apart, backed
   up automatically and can be restored; the original game files are never
   changed.
-- Play time, save details, screenshots and per-game DOSBox settings.
+- Play time, save details, screenshots, videos and per-game DOSBox settings.
 - Optional one-button firing in Keen 1-3: Space shoots instead of Ctrl and Alt.
 
 ## Installing

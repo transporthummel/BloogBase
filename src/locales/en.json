@@ -352,6 +352,7 @@
     "tabConfig": "DOSBox settings",
     "tabs": "Sections",
     "tabScreenshots": "Screenshots",
+    "tabVideos": "Videos",
     "playTime": "Play time",
     "sessions": "Sessions",
     "added": "Added",
@@ -490,6 +491,16 @@
     "position": "{{n}} of {{count}}",
     "delete": "Delete",
     "confirmDelete": "Really delete?"
+  },
+  "videos": {
+    "hint": "Press {{key}} while playing to start or stop recording.",
+    "emptyTitle": "No videos yet",
+    "empty": "Press {{key}} while playing to start recording and again to stop. Your videos show up here.",
+    "view": "Video from {{date}}",
+    "newer": "Newer video",
+    "older": "Older video",
+    "play": "Play",
+    "player": "Videos play in your video player. DOSBox records them in its own format (ZMBV), which VLC can play, for example."
   },
   "about": {
     "title": "About BloogBase",
