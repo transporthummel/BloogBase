@@ -27,8 +27,6 @@ export function CapturesPanel<T extends Capture>({
   remove: removeFile,
   tile,
   viewer,
-  actions,
-  error: otherError,
 }: {
   profile: Profile;
   kind: "screenshots" | "videos";
@@ -39,9 +37,6 @@ export function CapturesPanel<T extends Capture>({
   /** Inside the thumbnail button. */
   tile: (capture: T) => ReactNode;
   viewer: (capture: T) => ReactNode;
-  /** Buttons before Delete in the viewer. */
-  actions?: (capture: T) => ReactNode;
-  error?: unknown;
 }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -66,7 +61,7 @@ export function CapturesPanel<T extends Capture>({
 
   const list = captures.data ?? [];
   const shown = viewing === null ? undefined : list[viewing];
-  const error = captures.error ?? openFolder.error ?? remove.error ?? otherError;
+  const error = captures.error ?? openFolder.error ?? remove.error;
   const title = (c: T) => (c.takenAt ? formatDateTime(i18n.language, c.takenAt) : c.file);
 
   return (
@@ -78,7 +73,7 @@ export function CapturesPanel<T extends Capture>({
           {t("screenshots.openFolder")}
         </Button>
       </div>
-      {!!error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
+      {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
       {captures.isPending && <Loading />}
       {captures.data?.length === 0 && (
         <EmptyState title={t(`${kind}.emptyTitle`)}>
@@ -123,17 +118,15 @@ export function CapturesPanel<T extends Capture>({
             >
               <ChevronRight className="size-4" aria-hidden />
             </Button>
-            <div className="ml-auto flex flex-wrap gap-2">
-              {actions?.(shown)}
-              <Button
-                variant="secondary"
-                onClick={() => (confirming ? remove.mutate(shown.file) : setConfirming(true))}
-                disabled={remove.isPending}
-              >
-                <Trash2 className="size-4" aria-hidden />
-                {confirming ? t("screenshots.confirmDelete") : t("screenshots.delete")}
-              </Button>
-            </div>
+            <Button
+              variant="secondary"
+              className="ml-auto"
+              onClick={() => (confirming ? remove.mutate(shown.file) : setConfirming(true))}
+              disabled={remove.isPending}
+            >
+              <Trash2 className="size-4" aria-hidden />
+              {confirming ? t("screenshots.confirmDelete") : t("screenshots.delete")}
+            </Button>
           </div>
         </Dialog>
       )}

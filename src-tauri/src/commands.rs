@@ -9,7 +9,7 @@ use tauri::{AppHandle, Manager, State};
 use tauri_specta::Event;
 
 use crate::backups::{self, Backup, BackupSettings, Contents, Origin};
-use crate::captures::{self, Kind, Screenshot, Video};
+use crate::captures::{self, Kind, Screenshot, Video, VideoIndex};
 use crate::catalog::{self, Game};
 use crate::covers;
 use crate::db::Db;
@@ -249,21 +249,19 @@ pub fn delete_video(
     Ok(captures::delete(&paths, &profile_id, Kind::Video, &file)?)
 }
 
-/// Plays a video in the system's player; the app can't decode DOSBox's codec.
+/// Where a video's frames and sound are, for playing it in the app.
 #[tauri::command]
 #[specta::specta]
-pub fn open_video(
+pub async fn video_index(
     app: AppHandle,
-    paths: State<'_, AppPaths>,
-    db: State<'_, Db>,
     profile_id: String,
     file: String,
-) -> CommandResult<()> {
-    profiles::get(&db, &profile_id)?;
-    open_path(
-        &app,
-        &captures::path(&paths, &profile_id, Kind::Video, &file)?,
-    )
+) -> CommandResult<VideoIndex> {
+    blocking(move || {
+        profiles::get(&app.state::<Db>(), &profile_id)?;
+        captures::video_index(&app.state::<AppPaths>(), &profile_id, &file)
+    })
+    .await
 }
 
 /// The profile's title screen as a PNG path, extracted on first use; `None`
@@ -292,7 +290,7 @@ pub fn open_capture_folder(
     profiles::get(&db, &profile_id)?;
     let dir = paths.profile(&profile_id).capture;
     std::fs::create_dir_all(&dir).map_err(Error::from)?;
-    open_path(&app, &dir)
+    open_dir(&app, &dir)
 }
 
 /// Opens the folder with a mod's installed files.
@@ -307,14 +305,14 @@ pub fn open_mod_folder(
     if !mods::list(&db)?.iter().any(|m| m.id == mod_id) {
         return Err(Error::NotFound(format!("mod {mod_id}")).into());
     }
-    open_path(&app, &paths.mods.join(&mod_id).join("files"))
+    open_dir(&app, &paths.mods.join(&mod_id).join("files"))
 }
 
-/// Shows a folder in the system's file manager, or opens a file with its app.
-fn open_path(app: &AppHandle, path: &Path) -> CommandResult<()> {
+/// Shows a folder in the system's file manager.
+fn open_dir(app: &AppHandle, dir: &Path) -> CommandResult<()> {
     use tauri_plugin_opener::OpenerExt;
     app.opener()
-        .open_path(path.display().to_string(), None::<&str>)
+        .open_path(dir.display().to_string(), None::<&str>)
         .map_err(|e| Error::from(std::io::Error::other(e.to_string())))?;
     Ok(())
 }

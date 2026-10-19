@@ -500,7 +500,9 @@
     "newer": "Newer video",
     "older": "Older video",
     "play": "Play",
-    "player": "Videos play in your video player. DOSBox records them in its own format (ZMBV), which VLC can play, for example."
+    "pause": "Pause",
+    "position": "Position",
+    "alt": "Video"
   },
   "about": {
     "title": "About BloogBase",

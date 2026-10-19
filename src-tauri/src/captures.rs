@@ -30,6 +30,8 @@ pub struct Screenshot {
 pub struct Video {
     /// File name in the capture folder.
     pub file: String,
+    /// Absolute path, for the asset protocol.
+    pub path: String,
     /// Unix epoch seconds.
     pub taken_at: Option<u32>,
     pub size: u32,
@@ -37,6 +39,31 @@ pub struct Video {
     pub duration: Option<u32>,
     /// PNG of the first frame, for the asset protocol.
     pub thumbnail: Option<String>,
+}
+
+/// Where a video's frames and sound are, for playing it in the app.
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct VideoIndex {
+    pub width: u32,
+    pub height: u32,
+    /// Microseconds per frame.
+    pub frame_us: u32,
+    /// Byte offset and size of every frame; an empty one repeats the last.
+    pub frames: Vec<[u32; 2]>,
+    /// Numbers of the frames that don't build on earlier ones.
+    pub key_frames: Vec<u32>,
+    /// Only 16-bit PCM, which is what DOSBox records.
+    pub audio: Option<VideoAudio>,
+}
+
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct VideoAudio {
+    pub rate: u32,
+    pub channels: u32,
+    /// Byte offset and size of every chunk of samples.
+    pub chunks: Vec<[u32; 2]>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -132,6 +159,7 @@ pub fn videos(paths: &AppPaths, profile_id: &str) -> Result<Vec<Video>> {
             };
             Video {
                 taken_at: e.taken_at(),
+                path: e.path.display().to_string(),
                 file: e.file,
                 size: e.size,
                 duration,
@@ -142,7 +170,7 @@ pub fn videos(paths: &AppPaths, profile_id: &str) -> Result<Vec<Video>> {
 }
 
 /// A capture's path; refuses names that would leave the capture folder.
-pub fn path(paths: &AppPaths, profile_id: &str, kind: Kind, file: &str) -> Result<PathBuf> {
+fn path(paths: &AppPaths, profile_id: &str, kind: Kind, file: &str) -> Result<PathBuf> {
     let not_found = || Error::NotFound(format!("{} {file}", kind.name()));
     if file.is_empty() || file.contains(['/', '\\']) || file == ".." || !kind.matches(file) {
         return Err(not_found());
@@ -168,13 +196,47 @@ pub fn delete(paths: &AppPaths, profile_id: &str, kind: Kind, file: &str) -> Res
     Ok(())
 }
 
+pub fn video_index(paths: &AppPaths, profile_id: &str, file: &str) -> Result<VideoIndex> {
+    let avi = read_avi(&path(paths, profile_id, Kind::Video, file)?, true)?;
+    // AVI files stay below 4 GiB; anything past that is broken.
+    let fits = |offset: u64, size: u32| u32::try_from(offset).ok().map(|o| [o, size]);
+    let frames: Vec<_> = avi
+        .frames
+        .iter()
+        .map_while(|&(o, s, _)| fits(o, s))
+        .collect();
+    let key_frames = (0..frames.len() as u32)
+        .filter(|&i| avi.frames[i as usize].2)
+        .collect();
+    let audio = avi
+        .audio
+        .filter(|a| a.tag == 1 && a.bits == 16 && a.channels > 0)
+        .map(|a| VideoAudio {
+            rate: a.rate,
+            channels: u32::from(a.channels),
+            chunks: avi
+                .audio_chunks
+                .iter()
+                .map_while(|&(o, s)| fits(o, s))
+                .collect(),
+        });
+    Ok(VideoIndex {
+        width: avi.width as u32,
+        height: avi.height as u32,
+        frame_us: avi.frame_us,
+        frames,
+        key_frames,
+        audio,
+    })
+}
+
 fn thumbnail_path(thumbs: &Path, file: &str) -> PathBuf {
     thumbs.join(format!("{file}.png"))
 }
 
 /// The video's length and its first frame as PNG, made once per recording.
 fn video_info(video: &Entry, thumbs: &Path) -> io::Result<(Option<u32>, Option<PathBuf>)> {
-    let avi = read_avi(&video.path)?;
+    let avi = read_avi(&video.path, false)?;
     let thumb = thumbnail_path(thumbs, &video.file);
     let made = fs::metadata(&thumb).and_then(|m| m.modified()).ok();
     if made.is_some() && made >= video.modified {
@@ -193,107 +255,153 @@ fn video_info(video: &Entry, thumbs: &Path) -> io::Result<(Option<u32>, Option<P
     Ok((avi.duration, Some(thumb)))
 }
 
-/// What DOSBox's AVI files reveal without decoding them all.
+/// What DOSBox's AVI files hold, read without decoding any frames.
 struct Avi {
     duration: Option<u32>,
     width: usize,
     height: usize,
-    /// The first video frame, as stored.
+    frame_us: u32,
+    audio: Option<AudioFormat>,
+    /// Offset and size of every video frame, and whether it's a key frame.
+    frames: Vec<(u64, u32, bool)>,
+    /// Offset and size of every audio chunk.
+    audio_chunks: Vec<(u64, u32)>,
+    /// The first non-empty frame, if only that was asked for.
     first_frame: Option<Vec<u8>>,
+}
+
+#[derive(Clone, Copy)]
+struct AudioFormat {
+    tag: u16,
+    channels: u16,
+    rate: u32,
+    bits: u16,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Stream {
+    Video,
+    Audio,
+    Other,
 }
 
 fn invalid(what: &str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, what.to_string())
 }
 
-fn read_avi(path: &Path) -> io::Result<Avi> {
+/// Reads the headers and, with `full`, where every chunk is; otherwise
+/// stops at the first frame.
+fn read_avi(path: &Path, full: bool) -> io::Result<Avi> {
     let mut r = BufReader::new(fs::File::open(path)?);
-    let mut word = [0u8; 4];
-    let mut header = |r: &mut BufReader<fs::File>| -> io::Result<([u8; 4], u32)> {
-        r.read_exact(&mut word)?;
-        let id = word;
-        r.read_exact(&mut word)?;
-        Ok((id, u32::from_le_bytes(word)))
-    };
-    let (riff, _) = header(&mut r)?;
-    let mut form = [0u8; 4];
-    r.read_exact(&mut form)?;
-    if &riff != b"RIFF" || &form != b"AVI " {
+    let mut head = [0u8; 12];
+    r.read_exact(&mut head)?;
+    if &head[..4] != b"RIFF" || &head[8..] != b"AVI " {
         return Err(invalid("not an AVI file"));
     }
-
     let mut avi = Avi {
         duration: None,
         width: 0,
         height: 0,
+        frame_us: 0,
+        audio: None,
+        frames: Vec::new(),
+        audio_chunks: Vec::new(),
         first_frame: None,
     };
-    loop {
-        let (id, size) = match header(&mut r) {
-            Ok(h) => h,
-            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => break,
-            Err(e) => return Err(e),
-        };
-        let start = r.stream_position()?;
-        // DOSBox fills in sizes when it stops recording.
-        let end = (size > 0).then(|| start + u64::from(size) + u64::from(size & 1));
-        if &id == b"LIST" {
-            r.read_exact(&mut form)?;
-            if &form == b"hdrl" {
-                let (id, size) = header(&mut r)?;
-                if &id == b"avih" && size >= 40 {
-                    let mut avih = [0u8; 40];
-                    r.read_exact(&mut avih)?;
-                    let field =
-                        |at: usize| u32::from_le_bytes(avih[at..at + 4].try_into().unwrap());
-                    let frame_us = u64::from(field(0));
-                    let frames = u64::from(field(16));
-                    avi.width = field(32) as usize;
-                    avi.height = field(36) as usize;
-                    avi.duration =
-                        (frames > 0).then(|| ((frames * frame_us + 500_000) / 1_000_000) as u32);
-                }
-            } else if &form == b"movi" {
-                avi.first_frame = first_frame(&mut r, end)?;
-                break;
-            }
-        }
-        match end {
-            Some(end) => r.seek(SeekFrom::Start(end))?,
-            None => break,
-        };
-    }
+    walk(&mut r, None, &mut avi, &mut Vec::new(), full)?;
     Ok(avi)
 }
 
-/// The first non-empty video chunk in the `movi` list.
-fn first_frame(r: &mut BufReader<fs::File>, end: Option<u64>) -> io::Result<Option<Vec<u8>>> {
+/// Goes through the chunks up to `end` (the file's end if unknown); `true`
+/// once there's nothing more to read.
+fn walk(
+    r: &mut BufReader<fs::File>,
+    end: Option<u64>,
+    avi: &mut Avi,
+    streams: &mut Vec<Stream>,
+    full: bool,
+) -> io::Result<bool> {
     /// Far above any frame DOSBox writes; guards against broken sizes.
     const MAX_FRAME: u32 = 64 << 20;
     let mut head = [0u8; 8];
     while end.is_none_or(|end| r.stream_position().is_ok_and(|p| p + 8 <= end)) {
         match r.read_exact(&mut head) {
             Ok(()) => {}
-            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => break,
+            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => return Ok(true),
             Err(e) => return Err(e),
         }
+        let id: [u8; 4] = head[..4].try_into().unwrap();
         let size = u32::from_le_bytes(head[4..].try_into().unwrap());
-        match &head[..4] {
-            // A `rec ` list just groups chunks; step into it.
+        let start = r.stream_position()?;
+        let chunk_end = start + u64::from(size) + u64::from(size & 1);
+        match &id {
             b"LIST" => {
-                r.seek_relative(4)?;
+                let mut form = [0u8; 4];
+                r.read_exact(&mut form)?;
+                if matches!(&form, b"hdrl" | b"strl" | b"movi" | b"rec ") {
+                    // DOSBox fills in list sizes when it stops recording.
+                    let list_end = (size > 0).then_some(chunk_end);
+                    if walk(r, list_end, avi, streams, full)? || list_end.is_none() {
+                        return Ok(true);
+                    }
+                }
             }
-            [_, _, b'd', b'b' | b'c'] if size > 0 && size <= MAX_FRAME => {
-                let mut frame = vec![0; size as usize];
-                r.read_exact(&mut frame)?;
-                return Ok(Some(frame));
+            b"avih" if size >= 40 => {
+                let mut avih = [0u8; 40];
+                r.read_exact(&mut avih)?;
+                let field = |at: usize| u32::from_le_bytes(avih[at..at + 4].try_into().unwrap());
+                avi.frame_us = field(0);
+                let frames = u64::from(field(16));
+                avi.width = field(32) as usize;
+                avi.height = field(36) as usize;
+                avi.duration = (frames > 0)
+                    .then(|| ((frames * u64::from(avi.frame_us) + 500_000) / 1_000_000) as u32);
             }
-            _ => {
-                r.seek_relative(i64::from(size) + i64::from(size & 1))?;
+            b"strh" if size >= 4 => {
+                let mut kind = [0u8; 4];
+                r.read_exact(&mut kind)?;
+                streams.push(match &kind {
+                    b"vids" => Stream::Video,
+                    b"auds" => Stream::Audio,
+                    _ => Stream::Other,
+                });
             }
+            b"strf" if size >= 16 && streams.last() == Some(&Stream::Audio) => {
+                let mut wave = [0u8; 16];
+                r.read_exact(&mut wave)?;
+                let half = |at: usize| u16::from_le_bytes([wave[at], wave[at + 1]]);
+                avi.audio = Some(AudioFormat {
+                    tag: half(0),
+                    channels: half(2),
+                    rate: u32::from_le_bytes(wave[4..8].try_into().unwrap()),
+                    bits: half(14),
+                });
+            }
+            [a, b, kind @ ..] if a.is_ascii_digit() && b.is_ascii_digit() => {
+                let stream = streams.get(usize::from((a - b'0') * 10 + (b - b'0')));
+                match (stream, kind) {
+                    (Some(Stream::Video), b"dc" | b"db") if !full => {
+                        if size > 0 && size <= MAX_FRAME {
+                            let mut frame = vec![0; size as usize];
+                            r.read_exact(&mut frame)?;
+                            avi.first_frame = Some(frame);
+                            return Ok(true);
+                        }
+                    }
+                    (Some(Stream::Video), b"dc" | b"db") => {
+                        let mut flags = [0u8];
+                        let key = size > 0 && r.read_exact(&mut flags).is_ok() && flags[0] & 1 == 1;
+                        avi.frames.push((start, size, key));
+                    }
+                    (Some(Stream::Audio), b"wb") if full => avi.audio_chunks.push((start, size)),
+                    _ => {}
+                }
+            }
+            _ => {}
         }
+        r.seek(SeekFrom::Start(chunk_end))?;
     }
-    Ok(None)
+    Ok(false)
 }
 
 /// Decodes a ZMBV key frame (DOSBox's video codec) to RGB. `None` for delta
@@ -448,8 +556,23 @@ mod tests {
         let mut frame = vec![1, 0, 1, 1, 4, 16, 16];
         frame.extend(z.finish().unwrap());
 
+        let mut wave = vec![1, 0, 2, 0];
+        wave.extend(48_000u32.to_le_bytes());
+        wave.extend(192_000u32.to_le_bytes());
+        wave.extend([4, 0, 16, 0]);
+
         let mut body = b"AVI ".to_vec();
-        body.extend(list(b"hdrl", &[chunk(b"avih", &avih)]));
+        body.extend(list(
+            b"hdrl",
+            &[
+                chunk(b"avih", &avih),
+                list(
+                    b"strl",
+                    &[chunk(b"strh", b"vidsZMBV"), chunk(b"strf", &[0; 40])],
+                ),
+                list(b"strl", &[chunk(b"strh", b"auds"), chunk(b"strf", &wave)]),
+            ],
+        ));
         body.extend(chunk(b"JUNK", &[0; 3]));
         body.extend(list(
             b"movi",
@@ -457,6 +580,8 @@ mod tests {
                 chunk(b"01wb", &[0; 8]),
                 chunk(b"00dc", &[]),
                 chunk(b"00dc", &frame),
+                chunk(b"01wb", &[0; 4]),
+                chunk(b"00dc", &[0, 1, 2]),
             ],
         ));
         chunk(b"RIFF", &body)
@@ -491,6 +616,34 @@ mod tests {
         assert!(!thumb.exists());
         assert!(matches!(
             delete(&paths, "keen4-1", Kind::Video, "image0001.png"),
+            Err(Error::NotFound(_))
+        ));
+    }
+
+    #[test]
+    fn indexes_frames_and_sound() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(tmp.path());
+        let dir = paths.profile("keen4-1").capture;
+        fs::create_dir_all(&dir).unwrap();
+        let data = avi();
+        fs::write(dir.join("video0001.avi"), &data).unwrap();
+
+        let index = video_index(&paths, "keen4-1", "video0001.avi").unwrap();
+        assert_eq!((index.width, index.height, index.frame_us), (2, 1, 14_286));
+        let at = |[offset, size]: [u32; 2]| &data[offset as usize..][..size as usize];
+        let sizes: Vec<_> = index.frames.iter().map(|f| f[1]).collect();
+        assert_eq!(sizes[0], 0);
+        assert_eq!(at(index.frames[1])[..5], [1, 0, 1, 1, 4]);
+        assert_eq!(at(index.frames[2]), [0, 1, 2]);
+        assert_eq!(index.key_frames, [1]);
+        let audio = index.audio.unwrap();
+        assert_eq!((audio.rate, audio.channels), (48_000, 2));
+        let sizes: Vec<_> = audio.chunks.iter().map(|c| c[1]).collect();
+        assert_eq!(sizes, [8, 4]);
+
+        assert!(matches!(
+            video_index(&paths, "keen4-1", "../video0001.avi"),
             Err(Error::NotFound(_))
         ));
     }

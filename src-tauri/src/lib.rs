@@ -61,7 +61,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::delete_screenshot,
             commands::list_videos,
             commands::delete_video,
-            commands::open_video,
+            commands::video_index,
             commands::open_capture_folder,
             commands::list_backups,
             commands::create_backup,

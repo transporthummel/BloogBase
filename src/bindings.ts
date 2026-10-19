@@ -34,8 +34,8 @@ export const commands = {
 	/**  Videos recorded in DOSBox, newest first. */
 	listVideos: (profileId: string) => typedError<Video[], CommandError>(__TAURI_INVOKE("list_videos", { profileId })),
 	deleteVideo: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_video", { profileId, file })),
-	/**  Plays a video in the system's player; the app can't decode DOSBox's codec. */
-	openVideo: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_video", { profileId, file })),
+	/**  Where a video's frames and sound are, for playing it in the app. */
+	videoIndex: (profileId: string, file: string) => typedError<VideoIndex, CommandError>(__TAURI_INVOKE("video_index", { profileId, file })),
 	/**  Opens the folder DOSBox writes screenshots and recordings to. */
 	openCaptureFolder: (profileId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_capture_folder", { profileId })),
 	listBackups: (profileId: string) => typedError<Backup[], CommandError>(__TAURI_INVOKE("list_backups", { profileId })),
@@ -682,6 +682,8 @@ export type StoreInstall = {
 export type Video = {
 	/**  File name in the capture folder. */
 	file: string,
+	/**  Absolute path, for the asset protocol. */
+	path: string,
 	/**  Unix epoch seconds. */
 	takenAt: number | null,
 	size: number,
@@ -689,6 +691,27 @@ export type Video = {
 	duration: number | null,
 	/**  PNG of the first frame, for the asset protocol. */
 	thumbnail: string | null,
+};
+
+export type VideoAudio = {
+	rate: number,
+	channels: number,
+	/**  Byte offset and size of every chunk of samples. */
+	chunks: ([number, number])[],
+};
+
+/**  Where a video's frames and sound are, for playing it in the app. */
+export type VideoIndex = {
+	width: number,
+	height: number,
+	/**  Microseconds per frame. */
+	frameUs: number,
+	/**  Byte offset and size of every frame; an empty one repeats the last. */
+	frames: ([number, number])[],
+	/**  Numbers of the frames that don't build on earlier ones. */
+	keyFrames: number[],
+	/**  Only 16-bit PCM, which is what DOSBox records. */
+	audio: VideoAudio | null,
 };
 
 export type WarningKind = 

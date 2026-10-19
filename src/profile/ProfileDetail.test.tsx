@@ -77,7 +77,7 @@ vi.mock("../bindings", () => {
     "deleteScreenshot",
     "listVideos",
     "deleteVideo",
-    "openVideo",
+    "videoIndex",
     "openCaptureFolder",
     "oneButtonFiring",
     "profileFiring",
@@ -427,9 +427,10 @@ test("screenshots open in a viewer and delete after a second click", async () =>
   expect(commands.deleteScreenshot).toHaveBeenCalledWith("keen4-1", "image0002.png");
 });
 
-test("videos show their first frame and length, and play outside the app", async () => {
+test("videos show their first frame and length, and open in a player", async () => {
   const video = (file: string, takenAt: number, thumbnail: string | null): Video => ({
     file,
+    path: `/data/profiles/keen4-1/capture/${file}`,
     takenAt,
     size: 1000,
     duration: thumbnail ? 75 : null,
@@ -441,7 +442,10 @@ test("videos show their first frame and length, and play outside the app", async
       video("video0001.avi", 1_700_000_000, "/thumbs/video0001.avi.png"),
     ]),
   );
-  vi.mocked(commands.openVideo).mockResolvedValue(ok(null));
+  // Nothing recorded yet, so nothing to draw in jsdom.
+  vi.mocked(commands.videoIndex).mockResolvedValue(
+    ok({ width: 320, height: 200, frameUs: 14_286, frames: [], keyFrames: [], audio: null }),
+  );
   vi.mocked(commands.deleteVideo).mockResolvedValue(ok(null));
   renderDetail();
   await userEvent.click(await screen.findByRole("tab", { name: "Videos" }));
@@ -453,8 +457,11 @@ test("videos show their first frame and length, and play outside the app", async
 
   await userEvent.click(tiles[1]);
   const dialog = screen.getByRole("dialog");
-  await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));
-  expect(commands.openVideo).toHaveBeenCalledWith("keen4-1", "video0001.avi");
+  expect(within(dialog).getByRole("slider", { name: "Position" })).toBeInTheDocument();
+  await vi.waitFor(() =>
+    expect(commands.videoIndex).toHaveBeenCalledWith("keen4-1", "video0001.avi"),
+  );
+  expect(within(dialog).getByRole("button", { name: "Play" })).toBeDisabled();
   await userEvent.click(within(dialog).getByRole("button", { name: "Newer video" }));
   await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
   await userEvent.click(within(dialog).getByRole("button", { name: "Really delete?" }));
