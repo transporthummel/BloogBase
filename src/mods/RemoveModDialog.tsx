@@ -27,7 +27,12 @@ export function RemoveModDialog({
 
   return (
     <Dialog title={t("mods.removeTitle", { name: profile.label })} onClose={onClose}>
-      <p className="text-sm text-muted">{t("mods.removeHint")}</p>
+      <p className="text-sm text-muted">
+        {t("mods.removeHint", {
+          // Without its game, there is no game to stay.
+          context: profile.missingGame === null ? undefined : "noGame",
+        })}
+      </p>
       {profile.saveCount > 0 && (
         <label className="flex items-center gap-2 text-sm">
           <input

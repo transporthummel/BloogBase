@@ -285,6 +285,12 @@ test("a mod waiting for its game says which one and can't be played", async () =
   expect(screen.getByRole("button", { name: "Game missing" })).toBeDisabled();
   expect(screen.queryByText(/^Runs on/)).toBeNull();
   expect(screen.queryByRole("button", { name: /^Uninstall/ })).toBeNull();
+
+  // Removing it doesn't mention a game that stays.
+  await userEvent.click(await screen.findByRole("button", { name: "Remove Aurora Bliss" }));
+  const dialog = screen.getByRole("dialog");
+  expect(dialog).toHaveTextContent("The mod’s files are deleted.");
+  expect(dialog).not.toHaveTextContent("The game itself stays");
 });
 
 test("a mod's README is the first tab, shown as text with links opening outside", async () => {

@@ -273,6 +273,7 @@
     "removeNamed": "Remove {{name}}",
     "removeTitle": "Remove {{name}}?",
     "removeHint": "The mod’s files are deleted. The game itself stays in your library.",
+    "removeHint_noGame": "The mod’s files are deleted.",
     "keepSaves_one": "Keep the saved game as a backup",
     "keepSaves_other": "Keep the {{count}} saved games as a backup",
     "installAnyway": "Install anyway",
