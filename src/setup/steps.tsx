@@ -233,87 +233,7 @@ export function EngineStep({ next, back }: StepProps) {
   );
 }
 
-// 4. Free episodes --------------------------------------------------------
-
-export function EpisodesStep({ next, back }: StepProps) {
-  const { t } = useTranslation();
-  const episodes = useFreeEpisodes();
-  const games = useGames();
-  const jobs = useJobs().data ?? [];
-  const jobLabel = useJobLabel();
-  const start = useStartJob((gameId: string) => commands.installFreeEpisode(gameId));
-  // `null` until the user changes something: everything not yet installed.
-  const [picked, setPicked] = useState<Set<string> | null>(null);
-
-  const available = (episodes.data ?? []).filter((e) => !e.installed);
-  const selected = picked ?? new Set(available.map((e) => e.gameId));
-  const jobFor = (e: FreeEpisode) =>
-    jobs.find((j) => j.kind === "shareware" && j.subject === e.gameId);
-  const toStart = available.filter((e) => selected.has(e.gameId) && !jobFor(e));
-
-  function toggle(id: string) {
-    const set = new Set(selected);
-    if (set.has(id)) set.delete(id);
-    else set.add(id);
-    setPicked(set);
-  }
-
-  async function download() {
-    for (const e of toStart) await start.mutateAsync(e.gameId);
-    next();
-  }
-
-  return (
-    <>
-      <StepHeader title={t("setup.episodes.title")}>
-        <p>{t("setup.episodes.intro")}</p>
-      </StepHeader>
-      <OfflineNotice />
-      <ul className="grid gap-3">
-        {episodes.data?.map((e) => {
-          const game = games.data?.find((g) => g.id === e.gameId);
-          const version = game?.versions.find((v) => v.id === e.versionId);
-          const job = jobFor(e);
-          return (
-            <li key={e.gameId} className="grid gap-2 rounded-lg border border-border p-3">
-              <label className="flex items-center gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  className="size-4 accent-[var(--bb-accent)]"
-                  checked={e.installed || selected.has(e.gameId)}
-                  disabled={e.installed || !!job}
-                  onChange={() => toggle(e.gameId)}
-                />
-                <span className="font-semibold">{gameTitle(games.data, e.gameId)}</span>
-                {version && <Badge>{version.label}</Badge>}
-                <span className="ml-auto text-xs text-muted">
-                  {e.installed
-                    ? t("setup.episodes.installed")
-                    : t("setup.episodes.size", { size: formatMegabytes(e.size) })}
-                </span>
-              </label>
-              {job && <JobRow job={job} label={jobLabel(job)} />}
-            </li>
-          );
-        })}
-      </ul>
-      <p className="text-xs text-muted">{t("setup.episodes.terms")}</p>
-      {episodes.error && <Notice tone="error">{errorMessage(t, episodes.error)}</Notice>}
-      {start.error && <Notice tone="error">{errorMessage(t, start.error)}</Notice>}
-      <Footer back={back} skip={toStart.length > 0 ? next : undefined}>
-        {toStart.length > 0 ? (
-          <Button onClick={download} disabled={start.isPending}>
-            {t("setup.episodes.download", { count: toStart.length })}
-          </Button>
-        ) : (
-          <Button onClick={next}>{t("setup.next")}</Button>
-        )}
-      </Footer>
-    </>
-  );
-}
-
-// 5. Already own Keen? ----------------------------------------------------
+// 4. Already own Keen? ----------------------------------------------------
 
 const scanKey = ["storeScan"] as const;
 
@@ -334,6 +254,7 @@ export function OwnedStep({ next, back }: StepProps) {
   const refresh = () =>
     Promise.all([
       client.invalidateQueries({ queryKey: profilesKey }),
+      client.invalidateQueries({ queryKey: installsKey }),
       client.invalidateQueries({ queryKey: setupStatusKey }),
       client.invalidateQueries({ queryKey: scanKey }),
     ]);
@@ -451,6 +372,94 @@ export function OwnedStep({ next, back }: StepProps) {
         {count > 0 ? (
           <Button onClick={() => importStores.mutate()} disabled={importStores.isPending}>
             {t("setup.owned.import", { count })}
+          </Button>
+        ) : (
+          <Button onClick={next}>{t("setup.next")}</Button>
+        )}
+      </Footer>
+    </>
+  );
+}
+
+// 5. Free episodes --------------------------------------------------------
+
+export function EpisodesStep({ next, back }: StepProps) {
+  const { t } = useTranslation();
+  const episodes = useFreeEpisodes();
+  const games = useGames();
+  const installs = useQuery({
+    queryKey: installsKey,
+    queryFn: () => unwrap(commands.listInstalls()),
+  });
+  const jobs = useJobs().data ?? [];
+  const jobLabel = useJobLabel();
+  const start = useStartJob((gameId: string) => commands.installFreeEpisode(gameId));
+  // `null` until the user changes something: everything not yet installed.
+  const [picked, setPicked] = useState<Set<string> | null>(null);
+
+  const available = (episodes.data ?? []).filter((e) => !e.installed);
+  // A full version added from Steam or GOG makes the shareware redundant.
+  const owns = (e: FreeEpisode) => installs.data?.some((i) => i.gameId === e.gameId);
+  const selected = picked ?? new Set(available.filter((e) => !owns(e)).map((e) => e.gameId));
+  const jobFor = (e: FreeEpisode) =>
+    jobs.find((j) => j.kind === "shareware" && j.subject === e.gameId);
+  const toStart = available.filter((e) => selected.has(e.gameId) && !jobFor(e));
+
+  function toggle(id: string) {
+    const set = new Set(selected);
+    if (set.has(id)) set.delete(id);
+    else set.add(id);
+    setPicked(set);
+  }
+
+  async function download() {
+    for (const e of toStart) await start.mutateAsync(e.gameId);
+    next();
+  }
+
+  return (
+    <>
+      <StepHeader title={t("setup.episodes.title")}>
+        <p>{t("setup.episodes.intro")}</p>
+      </StepHeader>
+      <OfflineNotice />
+      <ul className="grid gap-3">
+        {episodes.data?.map((e) => {
+          const game = games.data?.find((g) => g.id === e.gameId);
+          const version = game?.versions.find((v) => v.id === e.versionId);
+          const job = jobFor(e);
+          return (
+            <li key={e.gameId} className="grid gap-2 rounded-lg border border-border p-3">
+              <label className="flex items-center gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="size-4 accent-[var(--bb-accent)]"
+                  checked={e.installed || selected.has(e.gameId)}
+                  disabled={e.installed || !!job}
+                  onChange={() => toggle(e.gameId)}
+                />
+                <span className="font-semibold">{gameTitle(games.data, e.gameId)}</span>
+                {version && <Badge>{version.label}</Badge>}
+                <span className="ml-auto text-xs text-muted">
+                  {e.installed
+                    ? t("setup.episodes.installed")
+                    : owns(e)
+                      ? t("setup.episodes.owned")
+                      : t("setup.episodes.size", { size: formatMegabytes(e.size) })}
+                </span>
+              </label>
+              {job && <JobRow job={job} label={jobLabel(job)} />}
+            </li>
+          );
+        })}
+      </ul>
+      <p className="text-xs text-muted">{t("setup.episodes.terms")}</p>
+      {episodes.error && <Notice tone="error">{errorMessage(t, episodes.error)}</Notice>}
+      {start.error && <Notice tone="error">{errorMessage(t, start.error)}</Notice>}
+      <Footer back={back} skip={toStart.length > 0 ? next : undefined}>
+        {toStart.length > 0 ? (
+          <Button onClick={download} disabled={start.isPending}>
+            {t("setup.episodes.download", { count: toStart.length })}
           </Button>
         ) : (
           <Button onClick={next}>{t("setup.next")}</Button>

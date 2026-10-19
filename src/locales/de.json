@@ -186,6 +186,7 @@
       "title": "Kostenlose Episoden",
       "intro": "Diese Episoden wurden als Shareware veröffentlicht und sind kostenlos spielbar. Mods dafür funktionieren sofort.",
       "installed": "In deiner Bibliothek",
+      "owned": "Vollversion in deiner Bibliothek",
       "size": "{{size}} MB",
       "terms": "BloogBase lädt die originalen, unveränderten Shareware-Versionen aus öffentlichen Archiven herunter (archive.org, textfiles.com). Shareware darf frei weitergegeben, aber nie verkauft werden.",
       "download_one": "{{count}} Episode herunterladen",

@@ -186,6 +186,7 @@
       "title": "Free episodes",
       "intro": "These episodes were released as shareware and are free to play. Mods made for them work right away.",
       "installed": "In your library",
+      "owned": "Full version in your library",
       "size": "{{size}} MB",
       "terms": "BloogBase downloads the original, unmodified shareware releases from public archives (archive.org, textfiles.com). Shareware may be shared freely, but never sold.",
       "download_one": "Download {{count}} episode",

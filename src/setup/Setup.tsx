@@ -22,7 +22,7 @@ import {
 } from "./steps";
 
 /** The wizard steps of PLAN.md §7. */
-const STEPS = ["welcome", "storage", "engine", "episodes", "owned", "mods", "done"] as const;
+const STEPS = ["welcome", "storage", "engine", "owned", "episodes", "mods", "done"] as const;
 type Step = (typeof STEPS)[number];
 
 const components: Record<Step, (props: StepProps) => ReactNode> = {

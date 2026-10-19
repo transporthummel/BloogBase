@@ -141,9 +141,9 @@ test("walks through all steps, skipping each, and finishes", async () => {
   await user.click(screen.getByRole("button", { name: "Next" }));
   await screen.findByRole("button", { name: "Download DOSBox Staging 0.83.0" });
   await user.click(screen.getByRole("button", { name: "Skip" }));
-  await screen.findByRole("heading", { name: "Free episodes" });
-  await user.click(screen.getByRole("button", { name: "Next" }));
   await screen.findByText(/No Commander Keen games from Steam or GOG/);
+  await user.click(screen.getByRole("button", { name: "Next" }));
+  await screen.findByRole("heading", { name: "Free episodes" });
   await user.click(screen.getByRole("button", { name: "Next" }));
   await screen.findByRole("heading", { name: "Try a mod" });
   await user.click(screen.getByRole("button", { name: "Next" }));
@@ -191,7 +191,40 @@ test("downloads the chosen free episodes as jobs", async () => {
   await user.click(await screen.findByRole("button", { name: "Download 1 episode" }));
   expect(commands.installFreeEpisode).toHaveBeenCalledTimes(1);
   expect(commands.installFreeEpisode).toHaveBeenCalledWith("keen1");
-  expect(await screen.findByRole("heading", { name: "Already own Keen?" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: "Try a mod" })).toBeInTheDocument();
+});
+
+test("doesn't preselect free episodes whose full version is in the library", async () => {
+  setSetupStep("episodes");
+  vi.mocked(commands.freeEpisodes).mockResolvedValue({
+    status: "ok",
+    data: [
+      { gameId: "keen1", versionId: "keen1-1.31", size: 150934, installed: false },
+      { gameId: "keen4", versionId: "keen4-1.4-ega", size: 631332, installed: false },
+    ],
+  });
+  vi.mocked(commands.listInstalls).mockResolvedValue({
+    status: "ok",
+    data: [
+      {
+        id: "i1",
+        gameId: "keen4",
+        versionId: null,
+        label: "Steam",
+        source: "steam",
+        path: "C:/Steam",
+        addedAt: 0,
+      },
+    ],
+  });
+  vi.mocked(commands.installFreeEpisode).mockImplementation((id) => Promise.resolve(job(id)));
+  renderSetup();
+  const user = userEvent.setup();
+
+  expect(await screen.findByText("Full version in your library")).toBeInTheDocument();
+  await user.click(await screen.findByRole("button", { name: "Download 1 episode" }));
+  expect(commands.installFreeEpisode).toHaveBeenCalledTimes(1);
+  expect(commands.installFreeEpisode).toHaveBeenCalledWith("keen1");
 });
 
 test("imports the games found in Steam and GOG folders", async () => {
@@ -219,7 +252,7 @@ test("imports the games found in Steam and GOG folders", async () => {
     "C:/Steam/steamapps/common/Commander Keen",
     ["keen4"],
   );
-  expect(await screen.findByRole("heading", { name: "Try a mod" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: "Free episodes" })).toBeInTheDocument();
 });
 
 test("suggests featured mods for games on their way and queues the picked ones", async () => {
