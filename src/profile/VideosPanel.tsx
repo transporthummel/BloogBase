@@ -10,7 +10,7 @@ import { formatDuration, useVideos, videosKey } from "./captures";
 
 /** DOSBox Staging's video recording hotkey. */
 function hotkey(): string {
-  return /Mac/.test(navigator.userAgent) ? "⌘ + ⌥ + F5" : "Ctrl + Alt + F5";
+  return /Mac/.test(navigator.userAgent) ? "⌘ + F7" : "Ctrl + F7";
 }
 
 /**
