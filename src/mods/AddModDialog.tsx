@@ -4,7 +4,7 @@ import { FileArchive, FolderOpen } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Install, type KeenwikiOrigin, type Mod, type ModInfo } from "../bindings";
-import { gameTitle, useGames } from "../catalog";
+import { gameTitle, isModified, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { installsKey } from "../library/queries";
@@ -129,8 +129,8 @@ function Confirm({
   // Prefer an install whose version is known to fit, then an unmodified one.
   const fallback =
     candidates.find((i) => i.versionId !== null && option.versionIds.includes(i.versionId)) ??
-    candidates.find((i) => isAssumed(i) && !versionOf(i)?.original) ??
-    candidates.find((i) => !versionOf(i)?.original) ??
+    candidates.find((i) => isAssumed(i) && !isModified(versionOf(i))) ??
+    candidates.find((i) => !isModified(versionOf(i))) ??
     candidates[0];
   const target = candidates.find((i) => i.id === installId) ?? fallback;
   const versionLabel = (i: Install) => versionOf(i)?.label ?? t("library.unknownVersion");
@@ -253,7 +253,7 @@ function Confirm({
           })}
         </Notice>
       )}
-      {target && option.recipe.type === "patch" && versionOf(target)?.original && (
+      {target && option.recipe.type === "patch" && isModified(versionOf(target)) && (
         <Notice>{t("mods.modifiedGame")}</Notice>
       )}
       {target && target.versionId === null && option.gameVersions.length > 0 && (

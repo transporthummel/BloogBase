@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::backups::{self, Contents, Reason};
-use crate::catalog::{self, Game};
+use crate::catalog::{self, Game, GameVersion};
 use crate::db::Db;
 use crate::detect::{detect, sha256_hex};
 use crate::error::{Error, Result};
@@ -382,21 +382,16 @@ fn find_game(
     catalog::game(id)
 }
 
-/// Catalog versions of `game` matching patch file versions like `1.4`
-/// (labels look like `v1.4 EGA`), plus third-party builds of those.
+/// Catalog versions of `game` matching patch file versions like `1.4`,
+/// plus third-party builds of those.
 fn version_ids(game: &Game, versions: &[String]) -> Vec<String> {
     let originals: Vec<&str> = game
         .versions
         .iter()
-        .filter(|v| v.original.is_none())
         .filter(|v| {
-            let number = v
-                .label
-                .split_whitespace()
-                .next()
-                .unwrap_or("")
-                .trim_start_matches('v');
-            versions.iter().any(|w| w == number)
+            v.patch_version
+                .as_ref()
+                .is_some_and(|p| versions.contains(p))
         })
         .map(|v| v.id.as_str())
         .collect();
@@ -742,23 +737,28 @@ pub fn fits(game: &Game, requires: Option<&[String]>, install: &Install) -> bool
     install.game_id == game.id
         && match (requires, &install.version_id) {
             (None, _) | (_, None) => true,
-            (Some(r), Some(v)) => r.contains(v) || original(game, v).is_some_and(|o| r.contains(o)),
+            (Some(r), Some(v)) => fits_version(game, r, v),
         }
 }
 
-fn original<'a>(game: &'a Game, version_id: &str) -> Option<&'a String> {
-    game.versions
-        .iter()
-        .find(|v| v.id == version_id)
-        .and_then(|v| v.original.as_ref())
+fn version<'a>(game: &'a Game, version_id: &str) -> Option<&'a GameVersion> {
+    game.versions.iter().find(|v| v.id == version_id)
+}
+
+/// `version_id` is one of `requires`, or a build of one.
+fn fits_version(game: &Game, requires: &[String], version_id: &str) -> bool {
+    requires.iter().any(|r| r == version_id)
+        || version(game, version_id)
+            .and_then(|v| v.original.as_ref())
+            .is_some_and(|o| requires.contains(o))
 }
 
 /// Lower is better: an original release, a third-party build of it, an
 /// unknown version.
 fn fit_rank(game: &Game, requires: Option<&[String]>, install: &Install) -> u8 {
     match &install.version_id {
-        Some(v) if original(game, v).is_some() => 1,
-        Some(v) if requires.is_none_or(|r| r.contains(v)) => 0,
+        Some(v) if version(game, v).is_some_and(GameVersion::modified) => 1,
+        Some(v) if requires.is_none_or(|r| fits_version(game, r, v)) => 0,
         Some(_) => 1,
         None => 2,
     }
@@ -1713,7 +1713,7 @@ mod tests {
         assert!(fits(k6, parse_requires(None).as_deref(), &install));
         assert_eq!(
             needed_game(k6, requires.as_deref()),
-            format!("{} (v1.0)", k6.title)
+            format!("{} (v1.0 EGA)", k6.title)
         );
     }
 
@@ -1741,6 +1741,15 @@ mod tests {
         let rank = |v| fit_rank(k6, Some(&v10), &install(v));
         assert!(rank(Some("keen6-1.0")) < rank(Some("keen6-1.0-nocp")));
         assert!(rank(Some("keen6-1.0-nocp")) < rank(None));
+        // Same game files as the original: as good as it.
+        let kdreams = catalog::game("kdreams").unwrap();
+        let v193 = vec!["kdreams-1.93".to_string()];
+        let anthology = Install {
+            game_id: "kdreams".into(),
+            ..install(Some("kdreams-1.93-anthology"))
+        };
+        assert!(fits(kdreams, Some(&v193), &anthology));
+        assert_eq!(fit_rank(kdreams, Some(&v193), &anthology), 0);
     }
 
     #[test]
@@ -1898,7 +1907,13 @@ mod tests {
             version_ids(k6, &["1.0".into()]),
             ["keen6-1.0", "keen6-1.0-nocp"]
         );
+        // Not the CGA release of the same number.
         assert_eq!(version_ids(k6, &["1.4".into()]), ["keen6-1.4-ega"]);
+        let kdreams = catalog::game("kdreams").unwrap();
+        assert_eq!(
+            version_ids(kdreams, &["1.93".into()]),
+            ["kdreams-1.93-anthology", "kdreams-1.93"]
+        );
     }
 
     #[test]

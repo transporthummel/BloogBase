@@ -299,7 +299,7 @@ export type Game = {
 	engine: Engine,
 	/**  Any one of these must be present. */
 	executables: string[],
-	/**  All of these must be present. */
+	/**  All of these must be present; `A|B` means either. */
 	requiredFiles: string[],
 	/**  Patterns for save games. */
 	saves: string[],
@@ -317,9 +317,18 @@ export type Game = {
 export type GameVersion = {
 	id: string,
 	label: string,
-	/**  File name → lowercase hex SHA-256. */
+	/**
+	 *  File name → lowercase hex SHA-256. At least one executable; other
+	 *  files tell apart releases that share it.
+	 */
 	files: { [key in string]: string },
 	shareware: boolean,
+	kind?: VersionKind,
+	/**
+	 *  What patch files call this release in `%version`, if they're made
+	 *  for it.
+	 */
+	patchVersion?: string | null,
 	/**  Program to launch instead of the episode executable. */
 	start?: string | null,
 	/**
@@ -328,6 +337,11 @@ export type GameVersion = {
 	 *  are offered, but patches may not fit.
 	 */
 	original?: string | null,
+	/**
+	 *  The game files are those of `original`, only packaged differently,
+	 *  so patches fit too.
+	 */
+	repackaged?: boolean,
 };
 
 export type IndexEntry = {
@@ -678,6 +692,10 @@ export type StoreInstall = {
 	path: string,
 	games: FoundGame[],
 };
+
+export type VersionKind = "release" | "beta" | 
+/**  Only part of the game. */
+"demo";
 
 export type Video = {
 	/**  File name in the capture folder. */

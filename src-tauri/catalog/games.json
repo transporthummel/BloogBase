@@ -1,5 +1,17 @@
 {
-  "$comment": "Game definitions (PLAN.md §5). File names are matched case-insensitively; `?` and `*` are wildcards in saves/stateFiles. Hashes are SHA-256 of the listed files. A version's `start` replaces the episode executable at launch (Keen Dreams 1.13 refuses to run without its START shell). TODO: confirm all names and add hashes against the Shikadi ModdingWiki.",
+  "$comment": "Game definitions (PLAN.md §5). File names are matched case-insensitively; `requiredFiles` entries may list alternatives as `A|B`; `?` and `*` are wildcards in saves/stateFiles. A version is recognised by the SHA-256 of its `files` (at least one executable; the first version whose files all match wins, so a version that needs more files comes before one that needs fewer). `patchVersion`: what patch files call this release in `%version`, only set on releases patches are made for. `kind`: `beta` or `demo` for releases that aren't the full game. `original`: for third-party builds (e.g. copy protection removed), the release they were made from; mods for it are offered, but patches may not fit, unless `repackaged` says the game files are identical. `start` replaces the episode executable at launch (Keen Dreams 1.01/1.13 refuse to run without their START shell). Hashes checked 2026-10-20 against the owner's copies in .local/games/versions.",
+  "$missing": [
+    "Releases known to exist that have no hashes yet, because no copy could be found:",
+    "Commander Keen 2 v1.1",
+    "Commander Keen 2 v1.32",
+    "Commander Keen 3 v1.1",
+    "Commander Keen 3 v1.32",
+    "Keen Dreams v1.05 REV 1",
+    "Commander Keen 4 v1.2 CGA",
+    "Commander Keen 5 v1.0 CGA",
+    "Commander Keen 6 Apogee demo",
+    "Commander Keen 6 id Anthology release (CGA)"
+  ],
   "games": [
     {
       "id": "keen1",
@@ -11,10 +23,53 @@
       "stateFiles": ["CTLPANEL.CK1", "SCORES.CK1"],
       "versions": [
         {
+          "id": "keen1-beta-nov",
+          "label": "November beta",
+          "files": { "KEEN1.EXE": "0ec218efabacb600cd0f895cf99ddf1f4a0a4f07498d53d89b08af91c54b72de" },
+          "shareware": false,
+          "kind": "beta"
+        },
+        {
+          "id": "keen1-beta-dec",
+          "label": "December beta",
+          "files": { "KEEN1.EXE": "20bd1f002ecd30224ac05091f9e7e6926991fb25076b8b48eef352ce33ffc907" },
+          "shareware": false,
+          "kind": "beta"
+        },
+        {
+          "id": "keen1-1.1",
+          "label": "v1.1",
+          "files": { "KEEN1.EXE": "9d30372daa9ec6985c2b9b6a36a4eaa1331762a3f449c87bbf27110676a91230" },
+          "shareware": true,
+          "patchVersion": "1.1"
+        },
+        {
+          "id": "keen1-1.3",
+          "label": "v1.3",
+          "files": { "KEEN1.EXE": "d58cbe0736985534c66784b9df64a07e6f04a88105134c73300e01efcd6eff2d" },
+          "shareware": true,
+          "patchVersion": "1.3"
+        },
+        {
           "id": "keen1-1.31",
           "label": "v1.31",
           "files": { "KEEN1.EXE": "8b3f829f7eeab18a7fbf9d539967e9ae9c856258aa78efc0531fa922df71c4a2" },
-          "shareware": true
+          "shareware": true,
+          "patchVersion": "1.31"
+        },
+        {
+          "id": "keen1-1.32",
+          "label": "v1.32",
+          "files": { "KEEN1.EXE": "8c599e8208fdfa6ced21401cdf79abde417ce3ff5c4f4f2ef79fb6150b8a5a5f" },
+          "shareware": true,
+          "patchVersion": "1.32"
+        },
+        {
+          "id": "keen1-1.34",
+          "label": "v1.34",
+          "files": { "KEEN1.EXE": "b92db0360979d31e4ec01244076385839ce7ab6cde641cc24a36f22574432d36" },
+          "shareware": true,
+          "patchVersion": "1.34"
         }
       ]
     },
@@ -28,10 +83,18 @@
       "stateFiles": ["CTLPANEL.CK2", "SCORES.CK2"],
       "versions": [
         {
+          "id": "keen2-1.0",
+          "label": "v1.0",
+          "files": { "KEEN2.EXE": "190439a2426f667b4d4f70277d80bc7e9edd93c2e6173db2cc64ee4f720936c0" },
+          "shareware": false,
+          "patchVersion": "1.0"
+        },
+        {
           "id": "keen2-1.31",
           "label": "v1.31",
           "files": { "KEEN2.EXE": "01a05a1584c4245dbf14b4de74bcc10205d4b0944b891ad9b24d01a33f93b966" },
-          "shareware": false
+          "shareware": false,
+          "patchVersion": "1.31"
         }
       ]
     },
@@ -45,10 +108,18 @@
       "stateFiles": ["CTLPANEL.CK3", "SCORES.CK3"],
       "versions": [
         {
+          "id": "keen3-1.0",
+          "label": "v1.0",
+          "files": { "KEEN3.EXE": "4345f5e01af742685686728c0bebd140673e64caf0a32d946016f1923f714324" },
+          "shareware": false,
+          "patchVersion": "1.0"
+        },
+        {
           "id": "keen3-1.31",
           "label": "v1.31",
           "files": { "KEEN3.EXE": "ce240fee9e23e0c359492ce3d247a29cd2309b1b9822d0267e587df5838c9047" },
-          "shareware": false
+          "shareware": false,
+          "patchVersion": "1.31"
         }
       ]
     },
@@ -57,16 +128,81 @@
       "title": "Commander Keen 4: Secret of the Oracle",
       "engine": "galaxy",
       "moddingVersion": "keen4-1.4-ega",
-      "executables": ["KEEN4E.EXE", "KEEN4C.EXE"],
-      "requiredFiles": ["GAMEMAPS.CK4", "AUDIO.CK4"],
+      "executables": ["KEEN4E.EXE", "KEEN4C.EXE", "KEEN4.EXE", "KEEN.EXE"],
+      "requiredFiles": ["GAMEMAPS.CK4", "AUDIO.CK4|AUDIOT.CK4"],
       "saves": ["SAVEGAM?.CK4"],
       "stateFiles": ["CONFIG.CK4"],
       "versions": [
         {
+          "id": "keen4-demo",
+          "label": "Special demo",
+          "files": { "KEEN.EXE": "33d0dfb43da7d263109c3ae1387c7965ff3ecd14cb0a6998a2f0af687473e68c" },
+          "shareware": false,
+          "kind": "demo"
+        },
+        {
+          "id": "keen4-1.0-ega",
+          "label": "v1.0 EGA",
+          "files": { "KEEN4E.EXE": "e4c433af6ceda12daf166b488ff7bf7006e2f0e4aedc206c9b39d2633087b9fb" },
+          "shareware": true,
+          "patchVersion": "1.0"
+        },
+        {
+          "id": "keen4-1.0-cga",
+          "label": "v1.0 CGA",
+          "files": { "KEEN4C.EXE": "cfd35e100d4da507d773860642e8fcd02638aeea03d78ba4aa0a51589ba99116" },
+          "shareware": true
+        },
+        {
+          "id": "keen4-1.1-ega",
+          "label": "v1.1 EGA",
+          "files": { "KEEN4E.EXE": "676057cb70dfab7c4df080c68d101e6ba54bdb40a37ce19cba64477ff7ebe94e" },
+          "shareware": true,
+          "patchVersion": "1.1"
+        },
+        {
+          "id": "keen4-1.1-cga",
+          "label": "v1.1 CGA",
+          "files": { "KEEN4C.EXE": "f838ee104b4670a1454956b9de5bd38118551fb5eaa55a8aa11ff6c6e5850eb0" },
+          "shareware": true
+        },
+        {
+          "id": "keen4-1.2-ega",
+          "label": "v1.2 EGA",
+          "files": { "KEEN4E.EXE": "3786685a2961a3e669724fb1d4d78ad28e4db0b5392eb6a772402e7da9058fad" },
+          "shareware": true,
+          "patchVersion": "1.2"
+        },
+        {
           "id": "keen4-1.4-ega",
           "label": "v1.4 EGA",
           "files": { "KEEN4E.EXE": "bdbb46746e02c0dddcba9b24fa464c26cc7e3514a3b3931267c8c17b9fb9c405" },
+          "shareware": true,
+          "patchVersion": "1.4"
+        },
+        {
+          "id": "keen4-1.4-cga",
+          "label": "v1.4 CGA",
+          "files": { "KEEN4C.EXE": "25a01ab813d72de0dbfc83810b5a48d5c48f0c87ca0aeb75d0eeeac1d5aeae13" },
           "shareware": true
+        },
+        {
+          "id": "keen4-1.4-ega-formgen",
+          "label": "v1.4 EGA (FormGen)",
+          "files": { "KEEN4E.EXE": "2b64ef7e701e0142313c2c62713b92b67b72fca7ea696f2f1ad0055df55f6525" },
+          "shareware": false
+        },
+        {
+          "id": "keen4-1.4-cga-formgen",
+          "label": "v1.4 CGA (FormGen)",
+          "files": { "KEEN4C.EXE": "a93e687b26a2b0d7a4c5f293db78abf6a52a946fc7952f9a7be81874c9fc9964" },
+          "shareware": false
+        },
+        {
+          "id": "keen4-1.4-ega-gt",
+          "label": "v1.4 EGA (GT Interactive)",
+          "files": { "KEEN4.EXE": "2e4617f10ffe33d82479ac4704a5eec4453cfdf0afe4d8ab0e3f75f63a756c43" },
+          "shareware": false
         }
       ]
     },
@@ -81,9 +217,29 @@
       "stateFiles": ["CONFIG.CK5"],
       "versions": [
         {
+          "id": "keen5-1.0-ega",
+          "label": "v1.0 EGA",
+          "files": { "KEEN5E.EXE": "e4d571144f528d3c032cd619f3c36176f590aa9e376083a31e3d188b0403e4e2" },
+          "shareware": false,
+          "patchVersion": "1.0"
+        },
+        {
           "id": "keen5-1.4-ega",
           "label": "v1.4 EGA",
           "files": { "KEEN5E.EXE": "77f687268be09763d139a1226a0f4eec191e62181299ff466d54fc232670cf57" },
+          "shareware": false,
+          "patchVersion": "1.4"
+        },
+        {
+          "id": "keen5-1.4-cga",
+          "label": "v1.4 CGA",
+          "files": { "KEEN5C.EXE": "052ab57005a7767bdceef1da7690e8b1a4f145b6d4b529cde254149e23fa83e9" },
+          "shareware": false
+        },
+        {
+          "id": "keen5-1.4-ega-gt",
+          "label": "v1.4 EGA (GT Interactive)",
+          "files": { "KEEN5E.EXE": "1a937f9c51bbb1342fe65932aea2859a18db58b0308319c04af9e84a72400022" },
           "shareware": false
         }
       ]
@@ -93,28 +249,76 @@
       "title": "Commander Keen 6: Aliens Ate My Baby Sitter!",
       "engine": "galaxy",
       "moddingVersion": "keen6-1.4-ega",
-      "executables": ["KEEN6E.EXE", "KEEN6C.EXE", "KEEN6.EXE"],
+      "executables": ["KEEN6E.EXE", "KEEN6C.EXE", "KEEN6.EXE", "K6DEMO.EXE"],
       "requiredFiles": ["GAMEMAPS.CK6", "AUDIO.CK6"],
       "saves": ["SAVEGAM?.CK6"],
       "stateFiles": ["CONFIG.CK6"],
       "versions": [
         {
+          "id": "keen6-demo",
+          "label": "Special demo",
+          "files": { "K6DEMO.EXE": "318606e433ef2770743e43ad494f19eb5d59cc4c8104d303a6de0537edb2c8dd" },
+          "shareware": false,
+          "kind": "demo"
+        },
+        {
+          "id": "keen6-promo",
+          "label": "Promotional release",
+          "files": { "KEEN6.EXE": "4fe2b68ae01301627e104d729eaf9745486842d486c6ad645ededcd03deffe54" },
+          "shareware": false,
+          "kind": "demo"
+        },
+        {
           "id": "keen6-1.0",
-          "label": "v1.0",
+          "label": "v1.0 EGA",
           "files": { "KEEN6.EXE": "d599f678649ba06955ebd3fbb3c27a0f9a8d2e8f30ccdd4480b9763e9d3fb939" },
-          "shareware": false
+          "shareware": false,
+          "patchVersion": "1.0"
         },
         {
           "id": "keen6-1.0-nocp",
-          "label": "v1.0 (no copy protection)",
+          "label": "v1.0 EGA (no copy protection)",
           "files": { "KEEN6C.EXE": "050dadf0c1902fcf9c7288e2a704057bd5ec2159388d3900a0f13ab326b134a3" },
           "shareware": false,
           "original": "keen6-1.0"
         },
         {
+          "id": "keen6-1.0-cga",
+          "label": "v1.0 CGA",
+          "files": { "KEEN6.EXE": "cfd83165bf89f16885dc0aa7c9ca13fbeb7e951b91cdd6b4d66955b85cad7574" },
+          "shareware": false
+        },
+        {
           "id": "keen6-1.4-ega",
           "label": "v1.4 EGA",
           "files": { "KEEN6.EXE": "f1b19d231eb3ba84c90c724b25607adcf4a245d58677a023e2cece127410b943" },
+          "shareware": false,
+          "patchVersion": "1.4"
+        },
+        {
+          "id": "keen6-1.4-cga",
+          "label": "v1.4 CGA",
+          "files": { "KEEN6.EXE": "f2f9577dae4f1d2c639cc606e578a33f36b0bf350630a4ab581929ae68d585e8" },
+          "shareware": false
+        },
+        {
+          "id": "keen6-1.5-ega",
+          "label": "v1.5 EGA",
+          "files": { "KEEN6.EXE": "d08e622453635b6bf48d242c8175524fb0bf6458c82c300beaccc16cf07c59e3" },
+          "shareware": false,
+          "patchVersion": "1.5"
+        },
+        {
+          "id": "keen6-1.5-ega-nocp",
+          "label": "v1.5 EGA (no copy protection)",
+          "files": { "KEEN6.EXE": "cf56b989d210c58131dc15e94517daa48a759a964fdf019a80b90133eb2576a3" },
+          "shareware": false,
+          "original": "keen6-1.5-ega"
+        },
+        {
+          "id": "keen6-1.5-cga",
+          "label": "v1.5 CGA",
+          "files": { "KEEN6.EXE": "0a9e6476947de53288d430146d0d719c8fdb50847324dcaada6a750edb60fa4d" },
           "shareware": false
         }
       ]
@@ -124,16 +328,57 @@
       "title": "Commander Keen in Keen Dreams",
       "engine": "dreams",
       "executables": ["KDREAMS.EXE"],
-      "requiredFiles": ["KDREAMS.MAP", "KDREAMS.AUD"],
+      "requiredFiles": ["KDREAMS.MAP|GAMEMAPS.KDR", "KDREAMS.AUD|AUDIO.KDR"],
       "saves": ["SAVEGAM?.KDR", "SAVEGM?.KDR"],
-      "stateFiles": ["CONFIG.KDR"],
+      "stateFiles": ["CONFIG.KDR", "KDREAMS.CFG"],
       "versions": [
+        {
+          "id": "kdreams-1.0",
+          "label": "v1.0",
+          "files": { "KDREAMS.EXE": "36a22dbd3119c0b4cdff7adaf50a8abc3b11c21f7bc0d4d7c0d5dbf7b347e3ae" },
+          "shareware": false,
+          "patchVersion": "1.0"
+        },
+        {
+          "id": "kdreams-1.01",
+          "label": "v1.01",
+          "files": { "KDREAMS.EXE": "24aa36f8ff00a728d474441884174677ef12360d179bfe9b8cdac01d874799ab" },
+          "shareware": true,
+          "start": "START.EXE",
+          "patchVersion": "1.01"
+        },
         {
           "id": "kdreams-1.13",
           "label": "v1.13",
           "files": { "KDREAMS.EXE": "574d49b882af9ac15232eadb4c6edce94a35b30d622f6e01f6ae20565f7c5aab" },
           "shareware": true,
-          "start": "START.EXE"
+          "start": "START.EXE",
+          "patchVersion": "1.13"
+        },
+        {
+          "id": "kdreams-1.92",
+          "label": "v1.92 (rev 0)",
+          "files": { "KDREAMS.EXE": "bc7acc096c8c16e77d5b52096a024816cc46eeec813101702279f319eef56862" },
+          "shareware": false,
+          "patchVersion": "1.92"
+        },
+        {
+          "id": "kdreams-1.93-anthology",
+          "label": "v1.93 (rev 1, id Anthology)",
+          "files": {
+            "KDREAMS.EXE": "e4d39895561aa6854a52fdfe90ac2d9de47ca296deee7f2900918db34605780d",
+            "DOCSHELL.EXE": "4102682ae9a97c8326e5663a4ff9ea928670c95696daab2056cd12d83e10f0d8"
+          },
+          "shareware": false,
+          "original": "kdreams-1.93",
+          "repackaged": true
+        },
+        {
+          "id": "kdreams-1.93",
+          "label": "v1.93 (rev 1)",
+          "files": { "KDREAMS.EXE": "e4d39895561aa6854a52fdfe90ac2d9de47ca296deee7f2900918db34605780d" },
+          "shareware": false,
+          "patchVersion": "1.93"
         }
       ]
     }

@@ -22,7 +22,7 @@ pub struct Game {
     pub engine: Engine,
     /// Any one of these must be present.
     pub executables: Vec<String>,
-    /// All of these must be present.
+    /// All of these must be present; `A|B` means either.
     pub required_files: Vec<String>,
     /// Patterns for save games.
     pub saves: Vec<String>,
@@ -41,9 +41,16 @@ pub struct Game {
 pub struct GameVersion {
     pub id: String,
     pub label: String,
-    /// File name → lowercase hex SHA-256.
+    /// File name → lowercase hex SHA-256. At least one executable; other
+    /// files tell apart releases that share it.
     pub files: BTreeMap<String, String>,
     pub shareware: bool,
+    #[serde(default)]
+    pub kind: VersionKind,
+    /// What patch files call this release in `%version`, if they're made
+    /// for it.
+    #[serde(default)]
+    pub patch_version: Option<String>,
     /// Program to launch instead of the episode executable.
     #[serde(default)]
     pub start: Option<String>,
@@ -52,6 +59,27 @@ pub struct GameVersion {
     /// are offered, but patches may not fit.
     #[serde(default)]
     pub original: Option<String>,
+    /// The game files are those of `original`, only packaged differently,
+    /// so patches fit too.
+    #[serde(default)]
+    pub repackaged: bool,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum VersionKind {
+    #[default]
+    Release,
+    Beta,
+    /// Only part of the game.
+    Demo,
+}
+
+impl GameVersion {
+    /// A third-party build whose code differs from its original.
+    pub fn modified(&self) -> bool {
+        self.original.is_some() && !self.repackaged
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -134,8 +162,32 @@ mod tests {
                     g.id
                 );
             }
+            // The first match wins: no version may shadow a later one.
+            for (i, a) in g.versions.iter().enumerate() {
+                for b in &g.versions[i + 1..] {
+                    assert!(
+                        !a.files.iter().all(|(f, h)| b.files.get(f) == Some(h)),
+                        "{} hides {}",
+                        a.id,
+                        b.id
+                    );
+                }
+            }
+            let mut ids = std::collections::HashSet::new();
             for v in &g.versions {
                 assert!(v.id.starts_with(&g.id), "{}", v.id);
+                assert!(ids.insert(&v.id), "{} twice", v.id);
+                assert!(
+                    v.files.keys().any(|f| g.executables.contains(f)),
+                    "{} hashes no executable",
+                    v.id
+                );
+                assert!(!v.repackaged || v.original.is_some(), "{}", v.id);
+                assert!(
+                    v.original.is_none() || v.patch_version.is_none(),
+                    "{}: builds patch as their original",
+                    v.id
+                );
                 if let Some(original) = &v.original {
                     assert!(
                         g.versions
@@ -145,12 +197,7 @@ mod tests {
                         v.id
                     );
                 }
-                for (file, hash) in &v.files {
-                    assert!(
-                        g.executables.contains(file),
-                        "{} hashes unknown {file}",
-                        v.id
-                    );
+                for hash in v.files.values() {
                     assert!(
                         hash.len() == 64
                             && hash

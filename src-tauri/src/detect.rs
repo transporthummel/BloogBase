@@ -40,7 +40,11 @@ pub fn detect(source: &Source) -> Result<Vec<Detection>> {
             .iter()
             .map(|rel| (split_dir(rel).1.to_ascii_uppercase(), *rel))
             .collect();
-        let has = |name: &str| by_name.contains_key(&name.to_ascii_uppercase());
+        let has = |names: &str| {
+            names
+                .split('|')
+                .any(|n| by_name.contains_key(&n.to_ascii_uppercase()))
+        };
 
         let games: Vec<&Game> = catalog::games()
             .iter()
@@ -198,6 +202,52 @@ mod tests {
             Some(version.id.clone())
         );
         assert_eq!(identify_version(&source, game, &by_name).unwrap(), None);
+    }
+
+    #[test]
+    fn other_files_tell_apart_releases_sharing_an_executable() {
+        let mut game = catalog::game("kdreams").unwrap().clone();
+        let exe: &[u8] = b"kdreams";
+        let shell: &[u8] = b"shell";
+        for v in &mut game.versions {
+            for (name, hash) in &mut v.files {
+                *hash = sha256_hex(if name == "KDREAMS.EXE" { exe } else { shell });
+            }
+        }
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(tmp.path(), &[("KDREAMS.EXE", exe), ("DOCSHELL.EXE", shell)]);
+        let source = Source::open(tmp.path()).unwrap();
+        let mut by_name = HashMap::from([("KDREAMS.EXE".to_string(), "KDREAMS.EXE")]);
+        let id = |game: &Game, by_name: &HashMap<String, &str>| {
+            identify_version(&source, game, by_name).unwrap()
+        };
+        // Every version now has the same executable: the first one with
+        // nothing else to check wins.
+        assert_eq!(id(&game, &by_name).as_deref(), Some("kdreams-1.0"));
+        game.versions.retain(|v| v.id.starts_with("kdreams-1.93"));
+        assert_eq!(id(&game, &by_name).as_deref(), Some("kdreams-1.93"));
+        by_name.insert("DOCSHELL.EXE".into(), "DOCSHELL.EXE");
+        assert_eq!(
+            id(&game, &by_name).as_deref(),
+            Some("kdreams-1.93-anthology")
+        );
+    }
+
+    #[test]
+    fn required_files_may_have_alternatives() {
+        // Keen Dreams v1.0 names its data files like the later games.
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(
+            tmp.path(),
+            &[
+                ("kdreams.exe", b"x"),
+                ("gamemaps.kdr", b""),
+                ("audio.kdr", b""),
+            ],
+        );
+        let found = detect(&Source::open(tmp.path()).unwrap()).unwrap();
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].game_id, "kdreams");
     }
 
     #[test]

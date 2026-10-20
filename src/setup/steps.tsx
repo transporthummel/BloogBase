@@ -5,7 +5,7 @@ import { CircleCheck, FileArchive, FileCog, FolderOpen, PartyPopper } from "luci
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import logo from "../assets/logo.jpg";
-import { commands, type FreeEpisode, type StoreInstall } from "../bindings";
+import { commands, type FreeEpisode, type Install, type StoreInstall } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatMegabytes } from "../format";
@@ -398,8 +398,12 @@ export function EpisodesStep({ next, back }: StepProps) {
   const [picked, setPicked] = useState<Set<string> | null>(null);
 
   const available = (episodes.data ?? []).filter((e) => !e.installed);
-  // A full version added from Steam or GOG makes the shareware redundant.
-  const owns = (e: FreeEpisode) => installs.data?.some((i) => i.gameId === e.gameId);
+  // A full version added from Steam or GOG makes the shareware redundant;
+  // a beta or demo doesn't.
+  const isFull = (i: Install) =>
+    (games.data?.find((g) => g.id === i.gameId)?.versions.find((v) => v.id === i.versionId)?.kind ??
+      "release") === "release";
+  const owns = (e: FreeEpisode) => installs.data?.some((i) => i.gameId === e.gameId && isFull(i));
   const selected = picked ?? new Set(available.filter((e) => !owns(e)).map((e) => e.gameId));
   const jobFor = (e: FreeEpisode) =>
     jobs.find((j) => j.kind === "shareware" && j.subject === e.gameId);

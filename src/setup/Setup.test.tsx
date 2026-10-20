@@ -227,6 +227,41 @@ test("doesn't preselect free episodes whose full version is in the library", asy
   expect(commands.installFreeEpisode).toHaveBeenCalledWith("keen1");
 });
 
+test("still preselects a free episode when only its demo is in the library", async () => {
+  setSetupStep("episodes");
+  const keen4 = game("keen4", "Commander Keen 4", "keen4-1.4-ega");
+  keen4.versions.push({
+    id: "keen4-demo",
+    label: "Special demo",
+    files: {},
+    shareware: false,
+    kind: "demo",
+  });
+  vi.mocked(commands.listGames).mockResolvedValue([keen4]);
+  vi.mocked(commands.freeEpisodes).mockResolvedValue({
+    status: "ok",
+    data: [{ gameId: "keen4", versionId: "keen4-1.4-ega", size: 631332, installed: false }],
+  });
+  vi.mocked(commands.listInstalls).mockResolvedValue({
+    status: "ok",
+    data: [
+      {
+        id: "i1",
+        gameId: "keen4",
+        versionId: "keen4-demo",
+        label: "Demo",
+        source: "folder",
+        path: "C:/Demo",
+        addedAt: 0,
+      },
+    ],
+  });
+  renderSetup();
+
+  expect(await screen.findByRole("button", { name: "Download 1 episode" })).toBeEnabled();
+  expect(screen.queryByText("Full version in your library")).not.toBeInTheDocument();
+});
+
 test("imports the games found in Steam and GOG folders", async () => {
   setSetupStep("owned");
   vi.mocked(commands.scanStores).mockResolvedValue({
