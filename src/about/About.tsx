@@ -7,6 +7,7 @@ import logo from "../assets/logo.jpg";
 import { commands } from "../bindings";
 import { unwrap } from "../ipc";
 import { useRuntimeStatus } from "../runtime/queries";
+import { Bloog } from "../ui/Bloog";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Dialog } from "../ui/Dialog";
@@ -37,33 +38,36 @@ export function About() {
           alt="BloogBase"
           className="aspect-[16/9] w-full object-cover [image-rendering:pixelated]"
         />
-        <div className="grid gap-2 p-5">
-          <h1 className="sr-only">{t("about.title")}</h1>
-          <p>{t("about.tagline")}</p>
-          <p className="text-sm">
-            <Trans
-              i18nKey="about.author"
-              values={{ name: "transporthummel" }}
-              components={{
-                profile: (
-                  <button
-                    type="button"
-                    className="font-semibold text-accent underline-offset-2 hover:underline"
-                    title={t("about.authorProfile")}
-                    onClick={() => openUrl(AUTHOR_URL)}
-                  />
-                ),
-              }}
-            />
-          </p>
-          <p className="text-sm text-muted">
-            {t("settings.version")}{" "}
-            <span className="font-pixel text-xs text-ink">{info.data?.version}</span>
-          </p>
-          <div className="flex flex-wrap gap-2 pt-1">
-            <LinkButton url={REPO_URL}>{t("about.sourceCode")}</LinkButton>
-            <LinkButton url={`${REPO_URL}/issues`}>{t("about.reportProblem")}</LinkButton>
+        <div className="flex items-start gap-4 p-5">
+          <div className="grid flex-1 gap-2">
+            <h1 className="sr-only">{t("about.title")}</h1>
+            <p>{t("about.tagline")}</p>
+            <p className="text-sm">
+              <Trans
+                i18nKey="about.author"
+                values={{ name: "transporthummel" }}
+                components={{
+                  profile: (
+                    <button
+                      type="button"
+                      className="font-semibold text-accent underline-offset-2 hover:underline"
+                      title={t("about.authorProfile")}
+                      onClick={() => openUrl(AUTHOR_URL)}
+                    />
+                  ),
+                }}
+              />
+            </p>
+            <p className="text-sm text-muted">
+              {t("settings.version")}{" "}
+              <span className="font-pixel text-xs text-ink">{info.data?.version}</span>
+            </p>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <LinkButton url={REPO_URL}>{t("about.sourceCode")}</LinkButton>
+              <LinkButton url={`${REPO_URL}/issues`}>{t("about.reportProblem")}</LinkButton>
+            </div>
           </div>
+          <Bloog className="bb-hop size-10 shrink-0" />
         </div>
       </Card>
 
