@@ -53,3 +53,27 @@ test("grouped sorts put base games first in catalog order", () => {
   ]);
   expect(arrange([profiles[1]], "type", games, "en").map((g) => g.key)).toEqual(["games"]);
 });
+
+test("copies of one game keep their order whichever was played last", () => {
+  const keen4 = {
+    ...game("keen4"),
+    versions: ["keen4-1.0-ega", "keen4-1.4-ega"].map((id) => ({
+      id,
+      label: id,
+      files: {},
+      shareware: true,
+    })),
+  };
+  const copy = (id: string, versionId: string | null, addedAt: number) =>
+    ({ ...profile(id, "keen4", "Keen 4", addedAt), versionId }) as Profile;
+  const copies = [
+    copy("unknown", null, 1),
+    copy("v14", "keen4-1.4-ega", 2),
+    copy("v10-later", "keen4-1.0-ega", 4),
+    copy("v10", "keen4-1.0-ega", 3),
+  ];
+  const order = (list: Profile[]) =>
+    arrange(list, "name", [keen4], "en")[0].profiles.map((p) => p.id);
+  expect(order(copies)).toEqual(["v10", "v10-later", "v14", "unknown"]);
+  expect(order([...copies].reverse())).toEqual(order(copies));
+});

@@ -18,7 +18,19 @@ export function arrange(
   language: string,
 ): Group[] {
   const collator = new Intl.Collator(language, { numeric: true, sensitivity: "base" });
-  const byName = (a: Profile, b: Profile) => collator.compare(a.label, b.label);
+  // Copies of one game share a name: they keep the catalog's version order
+  // (unknown versions last), then the order they were added, not the order
+  // they were played in.
+  const versionIndex = (p: Profile) => {
+    const versions = games.find((g) => g.id === p.gameId)?.versions ?? [];
+    const i = versions.findIndex((v) => v.id === p.versionId);
+    return i === -1 ? versions.length : i;
+  };
+  const byName = (a: Profile, b: Profile) =>
+    collator.compare(a.label, b.label) ||
+    versionIndex(a) - versionIndex(b) ||
+    a.addedAt - b.addedAt ||
+    a.id.localeCompare(b.id);
   const gameIndex = (p: Profile) => {
     const i = games.findIndex((g) => g.id === p.gameId);
     return i === -1 ? games.length : i;
