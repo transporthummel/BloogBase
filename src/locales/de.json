@@ -281,7 +281,8 @@
     "installAnyway": "Trotzdem installieren",
     "waitsFor": "Braucht {{game}}",
     "gameMissing": "Spiel fehlt",
-    "waitingHint": "Füge {{game}} deiner Bibliothek hinzu, um diese Mod zu spielen."
+    "waitingHint": "Füge {{game}} deiner Bibliothek hinzu, um diese Mod zu spielen.",
+    "changeGameHint": "Spielstände bleiben bei der Mod, lassen sich in einer anderen Spielversion aber eventuell nicht laden."
   },
   "discover": {
     "title": "Entdecken",

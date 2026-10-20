@@ -281,7 +281,8 @@
     "installAnyway": "Install anyway",
     "waitsFor": "Needs {{game}}",
     "gameMissing": "Game missing",
-    "waitingHint": "Add {{game}} to your library to play this mod."
+    "waitingHint": "Add {{game}} to your library to play this mod.",
+    "changeGameHint": "Saved games stay with the mod, but may not load in another version of the game."
   },
   "discover": {
     "title": "Discover",

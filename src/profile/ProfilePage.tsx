@@ -276,6 +276,14 @@ function Hero({
             </div>
           ))}
         </dl>
+        {profile.modId !== null && profile.installId !== null && (
+          <GamePicker
+            modId={profile.modId}
+            installId={profile.installId}
+            game={game}
+            disabled={profile.running}
+          />
+        )}
         <div className="flex flex-wrap items-center gap-3">
           <PlayButton
             onClick={onPlay}
@@ -349,6 +357,59 @@ function Hero({
         {openFolder.error && <Notice tone="error">{errorMessage(t, openFolder.error)}</Notice>}
       </div>
     </Card>
+  );
+}
+
+/** Which copy of the game a mod plays on, when more than one fits. */
+function GamePicker({
+  modId,
+  installId,
+  game,
+  disabled,
+}: {
+  modId: string;
+  installId: string;
+  game?: Game;
+  disabled: boolean;
+}) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const installs = useQuery({
+    // Under the installs key, so it follows changes to the library.
+    queryKey: [...installsKey, "mod", modId],
+    queryFn: () => unwrap(commands.modInstalls(modId)),
+  });
+  const change = useMutation({
+    mutationFn: (id: string) => unwrap(commands.setModInstall(modId, id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: profilesKey });
+      queryClient.invalidateQueries({ queryKey: profileFiringKey(modId) });
+    },
+  });
+  if (!installs.data || installs.data.length < 2) return null;
+  const versionLabel = (versionId: string | null) =>
+    game?.versions.find((v) => v.id === versionId)?.label ?? t("library.unknownVersion");
+
+  return (
+    <div className="grid max-w-md gap-1">
+      <label className="grid grid-cols-1 gap-1 text-xs">
+        <span className="text-muted">{t("mods.playOn")}</span>
+        <select
+          className="min-w-0 truncate rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-sm"
+          value={installId}
+          disabled={disabled || change.isPending}
+          onChange={(e) => change.mutate(e.target.value)}
+        >
+          {installs.data.map((i) => (
+            <option key={i.id} value={i.id}>
+              {i.label} ({versionLabel(i.versionId)})
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="text-xs text-muted">{t("mods.changeGameHint")}</p>
+      {change.error && <Notice tone="error">{errorMessage(t, change.error)}</Notice>}
+    </div>
   );
 }
 

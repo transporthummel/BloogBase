@@ -7,6 +7,7 @@ import {
   commands,
   type Backup,
   type Game,
+  type Install,
   type Mod,
   type Profile,
   type RuntimeStatus,
@@ -70,6 +71,8 @@ vi.mock("../bindings", () => {
     "modReadme",
     "openModFolder",
     "deleteMod",
+    "modInstalls",
+    "setModInstall",
     "removeGame",
     "indexMods",
     "listScreenshots",
@@ -180,6 +183,7 @@ beforeEach(() => {
   vi.mocked(commands.profileCover).mockResolvedValue(ok(null));
   vi.mocked(commands.oneButtonFiring).mockResolvedValue(ok(false));
   vi.mocked(commands.profileFiring).mockResolvedValue(ok(null));
+  vi.mocked(commands.modInstalls).mockResolvedValue(ok([]));
 });
 
 const aurora: Mod = {
@@ -227,6 +231,31 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   vi.mocked(commands.openModFolder).mockResolvedValue(ok(null));
   await userEvent.click(screen.getByRole("button", { name: "Open mod folder" }));
   expect(commands.openModFolder).toHaveBeenCalledWith("aurora-bliss");
+});
+
+test("a mod's page changes the copy of the game it plays on", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
+  );
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  const copy = (id: string, label: string): Install => ({
+    id,
+    gameId: "keen4",
+    versionId: null,
+    label,
+    source: "folder",
+    path: `/games/${id}`,
+    addedAt: 1_690_000_000,
+  });
+  vi.mocked(commands.modInstalls).mockResolvedValue(
+    ok([copy("keen4-1", "Keen 4"), copy("keen4-2", "Keen 4 (GOG)")]),
+  );
+  vi.mocked(commands.setModInstall).mockResolvedValue(ok(null));
+  renderDetail();
+  const picker = await screen.findByRole("combobox", { name: "Play with" });
+  expect(picker).toHaveValue("keen4-1");
+  await userEvent.selectOptions(picker, "keen4-2");
+  expect(commands.setModInstall).toHaveBeenCalledWith("aurora-bliss", "keen4-2");
 });
 
 test("a mod is removed from its page, keeping saves unless unticked", async () => {

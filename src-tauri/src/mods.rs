@@ -835,6 +835,47 @@ pub fn rehome(db: &Db, except: Option<&str>) -> Result<Vec<String>> {
     Ok(moved)
 }
 
+/// The installs `mod_id` can be played on, in library order.
+pub fn fitting_installs(db: &Db, mod_id: &str) -> Result<Vec<Install>> {
+    let (game_id, requires): (String, Option<String>) = db
+        .conn()
+        .query_row(
+            "SELECT game_id, requires_json FROM mods WHERE id = ?1",
+            [mod_id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .optional()?
+        .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))?;
+    let Some(game) = catalog::game(&game_id) else {
+        return Ok(Vec::new());
+    };
+    let requires = parse_requires(requires.as_deref());
+    Ok(library::list(db)?
+        .into_iter()
+        .filter(|i| fits(game, requires.as_deref(), i))
+        .collect())
+}
+
+/// Plays `mod_id` on `install_id` from now on. Saves stay with the mod;
+/// the composed layer is rebuilt on the next launch.
+pub fn set_install(db: &Db, mod_id: &str, install_id: &str) -> Result<()> {
+    if !fitting_installs(db, mod_id)?
+        .iter()
+        .any(|i| i.id == install_id)
+    {
+        return Err(Error::IncompatibleInstall(format!(
+            "{mod_id} can't be played on {install_id}"
+        )));
+    }
+    db.conn().execute(
+        "UPDATE profiles SET install_id = ?2, composed_hash = NULL
+         WHERE mod_id = ?1 AND install_id IS NOT ?2",
+        params![mod_id, install_id],
+    )?;
+    tracing::info!("mod {mod_id} now plays on {install_id}");
+    Ok(())
+}
+
 /// Copies the mod's files (and the archive) into `staging`.
 fn stage(
     source: &Source,
@@ -1699,6 +1740,41 @@ mod tests {
         assert_eq!(install_of("aurora"), None);
         assert!(paths.mods.join("aurora/files/GAMEMAPS.CK4").is_file());
         assert_eq!(list(&db).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn mods_move_to_another_fitting_copy() {
+        let (tmp, paths, db) = setup();
+        let other = tmp.path().join("k4b");
+        write_folder(&other, KEEN4);
+        fs::write(other.join("KEEN4E.EXE"), b"other").unwrap();
+        library::import(&paths, &db, &other).unwrap();
+        let zip = tmp.path().join("aurora.zip");
+        write_zip(&zip, AURORA);
+        let info = inspect(&zip, None).unwrap();
+        let m = install(&paths, &db, &request(&zip, info.recipes[0].recipe.clone())).unwrap();
+        let ids = |v: Vec<Install>| v.into_iter().map(|i| i.id).collect::<Vec<_>>();
+        assert_eq!(
+            ids(fitting_installs(&db, &m.id).unwrap()),
+            ["keen4-1", "keen4-2"]
+        );
+
+        set_install(&db, &m.id, "keen4-2").unwrap();
+        let p = profiles::get(&db, &m.profile_id).unwrap().0;
+        assert_eq!(p.install_id.as_deref(), Some("keen4-2"));
+        assert!(matches!(
+            set_install(&db, &m.id, "keen5-1"),
+            Err(Error::IncompatibleInstall(_))
+        ));
+        assert_eq!(
+            profiles::get(&db, &m.profile_id)
+                .unwrap()
+                .0
+                .install_id
+                .as_deref(),
+            Some("keen4-2")
+        );
+        assert!(set_install(&db, "nope", "keen4-1").is_err());
     }
 
     #[test]

@@ -550,6 +550,29 @@ pub async fn mod_readme(app: AppHandle, mod_id: String) -> CommandResult<Option<
     blocking(move || readme::for_mod(&app.state::<AppPaths>(), &app.state::<Db>(), &mod_id)).await
 }
 
+/// The installs a mod can be played on.
+#[tauri::command]
+#[specta::specta]
+pub async fn mod_installs(app: AppHandle, mod_id: String) -> CommandResult<Vec<Install>> {
+    blocking(move || mods::fitting_installs(&app.state::<Db>(), &mod_id)).await
+}
+
+/// Plays a mod on another install it fits.
+#[tauri::command]
+#[specta::specta]
+pub async fn set_mod_install(
+    app: AppHandle,
+    mod_id: String,
+    install_id: String,
+) -> CommandResult<()> {
+    // The profile id equals the mod id.
+    let id = mod_id.clone();
+    with_profile_locked(&app, &id, move |_, db| {
+        mods::set_install(db, &mod_id, &install_id)
+    })
+    .await
+}
+
 /// Removes a mod and its profile; `keep_saves` archives the saves first.
 #[tauri::command]
 #[specta::specta]

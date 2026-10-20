@@ -109,6 +109,10 @@ export const commands = {
 } | null, CommandError>(__TAURI_INVOKE("mod_readme", { modId })),
 	/**  Opens the folder with a mod's installed files. */
 	openModFolder: (modId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_folder", { modId })),
+	/**  The installs a mod can be played on. */
+	modInstalls: (modId: string) => typedError<Install[], CommandError>(__TAURI_INVOKE("mod_installs", { modId })),
+	/**  Plays a mod on another install it fits. */
+	setModInstall: (modId: string, installId: string) => typedError<null, CommandError>(__TAURI_INVOKE("set_mod_install", { modId, installId })),
 	/**  Removes a mod and its profile; `keep_saves` archives the saves first. */
 	deleteMod: (modId: string, keepSaves: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("delete_mod", { modId, keepSaves })),
 	/**
