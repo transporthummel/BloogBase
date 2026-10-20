@@ -15,6 +15,8 @@ pub struct EgaGraph<'a> {
     /// Start of each chunk; `None` for empty slots.
     offsets: Vec<Option<usize>>,
     dict: Dictionary,
+    /// CGAGRAPH: pictures with 2 bits per pixel instead of 4 planes.
+    cga: bool,
 }
 
 impl<'a> EgaGraph<'a> {
@@ -42,6 +44,7 @@ impl<'a> EgaGraph<'a> {
                     data: graph,
                     offsets,
                     dict: Dictionary::parse(d)?,
+                    cga: false,
                 })
             }
             None => Self::with_dictionary_from(graph, head, offset_len, exe),
@@ -63,12 +66,18 @@ impl<'a> EgaGraph<'a> {
                 data: graph,
                 offsets: offsets.clone(),
                 dict,
+                cga: false,
             };
             if candidate.pictures().is_ok_and(|p| !p.is_empty()) {
                 return Ok(candidate);
             }
         }
         Err(Error::Format("EGADICT not found in the executable"))
+    }
+
+    /// Reads the file as CGAGRAPH, the CGA releases' graphics.
+    pub fn cga(self) -> Self {
+        EgaGraph { cga: true, ..self }
     }
 
     /// The decompressed chunk `n`. Only for chunks with a size prefix (all
@@ -136,28 +145,51 @@ impl<'a> EgaGraph<'a> {
         // first chunk that has the size of picture 0.
         let (w0, h0) = pics[0];
         let first = (3..16)
-            .find(|&c| self.chunk(c).is_ok_and(|d| d.len() == w0 * h0 * 4))
+            .find(|&c| {
+                self.chunk(c)
+                    .is_ok_and(|d| d.len() == w0 * h0 * self.planes())
+            })
             .ok_or(Error::Format("pictures not found"))?;
-        Image::from_planar(&self.chunk(first + index)?, w * 8, h)
+        let data = self.chunk(first + index)?;
+        if self.cga {
+            Image::from_cga(&data, w * 4, h)
+        } else {
+            Image::from_planar(&data, w * 8, h)
+        }
+    }
+
+    /// Picture widths count bytes: 8 pixels in each of 4 EGA planes, or 4
+    /// CGA pixels.
+    fn planes(&self) -> usize {
+        if self.cga { 1 } else { 4 }
+    }
+
+    /// The width of a 320-pixel picture.
+    fn screen_width(&self) -> usize {
+        if self.cga { 80 } else { 40 }
     }
 
     /// The title screen: the known title picture of Keen 4-6, else the
     /// full-screen (320x200) picture with the most colors. In the original
-    /// games that's the only one using all 16; the others are the menu frame,
+    /// games that's the only one using all 16 (in CGA all 4); the others are the menu frame,
     /// the story backdrop and, in Keen 5, the ending's galaxy.
     pub fn title(&self) -> Result<Image, Error> {
         // Mods can change pictures but not their numbers, so the original
         // title picture's number is the surest guide. Its game is told apart
         // by the number of pictures.
-        let known = match self.pictures()?.len() {
-            107 => Some(95),  // Keen 4
-            115 => Some(103), // Keen 4 shareware
-            93 => Some(82),   // Keen 5
-            37 => Some(28),   // Keen 6
+        let known = match (self.cga, self.pictures()?.len()) {
+            (false, 107) => Some(95),  // Keen 4
+            (false, 115) => Some(103), // Keen 4 shareware
+            (false, 93) => Some(82),   // Keen 5
+            (false, 37) => Some(28),   // Keen 6
+            (true, 108) => Some(96),   // Keen 4 1.0-1.1
+            (true, 116) => Some(104),  // Keen 4 1.4
+            (true, 94) => Some(83),    // Keen 5
+            (true, 34) => Some(25),    // Keen 6
             _ => None,
         };
         if let Some(index) = known
-            && self.pictures()?[index] == (40, 200)
+            && self.pictures()?[index] == (self.screen_width(), 200)
         {
             return self.picture(index);
         }
@@ -179,7 +211,7 @@ impl<'a> EgaGraph<'a> {
             .pictures()?
             .iter()
             .enumerate()
-            .filter(|(_, p)| **p == (40, 200))
+            .filter(|(_, p)| **p == (self.screen_width(), 200))
             .map(|(i, _)| i)
             .collect())
     }

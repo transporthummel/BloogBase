@@ -19,7 +19,7 @@ use crate::profiles;
 use crate::recipe::{Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v2";
+const VERSION: &str = "covers v3";
 
 /// The profile's cover PNG, extracting it first if its files changed since
 /// the last time. `None` if the title can't be read from them.
@@ -278,6 +278,19 @@ fn extract(
                     ) {
                         Ok(image) => return Ok(image),
                         Err(e) => last = format!("{graph_name} with {exe_name}: {e}"),
+                    }
+                }
+            }
+            // The CGA releases.
+            let cga_name = format!("CGAGRAPH.{ext}");
+            if let Some(graph) = files.read(&cga_name) {
+                for exe_name in &exes {
+                    let Some(exe) = files.read(exe_name) else {
+                        continue;
+                    };
+                    match keen_graphics::galaxy_cga_title(&exe, &graph) {
+                        Ok(image) => return Ok(image),
+                        Err(e) => last = format!("{cga_name} with {exe_name}: {e}"),
                     }
                 }
             }

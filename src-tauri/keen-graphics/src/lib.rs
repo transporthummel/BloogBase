@@ -87,6 +87,23 @@ impl Image {
         })
     }
 
+    /// From CGA data: 4 pixels per byte, leftmost in the top bits, in the
+    /// palette the games use (black, light cyan, light magenta, white).
+    pub fn from_cga(data: &[u8], width: usize, height: usize) -> Result<Self, Error> {
+        const CGA: [u8; 4] = [0, 11, 13, 15];
+        if data.len() < width / 4 * height {
+            return Err(Error::Format("picture data too short"));
+        }
+        let pixels = (0..width * height)
+            .map(|i| CGA[usize::from((data[i / 4] >> (6 - 2 * (i % 4))) & 3)])
+            .collect();
+        Ok(Image {
+            width,
+            height,
+            pixels,
+        })
+    }
+
     /// How many of the 16 colors the picture uses.
     pub fn color_count(&self) -> usize {
         let mut used = [false; 16];
@@ -127,6 +144,14 @@ pub fn galaxy_title(
             .or_else(|_| egagraph::EgaGraph::from_exe(egagraph, &image, 4))?,
     };
     graph.title()
+}
+
+/// The title screen of a CGA release of Keen 4-6 from its executable and
+/// CGAGRAPH.
+pub fn galaxy_cga_title(exe: &[u8], cgagraph: &[u8]) -> Result<Image, Error> {
+    egagraph::EgaGraph::from_exe(cgagraph, &load_image(exe)?, 3)?
+        .cga()
+        .title()
 }
 
 /// The title screen of Keen Dreams 1.13 from `KDREAMS.CMP`.

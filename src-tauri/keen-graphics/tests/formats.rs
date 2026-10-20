@@ -385,3 +385,11 @@ fn pklite_unpacks_the_load_image() {
     exe[0x1D] = 0x01; // small model
     assert!(keen_graphics::load_image(&exe).is_err());
 }
+
+#[test]
+fn cga_pictures_have_four_pixels_per_byte() {
+    // Black, cyan, magenta, white; then white, magenta, cyan, black.
+    let image = Image::from_cga(&[0b00_01_10_11, 0b11_10_01_00], 8, 1).unwrap();
+    assert_eq!(image.pixels, [0, 11, 13, 15, 15, 13, 11, 0]);
+    assert!(Image::from_cga(&[0], 8, 1).is_err());
+}
