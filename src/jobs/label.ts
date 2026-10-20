@@ -13,8 +13,14 @@ export function useJobLabel() {
     switch (job.kind) {
       case "runtime":
         return t("jobs.runtime");
-      case "shareware":
-        return t("jobs.shareware", { game: gameTitle(games.data, subject) });
+      case "freeGame": {
+        const game = games.data?.find((g) => g.versions.some((v) => v.id === subject));
+        const version = game?.versions.find((v) => v.id === subject);
+        return t("jobs.freeGame", {
+          game: gameTitle(games.data, game?.id ?? subject),
+          version: version?.label ?? "",
+        });
+      }
       case "mod":
         return mods.data?.find((m) => m.entry.id === subject)?.entry.name ?? subject;
     }

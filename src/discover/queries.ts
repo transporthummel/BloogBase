@@ -5,6 +5,7 @@ import { unwrap } from "../ipc";
 
 export const indexStatusKey = ["indexStatus"] as const;
 export const indexModsKey = ["indexMods"] as const;
+export const freeGamesKey = ["freeGames"] as const;
 
 export function useIndexStatus() {
   return useQuery({ queryKey: indexStatusKey, queryFn: commands.indexStatus });
@@ -12,6 +13,11 @@ export function useIndexStatus() {
 
 export function useIndexMods() {
   return useQuery({ queryKey: indexModsKey, queryFn: () => unwrap(commands.indexMods()) });
+}
+
+/** Shareware episodes, demos and betas BloogBase can download. */
+export function useFreeGames() {
+  return useQuery({ queryKey: freeGamesKey, queryFn: () => unwrap(commands.freeGames()) });
 }
 
 /** Checks for a new index right away. */

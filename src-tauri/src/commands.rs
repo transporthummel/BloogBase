@@ -17,6 +17,7 @@ use crate::dosconf::{self, ConfigView, ConfigWarning};
 use crate::downloads;
 use crate::error::{CommandResult, Error, Result};
 use crate::firing::{self, Firing};
+use crate::free_games::{self, FreeGame};
 use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
 use crate::keenwiki::{self, WikiMod};
 use crate::launcher::{self, PlaySessionEnded, Playing, Running};
@@ -30,7 +31,6 @@ use crate::recipe::Recipe;
 use crate::runtime::{self, RuntimeStatus};
 use crate::saves::{self, SaveFile};
 use crate::settings::{self, SetupStatus};
-use crate::shareware::{self, FreeEpisode};
 use crate::storage::{self, StorageUsage};
 use crate::stores::{self, Store, StoreInstall};
 
@@ -762,10 +762,9 @@ pub fn install_index_mod(
         .await?;
         report.progress(JobPhase::Installing, size, size);
         // Right after the setup wizard the game may still be on its way.
-        while a
-            .state::<Jobs>()
-            .is_running(JobKind::Shareware, Some(&entry.game))
-        {
+        while a.state::<Jobs>().is_running(JobKind::FreeGame, |v| {
+            free_games::game_of(v) == Some(entry.game.as_str())
+        }) {
             tokio::time::sleep(std::time::Duration::from_millis(500)).await;
         }
 
@@ -860,22 +859,22 @@ pub fn clear_finished_jobs(jobs: State<'_, Jobs>) {
 
 #[tauri::command]
 #[specta::specta]
-pub fn free_episodes(db: State<'_, Db>) -> CommandResult<Vec<FreeEpisode>> {
-    Ok(shareware::list(&db)?)
+pub fn free_games(db: State<'_, Db>) -> CommandResult<Vec<FreeGame>> {
+    Ok(free_games::list(&db)?)
 }
 
-/// Starts downloading a free shareware episode into the library.
+/// Starts downloading a free game version into the library.
 #[tauri::command]
 #[specta::specta]
-pub fn install_free_episode(app: AppHandle, game_id: String) -> Job {
+pub fn install_free_game(app: AppHandle, version_id: String) -> Job {
     let a = app.clone();
-    let id = game_id.clone();
+    let id = version_id.clone();
     jobs::start(
         &app,
-        JobKind::Shareware,
-        Some(game_id),
+        JobKind::FreeGame,
+        Some(version_id),
         |report| async move {
-            shareware::install(
+            free_games::install(
                 &a.state::<AppPaths>(),
                 &a.state::<Db>(),
                 &id,

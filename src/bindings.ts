@@ -150,9 +150,9 @@ export const commands = {
 	setCustomRuntime: (path: string | null) => typedError<RuntimeStatus, CommandError>(__TAURI_INVOKE("set_custom_runtime", { path })),
 	listJobs: () => __TAURI_INVOKE<Job[]>("list_jobs"),
 	clearFinishedJobs: () => __TAURI_INVOKE<void>("clear_finished_jobs"),
-	freeEpisodes: () => typedError<FreeEpisode[], CommandError>(__TAURI_INVOKE("free_episodes")),
-	/**  Starts downloading a free shareware episode into the library. */
-	installFreeEpisode: (gameId: string) => __TAURI_INVOKE<Job>("install_free_episode", { gameId }),
+	freeGames: () => typedError<FreeGame[], CommandError>(__TAURI_INVOKE("free_games")),
+	/**  Starts downloading a free game version into the library. */
+	installFreeGame: (versionId: string) => __TAURI_INVOKE<Job>("install_free_game", { versionId }),
 	/**  Looks for Commander Keen in the Steam and GOG library folders. */
 	scanStores: () => typedError<StoreInstall[], CommandError>(__TAURI_INVOKE("scan_stores")),
 	/**  Imports the chosen episodes from a folder found by `scan_stores`. */
@@ -291,9 +291,11 @@ export type FoundGame = {
 	imported: boolean,
 };
 
-export type FreeEpisode = {
+export type FreeGame = {
 	gameId: string,
 	versionId: string,
+	/**  The setup wizard offers it (one shareware episode per game). */
+	setup: boolean,
 	/**  Download size in bytes. */
 	size: number,
 	/**  This version is already in the library. */
@@ -451,8 +453,8 @@ export type Job = {
 export type JobKind = 
 /**  Downloading DOSBox Staging. */
 "runtime" | 
-/**  Downloading a free episode; the subject is the game id. */
-"shareware" | 
+/**  Downloading a free game version; the subject is the version id. */
+"freeGame" | 
 /**  Installing or updating a mod from the index; the subject is its index id. */
 "mod";
 

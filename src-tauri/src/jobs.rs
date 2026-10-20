@@ -18,8 +18,8 @@ use crate::error::{CommandError, Result};
 pub enum JobKind {
     /// Downloading DOSBox Staging.
     Runtime,
-    /// Downloading a free episode; the subject is the game id.
-    Shareware,
+    /// Downloading a free game version; the subject is the version id.
+    FreeGame,
     /// Installing or updating a mod from the index; the subject is its index id.
     Mod,
 }
@@ -99,11 +99,11 @@ impl Jobs {
         Some(job.clone())
     }
 
-    /// Whether this work is in progress.
-    pub fn is_running(&self, kind: JobKind, subject: Option<&str>) -> bool {
-        self.lock()
-            .iter()
-            .any(|j| j.kind == kind && j.subject.as_deref() == subject && !j.phase.finished())
+    /// Whether work of this kind is in progress on a subject `subject` accepts.
+    pub fn is_running(&self, kind: JobKind, subject: impl Fn(&str) -> bool) -> bool {
+        self.lock().iter().any(|j| {
+            j.kind == kind && !j.phase.finished() && j.subject.as_deref().is_some_and(&subject)
+        })
     }
 
     /// Forgets finished jobs.
@@ -183,12 +183,12 @@ mod tests {
     #[test]
     fn same_work_is_not_started_twice() {
         let jobs = Jobs::default();
-        let (a, fresh) = jobs.begin(JobKind::Shareware, Some("keen1".into()));
+        let (a, fresh) = jobs.begin(JobKind::FreeGame, Some("keen1-1.31".into()));
         assert!(fresh);
-        let (b, fresh) = jobs.begin(JobKind::Shareware, Some("keen1".into()));
+        let (b, fresh) = jobs.begin(JobKind::FreeGame, Some("keen1-1.31".into()));
         assert!(!fresh);
         assert_eq!(a.id, b.id);
-        let (c, fresh) = jobs.begin(JobKind::Shareware, Some("keen4".into()));
+        let (c, fresh) = jobs.begin(JobKind::FreeGame, Some("keen4-1.4-ega".into()));
         assert!(fresh);
         assert_ne!(a.id, c.id);
         assert_eq!(jobs.list().len(), 2);
@@ -203,7 +203,7 @@ mod tests {
         assert!(fresh);
         assert_eq!(jobs.list().len(), 1);
 
-        let (c, _) = jobs.begin(JobKind::Shareware, Some("keen4".into()));
+        let (c, _) = jobs.begin(JobKind::FreeGame, Some("keen4-1.4-ega".into()));
         jobs.update(c.id, |j| j.phase = JobPhase::Done).unwrap();
         jobs.clear_finished();
         let left: Vec<_> = jobs.list().iter().map(|j| j.id).collect();

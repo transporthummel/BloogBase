@@ -5,7 +5,7 @@ import { CircleCheck, FileArchive, FileCog, FolderOpen, PartyPopper } from "luci
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import logo from "../assets/logo.jpg";
-import { commands, type FreeEpisode, type Install, type StoreInstall } from "../bindings";
+import { commands, type FreeGame, type Install, type StoreInstall } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatMegabytes } from "../format";
@@ -14,7 +14,7 @@ import { JobList, JobRow } from "../jobs/JobList";
 import { useJobLabel } from "../jobs/label";
 import { isFinished, useJobs, useStartJob } from "../jobs/queries";
 import { compare, fitting, type Owned } from "../discover/fit";
-import { useIndexMods, useIndexStatus } from "../discover/queries";
+import { useFreeGames, useIndexMods, useIndexStatus } from "../discover/queries";
 import { installsKey, profilesKey } from "../library/queries";
 import { setLanguage, type Language } from "../preferences";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
@@ -22,7 +22,7 @@ import { useRuntimeMutation, useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
-import { setupStatusKey, useFreeEpisodes, useSetupStatus } from "./queries";
+import { setupStatusKey, useSetupStatus } from "./queries";
 
 export type StepProps = {
   next: () => void;
@@ -385,7 +385,7 @@ export function OwnedStep({ next, back }: StepProps) {
 
 export function EpisodesStep({ next, back }: StepProps) {
   const { t } = useTranslation();
-  const episodes = useFreeEpisodes();
+  const free = useFreeGames();
   const games = useGames();
   const installs = useQuery({
     queryKey: installsKey,
@@ -393,21 +393,22 @@ export function EpisodesStep({ next, back }: StepProps) {
   });
   const jobs = useJobs().data ?? [];
   const jobLabel = useJobLabel();
-  const start = useStartJob((gameId: string) => commands.installFreeEpisode(gameId));
+  const start = useStartJob((versionId: string) => commands.installFreeGame(versionId));
   // `null` until the user changes something: everything not yet installed.
   const [picked, setPicked] = useState<Set<string> | null>(null);
 
-  const available = (episodes.data ?? []).filter((e) => !e.installed);
+  const episodes = free.data?.filter((e) => e.setup);
+  const available = (episodes ?? []).filter((e) => !e.installed);
   // A full version added from Steam or GOG makes the shareware redundant;
   // a beta or demo doesn't.
   const isFull = (i: Install) =>
     (games.data?.find((g) => g.id === i.gameId)?.versions.find((v) => v.id === i.versionId)?.kind ??
       "release") === "release";
-  const owns = (e: FreeEpisode) => installs.data?.some((i) => i.gameId === e.gameId && isFull(i));
-  const selected = picked ?? new Set(available.filter((e) => !owns(e)).map((e) => e.gameId));
-  const jobFor = (e: FreeEpisode) =>
-    jobs.find((j) => j.kind === "shareware" && j.subject === e.gameId);
-  const toStart = available.filter((e) => selected.has(e.gameId) && !jobFor(e));
+  const owns = (e: FreeGame) => installs.data?.some((i) => i.gameId === e.gameId && isFull(i));
+  const selected = picked ?? new Set(available.filter((e) => !owns(e)).map((e) => e.versionId));
+  const jobFor = (e: FreeGame) =>
+    jobs.find((j) => j.kind === "freeGame" && j.subject === e.versionId);
+  const toStart = available.filter((e) => selected.has(e.versionId) && !jobFor(e));
 
   function toggle(id: string) {
     const set = new Set(selected);
@@ -417,7 +418,7 @@ export function EpisodesStep({ next, back }: StepProps) {
   }
 
   async function download() {
-    for (const e of toStart) await start.mutateAsync(e.gameId);
+    for (const e of toStart) await start.mutateAsync(e.versionId);
     next();
   }
 
@@ -428,19 +429,19 @@ export function EpisodesStep({ next, back }: StepProps) {
       </StepHeader>
       <OfflineNotice />
       <ul className="grid gap-3">
-        {episodes.data?.map((e) => {
+        {episodes?.map((e) => {
           const game = games.data?.find((g) => g.id === e.gameId);
           const version = game?.versions.find((v) => v.id === e.versionId);
           const job = jobFor(e);
           return (
-            <li key={e.gameId} className="grid gap-2 rounded-lg border border-border p-3">
+            <li key={e.versionId} className="grid gap-2 rounded-lg border border-border p-3">
               <label className="flex items-center gap-3 text-sm">
                 <input
                   type="checkbox"
                   className="size-4 accent-[var(--bb-accent)]"
-                  checked={e.installed || selected.has(e.gameId)}
+                  checked={e.installed || selected.has(e.versionId)}
                   disabled={e.installed || !!job}
-                  onChange={() => toggle(e.gameId)}
+                  onChange={() => toggle(e.versionId)}
                 />
                 <span className="font-semibold">{gameTitle(games.data, e.gameId)}</span>
                 {version && <Badge>{version.label}</Badge>}
@@ -458,7 +459,7 @@ export function EpisodesStep({ next, back }: StepProps) {
         })}
       </ul>
       <p className="text-xs text-muted">{t("setup.episodes.terms")}</p>
-      {episodes.error && <Notice tone="error">{errorMessage(t, episodes.error)}</Notice>}
+      {free.error && <Notice tone="error">{errorMessage(t, free.error)}</Notice>}
       {start.error && <Notice tone="error">{errorMessage(t, start.error)}</Notice>}
       <Footer back={back} skip={toStart.length > 0 ? next : undefined}>
         {toStart.length > 0 ? (
@@ -486,14 +487,14 @@ export function ModsStep({ next, back }: StepProps) {
     queryKey: installsKey,
     queryFn: () => unwrap(commands.listInstalls()),
   });
-  const episodes = useFreeEpisodes();
+  const free = useFreeGames();
   const jobs = useJobs().data ?? [];
   const start = useStartJob((indexId: string) => commands.installIndexMod(indexId, null, false));
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
-  const coming: Owned[] = (episodes.data ?? [])
+  const coming: Owned[] = (free.data ?? [])
     .filter((e) =>
-      jobs.some((j) => j.kind === "shareware" && j.subject === e.gameId && j.phase !== "failed"),
+      jobs.some((j) => j.kind === "freeGame" && j.subject === e.versionId && j.phase !== "failed"),
     )
     .map((e) => ({ gameId: e.gameId, versionId: e.versionId }));
   const owned: Owned[] = [...(installs.data ?? []), ...coming];

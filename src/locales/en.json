@@ -146,7 +146,7 @@
   "jobs": {
     "title": "Downloads",
     "runtime": "DOSBox Staging",
-    "shareware": "{{game}}",
+    "freeGame": "{{game}} ({{version}})",
     "starting": "Starting download…",
     "progress": "{{received}} of {{total}} MB",
     "installing": "Installing…",
@@ -288,6 +288,12 @@
     "title": "Discover",
     "find": "Find mods",
     "refresh": "Check for new mods",
+    "tabs": {
+      "label": "What to discover",
+      "mods": "Mods",
+      "games": "Games",
+      "demos": "Demos & Betas"
+    },
     "status_one": "{{count}} mod · checked {{date}}",
     "status_other": "{{count}} mods · checked {{date}}",
     "neverChecked": "The mod list hasn't been loaded yet.",
@@ -326,7 +332,33 @@
     "install": "Install ({{size}} MB)",
     "installAnyway": "Install anyway",
     "withoutGameTitle": "Install {{name}} without its game?",
-    "withoutGameHint": "{{game}} isn’t in your library. The mod is installed now and can be played once you add the game."
+    "withoutGameHint": "{{game}} isn’t in your library. The mod is installed now and can be played once you add the game.",
+    "free": {
+      "intro": {
+        "games": "These episodes were released as shareware: complete games you may play and pass on for free. Mods made for them work right away.",
+        "demos": "Early test builds and promotional demos, interesting for a look at how the games came about. They are not complete games."
+      },
+      "terms": {
+        "games": "BloogBase downloads the original, unmodified shareware releases from public archives. Shareware may be shared freely, but never sold.",
+        "demos": "BloogBase downloads these from public archives, as linked on KeenWiki. The demos were given away for promotion; the betas were never officially released."
+      },
+      "kind": {
+        "demo": "Demo",
+        "beta": "Beta"
+      },
+      "download": "Download ({{size}} MB)",
+      "about": {
+        "keen1-1.31": "The complete first episode of Invasion of the Vorticons.",
+        "keen4-1.4-ega": "The complete first episode of Goodbye, Galaxy!, in 16 colors.",
+        "keen4-1.4-cga": "The same episode for CGA graphics cards, in 4 colors.",
+        "kdreams-1.13": "Softdisk’s shareware release of the “lost episode”.",
+        "keen4-demo": "Given away by FormGen in a Keen 6 promotional package. Only some levels can be entered.",
+        "keen6-demo": "Released in November 1991, before the game. Large parts of the map are blocked off.",
+        "keen6-promo": "A later promotional release of the demo with re-recorded demos.",
+        "keen1-beta-nov": "Test build from November 1990 with a cutscene that was removed later.",
+        "keen1-beta-dec": "Test build from December 3, 1990, shortly before the release."
+      }
+    }
   },
   "keenwiki": {
     "label": "KeenWiki link",

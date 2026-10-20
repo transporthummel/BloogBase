@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { RefreshCw, Search } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type ModKind } from "../bindings";
+import { commands, type Game, type ModKind } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatDate } from "../format";
@@ -12,26 +12,66 @@ import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
+import { Tabs } from "../ui/Tabs";
 import { compare, fitting, type Sort } from "./fit";
+import { FreeGames } from "./FreeGames";
 import { ModCard } from "./ModCard";
 import { useIndexMods, useIndexStatus, useRefreshIndex } from "./queries";
 
 const KINDS: ModKind[] = ["episode", "levelpack", "conversion"];
 const SORTS: Sort[] = ["featured", "newest", "name"];
+const TABS = ["mods", "games", "demos"] as const;
+type Tab = (typeof TABS)[number];
 
 const field = "rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm";
 
-/** Mod browser for the curated index (PLAN.md §8.3). */
+/** Mods from the curated index and freely available game versions (PLAN.md §8.3). */
 export function Discover() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const games = useGames().data ?? [];
+  const refresh = useRefreshIndex();
+  const [tab, setTab] = useState<Tab>("mods");
+
+  return (
+    <>
+      <PageHeader
+        title={t("discover.title")}
+        actions={
+          tab === "mods" && (
+            <Button
+              variant="secondary"
+              onClick={() => refresh.mutate()}
+              disabled={refresh.isPending}
+            >
+              <RefreshCw
+                className={`size-4 ${refresh.isPending ? "animate-spin" : ""}`}
+                aria-hidden
+              />
+              {t("discover.refresh")}
+            </Button>
+          )
+        }
+      />
+      <Tabs
+        tabs={TABS.map((id) => ({ id, label: t(`discover.tabs.${id}`) }))}
+        selected={tab}
+        onSelect={setTab}
+        label={t("discover.tabs.label")}
+      >
+        {tab === "mods" ? <Mods games={games} /> : <FreeGames category={tab} games={games} />}
+      </Tabs>
+    </>
+  );
+}
+
+function Mods({ games }: { games: Game[] }) {
+  const { t, i18n } = useTranslation();
   const status = useIndexStatus();
   const mods = useIndexMods();
   const installs = useQuery({
     queryKey: installsKey,
     queryFn: () => unwrap(commands.listInstalls()),
   });
-  const refresh = useRefreshIndex();
 
   const [query, setQuery] = useState("");
   const [game, setGame] = useState("");
@@ -59,19 +99,6 @@ export function Discover() {
   const error = st?.error ?? mods.error;
   return (
     <>
-      <PageHeader
-        title={t("discover.title")}
-        actions={
-          <Button variant="secondary" onClick={() => refresh.mutate()} disabled={refresh.isPending}>
-            <RefreshCw
-              className={`size-4 ${refresh.isPending ? "animate-spin" : ""}`}
-              aria-hidden
-            />
-            {t("discover.refresh")}
-          </Button>
-        }
-      />
-
       <div className="mb-4 grid gap-2">
         {st && (
           <p className="text-xs text-muted">

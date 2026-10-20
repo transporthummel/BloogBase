@@ -1,0 +1,142 @@
+{
+  "$comment": "Freely available game versions (PLAN.md §2.3): the shareware episodes, which the setup wizard offers too (`setup`), and the demos and betas offered on the Discover page. Each is downloaded from public archives, mostly the links on KeenWiki's version pages; where those are gone or incomplete, the owner's server (transporthummel.de) comes first. Mirrors are tried in order; each has its own archive hash, and the archive must hold exactly `versionId` of games.json. Terms: Keen 1 and Keen 4 (Apogee VENDOR.DOC) may be passed around freely as long as nothing is charged and the files are unmodified; Keen Dreams (Softdisk LICENSE.DOC) may be distributed free of charge as the complete, unmodified package. The demos were given away for promotion and come without a license file; the betas were never released (decided 2026-10-20: offered anyway, as KeenWiki does).",
+  "games": [
+    {
+      "gameId": "keen1",
+      "versionId": "keen1-1.31",
+      "setup": true,
+      "mirrors": [
+        {
+          "url": "https://archive.org/download/commander_keen_volume_one_131/keen.zip",
+          "sha256": "62d58adf9a3076e95a80e291845d3ad4a64a650b72d3f8fa3db3f46d39549989",
+          "size": 150934
+        },
+        {
+          "url": "http://cd.textfiles.com/smsharew/GAMES1/1KEENV3.ZIP",
+          "sha256": "6da80d127634b5d5b3447c3fc94a66096aac141cc2d06fc9de85bfd186aa0c27",
+          "size": 183750
+        }
+      ]
+    },
+    {
+      "gameId": "keen4",
+      "versionId": "keen4-1.4-ega",
+      "setup": true,
+      "mirrors": [
+        {
+          "url": "https://archive.org/download/Keen4e-sw/keen4.zip",
+          "sha256": "d7834a9b3265a997951743b58282886966e555bc6bf71d92df4de17b6129c36b",
+          "size": 631332
+        },
+        {
+          "url": "https://archive.org/download/CommanderKeenGoodbyeGalaxy/4keen.ZIP",
+          "sha256": "c7695d4d3feee73aa3e3dd81f206dd0adb6266f91f654b452cc51bdc46e46f83",
+          "size": 593497
+        },
+        {
+          "url": "https://davidgow.net/keen/4keen14.zip",
+          "sha256": "f92e2d02d3779a2e717a50287ef3ed116c22fdf7bcc12ccf676a412e97195cfe",
+          "size": 585043
+        }
+      ]
+    },
+    {
+      "gameId": "keen4",
+      "versionId": "keen4-1.4-cga",
+      "mirrors": [
+        {
+          "url": "https://transporthummel.de/bloogbase/files/keen4-1_4-cga.zip",
+          "sha256": "076ec5d34845d4a372f8ef2bddb88b13116d54d3f4661e0a71750e1c302b5b0e",
+          "size": 482507
+        },
+        {
+          "url": "https://web.archive.org/web/20230825062631id_/https://zapzot.net/collective/keen4-1.4-cga.zip",
+          "sha256": "d3bc8f170f7e0f78b9fd4a2e27b0120a57c92c6e356042d3175f7616c8a400df",
+          "size": 437372
+        }
+      ]
+    },
+    {
+      "gameId": "kdreams",
+      "versionId": "kdreams-1.13",
+      "setup": true,
+      "mirrors": [
+        {
+          "url": "http://cd.textfiles.com/megagames2/GAMES/APOGEE/KEENDR13.ZIP",
+          "sha256": "f44f33847b907231f781fc97e6dd1e801c3fb32209e0e14ee96394b9a8e6583e",
+          "size": 379768
+        }
+      ]
+    },
+    {
+      "gameId": "keen4",
+      "versionId": "keen4-demo",
+      "mirrors": [
+        {
+          "url": "http://cd.textfiles.com/nightowl/pdsi006/002A/1KEEN4.ZIP",
+          "sha256": "4c1b05e6eb98652c8494bfce97dbc661446629cb5a58eb1c5795646bdf07172f",
+          "size": 538631
+        }
+      ]
+    },
+    {
+      "gameId": "keen6",
+      "versionId": "keen6-demo",
+      "mirrors": [
+        {
+          "url": "https://transporthummel.de/bloogbase/files/keen6-special-demo.zip",
+          "sha256": "5898ae9a144b0e613952a05bffae97c8f9fc88b521510523773e1a0e1bab27eb",
+          "size": 341808
+        },
+        {
+          "url": "https://web.archive.org/web/20230825014308id_/https://zapzot.net/collective/keen6-1.0-ega-demo.zip",
+          "sha256": "51ec86a4401e81daebc269503e8a01932ca745636c18096feca9212dc9bf38b1",
+          "size": 339390
+        }
+      ]
+    },
+    {
+      "gameId": "keen6",
+      "versionId": "keen6-promo",
+      "mirrors": [
+        {
+          "url": "https://transporthummel.de/bloogbase/files/keen6-promo-release.zip",
+          "sha256": "87c72324fd3c62c5a7befbeca27188df53349a98415afe6cd4a652064660f817",
+          "size": 337783
+        },
+        {
+          "url": "https://web.archive.org/web/20230825014307id_/https://zapzot.net/collective/keen6-1.0-ega-promo.zip",
+          "sha256": "1f881d69b8ab4230e4d132f4ce4e3e44d5f2b141ff5202bb3147d06bfedfd5d2",
+          "size": 337388
+        }
+      ]
+    },
+    {
+      "gameId": "keen1",
+      "versionId": "keen1-beta-nov",
+      "mirrors": [
+        {
+          "url": "http://www.knightsandmerchants.net/Litude/Private/keennovb.zip",
+          "sha256": "5f177ce2906c52599282a3ca9bf3e9446ff68e655fec66b0c219afde38cce327",
+          "size": 119315
+        }
+      ]
+    },
+    {
+      "gameId": "keen1",
+      "versionId": "keen1-beta-dec",
+      "mirrors": [
+        {
+          "url": "https://transporthummel.de/bloogbase/files/keen1-december-beta.zip",
+          "sha256": "79b2e4e9882407f8982524f0a2509249cefd5c7d290c5a63dc0b53b88e3ab677",
+          "size": 140579
+        },
+        {
+          "url": "https://web.archive.org/web/20230825013748id_/https://zapzot.net/collective/keen1-1.0.zip",
+          "sha256": "5b069e4011de1335cd9d343b56e8a97f2c99fc9b2f35c764c1956adcea5c8132",
+          "size": 139149
+        }
+      ]
+    }
+  ]
+}

@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { commands, events, type Job, type JobKind } from "../bindings";
-import { indexModsKey } from "../discover/queries";
+import { freeGamesKey, indexModsKey } from "../discover/queries";
 import { installsKey, profilesKey } from "../library/queries";
 import { runtimeKey } from "../runtime/queries";
-import { freeEpisodesKey } from "../setup/queries";
 
 export const jobsKey = ["jobs"] as const;
 
@@ -39,10 +38,10 @@ export function useJobEvents() {
       upsert(client, job);
       if (job.phase !== "done") return;
       if (job.kind === "runtime") client.invalidateQueries({ queryKey: runtimeKey });
-      if (job.kind === "shareware") {
+      if (job.kind === "freeGame") {
         client.invalidateQueries({ queryKey: profilesKey });
         client.invalidateQueries({ queryKey: installsKey });
-        client.invalidateQueries({ queryKey: freeEpisodesKey });
+        client.invalidateQueries({ queryKey: freeGamesKey });
       }
       if (job.kind === "mod") {
         client.invalidateQueries({ queryKey: profilesKey });

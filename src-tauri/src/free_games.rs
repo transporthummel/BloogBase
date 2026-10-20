@@ -1,4 +1,5 @@
-//! Free shareware episodes offered by the setup wizard (PLAN.md §2.3).
+//! Freely available game versions (PLAN.md §2.3): the shareware episodes,
+//! demos and betas offered on the Discover page and in the setup wizard.
 
 use std::fs;
 use std::path::Path;
@@ -18,14 +19,16 @@ use crate::source::Source;
 
 #[derive(Debug, Deserialize)]
 struct Manifest {
-    episodes: Vec<Episode>,
+    games: Vec<Entry>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Episode {
+struct Entry {
     game_id: String,
     version_id: String,
+    #[serde(default)]
+    setup: bool,
     mirrors: Vec<Mirror>,
 }
 
@@ -37,29 +40,32 @@ struct Mirror {
 }
 
 static MANIFEST: LazyLock<Manifest> = LazyLock::new(|| {
-    serde_json::from_str(include_str!("../catalog/shareware.json"))
-        .expect("bundled shareware manifest is invalid")
+    serde_json::from_str(include_str!("../catalog/free-games.json"))
+        .expect("bundled free games manifest is invalid")
 });
 
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
-pub struct FreeEpisode {
+pub struct FreeGame {
     pub game_id: String,
     pub version_id: String,
+    /// The setup wizard offers it (one shareware episode per game).
+    pub setup: bool,
     /// Download size in bytes.
     pub size: u32,
     /// This version is already in the library.
     pub installed: bool,
 }
 
-pub fn list(db: &Db) -> Result<Vec<FreeEpisode>> {
+pub fn list(db: &Db) -> Result<Vec<FreeGame>> {
     MANIFEST
-        .episodes
+        .games
         .iter()
         .map(|e| {
-            Ok(FreeEpisode {
+            Ok(FreeGame {
                 game_id: e.game_id.clone(),
                 version_id: e.version_id.clone(),
+                setup: e.setup,
                 size: e.mirrors.first().map_or(0, |m| m.size as u32),
                 installed: library::has_version(db, &e.version_id)?,
             })
@@ -67,26 +73,35 @@ pub fn list(db: &Db) -> Result<Vec<FreeEpisode>> {
         .collect()
 }
 
-/// Downloads a free episode, trying each mirror in turn, and imports it.
+/// The game a free version belongs to.
+pub fn game_of(version_id: &str) -> Option<&'static str> {
+    MANIFEST
+        .games
+        .iter()
+        .find(|e| e.version_id == version_id)
+        .map(|e| e.game_id.as_str())
+}
+
+/// Downloads a free version, trying each mirror in turn, and imports it.
 pub async fn install(
     paths: &AppPaths,
     db: &Db,
-    game_id: &str,
+    version_id: &str,
     progress: impl Fn(JobPhase, u64, u64),
 ) -> Result<()> {
-    let episode = MANIFEST
-        .episodes
+    let entry = MANIFEST
+        .games
         .iter()
-        .find(|e| e.game_id == game_id)
-        .ok_or_else(|| Error::NotFound(format!("free episode {game_id}")))?;
+        .find(|e| e.version_id == version_id)
+        .ok_or_else(|| Error::NotFound(format!("free version {version_id}")))?;
     let mut last_err = None;
-    for mirror in &episode.mirrors {
+    for mirror in &entry.mirrors {
         let name = mirror.url.rsplit('/').next().unwrap_or("download.zip");
         let archive = paths
             .cache
             .join("downloads")
-            .join(format!("{game_id}-{name}"));
-        tracing::info!("downloading {} from {}", episode.version_id, mirror.url);
+            .join(format!("{version_id}-{name}"));
+        tracing::info!("downloading {version_id} from {}", mirror.url);
         let fetched = downloads::fetch(
             &mirror.url,
             &mirror.sha256,
@@ -102,29 +117,29 @@ pub async fn install(
         }
         progress(JobPhase::Installing, mirror.size, mirror.size);
         // A few hundred KB: importing right here is quick enough.
-        let result = import_verified(paths, db, episode, &archive, &mirror.url);
+        let result = import_verified(paths, db, entry, &archive, &mirror.url);
         let _ = fs::remove_file(&archive);
         return result;
     }
-    Err(last_err.unwrap_or_else(|| Error::NotFound(format!("mirror for {game_id}"))))
+    Err(last_err.unwrap_or_else(|| Error::NotFound(format!("mirror for {version_id}"))))
 }
 
-/// Imports the archive if it holds exactly the expected episode version.
+/// Imports the archive if it holds exactly the expected version.
 fn import_verified(
     paths: &AppPaths,
     db: &Db,
-    episode: &Episode,
+    entry: &Entry,
     archive: &Path,
     origin: &str,
 ) -> Result<()> {
     let found = detect(&Source::open(archive)?)?;
     let expected = |d: &crate::detect::Detection| {
-        d.game_id == episode.game_id && d.version_id.as_deref() == Some(&episode.version_id)
+        d.game_id == entry.game_id && d.version_id.as_deref() == Some(&entry.version_id)
     };
     if found.len() != 1 || !expected(&found[0]) {
         return Err(Error::UnexpectedContent(format!(
             "expected only {}",
-            episode.version_id
+            entry.version_id
         )));
     }
     library::import_from(paths, db, archive, InstallSource::Download, origin, None)?;
@@ -134,20 +149,40 @@ fn import_verified(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::catalog;
+    use crate::catalog::{self, VersionKind};
     use crate::source::testutil::*;
 
     #[test]
     fn manifest_matches_catalog() {
-        assert!(!MANIFEST.episodes.is_empty());
-        for e in &MANIFEST.episodes {
+        assert!(!MANIFEST.games.is_empty());
+        let mut versions = std::collections::HashSet::new();
+        let mut setup_games = std::collections::HashSet::new();
+        for e in &MANIFEST.games {
+            assert!(versions.insert(&e.version_id), "{} twice", e.version_id);
             let game = catalog::game(&e.game_id).unwrap_or_else(|| panic!("{}", e.game_id));
-            let version = game.versions.iter().find(|v| v.id == e.version_id);
+            let version = game
+                .versions
+                .iter()
+                .find(|v| v.id == e.version_id)
+                .unwrap_or_else(|| panic!("{} is not a {} version", e.version_id, e.game_id));
+            // Full releases are only free as shareware.
             assert!(
-                version.is_some_and(|v| v.shareware),
-                "{} is not a shareware version",
+                version.shareware || version.kind != VersionKind::Release,
+                "{} is not freely available",
                 e.version_id
             );
+            if e.setup {
+                assert!(
+                    version.shareware,
+                    "{} is no shareware episode",
+                    e.version_id
+                );
+                assert!(
+                    setup_games.insert(&e.game_id),
+                    "{} twice in setup",
+                    e.game_id
+                );
+            }
             assert!(!e.mirrors.is_empty());
             for m in &e.mirrors {
                 assert!(m.url.starts_with("https://") || m.url.starts_with("http://"));
@@ -166,24 +201,24 @@ mod tests {
         // The fixture's executable isn't the known shareware build.
         let zip = tmp.path().join("4keen.zip");
         write_zip(&zip, KEEN4);
-        let episode = MANIFEST
-            .episodes
+        let entry = MANIFEST
+            .games
             .iter()
-            .find(|e| e.game_id == "keen4")
+            .find(|e| e.version_id == "keen4-1.4-ega")
             .unwrap();
         assert!(matches!(
-            import_verified(&paths, &db, episode, &zip, "x"),
+            import_verified(&paths, &db, entry, &zip, "x"),
             Err(Error::UnexpectedContent(_))
         ));
         assert!(library::list(&db).unwrap().is_empty());
     }
 
     /// Downloads every mirror and checks it holds the expected version.
-    /// Run with `cargo test -- --ignored` when changing the manifest.
+    /// Run with `cargo test free_games -- --ignored` when changing the manifest.
     #[tokio::test]
     #[ignore = "downloads from the internet"]
     async fn all_mirrors_deliver_the_expected_version() {
-        for e in &MANIFEST.episodes {
+        for e in &MANIFEST.games {
             for m in &e.mirrors {
                 let tmp = tempfile::tempdir().unwrap();
                 let paths = AppPaths::new(tmp.path().join("data"));

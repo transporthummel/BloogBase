@@ -146,7 +146,7 @@
   "jobs": {
     "title": "Downloads",
     "runtime": "DOSBox Staging",
-    "shareware": "{{game}}",
+    "freeGame": "{{game}} ({{version}})",
     "starting": "Download startet…",
     "progress": "{{received}} von {{total}} MB",
     "installing": "Wird installiert…",
@@ -288,6 +288,12 @@
     "title": "Entdecken",
     "find": "Mods finden",
     "refresh": "Nach neuen Mods suchen",
+    "tabs": {
+      "label": "Was du entdecken willst",
+      "mods": "Mods",
+      "games": "Spiele",
+      "demos": "Demos & Betas"
+    },
     "status_one": "{{count}} Mod · geprüft am {{date}}",
     "status_other": "{{count}} Mods · geprüft am {{date}}",
     "neverChecked": "Die Mod-Liste wurde noch nicht geladen.",
@@ -326,7 +332,33 @@
     "install": "Installieren ({{size}} MB)",
     "installAnyway": "Trotzdem installieren",
     "withoutGameTitle": "{{name}} ohne Spiel installieren?",
-    "withoutGameHint": "{{game}} ist nicht in deiner Bibliothek. Die Mod wird jetzt installiert und lässt sich spielen, sobald du das Spiel hinzufügst."
+    "withoutGameHint": "{{game}} ist nicht in deiner Bibliothek. Die Mod wird jetzt installiert und lässt sich spielen, sobald du das Spiel hinzufügst.",
+    "free": {
+      "intro": {
+        "games": "Diese Episoden erschienen als Shareware: vollständige Spiele, die du kostenlos spielen und weitergeben darfst. Mods dafür funktionieren sofort.",
+        "demos": "Frühe Testfassungen und Werbe-Demos, spannend für einen Blick darauf, wie die Spiele entstanden sind. Vollständige Spiele sind das nicht."
+      },
+      "terms": {
+        "games": "BloogBase lädt die originalen, unveränderten Shareware-Versionen aus öffentlichen Archiven herunter. Shareware darf frei weitergegeben, aber nie verkauft werden.",
+        "demos": "BloogBase lädt diese Versionen aus öffentlichen Archiven herunter, wie sie auf KeenWiki verlinkt sind. Die Demos wurden zur Werbung verschenkt; die Betas wurden nie offiziell veröffentlicht."
+      },
+      "kind": {
+        "demo": "Demo",
+        "beta": "Beta"
+      },
+      "download": "Herunterladen ({{size}} MB)",
+      "about": {
+        "keen1-1.31": "Die komplette erste Episode von Invasion of the Vorticons.",
+        "keen4-1.4-ega": "Die komplette erste Episode von Goodbye, Galaxy! in 16 Farben.",
+        "keen4-1.4-cga": "Dieselbe Episode für CGA-Grafikkarten, in 4 Farben.",
+        "kdreams-1.13": "Die Shareware-Fassung der „verlorenen Episode“ von Softdisk.",
+        "keen4-demo": "Von FormGen in einem Werbepaket für Keen 6 verschenkt. Nur einige Level lassen sich betreten.",
+        "keen6-demo": "Erschien im November 1991, noch vor dem Spiel. Große Teile der Karte sind gesperrt.",
+        "keen6-promo": "Eine spätere Werbefassung der Demo mit neu aufgenommenen Vorführungen.",
+        "keen1-beta-nov": "Testfassung vom November 1990 mit einer Zwischensequenz, die später entfernt wurde.",
+        "keen1-beta-dec": "Testfassung vom 3. Dezember 1990, kurz vor der Veröffentlichung."
+      }
+    }
   },
   "keenwiki": {
     "label": "KeenWiki-Link",

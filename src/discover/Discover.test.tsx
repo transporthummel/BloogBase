@@ -38,6 +38,9 @@ vi.mock("../bindings", () => ({
     indexMods: vi.fn(),
     refreshIndex: vi.fn(),
     installIndexMod: vi.fn(),
+    freeGames: vi.fn(),
+    installFreeGame: vi.fn(),
+    listProfiles: vi.fn(),
   },
 }));
 
@@ -58,7 +61,11 @@ const games: Game[] = [
     requiredFiles: [],
     saves: [],
     stateFiles: [],
-    versions: [version("keen4-1.4-ega", "v1.4 EGA")],
+    versions: [
+      { ...version("keen4-1.4-ega", "v1.4 EGA"), shareware: true },
+      { ...version("keen4-1.4-cga", "v1.4 CGA"), shareware: true },
+      { ...version("keen4-demo", "Special demo"), kind: "demo" },
+    ],
   },
   {
     id: "keen6",
@@ -259,4 +266,61 @@ test("new badges and sorting", () => {
   expect(ids("featured")).toEqual(["a", "c", "b"]);
   expect(ids("newest")).toEqual(["c", "b", "a"]);
   expect(ids("name")).toEqual(["a", "b", "c"]);
+});
+
+test("offers shareware episodes and demos on their own tabs", async () => {
+  vi.mocked(commands.freeGames).mockResolvedValue({
+    status: "ok",
+    data: [
+      { gameId: "keen4", versionId: "keen4-1.4-ega", setup: true, size: 1, installed: true },
+      { gameId: "keen4", versionId: "keen4-1.4-cga", setup: false, size: 437372, installed: false },
+      { gameId: "keen4", versionId: "keen4-demo", setup: false, size: 538631, installed: false },
+    ],
+  });
+  vi.mocked(commands.listProfiles).mockResolvedValue({
+    status: "ok",
+    data: [
+      {
+        id: "p-ega",
+        installId: "keen4-a",
+        gameId: "keen4",
+        versionId: "keen4-1.4-ega",
+        modId: null,
+        label: "Keen 4",
+        sessionCount: 0,
+        playSeconds: 0,
+        lastPlayedAt: null,
+        addedAt: 0,
+        saveCount: 0,
+        running: false,
+        missingGame: null,
+      },
+    ],
+  });
+  vi.mocked(commands.installFreeGame).mockResolvedValue({
+    id: 3,
+    kind: "freeGame",
+    subject: "keen4-1.4-cga",
+    phase: "downloading",
+    received: 0,
+    total: 0,
+    error: null,
+  });
+  renderDiscover();
+  const user = userEvent.setup();
+
+  await user.click(await screen.findByRole("tab", { name: "Games" }));
+  const versions = () =>
+    screen.getAllByRole("article").map((a) => within(a).getByText(/^v1|Special/).textContent);
+  expect(await screen.findAllByRole("article")).toHaveLength(2);
+  expect(versions()).toEqual(["v1.4 EGA", "v1.4 CGA"]);
+  expect(screen.queryByRole("button", { name: "Check for new mods" })).not.toBeInTheDocument();
+  const [ega, cga] = screen.getAllByRole("article");
+  expect(await within(ega).findByText("Details & Play")).toHaveAttribute("href", "/profiles/p-ega");
+  await user.click(within(cga).getByRole("button", { name: "Download (0.4 MB)" }));
+  expect(commands.installFreeGame).toHaveBeenCalledWith("keen4-1.4-cga");
+
+  await user.click(screen.getByRole("tab", { name: "Demos & Betas" }));
+  expect(versions()).toEqual(["Special demo"]);
+  expect(screen.getByText("Demo")).toBeInTheDocument();
 });

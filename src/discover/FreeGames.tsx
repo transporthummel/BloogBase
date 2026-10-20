@@ -1,0 +1,125 @@
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Download } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { commands, type FreeGame, type Game } from "../bindings";
+import { gameTitle } from "../catalog";
+import { errorMessage } from "../errors";
+import { formatMegabytes } from "../format";
+import { unwrap } from "../ipc";
+import { JobRow } from "../jobs/JobList";
+import { isFinished, useJob, useStartJob } from "../jobs/queries";
+import { Cover } from "../library/Cover";
+import { profilesKey } from "../library/queries";
+import { Badge } from "../ui/Badge";
+import { Button } from "../ui/Button";
+import { Card } from "../ui/Card";
+import { Notice } from "../ui/Notice";
+import { useFreeGames } from "./queries";
+
+/** Full shareware episodes, or the demos and betas. */
+export type FreeCategory = "games" | "demos";
+
+/** The free versions of one category, in catalog order (PLAN.md §2.3). */
+export function FreeGames({ category, games }: { category: FreeCategory; games: Game[] }) {
+  const { t } = useTranslation();
+  const free = useFreeGames();
+  const shown = (free.data ?? [])
+    .map((f) => {
+      const game = games.find((g) => g.id === f.gameId);
+      const version = game?.versions.find((v) => v.id === f.versionId);
+      return { free: f, game, kind: version?.kind ?? "release" };
+    })
+    .filter(({ kind }) => (category === "games") === (kind === "release"))
+    .sort((a, b) => games.indexOf(a.game!) - games.indexOf(b.game!));
+
+  return (
+    <div className="grid gap-4">
+      <p className="max-w-2xl text-sm text-muted">{t(`discover.free.intro.${category}`)}</p>
+      {free.error && <Notice tone="error">{errorMessage(t, free.error)}</Notice>}
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
+        {shown.map(({ free: f, game }) => (
+          <li key={f.versionId}>
+            <FreeGameCard free={f} game={game} games={games} />
+          </li>
+        ))}
+      </ul>
+      <p className="max-w-2xl text-xs text-muted">{t(`discover.free.terms.${category}`)}</p>
+    </div>
+  );
+}
+
+function FreeGameCard({
+  free,
+  game,
+  games,
+}: {
+  free: FreeGame;
+  game: Game | undefined;
+  games: Game[];
+}) {
+  const { t } = useTranslation();
+  const version = game?.versions.find((v) => v.id === free.versionId);
+  const kind = version?.kind ?? "release";
+
+  return (
+    <Card className="flex h-full flex-col">
+      <Cover gameId={free.gameId} game={game} className="h-20 text-3xl" />
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div className="grid gap-1">
+          <h2 className="leading-tight font-semibold">{gameTitle(games, free.gameId)}</h2>
+          <p className="text-xs text-muted">{version?.label ?? free.versionId}</p>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {version?.shareware && <Badge>{t("profile.shareware")}</Badge>}
+          {kind !== "release" && <Badge>{t(`discover.free.kind.${kind}`)}</Badge>}
+          {free.installed && <Badge>{t("discover.installed")}</Badge>}
+        </div>
+        <p className="text-sm">
+          {t(`discover.free.about.${free.versionId}`, { defaultValue: "" })}
+        </p>
+        <div className="mt-auto grid grid-cols-1 gap-2 pt-1">
+          <FreeGameAction
+            free={free}
+            label={`${gameTitle(games, free.gameId)} (${version?.label})`}
+          />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function FreeGameAction({ free, label }: { free: FreeGame; label: string }) {
+  const { t } = useTranslation();
+  const job = useJob("freeGame", free.versionId);
+  const start = useStartJob((versionId: string) => commands.installFreeGame(versionId));
+  const profiles = useQuery({
+    queryKey: profilesKey,
+    queryFn: () => unwrap(commands.listProfiles()),
+    enabled: free.installed,
+  });
+
+  if (job && !isFinished(job)) return <JobRow job={job} label={label} />;
+  if (free.installed) {
+    // The game's own play profile, not one of a mod played on it.
+    const profile = profiles.data?.find((p) => p.versionId === free.versionId && !p.modId);
+    return profile ? (
+      <Link
+        to="/profiles/$profileId"
+        params={{ profileId: profile.id }}
+        className="text-sm text-ink underline underline-offset-2"
+      >
+        {t("discover.openDetails")}
+      </Link>
+    ) : null;
+  }
+  return (
+    <>
+      {job?.phase === "failed" && <JobRow job={job} label={label} />}
+      <Button onClick={() => start.mutate(free.versionId)} disabled={start.isPending}>
+        <Download className="size-4" aria-hidden />
+        {t("discover.free.download", { size: formatMegabytes(free.size) })}
+      </Button>
+    </>
+  );
+}

@@ -10,6 +10,7 @@ mod dosconf;
 mod downloads;
 mod error;
 mod firing;
+mod free_games;
 mod jobs;
 mod keenwiki;
 mod launcher;
@@ -24,7 +25,6 @@ mod recipe;
 mod runtime;
 mod saves;
 mod settings;
-mod shareware;
 mod source;
 mod storage;
 mod stores;
@@ -102,8 +102,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::set_custom_runtime,
             commands::list_jobs,
             commands::clear_finished_jobs,
-            commands::free_episodes,
-            commands::install_free_episode,
+            commands::free_games,
+            commands::install_free_game,
             commands::scan_stores,
             commands::import_store_games,
             commands::setup_status,

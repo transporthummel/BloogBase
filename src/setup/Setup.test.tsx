@@ -30,8 +30,8 @@ vi.mock("../bindings", () => {
       installRuntime: vi.fn(),
       setCustomRuntime: vi.fn(),
       listJobs: vi.fn(),
-      freeEpisodes: vi.fn(),
-      installFreeEpisode: vi.fn(),
+      freeGames: vi.fn(),
+      installFreeGame: vi.fn(),
       scanStores: vi.fn(),
       importStoreGames: vi.fn(),
       importGames: vi.fn(),
@@ -62,10 +62,10 @@ const missing: RuntimeStatus = {
   downloadAvailable: true,
 };
 
-const job = (gameId: string): Job => ({
+const job = (versionId: string): Job => ({
   id: 1,
-  kind: "shareware",
-  subject: gameId,
+  kind: "freeGame",
+  subject: versionId,
   phase: "downloading",
   received: 0,
   total: 0,
@@ -130,7 +130,7 @@ const indexMod = (id: string, gameId: string, requires: string[]): IndexMod => {
 };
 
 test("walks through all steps, skipping each, and finishes", async () => {
-  vi.mocked(commands.freeEpisodes).mockResolvedValue({ status: "ok", data: [] });
+  vi.mocked(commands.freeGames).mockResolvedValue({ status: "ok", data: [] });
   vi.mocked(commands.scanStores).mockResolvedValue({ status: "ok", data: [] });
   renderSetup();
   const user = userEvent.setup();
@@ -175,32 +175,34 @@ test("skipping setup refreshes the cached status before leaving", async () => {
 
 test("downloads the chosen free episodes as jobs", async () => {
   setSetupStep("episodes");
-  vi.mocked(commands.freeEpisodes).mockResolvedValue({
+  vi.mocked(commands.freeGames).mockResolvedValue({
     status: "ok",
     data: [
-      { gameId: "keen1", versionId: "keen1-1.31", size: 150934, installed: false },
-      { gameId: "keen4", versionId: "keen4-1.4-ega", size: 631332, installed: true },
+      { gameId: "keen1", versionId: "keen1-1.31", setup: true, size: 150934, installed: false },
+      { gameId: "keen4", versionId: "keen4-1.4-ega", setup: true, size: 631332, installed: true },
+      // Only on the Discover page.
+      { gameId: "keen4", versionId: "keen4-1.4-cga", setup: false, size: 437372, installed: false },
     ],
   });
-  vi.mocked(commands.installFreeEpisode).mockImplementation((id) => Promise.resolve(job(id)));
+  vi.mocked(commands.installFreeGame).mockImplementation((id) => Promise.resolve(job(id)));
   vi.mocked(commands.scanStores).mockResolvedValue({ status: "ok", data: [] });
   renderSetup();
   const user = userEvent.setup();
 
   expect(await screen.findByText("In your library")).toBeInTheDocument();
   await user.click(await screen.findByRole("button", { name: "Download 1 episode" }));
-  expect(commands.installFreeEpisode).toHaveBeenCalledTimes(1);
-  expect(commands.installFreeEpisode).toHaveBeenCalledWith("keen1");
+  expect(commands.installFreeGame).toHaveBeenCalledTimes(1);
+  expect(commands.installFreeGame).toHaveBeenCalledWith("keen1-1.31");
   expect(await screen.findByRole("heading", { name: "Try a mod" })).toBeInTheDocument();
 });
 
 test("doesn't preselect free episodes whose full version is in the library", async () => {
   setSetupStep("episodes");
-  vi.mocked(commands.freeEpisodes).mockResolvedValue({
+  vi.mocked(commands.freeGames).mockResolvedValue({
     status: "ok",
     data: [
-      { gameId: "keen1", versionId: "keen1-1.31", size: 150934, installed: false },
-      { gameId: "keen4", versionId: "keen4-1.4-ega", size: 631332, installed: false },
+      { gameId: "keen1", versionId: "keen1-1.31", setup: true, size: 150934, installed: false },
+      { gameId: "keen4", versionId: "keen4-1.4-ega", setup: true, size: 631332, installed: false },
     ],
   });
   vi.mocked(commands.listInstalls).mockResolvedValue({
@@ -217,14 +219,14 @@ test("doesn't preselect free episodes whose full version is in the library", asy
       },
     ],
   });
-  vi.mocked(commands.installFreeEpisode).mockImplementation((id) => Promise.resolve(job(id)));
+  vi.mocked(commands.installFreeGame).mockImplementation((id) => Promise.resolve(job(id)));
   renderSetup();
   const user = userEvent.setup();
 
   expect(await screen.findByText("Full version in your library")).toBeInTheDocument();
   await user.click(await screen.findByRole("button", { name: "Download 1 episode" }));
-  expect(commands.installFreeEpisode).toHaveBeenCalledTimes(1);
-  expect(commands.installFreeEpisode).toHaveBeenCalledWith("keen1");
+  expect(commands.installFreeGame).toHaveBeenCalledTimes(1);
+  expect(commands.installFreeGame).toHaveBeenCalledWith("keen1-1.31");
 });
 
 test("still preselects a free episode when only its demo is in the library", async () => {
@@ -238,9 +240,11 @@ test("still preselects a free episode when only its demo is in the library", asy
     kind: "demo",
   });
   vi.mocked(commands.listGames).mockResolvedValue([keen4]);
-  vi.mocked(commands.freeEpisodes).mockResolvedValue({
+  vi.mocked(commands.freeGames).mockResolvedValue({
     status: "ok",
-    data: [{ gameId: "keen4", versionId: "keen4-1.4-ega", size: 631332, installed: false }],
+    data: [
+      { gameId: "keen4", versionId: "keen4-1.4-ega", setup: true, size: 631332, installed: false },
+    ],
   });
   vi.mocked(commands.listInstalls).mockResolvedValue({
     status: "ok",
@@ -292,11 +296,11 @@ test("imports the games found in Steam and GOG folders", async () => {
 
 test("suggests featured mods for games on their way and queues the picked ones", async () => {
   setSetupStep("mods");
-  vi.mocked(commands.freeEpisodes).mockResolvedValue({
+  vi.mocked(commands.freeGames).mockResolvedValue({
     status: "ok",
-    data: [{ gameId: "keen1", versionId: "keen1-1.31", size: 1, installed: false }],
+    data: [{ gameId: "keen1", versionId: "keen1-1.31", setup: true, size: 1, installed: false }],
   });
-  vi.mocked(commands.listJobs).mockResolvedValue([job("keen1")]);
+  vi.mocked(commands.listJobs).mockResolvedValue([job("keen1-1.31")]);
   vi.mocked(commands.indexMods).mockResolvedValue({
     status: "ok",
     data: [
