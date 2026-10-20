@@ -83,6 +83,17 @@ pub fn detect(source: &Source) -> Result<Vec<Detection>> {
     Ok(found)
 }
 
+/// The catalog version of `game` whose files lie at the root of `source`.
+pub fn identify(source: &Source, game: &Game) -> Result<Option<String>> {
+    let files = source.files()?;
+    let by_name: HashMap<String, &str> = files
+        .iter()
+        .filter(|rel| split_dir(rel).0.is_empty())
+        .map(|rel| (rel.to_ascii_uppercase(), rel.as_str()))
+        .collect();
+    identify_version(source, game, &by_name)
+}
+
 fn identify_version(
     source: &Source,
     game: &Game,

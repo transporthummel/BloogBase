@@ -191,6 +191,9 @@ pub fn run() {
 
             let db = Db::open(&paths.database)?;
             tracing::info!("database ready, schema version {}", db.schema_version()?);
+            if let Err(e) = library::identify_unknown(&paths, &db) {
+                tracing::warn!("could not check unknown game versions: {e}");
+            }
 
             let index = ModIndex::open(&paths, mod_index::configured_url());
             tracing::info!("mod index source: {}", index.status().url);

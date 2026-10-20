@@ -13,7 +13,7 @@ use crate::backups::{self, Contents, Reason};
 use crate::catalog;
 use crate::covers;
 use crate::db::Db;
-use crate::detect::{Detection, detect};
+use crate::detect::{self, Detection, detect};
 use crate::error::{Error, Result};
 use crate::mods;
 use crate::paths::AppPaths;
@@ -276,6 +276,44 @@ pub fn remove(
     Ok(())
 }
 
+/// Gives installs of an unknown version the catalog version their files now
+/// match, e.g. after an update taught the catalog more releases.
+pub fn identify_unknown(paths: &AppPaths, db: &Db) -> Result<()> {
+    identify_unknown_with(paths, db, |id| catalog::game(id).cloned())
+}
+
+fn identify_unknown_with(
+    paths: &AppPaths,
+    db: &Db,
+    game_of: impl Fn(&str) -> Option<catalog::Game>,
+) -> Result<()> {
+    let mut found = false;
+    for install in list(db)?.into_iter().filter(|i| i.version_id.is_none()) {
+        let Some(game) = game_of(&install.game_id) else {
+            continue;
+        };
+        let base = paths.library.join(&install.id).join("base");
+        let version = match Source::open(&base).and_then(|s| detect::identify(&s, &game)) {
+            Ok(Some(v)) => v,
+            Ok(None) => continue,
+            Err(e) => {
+                tracing::warn!("could not check the version of {}: {e}", install.id);
+                continue;
+            }
+        };
+        db.conn().execute(
+            "UPDATE installs SET version_id = ?1 WHERE id = ?2",
+            params![version, install.id],
+        )?;
+        tracing::info!("{} is {version}", install.id);
+        found = true;
+    }
+    if found {
+        mods::rehome(db, None)?;
+    }
+    Ok(())
+}
+
 pub fn list(db: &Db) -> Result<Vec<Install>> {
     let conn = db.conn();
     let mut stmt = conn.prepare(
@@ -341,6 +379,25 @@ mod tests {
             .collect();
         v.sort();
         v
+    }
+
+    #[test]
+    fn identifies_unknown_versions_the_catalog_learned() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("Keen 4");
+        write_folder(&src, KEEN4);
+        let id = import(&paths, &db, &src).unwrap()[0].id.clone();
+        let version = || list(&db).unwrap()[0].version_id.clone();
+        assert_eq!(version(), None);
+
+        let mut taught = catalog::game("keen4").unwrap().clone();
+        let exe = fs::read(paths.library.join(&id).join("base/KEEN4E.EXE")).unwrap();
+        taught.versions.truncate(1);
+        taught.versions[0].files = [("KEEN4E.EXE".to_string(), detect::sha256_hex(&exe))].into();
+        identify_unknown_with(&paths, &db, |_| None).unwrap();
+        assert_eq!(version(), None);
+        identify_unknown_with(&paths, &db, |_| Some(taught.clone())).unwrap();
+        assert_eq!(version(), Some(taught.versions[0].id.clone()));
     }
 
     #[test]
