@@ -2,7 +2,7 @@
 //! `corpus` runs against a local folder of them.
 
 use keen_graphics::huffman::Dictionary;
-use keen_graphics::{Image, egagraph::EgaGraph, ilbm, lzexe, slib, vorticons};
+use keen_graphics::{Image, egagraph::EgaGraph, ilbm, lzexe, pklite, slib, vorticons};
 
 /// Root: 0 -> 'A', 1 -> node 253; node 253: 0 -> 'B', 1 -> 'C'.
 fn dictionary() -> Vec<u8> {
@@ -316,6 +316,21 @@ fn lzexe_unpacks_to_a_runnable_executable() {
     exe[0x1C..0x20].copy_from_slice(b"LZ91");
     exe.extend(image);
 
+    // Also without the signature (Keen 6 1.5), told by the unpacker code
+    // at the entry point.
+    let mut unsigned = exe.clone();
+    unsigned[0x1C..0x20].fill(0);
+    unsigned[0x14..0x16].copy_from_slice(&word(0x0E));
+    let unpacker = [
+        0x06, 0x0E, 0x1F, 0x8B, 0x0E, 0x0C, 0x00, 0x8B, 0xF1, 0x4E, 0x89, 0xF7, 0x8C, 0xDB, 0x03,
+        0x1E, 0x0A, 0x00,
+    ];
+    unsigned[0x30 + 0x0E..0x30 + 0x0E + unpacker.len()].copy_from_slice(&unpacker);
+    assert!(lzexe::is_lzexe91(&unsigned));
+    assert_eq!(lzexe::load_image(&unsigned).unwrap(), b"AB");
+    unsigned[0x14..0x16].copy_from_slice(&word(0));
+    assert!(!lzexe::is_lzexe91(&unsigned));
+
     let out = lzexe::unpack_exe(&exe).unwrap();
     let field = |i: usize| u16::from_le_bytes([out[i * 2], out[i * 2 + 1]]);
     assert_eq!(out.len(), 0x200 + 2);
@@ -335,4 +350,25 @@ fn lzexe_unpacks_to_a_runnable_executable() {
 
     // Unpacked executables stay as they are.
     assert_eq!(lzexe::unpack_exe(&out).unwrap(), out);
+}
+
+#[test]
+fn pklite_unpacks_the_load_image() {
+    let mut exe = vec![0u8; 0x80];
+    exe[..2].copy_from_slice(b"MZ");
+    exe[8] = 2; // header paragraphs
+    exe[0x1C..0x20].copy_from_slice(&[0x05, 0x21, b'P', b'K']); // 1.05, large
+    exe[0x20 + 0x4E] = 0x16; // data at (2 + 0x16 - 0x10) paragraphs
+    // One word of bits: literal, literal, copy (length 5: 0010, distance
+    // high byte 0: 1), copy (escape 011100), first bit first. Bytes follow
+    // in the order they are read: "A", "B", distance low byte 2, end mark.
+    let bits = [0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0];
+    let word: u16 = bits.iter().rev().fold(0, |w, &b| (w << 1) | b);
+    exe.extend(word.to_le_bytes());
+    exe.extend([b'A', b'B', 2, 0xFF]);
+
+    assert!(pklite::is_pklite(&exe));
+    assert_eq!(keen_graphics::load_image(&exe).unwrap(), b"ABABABA");
+    exe[0x1D] = 0x01; // small model
+    assert!(keen_graphics::load_image(&exe).is_err());
 }

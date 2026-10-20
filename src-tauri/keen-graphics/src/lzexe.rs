@@ -7,9 +7,21 @@
 
 use crate::Error;
 
-/// Whether `exe` is packed with LZEXE 0.91 (`LZ91` in the MZ header).
+/// The start of LZEXE 0.91's unpacker, at its entry point.
+const UNPACKER: [u8; 18] = [
+    0x06, 0x0E, 0x1F, 0x8B, 0x0E, 0x0C, 0x00, 0x8B, 0xF1, 0x4E, 0x89, 0xF7, 0x8C, 0xDB, 0x03, 0x1E,
+    0x0A, 0x00,
+];
+
+/// Whether `exe` is packed with LZEXE 0.91: `LZ91` in the MZ header, or its
+/// unpacker where the program starts (Keen 6 1.5 has the signature wiped).
 pub fn is_lzexe91(exe: &[u8]) -> bool {
-    exe.len() > 0x20 && exe.starts_with(b"MZ") && &exe[0x1C..0x20] == b"LZ91"
+    if exe.len() <= 0x20 || !exe.starts_with(b"MZ") {
+        return false;
+    }
+    let word = |at: usize| usize::from(u16::from_le_bytes([exe[at], exe[at + 1]]));
+    let entry = (word(8) + word(0x16)) * 16 + word(0x14);
+    &exe[0x1C..0x20] == b"LZ91" || exe.get(entry..entry + UNPACKER.len()) == Some(&UNPACKER)
 }
 
 /// The unpacked load image, or the load image as is if it isn't packed.

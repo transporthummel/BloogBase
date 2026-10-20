@@ -16,6 +16,7 @@ pub mod egagraph;
 pub mod huffman;
 pub mod ilbm;
 pub mod lzexe;
+pub mod pklite;
 pub mod slib;
 pub mod vorticons;
 
@@ -118,10 +119,12 @@ pub fn galaxy_title(
     egahead: Option<&[u8]>,
     egadict: Option<&[u8]>,
 ) -> Result<Image, Error> {
-    let image = lzexe::load_image(exe)?;
+    let image = load_image(exe)?;
     let graph = match egahead {
         Some(head) => egagraph::EgaGraph::from_files(egagraph, head, 3, egadict, &image)?,
-        None => egagraph::EgaGraph::from_exe(egagraph, &image, 3)?,
+        // The Keen 4 special demo still has 4-byte offsets, like Keen Dreams.
+        None => egagraph::EgaGraph::from_exe(egagraph, &image, 3)
+            .or_else(|_| egagraph::EgaGraph::from_exe(egagraph, &image, 4))?,
     };
     graph.title()
 }
@@ -129,4 +132,13 @@ pub fn galaxy_title(
 /// The title screen of Keen Dreams 1.13 from `KDREAMS.CMP`.
 pub fn dreams_title(cmp: &[u8]) -> Result<Image, Error> {
     ilbm::decode(&slib::entry(cmp, "TITLESCR.LBM")?)
+}
+
+/// The load image of a DOS executable, unpacked if LZEXE or PKLITE packed it.
+pub fn load_image(exe: &[u8]) -> Result<Vec<u8>, Error> {
+    if pklite::is_pklite(exe) {
+        pklite::load_image(exe)
+    } else {
+        lzexe::load_image(exe)
+    }
 }
