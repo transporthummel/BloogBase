@@ -204,9 +204,11 @@ export function Library() {
           return (
             <section key={group.key} aria-label={grouped ? title : undefined}>
               {grouped && (
-                <h2 className="mb-3 font-semibold">
-                  {title}{" "}
-                  <span className="text-sm font-normal text-muted">{group.profiles.length}</span>
+                <h2 className="mb-3 flex items-center gap-2 font-semibold">
+                  {title}
+                  <span className="min-w-6 rounded-full border border-border bg-surface-raised px-2 text-center font-pixel text-[0.6rem] leading-5 text-muted">
+                    {group.profiles.length}
+                  </span>
                 </h2>
               )}
               <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-4">
