@@ -21,6 +21,7 @@
       "requiredFiles": ["EGAHEAD.CK1", "EGALATCH.CK1", "EGASPRIT.CK1", "LEVEL01.CK1", "SOUNDS.CK1"],
       "saves": ["SAVED?.CK1"],
       "stateFiles": ["CTLPANEL.CK1", "SCORES.CK1"],
+      "preferredVersions": ["keen1-1.31", "keen1-1.32", "keen1-1.34", "keen1-1.3", "keen1-1.1", "keen1-beta-dec", "keen1-beta-nov"],
       "versions": [
         {
           "id": "keen1-beta-nov",
@@ -81,6 +82,7 @@
       "requiredFiles": ["EGAHEAD.CK2", "EGALATCH.CK2", "EGASPRIT.CK2", "LEVEL01.CK2"],
       "saves": ["SAVED?.CK2"],
       "stateFiles": ["CTLPANEL.CK2", "SCORES.CK2"],
+      "preferredVersions": ["keen2-1.31", "keen2-1.0"],
       "versions": [
         {
           "id": "keen2-1.0",
@@ -106,6 +108,7 @@
       "requiredFiles": ["EGAHEAD.CK3", "EGALATCH.CK3", "EGASPRIT.CK3", "LEVEL01.CK3"],
       "saves": ["SAVED?.CK3"],
       "stateFiles": ["CTLPANEL.CK3", "SCORES.CK3"],
+      "preferredVersions": ["keen3-1.31", "keen3-1.0"],
       "versions": [
         {
           "id": "keen3-1.0",
@@ -132,6 +135,7 @@
       "requiredFiles": ["GAMEMAPS.CK4", "AUDIO.CK4|AUDIOT.CK4"],
       "saves": ["SAVEGAM?.CK4"],
       "stateFiles": ["CONFIG.CK4"],
+      "preferredVersions": ["keen4-1.4-ega", "keen4-1.4-ega-formgen", "keen4-1.4-ega-gt", "keen4-1.2-ega", "keen4-1.1-ega", "keen4-1.0-ega", "keen4-1.4-cga", "keen4-1.4-cga-formgen", "keen4-1.1-cga", "keen4-1.0-cga", "keen4-demo"],
       "versions": [
         {
           "id": "keen4-demo",
@@ -215,6 +219,7 @@
       "requiredFiles": ["GAMEMAPS.CK5", "AUDIO.CK5"],
       "saves": ["SAVEGAM?.CK5"],
       "stateFiles": ["CONFIG.CK5"],
+      "preferredVersions": ["keen5-1.4-ega", "keen5-1.4-ega-gt", "keen5-1.0-ega", "keen5-1.4-cga"],
       "versions": [
         {
           "id": "keen5-1.0-ega",
@@ -253,6 +258,7 @@
       "requiredFiles": ["GAMEMAPS.CK6", "AUDIO.CK6"],
       "saves": ["SAVEGAM?.CK6"],
       "stateFiles": ["CONFIG.CK6"],
+      "preferredVersions": ["keen6-1.4-ega", "keen6-1.5-ega", "keen6-1.0", "keen6-1.4-cga", "keen6-1.5-cga", "keen6-1.0-cga", "keen6-promo", "keen6-demo"],
       "versions": [
         {
           "id": "keen6-demo",
@@ -331,6 +337,7 @@
       "requiredFiles": ["KDREAMS.MAP|GAMEMAPS.KDR", "KDREAMS.AUD|AUDIO.KDR"],
       "saves": ["SAVEGAM?.KDR", "SAVEGM?.KDR"],
       "stateFiles": ["CONFIG.KDR", "KDREAMS.CFG"],
+      "preferredVersions": ["kdreams-1.93-anthology", "kdreams-1.13", "kdreams-1.01", "kdreams-1.93", "kdreams-1.92", "kdreams-1.0"],
       "versions": [
         {
           "id": "kdreams-1.0",

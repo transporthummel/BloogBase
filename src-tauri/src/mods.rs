@@ -753,23 +753,25 @@ fn fits_version(game: &Game, requires: &[String], version_id: &str) -> bool {
             .is_some_and(|o| requires.contains(o))
 }
 
-/// Lower is better: an original release, a third-party build of it, an
-/// unknown version.
-fn fit_rank(game: &Game, requires: Option<&[String]>, install: &Install) -> u8 {
+/// Lower is better, among installs a mod [`fits`]: a release, a
+/// third-party build, an unknown version; then the game's preferred
+/// versions. `bestFit` in catalog.ts mirrors it.
+fn fit_rank(game: &Game, install: &Install) -> (u8, usize) {
     match &install.version_id {
-        Some(v) if version(game, v).is_some_and(GameVersion::modified) => 1,
-        Some(v) if requires.is_none_or(|r| fits_version(game, r, v)) => 0,
-        Some(_) => 1,
-        None => 2,
+        Some(v) => (
+            u8::from(version(game, v).is_some_and(GameVersion::modified)),
+            game.preference(v),
+        ),
+        None => (2, 0),
     }
 }
 
-/// The install a mod fits best, if any.
+/// The install a mod fits best, if any; on a tie the one added first.
 fn best_install(db: &Db, game: &Game, requires: Option<&[String]>) -> Result<Option<Install>> {
     Ok(library::list(db)?
         .into_iter()
         .filter(|i| fits(game, requires, i))
-        .min_by_key(|i| fit_rank(game, requires, i)))
+        .min_by_key(|i| fit_rank(game, i)))
 }
 
 /// e.g. `Commander Keen 4: Secret of the Oracle (v1.4 EGA)`.
@@ -818,7 +820,7 @@ pub fn rehome(db: &Db, except: Option<&str>) -> Result<Vec<String>> {
         let target = installs
             .iter()
             .filter(|i| fits(game, requires.as_deref(), i))
-            .min_by_key(|i| fit_rank(game, requires.as_deref(), i));
+            .min_by_key(|i| fit_rank(game, i));
         let target = target.map(|i| i.id.as_str());
         let changed = db.conn().execute(
             "UPDATE profiles SET install_id = ?2, composed_hash = NULL
@@ -1741,9 +1743,23 @@ mod tests {
         // A patch naming versions the catalog doesn't know.
         assert!(!fits(k6, Some(&[]), &install(Some("keen6-1.0"))));
         assert!(!fits(catalog::game("keen4").unwrap(), None, &install(None)));
-        let rank = |v| fit_rank(k6, Some(&v10), &install(v));
+        let rank = |v| fit_rank(k6, &install(v));
         assert!(rank(Some("keen6-1.0")) < rank(Some("keen6-1.0-nocp")));
         assert!(rank(Some("keen6-1.0-nocp")) < rank(None));
+        // Releases by the game's preferred versions, builds after all of them.
+        assert!(rank(Some("keen6-1.4-ega")) < rank(Some("keen6-1.5-ega")));
+        assert!(rank(Some("keen6-1.5-ega")) < rank(Some("keen6-1.0")));
+        assert!(rank(Some("keen6-demo")) < rank(Some("keen6-1.5-ega-nocp")));
+        assert!(rank(Some("keen6-1.5-ega-nocp")) < rank(Some("keen6-1.0-nocp")));
+        let k1 = catalog::game("keen1").unwrap();
+        let k1_rank = |v: &str| {
+            let i = Install {
+                game_id: "keen1".into(),
+                ..install(Some(v))
+            };
+            fit_rank(k1, &i)
+        };
+        assert!(k1_rank("keen1-1.1") < k1_rank("keen1-beta-dec"));
         // Same game files as the original: as good as it.
         let kdreams = catalog::game("kdreams").unwrap();
         let v193 = vec!["kdreams-1.93".to_string()];
@@ -1752,7 +1768,7 @@ mod tests {
             ..install(Some("kdreams-1.93-anthology"))
         };
         assert!(fits(kdreams, Some(&v193), &anthology));
-        assert_eq!(fit_rank(kdreams, Some(&v193), &anthology), 0);
+        assert_eq!(fit_rank(kdreams, &anthology), (0, 0));
     }
 
     #[test]

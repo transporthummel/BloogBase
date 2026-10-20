@@ -315,6 +315,12 @@ export type Game = {
 	 *  need are assumed to need this one.
 	 */
 	moddingVersion?: string | null,
+	/**
+	 *  Where mods go when several copies fit, best first (PLAN.md §5).
+	 *  Lists every release but third-party builds, which rank like their
+	 *  original, though after every release.
+	 */
+	preferredVersions?: string[],
 };
 
 export type GameVersion = {

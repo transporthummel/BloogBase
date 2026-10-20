@@ -4,7 +4,7 @@ import { FileArchive, FolderOpen } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Install, type KeenwikiOrigin, type Mod, type ModInfo } from "../bindings";
-import { gameTitle, isModified, useGames } from "../catalog";
+import { bestFit, gameTitle, isModified, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { installsKey } from "../library/queries";
@@ -126,13 +126,7 @@ function Confirm({
     const v = versionOf(i);
     return v !== undefined && (v.original ?? v.id) === assumedVersion?.id;
   };
-  // Prefer an install whose version is known to fit, then an unmodified one.
-  const fallback =
-    candidates.find((i) => i.versionId !== null && option.versionIds.includes(i.versionId)) ??
-    candidates.find((i) => isAssumed(i) && !isModified(versionOf(i))) ??
-    candidates.find((i) => !isModified(versionOf(i))) ??
-    candidates[0];
-  const target = candidates.find((i) => i.id === installId) ?? fallback;
+  const target = candidates.find((i) => i.id === installId) ?? bestFit(game, candidates);
   const versionLabel = (i: Install) => versionOf(i)?.label ?? t("library.unknownVersion");
   // Unknown versions get no warning: they may well be the right one.
   const likelyWrongVersion =

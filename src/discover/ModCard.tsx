@@ -4,7 +4,7 @@ import { Download, ExternalLink, RefreshCw } from "lucide-react";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Game, type IndexMod, type Install } from "../bindings";
-import { gameTitle } from "../catalog";
+import { bestFit, gameTitle } from "../catalog";
 import { formatMegabytes } from "../format";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
@@ -111,7 +111,12 @@ function InstallAction({
   const [confirming, setConfirming] = useState(false);
   const candidates = fitting(entry, installs, games);
   const [installId, setInstallId] = useState<string | null>(null);
-  const target = candidates.find((i) => i.id === installId) ?? candidates[0];
+  const target =
+    candidates.find((i) => i.id === installId) ??
+    bestFit(
+      games.find((g) => g.id === entry.game),
+      candidates,
+    );
   const versionLabel = (i: Install) =>
     games.find((g) => g.id === i.gameId)?.versions.find((v) => v.id === i.versionId)?.label ??
     t("library.unknownVersion");
@@ -144,7 +149,7 @@ function InstallAction({
       </>
     );
   }
-  if (candidates.length === 0) {
+  if (!target) {
     const versions = requiredLabels(entry, games);
     const game = versions.length
       ? `${gameTitle(games, entry.game)} (${versions.join(", ")})`
@@ -195,7 +200,7 @@ function InstallAction({
           <span className="text-muted">{t("mods.playOn")}</span>
           <select
             className="rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-sm"
-            value={target?.id}
+            value={target.id}
             onChange={(e) => setInstallId(e.target.value)}
           >
             {candidates.map((i) => (

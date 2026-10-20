@@ -34,6 +34,11 @@ pub struct Game {
     /// need are assumed to need this one.
     #[serde(default)]
     pub modding_version: Option<String>,
+    /// Where mods go when several copies fit, best first (PLAN.md §5).
+    /// Lists every release but third-party builds, which rank like their
+    /// original, though after every release.
+    #[serde(default)]
+    pub preferred_versions: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Type)]
@@ -109,6 +114,20 @@ impl Game {
             .chain(&self.state_files)
             .any(|p| glob_match(p, name))
     }
+
+    /// The place of `version_id` in `preferred_versions`; a build takes its
+    /// original's, unlisted versions come last.
+    pub fn preference(&self, version_id: &str) -> usize {
+        let original = self
+            .versions
+            .iter()
+            .find(|v| v.id == version_id)
+            .and_then(|v| v.original.as_deref());
+        self.preferred_versions
+            .iter()
+            .position(|p| p == version_id || Some(p.as_str()) == original)
+            .unwrap_or(self.preferred_versions.len())
+    }
 }
 
 /// Case-insensitive wildcard match supporting `?` (one char) and `*` (any run).
@@ -162,6 +181,16 @@ mod tests {
                     g.id
                 );
             }
+            let mut preferred = g.preferred_versions.clone();
+            preferred.sort();
+            let mut releases: Vec<_> = g
+                .versions
+                .iter()
+                .filter(|v| !v.modified())
+                .map(|v| v.id.clone())
+                .collect();
+            releases.sort();
+            assert_eq!(preferred, releases, "{}: preferred versions", g.id);
             // The first match wins: no version may shadow a later one.
             for (i, a) in g.versions.iter().enumerate() {
                 for b in &g.versions[i + 1..] {
