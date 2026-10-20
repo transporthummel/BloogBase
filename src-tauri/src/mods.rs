@@ -1686,8 +1686,11 @@ mod tests {
         assert_eq!(profiles::get(&db, "aurora").unwrap().0.missing_game, None);
         assert_eq!(install_of(&k5_mod.profile_id), None);
 
-        // Removing it moves the mod to another copy, else it waits again.
-        library::import(&paths, &db, &src).unwrap();
+        // Removing it moves the mod to another release, else it waits again.
+        let other = tmp.path().join("k4b");
+        write_folder(&other, KEEN4);
+        fs::write(other.join("KEEN4E.EXE"), b"other").unwrap();
+        library::import(&paths, &db, &other).unwrap();
         library::remove(&paths, &db, "keen4-1", false, false).unwrap();
         assert_eq!(install_of("aurora").as_deref(), Some("keen4-2"));
         library::remove(&paths, &db, "keen4-2", false, false).unwrap();

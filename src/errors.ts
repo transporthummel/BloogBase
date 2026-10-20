@@ -5,6 +5,7 @@ import { isCommandError } from "./ipc";
 /** Error kinds with their own friendly message; everything else is generic. */
 const translated: ErrorKind[] = [
   "noGamesFound",
+  "alreadyInLibrary",
   "unsupportedSource",
   "archive",
   "network",

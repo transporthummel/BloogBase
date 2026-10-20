@@ -118,6 +118,7 @@
   },
   "errors": {
     "noGamesFound": "No Commander Keen games were found there.",
+    "alreadyInLibrary": "That is already in your library: {{message}}.",
     "unsupportedSource": "Please choose a folder or a ZIP file.",
     "archive": "The archive could not be read.",
     "network": "The download didn't work. Please check your internet connection and try again.",

@@ -21,6 +21,8 @@ pub enum Error {
     UnsupportedSource(PathBuf),
     #[error("no Commander Keen games found")]
     NoGamesFound,
+    #[error("already in the library: {0}")]
+    AlreadyInLibrary(String),
     #[error("network error: {0}")]
     Network(#[from] reqwest::Error),
     #[error("download failed: HTTP {0}")]
@@ -82,6 +84,7 @@ impl Error {
             Error::Archive(_) => ErrorKind::Archive,
             Error::UnsupportedSource(_) => ErrorKind::UnsupportedSource,
             Error::NoGamesFound => ErrorKind::NoGamesFound,
+            Error::AlreadyInLibrary(_) => ErrorKind::AlreadyInLibrary,
             Error::Network(_) | Error::HttpStatus(_) => ErrorKind::Network,
             Error::ChecksumMismatch { .. } | Error::UnexpectedContent(_) => {
                 ErrorKind::ChecksumMismatch
@@ -120,6 +123,7 @@ pub enum ErrorKind {
     Archive,
     UnsupportedSource,
     NoGamesFound,
+    AlreadyInLibrary,
     Network,
     ChecksumMismatch,
     UnsupportedPlatform,

@@ -118,6 +118,7 @@
   },
   "errors": {
     "noGamesFound": "Dort wurden keine Commander-Keen-Spiele gefunden.",
+    "alreadyInLibrary": "Das ist schon in deiner Bibliothek: {{message}}.",
     "unsupportedSource": "Bitte wähle einen Ordner oder eine ZIP-Datei.",
     "archive": "Das Archiv konnte nicht gelesen werden.",
     "network": "Der Download hat nicht geklappt. Bitte prüfe deine Internetverbindung und versuch es noch einmal.",

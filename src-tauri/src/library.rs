@@ -1,5 +1,6 @@
 //! Installed games: import from a folder or ZIP, listing (PLAN.md §4).
 
+use std::collections::HashSet;
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -10,7 +11,7 @@ use serde::Serialize;
 use specta::Type;
 
 use crate::backups::{self, Contents, Reason};
-use crate::catalog;
+use crate::catalog::{self, Game};
 use crate::covers;
 use crate::db::Db;
 use crate::detect::{self, Detection, detect};
@@ -95,6 +96,32 @@ pub fn import_from(
     if detections.is_empty() {
         return Err(Error::NoGamesFound);
     }
+    // The same release twice only makes a second copy of the same files.
+    let mut have = release_keys(paths, db)?;
+    let mut skipped = Vec::new();
+    let mut fresh = Vec::new();
+    for d in detections {
+        let game = catalog::game(&d.game_id).expect("detections come from the catalog");
+        let key = release_key(game, d.version_id.as_deref(), |name| {
+            d.base_files
+                .iter()
+                .find(|rel| split_dir(rel).1.eq_ignore_ascii_case(name))
+                .map(|rel| source.read(rel))
+                .transpose()
+        })?;
+        if key.is_some_and(|k| !have.insert(k)) {
+            skipped.push(release_name(game, &d));
+        } else {
+            fresh.push(d);
+        }
+    }
+    if fresh.is_empty() {
+        return Err(Error::AlreadyInLibrary(skipped.join(", ")));
+    }
+    for name in &skipped {
+        tracing::info!("not imported again: {name}");
+    }
+    let detections = fresh;
     let installs = detections
         .iter()
         .map(|d| import_one(paths, db, &source, kind, origin, d))
@@ -104,6 +131,57 @@ pub fn import_from(
         tracing::warn!("could not put waiting mods on the new games: {e}");
     }
     Ok(installs)
+}
+
+/// What tells releases apart: the catalog version, else the executable.
+fn release_key(
+    game: &Game,
+    version_id: Option<&str>,
+    read: impl Fn(&str) -> Result<Option<Vec<u8>>>,
+) -> Result<Option<String>> {
+    if let Some(v) = version_id {
+        return Ok(Some(v.to_string()));
+    }
+    for exe in &game.executables {
+        if let Some(data) = read(exe)? {
+            return Ok(Some(format!("{} {}", game.id, detect::sha256_hex(&data))));
+        }
+    }
+    Ok(None)
+}
+
+/// The release keys of everything in the library.
+fn release_keys(paths: &AppPaths, db: &Db) -> Result<HashSet<String>> {
+    let mut keys = HashSet::new();
+    for install in list(db)? {
+        let Some(game) = catalog::game(&install.game_id) else {
+            continue;
+        };
+        let base = paths.library.join(&install.id).join("base");
+        let read = |name: &str| -> Result<Option<Vec<u8>>> {
+            let Ok(entries) = fs::read_dir(&base) else {
+                return Ok(None);
+            };
+            entries
+                .flatten()
+                .find(|e| e.file_name().to_string_lossy().eq_ignore_ascii_case(name))
+                .map(|e| fs::read(e.path()).map_err(Error::from))
+                .transpose()
+        };
+        keys.extend(release_key(game, install.version_id.as_deref(), read)?);
+    }
+    Ok(keys)
+}
+
+fn release_name(game: &Game, d: &Detection) -> String {
+    match d
+        .version_id
+        .as_deref()
+        .and_then(|id| game.versions.iter().find(|v| v.id == id))
+    {
+        Some(v) => format!("{} {}", game.title, v.label),
+        None => game.title.clone(),
+    }
 }
 
 fn import_one(
@@ -456,11 +534,32 @@ mod tests {
     }
 
     #[test]
-    fn importing_twice_gets_a_new_id() {
+    fn the_same_release_is_imported_once() {
         let (tmp, paths, db) = setup();
         let zip = tmp.path().join("keen4.zip");
         write_zip(&zip, KEEN4);
         import(&paths, &db, &zip).unwrap();
+        assert!(matches!(
+            import(&paths, &db, &zip),
+            Err(Error::AlreadyInLibrary(name)) if name == "Commander Keen 4: Secret of the Oracle"
+        ));
+
+        // Another release of the same game gets an id of its own.
+        let other: Vec<(&str, &[u8])> = KEEN4
+            .iter()
+            .map(|&(n, d)| {
+                (
+                    n,
+                    if n == "KEEN4E.EXE" {
+                        b"other".as_slice()
+                    } else {
+                        d
+                    },
+                )
+            })
+            .collect();
+        let zip = tmp.path().join("other.zip");
+        write_zip(&zip, &other);
         let second = import(&paths, &db, &zip).unwrap();
         assert_eq!(second[0].id, "keen4-2");
         assert_eq!(second[0].source, InstallSource::Zip);

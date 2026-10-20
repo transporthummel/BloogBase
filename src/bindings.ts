@@ -263,7 +263,7 @@ export type Dropped = { kind: "games" } | { kind: "mod"; info: ModInfo } | { kin
 export type Engine = "vorticons" | "galaxy" | "dreams";
 
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
-export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload" | "noSavesFound" | "otherGame";
+export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "alreadyInLibrary" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload" | "noSavesFound" | "otherGame";
 
 /**  Where a game or mod stands with the patch. */
 export type Firing = 
