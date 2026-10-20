@@ -76,6 +76,22 @@ pub enum Error {
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 impl Error {
+    /// What the frontend fills into its message for this kind: just the
+    /// details where its own text already says what happened, else the
+    /// whole message.
+    fn detail(&self) -> String {
+        match self {
+            Error::AlreadyInLibrary(s)
+            | Error::MissingGame(s)
+            | Error::OtherGame(s)
+            | Error::IncompatibleInstall(s)
+            | Error::InvalidRuntime(s)
+            | Error::InvalidLocation(s)
+            | Error::UnsupportedDownload(s) => s.clone(),
+            _ => self.to_string(),
+        }
+    }
+
     pub fn kind(&self) -> ErrorKind {
         match self {
             Error::Database(_) | Error::Migration(_) => ErrorKind::Database,
@@ -152,7 +168,8 @@ pub enum ErrorKind {
 #[serde(rename_all = "camelCase")]
 pub struct CommandError {
     pub kind: ErrorKind,
-    /// Technical message in English, for logs and "details" views.
+    /// Technical message in English, for "details" views; for kinds the
+    /// frontend words itself, only the details it fills in.
     pub message: String,
 }
 
@@ -168,7 +185,7 @@ impl CommandError {
     pub fn from_quiet(err: Error) -> Self {
         CommandError {
             kind: err.kind(),
-            message: err.to_string(),
+            message: err.detail(),
         }
     }
 }
@@ -185,6 +202,13 @@ mod tests {
         let cmd: CommandError = err.into();
         assert_eq!(cmd.kind, ErrorKind::Io);
         assert_eq!(cmd.message, "I/O error: disk on fire");
+    }
+
+    #[test]
+    fn worded_kinds_carry_only_their_details() {
+        let cmd: CommandError = Error::AlreadyInLibrary("Keen 1 v1.3".into()).into();
+        assert_eq!(cmd.kind, ErrorKind::AlreadyInLibrary);
+        assert_eq!(cmd.message, "Keen 1 v1.3");
     }
 
     #[test]

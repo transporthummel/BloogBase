@@ -208,7 +208,10 @@ export type BackupSettings = {
 /**  The error shape every command returns to the frontend. */
 export type CommandError = {
 	kind: ErrorKind,
-	/**  Technical message in English, for logs and "details" views. */
+	/**
+	 *  Technical message in English, for "details" views; for kinds the
+	 *  frontend words itself, only the details it fills in.
+	 */
 	message: string,
 };
 
