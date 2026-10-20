@@ -83,7 +83,7 @@ export function ModCard({
             ))}
           </p>
         )}
-        <div className="mt-auto grid gap-2 pt-1">
+        <div className="mt-auto grid grid-cols-1 gap-2 pt-1">
           <InstallAction mod={mod} installs={installs} games={games} size={latest?.size ?? 0} />
         </div>
       </div>
@@ -196,10 +196,10 @@ function InstallAction({
     <>
       {failed}
       {candidates.length > 1 && (
-        <label className="grid gap-1 text-xs">
+        <label className="grid grid-cols-1 gap-1 text-xs">
           <span className="text-muted">{t("mods.playOn")}</span>
           <select
-            className="rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-sm"
+            className="min-w-0 truncate rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-sm"
             value={target.id}
             onChange={(e) => setInstallId(e.target.value)}
           >
