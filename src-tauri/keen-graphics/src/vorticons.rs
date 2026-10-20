@@ -11,6 +11,8 @@ const LATCH_COMPRESSED: u16 = 2;
 
 struct Header<'a> {
     head: &'a [u8],
+    /// How much later than usual the fields from the tile count on are.
+    shift: usize,
     plane_size: usize,
     tiles16: usize,
     tile_count: usize,
@@ -26,24 +28,34 @@ impl<'a> Header<'a> {
         let u32_at = |at: usize| {
             u32::from_le_bytes([head[at], head[at + 1], head[at + 2], head[at + 3]]) as usize
         };
+        // Keen 1 1.32 and later have one more count and location after
+        // the screen graphics', a 64-byte header instead of 48: the bitmap
+        // table starts later.
+        let shift = if u32_at(8) >= 54 { 6 } else { 0 };
+        if head.len() < 48 + shift {
+            return Err(Error::Format("EGAHEAD too short"));
+        }
         Ok(Header {
             head,
+            shift,
             plane_size: u32_at(0),
-            tile_count: u16_at(28),
-            tiles16: u32_at(30),
-            bitmaps: u32_at(36),
+            tile_count: u16_at(28 + shift),
+            tiles16: u32_at(30 + shift),
+            bitmaps: u32_at(36 + shift),
         })
     }
 
     fn compressed(&self) -> bool {
-        u16::from_le_bytes([self.head[46], self.head[47]]) & LATCH_COMPRESSED != 0
+        u16::from_le_bytes([self.head[46 + self.shift], self.head[47 + self.shift]])
+            & LATCH_COMPRESSED
+            != 0
     }
 
     /// Width in bytes, height and location of the first bitmap, the title.
     /// The game picks it by number; mod tools often leave the names blank.
     fn title(&self) -> Option<(usize, usize, usize)> {
         let table = u32::from_le_bytes(self.head[8..12].try_into().ok()?) as usize;
-        let count = u16::from_le_bytes([self.head[34], self.head[35]]);
+        let count = u16::from_le_bytes([self.head[34 + self.shift], self.head[35 + self.shift]]);
         let e = self.head.get(table..table + 16).filter(|_| count > 0)?;
         Some((
             usize::from(u16::from_le_bytes([e[0], e[1]])),

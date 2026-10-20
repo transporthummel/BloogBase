@@ -211,6 +211,19 @@ fn vorticons_title_draws_the_bitmap_over_the_level() {
 
     assert!(keen_graphics::vorticons_title(&head, &latch[..100], &level).is_err());
     assert!(keen_graphics::vorticons_title(&head[..40], &latch, &level).is_err());
+
+    // Keen 1 1.32 and later: 6 more bytes before the tile count, a 64-byte
+    // header, the same picture.
+    let mut long = head[..28].to_vec();
+    long.extend([0; 6]);
+    long.extend(&head[28..48]);
+    long.resize(64, 0);
+    long[8..12].copy_from_slice(&64u32.to_le_bytes());
+    long.extend(&head[48..]);
+    assert_eq!(
+        keen_graphics::vorticons_title(&long, &latch, &level).unwrap(),
+        image
+    );
 }
 
 /// Checks the real games in `$KEEN_GAMES/<folder>` (game folders as in
