@@ -192,11 +192,20 @@ fn dosbox_args(confs: &[String], lower: &str, upper: &str, command: &str) -> Vec
         args.push(conf.clone());
     }
     args.push("--noautoexec".into());
+    // A batch file started without CALL never returns, so `exit` would not run.
+    let is_batch = command
+        .split_whitespace()
+        .next()
+        .is_some_and(|f| f.to_ascii_uppercase().ends_with(".BAT"));
     for cmd in [
         format!("mount C \"{lower}\""),
         format!("mount C \"{upper}\" -t overlay"),
         "C:".into(),
-        command.to_string(),
+        if is_batch {
+            format!("call {command}")
+        } else {
+            command.to_string()
+        },
         "exit".into(),
     ] {
         args.push("-c".into());
@@ -270,6 +279,14 @@ mod tests {
         write_folder(&src, KEEN4);
         library::import(&paths, &db, &src).unwrap();
         (tmp, paths, db)
+    }
+
+    #[test]
+    fn batch_files_are_called_so_dosbox_exits() {
+        let cmd = |c: &str| dosbox_args(&[], "l", "u", c)[10].clone();
+        assert_eq!(cmd("cool1.bat"), "call cool1.bat");
+        assert_eq!(cmd("PLAY.BAT -x"), "call PLAY.BAT -x");
+        assert_eq!(cmd("KEEN1.EXE"), "KEEN1.EXE");
     }
 
     #[test]
