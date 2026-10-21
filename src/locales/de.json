@@ -521,6 +521,7 @@
     "deleteHint": "„{{name}}“ vom {{date}} ist dann endgültig weg.",
     "reason": {
       "beforeLaunch": "Vor dem Spielen",
+      "beforeOverwrite": "Vor dem Überschreiben eines Spielstands",
       "beforeRestore": "Vor dem Wiederherstellen",
       "beforeDelete": "Vor dem Löschen eines Spielstands",
       "modRemoved": "Mod entfernt",

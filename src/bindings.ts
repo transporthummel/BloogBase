@@ -630,7 +630,12 @@ export type Readme = {
  *  Why BloogBase made a backup on its own. Stored in the label column with
  *  a prefix no user label gets.
  */
-export type Reason = "beforeLaunch" | "beforeRestore" | "beforeDelete" | "modRemoved" | "gameRemoved";
+export type Reason = 
+/**
+ *  Kept after the session only if that overwrote a save (§11.1): then
+ *  it becomes [`Reason::BeforeOverwrite`].
+ */
+"beforeLaunch" | "beforeOverwrite" | "beforeRestore" | "beforeDelete" | "modRemoved" | "gameRemoved";
 
 export type Recipe = 
 /**  Run the episode's patcher with a patch file. */

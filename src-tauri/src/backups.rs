@@ -39,7 +39,10 @@ pub const DEFAULT_KEEP: u32 = 10;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub enum Reason {
+    /// Kept after the session only if that overwrote a save (§11.1): then
+    /// it becomes [`Reason::BeforeOverwrite`].
     BeforeLaunch,
+    BeforeOverwrite,
     BeforeRestore,
     BeforeDelete,
     ModRemoved,
@@ -52,6 +55,7 @@ impl Reason {
     fn key(self) -> &'static str {
         match self {
             Reason::BeforeLaunch => "before-launch",
+            Reason::BeforeOverwrite => "before-overwrite",
             Reason::BeforeRestore => "before-restore",
             Reason::BeforeDelete => "before-delete",
             Reason::ModRemoved => "mod-removed",
@@ -67,6 +71,7 @@ impl Reason {
         let key = label.strip_prefix(REASON_PREFIX)?;
         [
             Reason::BeforeLaunch,
+            Reason::BeforeOverwrite,
             Reason::BeforeRestore,
             Reason::BeforeDelete,
             Reason::ModRemoved,
@@ -682,8 +687,8 @@ fn current_saves(game: &Game, layers: &Layers) -> Result<Vec<(String, String)>> 
 }
 
 /// After a session: keeps the backup made before it only if the session
-/// overwrote or lost a save that existed then (§11.1). Returns whether it
-/// was kept.
+/// overwrote or lost a save that existed then (§11.1), and then names it
+/// for that. Returns whether it was kept.
 pub fn after_session(db: &Db, profile_id: &str, backup_id: u32) -> Result<bool> {
     let (profile, layers) = profiles::get(db, profile_id)?;
     let game = saves::game_of(&profile.game_id)?;
@@ -701,7 +706,15 @@ pub fn after_session(db: &Db, profile_id: &str, backup_id: u32) -> Result<bool> 
             let upper = path.to_ascii_uppercase();
             !now.iter().any(|(p, h)| *p == upper && h == hash)
         });
-    if !changed {
+    if changed {
+        db.conn().execute(
+            "UPDATE save_backups SET label = ?1 WHERE id = ?2",
+            params![
+                format!("{REASON_PREFIX}{}", Reason::BeforeOverwrite.key()),
+                backup_id
+            ],
+        )?;
+    } else {
         tracing::debug!("{profile_id} lost no save; dropping backup {backup_id}");
         delete(db, backup_id)?;
     }
@@ -1033,7 +1046,10 @@ mod tests {
         let id = before_launch(&paths, &db, "keen4-1").unwrap();
         fs::remove_file(st.join("SAVEGAM1.CK4")).unwrap();
         assert!(after_session(&db, "keen4-1", id).unwrap());
-        assert_eq!(list(&db, "keen4-1").unwrap().len(), 2);
+        assert_eq!(
+            names(&list(&db, "keen4-1").unwrap()),
+            [Some(Reason::BeforeOverwrite); 2]
+        );
     }
 
     #[test]
@@ -1183,6 +1199,7 @@ mod tests {
     fn reasons_round_trip_through_labels() {
         for r in [
             Reason::BeforeLaunch,
+            Reason::BeforeOverwrite,
             Reason::BeforeRestore,
             Reason::BeforeDelete,
             Reason::ModRemoved,

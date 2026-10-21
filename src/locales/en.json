@@ -521,6 +521,7 @@
     "deleteHint": "“{{name}}” from {{date}} will be gone for good.",
     "reason": {
       "beforeLaunch": "Before playing",
+      "beforeOverwrite": "Before a save was overwritten",
       "beforeRestore": "Before restoring",
       "beforeDelete": "Before deleting a save",
       "modRemoved": "Mod removed",
