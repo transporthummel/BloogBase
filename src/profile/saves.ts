@@ -30,6 +30,16 @@ export function backupTitle(t: TFunction, backup: Backup): string {
   return backup.label ?? t("backups.manual");
 }
 
+/** "3 saves + settings and high scores". */
+export function backupContents(t: TFunction, backup: Backup): string {
+  const parts: string[] = [];
+  if (backup.saves > 0) parts.push(t("backups.holdsSaves", { count: backup.saves }));
+  if (backup.settings > 0) parts.push(t("backups.holdsSettings"));
+  if (backup.other > 0) parts.push(t("backups.holdsOther", { count: backup.other }));
+  const text = parts.join(" + ") || t("backups.holdsNothing");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 /**
  * The save slots an episode has, as file names in the style of `file`:
  * Keen 1-3 use SAVED1-9, the others SAVEGAM0-5 (shown as slots 1-6).

@@ -14,7 +14,7 @@ import { Card } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Notice } from "../ui/Notice";
 import { RestoreDialog } from "./RestoreDialog";
-import { backupTitle, backupsKey, saveSummary, saveTitle, savesKey } from "./saves";
+import { backupContents, backupTitle, backupsKey, saveSummary, saveTitle, savesKey } from "./saves";
 
 /** The save manager of one profile: its saves and their backups (§11). */
 export function SavesPanel({ profile, game }: { profile: Profile; game?: Game }) {
@@ -185,6 +185,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
             {t("backups.import")}
           </Button>
         </form>
+        <p className="-mt-1 text-xs text-muted">{t("backups.backupAllHint")}</p>
         {backups.data?.length === 0 && <p className="text-sm text-muted">{t("backups.empty")}</p>}
         <ul className="grid gap-2">
           {backups.data?.map((b) => (
@@ -196,8 +197,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
                     {b.auto && <Badge>{t("backups.auto")}</Badge>}
                   </h3>
                   <p className="text-xs text-muted">
-                    {formatDateTime(i18n.language, b.createdAt)} ·{" "}
-                    {t("backups.files", { count: b.files.length })}
+                    {formatDateTime(i18n.language, b.createdAt)} · {backupContents(t, b)}
                   </p>
                 </div>
                 <div className="flex gap-1">

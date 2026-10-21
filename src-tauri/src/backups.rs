@@ -13,6 +13,7 @@ use sha2::{Digest, Sha256};
 use specta::Type;
 use zip::write::SimpleFileOptions;
 
+use crate::catalog::Game;
 use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::library::now;
@@ -107,6 +108,11 @@ pub struct Backup {
     pub reason: Option<Reason>,
     pub created_at: u32,
     pub files: Vec<String>,
+    /// Of `files`: the saves, the game's other files (settings, high
+    /// scores), and anything else. Deletion markers count as none of them.
+    pub saves: u32,
+    pub settings: u32,
+    pub other: u32,
     pub auto: bool,
     pub size: u32,
 }
@@ -355,11 +361,36 @@ fn from_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<(Backup, String)> {
             reason,
             created_at: r.get(3)?,
             files: serde_json::from_str(&files).unwrap_or_default(),
+            saves: 0,
+            settings: 0,
+            other: 0,
             auto: r.get(5)?,
             size: fs::metadata(&archive).map_or(0, |m| m.len() as u32),
         },
         archive,
     ))
+}
+
+/// Fills in what kinds of files a backup holds.
+fn tally(game: &Game, mut b: Backup) -> Backup {
+    for file in &b.files {
+        let name = file.rsplit('/').next().unwrap_or(file);
+        if overlay_view::is_marker(name) {
+            continue;
+        }
+        if saves::is_save(game, file) {
+            b.saves += 1;
+        } else if !file.contains('/') && game.is_state_file(name) {
+            b.settings += 1;
+        } else {
+            b.other += 1;
+        }
+    }
+    b
+}
+
+fn game_of_profile(db: &Db, profile_id: &str) -> Result<&'static Game> {
+    saves::game_of(&profiles::get(db, profile_id)?.0.game_id)
 }
 
 fn get_with_archive(db: &Db, id: u32) -> Result<(Backup, String)> {
@@ -370,18 +401,20 @@ fn get_with_archive(db: &Db, id: u32) -> Result<(Backup, String)> {
 }
 
 pub fn get(db: &Db, id: u32) -> Result<Backup> {
-    Ok(get_with_archive(db, id)?.0)
+    let b = get_with_archive(db, id)?.0;
+    Ok(tally(game_of_profile(db, &b.profile_id)?, b))
 }
 
 /// A profile's backups, newest first.
 pub fn list(db: &Db, profile_id: &str) -> Result<Vec<Backup>> {
+    let game = game_of_profile(db, profile_id)?;
     let conn = db.conn();
     let mut stmt = conn.prepare(&format!(
         "{SELECT} WHERE profile_id = ?1 ORDER BY created_at DESC, id DESC"
     ))?;
     let rows = stmt
         .query_map([profile_id], from_row)?
-        .map(|r| r.map(|(b, _)| b))
+        .map(|r| r.map(|(b, _)| tally(game, b)))
         .collect::<rusqlite::Result<_>>()?;
     Ok(rows)
 }
@@ -431,15 +464,17 @@ pub fn saves_in(db: &Db, id: u32) -> Result<Vec<SaveFile>> {
         .collect())
 }
 
-/// Puts a backup's files back into `state/`, after backing up what's there.
-/// With `file`, only that file, written under the name `target` (another
-/// slot) if given. Files not in the backup stay as they are.
+/// Puts a backup's saves back into `state/`, after backing up what's there;
+/// with `include_other`, all its files: settings, high scores and deletion
+/// markers too. With `file`, only that file, written under the name
+/// `target` (another slot) if given. Files not in the backup stay as they are.
 pub fn restore(
     paths: &AppPaths,
     db: &Db,
     id: u32,
     file: Option<&str>,
     target: Option<&str>,
+    include_other: bool,
 ) -> Result<()> {
     let (backup, archive) = get_with_archive(db, id)?;
     let (profile, layers) = profiles::get(db, &backup.profile_id)?;
@@ -448,6 +483,7 @@ pub fn restore(
     let chosen: Vec<(String, &[u8])> = match file {
         None => files
             .iter()
+            .filter(|(n, _)| include_other || saves::is_save(game, n))
             .map(|(n, d)| (n.clone(), d.as_slice()))
             .collect(),
         Some(file) => {
@@ -694,7 +730,7 @@ mod tests {
         fs::write(st.join("SAVEGAM0.CK4"), keen4_save("new")).unwrap();
         fs::write(st.join("SAVEGAM4.CK4"), b"later").unwrap();
 
-        restore(&paths, &db, b.id, None, None).unwrap();
+        restore(&paths, &db, b.id, None, None, false).unwrap();
         assert_eq!(
             fs::read(st.join("SAVEGAM0.CK4")).unwrap(),
             keen4_save("old")
@@ -715,6 +751,7 @@ mod tests {
             b.id,
             Some("SAVEGAM0.CK4"),
             Some("SAVEGAM2.CK4"),
+            false,
         )
         .unwrap();
         assert_eq!(
@@ -723,9 +760,46 @@ mod tests {
         );
         assert!(!st.join("DBOVERLAY_DEL_SAVEGAM2.CK4").exists());
 
-        assert!(restore(&paths, &db, b.id, Some("SAVEGAM0.CK4"), Some("EVIL.EXE")).is_err());
-        assert!(restore(&paths, &db, b.id, Some("nope"), None).is_err());
-        assert!(restore(&paths, &db, 999, None, None).is_err());
+        assert!(
+            restore(
+                &paths,
+                &db,
+                b.id,
+                Some("SAVEGAM0.CK4"),
+                Some("EVIL.EXE"),
+                false
+            )
+            .is_err()
+        );
+        assert!(restore(&paths, &db, b.id, Some("nope"), None, false).is_err());
+        assert!(restore(&paths, &db, 999, None, None, false).is_err());
+    }
+
+    #[test]
+    fn restore_all_leaves_settings_unless_asked() {
+        let (_tmp, paths, db) = setup();
+        let st = state(&paths);
+        fs::write(st.join("SAVEGAM0.CK4"), keen4_save("old")).unwrap();
+        fs::write(st.join("DBOVERLAY_DEL_SAVEGAM3.CK4"), b"empty").unwrap();
+        let b = create(&paths, &db, "keen4-1", Contents::State, Origin::User(None))
+            .unwrap()
+            .unwrap();
+        assert_eq!((b.saves, b.settings, b.other), (1, 1, 0));
+        fs::write(st.join("SAVEGAM0.CK4"), keen4_save("new")).unwrap();
+        fs::write(st.join("config.ck4"), b"changed").unwrap();
+        fs::remove_file(st.join("DBOVERLAY_DEL_SAVEGAM3.CK4")).unwrap();
+
+        restore(&paths, &db, b.id, None, None, false).unwrap();
+        assert_eq!(
+            fs::read(st.join("SAVEGAM0.CK4")).unwrap(),
+            keen4_save("old")
+        );
+        assert_eq!(fs::read(st.join("config.ck4")).unwrap(), b"changed");
+        assert!(!st.join("DBOVERLAY_DEL_SAVEGAM3.CK4").exists());
+
+        restore(&paths, &db, b.id, None, None, true).unwrap();
+        assert_eq!(fs::read(st.join("config.ck4")).unwrap(), b"cfg");
+        assert!(st.join("DBOVERLAY_DEL_SAVEGAM3.CK4").exists());
     }
 
     #[test]
@@ -743,7 +817,7 @@ mod tests {
         .unwrap();
         fs::remove_file(st.join("config.ck4")).unwrap();
         fs::write(st.join("CONFIG.CK4"), b"other").unwrap();
-        restore(&paths, &db, b.id, None, None).unwrap();
+        restore(&paths, &db, b.id, None, None, true).unwrap();
         let names: Vec<String> = fs::read_dir(&st)
             .unwrap()
             .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())

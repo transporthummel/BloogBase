@@ -145,6 +145,9 @@ const backup: Backup = {
   reason: "beforeLaunch",
   createdAt: 1_700_000_000,
   files: ["CONFIG.CK4", "SAVEGAM0.CK4"],
+  saves: 1,
+  settings: 1,
+  other: 0,
   auto: true,
   size: 300,
 };
@@ -540,7 +543,7 @@ test("lists saves with their details and backups", async () => {
   expect(screen.getByText("Slot 6")).toBeInTheDocument();
   expect(screen.getByText("Couldn’t read the details of this save.")).toBeInTheDocument();
   expect(await screen.findByText("Before playing")).toBeInTheDocument();
-  expect(screen.getByText(/2 files/)).toBeInTheDocument();
+  expect(screen.getByText(/1 save \+ settings and high scores/)).toBeInTheDocument();
 });
 
 test("deleting a save asks first", async () => {
@@ -572,13 +575,29 @@ test("restores one save into another slot and warns about what it replaces", asy
   expect(await within(dialog).findByText("Slot 1 · old")).toBeInTheDocument();
   // Slot 1 holds "pabba" now.
   expect(within(dialog).getByText("Replaces Slot 1 · pabba; it’s backed up first.")).toBeVisible();
-  expect(within(dialog).getByText(/One other file/)).toBeInTheDocument();
+  expect(within(dialog).getByLabelText(/Also reset settings and high scores/)).not.toBeChecked();
 
   await userEvent.selectOptions(within(dialog).getByLabelText("Into"), "SAVEGAM2.CK4");
   expect(within(dialog).queryByText(/^Replaces/)).not.toBeInTheDocument();
   await userEvent.click(within(dialog).getByRole("button", { name: "Restore this save" }));
-  expect(commands.restoreBackup).toHaveBeenCalledWith(7, "SAVEGAM0.CK4", "SAVEGAM2.CK4");
+  expect(commands.restoreBackup).toHaveBeenCalledWith(7, "SAVEGAM0.CK4", "SAVEGAM2.CK4", false);
   expect(await screen.findByText(/^Restored/)).toBeInTheDocument();
+});
+
+test("restores all saves, and settings and high scores only if asked", async () => {
+  vi.mocked(commands.backupSaves).mockResolvedValue(ok([save("SAVEGAM0.CK4", 1, "old")]));
+  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(null));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "Restore Before playing" }));
+  const dialog = screen.getByRole("dialog");
+  await userEvent.click(await within(dialog).findByRole("button", { name: "Restore all saves" }));
+  expect(commands.restoreBackup).toHaveBeenLastCalledWith(7, null, null, false);
+
+  await userEvent.click(await screen.findByRole("button", { name: "Restore Before playing" }));
+  const again = screen.getByRole("dialog");
+  await userEvent.click(within(again).getByLabelText(/Also reset settings and high scores/));
+  await userEvent.click(within(again).getByRole("button", { name: "Restore everything" }));
+  expect(commands.restoreBackup).toHaveBeenLastCalledWith(7, null, null, true);
 });
 
 test("save actions are locked while the game runs", async () => {

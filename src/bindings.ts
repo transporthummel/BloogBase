@@ -51,15 +51,23 @@ export const commands = {
 	reason: Reason | null,
 	createdAt: number,
 	files: string[],
+	/**
+	 *  Of `files`: the saves, the game's other files (settings, high
+	 *  scores), and anything else. Deletion markers count as none of them.
+	 */
+	saves: number,
+	settings: number,
+	other: number,
 	auto: boolean,
 	size: number,
 } | null, CommandError>(__TAURI_INVOKE("create_backup", { profileId, label, file })),
 	backupSaves: (backupId: number) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("backup_saves", { backupId })),
 	/**
-	 *  Restores a backup, or only its `file`, optionally into the slot file
-	 *  `target`. What's there now is backed up first.
+	 *  Restores a backup's saves (all its files with `include_other`), or only
+	 *  its `file`, optionally into the slot file `target`. What's there now is
+	 *  backed up first.
 	 */
-	restoreBackup: (backupId: number, file: string | null, target: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("restore_backup", { backupId, file, target })),
+	restoreBackup: (backupId: number, file: string | null, target: string | null, includeOther: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("restore_backup", { backupId, file, target, includeOther })),
 	deleteBackup: (backupId: number) => typedError<null, CommandError>(__TAURI_INVOKE("delete_backup", { backupId })),
 	exportBackup: (backupId: number, path: string) => typedError<null, CommandError>(__TAURI_INVOKE("export_backup", { backupId, path })),
 	/**  Adds a ZIP of saves as a new backup of the profile. */
@@ -203,6 +211,13 @@ export type Backup = {
 	reason: Reason | null,
 	createdAt: number,
 	files: string[],
+	/**
+	 *  Of `files`: the saves, the game's other files (settings, high
+	 *  scores), and anything else. Deletion markers count as none of them.
+	 */
+	saves: number,
+	settings: number,
+	other: number,
 	auto: boolean,
 	size: number,
 };

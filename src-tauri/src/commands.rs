@@ -352,8 +352,9 @@ pub async fn backup_saves(app: AppHandle, backup_id: u32) -> CommandResult<Vec<S
     blocking(move || backups::saves_in(&app.state::<Db>(), backup_id)).await
 }
 
-/// Restores a backup, or only its `file`, optionally into the slot file
-/// `target`. What's there now is backed up first.
+/// Restores a backup's saves (all its files with `include_other`), or only
+/// its `file`, optionally into the slot file `target`. What's there now is
+/// backed up first.
 #[tauri::command]
 #[specta::specta]
 pub async fn restore_backup(
@@ -361,10 +362,18 @@ pub async fn restore_backup(
     backup_id: u32,
     file: Option<String>,
     target: Option<String>,
+    include_other: bool,
 ) -> CommandResult<()> {
     let profile_id = backups::get(&app.state::<Db>(), backup_id)?.profile_id;
     with_profile_locked(&app, &profile_id, move |paths, db| {
-        backups::restore(paths, db, backup_id, file.as_deref(), target.as_deref())
+        backups::restore(
+            paths,
+            db,
+            backup_id,
+            file.as_deref(),
+            target.as_deref(),
+            include_other,
+        )
     })
     .await
 }

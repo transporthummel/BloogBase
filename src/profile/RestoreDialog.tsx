@@ -32,16 +32,26 @@ export function RestoreDialog({
     queryFn: () => unwrap(commands.backupSaves(backup.id)),
   });
   const [targets, setTargets] = useState<Record<string, string>>({});
+  // Settings and high scores stay as they are unless asked.
+  const [includeOther, setIncludeOther] = useState(false);
   const restore = useMutation({
-    mutationFn: ({ file, target }: { file: string | null; target: string | null }) =>
-      unwrap(commands.restoreBackup(backup.id, file, target)),
+    mutationFn: ({
+      file,
+      target,
+      all = false,
+    }: {
+      file: string | null;
+      target: string | null;
+      all?: boolean;
+    }) => unwrap(commands.restoreBackup(backup.id, file, target, all)),
     onSuccess: onRestored,
   });
 
   const occupied = (file: string) =>
     current.find((c) => c.file.toUpperCase() === file.toUpperCase());
   const replacedByAll = (inBackup.data ?? []).map((s) => occupied(s.file)).filter((s) => !!s);
-  const others = backup.files.length - (inBackup.data?.length ?? 0);
+  const hasOther = backup.settings + backup.other > 0;
+  const onlyOther = hasOther && inBackup.data?.length === 0;
 
   return (
     <Dialog title={t("backups.restoreTitle", { name: backupTitle(t, backup) })} onClose={onClose}>
@@ -94,20 +104,41 @@ export function RestoreDialog({
       {inBackup.data && (
         <div className="grid gap-2 border-t border-border pt-3">
           <p className="text-sm text-muted">
-            {replacedByAll.length > 0
-              ? t("backups.restoreAllReplaces", { count: replacedByAll.length })
-              : t("backups.restoreAllHint")}
-            {others > 0 && <> {t("backups.otherFiles", { count: others })}</>}
+            {onlyOther
+              ? t("backups.onlyOther")
+              : replacedByAll.length > 0
+                ? t("backups.restoreAllReplaces", { count: replacedByAll.length })
+                : t("backups.restoreAllHint")}
           </p>
+          {hasOther && !onlyOther && (
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={includeOther}
+                onChange={(e) => setIncludeOther(e.target.checked)}
+              />
+              <span>
+                {t("backups.includeOther")}
+                <span className="block text-xs text-muted">{t("backups.includeOtherHint")}</span>
+              </span>
+            </label>
+          )}
           <div className="flex justify-end gap-3">
             <Button variant="ghost" onClick={onClose}>
               {t("common.cancel")}
             </Button>
             <Button
               disabled={restore.isPending}
-              onClick={() => restore.mutate({ file: null, target: null })}
+              onClick={() =>
+                restore.mutate({ file: null, target: null, all: onlyOther || includeOther })
+              }
             >
-              {t("backups.restoreAll")}
+              {onlyOther
+                ? t("backups.restore")
+                : includeOther
+                  ? t("backups.restoreEverything")
+                  : t("backups.restoreAll")}
             </Button>
           </div>
         </div>
