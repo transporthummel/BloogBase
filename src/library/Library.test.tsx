@@ -9,7 +9,8 @@ import { profilesKey } from "./queries";
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ convertFileSrc: (p: string) => `asset://${p}` }));
 vi.mock("@tanstack/react-router", () => ({
-  Link: (props: object) => <a {...props} />,
+  // Real links have an href, which makes them focusable.
+  Link: (props: { to: string }) => <a href={props.to} {...props} />,
   Navigate: ({ to }: { to: string }) => <p>redirect to {to}</p>,
 }));
 vi.mock("../bindings", () => {
@@ -68,14 +69,16 @@ const ready: RuntimeStatus = {
   downloadAvailable: true,
 };
 
-function renderLibrary() {
+function renderLibrary(container?: HTMLElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
+  const view = render(
     <QueryClientProvider client={client}>
       <Library />
     </QueryClientProvider>,
+    // A fresh root each time, inside the given element.
+    { container: container?.appendChild(document.createElement("div")) },
   );
-  return client;
+  return Object.assign(client, { unmount: view.unmount });
 }
 
 beforeEach(() => {
@@ -124,6 +127,28 @@ test("lists profiles with version and play stats", async () => {
   expect(screen.getByText("Played 1 h 5 min")).toBeInTheDocument();
   // On the card and in the status bar.
   expect(screen.getAllByText("1 saved game")).toHaveLength(2);
+});
+
+test("coming back from a details page keeps the place and shows the card", async () => {
+  const other = { ...profile, id: "other", label: "Other Game" };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile, other] });
+  const scrolled = vi.fn();
+  Element.prototype.scrollIntoView = scrolled;
+  // Pages scroll inside the shell's <main>.
+  const main = document.body.appendChild(document.createElement("main"));
+  const first = renderLibrary(main);
+  main.scrollTop = 300;
+  await userEvent.click(await screen.findByRole("link", { name: "Other Game" }));
+  first.unmount();
+
+  main.scrollTop = 0;
+  renderLibrary(main);
+  const link = await screen.findByRole("link", { name: "Other Game" });
+  await vi.waitFor(() => expect(link).toHaveFocus());
+  expect(main.scrollTop).toBe(300);
+  expect(scrolled).toHaveBeenCalledTimes(1);
+  expect(scrolled.mock.contexts[0]).toHaveAttribute("data-profile-id", "other");
+  main.remove();
 });
 
 test("play launches the profile", async () => {

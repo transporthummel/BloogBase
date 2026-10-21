@@ -276,6 +276,20 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   expect(remove).toHaveBeenCalledWith({ queryKey: ["cover", "keen4-1"] });
 });
 
+test("opens at the top, wherever the library was scrolled to", async () => {
+  // Pages scroll inside the shell's <main>.
+  const main = document.body.appendChild(document.createElement("main"));
+  main.scrollTop = 500;
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <ProfileDetail profileId="keen4-1" />
+    </QueryClientProvider>,
+    { container: main },
+  );
+  expect(main.scrollTop).toBe(0);
+  main.remove();
+});
+
 test("a mod can be replaced with a local copy, unless it runs", async () => {
   const mine = { ...profile, modId: "aurora-bliss", label: "Aurora Bliss" };
   vi.mocked(commands.listProfiles).mockResolvedValue(ok([mine]));

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ArrowLeft, ExternalLink, FileArchive, FolderOpen, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
 import { useGames } from "../catalog";
@@ -12,6 +12,7 @@ import { formatDate, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { Cover } from "../library/Cover";
 import { coverKey, coverKeys, useCover } from "../library/covers";
+import { scroller } from "../library/scroll";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Authors } from "../mods/Authors";
 import { AddModDialog } from "../mods/AddModDialog";
@@ -55,6 +56,12 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   });
   // Until the player picks one: the README if the mod has one, else saves.
   const [picked, setTab] = useState<Tab | null>(null);
+
+  // The page shares its scrolling area with the library, which may have been far down.
+  useLayoutEffect(() => {
+    const main = scroller();
+    if (main) main.scrollTop = 0;
+  }, [profileId]);
 
   useEffect(() => {
     // The game may have saved, made an automatic backup before, or the

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Compass, FileArchive, FolderOpen, Puzzle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type Mod, type Profile } from "../bindings";
 import { useGames } from "../catalog";
@@ -18,6 +18,7 @@ import { installsKey, profilesKey } from "./queries";
 import { getLibrarySort, getSetupStep, setLibrarySort } from "../preferences";
 import { arrange, librarySorts, type LibrarySort } from "./sort";
 import { StatusBar } from "./StatusBar";
+import { leaveLibrary, returnToLibrary } from "./scroll";
 import { useRuntimeStatus } from "../runtime/queries";
 import { useSetupStatus } from "../setup/queries";
 import { Badge } from "../ui/Badge";
@@ -41,6 +42,12 @@ export function Library() {
   const [addingMod, setAddingMod] = useState(false);
   const [installedMod, setInstalledMod] = useState<Mod | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
+  const list = useRef<HTMLDivElement>(null);
+  // Once the cards are laid out, so the old position means the same.
+  const loaded = !!profiles.data && !!games.data;
+  useLayoutEffect(() => {
+    if (loaded && list.current) returnToLibrary(list.current);
+  }, [loaded]);
 
   useEffect(() => {
     const unlisten = events.playSessionEnded.listen(() =>
@@ -194,7 +201,7 @@ export function Library() {
         </div>
       )}
 
-      <div className="grid gap-8">
+      <div ref={list} className="grid gap-8">
         {groups.map((group) => {
           const grouped = group.key !== "all";
           const title =
@@ -213,7 +220,13 @@ export function Library() {
               )}
               <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-4">
                 {group.profiles.map((profile) => (
-                  <li key={profile.id}>
+                  <li
+                    key={profile.id}
+                    data-profile-id={profile.id}
+                    onClickCapture={(e) => {
+                      if ((e.target as Element).closest("a")) leaveLibrary(profile.id);
+                    }}
+                  >
                     <ProfileCard
                       profile={profile}
                       game={gameById.get(profile.gameId)}
