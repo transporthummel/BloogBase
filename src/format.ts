@@ -21,6 +21,51 @@ export function formatDateTime(language: string, epochSeconds: number): string {
   );
 }
 
+const monthNames = [
+  "jan",
+  "feb",
+  "mar",
+  "apr",
+  "may",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "oct",
+  "nov",
+  "dec",
+];
+
+/**
+ * A date as KeenWiki and the index write it ("2017-07-04", "2017-07", "2017",
+ * "November 22, 1991[1]", "22 November 1991", "November 1991") in the
+ * user's language, as precise as the source. Anything else is shown as is.
+ */
+export function formatLooseDate(language: string, raw: string): string {
+  const text = raw.replace(/\[\d+\]/g, "").trim();
+  const month = (name: string) => monthNames.indexOf(name.slice(0, 3).toLowerCase()) + 1;
+  let parts: [number, number?, number?] | undefined;
+  let m;
+  if ((m = /^(\d{4})(?:-(\d{1,2})(?:-(\d{1,2}))?)?$/.exec(text))) {
+    parts = [+m[1], m[2] ? +m[2] : undefined, m[3] ? +m[3] : undefined];
+  } else if ((m = /^([a-z]+)\.? (?:(\d{1,2})(?:st|nd|rd|th)?,? )?(\d{4})$/i.exec(text))) {
+    parts = [+m[3], month(m[1]), m[2] ? +m[2] : undefined];
+  } else if ((m = /^(\d{1,2})(?:st|nd|rd|th)?\.? ([a-z]+)\.?,? (\d{4})$/i.exec(text))) {
+    parts = [+m[3], month(m[2]), +m[1]];
+  }
+  if (!parts) return raw;
+  const [year, mon, day] = parts;
+  if (mon !== undefined && (mon < 1 || mon > 12)) return raw;
+  const date = new Date(Date.UTC(year, (mon ?? 1) - 1, day ?? 1));
+  if (day !== undefined && date.getUTCDate() !== day) return raw;
+  return new Intl.DateTimeFormat(language, {
+    timeZone: "UTC",
+    year: "numeric",
+    ...(mon !== undefined && { month: day !== undefined ? "short" : "long" }),
+    ...(day !== undefined && { day: "numeric" }),
+  }).format(date);
+}
+
 /**
  * "just now", "5 minutes ago", "yesterday", "2 weeks ago". Days and longer
  * count calendar boundaries, so last night reads "yesterday" this morning.

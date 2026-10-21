@@ -5,7 +5,7 @@ import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Game, type IndexMod, type Install } from "../bindings";
 import { bestFit, gameTitle, shortGameTitle } from "../catalog";
-import { formatMegabytes } from "../format";
+import { formatLooseDate, formatMegabytes } from "../format";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { Cover } from "../library/Cover";
@@ -27,14 +27,15 @@ export function ModCard({
   installs: Install[];
   games: Game[];
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { entry } = mod;
   const game = games.find((g) => g.id === entry.game);
   const latest = entry.downloads[0];
+  const date = entry.updated ?? entry.released;
   const details = [
     entry.authors.length > 0 && <Authors authors={entry.authors} links={entry.authorLinks} />,
     entry.version && t("mods.version", { version: entry.version }),
-    entry.updated ?? entry.released,
+    date && formatLooseDate(i18n.language, date),
   ].filter(Boolean);
   const links = [
     ["KeenWiki", entry.links.keenwiki],

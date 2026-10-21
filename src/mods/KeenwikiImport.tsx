@@ -8,6 +8,7 @@ import { gameTitle, useGames } from "../catalog";
 import { ModCard } from "../discover/ModCard";
 import { useIndexMods } from "../discover/queries";
 import { errorMessage } from "../errors";
+import { formatLooseDate } from "../format";
 import { unwrap } from "../ipc";
 import { installsKey } from "../library/queries";
 import { Button } from "../ui/Button";
@@ -109,7 +110,7 @@ function WikiCard({
   page: WikiMod;
   onDownloaded: (d: Downloaded) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const games = useGames();
   const [choice, setChoice] = useState(0);
   const chosen = page.downloads[choice];
@@ -122,8 +123,8 @@ function WikiCard({
     [t("mods.forGame"), page.gameId ? gameTitle(games.data, page.gameId) : null],
     [t("keenwiki.authors"), page.authors.join(", ") || null],
     [t("keenwiki.status"), page.status],
-    [t("keenwiki.released"), page.released],
-    [t("keenwiki.updated"), page.updated],
+    [t("keenwiki.released"), page.released && formatLooseDate(i18n.language, page.released)],
+    [t("keenwiki.updated"), page.updated && formatLooseDate(i18n.language, page.updated)],
     [t("keenwiki.levels"), page.levels],
   ];
   const links = [

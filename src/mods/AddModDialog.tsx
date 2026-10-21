@@ -14,6 +14,7 @@ import {
 } from "../bindings";
 import { bestFit, gameTitle, isModified, shortGameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
+import { formatLooseDate } from "../format";
 import { unwrap } from "../ipc";
 import { coverKey } from "../library/covers";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
@@ -164,7 +165,7 @@ function Confirm({
   onCancel: () => void;
   onInstalled: (mod: Mod) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const games = useGames();
   const installs = useQuery({
     queryKey: installsKey,
@@ -253,7 +254,7 @@ function Confirm({
   const details = [
     authors.length > 0 && t("mods.by", { authors: authors.join(", ") }),
     version && t("mods.version", { version }),
-    info.released,
+    info.released && formatLooseDate(i18n.language, info.released),
   ].filter(Boolean);
 
   return (

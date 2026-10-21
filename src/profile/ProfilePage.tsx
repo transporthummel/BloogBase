@@ -8,7 +8,7 @@ import { commands, events, type Game, type IndexEntry, type Mod, type Profile } 
 import { useGames } from "../catalog";
 import { useIndexMods } from "../discover/queries";
 import { errorMessage } from "../errors";
-import { formatDate, formatPlayTime } from "../format";
+import { formatDate, formatLooseDate, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { Cover } from "../library/Cover";
 import { coverKey, coverKeys, useCover } from "../library/covers";
@@ -261,7 +261,9 @@ function Hero({
             </p>
           )}
           {mod?.released && (
-            <p className="text-sm text-muted">{t("profile.released", { date: mod.released })}</p>
+            <p className="text-sm text-muted">
+              {t("profile.released", { date: formatLooseDate(i18n.language, mod.released) })}
+            </p>
           )}
         </div>
         {description && (

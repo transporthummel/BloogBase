@@ -162,7 +162,7 @@ test("inspects the picked ZIP and installs the mod on the matching game", async 
   const name = await screen.findByRole("textbox", { name: "Name" });
   expect(name).toHaveValue("Aurora Bliss");
   expect(screen.getByText(keen4.title)).toBeInTheDocument();
-  expect(screen.getByText("by dave216 · version 1.2 · 2023-08-23")).toBeInTheDocument();
+  expect(screen.getByText("by dave216 · version 1.2 · Aug 23, 2023")).toBeInTheDocument();
   // Only one way to start it: no choice shown.
   expect(screen.queryByText("We need your help")).not.toBeInTheDocument();
 
@@ -444,7 +444,7 @@ test("installs a mod from a KeenWiki page with the page's details", async () => 
 
   // The page's name and authors win over what the archive suggests.
   expect(await screen.findByRole("textbox", { name: "Name" })).toHaveValue("Aurora Bliss");
-  expect(screen.getByText("by Dave216 · version 1.0 · 2023-08-23")).toBeInTheDocument();
+  expect(screen.getByText("by Dave216 · version 1.0 · Aug 23, 2023")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Install" }));
   expect(commands.installMod).toHaveBeenCalledWith({
     path: "/cache/aurora_v1.0.zip",

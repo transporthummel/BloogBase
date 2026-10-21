@@ -1,6 +1,6 @@
 import { type TFunction } from "i18next";
 import { expect, test } from "vitest";
-import { formatRelative } from "./format";
+import { formatLooseDate, formatRelative } from "./format";
 
 const t = ((key: string) => key) as unknown as TFunction;
 const now = new Date(2026, 9, 21, 14, 0).getTime();
@@ -24,4 +24,16 @@ test("shortly after midnight, last night reads in hours", () => {
   expect(formatRelative(t, "en", new Date(2026, 9, 20, 23, 0).getTime() / 1000, early)).toBe(
     "2 hours ago",
   );
+});
+
+test("KeenWiki dates are shown as precisely as written, in the user's language", () => {
+  expect(formatLooseDate("de", "2017-07-04")).toBe("4. Juli 2017");
+  expect(formatLooseDate("en", "2017-07-04")).toBe("Jul 4, 2017");
+  expect(formatLooseDate("de", "November 22, 1991[1]")).toBe("22. Nov. 1991");
+  expect(formatLooseDate("de", "22 November 1991")).toBe("22. Nov. 1991");
+  expect(formatLooseDate("de", "November 1991")).toBe("November 1991");
+  expect(formatLooseDate("de", "2009-10")).toBe("Oktober 2009");
+  expect(formatLooseDate("de", "2009")).toBe("2009");
+  expect(formatLooseDate("de", "2017-02-30")).toBe("2017-02-30");
+  expect(formatLooseDate("de", "Late 2005")).toBe("Late 2005");
 });
