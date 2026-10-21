@@ -140,7 +140,10 @@ fn rank(name: &str) -> Option<u8> {
         "secret",
         "spoiler",
     ];
-    if EXACT.contains(&key.as_str()) {
+    // CKPatch's own manual comes along with the patcher in many mods.
+    if key.starts_with("ckpatch") {
+        None
+    } else if EXACT.contains(&key.as_str()) {
         Some(0)
     } else if key.contains("readme") || key.contains("readthis") || key.contains("liesmich") {
         Some(1)
@@ -431,6 +434,7 @@ mod tests {
             "HELP",
             "INFO.CK4",
             "KEEN4.PAT",
+            "CKPATCH.TXT",
         ] {
             assert_eq!(rank(name), None, "{name}");
         }
