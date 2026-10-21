@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { commands, events, type Job, type JobKind } from "../bindings";
+import { commands, events, type IndexMod, type Job, type JobKind } from "../bindings";
 import { freeGamesKey, indexModsKey } from "../discover/queries";
+import { coverKey } from "../library/covers";
 import { installsKey, profilesKey } from "../library/queries";
 import { runtimeKey } from "../runtime/queries";
 
@@ -44,6 +45,12 @@ export function useJobEvents() {
         client.invalidateQueries({ queryKey: freeGamesKey });
       }
       if (job.kind === "mod") {
+        // An update may bring another title screen; a mod's profile has its id.
+        // Without the index at hand, any cover may be the one.
+        const index = client.getQueryData<IndexMod[]>(indexModsKey);
+        const updated = index?.find((m) => m.entry.id === job.subject)?.modId;
+        if (!index) client.invalidateQueries({ queryKey: ["cover"] });
+        else if (updated) client.invalidateQueries({ queryKey: coverKey(updated) });
         client.invalidateQueries({ queryKey: profilesKey });
         client.invalidateQueries({ queryKey: indexModsKey });
       }
