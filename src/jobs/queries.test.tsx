@@ -40,7 +40,7 @@ function listen(client: QueryClient) {
   return (job: Job) => emit(job);
 }
 
-test("an updated index mod gets its cover extracted again", () => {
+test("an updated index mod gets its cover and README read again", () => {
   const client = new QueryClient();
   const invalidate = vi.spyOn(client, "invalidateQueries");
   const mods = [
@@ -52,6 +52,7 @@ test("an updated index mod gets its cover extracted again", () => {
 
   emit(done);
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["cover", "aurora"] });
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["readme", "aurora"] });
 
   // A first install has no cover to refresh.
   invalidate.mockClear();
@@ -61,9 +62,10 @@ test("an updated index mod gets its cover extracted again", () => {
   );
 });
 
-test("without the index at hand, all covers are refreshed", () => {
+test("without the index at hand, all covers and READMEs are refreshed", () => {
   const client = new QueryClient();
   const invalidate = vi.spyOn(client, "invalidateQueries");
   listen(client)(done);
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["cover"] });
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["readme"] });
 });

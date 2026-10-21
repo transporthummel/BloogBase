@@ -183,8 +183,9 @@ test("asks whether another version replaces the installed one", async () => {
     expect.objectContaining({ replace: "aurora-bliss", installId: "keen4-2" }),
   );
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
-  // The new version may have another title screen.
+  // The new version may have another title screen and README.
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["cover", "aurora-bliss"] });
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["readme", "aurora-bliss"] });
 
   vi.mocked(commands.installMod).mockClear();
   await user.click(screen.getByRole("radio", { name: "Keep it and install this one as well" }));

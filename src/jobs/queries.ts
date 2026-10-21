@@ -4,6 +4,7 @@ import { commands, events, type IndexMod, type Job, type JobKind } from "../bind
 import { freeGamesKey, indexModsKey } from "../discover/queries";
 import { coverKey, coverKeys } from "../library/covers";
 import { installsKey, profilesKey } from "../library/queries";
+import { readmeKey, readmeKeys } from "../profile/readme";
 import { runtimeKey } from "../runtime/queries";
 
 export const jobsKey = ["jobs"] as const;
@@ -45,12 +46,17 @@ export function useJobEvents() {
         client.invalidateQueries({ queryKey: freeGamesKey });
       }
       if (job.kind === "mod") {
-        // An update may bring another title screen; a mod's profile has its id.
-        // Without the index at hand, any cover may be the one.
+        // An update may bring another title screen and README; a mod's profile
+        // has its id. Without the index at hand, any mod may be the one.
         const index = client.getQueryData<IndexMod[]>(indexModsKey);
         const updated = index?.find((m) => m.entry.id === job.subject)?.modId;
-        if (!index) client.invalidateQueries({ queryKey: coverKeys });
-        else if (updated) client.invalidateQueries({ queryKey: coverKey(updated) });
+        if (!index) {
+          client.invalidateQueries({ queryKey: coverKeys });
+          client.invalidateQueries({ queryKey: readmeKeys });
+        } else if (updated) {
+          client.invalidateQueries({ queryKey: coverKey(updated) });
+          client.invalidateQueries({ queryKey: readmeKey(updated) });
+        }
         client.invalidateQueries({ queryKey: profilesKey });
         client.invalidateQueries({ queryKey: indexModsKey });
       }

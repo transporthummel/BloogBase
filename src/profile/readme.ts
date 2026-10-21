@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { commands } from "../bindings";
 import { unwrap } from "../ipc";
 
-export const readmeKey = (modId: string) => ["readme", modId] as const;
+export const readmeKeys = ["readme"] as const;
+/** Invalidate it when the mod's files change, e.g. it's replaced. */
+export const readmeKey = (modId: string) => [...readmeKeys, modId] as const;
 
 /** The README shipped with a mod; `null` when it has none. Off for games. */
 export function useReadme(modId: string | null) {

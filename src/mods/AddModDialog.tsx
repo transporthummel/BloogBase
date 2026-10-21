@@ -9,6 +9,7 @@ import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { coverKey } from "../library/covers";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
+import { readmeKey } from "../profile/readme";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
@@ -188,8 +189,11 @@ function Confirm({
       ),
     onSuccess: (mod) => {
       queryClient.invalidateQueries({ queryKey: modsKey });
-      // The new version may have another title screen.
-      if (replaced) queryClient.invalidateQueries({ queryKey: coverKey(mod.profileId) });
+      // The new version may have another title screen and README.
+      if (replaced) {
+        queryClient.invalidateQueries({ queryKey: coverKey(mod.profileId) });
+        queryClient.invalidateQueries({ queryKey: readmeKey(mod.id) });
+      }
       onInstalled(mod);
     },
   });
