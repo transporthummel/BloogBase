@@ -408,9 +408,8 @@ test("the title screen is the picture, else the latest screenshot", async () => 
   vi.mocked(commands.profileCover).mockResolvedValue(ok("/data/cache/covers/keen4-1.png"));
   const { container } = renderDetail();
   await vi.waitFor(() =>
-    expect(container.querySelector("img")).toHaveAttribute(
-      "src",
-      "asset:///data/cache/covers/keen4-1.png",
+    expect(container.querySelector("img")?.getAttribute("src")).toMatch(
+      /^asset:\/\/\/data\/cache\/covers\/keen4-1\.png\?v=\d+$/,
     ),
   );
 });

@@ -75,10 +75,10 @@ const info: ModInfo = {
 
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
 
-function renderDialog() {
+function renderDialog(client = new QueryClient()) {
   const onInstalled = vi.fn();
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={client}>
       <AddModDialog onClose={() => {}} onInstalled={onInstalled} />
     </QueryClientProvider>,
   );
@@ -165,7 +165,9 @@ test("asks whether another version replaces the installed one", async () => {
   );
   vi.mocked(commands.inspectMod).mockReturnValue(ok(info));
   vi.mocked(commands.installMod).mockReturnValue(ok(older));
-  const onInstalled = renderDialog();
+  const client = new QueryClient();
+  const invalidate = vi.spyOn(client, "invalidateQueries");
+  const onInstalled = renderDialog(client);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
 
@@ -181,6 +183,8 @@ test("asks whether another version replaces the installed one", async () => {
     expect.objectContaining({ replace: "aurora-bliss", installId: "keen4-2" }),
   );
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
+  // The new version may have another title screen.
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["cover", "aurora-bliss"] });
 
   vi.mocked(commands.installMod).mockClear();
   await user.click(screen.getByRole("radio", { name: "Keep it and install this one as well" }));

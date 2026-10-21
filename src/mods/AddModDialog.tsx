@@ -7,6 +7,7 @@ import { commands, type Install, type KeenwikiOrigin, type Mod, type ModInfo } f
 import { bestFit, gameTitle, isModified, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
+import { coverKey } from "../library/covers";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
@@ -175,6 +176,8 @@ function Confirm({
       ),
     onSuccess: (mod) => {
       queryClient.invalidateQueries({ queryKey: modsKey });
+      // The new version may have another title screen.
+      if (replaced) queryClient.invalidateQueries({ queryKey: coverKey(mod.profileId) });
       onInstalled(mod);
     },
   });

@@ -3,6 +3,9 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { commands } from "../bindings";
 import { unwrap } from "../ipc";
 
+/** Invalidate it when a profile's files change, e.g. a mod is replaced. */
+export const coverKey = (profileId: string) => ["cover", profileId] as const;
+
 /**
  * The image URL of a profile's title screen, extracted from its game files
  * on first use; `null` keeps the placeholder. A mod that gets its game gets
@@ -10,10 +13,11 @@ import { unwrap } from "../ipc";
  */
 export function useCover(profileId: string, installId: string | null) {
   return useQuery({
-    queryKey: ["cover", profileId, installId],
+    queryKey: [...coverKey(profileId), installId],
     queryFn: async () => {
       const path = await unwrap(commands.profileCover(profileId));
-      return path === null ? null : convertFileSrc(path);
+      // A new extraction keeps the file name, so the URL has to change.
+      return path === null ? null : `${convertFileSrc(path)}?v=${Date.now()}`;
     },
     staleTime: Infinity,
     retry: false,

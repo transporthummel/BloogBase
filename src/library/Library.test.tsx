@@ -170,7 +170,7 @@ test("a mod gets its title screen once its game is there", async () => {
   });
   await client.invalidateQueries({ queryKey: profilesKey });
   await vi.waitFor(() =>
-    expect(document.querySelector('img[src="asset:///covers/galactic.png"]')).not.toBeNull(),
+    expect(document.querySelector('img[src^="asset:///covers/galactic.png?v="]')).not.toBeNull(),
   );
 });
 
