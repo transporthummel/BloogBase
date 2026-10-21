@@ -19,7 +19,7 @@ use crate::profiles;
 use crate::recipe::{Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v5";
+const VERSION: &str = "covers v6";
 
 /// The profile's cover PNG, extracting it first if its files changed since
 /// the last time. `None` if the title can't be read from them.
@@ -219,12 +219,12 @@ fn extract(
     match game.engine {
         Engine::Vorticons => {
             // Mods with the tileset loader patch keep the title level's
-            // tiles in a file of their own.
+            // tiles in a file of their own. Some ship a TILEHEAD naming files
+            // they lack, like Fireblaze; their game draws from EGALATCH.
             let tileset = files
                 .read(&format!("TILEHEAD.{ext}"))
                 .and_then(|t| keen_graphics::vorticons_tileset_name(&t, 90))
-                .map(|name| need(&name))
-                .transpose()?;
+                .and_then(|name| files.read(&name));
             keen_graphics::vorticons_title(
                 &need(&format!("EGAHEAD.{ext}"))?,
                 &need(&format!("EGALATCH.{ext}"))?,
