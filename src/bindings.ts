@@ -134,6 +134,11 @@ export const commands = {
 	installIndexMod: (indexId: string, installId: string | null, withoutGame: boolean) => __TAURI_INVOKE<Job>("install_index_mod", { indexId, installId, withoutGame }),
 	lookupKeenwiki: (url: string) => typedError<KeenwikiLookup, CommandError>(__TAURI_INVOKE("lookup_keenwiki", { url })),
 	/**
+	 *  Checks a mod's KeenWiki page for a newer download. The page comes from
+	 *  the cache when it was read today.
+	 */
+	checkModUpdate: (modId: string) => typedError<ModUpdate, CommandError>(__TAURI_INVOKE("check_mod_update", { modId })),
+	/**
 	 *  Downloads one of a KeenWiki page's links and inspects it. `game_id` is
 	 *  the page's episode, used when the files don't tell.
 	 */
@@ -547,6 +552,12 @@ export type ModKind = "episode" | "levelpack" | "conversion";
 
 export type ModSource = "index" | "keenwiki" | "manual";
 
+/**  What a mod's KeenWiki page offers compared to the installed version. */
+export type ModUpdate = {
+	status: UpdateStatus,
+	page: WikiMod,
+};
+
 export type PlaySessionEnded = {
 	profileId: string,
 	exitCode: number | null,
@@ -712,6 +723,16 @@ export type StoreInstall = {
 	path: string,
 	games: FoundGame[],
 };
+
+/**  How an installed mod compares to what its page offers now. */
+export type UpdateStatus = "upToDate" | "newer" | 
+/**
+ *  The page's newest download can't be told apart from the installed
+ *  one: neither its link nor the versions say.
+ */
+"unknown" | 
+/**  The page has nothing to download. */
+"noDownload";
 
 export type VersionKind = "release" | "beta" | 
 /**  Only part of the game. */

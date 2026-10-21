@@ -19,7 +19,7 @@ use crate::error::{CommandResult, Error, Result};
 use crate::firing::{self, Firing};
 use crate::free_games::{self, FreeGame};
 use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
-use crate::keenwiki::{self, WikiMod};
+use crate::keenwiki::{self, UpdateStatus, WikiMod};
 use crate::launcher::{self, PlaySessionEnded, Playing, Running};
 use crate::library::{self, Install};
 use crate::mod_index::{self, IndexMod, IndexStatus, IndexUpdated, ModIndex};
@@ -526,7 +526,16 @@ pub async fn inspect_dropped(path: String) -> CommandResult<Dropped> {
 pub async fn install_mod(app: AppHandle, request: InstallModRequest) -> CommandResult<Mod> {
     blocking(move || {
         let paths = app.state::<AppPaths>();
-        let m = mods::install(&paths, &app.state::<Db>(), &request)?;
+        // Replacing must not swap files under a running game.
+        let running = app.state::<Running>();
+        if let Some(id) = &request.replace {
+            running.claim(id)?;
+        }
+        let m = mods::install(&paths, &app.state::<Db>(), &request);
+        if let Some(id) = &request.replace {
+            running.release(id);
+        }
+        let m = m?;
         // The mod keeps its own copy of the archive.
         let downloads = keenwiki_downloads(&paths);
         if Path::new(&request.path).starts_with(&downloads) {
@@ -667,6 +676,30 @@ pub async fn lookup_keenwiki(app: AppHandle, url: String) -> CommandResult<Keenw
         // The page may have been reached under another name.
         index_id: in_index(&page.page_url),
         page: Some(page),
+    })
+}
+
+/// What a mod's KeenWiki page offers compared to the installed version.
+#[derive(Debug, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ModUpdate {
+    pub status: UpdateStatus,
+    pub page: WikiMod,
+}
+
+/// Checks a mod's KeenWiki page for a newer download. The page comes from
+/// the cache when it was read today.
+#[tauri::command]
+#[specta::specta]
+pub async fn check_mod_update(app: AppHandle, mod_id: String) -> CommandResult<ModUpdate> {
+    let (page_url, url, version) = mods::origin(&app.state::<Db>(), &mod_id)?;
+    let page_url = page_url.ok_or_else(|| Error::NotFound(format!("KeenWiki page of {mod_id}")))?;
+    let cache = app.state::<AppPaths>().cache.join("keenwiki");
+    let html = keenwiki::fetch(&cache, &page_url).await?;
+    let page = keenwiki::parse(&html, &page_url)?;
+    Ok(ModUpdate {
+        status: keenwiki::update_status(&page, &url, version.as_deref()),
+        page,
     })
 }
 

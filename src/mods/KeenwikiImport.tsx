@@ -3,13 +3,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { Download, ExternalLink, Search } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  commands,
-  type KeenwikiLookup,
-  type KeenwikiOrigin,
-  type ModInfo,
-  type WikiMod,
-} from "../bindings";
+import { commands, type KeenwikiLookup, type WikiMod } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { ModCard } from "../discover/ModCard";
 import { useIndexMods } from "../discover/queries";
@@ -18,8 +12,7 @@ import { unwrap } from "../ipc";
 import { installsKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
-
-export type Downloaded = { path: string; info: ModInfo; origin: KeenwikiOrigin };
+import { downloaded, type Downloaded } from "./wikiDownload";
 
 /** Paste a KeenWiki link: shows the index entry for it, or the page's details. */
 export function KeenwikiImport({
@@ -121,22 +114,7 @@ function WikiCard({
   const chosen = page.downloads[choice];
   const download = useMutation({
     mutationFn: () => unwrap(commands.downloadKeenwikiMod(chosen.url, page.gameId)),
-    onSuccess: ({ path, info }) =>
-      onDownloaded({
-        path,
-        info: { ...info, name: page.name },
-        origin: {
-          pageUrl: page.pageUrl,
-          downloadUrl: chosen.url,
-          gameId: page.gameId,
-          authors: page.authors,
-          authorLinks: page.authorLinks,
-          // Without one the archive name is used.
-          version: chosen.version,
-          description: page.description,
-          released: page.released,
-        },
-      }),
+    onSuccess: (d) => onDownloaded(downloaded(page, chosen, d)),
   });
 
   const facts: [string, string | null][] = [

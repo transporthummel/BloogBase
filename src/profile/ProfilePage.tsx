@@ -14,6 +14,7 @@ import { Cover } from "../library/Cover";
 import { useCover } from "../library/covers";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Authors } from "../mods/Authors";
+import { ModUpdate } from "../mods/ModUpdate";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
 import { useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
@@ -328,6 +329,7 @@ function Hero({
         {profile.missingGame !== null && (
           <Notice>{t("mods.waitingHint", { game: profile.missingGame })}</Notice>
         )}
+        {mod?.keenwikiUrl && <ModUpdate mod={mod} disabled={profile.running} />}
         {removing && profile.modId === null && profile.installId !== null && (
           <RemoveGameDialog
             profile={profile}

@@ -12,24 +12,31 @@ import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
-import { KeenwikiImport, type Downloaded } from "./KeenwikiImport";
+import { KeenwikiImport } from "./KeenwikiImport";
+import type { Downloaded } from "./wikiDownload";
 import { RecipeLabel } from "./RecipeLabel";
 import { fits } from "./recipes";
 
 /** Get a mod (KeenWiki link, folder or ZIP), confirm what was detected, install it. */
 export function AddModDialog({
   dropped,
+  downloaded,
+  replacing,
   onClose,
   onInstalled,
 }: {
   /** A folder or ZIP dropped on the window and inspected already. */
   dropped?: { path: string; info: ModInfo };
+  /** A KeenWiki download fetched already, e.g. an update. */
+  downloaded?: Downloaded;
+  /** The installed mod it updates. */
+  replacing?: string;
   onClose: () => void;
   onInstalled: (mod: Mod) => void;
 }) {
   const { t } = useTranslation();
   const [path, setPath] = useState<string | null>(null);
-  const [fromWiki, setFromWiki] = useState<Downloaded | null>(null);
+  const [fromWiki, setFromWiki] = useState<Downloaded | null>(downloaded ?? null);
 
   const inspect = useMutation({
     mutationFn: (p: string) => unwrap(commands.inspectMod(p)),
@@ -45,7 +52,7 @@ export function AddModDialog({
   }
 
   return (
-    <Dialog title={t("mods.addTitle")} onClose={onClose}>
+    <Dialog title={t(replacing ? "mods.updateTitle" : "mods.addTitle")} onClose={onClose}>
       {dropped ? (
         <Confirm
           path={dropped.path}
@@ -58,6 +65,7 @@ export function AddModDialog({
           path={fromWiki.path}
           info={fromWiki.info}
           origin={fromWiki.origin}
+          replacing={replacing}
           onCancel={onClose}
           onInstalled={onInstalled}
         />
@@ -94,6 +102,7 @@ function Confirm({
   path,
   info,
   origin = null,
+  replacing,
   onCancel,
   onInstalled,
 }: {
@@ -101,6 +110,8 @@ function Confirm({
   info: ModInfo;
   /** Set for a mod from a KeenWiki page, whose details win over the guesses. */
   origin?: KeenwikiOrigin | null;
+  /** The installed mod to preselect for replacing. */
+  replacing?: string;
   onCancel: () => void;
   onInstalled: (mod: Mod) => void;
 }) {
@@ -120,7 +131,7 @@ function Confirm({
     queryFn: () => unwrap(commands.listProfiles()),
   });
   // The mod this one replaces, `null` to install alongside; unset: the first that matches.
-  const [replace, setReplace] = useState<string | null>();
+  const [replace, setReplace] = useState<string | null | undefined>(replacing);
 
   const game = games.data?.find((g) => g.id === info.gameId);
   const option = info.recipes[recipeIndex];
@@ -140,10 +151,11 @@ function Confirm({
   const others =
     mods.data?.filter(
       (m) =>
-        m.gameId === info.gameId &&
-        ((origin && m.keenwikiUrl === origin.pageUrl) ||
-          same(m.name, name) ||
-          same(m.name, info.name)),
+        m.id === replacing ||
+        (m.gameId === info.gameId &&
+          ((origin && m.keenwikiUrl === origin.pageUrl) ||
+            same(m.name, name) ||
+            same(m.name, info.name))),
     ) ?? [];
   const replaced =
     replace === null ? undefined : (others.find((m) => m.id === replace) ?? others[0]);

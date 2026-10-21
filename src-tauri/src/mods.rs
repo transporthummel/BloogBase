@@ -1252,6 +1252,19 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
     Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 
+/// Where an installed mod came from: its KeenWiki page, the download (or
+/// picked file) and its version.
+pub fn origin(db: &Db, mod_id: &str) -> Result<(Option<String>, String, Option<String>)> {
+    db.conn()
+        .query_row(
+            "SELECT keenwiki_url, source_url, version FROM mods WHERE id = ?1",
+            [mod_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .optional()?
+        .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))
+}
+
 /// A link to a prefilled GitHub issue suggesting a KeenWiki mod for the
 /// index (§9.3), with a draft entry built from what was installed.
 pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {

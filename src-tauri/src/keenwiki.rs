@@ -384,6 +384,71 @@ fn version_in(s: &str) -> Option<String> {
     })
 }
 
+/// How an installed mod compares to what its page offers now.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum UpdateStatus {
+    UpToDate,
+    Newer,
+    /// The page's newest download can't be told apart from the installed
+    /// one: neither its link nor the versions say.
+    Unknown,
+    /// The page has nothing to download.
+    NoDownload,
+}
+
+/// Compares the installed download (`url`, `version`) with the page's
+/// newest one. Downloads are listed newest first; mirrors are copies of the
+/// newest one.
+pub fn update_status(page: &WikiMod, url: &str, version: Option<&str>) -> UpdateStatus {
+    let Some(newest) = page.downloads.first() else {
+        return UpdateStatus::NoDownload;
+    };
+    let found = page.downloads.iter().position(|d| same_url(&d.url, url));
+    if found == Some(0)
+        || found.is_some_and(|i| {
+            page.downloads[i]
+                .label
+                .to_ascii_lowercase()
+                .contains("mirror")
+        })
+    {
+        return UpdateStatus::UpToDate;
+    }
+    let have = found
+        .and_then(|i| page.downloads[i].version.as_deref())
+        .or(version);
+    match newest
+        .version
+        .as_deref()
+        .zip(have)
+        .and_then(|(n, h)| compare_versions(n, h))
+    {
+        Some(std::cmp::Ordering::Greater) => UpdateStatus::Newer,
+        Some(_) => UpdateStatus::UpToDate,
+        None if found.is_some() => UpdateStatus::Newer,
+        None => UpdateStatus::Unknown,
+    }
+}
+
+/// Links differing only in the scheme or the host's case are the same.
+fn same_url(a: &str, b: &str) -> bool {
+    match (Url::parse(a.trim()), Url::parse(b.trim())) {
+        (Ok(a), Ok(b)) => a.host_str() == b.host_str() && a.path() == b.path(),
+        _ => a.trim() == b.trim(),
+    }
+}
+
+/// `1.10` > `1.9`, `2` = `2.0`; `None` unless both are dotted numbers.
+fn compare_versions(a: &str, b: &str) -> Option<std::cmp::Ordering> {
+    let parse = |v: &str| -> Option<Vec<u32>> { v.split('.').map(|p| p.parse().ok()).collect() };
+    let (mut a, mut b) = (parse(a)?, parse(b)?);
+    let len = a.len().max(b.len());
+    a.resize(len, 0);
+    b.resize(len, 0);
+    Some(a.cmp(&b))
+}
+
 /// The list items of the "Credits" section.
 fn credits(doc: &Html) -> Vec<String> {
     let Some(heading) = doc
@@ -707,6 +772,46 @@ mod tests {
         assert_eq!(version_in("newest"), None);
         assert_eq!(version_in("Mirror Download"), None);
         assert_eq!(version_in("dev build"), None);
+    }
+
+    #[test]
+    fn installed_downloads_compare_to_the_page() {
+        use UpdateStatus::*;
+        let page = fixture("The_Alphamatic");
+        let (v2, v1) = (&page.downloads[0].url, &page.downloads[1].url);
+        assert_eq!(update_status(&page, v2, None), UpToDate);
+        // Another scheme is the same file.
+        assert_eq!(
+            update_status(&page, &v2.replace("https", "http"), None),
+            UpToDate
+        );
+        assert_eq!(update_status(&page, v1, None), Newer);
+        // A link the page doesn't list: the versions tell.
+        assert_eq!(update_status(&page, "C:/aurora.zip", Some("1.0")), Newer);
+        assert_eq!(update_status(&page, "C:/aurora.zip", Some("2")), UpToDate);
+        assert_eq!(update_status(&page, "C:/aurora.zip", Some("2.1")), UpToDate);
+        assert_eq!(update_status(&page, "C:/aurora.zip", Some("beta")), Unknown);
+        assert_eq!(update_status(&page, "C:/aurora.zip", None), Unknown);
+
+        let mirrored = fixture("Candy_Dreams");
+        assert_eq!(
+            update_status(&mirrored, "http://levellord.rewound.net/KDREAMS.zip", None),
+            UpToDate
+        );
+        let none = WikiMod {
+            downloads: vec![],
+            ..page.clone()
+        };
+        assert_eq!(update_status(&none, v2, None), NoDownload);
+    }
+
+    #[test]
+    fn versions_compare_by_number() {
+        use std::cmp::Ordering::*;
+        assert_eq!(compare_versions("1.10", "1.9"), Some(Greater));
+        assert_eq!(compare_versions("2", "2.0"), Some(Equal));
+        assert_eq!(compare_versions("1.0", "1.0.1"), Some(Less));
+        assert_eq!(compare_versions("1.0b", "1.0"), None);
     }
 
     /// Answers `GET /<path>` with the route's raw response head and body.

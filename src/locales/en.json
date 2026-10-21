@@ -238,6 +238,7 @@
   "mods": {
     "add": "Add mod",
     "addTitle": "Add a mod",
+    "updateTitle": "Update a mod",
     "addHint": "Or choose a mod you downloaded yourself: a ZIP file or an unpacked folder. BloogBase finds out which game it is for and how to start it.",
     "chooseZip": "Choose ZIP file…",
     "chooseFolder": "Choose folder…",
@@ -290,6 +291,18 @@
     "alongside": "Keep it and install this one as well",
     "replace": "Replace",
     "replacing": "Replacing…"
+  },
+  "modUpdate": {
+    "check": "Check for updates",
+    "checking": "Looking at the KeenWiki page…",
+    "upToDate": "You have the newest version.",
+    "noDownload": "The KeenWiki page has nothing to download right now.",
+    "newer": "A newer version is available on KeenWiki.",
+    "newer_version": "Version {{version}} is available on KeenWiki.",
+    "unknown": "KeenWiki offers “{{download}}”. BloogBase can’t tell whether it is newer than yours.",
+    "leavesIndex": "After this update, the mod no longer gets updates from the BloogBase mod list.",
+    "update": "Update",
+    "downloading": "Downloading…"
   },
   "discover": {
     "title": "Discover",
