@@ -287,7 +287,7 @@ function ProfileCard({
               className="hover:underline"
               title={t("library.details")}
             >
-              {profile.modId === null ? (game?.shortTitle ?? profile.label) : profile.label}
+              {profile.label}
             </Link>
           </Heading>
           {profile.missingGame !== null ? (

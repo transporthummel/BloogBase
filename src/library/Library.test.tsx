@@ -123,7 +123,7 @@ test("shows the empty state with import actions", async () => {
 test("lists profiles with version and play stats", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
   renderLibrary();
-  expect(await screen.findByText(keen5.shortTitle)).toBeInTheDocument();
+  expect(await screen.findByText(keen5.title)).toBeInTheDocument();
   expect(await screen.findByText("v1.4 EGA")).toBeInTheDocument();
   expect(screen.getByText("Played 1 h 5 min")).toBeInTheDocument();
   // On the card and in the status bar.
@@ -131,7 +131,7 @@ test("lists profiles with version and play stats", async () => {
 });
 
 test("coming back from a details page keeps the place and shows the card", async () => {
-  const other = { ...profile, id: "other", modId: "other", label: "Other Game" };
+  const other = { ...profile, id: "other", label: "Other Game" };
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile, other] });
   const scrolled = vi.fn();
   Element.prototype.scrollIntoView = scrolled;
@@ -228,7 +228,7 @@ test("sorting by type groups games and mods and is remembered", async () => {
   renderLibrary();
   await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Sort" }), "type");
   const games = screen.getByRole("region", { name: "Games" });
-  expect(within(games).getByRole("heading", { name: keen5.shortTitle })).toBeInTheDocument();
+  expect(within(games).getByRole("heading", { name: keen5.title })).toBeInTheDocument();
   const mods = screen.getByRole("region", { name: "Mods" });
   expect(within(mods).getByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
   expect(localStorage.getItem("bloogbase.librarySort")).toBe("type");
