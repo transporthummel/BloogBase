@@ -239,6 +239,9 @@
     "add": "Add mod",
     "addTitle": "Add a mod",
     "updateTitle": "Update a mod",
+    "replaceTitle": "Replace with another copy",
+    "replaceIntro": "Choose another version of this mod: a ZIP file or an unpacked folder. Its saved games are kept.",
+    "replaceOtherGame": "{{name}} is a mod for {{game}}, but this one is for {{files}}, so it can’t replace it.",
     "addHint": "Or choose a mod you downloaded yourself: a ZIP file or an unpacked folder. BloogBase finds out which game it is for and how to start it.",
     "chooseZip": "Choose ZIP file…",
     "chooseFolder": "Choose folder…",
@@ -414,6 +417,7 @@
     "released": "Released {{date}}",
     "links": "Links",
     "openModFolder": "Open mod folder",
+    "replaceMod": "Replace with a local copy…",
     "firing": {
       "on": "Space shoots, Enter opens the status window.",
       "builtIn": "This mod already shoots with Space.",

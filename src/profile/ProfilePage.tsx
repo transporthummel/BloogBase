@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ArrowLeft, ExternalLink, FolderOpen, Trash2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileArchive, FolderOpen, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
@@ -14,6 +14,7 @@ import { Cover } from "../library/Cover";
 import { coverKey, coverKeys, useCover } from "../library/covers";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Authors } from "../mods/Authors";
+import { AddModDialog } from "../mods/AddModDialog";
 import { ModUpdate } from "../mods/ModUpdate";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
 import { useRuntimeStatus } from "../runtime/queries";
@@ -169,6 +170,7 @@ function Hero({
     mutationFn: (modId: string) => unwrap(commands.openModFolder(modId)),
   });
   const [removing, setRemoving] = useState(false);
+  const [replacing, setReplacing] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -304,6 +306,14 @@ function Hero({
                 {t("profile.openModFolder")}
               </Button>
               <Button
+                variant="secondary"
+                onClick={() => setReplacing(true)}
+                disabled={profile.running}
+              >
+                <FileArchive className="size-4" aria-hidden />
+                {t("profile.replaceMod")}
+              </Button>
+              <Button
                 variant="ghost"
                 onClick={() => setRemoving(true)}
                 disabled={profile.running}
@@ -356,6 +366,16 @@ function Hero({
               navigate({ to: "/" });
               // Installing it again gets the same id, and a new cover.
               queryClient.removeQueries({ queryKey: coverKey(profile.id) });
+            }}
+          />
+        )}
+        {replacing && mod && (
+          <AddModDialog
+            replacing={mod.id}
+            onClose={() => setReplacing(false)}
+            onInstalled={() => {
+              setReplacing(false);
+              queryClient.invalidateQueries({ queryKey: profilesKey });
             }}
           />
         )}

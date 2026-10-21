@@ -18,7 +18,10 @@ import type { Downloaded } from "./wikiDownload";
 import { RecipeLabel } from "./RecipeLabel";
 import { fits } from "./recipes";
 
-/** Get a mod (KeenWiki link, folder or ZIP), confirm what was detected, install it. */
+/**
+ * Get a mod (KeenWiki link, folder or ZIP), confirm what was detected, install it.
+ * With `replacing` and nothing fetched yet, it asks for a local copy to replace that mod with.
+ */
 export function AddModDialog({
   dropped,
   downloaded,
@@ -30,7 +33,7 @@ export function AddModDialog({
   dropped?: { path: string; info: ModInfo };
   /** A KeenWiki download fetched already, e.g. an update. */
   downloaded?: Downloaded;
-  /** The installed mod it updates. */
+  /** The installed mod it updates or replaces. */
   replacing?: string;
   onClose: () => void;
   onInstalled: (mod: Mod) => void;
@@ -53,11 +56,15 @@ export function AddModDialog({
   }
 
   return (
-    <Dialog title={t(replacing ? "mods.updateTitle" : "mods.addTitle")} onClose={onClose}>
+    <Dialog
+      title={t(downloaded ? "mods.updateTitle" : replacing ? "mods.replaceTitle" : "mods.addTitle")}
+      onClose={onClose}
+    >
       {dropped ? (
         <Confirm
           path={dropped.path}
           info={dropped.info}
+          replacing={replacing}
           onCancel={onClose}
           onInstalled={onInstalled}
         />
@@ -71,11 +78,19 @@ export function AddModDialog({
           onInstalled={onInstalled}
         />
       ) : path && inspect.data ? (
-        <Confirm path={path} info={inspect.data} onCancel={onClose} onInstalled={onInstalled} />
+        <Confirm
+          path={path}
+          info={inspect.data}
+          replacing={replacing}
+          onCancel={onClose}
+          onInstalled={onInstalled}
+        />
       ) : (
         <>
-          <KeenwikiImport disabled={inspect.isPending} onDownloaded={setFromWiki} />
-          <p className="text-sm text-muted">{t("mods.addHint")}</p>
+          {!replacing && <KeenwikiImport disabled={inspect.isPending} onDownloaded={setFromWiki} />}
+          <p className="text-sm text-muted">
+            {t(replacing ? "mods.replaceIntro" : "mods.addHint")}
+          </p>
           <div className="flex flex-wrap gap-3">
             <Button onClick={() => pick("zip")} disabled={inspect.isPending}>
               <FileArchive className="size-4" aria-hidden />
@@ -152,12 +167,14 @@ function Confirm({
   const others =
     mods.data?.filter(
       (m) =>
-        m.id === replacing ||
-        (m.gameId === info.gameId &&
-          ((origin && m.keenwikiUrl === origin.pageUrl) ||
-            same(m.name, name) ||
-            same(m.name, info.name))),
+        m.gameId === info.gameId &&
+        (m.id === replacing ||
+          (origin && m.keenwikiUrl === origin.pageUrl) ||
+          same(m.name, name) ||
+          same(m.name, info.name)),
     ) ?? [];
+  // Picked to replace it, but for another game.
+  const wrongGame = mods.data?.find((m) => m.id === replacing && m.gameId !== info.gameId);
   const replaced =
     replace === null ? undefined : (others.find((m) => m.id === replace) ?? others[0]);
   // A replaced mod stays on its copy of the game when it can.
@@ -167,7 +184,7 @@ function Confirm({
     candidates.find((i) => i.id === replacedInstall) ??
     bestFit(game, candidates);
   // Waits for the mods, so the question about another version isn't skipped.
-  const ready = !!installs.data && !!mods.data;
+  const ready = !!installs.data && !!mods.data && !wrongGame;
   const versionLabel = (i: Install) => versionOf(i)?.label ?? t("library.unknownVersion");
   // Unknown versions get no warning: they may well be the right one.
   const likelyWrongVersion =
@@ -262,6 +279,15 @@ function Confirm({
           {t("keenwiki.otherGame", {
             page: gameTitle(games.data, origin.gameId),
             files: gameTitle(games.data, info.gameId),
+          })}
+        </Notice>
+      )}
+      {wrongGame && (
+        <Notice tone="error">
+          {t("mods.replaceOtherGame", {
+            name: wrongGame.name,
+            game: gameTitle(games.data, wrongGame.gameId),
+            files: game?.title ?? info.gameId,
           })}
         </Notice>
       )}

@@ -75,11 +75,11 @@ const info: ModInfo = {
 
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
 
-function renderDialog(client = new QueryClient()) {
+function renderDialog(client = new QueryClient(), replacing?: string) {
   const onInstalled = vi.fn();
   render(
     <QueryClientProvider client={client}>
-      <AddModDialog onClose={() => {}} onInstalled={onInstalled} />
+      <AddModDialog replacing={replacing} onClose={() => {}} onInstalled={onInstalled} />
     </QueryClientProvider>,
   );
   return onInstalled;
@@ -193,6 +193,46 @@ test("asks whether another version replaces the installed one", async () => {
   expect(commands.installMod).toHaveBeenCalledWith(
     expect.objectContaining({ replace: null, installId: "keen4-1" }),
   );
+});
+
+test("replaces a mod with a local copy, whatever its name", async () => {
+  const old = {
+    id: "aurora-old",
+    gameId: "keen4",
+    name: "My Aurora",
+    version: null,
+    profileId: "aurora-old",
+  } as Mod;
+  vi.mocked(commands.listMods).mockReturnValue(ok([old]));
+  vi.mocked(commands.inspectMod).mockReturnValue(ok(info));
+  vi.mocked(commands.installMod).mockReturnValue(ok(old));
+  const onInstalled = renderDialog(new QueryClient(), "aurora-old");
+  const user = userEvent.setup();
+
+  expect(screen.getByRole("dialog", { name: "Replace with another copy" })).toBeInTheDocument();
+  // Only local copies here.
+  expect(screen.queryByRole("textbox")).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+  expect(await screen.findByRole("radio", { name: /^Replace My Aurora/ })).toBeChecked();
+  await user.click(screen.getByRole("button", { name: "Replace" }));
+  expect(commands.installMod).toHaveBeenCalledWith(
+    expect.objectContaining({ path: "/downloads/aurora.zip", replace: "aurora-old" }),
+  );
+  await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
+});
+
+test("won't replace a mod with one for another game", async () => {
+  vi.mocked(commands.listMods).mockReturnValue(
+    ok([{ id: "k5", gameId: "keen5", name: "Keen 5 Mod", profileId: "k5" } as Mod]),
+  );
+  vi.mocked(commands.inspectMod).mockReturnValue(ok(info));
+  renderDialog(new QueryClient(), "k5");
+  await userEvent.setup().click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Keen 5 Mod is a mod for keen5, but this one is for Commander Keen 4: Secret of the Oracle, so it can’t replace it.",
+  );
+  expect(screen.getByRole("button", { name: "Install" })).toBeDisabled();
 });
 
 test("asks which recipe to use when unsure", async () => {

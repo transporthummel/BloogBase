@@ -239,6 +239,9 @@
     "add": "Mod hinzufügen",
     "addTitle": "Mod hinzufügen",
     "updateTitle": "Mod aktualisieren",
+    "replaceTitle": "Durch eine andere Kopie ersetzen",
+    "replaceIntro": "Wähle eine andere Version dieser Mod: eine ZIP-Datei oder einen entpackten Ordner. Die Spielstände bleiben erhalten.",
+    "replaceOtherGame": "{{name}} ist eine Mod für {{game}}, diese hier aber für {{files}}. Sie kann sie deshalb nicht ersetzen.",
     "addHint": "Oder wähle eine Mod, die du selbst heruntergeladen hast: als ZIP-Datei oder entpackten Ordner. BloogBase findet heraus, zu welchem Spiel sie gehört und wie sie startet.",
     "chooseZip": "ZIP-Datei wählen…",
     "chooseFolder": "Ordner wählen…",
@@ -414,6 +417,7 @@
     "released": "Erschienen {{date}}",
     "links": "Links",
     "openModFolder": "Mod-Ordner öffnen",
+    "replaceMod": "Durch lokale Kopie ersetzen…",
     "firing": {
       "on": "Space schießt, Enter öffnet das Statusfenster.",
       "builtIn": "Diese Mod schießt schon mit Space.",

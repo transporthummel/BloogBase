@@ -276,6 +276,20 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   expect(remove).toHaveBeenCalledWith({ queryKey: ["cover", "keen4-1"] });
 });
 
+test("a mod can be replaced with a local copy, unless it runs", async () => {
+  const mine = { ...profile, modId: "aurora-bliss", label: "Aurora Bliss" };
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([mine]));
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "Replace with a local copy…" }));
+  expect(screen.getByRole("dialog", { name: "Replace with another copy" })).toBeInTheDocument();
+
+  cleanup();
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([{ ...mine, running: true }]));
+  renderDetail();
+  expect(await screen.findByRole("button", { name: "Replace with a local copy…" })).toBeDisabled();
+});
+
 test("a game is uninstalled from its page, with its mods if asked", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue(
     ok([
