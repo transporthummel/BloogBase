@@ -396,7 +396,7 @@ const page: WikiMod = {
 
 async function lookUp(url = page.pageUrl) {
   const user = userEvent.setup();
-  await user.type(screen.getByRole("textbox", { name: "KeenWiki link" }), url);
+  await user.type(screen.getByRole("textbox", { name: "Add a mod from KeenWiki" }), url);
   await user.click(screen.getByRole("button", { name: "Look up" }));
   return user;
 }

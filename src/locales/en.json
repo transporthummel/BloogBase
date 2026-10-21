@@ -386,7 +386,7 @@
     }
   },
   "keenwiki": {
-    "label": "KeenWiki link",
+    "label": "Add a mod from KeenWiki",
     "lookUp": "Look up",
     "looking": "Reading the KeenWiki page…",
     "inIndex": "This mod is in the BloogBase mod list, tested and ready to install:",
