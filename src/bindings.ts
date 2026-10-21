@@ -111,12 +111,11 @@ export const commands = {
 	/**  Installs a mod inspected with `inspect_mod` and creates its play profile. */
 	installMod: (request: InstallModRequest) => typedError<Mod, CommandError>(__TAURI_INVOKE("install_mod", { request })),
 	listMods: () => typedError<Mod[], CommandError>(__TAURI_INVOKE("list_mods")),
-	/**  The README shipped with a mod, as plain text; `None` when it has none. */
-	modReadme: (modId: string) => typedError<{
-	/**  Path of the file inside the mod or its archive. */
-	file: string,
-	text: string,
-} | null, CommandError>(__TAURI_INVOKE("mod_readme", { modId })),
+	/**
+	 *  The documents shipped with a mod as plain text, the README first; empty
+	 *  when it has none.
+	 */
+	modReadmes: (modId: string) => typedError<Readme[], CommandError>(__TAURI_INVOKE("mod_readmes", { modId })),
 	/**  Opens the folder with a mod's installed files. */
 	openModFolder: (modId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_folder", { modId })),
 	/**  The installs a mod can be played on. */

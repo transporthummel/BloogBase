@@ -30,7 +30,7 @@ import { ConfigPanel } from "./ConfigPanel";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { ReadmePanel } from "./ReadmePanel";
 import { RemoveGameDialog } from "./RemoveGameDialog";
-import { useReadme } from "./readme";
+import { useReadmes } from "./readme";
 import { SavesPanel } from "./SavesPanel";
 import { ScreenshotsPanel } from "./ScreenshotsPanel";
 import { VideosPanel } from "./VideosPanel";
@@ -89,7 +89,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
 
   const profile = profiles.data?.find((p) => p.id === profileId);
   const game = games.data?.find((g) => g.id === profile?.gameId);
-  const readme = useReadme(profile?.modId ?? null);
+  const readmes = useReadmes(profile?.modId ?? null);
 
   if (profiles.data && !profile) {
     return (
@@ -101,7 +101,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   }
 
   const tabs: { id: Tab; label: string }[] = [
-    ...(readme.data ? [{ id: "readme" as const, label: t("profile.tabReadme") }] : []),
+    ...(readmes.data?.length ? [{ id: "readme" as const, label: t("profile.tabReadme") }] : []),
     { id: "saves", label: t("profile.tabSaves") },
     { id: "screenshots", label: t("profile.tabScreenshots") },
     { id: "videos", label: t("profile.tabVideos") },
@@ -109,7 +109,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   ];
   const tab = tabs.find((x) => x.id === picked)?.id ?? tabs[0].id;
   // Wait for the README so the first tab doesn't change under the player.
-  const tabsReady = !(profile?.modId && readme.isPending);
+  const tabsReady = !(profile?.modId && readmes.isPending);
 
   return (
     <>
@@ -135,7 +135,9 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
       {profile && tabsReady && (
         <Tabs tabs={tabs} selected={tab} onSelect={setTab} label={t("profile.tabs")}>
           <div className={tab === "screenshots" || tab === "videos" ? "" : "max-w-3xl"}>
-            {readme.data && tab === "readme" && <ReadmePanel readme={readme.data} />}
+            {readmes.data && tab === "readme" && (
+              <ReadmePanel key={profile.id} readmes={readmes.data} />
+            )}
             {tab === "saves" && <SavesPanel profile={profile} game={game} />}
             {tab === "screenshots" && <ScreenshotsPanel profile={profile} />}
             {tab === "videos" && <VideosPanel profile={profile} />}

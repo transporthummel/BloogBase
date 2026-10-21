@@ -6,11 +6,11 @@ export const readmeKeys = ["readme"] as const;
 /** Invalidate it when the mod's files change, e.g. it's replaced. */
 export const readmeKey = (modId: string) => [...readmeKeys, modId] as const;
 
-/** The README shipped with a mod; `null` when it has none. Off for games. */
-export function useReadme(modId: string | null) {
+/** The documents shipped with a mod, the README first. Off for games. */
+export function useReadmes(modId: string | null) {
   return useQuery({
     queryKey: readmeKey(modId ?? ""),
-    queryFn: () => unwrap(commands.modReadme(modId!)),
+    queryFn: () => unwrap(commands.modReadmes(modId!)),
     enabled: modId !== null,
   });
 }

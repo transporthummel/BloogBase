@@ -579,10 +579,11 @@ pub fn list_mods(db: State<'_, Db>) -> CommandResult<Vec<Mod>> {
     Ok(mods::list(&db)?)
 }
 
-/// The README shipped with a mod, as plain text; `None` when it has none.
+/// The documents shipped with a mod as plain text, the README first; empty
+/// when it has none.
 #[tauri::command]
 #[specta::specta]
-pub async fn mod_readme(app: AppHandle, mod_id: String) -> CommandResult<Option<Readme>> {
+pub async fn mod_readmes(app: AppHandle, mod_id: String) -> CommandResult<Vec<Readme>> {
     blocking(move || readme::for_mod(&app.state::<AppPaths>(), &app.state::<Db>(), &mod_id)).await
 }
 

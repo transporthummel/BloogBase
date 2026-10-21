@@ -69,7 +69,7 @@ vi.mock("../bindings", () => {
     "saveConfig",
     "resetConfig",
     "listMods",
-    "modReadme",
+    "modReadmes",
     "openModFolder",
     "deleteMod",
     "modInstalls",
@@ -181,7 +181,7 @@ beforeEach(() => {
   );
   vi.mocked(commands.listBackups).mockResolvedValue(ok([backup]));
   vi.mocked(commands.listMods).mockResolvedValue(ok([]));
-  vi.mocked(commands.modReadme).mockResolvedValue(ok(null));
+  vi.mocked(commands.modReadmes).mockResolvedValue(ok([]));
   vi.mocked(commands.indexMods).mockResolvedValue(ok([]));
   vi.mocked(commands.listScreenshots).mockResolvedValue(ok([]));
   vi.mocked(commands.listVideos).mockResolvedValue(ok([]));
@@ -372,17 +372,19 @@ test("a mod's README is the first tab, shown as text with links opening outside"
     ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
   );
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
-  vi.mocked(commands.modReadme).mockResolvedValue(
-    ok({
-      file: "Aurora/READ ME.txt",
-      text: '<img src=x onerror="alert(1)"><script>alert(2)</script>\nSee https://pckf.com/aurora.',
-    }),
+  vi.mocked(commands.modReadmes).mockResolvedValue(
+    ok([
+      {
+        file: "Aurora/READ ME.txt",
+        text: '<img src=x onerror="alert(1)"><script>alert(2)</script>\nSee https://pckf.com/aurora.',
+      },
+    ]),
   );
   const { container } = renderDetail();
   const tab = await screen.findByRole("tab", { name: "Readme" });
   expect(tab).toHaveAttribute("aria-selected", "true");
   expect(screen.getAllByRole("tab")[0]).toBe(tab);
-  expect(commands.modReadme).toHaveBeenCalledWith("aurora-bliss");
+  expect(commands.modReadmes).toHaveBeenCalledWith("aurora-bliss");
   expect(screen.getByText("Aurora/READ ME.txt")).toBeInTheDocument();
   const panel = screen.getByRole("tabpanel");
   expect(panel).toHaveTextContent('<img src=x onerror="alert(1)"><script>alert(2)</script>');
@@ -391,12 +393,33 @@ test("a mod's README is the first tab, shown as text with links opening outside"
   expect(openUrl).toHaveBeenCalledWith("https://pckf.com/aurora");
 });
 
+test("other documents of a mod can be picked in the README tab", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
+  );
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  vi.mocked(commands.modReadmes).mockResolvedValue(
+    ok([
+      { file: "changes.txt", text: "v1.1: fixed a crash" },
+      { file: "Hints Sheet.txt", text: "The key is behind the wall" },
+    ]),
+  );
+  renderDetail();
+  const picker = await screen.findByRole("combobox", { name: "File:" });
+  expect(picker).toHaveValue("changes.txt");
+  const panel = screen.getByRole("tabpanel");
+  expect(panel).toHaveTextContent("v1.1: fixed a crash");
+  await userEvent.selectOptions(picker, "Hints Sheet.txt");
+  expect(panel).toHaveTextContent("The key is behind the wall");
+  expect(panel).not.toHaveTextContent("v1.1");
+});
+
 test("without a README there is no README tab", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue(
     ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
   );
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
-  vi.mocked(commands.modReadme).mockResolvedValue(ok(null));
+  vi.mocked(commands.modReadmes).mockResolvedValue(ok([]));
   renderDetail();
   expect(await screen.findByRole("tab", { name: "Saves" })).toHaveAttribute(
     "aria-selected",
@@ -411,7 +434,7 @@ test("games don't look for a README", async () => {
     "aria-selected",
     "true",
   );
-  expect(commands.modReadme).not.toHaveBeenCalled();
+  expect(commands.modReadmes).not.toHaveBeenCalled();
   expect(screen.queryByRole("button", { name: "Open mod folder" })).toBeNull();
 });
 

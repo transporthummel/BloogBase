@@ -31,10 +31,13 @@ pub struct Readme {
 const MAX_BYTES: usize = 1 << 20;
 /// Deeper files belong to tools or sources shipped along.
 const MAX_DEPTH: usize = 2;
+/// More would hardly fit a picker; the best-ranked come first anyway.
+const MAX_FILES: usize = 20;
 
-/// The README of an installed mod, if it has one. The kept archive is
-/// searched, so files outside the installed mod folder count too.
-pub fn for_mod(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Option<Readme>> {
+/// The documents of an installed mod, the README first; empty when it has
+/// none. The kept archive is searched, so files outside the installed mod
+/// folder count too.
+pub fn for_mod(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Vec<Readme>> {
     db.conn()
         .query_row("SELECT 1 FROM mods WHERE id = ?1", [mod_id], |_| Ok(()))
         .optional()?
@@ -43,7 +46,7 @@ pub fn for_mod(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Option<Readme>
     let source = match archive(&dir.join("source")) {
         Some(zip) => Source::Zip(zip),
         None if dir.join("files").is_dir() => Source::Folder(dir.join("files")),
-        None => return Ok(None),
+        None => return Ok(Vec::new()),
     };
     find(&source)
 }
@@ -55,8 +58,8 @@ fn archive(dir: &Path) -> Option<std::path::PathBuf> {
         .find(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("zip")))
 }
 
-/// The best-named readable candidate in `source`.
-pub fn find(source: &Source) -> Result<Option<Readme>> {
+/// The readable candidates in `source`, best-named first.
+pub fn find(source: &Source) -> Result<Vec<Readme>> {
     let mut candidates: Vec<(u8, usize, String)> = source
         .files()?
         .into_iter()
@@ -67,7 +70,11 @@ pub fn find(source: &Source) -> Result<Option<Readme>> {
         })
         .collect();
     candidates.sort();
+    let mut found = Vec::new();
     for (_, _, file) in candidates {
+        if found.len() == MAX_FILES {
+            break;
+        }
         let bytes = match source.read(&file) {
             Ok(b) => b,
             Err(e) => {
@@ -82,10 +89,10 @@ pub fn find(source: &Source) -> Result<Option<Readme>> {
             && !text.trim().is_empty()
             && !is_patch_script(&text)
         {
-            return Ok(Some(Readme { file, text }));
+            found.push(Readme { file, text });
         }
     }
-    Ok(None)
+    Ok(found)
 }
 
 /// Lower is better; `None` for files that are no README.
@@ -429,8 +436,12 @@ mod tests {
         }
     }
 
+    fn names(source: &Source) -> Vec<String> {
+        find(source).unwrap().into_iter().map(|r| r.file).collect()
+    }
+
     #[test]
-    fn picks_the_best_name_then_the_shallowest() {
+    fn lists_the_best_name_then_the_shallowest_first() {
         let tmp = tempfile::tempdir().unwrap();
         write_folder(
             tmp.path(),
@@ -443,13 +454,17 @@ mod tests {
                 ("Mod/GAMEMAPS.CK4", b"maps"),
             ],
         );
-        let found = find(&Source::Folder(tmp.path().into())).unwrap().unwrap();
+        let found = find(&Source::Folder(tmp.path().into())).unwrap();
         assert_eq!(
-            found,
+            found[0],
             Readme {
                 file: "readme.txt".into(),
                 text: "top".into()
             }
+        );
+        assert_eq!(
+            names(&Source::Folder(tmp.path().into())),
+            ["readme.txt", "Mod/docs/readme.txt", "Mod/Help.txt"]
         );
     }
 
@@ -465,12 +480,11 @@ mod tests {
                 ("INFO.TXT", b"info"),
             ],
         );
-        let found = find(&Source::Folder(tmp.path().into())).unwrap().unwrap();
-        assert_eq!(found.file, "INFO.TXT");
+        assert_eq!(names(&Source::Folder(tmp.path().into())), ["INFO.TXT"]);
 
         let tmp = tempfile::tempdir().unwrap();
         write_folder(tmp.path(), &[("readme.htm", b"<b>hi</b>"), ("1.TXT", b"")]);
-        assert_eq!(find(&Source::Folder(tmp.path().into())).unwrap(), None);
+        assert_eq!(find(&Source::Folder(tmp.path().into())).unwrap(), []);
     }
 
     #[test]
@@ -485,12 +499,14 @@ mod tests {
                 ("patch.txt", b"\r\n%ext ck4\r\n%version 1.4\r\n"),
             ],
         );
-        let found = find(&Source::Folder(tmp.path().into())).unwrap().unwrap();
-        assert_eq!(found.file, "changes.txt");
+        assert_eq!(
+            names(&Source::Folder(tmp.path().into())),
+            ["changes.txt", "Hints Sheet.txt"]
+        );
 
         let tmp = tempfile::tempdir().unwrap();
         write_folder(tmp.path(), &[("patch.txt", b"%ext ck4\n%end\n")]);
-        assert_eq!(find(&Source::Folder(tmp.path().into())).unwrap(), None);
+        assert_eq!(find(&Source::Folder(tmp.path().into())).unwrap(), []);
     }
 
     #[test]
@@ -505,9 +521,10 @@ mod tests {
                 ("__MACOSX/Aurora/._READ ME.txt", b"junk"),
             ],
         );
-        let found = find(&Source::Zip(zip)).unwrap().unwrap();
-        assert_eq!(found.file, "Aurora/READ ME.txt");
-        assert_eq!(found.text, "hi there");
+        let found = find(&Source::Zip(zip)).unwrap();
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].file, "Aurora/READ ME.txt");
+        assert_eq!(found[0].text, "hi there");
     }
 
     #[test]
