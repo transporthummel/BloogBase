@@ -9,7 +9,9 @@
   "library": {
     "title": "Bibliothek",
     "emptyTitle": "Noch ganz leer hier",
-    "empty": "Importiere einen Ordner oder eine ZIP-Datei mit einem Commander-Keen-Spiel, um loszulegen.",
+    "empty": "Füge einen Ordner oder eine ZIP-Datei mit einem Commander-Keen-Spiel hinzu, um loszulegen, oder hol dir eines der kostenlosen Spiele.",
+    "add": "Spiel oder Mod hinzufügen",
+    "freeGames": "Kostenlose Spiele holen",
     "importFolder": "Ordner importieren",
     "importZip": "ZIP importieren",
     "importing": "Importiere…",
@@ -236,16 +238,17 @@
     "nothing": "Dort wurde weder ein Commander-Keen-Spiel noch eine Mod gefunden."
   },
   "mods": {
-    "add": "Mod hinzufügen",
-    "addTitle": "Mod hinzufügen",
+    "addTitle": "Spiel oder Mod hinzufügen",
     "updateTitle": "Mod aktualisieren",
     "replaceTitle": "Durch eine andere Kopie ersetzen",
     "replaceIntro": "Wähle eine andere Version dieser Mod: eine ZIP-Datei oder einen entpackten Ordner. Die Spielstände bleiben erhalten.",
     "replaceOtherGame": "{{name}} ist eine Mod für {{game}}, diese hier aber für {{files}}. Sie kann sie deshalb nicht ersetzen.",
-    "addHint": "Oder wähle eine Mod, die du selbst heruntergeladen hast: als ZIP-Datei oder entpackten Ordner. BloogBase findet heraus, zu welchem Spiel sie gehört und wie sie startet.",
+    "addHint": "Oder wähle ein Spiel oder eine Mod, die du selbst hast: als ZIP-Datei oder entpackten Ordner. BloogBase findet heraus, was es ist und wie es startet.",
+    "addMore": "Du kannst Ordner und ZIP-Dateien auch einfach auf das Fenster ziehen. Auf der Suche nach Neuem?",
+    "toDiscover": "Zu Entdecken",
     "chooseZip": "ZIP-Datei wählen…",
     "chooseFolder": "Ordner wählen…",
-    "inspecting": "Mod wird untersucht…",
+    "inspecting": "Wird untersucht…",
     "name": "Name",
     "forGame": "Spiel",
     "madeFor": "Gemacht für",
@@ -309,7 +312,6 @@
   },
   "discover": {
     "title": "Entdecken",
-    "find": "Mods finden",
     "refresh": "Nach neuen Mods suchen",
     "tabs": {
       "label": "Was du entdecken willst",

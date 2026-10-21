@@ -23,6 +23,8 @@ vi.mock("../bindings", () => ({
     listMods: vi.fn(),
     listProfiles: vi.fn(),
     inspectMod: vi.fn(),
+    inspectDropped: vi.fn(),
+    importGames: vi.fn(),
     installMod: vi.fn(),
     lookupKeenwiki: vi.fn(),
     downloadKeenwikiMod: vi.fn(),
@@ -31,6 +33,9 @@ vi.mock("../bindings", () => ({
   },
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
+vi.mock("@tanstack/react-router", () => ({
+  Link: (props: { to: string }) => <a href={props.to} {...props} />,
+}));
 
 const keen4: Game = {
   id: "keen4",
@@ -76,11 +81,20 @@ const info: ModInfo = {
 
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
 
-function renderDialog(client = new QueryClient(), replacing?: string) {
+function renderDialog(
+  client = new QueryClient(),
+  replacing?: string,
+  onGamesImported?: (count: number) => void,
+) {
   const onInstalled = vi.fn();
   render(
     <QueryClientProvider client={client}>
-      <AddModDialog replacing={replacing} onClose={() => {}} onInstalled={onInstalled} />
+      <AddModDialog
+        replacing={replacing}
+        onClose={() => {}}
+        onInstalled={onInstalled}
+        onGamesImported={onGamesImported}
+      />
     </QueryClientProvider>,
   );
   return onInstalled;
@@ -92,6 +106,33 @@ beforeEach(() => {
   vi.mocked(commands.listMods).mockReturnValue(ok([]));
   vi.mocked(commands.listProfiles).mockReturnValue(ok([]));
   vi.mocked(open).mockResolvedValue("/downloads/aurora.zip");
+  // Whatever a test makes inspectMod find is what a pick holds.
+  vi.mocked(commands.inspectDropped).mockImplementation(async (path) => {
+    const found = await commands.inspectMod(path);
+    return found.status === "ok" ? ok({ kind: "mod" as const, info: found.data }) : found;
+  });
+});
+
+test("imports games picked instead of a mod", async () => {
+  vi.mocked(commands.inspectDropped).mockReturnValue(ok({ kind: "games" }));
+  vi.mocked(commands.importGames).mockReturnValue(ok([install, { ...install, id: "keen4-2" }]));
+  const onGamesImported = vi.fn();
+  renderDialog(new QueryClient(), undefined, onGamesImported);
+  await userEvent.setup().click(screen.getByRole("button", { name: "Choose folder…" }));
+
+  await vi.waitFor(() => expect(onGamesImported).toHaveBeenCalledWith(2));
+  expect(commands.importGames).toHaveBeenCalledWith("/downloads/aurora.zip");
+  expect(commands.inspectMod).not.toHaveBeenCalled();
+});
+
+test("says so when a pick holds neither a game nor a mod", async () => {
+  vi.mocked(commands.inspectDropped).mockReturnValue(ok({ kind: "nothing" }));
+  renderDialog();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  expect(
+    await screen.findByText("Neither a Commander Keen game nor a mod was found there."),
+  ).toBeInTheDocument();
 });
 
 test("inspects the picked ZIP and installs the mod on the matching game", async () => {

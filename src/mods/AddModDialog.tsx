@@ -1,9 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FileArchive, FolderOpen } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Install, type KeenwikiOrigin, type Mod, type ModInfo } from "../bindings";
+import {
+  commands,
+  type Dropped,
+  type Install,
+  type KeenwikiOrigin,
+  type Mod,
+  type ModInfo,
+} from "../bindings";
 import { bestFit, gameTitle, isModified, shortGameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
@@ -20,6 +28,7 @@ import { fits } from "./recipes";
 
 /**
  * Get a mod (KeenWiki link, folder or ZIP), confirm what was detected, install it.
+ * A folder or ZIP holding games instead is imported as such.
  * With `replacing` and nothing fetched yet, it asks for a local copy to replace that mod with.
  */
 export function AddModDialog({
@@ -28,6 +37,7 @@ export function AddModDialog({
   replacing,
   onClose,
   onInstalled,
+  onGamesImported,
 }: {
   /** A folder or ZIP dropped on the window and inspected already. */
   dropped?: { path: string; info: ModInfo };
@@ -37,13 +47,27 @@ export function AddModDialog({
   replacing?: string;
   onClose: () => void;
   onInstalled: (mod: Mod) => void;
+  /** Games were picked instead of a mod and imported; how many. */
+  onGamesImported?: (count: number) => void;
 }) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [path, setPath] = useState<string | null>(null);
   const [fromWiki, setFromWiki] = useState<Downloaded | null>(downloaded ?? null);
 
+  // A pick may also hold games, which are imported right away; only a replacement must be a mod.
   const inspect = useMutation({
-    mutationFn: (p: string) => unwrap(commands.inspectMod(p)),
+    mutationFn: async (p: string): Promise<Dropped> => {
+      if (replacing) return { kind: "mod", info: await unwrap(commands.inspectMod(p)) };
+      const found = await unwrap(commands.inspectDropped(p));
+      if (found.kind === "games") {
+        const imported = await unwrap(commands.importGames(p));
+        queryClient.invalidateQueries({ queryKey: profilesKey });
+        queryClient.invalidateQueries({ queryKey: installsKey });
+        onGamesImported?.(imported.length);
+      }
+      return found;
+    },
   });
 
   async function pick(kind: "folder" | "zip") {
@@ -77,10 +101,10 @@ export function AddModDialog({
           onCancel={onClose}
           onInstalled={onInstalled}
         />
-      ) : path && inspect.data ? (
+      ) : path && inspect.data?.kind === "mod" ? (
         <Confirm
           path={path}
-          info={inspect.data}
+          info={inspect.data.info}
           replacing={replacing}
           onCancel={onClose}
           onInstalled={onInstalled}
@@ -102,7 +126,16 @@ export function AddModDialog({
             </Button>
           </div>
           {inspect.isPending && <Notice>{t("mods.inspecting")}</Notice>}
+          {inspect.data?.kind === "nothing" && <Notice tone="error">{t("drop.nothing")}</Notice>}
           {inspect.error && <Notice tone="error">{errorMessage(t, inspect.error)}</Notice>}
+          {!replacing && (
+            <p className="text-sm text-muted">
+              {t("mods.addMore")}{" "}
+              <Link to="/discover" className="underline">
+                {t("mods.toDiscover")}
+              </Link>
+            </p>
+          )}
           <div className="flex justify-end">
             <Button variant="ghost" onClick={onClose}>
               {t("common.cancel")}

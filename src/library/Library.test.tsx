@@ -113,11 +113,12 @@ test("opens the setup wizard on first start", async () => {
   expect(await screen.findByText("redirect to /setup")).toBeInTheDocument();
 });
 
-test("shows the empty state with import actions", async () => {
+test("shows the empty state with ways to add games", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [] });
   renderLibrary();
   expect(await screen.findByText("Nothing here yet")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Import folder" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Add game or mod" })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Get free games" })).toHaveAttribute("href", "/discover");
 });
 
 test("lists profiles with version and play stats", async () => {

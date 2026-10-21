@@ -28,6 +28,7 @@ vi.mock("@tanstack/react-router", () => ({
       {children}
     </a>
   ),
+  useSearch: () => ({}),
 }));
 vi.mock("../bindings", () => ({
   commands: {

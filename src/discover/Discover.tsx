@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useSearch } from "@tanstack/react-router";
 import { RefreshCw, Search } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,12 +17,11 @@ import { Tabs } from "../ui/Tabs";
 import { compare, fitting, type Sort } from "./fit";
 import { FreeGames } from "./FreeGames";
 import { ModCard } from "./ModCard";
+import { TABS, type DiscoverTab } from "./tabs";
 import { useIndexMods, useIndexStatus, useRefreshIndex } from "./queries";
 
 const KINDS: ModKind[] = ["episode", "levelpack", "conversion"];
 const SORTS: Sort[] = ["featured", "newest", "name"];
-const TABS = ["mods", "games", "demos"] as const;
-type Tab = (typeof TABS)[number];
 
 const field = "rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm";
 
@@ -30,7 +30,8 @@ export function Discover() {
   const { t } = useTranslation();
   const games = useGames().data ?? [];
   const refresh = useRefreshIndex();
-  const [tab, setTab] = useState<Tab>("mods");
+  const search: { tab?: DiscoverTab } = useSearch({ strict: false });
+  const [tab, setTab] = useState<DiscoverTab>(search.tab ?? "mods");
 
   return (
     <>

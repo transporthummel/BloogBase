@@ -9,7 +9,9 @@
   "library": {
     "title": "Library",
     "emptyTitle": "Nothing here yet",
-    "empty": "Import a folder or ZIP file with a Commander Keen game to get started.",
+    "empty": "Add a folder or ZIP file with a Commander Keen game to get started, or get one of the free games.",
+    "add": "Add game or mod",
+    "freeGames": "Get free games",
     "importFolder": "Import folder",
     "importZip": "Import ZIP",
     "importing": "Importing…",
@@ -236,16 +238,17 @@
     "nothing": "Neither a Commander Keen game nor a mod was found there."
   },
   "mods": {
-    "add": "Add mod",
-    "addTitle": "Add a mod",
+    "addTitle": "Add a game or mod",
     "updateTitle": "Update a mod",
     "replaceTitle": "Replace with another copy",
     "replaceIntro": "Choose another version of this mod: a ZIP file or an unpacked folder. Its saved games are kept.",
     "replaceOtherGame": "{{name}} is a mod for {{game}}, but this one is for {{files}}, so it can’t replace it.",
-    "addHint": "Or choose a mod you downloaded yourself: a ZIP file or an unpacked folder. BloogBase finds out which game it is for and how to start it.",
+    "addHint": "Or choose a game or mod you have yourself: a ZIP file or an unpacked folder. BloogBase finds out what it is and how to start it.",
+    "addMore": "You can also drop folders and ZIP files onto the window. Looking for something new?",
+    "toDiscover": "Go to Discover",
     "chooseZip": "Choose ZIP file…",
     "chooseFolder": "Choose folder…",
-    "inspecting": "Looking at the mod…",
+    "inspecting": "Taking a look…",
     "name": "Name",
     "forGame": "Game",
     "madeFor": "Made for",
@@ -309,7 +312,6 @@
   },
   "discover": {
     "title": "Discover",
-    "find": "Find mods",
     "refresh": "Check for new mods",
     "tabs": {
       "label": "What to discover",

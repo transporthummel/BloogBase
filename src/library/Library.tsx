@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate } from "@tanstack/react-router";
-import { open } from "@tauri-apps/plugin-dialog";
-import { Compass, FileArchive, FolderOpen, Puzzle } from "lucide-react";
+import { Compass, Plus } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type Mod, type Profile } from "../bindings";
@@ -14,7 +13,7 @@ import { AddModDialog } from "../mods/AddModDialog";
 import { SuggestToIndex } from "../mods/KeenwikiImport";
 import { Cover } from "./Cover";
 import { useCover } from "./covers";
-import { installsKey, profilesKey } from "./queries";
+import { profilesKey } from "./queries";
 import { getLibrarySort, getSetupStep, setLibrarySort } from "../preferences";
 import { arrange, librarySorts, type LibrarySort } from "./sort";
 import { StatusBar } from "./StatusBar";
@@ -39,8 +38,8 @@ export function Library() {
     queryFn: () => unwrap(commands.listProfiles()),
   });
   const runtime = useRuntimeStatus();
-  const [addingMod, setAddingMod] = useState(false);
-  const [installedMod, setInstalledMod] = useState<Mod | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [added, setAdded] = useState<{ mod?: Mod; games?: number } | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
   const list = useRef<HTMLDivElement>(null);
   // Once the cards are laid out, so the old position means the same.
@@ -58,37 +57,21 @@ export function Library() {
     };
   }, [queryClient]);
 
-  const importGames = useMutation({
-    mutationFn: (path: string) => unwrap(commands.importGames(path)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: profilesKey });
-      queryClient.invalidateQueries({ queryKey: installsKey });
-    },
-  });
-
   const launch = useMutation({
     mutationFn: (profileId: string) => unwrap(commands.launchProfile(profileId)),
     onSettled: () => queryClient.invalidateQueries({ queryKey: profilesKey }),
   });
 
-  async function pick(kind: "folder" | "zip") {
-    const path = await open(
-      kind === "folder" ? { directory: true } : { filters: [{ name: "ZIP", extensions: ["zip"] }] },
-    );
-    if (path) importGames.mutate(path);
-  }
-
-  const importButtons = (
-    <>
-      <Button onClick={() => pick("folder")} disabled={importGames.isPending}>
-        <FolderOpen className="size-4" aria-hidden />
-        {t("library.importFolder")}
-      </Button>
-      <Button variant="secondary" onClick={() => pick("zip")} disabled={importGames.isPending}>
-        <FileArchive className="size-4" aria-hidden />
-        {t("library.importZip")}
-      </Button>
-    </>
+  const addButton = (
+    <Button
+      onClick={() => {
+        setAdded(null);
+        setAdding(true);
+      }}
+    >
+      <Plus className="size-4" aria-hidden />
+      {t("library.add")}
+    </Button>
   );
 
   // First start, or a wizard that was interrupted after adding games.
@@ -96,41 +79,25 @@ export function Library() {
     return <Navigate to="/setup" />;
 
   const gameById = new Map(games.data?.map((g) => [g.id, g]));
-  const error = importGames.error ?? launch.error ?? profiles.error;
+  const error = launch.error ?? profiles.error;
   const empty = profiles.data?.length === 0;
   const needsRuntime = !empty && runtime.data && !runtime.data.active;
   const groups = arrange(profiles.data ?? [], sort, games.data ?? [], i18n.language);
 
   return (
     <>
-      <PageHeader
-        title={t("library.title")}
-        actions={
-          !empty && (
-            <>
-              <Link
-                to="/discover"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink shadow-card transition hover:brightness-110"
-              >
-                <Compass className="size-4" aria-hidden />
-                {t("discover.find")}
-              </Link>
-              <Button variant="secondary" onClick={() => setAddingMod(true)}>
-                <Puzzle className="size-4" aria-hidden />
-                {t("mods.add")}
-              </Button>
-              {importButtons}
-            </>
-          )
-        }
-      />
-      {addingMod && (
+      <PageHeader title={t("library.title")} actions={!empty && addButton} />
+      {adding && (
         <AddModDialog
-          onClose={() => setAddingMod(false)}
+          onClose={() => setAdding(false)}
           onInstalled={(mod) => {
-            setAddingMod(false);
-            setInstalledMod(mod);
+            setAdding(false);
+            setAdded({ mod });
             queryClient.invalidateQueries({ queryKey: profilesKey });
+          }}
+          onGamesImported={(games) => {
+            setAdding(false);
+            setAdded({ games });
           }}
         />
       )}
@@ -153,17 +120,16 @@ export function Library() {
             )}
           </Card>
         )}
-        {importGames.isPending && <Notice>{t("library.importing")}</Notice>}
-        {importGames.isSuccess && (
-          <Notice>{t("library.imported", { count: importGames.data.length })}</Notice>
+        {added?.games !== undefined && (
+          <Notice>{t("library.imported", { count: added.games })}</Notice>
         )}
-        {installedMod && (
+        {added?.mod && (
           <Notice>
-            {t("mods.installed", { name: installedMod.name })}
-            {installedMod.source === "keenwiki" && (
+            {t("mods.installed", { name: added.mod.name })}
+            {added.mod.source === "keenwiki" && (
               <>
                 {" "}
-                <SuggestToIndex modId={installedMod.id} />
+                <SuggestToIndex modId={added.mod.id} />
               </>
             )}
           </Notice>
@@ -174,7 +140,17 @@ export function Library() {
       {empty && (
         <EmptyState title={t("library.emptyTitle")}>
           <p className="max-w-md text-sm text-muted">{t("library.empty")}</p>
-          <div className="flex flex-wrap justify-center gap-3">{importButtons}</div>
+          <div className="flex flex-wrap justify-center gap-3">
+            {addButton}
+            <Link
+              to="/discover"
+              search={{ tab: "games" }}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-raised px-4 py-2 text-sm font-semibold text-ink transition hover:border-muted"
+            >
+              <Compass className="size-4" aria-hidden />
+              {t("library.freeGames")}
+            </Link>
+          </div>
         </EmptyState>
       )}
 
