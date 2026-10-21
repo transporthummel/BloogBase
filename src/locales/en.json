@@ -78,6 +78,7 @@
     "chooseInSettings": "Choose an existing DOSBox Staging in the settings."
   },
   "time": {
+    "justNow": "just now",
     "lessThanMinute": "< 1 min",
     "minutes_one": "{{count}} min",
     "minutes_other": "{{count}} min",

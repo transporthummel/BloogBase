@@ -12,6 +12,7 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Notice } from "../ui/Notice";
+import { RelativeTime } from "../ui/RelativeTime";
 import { RestoreDialog } from "./RestoreDialog";
 import { VersionsDialog } from "./VersionsDialog";
 import { backupContents, backupTitle, backupsKey, saveSummary, saveTitle, savesKey } from "./saves";
@@ -204,7 +205,9 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
                   <p className="text-xs text-muted">{saveSummary(t, i18n.language, s)}</p>
                   {s.modifiedAt !== null && (
                     <p className="text-xs text-muted">
-                      {t("saves.savedAt", { date: formatDateTime(i18n.language, s.modifiedAt) })}
+                      <RelativeTime at={s.modifiedAt}>
+                        {(date) => t("saves.savedAt", { date })}
+                      </RelativeTime>
                     </p>
                   )}
                 </div>

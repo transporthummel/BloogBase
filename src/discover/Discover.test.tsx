@@ -171,7 +171,7 @@ test("shows what each mod needs and installs on the chosen game", async () => {
   const user = userEvent.setup();
 
   await screen.findByRole("heading", { name: "Aurora" });
-  expect(screen.getByText("4 mods · checked Oct 9, 2025")).toBeInTheDocument();
+  expect(screen.getByText(/^4 mods · checked \d+ years? ago$/)).toBeInTheDocument();
   expect(within(card("Krodacia")).getByText("Details & Play")).toHaveAttribute(
     "href",
     "/profiles/krodacia",

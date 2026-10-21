@@ -26,7 +26,7 @@
     "neverPlayed": "Noch nicht gespielt",
     "played": "{{time}} gespielt",
     "lastPlayed": "Zuletzt gespielt",
-    "lastPlayedOn": "Zuletzt gespielt am {{date}}",
+    "lastPlayedOn": "Zuletzt gespielt {{date}}",
     "saveCountLabel": "Spielstände",
     "saveCount_zero": "Keine Spielstände",
     "saveCount_one": "{{count}} Spielstand",
@@ -78,6 +78,7 @@
     "chooseInSettings": "Wähle in den Einstellungen ein vorhandenes DOSBox Staging aus."
   },
   "time": {
+    "justNow": "gerade eben",
     "lessThanMinute": "< 1 Min.",
     "minutes_one": "{{count}} Min.",
     "minutes_other": "{{count}} Min.",
@@ -323,8 +324,8 @@
       "games": "Spiele",
       "demos": "Demos & Betas"
     },
-    "status_one": "{{count}} Mod · geprüft am {{date}}",
-    "status_other": "{{count}} Mods · geprüft am {{date}}",
+    "status_one": "{{count}} Mod · geprüft {{date}}",
+    "status_other": "{{count}} Mods · geprüft {{date}}",
     "neverChecked": "Die Mod-Liste wurde noch nicht geladen.",
     "hidden_one": "Aktualisiere BloogBase, um {{count}} weitere Mod zu sehen.",
     "hidden_other": "Aktualisiere BloogBase, um {{count}} weitere Mods zu sehen.",

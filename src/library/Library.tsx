@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type Mod, type Profile } from "../bindings";
 import { useGames } from "../catalog";
 import { errorMessage } from "../errors";
-import { formatDate, formatPlayTime } from "../format";
+import { formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { AddModDialog } from "../mods/AddModDialog";
@@ -28,6 +28,7 @@ import { Card } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
+import { RelativeTime } from "../ui/RelativeTime";
 import { PlayButton } from "../ui/PlayButton";
 
 export function Library() {
@@ -254,7 +255,7 @@ function ProfileCard({
   canPlay: boolean;
   onPlay: () => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
   const cover = useCover(profile.id, profile.installId);
   return (
@@ -314,9 +315,9 @@ function ProfileCard({
             <>
               <dt className="sr-only">{t("library.lastPlayed")}</dt>
               <dd>
-                {t("library.lastPlayedOn", {
-                  date: formatDate(i18n.language, profile.lastPlayedAt),
-                })}
+                <RelativeTime at={profile.lastPlayedAt}>
+                  {(date) => t("library.lastPlayedOn", { date })}
+                </RelativeTime>
               </dd>
             </>
           )}

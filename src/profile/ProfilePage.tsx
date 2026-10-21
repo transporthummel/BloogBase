@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ArrowLeft, ExternalLink, FileArchive, FolderOpen, Trash2 } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
 import { useGames } from "../catalog";
@@ -24,6 +24,7 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Notice } from "../ui/Notice";
 import { PlayButton } from "../ui/PlayButton";
+import { RelativeTime } from "../ui/RelativeTime";
 import { Tabs } from "../ui/Tabs";
 import { ConfigPanel } from "./ConfigPanel";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
@@ -191,7 +192,7 @@ function Hero({
   const links = modLinks(t, mod, entry);
   const added = mod ? mod.addedAt : undefined;
 
-  const stats: [string, string][] = [
+  const stats: [string, ReactNode][] = [
     [
       t("profile.playTime"),
       profile.sessionCount === 0
@@ -201,7 +202,7 @@ function Hero({
     [t("profile.sessions"), String(profile.sessionCount)],
     [
       t("library.lastPlayed"),
-      profile.lastPlayedAt === null ? "–" : formatDate(i18n.language, profile.lastPlayedAt),
+      profile.lastPlayedAt === null ? "–" : <RelativeTime at={profile.lastPlayedAt} />,
     ],
     [t("library.saveCountLabel"), String(profile.saveCount)],
   ];

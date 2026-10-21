@@ -6,13 +6,13 @@ import { useTranslation } from "react-i18next";
 import { commands, type Game, type ModKind } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
-import { formatDate } from "../format";
 import { unwrap } from "../ipc";
 import { installsKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
+import { RelativeTime } from "../ui/RelativeTime";
 import { Tabs } from "../ui/Tabs";
 import { compare, fitting, type Sort } from "./fit";
 import { FreeGames } from "./FreeGames";
@@ -66,7 +66,7 @@ export function Discover() {
 }
 
 function Mods({ games }: { games: Game[] }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const status = useIndexStatus();
   const mods = useIndexMods();
   const installs = useQuery({
@@ -103,12 +103,13 @@ function Mods({ games }: { games: Game[] }) {
       <div className="mb-4 grid gap-2">
         {st && (
           <p className="text-xs text-muted">
-            {st.checkedAt
-              ? t("discover.status", {
-                  count: st.modCount,
-                  date: formatDate(i18n.language, st.checkedAt),
-                })
-              : t("discover.neverChecked")}
+            {st.checkedAt ? (
+              <RelativeTime at={st.checkedAt}>
+                {(date) => t("discover.status", { count: st.modCount, date })}
+              </RelativeTime>
+            ) : (
+              t("discover.neverChecked")
+            )}
           </p>
         )}
         {st && st.hiddenCount > 0 && (
