@@ -43,6 +43,7 @@ export function KeenwikiImport({
         <div className="flex gap-2">
           <input
             id="keenwiki-url"
+            data-autofocus
             type="text"
             inputMode="url"
             autoComplete="off"

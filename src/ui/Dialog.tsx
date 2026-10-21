@@ -5,7 +5,8 @@ const FOCUSABLE =
 
 /**
  * Modal dialog over a dimmed page. Escape and the backdrop close it; Tab
- * stays inside, and focus goes back where it was on close.
+ * stays inside, and focus goes back where it was on close. Opening focuses
+ * the element marked `data-autofocus`, else the panel.
  */
 export function Dialog({
   title,
@@ -29,7 +30,7 @@ export function Dialog({
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    panel.current?.focus();
+    (panel.current?.querySelector<HTMLElement>("[data-autofocus]") ?? panel.current)?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close.current();
       if (e.key !== "Tab" || !panel.current) return;
