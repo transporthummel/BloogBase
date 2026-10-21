@@ -94,6 +94,10 @@ pub struct InstallModRequest {
     /// Set when the mod came from a KeenWiki page.
     #[serde(default)]
     pub keenwiki: Option<KeenwikiOrigin>,
+    /// An installed mod of the same game this one replaces, e.g. an older
+    /// version. Its id and saves stay; `None` installs alongside.
+    #[serde(default)]
+    pub replace: Option<String>,
 }
 
 /// Where a KeenWiki mod came from, and what its page says.
@@ -582,7 +586,23 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
         "" => analysis.info.name.clone(),
         n => n.to_string(),
     };
-    let stored = match origin {
+    let replaced = match &req.replace {
+        Some(id) => {
+            let old = list(db)?
+                .into_iter()
+                .find(|m| m.id == *id)
+                .ok_or_else(|| Error::NotFound(format!("mod {id}")))?;
+            if old.game_id != analysis.info.game_id {
+                return Err(Error::IncompatibleInstall(format!(
+                    "{} is for {}, not {}",
+                    old.name, old.game_id, analysis.info.game_id
+                )));
+            }
+            Some(old)
+        }
+        None => None,
+    };
+    let mut stored = match origin {
         Some(o) => Stored {
             name,
             authors: if o.authors.is_empty() {
@@ -621,7 +641,24 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             archive_name: None,
         },
     };
-    store(paths, db, &source, &analysis, &stored, target.as_ref())
+    let Some(old) = &replaced else {
+        return store(paths, db, &source, &analysis, &stored, target.as_ref());
+    };
+    // What the files can't tell is still true of the new version.
+    if stored.author_links.is_empty() {
+        stored.author_links = old.author_links.clone();
+    }
+    stored.description = stored.description.or_else(|| old.description.clone());
+    stored.keenwiki_url = stored.keenwiki_url.or(old.keenwiki_url.as_deref());
+    update(
+        paths,
+        db,
+        &old.id,
+        &source,
+        &analysis,
+        &stored,
+        target.as_ref(),
+    )
 }
 
 /// A mod as the index describes it. Its recipe is used as is: a curated
@@ -689,13 +726,41 @@ pub fn install_curated(
         source_url: &c.url,
         archive_name: c.url.rsplit('/').next().filter(|n| !n.is_empty()),
     };
-    if let Some(mod_id) = find_by_index(db, &c.index_id)? {
-        return update(paths, db, &mod_id, &source, &analysis, &stored, c);
-    }
-
     let game =
         catalog::game(&c.game_id).ok_or_else(|| Error::NotFound(format!("game {}", c.game_id)))?;
     let requires = stored.requires.as_deref();
+    if let Some(mod_id) = find_by_index(db, &c.index_id)? {
+        let install_id: Option<String> = db.conn().query_row(
+            "SELECT install_id FROM profiles WHERE mod_id = ?1",
+            [&mod_id],
+            |r| r.get(0),
+        )?;
+        // A mod still waiting for its game has nothing to fit yet.
+        let target = match install_id {
+            Some(id) => Some(
+                library::list(db)?
+                    .into_iter()
+                    .find(|i| i.id == id && fits(game, requires, i))
+                    .ok_or_else(|| {
+                        Error::IncompatibleInstall(format!(
+                            "the new version needs {}",
+                            needed_game(game, requires)
+                        ))
+                    })?,
+            ),
+            None => None,
+        };
+        return update(
+            paths,
+            db,
+            &mod_id,
+            &source,
+            &analysis,
+            &stored,
+            target.as_ref(),
+        );
+    }
+
     let target = match install_id {
         Some(id) => Some(
             library::list(db)?
@@ -1014,8 +1079,9 @@ fn store(
     result
 }
 
-/// Replaces an installed index mod's files with a new download. Saves stay
-/// untouched; the composed layer is rebuilt on the next launch.
+/// Replaces an installed mod's files with another version and plays it on
+/// `target`, which the caller checked. Saves stay untouched; the composed
+/// layer is rebuilt on the next launch.
 fn update(
     paths: &AppPaths,
     db: &Db,
@@ -1023,27 +1089,8 @@ fn update(
     source: &Source,
     analysis: &Analysis,
     s: &Stored,
-    c: &Curated,
+    target: Option<&Install>,
 ) -> Result<Mod> {
-    let install_id: Option<String> = db.conn().query_row(
-        "SELECT install_id FROM profiles WHERE mod_id = ?1",
-        [mod_id],
-        |r| r.get(0),
-    )?;
-    let game =
-        catalog::game(&c.game_id).ok_or_else(|| Error::NotFound(format!("game {}", c.game_id)))?;
-    // A mod still waiting for its game has nothing to fit yet.
-    if let Some(install_id) = &install_id
-        && !library::list(db)?
-            .iter()
-            .any(|i| i.id == *install_id && fits(game, s.requires.as_deref(), i))
-    {
-        return Err(Error::IncompatibleInstall(format!(
-            "the new version needs {}",
-            needed_game(game, s.requires.as_deref())
-        )));
-    }
-
     let staging = paths.cache.join(format!("mod-{mod_id}-update"));
     let mod_dir = paths.mods.join(mod_id);
     let result: Result<()> = (|| {
@@ -1067,7 +1114,8 @@ fn update(
         tx.execute(
             "UPDATE mods SET authors = ?2, version = ?3, recipe_json = ?4, keenwiki_url = ?5,
                              source_url = ?6, archive_sha256 = ?7, description = ?8,
-                             released = ?9, author_links = ?10, requires_json = ?11
+                             released = ?9, author_links = ?10, requires_json = ?11,
+                             name = ?12, source = ?13, index_id = ?14
              WHERE id = ?1",
             params![
                 mod_id,
@@ -1080,12 +1128,15 @@ fn update(
                 s.description,
                 s.released,
                 serde_json::to_string(&s.author_links).expect("strings serialize"),
-                requires_json(s)
+                requires_json(s),
+                s.name,
+                s.source.as_str(),
+                s.index_id
             ],
         )?;
         tx.execute(
-            "UPDATE profiles SET composed_hash = NULL WHERE mod_id = ?1",
-            [mod_id],
+            "UPDATE profiles SET install_id = ?2, composed_hash = NULL WHERE mod_id = ?1",
+            params![mod_id, target.map(|t| &t.id)],
         )?;
         tx.commit()?;
         Ok(())
@@ -1093,7 +1144,7 @@ fn update(
     let _ = fs::remove_dir_all(&staging);
     result?;
     tracing::info!("updated mod {mod_id} to {:?}", s.version);
-    if install_id.is_none() {
+    if target.is_none() {
         rehome(db, None)?;
     }
     list(db)?
@@ -1366,6 +1417,7 @@ mod tests {
             recipe,
             install_id: Some("keen4-1".into()),
             keenwiki: None,
+            replace: None,
         }
     }
 
@@ -1520,6 +1572,80 @@ mod tests {
         }
         assert!(matches!(
             index_suggestion(&db, "nope"),
+            Err(Error::NotFound(_))
+        ));
+    }
+
+    #[test]
+    fn replaces_another_version_keeping_saves_and_page() {
+        let (tmp, paths, db) = setup();
+        let zip = tmp.path().join("aurora.zip");
+        write_zip(&zip, AURORA);
+        let recipe = inspect(&zip, None).unwrap().recipes[0].recipe.clone();
+        let mut req = request(&zip, recipe.clone());
+        req.keenwiki = Some(KeenwikiOrigin {
+            page_url: "https://keenwiki.shikadi.net/wiki/Aurora_Bliss".into(),
+            download_url: "https://files.shikadi.net/aurora.zip".into(),
+            game_id: Some("keen4".into()),
+            authors: vec!["Dave216".into()],
+            author_links: BTreeMap::new(),
+            version: Some("1.1".into()),
+            description: Some("Blissful.".into()),
+            released: None,
+        });
+        let old = install(&paths, &db, &req).unwrap();
+        fs::write(paths.profiles.join("aurora/state/SAVEGAM0.CK4"), b"save").unwrap();
+
+        let newer = tmp.path().join("m.dave216.aurora_v.1.2.k4.2023-08-23.zip");
+        let mut files = AURORA.to_vec();
+        files[3] = ("Aurora/GAMEMAPS.CK4", b"newer maps");
+        write_zip(&newer, &files);
+        let m = install(
+            &paths,
+            &db,
+            &InstallModRequest {
+                replace: Some(old.id.clone()),
+                ..request(&newer, recipe.clone())
+            },
+        )
+        .unwrap();
+        assert_eq!((m.id.as_str(), m.profile_id.as_str()), ("aurora", "aurora"));
+        assert_eq!(m.source, ModSource::Manual);
+        assert_eq!(m.version.as_deref(), Some("1.2"));
+        assert_eq!(m.description.as_deref(), Some("Blissful."));
+        assert_eq!(m.keenwiki_url, old.keenwiki_url);
+        assert_eq!(list(&db).unwrap().len(), 1);
+        let files = paths.mods.join("aurora/files");
+        assert_eq!(fs::read(files.join("GAMEMAPS.CK4")).unwrap(), b"newer maps");
+        assert!(
+            paths
+                .mods
+                .join("aurora/source")
+                .join(newer.file_name().unwrap())
+                .is_file()
+        );
+        assert!(!paths.mods.join("aurora/source/aurora.zip").exists());
+        assert!(paths.profiles.join("aurora/state/SAVEGAM0.CK4").is_file());
+        assert_eq!(fs::read_dir(&paths.cache).unwrap().count(), 0);
+
+        let k5 = tmp.path().join("k5mod");
+        write_folder(&k5, &[("LEVEL01.CK5", b"x")]);
+        let k5_recipe = inspect(&k5, None).unwrap().recipes[0].recipe.clone();
+        let other_game = InstallModRequest {
+            replace: Some("aurora".into()),
+            install_id: None,
+            ..request(&k5, k5_recipe)
+        };
+        assert!(matches!(
+            install(&paths, &db, &other_game),
+            Err(Error::IncompatibleInstall(_))
+        ));
+        let missing = InstallModRequest {
+            replace: Some("nope".into()),
+            ..request(&newer, recipe)
+        };
+        assert!(matches!(
+            install(&paths, &db, &missing),
             Err(Error::NotFound(_))
         ));
     }

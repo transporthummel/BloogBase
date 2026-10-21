@@ -613,6 +613,7 @@ mod tests {
                 recipe: info.recipes[0].recipe.clone(),
                 install_id: Some("keen4-1".into()),
                 keenwiki: None,
+                replace: None,
             },
         )
         .unwrap();

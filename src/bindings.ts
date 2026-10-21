@@ -434,6 +434,11 @@ export type InstallModRequest = {
 	installId: string | null,
 	/**  Set when the mod came from a KeenWiki page. */
 	keenwiki?: KeenwikiOrigin | null,
+	/**
+	 *  An installed mod of the same game this one replaces, e.g. an older
+	 *  version. Its id and saves stay; `None` installs alongside.
+	 */
+	replace?: string | null,
 };
 
 export type InstallSource = "folder" | "zip" | "download" | "steam" | "gog";

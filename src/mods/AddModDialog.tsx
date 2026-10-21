@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FileArchive, FolderOpen } from "lucide-react";
 import { useState } from "react";
@@ -7,7 +7,7 @@ import { commands, type Install, type KeenwikiOrigin, type Mod, type ModInfo } f
 import { bestFit, gameTitle, isModified, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
-import { installsKey } from "../library/queries";
+import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
@@ -112,6 +112,14 @@ function Confirm({
   const [name, setName] = useState(info.name);
   const [recipeIndex, setRecipeIndex] = useState(0);
   const [installId, setInstallId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const mods = useQuery({ queryKey: modsKey, queryFn: () => unwrap(commands.listMods()) });
+  const profiles = useQuery({
+    queryKey: profilesKey,
+    queryFn: () => unwrap(commands.listProfiles()),
+  });
+  // The mod this one replaces, `null` to install alongside; unset until the player says.
+  const [replace, setReplace] = useState<string | null>();
 
   const game = games.data?.find((g) => g.id === info.gameId);
   const option = info.recipes[recipeIndex];
@@ -126,7 +134,26 @@ function Confirm({
     const v = versionOf(i);
     return v !== undefined && (v.original ?? v.id) === assumedVersion?.id;
   };
-  const target = candidates.find((i) => i.id === installId) ?? bestFit(game, candidates);
+  const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  // Another version of a mod the player has: same KeenWiki page, or same game and name.
+  const others =
+    mods.data?.filter(
+      (m) =>
+        m.gameId === info.gameId &&
+        ((origin && m.keenwikiUrl === origin.pageUrl) ||
+          same(m.name, name) ||
+          same(m.name, info.name)),
+    ) ?? [];
+  const replaced = others.find((m) => m.id === replace);
+  // A replaced mod stays on its copy of the game when it can.
+  const replacedInstall = profiles.data?.find((p) => p.id === replaced?.profileId)?.installId;
+  const target =
+    candidates.find((i) => i.id === installId) ??
+    candidates.find((i) => i.id === replacedInstall) ??
+    bestFit(game, candidates);
+  // Asked first when there is a version already.
+  const ready =
+    !!installs.data && !!mods.data && (others.length === 0 || replace === null || !!replaced);
   const versionLabel = (i: Install) => versionOf(i)?.label ?? t("library.unknownVersion");
   // Unknown versions get no warning: they may well be the right one.
   const likelyWrongVersion =
@@ -142,9 +169,14 @@ function Confirm({
           // Without a fitting game, the player agreed to install anyway.
           installId: target?.id ?? null,
           keenwiki: origin,
+          // Renaming may have made it no longer match.
+          replace: replaced?.id ?? null,
         }),
       ),
-    onSuccess: onInstalled,
+    onSuccess: (mod) => {
+      queryClient.invalidateQueries({ queryKey: modsKey });
+      onInstalled(mod);
+    },
   });
 
   const authors = origin?.authors.length ? origin.authors : info.authors;
@@ -160,7 +192,7 @@ function Confirm({
       className="grid gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (installs.data) install.mutate();
+        if (ready) install.mutate();
       }}
     >
       <label className="grid gap-1 text-sm">
@@ -214,6 +246,40 @@ function Confirm({
           })}
         </Notice>
       )}
+      {others.length > 0 && (
+        <fieldset className="grid gap-2 text-sm">
+          <legend className="mb-1 font-medium">{t("mods.alreadyHave")}</legend>
+          {others.map((m) => (
+            <label key={m.id} className="flex items-start gap-2">
+              <input
+                type="radio"
+                name="replace"
+                className="mt-1"
+                checked={replace === m.id}
+                onChange={() => setReplace(m.id)}
+              />
+              <span>
+                {t("mods.replaceOld", {
+                  name: m.name,
+                  version: m.version,
+                  context: m.version ? "version" : undefined,
+                })}
+                <span className="block text-muted">{t("mods.replaceHint")}</span>
+              </span>
+            </label>
+          ))}
+          <label className="flex items-start gap-2">
+            <input
+              type="radio"
+              name="replace"
+              className="mt-1"
+              checked={replace === null}
+              onChange={() => setReplace(null)}
+            />
+            <span>{t("mods.alongside")}</span>
+          </label>
+        </fieldset>
+      )}
       {installs.data && candidates.length === 0 && (
         <Notice>
           {t("mods.missingGame", {
@@ -259,12 +325,14 @@ function Confirm({
         <Button variant="ghost" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={!installs.data || install.isPending}>
+        <Button type="submit" disabled={!ready || install.isPending}>
           {install.isPending
-            ? t("mods.installing")
-            : target
-              ? t("mods.install")
-              : t("mods.installAnyway")}
+            ? t(replaced ? "mods.replacing" : "mods.installing")
+            : replaced
+              ? t("mods.replace")
+              : target
+                ? t("mods.install")
+                : t("mods.installAnyway")}
         </Button>
       </div>
     </form>

@@ -282,7 +282,14 @@
     "waitsFor": "Needs {{game}}",
     "gameMissing": "Game missing",
     "waitingHint": "Add {{game}} to your library to play this mod.",
-    "changeGameHint": "Saved games stay with the mod, but may not load in another version of the game."
+    "changeGameHint": "Saved games stay with the mod, but may not load in another version of the game.",
+    "alreadyHave": "You already have this mod",
+    "replaceOld": "Replace {{name}}",
+    "replaceOld_version": "Replace {{name}} (version {{version}})",
+    "replaceHint": "Its saved games stay.",
+    "alongside": "Keep it and install this one as well",
+    "replace": "Replace",
+    "replacing": "Replacing…"
   },
   "discover": {
     "title": "Discover",

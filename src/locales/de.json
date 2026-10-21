@@ -282,7 +282,14 @@
     "waitsFor": "Braucht {{game}}",
     "gameMissing": "Spiel fehlt",
     "waitingHint": "Füge {{game}} deiner Bibliothek hinzu, um diese Mod zu spielen.",
-    "changeGameHint": "Spielstände bleiben bei der Mod, lassen sich in einer anderen Spielversion aber eventuell nicht laden."
+    "changeGameHint": "Spielstände bleiben bei der Mod, lassen sich in einer anderen Spielversion aber eventuell nicht laden.",
+    "alreadyHave": "Du hast diese Mod schon",
+    "replaceOld": "{{name}} ersetzen",
+    "replaceOld_version": "{{name}} (Version {{version}}) ersetzen",
+    "replaceHint": "Die Spielstände bleiben erhalten.",
+    "alongside": "Behalten und diese zusätzlich installieren",
+    "replace": "Ersetzen",
+    "replacing": "Wird ersetzt…"
   },
   "discover": {
     "title": "Entdecken",

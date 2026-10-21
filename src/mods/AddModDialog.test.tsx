@@ -7,7 +7,9 @@ import {
   commands,
   type Game,
   type Install,
+  type Mod,
   type ModInfo,
+  type Profile,
   type RecipeOption,
   type WikiMod,
 } from "../bindings";
@@ -18,6 +20,8 @@ vi.mock("../bindings", () => ({
   commands: {
     listGames: vi.fn(),
     listInstalls: vi.fn(),
+    listMods: vi.fn(),
+    listProfiles: vi.fn(),
     inspectMod: vi.fn(),
     installMod: vi.fn(),
     lookupKeenwiki: vi.fn(),
@@ -84,6 +88,8 @@ function renderDialog() {
 beforeEach(() => {
   vi.mocked(commands.listGames).mockResolvedValue([keen4]);
   vi.mocked(commands.listInstalls).mockReturnValue(ok([install]));
+  vi.mocked(commands.listMods).mockReturnValue(ok([]));
+  vi.mocked(commands.listProfiles).mockReturnValue(ok([]));
   vi.mocked(open).mockResolvedValue("/downloads/aurora.zip");
 });
 
@@ -127,8 +133,60 @@ test("inspects the picked ZIP and installs the mod on the matching game", async 
     recipe: patch.recipe,
     installId: "keen4-1",
     keenwiki: null,
+    replace: null,
   });
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
+});
+
+test("asks whether another version replaces the installed one", async () => {
+  const older: Mod = {
+    id: "aurora-bliss",
+    gameId: "keen4",
+    name: "Aurora Bliss",
+    authors: [],
+    authorLinks: {},
+    version: "1.1",
+    description: null,
+    released: null,
+    recipe: patch.recipe,
+    source: "manual",
+    indexId: null,
+    keenwikiUrl: null,
+    addedAt: 0,
+    profileId: "aurora-bliss",
+  };
+  const other = { ...install, id: "keen4-2" };
+  vi.mocked(commands.listInstalls).mockReturnValue(ok([install, other]));
+  vi.mocked(commands.listMods).mockReturnValue(
+    ok([older, { ...older, id: "dreams", gameId: "kdreams", profileId: "dreams" }]),
+  );
+  vi.mocked(commands.listProfiles).mockReturnValue(
+    ok([{ id: "aurora-bliss", installId: "keen4-2" } as Profile]),
+  );
+  vi.mocked(commands.inspectMod).mockReturnValue(ok(info));
+  vi.mocked(commands.installMod).mockReturnValue(ok(older));
+  const onInstalled = renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  expect(await screen.findByText("You already have this mod")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Install" })).toBeDisabled();
+  // Only the one for the same game.
+  expect(screen.getAllByRole("radio", { name: /^Replace/ })).toHaveLength(1);
+  await user.click(screen.getByRole("radio", { name: /Replace Aurora Bliss \(version 1\.1\)/ }));
+  await user.click(screen.getByRole("button", { name: "Replace" }));
+  // On the copy the old version played on, not the first one.
+  expect(commands.installMod).toHaveBeenCalledWith(
+    expect.objectContaining({ replace: "aurora-bliss", installId: "keen4-2" }),
+  );
+  await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
+
+  vi.mocked(commands.installMod).mockClear();
+  await user.click(screen.getByRole("radio", { name: "Keep it and install this one as well" }));
+  await user.click(screen.getByRole("button", { name: "Install" }));
+  expect(commands.installMod).toHaveBeenCalledWith(
+    expect.objectContaining({ replace: null, installId: "keen4-1" }),
+  );
 });
 
 test("asks which recipe to use when unsure", async () => {
@@ -315,6 +373,7 @@ test("installs a mod from a KeenWiki page with the page's details", async () => 
       description: "A Keen 4 mod.",
       released: page.released,
     },
+    replace: null,
   });
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
 });

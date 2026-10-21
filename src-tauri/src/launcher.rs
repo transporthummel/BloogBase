@@ -409,6 +409,7 @@ mod tests {
                 recipe: info.recipes[0].recipe.clone(),
                 install_id: Some("keen4-1".into()),
                 keenwiki: None,
+                replace: None,
             },
         )
         .unwrap();
@@ -638,6 +639,7 @@ $bmp.Save($env:SHOT_PATH)
                     recipe: info.recipes[0].recipe.clone(),
                     install_id: Some(install.id.clone()),
                     keenwiki: None,
+                    replace: None,
                 };
                 let m = match mods::install(&paths, &db, &request) {
                     Ok(m) => m,

@@ -24,6 +24,8 @@ vi.mock("../bindings", () => ({
     listGames: vi.fn(),
     listInstalls: vi.fn(),
     installMod: vi.fn(),
+    listMods: vi.fn(),
+    listProfiles: vi.fn(),
     indexMods: vi.fn(),
     listJobs: vi.fn(),
   },
@@ -67,6 +69,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(commands.listGames).mockResolvedValue([keen4]);
   vi.mocked(commands.listInstalls).mockReturnValue(ok([install]));
+  vi.mocked(commands.listMods).mockReturnValue(ok([]));
+  vi.mocked(commands.listProfiles).mockReturnValue(ok([]));
 });
 
 function renderDrop() {
