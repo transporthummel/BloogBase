@@ -65,8 +65,49 @@ impl<'a> Header<'a> {
     }
 }
 
-/// The title screen from `EGAHEAD`, `EGALATCH` and `LEVEL90` of Keen 1-3.
-pub fn title(egahead: &[u8], egalatch: &[u8], level: &[u8]) -> Result<Image, Error> {
+/// The 16x16 tiles in a file of the tileset loader patch some mods use,
+/// like Mura and Prelude. Its header has the tile count, the frames and the
+/// length of a plane, then where the tile info, the animations and the four
+/// planes of tiles are.
+struct Tileset<'a> {
+    count: usize,
+    planes: Vec<&'a [u8]>,
+}
+
+impl<'a> Tileset<'a> {
+    fn parse(tls: &'a [u8]) -> Result<Self, Error> {
+        let field = |at: usize, len: usize| {
+            tls.get(at..at + len)
+                .map(|b| b.iter().rev().fold(0, |n, &b| n << 8 | usize::from(b)))
+                .ok_or(Error::Format("tileset too short"))
+        };
+        let (count, plane_size, at) = (field(0, 2)?, field(4, 2)?, field(14, 4)?);
+        let planes = (0..4)
+            .map(|p| tls.get(at + p * plane_size..at + (p + 1) * plane_size))
+            .collect::<Option<Vec<_>>>()
+            .ok_or(Error::Format("tileset too short"))?;
+        Ok(Tileset { count, planes })
+    }
+}
+
+/// The tileset file the loader patch takes for `level` from `TILEHEAD`:
+/// 16 bytes per level, a name ending in a zero byte.
+pub fn tileset_name(tilehead: &[u8], level: usize) -> Option<String> {
+    let entry = tilehead.get(level * 16..level * 16 + 16)?;
+    let name = entry.split(|&b| b == 0).next()?;
+    // DOS cuts the name off at a space.
+    let name = String::from_utf8_lossy(name).split(' ').next()?.to_string();
+    (!name.is_empty()).then_some(name)
+}
+
+/// The title screen from `EGAHEAD`, `EGALATCH` and `LEVEL90` of Keen 1-3,
+/// with the tiles from a `tileset` file if the mod has one.
+pub fn title(
+    egahead: &[u8],
+    egalatch: &[u8],
+    level: &[u8],
+    tileset: Option<&[u8]>,
+) -> Result<Image, Error> {
     let header = Header::parse(egahead)?;
     let latch = if header.compressed() {
         lzw(egalatch)?
@@ -76,22 +117,28 @@ pub fn title(egahead: &[u8], egalatch: &[u8], level: &[u8]) -> Result<Image, Err
     if header.plane_size == 0 || latch.len() < header.plane_size * 4 {
         return Err(Error::Format("EGALATCH too short"));
     }
+    let planes: Vec<&[u8]> = latch.chunks_exact(header.plane_size).take(4).collect();
     let mut screen = Screen {
-        planes: latch.chunks_exact(header.plane_size).take(4).collect(),
         pixels: vec![0; WIDTH * HEIGHT],
     };
 
     let (w, h, at) = header.title().ok_or(Error::Format("no title bitmap"))?;
     // The level as the game shows it behind the title: scrolled past the
-    // two-tile border. A full-screen title hides it, which helps mods that
-    // load their tiles from files of their own, like Mura.
+    // two-tile border. A full-screen title hides it.
     if w * 8 < WIDTH || h < HEIGHT {
+        let (tile_planes, tile_count, tiles_at) = match tileset {
+            Some(tls) => {
+                let tileset = Tileset::parse(tls)?;
+                (tileset.planes, tileset.count, 0)
+            }
+            None => (planes.clone(), header.tile_count, header.tiles16),
+        };
         let (map_w, map_h, tiles) = level_tiles(level)?;
         for ty in 0..HEIGHT.div_ceil(16).min(map_h.saturating_sub(2)) {
             for tx in 0..(WIDTH / 16).min(map_w.saturating_sub(2)) {
                 let tile = usize::from(tiles[(ty + 2) * map_w + tx + 2]);
-                if tile < header.tile_count {
-                    screen.draw(header.tiles16 + tile * 32, 2, 16, tx * 16, ty * 16)?;
+                if tile < tile_count {
+                    screen.draw(&tile_planes, tiles_at + tile * 32, 2, 16, tx * 16, ty * 16)?;
                 }
             }
         }
@@ -100,7 +147,7 @@ pub fn title(egahead: &[u8], egalatch: &[u8], level: &[u8]) -> Result<Image, Err
     let (x, y) = TITLE_AT;
     let x = if w * 8 + x > WIDTH { 0 } else { x };
     let y = if h + y > HEIGHT { 0 } else { y };
-    screen.draw(header.bitmaps + at, w, h, x, y)?;
+    screen.draw(&planes, header.bitmaps + at, w, h, x, y)?;
     Ok(Image {
         width: WIDTH,
         height: HEIGHT,
@@ -115,17 +162,24 @@ const HEIGHT: usize = 200;
 /// left out: it sits somewhere else in each episode.
 const TITLE_AT: (usize, usize) = (32, 1);
 
-struct Screen<'a> {
-    planes: Vec<&'a [u8]>,
+struct Screen {
     pixels: Vec<u8>,
 }
 
-impl Screen<'_> {
-    /// Draws the planar graphic at `start` in each plane, `w` bytes wide and
-    /// `h` rows high, with its top left corner at `x`, `y`; cut off at the
-    /// screen edges.
-    fn draw(&mut self, start: usize, w: usize, h: usize, x: usize, y: usize) -> Result<(), Error> {
-        for (p, plane) in self.planes.iter().enumerate() {
+impl Screen {
+    /// Draws the planar graphic at `start` in each of `planes`, `w` bytes
+    /// wide and `h` rows high, with its top left corner at `x`, `y`; cut off
+    /// at the screen edges.
+    fn draw(
+        &mut self,
+        planes: &[&[u8]],
+        start: usize,
+        w: usize,
+        h: usize,
+        x: usize,
+        y: usize,
+    ) -> Result<(), Error> {
+        for (p, plane) in planes.iter().enumerate() {
             let data = plane
                 .get(start..start + w * h)
                 .ok_or(Error::Format("graphic outside EGALATCH"))?;

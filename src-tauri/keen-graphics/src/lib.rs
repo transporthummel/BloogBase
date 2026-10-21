@@ -123,8 +123,20 @@ impl Image {
 }
 
 /// The title screen of Keen 1-3 from `EGAHEAD`, `EGALATCH` and `LEVEL90`.
-pub fn vorticons_title(egahead: &[u8], egalatch: &[u8], level90: &[u8]) -> Result<Image, Error> {
-    vorticons::title(egahead, egalatch, level90)
+/// Mods with the tileset loader patch name a `tileset` file for the level
+/// in `TILEHEAD` (see [`vorticons_tileset_name`]).
+pub fn vorticons_title(
+    egahead: &[u8],
+    egalatch: &[u8],
+    level90: &[u8],
+    tileset: Option<&[u8]>,
+) -> Result<Image, Error> {
+    vorticons::title(egahead, egalatch, level90, tileset)
+}
+
+/// The tileset file a mod's `TILEHEAD` names for `level`.
+pub fn vorticons_tileset_name(tilehead: &[u8], level: usize) -> Option<String> {
+    vorticons::tileset_name(tilehead, level)
 }
 
 /// The title screen of Keen 4-6 from the game's executable and EGAGRAPH.

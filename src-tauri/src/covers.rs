@@ -19,7 +19,7 @@ use crate::profiles;
 use crate::recipe::{Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v4";
+const VERSION: &str = "covers v5";
 
 /// The profile's cover PNG, extracting it first if its files changed since
 /// the last time. `None` if the title can't be read from them.
@@ -217,12 +217,22 @@ fn extract(
     let mut last = String::from("no title screen");
 
     match game.engine {
-        Engine::Vorticons => keen_graphics::vorticons_title(
-            &need(&format!("EGAHEAD.{ext}"))?,
-            &need(&format!("EGALATCH.{ext}"))?,
-            &need(&format!("LEVEL90.{ext}"))?,
-        )
-        .map_err(|e| e.to_string()),
+        Engine::Vorticons => {
+            // Mods with the tileset loader patch keep the title level's
+            // tiles in a file of their own.
+            let tileset = files
+                .read(&format!("TILEHEAD.{ext}"))
+                .and_then(|t| keen_graphics::vorticons_tileset_name(&t, 90))
+                .map(|name| need(&name))
+                .transpose()?;
+            keen_graphics::vorticons_title(
+                &need(&format!("EGAHEAD.{ext}"))?,
+                &need(&format!("EGALATCH.{ext}"))?,
+                &need(&format!("LEVEL90.{ext}"))?,
+                tileset.as_deref(),
+            )
+            .map_err(|e| e.to_string())
+        }
         Engine::Dreams => {
             for name in candidates("CMP", "KDREAMS.CMP".into()) {
                 match files.read(&name).map(|c| keen_graphics::dreams_title(&c)) {

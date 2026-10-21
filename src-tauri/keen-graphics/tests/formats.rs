@@ -200,7 +200,7 @@ fn vorticons_title_draws_the_bitmap_over_the_level() {
         level.extend_from_slice(&word.to_le_bytes());
     }
 
-    let image = keen_graphics::vorticons_title(&head, &latch, &level).unwrap();
+    let image = keen_graphics::vorticons_title(&head, &latch, &level, None).unwrap();
     assert_eq!((image.width, image.height), (320, 200));
     assert_eq!(image.pixels[0], 1);
     assert_eq!(
@@ -209,8 +209,8 @@ fn vorticons_title_draws_the_bitmap_over_the_level() {
     );
     assert_eq!(image.pixels[199 * 320 + 319], 1);
 
-    assert!(keen_graphics::vorticons_title(&head, &latch[..100], &level).is_err());
-    assert!(keen_graphics::vorticons_title(&head[..40], &latch, &level).is_err());
+    assert!(keen_graphics::vorticons_title(&head, &latch[..100], &level, None).is_err());
+    assert!(keen_graphics::vorticons_title(&head[..40], &latch, &level, None).is_err());
 
     // Keen 1 1.32 and later: 6 more bytes before the tile count, a 64-byte
     // header, the same picture.
@@ -221,9 +221,32 @@ fn vorticons_title_draws_the_bitmap_over_the_level() {
     long[8..12].copy_from_slice(&64u32.to_le_bytes());
     long.extend(&head[48..]);
     assert_eq!(
-        keen_graphics::vorticons_title(&long, &latch, &level).unwrap(),
+        keen_graphics::vorticons_title(&long, &latch, &level, None).unwrap(),
         image
     );
+
+    // A tileset file of the loader patch: one red tile, its planes after a
+    // 64-byte header.
+    let mut tls = vec![0u8; 64];
+    tls[0..2].copy_from_slice(&1u16.to_le_bytes()); // tiles
+    tls[4..6].copy_from_slice(&32u16.to_le_bytes()); // plane length
+    tls[14..18].copy_from_slice(&64u32.to_le_bytes());
+    for plane in 0..4 {
+        tls.extend([if plane == 2 { 0xFF } else { 0 }; 32]);
+    }
+    let image = keen_graphics::vorticons_title(&head, &latch, &level, Some(&tls)).unwrap();
+    assert_eq!(image.pixels[0], 4);
+    assert_eq!(image.pixels[320 + 32], 8);
+    assert!(keen_graphics::vorticons_title(&head, &latch, &level, Some(&tls[..100])).is_err());
+
+    let mut tilehead = vec![0u8; 91 * 16];
+    tilehead[90 * 16..90 * 16 + 15].copy_from_slice(b"title.tls LS  \0");
+    assert_eq!(
+        keen_graphics::vorticons_tileset_name(&tilehead, 90).as_deref(),
+        Some("title.tls")
+    );
+    assert_eq!(keen_graphics::vorticons_tileset_name(&tilehead, 0), None);
+    assert_eq!(keen_graphics::vorticons_tileset_name(&tilehead, 91), None);
 }
 
 /// Checks the real games in `$KEEN_GAMES/<folder>` (game folders as in
@@ -242,6 +265,7 @@ fn corpus() {
                 &read("keen1", "EGAHEAD.CK1"),
                 &read("keen1", "EGALATCH.CK1"),
                 &read("keen1", "LEVEL90.CK1"),
+                None,
             ),
         ),
         (
@@ -250,6 +274,7 @@ fn corpus() {
                 &read("keen2", "EGAHEAD.CK2"),
                 &read("keen2", "EGALATCH.CK2"),
                 &read("keen2", "LEVEL90.CK2"),
+                None,
             ),
         ),
         (
@@ -258,6 +283,7 @@ fn corpus() {
                 &read("keen3", "EGAHEAD.CK3"),
                 &read("keen3", "EGALATCH.CK3"),
                 &read("keen3", "LEVEL90.CK3"),
+                None,
             ),
         ),
         (

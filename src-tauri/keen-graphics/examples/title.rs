@@ -33,6 +33,10 @@ fn main() {
             &read(&format!("EGAHEAD.CK{n}")).expect("EGAHEAD"),
             &read(&format!("EGALATCH.CK{n}")).unwrap(),
             &read(&format!("LEVEL90.CK{n}")).expect("LEVEL90"),
+            read(&format!("TILEHEAD.CK{n}"))
+                .and_then(|t| keen_graphics::vorticons_tileset_name(&t, 90))
+                .map(|name| read(&name).expect("tileset"))
+                .as_deref(),
         )
     } else if let Some(cmp) = read("KDREAMS.CMP") {
         keen_graphics::dreams_title(&cmp)
