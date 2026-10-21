@@ -118,7 +118,7 @@ function Confirm({
     queryKey: profilesKey,
     queryFn: () => unwrap(commands.listProfiles()),
   });
-  // The mod this one replaces, `null` to install alongside; unset until the player says.
+  // The mod this one replaces, `null` to install alongside; unset: the first that matches.
   const [replace, setReplace] = useState<string | null>();
 
   const game = games.data?.find((g) => g.id === info.gameId);
@@ -144,16 +144,16 @@ function Confirm({
           same(m.name, name) ||
           same(m.name, info.name)),
     ) ?? [];
-  const replaced = others.find((m) => m.id === replace);
+  const replaced =
+    replace === null ? undefined : (others.find((m) => m.id === replace) ?? others[0]);
   // A replaced mod stays on its copy of the game when it can.
   const replacedInstall = profiles.data?.find((p) => p.id === replaced?.profileId)?.installId;
   const target =
     candidates.find((i) => i.id === installId) ??
     candidates.find((i) => i.id === replacedInstall) ??
     bestFit(game, candidates);
-  // Asked first when there is a version already.
-  const ready =
-    !!installs.data && !!mods.data && (others.length === 0 || replace === null || !!replaced);
+  // Waits for the mods, so the question about another version isn't skipped.
+  const ready = !!installs.data && !!mods.data;
   const versionLabel = (i: Install) => versionOf(i)?.label ?? t("library.unknownVersion");
   // Unknown versions get no warning: they may well be the right one.
   const likelyWrongVersion =
@@ -255,7 +255,7 @@ function Confirm({
                 type="radio"
                 name="replace"
                 className="mt-1"
-                checked={replace === m.id}
+                checked={replaced?.id === m.id}
                 onChange={() => setReplace(m.id)}
               />
               <span>
@@ -273,7 +273,7 @@ function Confirm({
               type="radio"
               name="replace"
               className="mt-1"
-              checked={replace === null}
+              checked={!replaced}
               onChange={() => setReplace(null)}
             />
             <span>{t("mods.alongside")}</span>

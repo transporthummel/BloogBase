@@ -170,10 +170,11 @@ test("asks whether another version replaces the installed one", async () => {
   await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
 
   expect(await screen.findByText("You already have this mod")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Install" })).toBeDisabled();
-  // Only the one for the same game.
+  // Only the one for the same game, picked already.
   expect(screen.getAllByRole("radio", { name: /^Replace/ })).toHaveLength(1);
-  await user.click(screen.getByRole("radio", { name: /Replace Aurora Bliss \(version 1\.1\)/ }));
+  expect(
+    screen.getByRole("radio", { name: /Replace Aurora Bliss \(version 1\.1\)/ }),
+  ).toBeChecked();
   await user.click(screen.getByRole("button", { name: "Replace" }));
   // On the copy the old version played on, not the first one.
   expect(commands.installMod).toHaveBeenCalledWith(
