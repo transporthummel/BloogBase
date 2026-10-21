@@ -81,18 +81,21 @@ pub fn title(egahead: &[u8], egalatch: &[u8], level: &[u8]) -> Result<Image, Err
         pixels: vec![0; WIDTH * HEIGHT],
     };
 
+    let (w, h, at) = header.title().ok_or(Error::Format("no title bitmap"))?;
     // The level as the game shows it behind the title: scrolled past the
-    // two-tile border.
-    let (map_w, map_h, tiles) = level_tiles(level)?;
-    for ty in 0..HEIGHT.div_ceil(16).min(map_h.saturating_sub(2)) {
-        for tx in 0..(WIDTH / 16).min(map_w.saturating_sub(2)) {
-            let tile = usize::from(tiles[(ty + 2) * map_w + tx + 2]);
-            if tile < header.tile_count {
-                screen.draw(header.tiles16 + tile * 32, 2, 16, tx * 16, ty * 16)?;
+    // two-tile border. A full-screen title hides it, which helps mods that
+    // load their tiles from files of their own, like Mura.
+    if w * 8 < WIDTH || h < HEIGHT {
+        let (map_w, map_h, tiles) = level_tiles(level)?;
+        for ty in 0..HEIGHT.div_ceil(16).min(map_h.saturating_sub(2)) {
+            for tx in 0..(WIDTH / 16).min(map_w.saturating_sub(2)) {
+                let tile = usize::from(tiles[(ty + 2) * map_w + tx + 2]);
+                if tile < header.tile_count {
+                    screen.draw(header.tiles16 + tile * 32, 2, 16, tx * 16, ty * 16)?;
+                }
             }
         }
     }
-    let (w, h, at) = header.title().ok_or(Error::Format("no title bitmap"))?;
     // Mods with a bigger title get it in the corner, as far as it fits.
     let (x, y) = TITLE_AT;
     let x = if w * 8 + x > WIDTH { 0 } else { x };
