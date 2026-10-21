@@ -2,7 +2,8 @@
 //!
 //! Mods name their documentation freely (`README.TXT`, `Read Me.txt`,
 //! `READ.ME`, `CHEEKY README.rtf`, `LIESMICH.TXT`, …), so candidates are
-//! ranked by name. The text goes to the UI as plain text only: DOS code page
+//! ranked by name; without one, other text documents are shown instead
+//! (`changes.txt`, `story.txt`). The text goes to the UI as plain text only: DOS code page
 //! 437 or Windows-1252 is decoded, RTF is reduced to its text, control
 //! characters are dropped. HTML files are never picked.
 
@@ -79,6 +80,7 @@ pub fn find(source: &Source) -> Result<Option<Readme>> {
         }
         if let Some(text) = to_text(&bytes)
             && !text.trim().is_empty()
+            && !is_patch_script(&text)
         {
             return Ok(Some(Readme { file, text }));
         }
@@ -120,15 +122,40 @@ fn rank(name: &str) -> Option<u8> {
         "documentation",
         "anleitung",
     ];
+    // Without a README, any text document beats an empty tab: change logs
+    // after the rest, spoilers (hints, walkthroughs) last.
+    const CHANGES: &[&str] = &["change", "history", "whatsnew", "news", "version"];
+    const SPOILERS: &[&str] = &[
+        "hint",
+        "solution",
+        "walkthrough",
+        "cheat",
+        "secret",
+        "spoiler",
+    ];
     if EXACT.contains(&key.as_str()) {
         Some(0)
     } else if key.contains("readme") || key.contains("readthis") || key.contains("liesmich") {
         Some(1)
     } else if !ext.is_empty() && (OTHER.contains(&key.as_str()) || ext == "nfo") {
         Some(2)
-    } else {
+    } else if ext.is_empty() {
         None
+    } else if SPOILERS.iter().any(|w| key.contains(w)) {
+        Some(5)
+    } else if CHANGES.iter().any(|w| key.contains(w)) {
+        Some(4)
+    } else {
+        Some(3)
     }
+}
+
+/// CKPatch scripts are plain text too, but no reading matter.
+fn is_patch_script(text: &str) -> bool {
+    text.lines()
+        .map(str::trim)
+        .find(|l| !l.is_empty())
+        .is_some_and(|l| l.starts_with('%'))
 }
 
 /// Plain text, or `None` for binary files (e.g. a Word `.doc`).
@@ -384,16 +411,19 @@ mod tests {
         assert_eq!(rank("Aurora_readme_en.txt"), Some(1));
         assert_eq!(rank("Help.txt"), Some(2));
         assert_eq!(rank("FIREB.NFO"), Some(2));
+        assert_eq!(rank("story.txt"), Some(3));
+        assert_eq!(rank("changes.txt"), Some(4));
+        assert_eq!(rank("ChangeLog15Y.txt"), Some(4));
+        assert_eq!(rank("Hints Sheet.txt"), Some(5));
+        assert_eq!(rank("HINTS..txt"), Some(5));
         for name in [
             "readme.html",
             "readme.htm",
             "README.EXE",
             "readme.pdf",
-            "Changelog.txt",
-            "HINTS.TXT",
-            "story.txt",
             "HELP",
             "INFO.CK4",
+            "KEEN4.PAT",
         ] {
             assert_eq!(rank(name), None, "{name}");
         }
@@ -439,7 +469,27 @@ mod tests {
         assert_eq!(found.file, "INFO.TXT");
 
         let tmp = tempfile::tempdir().unwrap();
-        write_folder(tmp.path(), &[("readme.htm", b"<b>hi</b>"), ("a.txt", b"x")]);
+        write_folder(tmp.path(), &[("readme.htm", b"<b>hi</b>"), ("1.TXT", b"")]);
+        assert_eq!(find(&Source::Folder(tmp.path().into())).unwrap(), None);
+    }
+
+    #[test]
+    fn falls_back_to_other_text_files() {
+        // Commander Cool 1 ships only these two.
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(
+            tmp.path(),
+            &[
+                ("Hints Sheet.txt", b"Level 1: the key is behind the wall"),
+                ("changes.txt", b"v1.1: fixed a crash"),
+                ("patch.txt", b"\r\n%ext ck4\r\n%version 1.4\r\n"),
+            ],
+        );
+        let found = find(&Source::Folder(tmp.path().into())).unwrap().unwrap();
+        assert_eq!(found.file, "changes.txt");
+
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(tmp.path(), &[("patch.txt", b"%ext ck4\n%end\n")]);
         assert_eq!(find(&Source::Folder(tmp.path().into())).unwrap(), None);
     }
 
