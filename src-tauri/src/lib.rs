@@ -13,6 +13,7 @@ mod firing;
 mod free_games;
 mod jobs;
 mod keenwiki;
+mod keymap;
 mod launcher;
 mod library;
 mod mod_index;
