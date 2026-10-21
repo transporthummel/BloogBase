@@ -150,8 +150,9 @@ pub(crate) fn modified(path: &Path) -> Option<u32> {
 }
 
 /// Deletes a save after backing it up. A save that comes with a mod is
-/// hidden with a deletion marker, like DOSBox does it.
-pub fn delete(paths: &AppPaths, db: &Db, profile_id: &str, file: &str) -> Result<()> {
+/// hidden with a deletion marker, like DOSBox does it. Returns the backup
+/// that holds it, to undo the deletion from.
+pub fn delete(paths: &AppPaths, db: &Db, profile_id: &str, file: &str) -> Result<u32> {
     let (profile, layers) = profiles::get(db, profile_id)?;
     let game = game_of(&profile.game_id)?;
     let entries = overlay_view::list(layers.view_lower(), &layers.upper)?;
@@ -161,13 +162,21 @@ pub fn delete(paths: &AppPaths, db: &Db, profile_id: &str, file: &str) -> Result
     else {
         return Err(Error::NotFound(format!("save {file}")));
     };
-    backups::create(
+    let made = backups::create(
         paths,
         db,
         profile_id,
         Contents::Files(std::slice::from_ref(&entry.path)),
         Reason::BeforeDelete,
     )?;
+    // Skipped because the newest backup holds exactly this save already.
+    let backup = match made {
+        Some(b) => b.id,
+        None => backups::list(db, profile_id)?
+            .first()
+            .map(|b| b.id)
+            .ok_or_else(|| Error::NotFound(format!("backup of {file}")))?,
+    };
     let upper = layers.upper.join(&entry.path);
     if upper.exists() {
         fs::remove_file(&upper)?;
@@ -187,7 +196,7 @@ pub fn delete(paths: &AppPaths, db: &Db, profile_id: &str, file: &str) -> Result
         )?;
     }
     tracing::info!("deleted save {file} of {profile_id}");
-    Ok(())
+    Ok(backup)
 }
 
 #[cfg(test)]
@@ -266,7 +275,7 @@ pub(crate) mod tests {
         let (_tmp, paths, db) = setup();
         let st = state(&paths);
         fs::write(st.join("SAVEGAM1.CK4"), keen4_save("mine")).unwrap();
-        delete(&paths, &db, "keen4-1", "SAVEGAM1.CK4").unwrap();
+        let id = delete(&paths, &db, "keen4-1", "SAVEGAM1.CK4").unwrap();
         assert!(!st.join("SAVEGAM1.CK4").exists());
         assert!(
             !fs::read_dir(&st)
@@ -277,6 +286,24 @@ pub(crate) mod tests {
         assert_eq!(b.len(), 1);
         assert_eq!(b[0].files, ["SAVEGAM1.CK4"]);
         assert_eq!(b[0].reason, Some(Reason::BeforeDelete));
+        assert_eq!(b[0].id, id);
+
+        // Just backed up by hand: that backup is the one to undo from.
+        fs::write(st.join("SAVEGAM3.CK4"), keen4_save("kept")).unwrap();
+        let own = backups::create(
+            &paths,
+            &db,
+            "keen4-1",
+            Contents::Files(&["SAVEGAM3.CK4".into()]),
+            backups::Origin::User(None),
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(
+            delete(&paths, &db, "keen4-1", "SAVEGAM3.CK4").unwrap(),
+            own.id
+        );
+        assert_eq!(backups::list(&db, "keen4-1").unwrap().len(), 2);
 
         // A save in the lower layer only gets a marker.
         let lower = paths.library.join("keen4-1/base");

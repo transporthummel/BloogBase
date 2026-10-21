@@ -8,7 +8,6 @@ import { errorMessage } from "../errors";
 import { formatDateTime } from "../format";
 import { unwrap } from "../ipc";
 import { profilesKey } from "../library/queries";
-import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
@@ -35,6 +34,12 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
   const [restoring, setRestoring] = useState<Backup | null>(null);
   const [label, setLabel] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  // A deleted save and the backup to bring it back from.
+  const [undo, setUndo] = useState<{ backupId: number; file: string } | null>(null);
+  const say = (text: string, deleted: typeof undo = null) => {
+    setMessage(text);
+    setUndo(deleted);
+  };
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: savesKey(profile.id) });
@@ -47,15 +52,23 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
       unwrap(commands.createBackup(profile.id, file ? null : label || null, file)),
     onSuccess: (made) => {
       setLabel("");
-      setMessage(made ? t("backups.made") : t("backups.nothing"));
+      say(made ? t("backups.made") : t("backups.nothing"));
       refresh();
     },
   });
   const deleteSave = useMutation({
     mutationFn: (file: string) => unwrap(commands.deleteSave(profile.id, file)),
-    onSuccess: () => {
+    onSuccess: (backupId, file) => {
       setDeleting(null);
-      setMessage(t("saves.deleted"));
+      say(t("saves.deleted"), { backupId, file });
+      refresh();
+    },
+  });
+  const undoDelete = useMutation({
+    mutationFn: ({ backupId, file }: { backupId: number; file: string }) =>
+      unwrap(commands.restoreBackup(backupId, file, null, false)),
+    onSuccess: () => {
+      say(t("saves.undone"));
       refresh();
     },
   });
@@ -77,7 +90,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
       await unwrap(commands.exportBackup(b.id, path));
       return true;
     },
-    onSuccess: (done) => done && setMessage(t("backups.exported")),
+    onSuccess: (done) => done && say(t("backups.exported")),
   });
   const importBackup = useMutation({
     mutationFn: async () => {
@@ -88,7 +101,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
     },
     onSuccess: (done) => {
       if (!done) return;
-      setMessage(t("backups.imported"));
+      say(t("backups.imported"));
       refresh();
     },
   });
@@ -99,14 +112,82 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
     backups.error ??
     backup.error ??
     deleteSave.error ??
+    undoDelete.error ??
     exportBackup.error ??
     importBackup.error ??
     deleteBackup.error;
 
+  const own = backups.data?.filter((b) => !b.auto) ?? [];
+  const automatic = backups.data?.filter((b) => b.auto) ?? [];
+  const backupList = (list: Backup[]) => (
+    <ul className="grid gap-2">
+      {list.map((b) => (
+        <li key={b.id}>
+          <Card className="flex flex-wrap items-center gap-3 p-3">
+            <div className="grid min-w-0 flex-1 gap-0.5">
+              <h3 className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                {backupTitle(t, b)}
+              </h3>
+              <p className="text-xs text-muted">
+                {formatDateTime(i18n.language, b.createdAt)} · {backupContents(t, b)}
+              </p>
+            </div>
+            <div className="flex gap-1">
+              <Button
+                variant="secondary"
+                disabled={locked}
+                onClick={() => setRestoring(b)}
+                aria-label={t("backups.restoreNamed", { name: backupTitle(t, b) })}
+              >
+                <History className="size-4" aria-hidden />
+                {t("backups.restore")}
+              </Button>
+              <Button
+                variant="ghost"
+                className="px-2"
+                onClick={() => exportBackup.mutate(b)}
+                aria-label={t("backups.exportNamed", { name: backupTitle(t, b) })}
+                title={t("backups.export")}
+              >
+                <Download className="size-4" aria-hidden />
+              </Button>
+              <Button
+                variant="ghost"
+                className="px-2"
+                onClick={() => setRemovingBackup(b)}
+                aria-label={t("backups.deleteNamed", { name: backupTitle(t, b) })}
+                title={t("backups.delete")}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+            </div>
+          </Card>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
     <div className="grid gap-6">
       {locked && <Notice>{t("saves.locked")}</Notice>}
-      {message && !error && <Notice>{message}</Notice>}
+      {message && !error && (
+        <Notice>
+          {message}
+          {undo && (
+            <>
+              {" "}
+              <button
+                type="button"
+                className="text-ink underline underline-offset-2"
+                disabled={locked || undoDelete.isPending}
+                onClick={() => undoDelete.mutate(undo)}
+              >
+                {t("saves.undoDelete")}
+              </button>
+            </>
+          )}
+        </Notice>
+      )}
       {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
 
       <section className="grid gap-3" aria-labelledby="saves-heading">
@@ -200,52 +281,16 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
         </form>
         <p className="-mt-1 text-xs text-muted">{t("backups.backupAllHint")}</p>
         {backups.data?.length === 0 && <p className="text-sm text-muted">{t("backups.empty")}</p>}
-        <ul className="grid gap-2">
-          {backups.data?.map((b) => (
-            <li key={b.id}>
-              <Card className="flex flex-wrap items-center gap-3 p-3">
-                <div className="grid min-w-0 flex-1 gap-0.5">
-                  <h3 className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-                    {backupTitle(t, b)}
-                    {b.auto && <Badge>{t("backups.auto")}</Badge>}
-                  </h3>
-                  <p className="text-xs text-muted">
-                    {formatDateTime(i18n.language, b.createdAt)} · {backupContents(t, b)}
-                  </p>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    variant="secondary"
-                    disabled={locked}
-                    onClick={() => setRestoring(b)}
-                    aria-label={t("backups.restoreNamed", { name: backupTitle(t, b) })}
-                  >
-                    <History className="size-4" aria-hidden />
-                    {t("backups.restore")}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="px-2"
-                    onClick={() => exportBackup.mutate(b)}
-                    aria-label={t("backups.exportNamed", { name: backupTitle(t, b) })}
-                    title={t("backups.export")}
-                  >
-                    <Download className="size-4" aria-hidden />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="px-2"
-                    onClick={() => setRemovingBackup(b)}
-                    aria-label={t("backups.deleteNamed", { name: backupTitle(t, b) })}
-                    title={t("backups.delete")}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                </div>
-              </Card>
-            </li>
-          ))}
-        </ul>
+        {backupList(own)}
+        {automatic.length > 0 && (
+          <details className="grid gap-2">
+            <summary className="cursor-pointer text-sm font-medium">
+              {t("backups.autoGroup", { count: automatic.length })}
+            </summary>
+            <p className="my-2 text-xs text-muted">{t("backups.autoGroupHint")}</p>
+            {backupList(automatic)}
+          </details>
+        )}
       </section>
 
       {versionsOf && (
@@ -255,7 +300,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
           onClose={() => setVersionsOf(null)}
           onRestored={() => {
             setVersionsOf(null);
-            setMessage(t("saves.versionRestored"));
+            say(t("saves.versionRestored"));
             refresh();
           }}
         />
@@ -295,7 +340,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
           onClose={() => setRestoring(null)}
           onRestored={() => {
             setRestoring(null);
-            setMessage(t("backups.restored"));
+            say(t("backups.restored"));
             refresh();
           }}
         />

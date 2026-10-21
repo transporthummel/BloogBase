@@ -204,10 +204,10 @@ pub async fn save_versions(
     blocking(move || backups::save_versions(&app.state::<Db>(), &profile_id, &file)).await
 }
 
-/// Deletes a save; it's backed up first.
+/// Deletes a save; it's backed up first. Returns that backup, to undo from.
 #[tauri::command]
 #[specta::specta]
-pub async fn delete_save(app: AppHandle, profile_id: String, file: String) -> CommandResult<()> {
+pub async fn delete_save(app: AppHandle, profile_id: String, file: String) -> CommandResult<u32> {
     let id = profile_id.clone();
     with_profile_locked(&app, &profile_id, move |paths, db| {
         saves::delete(paths, db, &id, &file)

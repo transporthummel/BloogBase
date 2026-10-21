@@ -23,8 +23,8 @@ export const commands = {
 	listSaves: (profileId: string) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("list_saves", { profileId })),
 	/**  The earlier versions of a save that backups hold, newest first. */
 	saveVersions: (profileId: string, file: string) => typedError<SaveVersion[], CommandError>(__TAURI_INVOKE("save_versions", { profileId, file })),
-	/**  Deletes a save; it's backed up first. */
-	deleteSave: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_save", { profileId, file })),
+	/**  Deletes a save; it's backed up first. Returns that backup, to undo from. */
+	deleteSave: (profileId: string, file: string) => typedError<number, CommandError>(__TAURI_INVOKE("delete_save", { profileId, file })),
 	/**  Screenshots taken in DOSBox, newest first. */
 	listScreenshots: (profileId: string) => typedError<Screenshot[], CommandError>(__TAURI_INVOKE("list_screenshots", { profileId })),
 	/**

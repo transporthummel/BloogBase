@@ -548,15 +548,33 @@ test("lists saves with their details and backups", async () => {
   expect(screen.getByText(/1 save \+ settings and high scores/)).toBeInTheDocument();
 });
 
-test("deleting a save asks first", async () => {
-  vi.mocked(commands.deleteSave).mockResolvedValue(ok(null));
+test("deleting a save asks first and can be undone", async () => {
+  vi.mocked(commands.deleteSave).mockResolvedValue(ok(12));
+  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(null));
   renderDetail();
   await userEvent.click(await screen.findByRole("button", { name: "Delete Slot 1 · pabba" }));
   const dialog = screen.getByRole("dialog");
   expect(within(dialog).getByText(/backed up first/)).toBeInTheDocument();
   await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
   expect(commands.deleteSave).toHaveBeenCalledWith("keen4-1", "SAVEGAM0.CK4");
-  expect(await screen.findByText("Save deleted. A backup was kept.")).toBeInTheDocument();
+  expect(await screen.findByText(/^Save deleted\./)).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: "Undo" }));
+  expect(commands.restoreBackup).toHaveBeenCalledWith(12, "SAVEGAM0.CK4", null, false);
+  expect(await screen.findByText("Save brought back.")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Undo" })).not.toBeInTheDocument();
+});
+
+test("automatic backups sit in a closed group below the user's own", async () => {
+  vi.mocked(commands.listBackups).mockResolvedValue(
+    ok([{ ...backup, id: 8, reason: null, label: "Boss", auto: false }, backup]),
+  );
+  renderDetail();
+  const group = (await screen.findByText("Automatic backups (1)")).closest("details")!;
+  expect(group).not.toHaveAttribute("open");
+  expect(within(group).getByText("Before playing")).toBeInTheDocument();
+  expect(within(group).queryByText("Boss")).not.toBeInTheDocument();
+  expect(screen.getByText("Boss")).toBeInTheDocument();
 });
 
 test("backs up everything with a label", async () => {

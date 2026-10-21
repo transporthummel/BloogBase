@@ -319,13 +319,17 @@ function BackupSection() {
     <Section title={t("settings.backups")}>
       {s && (
         <>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex items-start gap-2 text-sm">
             <input
               type="checkbox"
+              className="mt-1"
               checked={s.auto}
               onChange={(e) => update.mutate({ ...s, auto: e.target.checked })}
             />
-            {t("settings.autoBackup")}
+            <span>
+              {t("settings.autoBackup")}
+              <span className="block text-xs text-muted">{t("settings.autoBackupHint")}</span>
+            </span>
           </label>
           <Field label={t("settings.keepBackups")}>
             <input
