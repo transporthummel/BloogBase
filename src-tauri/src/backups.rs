@@ -201,7 +201,47 @@ fn content_hash(files: &[(String, Vec<u8>)]) -> String {
         h.update((data.len() as u64).to_le_bytes());
         h.update(data);
     }
-    h.finalize().iter().map(|b| format!("{b:02x}")).collect()
+    hex(h.finalize().as_slice())
+}
+
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+fn file_hash(data: &[u8]) -> String {
+    hex(Sha256::digest(data).as_slice())
+}
+
+/// Notes what a backup holds, file by file (§11.1).
+fn record_files(conn: &rusqlite::Connection, id: u32, files: &[(String, Vec<u8>)]) -> Result<()> {
+    let mut stmt = conn.prepare(
+        "INSERT OR REPLACE INTO backup_files (backup_id, path, hash) VALUES (?1, ?2, ?3)",
+    )?;
+    for (path, data) in files {
+        stmt.execute(params![id, path, file_hash(data)])?;
+    }
+    Ok(())
+}
+
+/// Fills in `backup_files` for backups made before it existed. An archive
+/// that can't be read is skipped; it just won't offer earlier versions.
+pub fn record_older(db: &Db) -> Result<()> {
+    let todo: Vec<(u32, String)> = {
+        let conn = db.conn();
+        let mut stmt = conn.prepare(
+            "SELECT id, archive_path FROM save_backups b
+             WHERE NOT EXISTS (SELECT 1 FROM backup_files f WHERE f.backup_id = b.id)",
+        )?;
+        stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?
+            .collect::<rusqlite::Result<_>>()?
+    };
+    for (id, archive) in todo {
+        match read_zip(Path::new(&archive)) {
+            Ok((files, _)) => record_files(&db.conn(), id, &files)?,
+            Err(e) => tracing::warn!("could not read backup {id} at {archive}: {e}"),
+        }
+    }
+    Ok(())
 }
 
 /// Archives a profile's files. Returns `None` if there was nothing to back
@@ -274,7 +314,9 @@ pub fn create<'a>(
                 hash
             ],
         )?;
-        conn.last_insert_rowid() as u32
+        let id = conn.last_insert_rowid() as u32;
+        record_files(&conn, id, &files)?;
+        id
     };
     tracing::info!("backed up {} files of {profile_id}", names.len());
     if auto {
@@ -603,21 +645,140 @@ pub fn import(paths: &AppPaths, db: &Db, profile_id: &str, src: &Path) -> Result
                 content_hash(&files)
             ],
         )?;
-        conn.last_insert_rowid() as u32
+        let id = conn.last_insert_rowid() as u32;
+        record_files(&conn, id, &files)?;
+        id
     };
     get(db, id)
 }
 
-/// The automatic backup before a launch (§6.2 step 3), if switched on.
-/// Failing to back up must not keep anyone from playing: it's logged only.
-pub fn before_launch(paths: &AppPaths, db: &Db, profile_id: &str) {
+/// The automatic backup before a launch (§6.2 step 3), if switched on; its
+/// id, for [`after_session`]. Failing to back up must not keep anyone from
+/// playing: it's logged only.
+pub fn before_launch(paths: &AppPaths, db: &Db, profile_id: &str) -> Option<u32> {
     let enabled = get_settings(db).map(|s| s.auto).unwrap_or(true);
     if !enabled {
-        return;
+        return None;
     }
-    if let Err(e) = create(paths, db, profile_id, Contents::State, Reason::BeforeLaunch) {
-        tracing::warn!("backup before launching {profile_id} failed: {e}");
+    match create(paths, db, profile_id, Contents::State, Reason::BeforeLaunch) {
+        Ok(made) => made.map(|b| b.id),
+        Err(e) => {
+            tracing::warn!("backup before launching {profile_id} failed: {e}");
+            None
+        }
     }
+}
+
+/// The hash of each save DOS sees now, by upper-cased file name.
+fn current_saves(game: &Game, layers: &Layers) -> Result<Vec<(String, String)>> {
+    let mut out = Vec::new();
+    for entry in overlay_view::list(layers.view_lower(), &layers.upper)? {
+        if saves::is_save(game, &entry.path) {
+            let data = fs::read(saves::host_path(layers, &entry))?;
+            out.push((entry.path.to_ascii_uppercase(), file_hash(&data)));
+        }
+    }
+    Ok(out)
+}
+
+/// After a session: keeps the backup made before it only if the session
+/// overwrote or lost a save that existed then (§11.1). Returns whether it
+/// was kept.
+pub fn after_session(db: &Db, profile_id: &str, backup_id: u32) -> Result<bool> {
+    let (profile, layers) = profiles::get(db, profile_id)?;
+    let game = saves::game_of(&profile.game_id)?;
+    let now = current_saves(game, &layers)?;
+    let before: Vec<(String, String)> = {
+        let conn = db.conn();
+        let mut stmt = conn.prepare("SELECT path, hash FROM backup_files WHERE backup_id = ?1")?;
+        stmt.query_map([backup_id], |r| Ok((r.get(0)?, r.get(1)?)))?
+            .collect::<rusqlite::Result<_>>()?
+    };
+    let changed = before
+        .iter()
+        .filter(|(path, _)| saves::is_save(game, path))
+        .any(|(path, hash)| {
+            let upper = path.to_ascii_uppercase();
+            !now.iter().any(|(p, h)| *p == upper && h == hash)
+        });
+    if !changed {
+        tracing::debug!("{profile_id} lost no save; dropping backup {backup_id}");
+        delete(db, backup_id)?;
+    }
+    Ok(changed)
+}
+
+/// An earlier version of a save, kept in a backup.
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveVersion {
+    pub backup_id: u32,
+    /// `modified_at` is when the backup was made.
+    pub save: SaveFile,
+}
+
+/// The backed-up `(backup id, path, hash, created_at)` rows for a save file,
+/// newest first.
+fn backed_up(db: &Db, profile_id: &str, file: &str) -> Result<Vec<(u32, String, String, u32)>> {
+    let conn = db.conn();
+    let mut stmt = conn.prepare(
+        "SELECT b.id, f.path, f.hash, b.created_at
+         FROM backup_files f JOIN save_backups b ON b.id = f.backup_id
+         WHERE b.profile_id = ?1 AND f.path = ?2 COLLATE NOCASE
+         ORDER BY b.created_at DESC, b.id DESC",
+    )?;
+    let rows = stmt
+        .query_map(params![profile_id, file], |r| {
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))
+        })?
+        .collect::<rusqlite::Result<_>>()?;
+    Ok(rows)
+}
+
+/// Each content a save had in a backup other than `current` (its hash now),
+/// once, newest first.
+fn distinct_versions(
+    rows: Vec<(u32, String, String, u32)>,
+    current: Option<&str>,
+) -> Vec<(u32, String, u32)> {
+    let mut seen: Vec<String> = current.map(String::from).into_iter().collect();
+    let mut out = Vec::new();
+    for (id, path, hash, at) in rows {
+        if !seen.contains(&hash) {
+            seen.push(hash);
+            out.push((id, path, at));
+        }
+    }
+    out
+}
+
+/// How many earlier versions of a save with content `data` the backups hold.
+pub fn version_count(db: &Db, profile_id: &str, file: &str, data: &[u8]) -> Result<u32> {
+    let rows = backed_up(db, profile_id, file)?;
+    Ok(distinct_versions(rows, Some(&file_hash(data))).len() as u32)
+}
+
+/// The earlier versions of a save that backups hold, newest first.
+pub fn save_versions(db: &Db, profile_id: &str, file: &str) -> Result<Vec<SaveVersion>> {
+    let (profile, layers) = profiles::get(db, profile_id)?;
+    let game = saves::game_of(&profile.game_id)?;
+    let upper = file.to_ascii_uppercase();
+    let current = current_saves(game, &layers)?
+        .into_iter()
+        .find(|(p, _)| *p == upper)
+        .map(|(_, h)| h);
+    let mut out = Vec::new();
+    for (id, path, at) in distinct_versions(backed_up(db, profile_id, file)?, current.as_deref()) {
+        let (_, archive) = get_with_archive(db, id)?;
+        let (files, _) = read_zip(Path::new(&archive))?;
+        if let Some((_, data)) = files.iter().find(|(n, _)| *n == path) {
+            out.push(SaveVersion {
+                backup_id: id,
+                save: saves::describe(game, &path, data, Some(at)),
+            });
+        }
+    }
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -841,6 +1002,104 @@ mod tests {
             Some("hello")
         );
         assert_eq!(saves[0].modified_at, Some(b.created_at));
+    }
+
+    #[test]
+    fn backup_before_launch_stays_only_if_a_save_was_lost() {
+        let (_tmp, paths, db) = setup();
+        let st = state(&paths);
+        fs::write(st.join("SAVEGAM0.CK4"), keen4_save("first")).unwrap();
+
+        // New saves, settings and scores alone don't keep it.
+        let id = before_launch(&paths, &db, "keen4-1").unwrap();
+        fs::write(st.join("SAVEGAM1.CK4"), keen4_save("new")).unwrap();
+        fs::write(st.join("config.ck4"), b"changed").unwrap();
+        assert!(!after_session(&db, "keen4-1", id).unwrap());
+        assert!(list(&db, "keen4-1").unwrap().is_empty());
+        assert!(
+            paths
+                .backups
+                .join("keen4-1")
+                .read_dir()
+                .unwrap()
+                .next()
+                .is_none()
+        );
+
+        // Overwriting one does, and so does losing one.
+        let id = before_launch(&paths, &db, "keen4-1").unwrap();
+        fs::write(st.join("SAVEGAM0.CK4"), keen4_save("over")).unwrap();
+        assert!(after_session(&db, "keen4-1", id).unwrap());
+        let id = before_launch(&paths, &db, "keen4-1").unwrap();
+        fs::remove_file(st.join("SAVEGAM1.CK4")).unwrap();
+        assert!(after_session(&db, "keen4-1", id).unwrap());
+        assert_eq!(list(&db, "keen4-1").unwrap().len(), 2);
+    }
+
+    #[test]
+    fn earlier_versions_of_a_save_once_each_newest_first() {
+        let (_tmp, paths, db) = setup();
+        let st = state(&paths);
+        let user = || {
+            create(&paths, &db, "keen4-1", Contents::State, Origin::User(None))
+                .unwrap()
+                .unwrap()
+        };
+        fs::write(st.join("SAVEGAM0.CK4"), keen4_save("one")).unwrap();
+        let first = user();
+        // The same content again counts once, under its newest backup.
+        fs::write(st.join("config.ck4"), b"changed").unwrap();
+        let again = user();
+        fs::write(st.join("SAVEGAM0.CK4"), keen4_save("two")).unwrap();
+        user();
+        fs::write(st.join("SAVEGAM0.CK4"), keen4_save("three")).unwrap();
+
+        let versions = save_versions(&db, "keen4-1", "savegam0.ck4").unwrap();
+        let names: Vec<_> = versions
+            .iter()
+            .map(|v| v.save.details.as_ref().unwrap().name.clone().unwrap())
+            .collect();
+        assert_eq!(names, ["two", "one"]);
+        assert_eq!(versions[1].backup_id, again.id);
+        assert_ne!(versions[1].backup_id, first.id);
+        let saves = saves::list(&db, "keen4-1").unwrap();
+        assert_eq!(saves[0].versions, 2);
+
+        // Back to "two": that one isn't earlier any more.
+        fs::write(st.join("SAVEGAM0.CK4"), keen4_save("two")).unwrap();
+        assert_eq!(
+            save_versions(&db, "keen4-1", "SAVEGAM0.CK4").unwrap().len(),
+            1
+        );
+        assert_eq!(saves::list(&db, "keen4-1").unwrap()[0].versions, 1);
+    }
+
+    #[test]
+    fn files_of_older_backups_are_noted_on_start() {
+        let (_tmp, paths, db) = setup();
+        fs::write(state(&paths).join("SAVEGAM0.CK4"), keen4_save("old")).unwrap();
+        let b = create(&paths, &db, "keen4-1", Contents::State, Origin::User(None))
+            .unwrap()
+            .unwrap();
+        fs::write(state(&paths).join("SAVEGAM0.CK4"), keen4_save("new")).unwrap();
+        db.conn().execute("DELETE FROM backup_files", []).unwrap();
+        assert!(
+            save_versions(&db, "keen4-1", "SAVEGAM0.CK4")
+                .unwrap()
+                .is_empty()
+        );
+
+        record_older(&db).unwrap();
+        let versions = save_versions(&db, "keen4-1", "SAVEGAM0.CK4").unwrap();
+        assert_eq!(versions.len(), 1);
+        assert_eq!(versions[0].backup_id, b.id);
+        // Deleting a backup takes its rows along.
+        delete(&db, b.id).unwrap();
+        let left: u32 = db
+            .conn()
+            .query_row("SELECT COUNT(*) FROM backup_files", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(left, 0);
     }
 
     #[test]

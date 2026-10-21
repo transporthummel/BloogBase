@@ -124,6 +124,7 @@ const save = (file: string, slot: number, name: string | null): SaveFile => ({
   slot,
   modifiedAt: 1_700_000_000,
   size: 100,
+  versions: 0,
   details: name
     ? {
         name,

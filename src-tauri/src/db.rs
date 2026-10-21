@@ -17,6 +17,7 @@ const MIGRATIONS_SLICE: &[M<'_>] = &[
     M::up(include_str!("../migrations/0004_mod_details.sql")),
     M::up(include_str!("../migrations/0005_author_links.sql")),
     M::up(include_str!("../migrations/0006_mods_without_game.sql")).foreign_key_check(),
+    M::up(include_str!("../migrations/0007_backup_files.sql")),
 ];
 const MIGRATIONS: Migrations<'_> = Migrations::from_slice(MIGRATIONS_SLICE);
 

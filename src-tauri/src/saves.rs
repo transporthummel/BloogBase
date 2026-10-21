@@ -27,6 +27,8 @@ pub struct SaveFile {
     pub size: u32,
     /// `None` if the file couldn't be read as a save of this game.
     pub details: Option<SaveDetails>,
+    /// Earlier versions of it kept in backups (§11.1); 0 for a save in a backup.
+    pub versions: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
@@ -106,6 +108,7 @@ pub fn describe(game: &Game, file: &str, data: &[u8], modified_at: Option<u32>) 
         modified_at,
         size: data.len() as u32,
         details,
+        versions: 0,
     }
 }
 
@@ -132,7 +135,9 @@ pub fn list(db: &Db, profile_id: &str) -> Result<Vec<SaveFile>> {
         }
         let path = host_path(&layers, &entry);
         let data = fs::read(&path)?;
-        out.push(describe(game, &entry.path, &data, modified(&path)));
+        let mut save = describe(game, &entry.path, &data, modified(&path));
+        save.versions = backups::version_count(db, profile_id, &entry.path, &data)?;
+        out.push(save);
     }
     out.sort_by(|a, b| (a.slot, &a.file).cmp(&(b.slot, &b.file)));
     Ok(out)

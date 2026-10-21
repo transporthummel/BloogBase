@@ -8,7 +8,7 @@ use specta::Type;
 use tauri::{AppHandle, Manager, State};
 use tauri_specta::Event;
 
-use crate::backups::{self, Backup, BackupSettings, Contents, Origin};
+use crate::backups::{self, Backup, BackupSettings, Contents, Origin, SaveVersion};
 use crate::captures::{self, Kind, Screenshot, Video, VideoIndex};
 use crate::catalog::{self, Game};
 use crate::covers;
@@ -117,12 +117,13 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
     let a = app.clone();
     let id = profile_id.clone();
     let started = blocking(move || {
-        backups::before_launch(&a.state::<AppPaths>(), &a.state::<Db>(), &id);
+        let backup = backups::before_launch(&a.state::<AppPaths>(), &a.state::<Db>(), &id);
         let spec = launcher::prepare(&a.state::<AppPaths>(), &a.state::<Db>(), &id)?;
-        launcher::spawn(&runtime, &spec, &a.state::<Db>(), &id)
+        let (child, session) = launcher::spawn(&runtime, &spec, &a.state::<Db>(), &id)?;
+        Ok((child, session, backup))
     })
     .await;
-    let (mut child, session) = match started {
+    let (mut child, session, backup) = match started {
         Ok(s) => s,
         Err(e) => {
             app.state::<Running>().release(&profile_id);
@@ -154,6 +155,12 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
                 tracing::error!("could not record end of session {session}: {e}");
                 0
             });
+        // Still locked, so nothing changes the saves while they're compared.
+        if let Some(backup) = backup
+            && let Err(e) = backups::after_session(&app.state::<Db>(), &profile_id, backup)
+        {
+            tracing::warn!("could not check backup {backup} after the session: {e}");
+        }
         app.state::<Running>().release(&profile_id);
         tracing::info!("{profile_id} exited with {exit_code:?} after {seconds}s");
         let _ = PlaySessionEnded {
@@ -184,6 +191,17 @@ async fn with_profile_locked<T: Send + 'static>(
 #[specta::specta]
 pub async fn list_saves(app: AppHandle, profile_id: String) -> CommandResult<Vec<SaveFile>> {
     blocking(move || saves::list(&app.state::<Db>(), &profile_id)).await
+}
+
+/// The earlier versions of a save that backups hold, newest first.
+#[tauri::command]
+#[specta::specta]
+pub async fn save_versions(
+    app: AppHandle,
+    profile_id: String,
+    file: String,
+) -> CommandResult<Vec<SaveVersion>> {
+    blocking(move || backups::save_versions(&app.state::<Db>(), &profile_id, &file)).await
 }
 
 /// Deletes a save; it's backed up first.

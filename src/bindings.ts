@@ -21,6 +21,8 @@ export const commands = {
 	 */
 	launchProfile: (profileId: string) => typedError<null, CommandError>(__TAURI_INVOKE("launch_profile", { profileId })),
 	listSaves: (profileId: string) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("list_saves", { profileId })),
+	/**  The earlier versions of a save that backups hold, newest first. */
+	saveVersions: (profileId: string, file: string) => typedError<SaveVersion[], CommandError>(__TAURI_INVOKE("save_versions", { profileId, file })),
 	/**  Deletes a save; it's backed up first. */
 	deleteSave: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_save", { profileId, file })),
 	/**  Screenshots taken in DOSBox, newest first. */
@@ -693,6 +695,15 @@ export type SaveFile = {
 	size: number,
 	/**  `None` if the file couldn't be read as a save of this game. */
 	details: SaveDetails | null,
+	/**  Earlier versions of it kept in backups (§11.1); 0 for a save in a backup. */
+	versions: number,
+};
+
+/**  An earlier version of a save, kept in a backup. */
+export type SaveVersion = {
+	backupId: number,
+	/**  `modified_at` is when the backup was made. */
+	save: SaveFile,
 };
 
 export type Screenshot = {

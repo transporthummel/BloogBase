@@ -56,6 +56,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::storage_usage,
             commands::launch_profile,
             commands::list_saves,
+            commands::save_versions,
             commands::delete_save,
             commands::list_screenshots,
             commands::profile_cover,
@@ -195,6 +196,9 @@ pub fn run() {
 
             let db = Db::open(&paths.database)?;
             tracing::info!("database ready, schema version {}", db.schema_version()?);
+            if let Err(e) = backups::record_older(&db) {
+                tracing::warn!("could not note the files of older backups: {e}");
+            }
             if let Err(e) = library::identify_unknown(&paths, &db) {
                 tracing::warn!("could not check unknown game versions: {e}");
             }
