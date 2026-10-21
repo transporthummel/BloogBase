@@ -244,4 +244,3 @@ mod tests {
         assert_eq!(sdl_scancode(0x01), None);
     }
 }
-

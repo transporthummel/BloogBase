@@ -331,7 +331,7 @@ function ProfileCard({
             </Link>
           </dd>
         </dl>
-        <div className="mt-auto flex gap-2">
+        <div className="mt-auto flex gap-2 pt-1.5">
           <PlayButton
             className="flex-1"
             onClick={onPlay}
