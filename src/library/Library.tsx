@@ -259,7 +259,8 @@ function ProfileCard({
   const version = game?.versions.find((v) => v.id === profile.versionId);
   const cover = useCover(profile.id, profile.installId);
   return (
-    <Card className="flex h-full flex-col">
+    // Only the border colour changes, so nothing inside the card moves.
+    <Card className="flex h-full flex-col transition-colors has-[a:hover]:border-accent/35">
       {/* A second way to the same page for the mouse; the title link below
           is the one for keyboards and screen readers. */}
       <Link
