@@ -7,6 +7,7 @@
     "about": "About"
   },
   "library": {
+    "trivia": "Did you know?",
     "title": "Library",
     "emptyTitle": "Nothing here yet",
     "empty": "Add a folder or ZIP file with a Commander Keen game to get started, or get one of the free games.",
@@ -90,6 +91,8 @@
     "themeDark": "Dark",
     "themeLight": "Light",
     "themeSystem": "Like the system",
+    "showTrivia": "Show a fun fact in the library",
+    "showTriviaHint": "A made-up Commander Keen fact, just for fun. A different one on each start.",
     "about": "About",
     "version": "Version",
     "dataDir": "Data folder",

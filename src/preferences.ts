@@ -77,3 +77,30 @@ export function getLibrarySort(): LibrarySort {
 export function setLibrarySort(sort: LibrarySort) {
   write(LIBRARY_SORT_KEY, sort);
 }
+
+const SEEN_TRIVIA_KEY = "bloogbase.seenTrivia";
+
+/** The library fun facts this device has shown already. */
+export function getSeenTrivia(): string[] {
+  try {
+    const value: unknown = JSON.parse(read(SEEN_TRIVIA_KEY) ?? "[]");
+    return Array.isArray(value) ? value.filter((v) => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function setSeenTrivia(facts: string[]) {
+  write(SEEN_TRIVIA_KEY, JSON.stringify(facts));
+}
+
+const SHOW_TRIVIA_KEY = "bloogbase.showTrivia";
+
+/** Whether the library shows a fun fact. On unless turned off. */
+export function getShowTrivia(): boolean {
+  return read(SHOW_TRIVIA_KEY) !== "false";
+}
+
+export function setShowTrivia(show: boolean) {
+  write(SHOW_TRIVIA_KEY, show ? null : "false");
+}

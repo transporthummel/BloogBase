@@ -7,6 +7,7 @@
     "about": "Über"
   },
   "library": {
+    "trivia": "Schon gewusst?",
     "title": "Bibliothek",
     "emptyTitle": "Noch ganz leer hier",
     "empty": "Füge einen Ordner oder eine ZIP-Datei mit einem Commander-Keen-Spiel hinzu, um loszulegen, oder hol dir eines der kostenlosen Spiele.",
@@ -90,6 +91,8 @@
     "themeDark": "Dunkel",
     "themeLight": "Hell",
     "themeSystem": "Wie das System",
+    "showTrivia": "Fun Fact in der Bibliothek zeigen",
+    "showTriviaHint": "Ein erfundener Fakt über Commander Keen, nur zum Spaß. Bei jedem Start ein anderer.",
     "about": "Über",
     "version": "Version",
     "dataDir": "Datenordner",

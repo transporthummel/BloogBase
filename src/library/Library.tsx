@@ -14,13 +14,15 @@ import { SuggestToIndex } from "../mods/KeenwikiImport";
 import { Cover } from "./Cover";
 import { useCover } from "./covers";
 import { profilesKey } from "./queries";
-import { getLibrarySort, getSetupStep, setLibrarySort } from "../preferences";
+import { getLibrarySort, getSetupStep, getShowTrivia, setLibrarySort } from "../preferences";
 import { arrange, librarySorts, type LibrarySort } from "./sort";
 import { StatusBar } from "./StatusBar";
 import { leaveLibrary, returnToLibrary } from "./scroll";
+import { startupTrivia, triviaText } from "./trivia";
 import { useRuntimeStatus } from "../runtime/queries";
 import { useSetupStatus } from "../setup/queries";
 import { Badge } from "../ui/Badge";
+import { Bloog } from "../ui/Bloog";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
@@ -41,6 +43,8 @@ export function Library() {
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState<{ mod?: Mod; games?: number } | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
+  // Only picked (and remembered as seen) when it's shown.
+  const [trivia] = useState(() => (getShowTrivia() ? startupTrivia() : null));
   const list = useRef<HTMLDivElement>(null);
   // Once the cards are laid out, so the old position means the same.
   const loaded = !!profiles.data && !!games.data;
@@ -87,6 +91,18 @@ export function Library() {
   return (
     <>
       <PageHeader title={t("library.title")} actions={!empty && addButton} />
+      {trivia && (
+        // Dashed, with a Bloog and the pixel font, so it reads as a joke and not as news.
+        <aside className="-mt-2 mb-6 flex items-center gap-3 rounded-lg border border-dashed border-border bg-surface/60 px-4 py-2.5">
+          <Bloog className="size-6 shrink-0" />
+          <p className="text-sm text-muted">
+            <span className="mr-2 font-pixel text-[0.6rem] text-accent uppercase">
+              {t("library.trivia")}
+            </span>
+            <span className="italic">{triviaText(trivia, i18n.language)}</span>
+          </p>
+        </aside>
+      )}
       {adding && (
         <AddModDialog
           onClose={() => setAdding(false)}

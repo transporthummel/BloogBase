@@ -13,9 +13,11 @@ import { useAppUpdate, useCheckForUpdate } from "../updates/queries";
 import { UpdateCard } from "../updates/UpdateCard";
 import { unwrap } from "../ipc";
 import {
+  getShowTrivia,
   getTheme,
   setLanguage,
   setSetupStep,
+  setShowTrivia,
   setTheme,
   type Language,
   type Theme,
@@ -31,6 +33,7 @@ export function Settings() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [theme, setThemeState] = useState(getTheme);
+  const [showTrivia, setShowTriviaState] = useState(getShowTrivia);
   const info = useQuery({ queryKey: ["appInfo"], queryFn: () => unwrap(commands.appInfo()) });
 
   return (
@@ -67,6 +70,20 @@ export function Settings() {
               <option value="system">{t("settings.themeSystem")}</option>
             </select>
           </Field>
+          <div className="grid gap-1">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={showTrivia}
+                onChange={(e) => {
+                  setShowTrivia(e.target.checked);
+                  setShowTriviaState(e.target.checked);
+                }}
+              />
+              {t("settings.showTrivia")}
+            </label>
+            <p className="ml-6 text-xs text-muted">{t("settings.showTriviaHint")}</p>
+          </div>
         </Section>
         <RuntimeSection />
         <DisplaySection />
