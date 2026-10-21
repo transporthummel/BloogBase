@@ -267,7 +267,7 @@ function ProfileCard({
         params={{ profileId: profile.id }}
         tabIndex={-1}
         aria-hidden
-        className="block transition hover:brightness-110"
+        className="block"
       >
         <Cover gameId={profile.gameId} game={game} src={cover.data} />
       </Link>
