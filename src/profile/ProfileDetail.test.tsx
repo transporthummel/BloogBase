@@ -56,6 +56,7 @@ vi.mock("../bindings", () => {
     "launchProfile",
     "runtimeStatus",
     "listSaves",
+    "saveVersions",
     "deleteSave",
     "listBackups",
     "createBackup",
@@ -599,6 +600,32 @@ test("restores all saves, and settings and high scores only if asked", async () 
   await userEvent.click(within(again).getByLabelText(/Also reset settings and high scores/));
   await userEvent.click(within(again).getByRole("button", { name: "Restore everything" }));
   expect(commands.restoreBackup).toHaveBeenLastCalledWith(7, null, null, true);
+});
+
+test("restores an earlier version of a save", async () => {
+  vi.mocked(commands.listSaves).mockResolvedValue(
+    ok([{ ...save("SAVEGAM0.CK4", 1, "pabba"), versions: 2 }, save("SAVEGAM5.CK4", 6, null)]),
+  );
+  vi.mocked(commands.saveVersions).mockResolvedValue(
+    ok([
+      { backupId: 9, save: save("SAVEGAM0.CK4", 1, "before boss") },
+      { backupId: 7, save: save("savegam0.ck4", 1, "start") },
+    ]),
+  );
+  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(null));
+  renderDetail();
+  // Only the save with earlier versions offers them.
+  const open = await screen.findByRole("button", { name: "Earlier versions of Slot 1 · pabba" });
+  expect(open).toHaveTextContent("2 earlier versions");
+  expect(screen.getAllByRole("button", { name: /earlier versions/i })).toHaveLength(1);
+
+  await userEvent.click(open);
+  const dialog = screen.getByRole("dialog", { name: "Earlier versions of Slot 1 · pabba" });
+  expect(await within(dialog).findByText("Slot 1 · before boss")).toBeInTheDocument();
+  expect(commands.saveVersions).toHaveBeenCalledWith("keen4-1", "SAVEGAM0.CK4");
+  await userEvent.click(within(dialog).getAllByRole("button", { name: /Restore the version/ })[1]);
+  expect(commands.restoreBackup).toHaveBeenCalledWith(7, "savegam0.ck4", null, false);
+  expect(await screen.findByText(/^Earlier version restored/)).toBeInTheDocument();
 });
 
 test("save actions are locked while the game runs", async () => {

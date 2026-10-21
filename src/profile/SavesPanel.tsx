@@ -14,6 +14,7 @@ import { Card } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Notice } from "../ui/Notice";
 import { RestoreDialog } from "./RestoreDialog";
+import { VersionsDialog } from "./VersionsDialog";
 import { backupContents, backupTitle, backupsKey, saveSummary, saveTitle, savesKey } from "./saves";
 
 /** The save manager of one profile: its saves and their backups (§11). */
@@ -29,6 +30,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
     queryFn: () => unwrap(commands.listBackups(profile.id)),
   });
   const [deleting, setDeleting] = useState<SaveFile | null>(null);
+  const [versionsOf, setVersionsOf] = useState<SaveFile | null>(null);
   const [removingBackup, setRemovingBackup] = useState<Backup | null>(null);
   const [restoring, setRestoring] = useState<Backup | null>(null);
   const [label, setLabel] = useState("");
@@ -126,6 +128,17 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
                   )}
                 </div>
                 <div className="flex gap-1">
+                  {s.versions > 0 && (
+                    <Button
+                      variant="ghost"
+                      disabled={locked}
+                      onClick={() => setVersionsOf(s)}
+                      aria-label={t("saves.versionsNamed", { name: saveTitle(t, s) })}
+                    >
+                      <History className="size-4" aria-hidden />
+                      {t("saves.versions", { count: s.versions })}
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     className="px-2"
@@ -235,6 +248,18 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
         </ul>
       </section>
 
+      {versionsOf && (
+        <VersionsDialog
+          profileId={profile.id}
+          save={versionsOf}
+          onClose={() => setVersionsOf(null)}
+          onRestored={() => {
+            setVersionsOf(null);
+            setMessage(t("saves.versionRestored"));
+            refresh();
+          }}
+        />
+      )}
       {deleting && (
         <ConfirmDialog
           title={t("saves.deleteTitle", { name: saveTitle(t, deleting) })}

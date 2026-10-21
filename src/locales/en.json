@@ -463,7 +463,15 @@
     "deleteNamed": "Delete {{name}}",
     "deleteTitle": "Delete {{name}}?",
     "deleteHint": "It’s backed up first, so you can get it back from the backups below.",
-    "deleted": "Save deleted. A backup was kept."
+    "deleted": "Save deleted. A backup was kept.",
+    "versions_one": "Earlier version",
+    "versions_other": "{{count}} earlier versions",
+    "versionsNamed": "Earlier versions of {{name}}",
+    "versionsHint": "From your backups. Restoring one replaces the current save; it’s backed up first.",
+    "versionFrom": "Backed up {{date}}",
+    "restoreVersion": "Restore this version",
+    "restoreVersionNamed": "Restore the version from {{date}}",
+    "versionRestored": "Earlier version restored. What was there before was backed up."
   },
   "backups": {
     "title": "Backups",

@@ -463,7 +463,15 @@
     "deleteNamed": "{{name}} löschen",
     "deleteTitle": "{{name}} löschen?",
     "deleteHint": "Der Spielstand wird vorher gesichert und lässt sich unten aus den Sicherungen zurückholen.",
-    "deleted": "Spielstand gelöscht. Eine Sicherung wurde behalten."
+    "deleted": "Spielstand gelöscht. Eine Sicherung wurde behalten.",
+    "versions_one": "Frühere Version",
+    "versions_other": "{{count}} frühere Versionen",
+    "versionsNamed": "Frühere Versionen von {{name}}",
+    "versionsHint": "Aus deinen Sicherungen. Eine wiederherzustellen ersetzt den aktuellen Spielstand; der wird vorher gesichert.",
+    "versionFrom": "Gesichert {{date}}",
+    "restoreVersion": "Diese Version wiederherstellen",
+    "restoreVersionNamed": "Version vom {{date}} wiederherstellen",
+    "versionRestored": "Frühere Version wiederhergestellt. Der vorherige Stand wurde gesichert."
   },
   "backups": {
     "title": "Sicherungen",
