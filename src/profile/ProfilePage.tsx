@@ -11,7 +11,7 @@ import { errorMessage } from "../errors";
 import { formatDate, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { Cover } from "../library/Cover";
-import { useCover } from "../library/covers";
+import { coverKey, coverKeys, useCover } from "../library/covers";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Authors } from "../mods/Authors";
 import { ModUpdate } from "../mods/ModUpdate";
@@ -341,6 +341,8 @@ function Hero({
               queryClient.invalidateQueries({ queryKey: modsKey });
               queryClient.invalidateQueries({ queryKey: installsKey });
               navigate({ to: "/" });
+              // Ids are used again, and the game's mods may be gone too.
+              queryClient.removeQueries({ queryKey: coverKeys });
             }}
           />
         )}
@@ -352,6 +354,8 @@ function Hero({
               queryClient.invalidateQueries({ queryKey: profilesKey });
               queryClient.invalidateQueries({ queryKey: modsKey });
               navigate({ to: "/" });
+              // Installing it again gets the same id, and a new cover.
+              queryClient.removeQueries({ queryKey: coverKey(profile.id) });
             }}
           />
         )}

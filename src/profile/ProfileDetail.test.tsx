@@ -157,8 +157,7 @@ const ready: RuntimeStatus = {
 
 const ok = <T,>(data: T) => ({ status: "ok" as const, data });
 
-function renderDetail() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderDetail(client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   return render(
     <QueryClientProvider client={client}>
       <ProfileDetail profileId="keen4-1" />
@@ -264,13 +263,17 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   );
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
   vi.mocked(commands.deleteMod).mockResolvedValue(ok(null));
-  renderDetail();
+  const client = new QueryClient();
+  const remove = vi.spyOn(client, "removeQueries");
+  renderDetail(client);
   await userEvent.click(await screen.findByRole("button", { name: "Remove Aurora Bliss" }));
   const dialog = screen.getByRole("dialog");
   await userEvent.click(within(dialog).getByRole("checkbox"));
   await userEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
   expect(commands.deleteMod).toHaveBeenCalledWith("aurora-bliss", false);
   expect(navigate).toHaveBeenCalledWith({ to: "/" });
+  // Installed again, it gets the same id and must not show the old cover.
+  expect(remove).toHaveBeenCalledWith({ queryKey: ["cover", "keen4-1"] });
 });
 
 test("a game is uninstalled from its page, with its mods if asked", async () => {
@@ -282,7 +285,9 @@ test("a game is uninstalled from its page, with its mods if asked", async () => 
     ]),
   );
   vi.mocked(commands.removeGame).mockResolvedValue(ok(null));
-  renderDetail();
+  const client = new QueryClient();
+  const remove = vi.spyOn(client, "removeQueries");
+  renderDetail(client);
   const user = userEvent.setup();
   expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
   await user.click(await screen.findByRole("button", { name: `Uninstall ${keen4.title}` }));
@@ -296,6 +301,7 @@ test("a game is uninstalled from its page, with its mods if asked", async () => 
   await user.click(within(dialog).getByRole("button", { name: "Uninstall" }));
   expect(commands.removeGame).toHaveBeenCalledWith("keen4-1", true, true);
   expect(navigate).toHaveBeenCalledWith({ to: "/" });
+  expect(remove).toHaveBeenCalledWith({ queryKey: ["cover"] });
 });
 
 test("a mod waiting for its game says which one and can't be played", async () => {

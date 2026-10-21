@@ -3,8 +3,13 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { commands } from "../bindings";
 import { unwrap } from "../ipc";
 
-/** Invalidate it when a profile's files change, e.g. a mod is replaced. */
-export const coverKey = (profileId: string) => ["cover", profileId] as const;
+/** All covers. */
+export const coverKeys = ["cover"] as const;
+/**
+ * Invalidate it when a profile's files change, e.g. a mod is replaced; remove
+ * it with the profile, whose id a new one may get.
+ */
+export const coverKey = (profileId: string) => [...coverKeys, profileId] as const;
 
 /**
  * The image URL of a profile's title screen, extracted from its game files
