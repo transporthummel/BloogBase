@@ -115,9 +115,14 @@ impl Image {
 
     /// 8-bit RGB, row by row.
     pub fn to_rgb(&self) -> Vec<u8> {
+        self.to_rgb_with(&EGA_PALETTE)
+    }
+
+    /// 8-bit RGB in another palette, like one a mod sets.
+    pub fn to_rgb_with(&self, palette: &[[u8; 3]; 16]) -> Vec<u8> {
         self.pixels
             .iter()
-            .flat_map(|&c| EGA_PALETTE[usize::from(c & 15)])
+            .flat_map(|&c| palette[usize::from(c & 15)])
             .collect()
     }
 }

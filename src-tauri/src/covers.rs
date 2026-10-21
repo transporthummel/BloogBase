@@ -19,7 +19,7 @@ use crate::profiles;
 use crate::recipe::{Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v6";
+const VERSION: &str = "covers v7";
 
 /// The profile's cover PNG, extracting it first if its files changed since
 /// the last time. `None` if the title can't be read from them.
@@ -44,8 +44,8 @@ pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<PathB
     let title = extract(game, profile.version_id.as_deref(), recipe, &files);
     fs::create_dir_all(stamp.parent().expect("covers have a folder"))?;
     let state = match title {
-        Ok(image) => {
-            write_png(&image, &png)?;
+        Ok((image, palette)) => {
+            write_png(&image, &palette, &png)?;
             tracing::info!("extracted the title screen of {profile_id}");
             "png"
         }
@@ -141,19 +141,27 @@ impl Files {
     }
 }
 
-/// What a mod's patch file says about the graphics files.
+/// What a mod's patch file says about the graphics.
 #[derive(Debug, Default, PartialEq, Eq)]
-struct PatchedNames {
+struct Patched {
     egahead: Option<String>,
     egadict: Option<String>,
     /// File names patched into the executable as text, e.g. a graphics
     /// file renamed to `KDREAMS2.CMP`.
     renamed: Vec<String>,
+    /// The colors the game sets instead of the EGA ones.
+    palette: Option<[[u8; 3]; 16]>,
 }
 
-fn patched_names(text: &str) -> PatchedNames {
-    let mut names = PatchedNames::default();
-    for line in text.lines() {
+/// Where Keen 1 palette patches put their 16 VGA colors, each red, green and
+/// blue from 0 to 63: adurdin's patch over the Turbo C++ message at DS:0004,
+/// and the fading palette patch, whose first palette is the bright one.
+const PALETTES: [(&str, u32); 2] = [("CK1", 0x13054), ("CK1", 0x21850)];
+
+fn patched(text: &str, ext: &str) -> Patched {
+    let mut names = Patched::default();
+    let lines: Vec<&str> = text.lines().collect();
+    for (i, line) in lines.iter().enumerate() {
         let mut words = line.split_whitespace();
         let Some(first) = words.next() else { continue };
         let first = first.to_ascii_lowercase();
@@ -167,6 +175,14 @@ fn patched_names(text: &str) -> PatchedNames {
             "%egahead" => names.egahead = argument(),
             "%egadict" => names.egadict = argument(),
             "%patch" => {
+                if names.palette.is_none() {
+                    names.palette = words
+                        .clone()
+                        .next()
+                        .and_then(|a| u32::from_str_radix(a.strip_prefix('$')?, 16).ok())
+                        .filter(|&a| PALETTES.contains(&(ext, a)))
+                        .and_then(|_| palette(&lines[i..]));
+                }
                 // Text comes in quotes; file names have a dot.
                 names.renamed.extend(
                     line.split('"')
@@ -183,6 +199,36 @@ fn patched_names(text: &str) -> PatchedNames {
     names
 }
 
+/// The 16 colors at the start of the `%patch` on the first of `lines`, if
+/// it starts with 48 plain numbers up to 63 (decimal unless `$` hex).
+fn palette(lines: &[&str]) -> Option<[[u8; 3]; 16]> {
+    let values = lines
+        .iter()
+        .enumerate()
+        .take_while(|(i, l)| *i == 0 || !l.trim_start().starts_with('%'))
+        .flat_map(|(i, l)| {
+            let code = l.split('#').next().unwrap_or_default();
+            // Skips `%patch` and the address.
+            code.split_whitespace().skip(if i == 0 { 2 } else { 0 })
+        })
+        .take(48)
+        .map(|w| match w.strip_prefix('$') {
+            Some(h) => u8::from_str_radix(h, 16).ok(),
+            None => w.parse::<u8>().ok(),
+        })
+        .collect::<Option<Vec<u8>>>()?;
+    if values.len() < 48 || values.iter().any(|&v| v > 63) {
+        return None;
+    }
+    let mut colors = [[0; 3]; 16];
+    for (color, rgb) in colors.iter_mut().zip(values.chunks(3)) {
+        for (c, &v) in color.iter_mut().zip(rgb) {
+            *c = v << 2 | v >> 4;
+        }
+    }
+    Some(colors)
+}
+
 /// `CK1`-`CK6`, `KDR`.
 fn extension(game: &Game) -> String {
     match game.id.strip_prefix("keen") {
@@ -196,13 +242,25 @@ fn extract(
     version_id: Option<&str>,
     recipe: Option<&Recipe>,
     files: &Files,
-) -> std::result::Result<Image, String> {
+) -> std::result::Result<(Image, [[u8; 3]; 16]), String> {
     let ext = extension(game);
     let patch = recipe
         .and_then(Recipe::patch_file)
         .and_then(|p| files.read(p))
-        .map(|t| patched_names(&String::from_utf8_lossy(&t)))
+        .map(|t| patched(&String::from_utf8_lossy(&t), &ext))
         .unwrap_or_default();
+    let palette = patch.palette.unwrap_or(keen_graphics::EGA_PALETTE);
+    title(game, version_id, recipe, files, &ext, &patch).map(|image| (image, palette))
+}
+
+fn title(
+    game: &Game,
+    version_id: Option<&str>,
+    recipe: Option<&Recipe>,
+    files: &Files,
+    ext: &str,
+    patch: &Patched,
+) -> std::result::Result<Image, String> {
     let need = |name: &str| files.read(name).ok_or(format!("{name} missing"));
     // Renamed files come first; only existing ones of the right kind count.
     let candidates = |ext: &str, standard: String| -> Vec<String> {
@@ -271,7 +329,7 @@ fn extract(
                     .as_deref()
                     .unwrap_or(&format!("EGADICT.{ext}")),
             );
-            for graph_name in candidates(&ext, format!("EGAGRAPH.{ext}")) {
+            for graph_name in candidates(ext, format!("EGAGRAPH.{ext}")) {
                 let Some(graph) = files.read(&graph_name) else {
                     last = format!("{graph_name} missing");
                     continue;
@@ -309,11 +367,11 @@ fn extract(
     }
 }
 
-fn write_png(image: &Image, path: &Path) -> Result<()> {
+fn write_png(image: &Image, palette: &[[u8; 3]; 16], path: &Path) -> Result<()> {
     write_rgb_png(
         image.width as u32,
         image.height as u32,
-        &image.to_rgb(),
+        &image.to_rgb_with(palette),
         path,
     )
 }
@@ -343,20 +401,41 @@ mod tests {
 
     #[test]
     fn reads_graphics_names_from_patch_files() {
-        let names = patched_names(
+        let names = patched(
             "%ext ck4\n%version 1.4\n%egahead EGAHEAD.CK4\n%EGADICT \"dict.ck4\"\n\
              %patch $23DFD \"KDREAMS2.CMP\"\n%patch $2F1A5 \"meminfo.txt\" 0\n\
              %patch $1000 \"Press a key\" $00\n%patchfile $1EE40 \"STORY.CK4\"\n\
              %end\n%patch $1 \"AFTER.END\"\n",
+            "CK4",
         );
         assert_eq!(
             names,
-            PatchedNames {
+            Patched {
                 egahead: Some("EGAHEAD.CK4".into()),
                 egadict: Some("dict.ck4".into()),
                 renamed: vec!["KDREAMS2.CMP".into(), "meminfo.txt".into()],
+                palette: None,
             }
         );
+    }
+
+    #[test]
+    fn reads_palettes_from_patch_files() {
+        // As in Sunset: decimal values over several lines, with comments.
+        let mut text = String::from("%ext ck1\n#Change the palette\n%patch $13054 \n");
+        for i in 0..16 {
+            text += &format!("       {:02} 00 $3F  #color {i}\n", i * 4);
+        }
+        text += "%patch $6E46  $E8 $D3 $D5 $90 $90\n";
+        let palette = patched(&text, "CK1").palette.unwrap();
+        assert_eq!(palette[0], [0, 0, 255]);
+        assert_eq!(palette[1], [16, 0, 255]);
+        assert_eq!(palette[15], [243, 0, 255]);
+
+        // Only Keen 1 has them there; too few colors don't count.
+        assert_eq!(patched(&text, "CK2").palette, None);
+        let short = "%patch $21850 00 00 00 63 63 63\n%patch $1 $00\n";
+        assert_eq!(patched(short, "CK1").palette, None);
     }
 
     #[test]
@@ -418,7 +497,9 @@ mod tests {
             let files = Files::new(&[&root, &base]).unwrap();
             let name = root.file_name().unwrap().to_string_lossy().into_owned();
             match extract(game, None, Some(recipe), &files) {
-                Ok(image) => write_png(&image, &out.join(format!("{name}.png"))).unwrap(),
+                Ok((image, palette)) => {
+                    write_png(&image, &palette, &out.join(format!("{name}.png"))).unwrap()
+                }
                 Err(e) => failed.push(format!("{name}: {e}")),
             }
         }
