@@ -4,7 +4,7 @@ import { Download, ExternalLink, RefreshCw } from "lucide-react";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Game, type IndexMod, type Install } from "../bindings";
-import { bestFit, gameTitle } from "../catalog";
+import { bestFit, gameTitle, shortGameTitle } from "../catalog";
 import { formatMegabytes } from "../format";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
@@ -205,7 +205,7 @@ function InstallAction({
           >
             {candidates.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.label} ({versionLabel(i)})
+                {shortGameTitle(games, i.gameId)} ({versionLabel(i)})
               </option>
             ))}
           </select>

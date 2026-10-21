@@ -435,7 +435,7 @@ function GamePicker({
         >
           {installs.data.map((i) => (
             <option key={i.id} value={i.id}>
-              {i.label} ({versionLabel(i.versionId)})
+              {game?.shortTitle ?? i.label} ({versionLabel(i.versionId)})
             </option>
           ))}
         </select>

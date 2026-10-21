@@ -34,6 +34,7 @@ vi.mock("../bindings", () => ({
 const keen4: Game = {
   id: "keen4",
   title: "Commander Keen 4: Secret of the Oracle",
+  shortTitle: "Keen 4",
   engine: "galaxy",
   executables: ["KEEN4E.EXE"],
   requiredFiles: [],

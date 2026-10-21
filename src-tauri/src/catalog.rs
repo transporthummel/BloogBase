@@ -19,6 +19,9 @@ pub enum Engine {
 pub struct Game {
     pub id: String,
     pub title: String,
+    /// "Keen 4": for library cards and install pickers, where the version
+    /// follows and the full title would crowd it out.
+    pub short_title: String,
     pub engine: Engine,
     /// Any one of these must be present.
     pub executables: Vec<String>,

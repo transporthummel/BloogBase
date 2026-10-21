@@ -287,7 +287,7 @@ function ProfileCard({
               className="hover:underline"
               title={t("library.details")}
             >
-              {profile.label}
+              {profile.modId === null ? (game?.shortTitle ?? profile.label) : profile.label}
             </Link>
           </Heading>
           {profile.missingGame !== null ? (
@@ -299,7 +299,7 @@ function ProfileCard({
             game && (
               <p className="text-xs text-muted">
                 {t("mods.baseGame", {
-                  game: game.title,
+                  game: game.shortTitle,
                   version: version?.label ?? t("library.unknownVersion"),
                 })}
               </p>

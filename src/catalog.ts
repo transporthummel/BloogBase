@@ -10,6 +10,11 @@ export function gameTitle(games: Game[] | undefined, id: string): string {
   return games?.find((g) => g.id === id)?.title ?? id;
 }
 
+/** "Keen 4", for where a version label follows. */
+export function shortGameTitle(games: Game[] | undefined, id: string): string {
+  return games?.find((g) => g.id === id)?.shortTitle ?? id;
+}
+
 /** A third-party build whose code differs from its original release. */
 export function isModified(version: GameVersion | undefined): boolean {
   return version?.original != null && !version.repackaged;

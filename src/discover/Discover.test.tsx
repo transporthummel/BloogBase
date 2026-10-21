@@ -56,6 +56,7 @@ const games: Game[] = [
   {
     id: "keen4",
     title: "Commander Keen 4",
+    shortTitle: "Keen 4",
     engine: "galaxy",
     executables: [],
     requiredFiles: [],
@@ -70,6 +71,7 @@ const games: Game[] = [
   {
     id: "keen6",
     title: "Commander Keen 6",
+    shortTitle: "Keen 6",
     engine: "galaxy",
     executables: [],
     requiredFiles: [],

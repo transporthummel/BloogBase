@@ -5,6 +5,7 @@ import { arrange } from "./sort";
 const game = (id: string): Game => ({
   id,
   title: id,
+  shortTitle: id,
   engine: "galaxy",
   executables: [],
   requiredFiles: [],

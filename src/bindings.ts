@@ -310,6 +310,11 @@ export type FreeGame = {
 export type Game = {
 	id: string,
 	title: string,
+	/**
+	 *  "Keen 4": for library cards and install pickers, where the version
+	 *  follows and the full title would crowd it out.
+	 */
+	shortTitle: string,
 	engine: Engine,
 	/**  Any one of these must be present. */
 	executables: string[],

@@ -47,6 +47,7 @@ vi.mock("../bindings", () => {
 const game = (id: string, title: string, versionId: string): Game => ({
   id,
   title,
+  shortTitle: title,
   engine: "galaxy",
   executables: [],
   requiredFiles: [],

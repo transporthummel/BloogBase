@@ -4,7 +4,7 @@ import { FileArchive, FolderOpen } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Install, type KeenwikiOrigin, type Mod, type ModInfo } from "../bindings";
-import { bestFit, gameTitle, isModified, useGames } from "../catalog";
+import { bestFit, gameTitle, isModified, shortGameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { coverKey } from "../library/covers";
@@ -344,7 +344,7 @@ function Confirm({
           >
             {candidates.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.label} ({versionLabel(i)})
+                {shortGameTitle(games.data, i.gameId)} ({versionLabel(i)})
               </option>
             ))}
           </select>

@@ -16,6 +16,7 @@
     {
       "id": "keen1",
       "title": "Commander Keen 1: Marooned on Mars",
+      "shortTitle": "Keen 1",
       "engine": "vorticons",
       "executables": ["KEEN1.EXE"],
       "requiredFiles": ["EGAHEAD.CK1", "EGALATCH.CK1", "EGASPRIT.CK1", "LEVEL01.CK1", "SOUNDS.CK1"],
@@ -77,6 +78,7 @@
     {
       "id": "keen2",
       "title": "Commander Keen 2: The Earth Explodes",
+      "shortTitle": "Keen 2",
       "engine": "vorticons",
       "executables": ["KEEN2.EXE"],
       "requiredFiles": ["EGAHEAD.CK2", "EGALATCH.CK2", "EGASPRIT.CK2", "LEVEL01.CK2"],
@@ -103,6 +105,7 @@
     {
       "id": "keen3",
       "title": "Commander Keen 3: Keen Must Die!",
+      "shortTitle": "Keen 3",
       "engine": "vorticons",
       "executables": ["KEEN3.EXE"],
       "requiredFiles": ["EGAHEAD.CK3", "EGALATCH.CK3", "EGASPRIT.CK3", "LEVEL01.CK3"],
@@ -129,6 +132,7 @@
     {
       "id": "keen4",
       "title": "Commander Keen 4: Secret of the Oracle",
+      "shortTitle": "Keen 4",
       "engine": "galaxy",
       "moddingVersion": "keen4-1.4-ega",
       "executables": ["KEEN4E.EXE", "KEEN4C.EXE", "KEEN4.EXE", "KEEN.EXE"],
@@ -213,6 +217,7 @@
     {
       "id": "keen5",
       "title": "Commander Keen 5: The Armageddon Machine",
+      "shortTitle": "Keen 5",
       "engine": "galaxy",
       "moddingVersion": "keen5-1.4-ega",
       "executables": ["KEEN5E.EXE", "KEEN5C.EXE"],
@@ -252,6 +257,7 @@
     {
       "id": "keen6",
       "title": "Commander Keen 6: Aliens Ate My Baby Sitter!",
+      "shortTitle": "Keen 6",
       "engine": "galaxy",
       "moddingVersion": "keen6-1.4-ega",
       "executables": ["KEEN6E.EXE", "KEEN6C.EXE", "KEEN6.EXE", "K6DEMO.EXE"],
@@ -332,6 +338,7 @@
     {
       "id": "kdreams",
       "title": "Commander Keen in Keen Dreams",
+      "shortTitle": "Keen Dreams",
       "engine": "dreams",
       "executables": ["KDREAMS.EXE"],
       "requiredFiles": ["KDREAMS.MAP|GAMEMAPS.KDR", "KDREAMS.AUD|AUDIO.KDR"],
