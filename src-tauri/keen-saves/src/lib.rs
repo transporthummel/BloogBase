@@ -243,7 +243,8 @@ fn dreams(data: &[u8]) -> Result<SaveInfo, ParseError> {
         name,
         score: Some(r.i32(score)?),
         ammo: Some(r.i16(flower_power)?),
-        levels_done: Some(r.count_words(levels, DREAMS_LEVELS)?),
+        // Slot 0 is the world map, which the game marks done on entering a level.
+        levels_done: Some(r.count_words(levels + 2, DREAMS_LEVELS - 1)?),
         on_world_map: Some(r.u16(mapon)? == 0),
         lives: Some(r.i16(mapon + 2)?),
         difficulty: difficulty(r.u16(mapon + 4)?),

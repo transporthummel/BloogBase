@@ -104,7 +104,7 @@ fn dreams() {
             score: Some(138_700),
             lives: Some(12),
             ammo: Some(71),
-            levels_done: Some(11),
+            levels_done: Some(10),
             difficulty: Some(Difficulty::Hard),
             on_world_map: Some(false),
             ship_parts: None,
