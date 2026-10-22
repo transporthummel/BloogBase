@@ -247,7 +247,11 @@ fn dreams(data: &[u8]) -> Result<SaveInfo, ParseError> {
         levels_done: Some(r.count_words(levels + 2, DREAMS_LEVELS - 1)?),
         on_world_map: Some(r.u16(mapon)? == 0),
         lives: Some(r.i16(mapon + 2)?),
-        difficulty: difficulty(r.u16(mapon + 4)?),
+        // Keen Dreams saves Normal as 0.
+        difficulty: match r.u16(mapon + 4)? {
+            0 => Some(Difficulty::Normal),
+            word => difficulty(word),
+        },
         ship_parts: None,
     })
 }

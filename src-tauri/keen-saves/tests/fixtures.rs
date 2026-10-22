@@ -113,6 +113,14 @@ fn dreams() {
 }
 
 #[test]
+fn dreams_saves_normal_as_zero() {
+    let mut data = fixture("SAVEGM0.KDR");
+    data[0x62] = 0;
+    let info = parse(Episode::Dreams, &data).unwrap();
+    assert_eq!(info.difficulty, Some(Difficulty::Normal));
+}
+
+#[test]
 fn wrong_files_are_errors_not_panics() {
     assert_eq!(
         parse(Episode::Keen4, &fixture("SAVEGAM0.CK6")),
