@@ -232,14 +232,14 @@ pub fn ensure(
         launch: dirs.launch_conf,
     };
     match mod_defaults {
-        Some(_) => write_if_changed(&files.defaults, &profile_defaults(engine, mod_defaults))?,
+        Some(_) => write_if_changed(&files.defaults, profile_defaults(engine, mod_defaults))?,
         None => write_if_changed(&files.defaults, content)?,
     }
     let with_keymap = keymap::ensure(&paths.configs)?;
-    write_if_changed(&files.options, &options_conf(options, with_keymap))?;
+    write_if_changed(&files.options, options_conf(options, with_keymap))?;
     write_if_missing(&files.global, GLOBAL_TEMPLATE)?;
     write_if_missing(&files.profile, PROFILE_TEMPLATE)?;
-    write_if_changed(&files.launch, &launch_conf())?;
+    write_if_changed(&files.launch, launch_conf())?;
     Ok(files)
 }
 
@@ -250,8 +250,9 @@ fn write_if_missing(path: &Path, content: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn write_if_changed(path: &Path, content: &str) -> Result<()> {
-    if fs::read_to_string(path).is_ok_and(|c| c == content) {
+pub fn write_if_changed(path: &Path, content: impl AsRef<[u8]>) -> Result<()> {
+    let content = content.as_ref();
+    if fs::read(path).is_ok_and(|c| c == content) {
         return Ok(());
     }
     if let Some(dir) = path.parent() {

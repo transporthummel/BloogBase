@@ -16,6 +16,7 @@ use crate::db::Db;
 use crate::dosconf::{self, ConfigView, ConfigWarning};
 use crate::downloads;
 use crate::error::{CommandResult, Error, Result};
+use crate::exit_screen;
 use crate::firing::{self, Firing};
 use crate::free_games::{self, FreeGame};
 use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
@@ -163,10 +164,16 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
         }
         app.state::<Running>().release(&profile_id);
         tracing::info!("{profile_id} exited with {exit_code:?} after {seconds}s");
+        let message =
+            exit_screen::message(&app.state::<AppPaths>().profile(&profile_id).exit_screen);
+        if let Some(m) = &message {
+            tracing::info!("{profile_id} ended with: {m}");
+        }
         let _ = PlaySessionEnded {
             profile_id,
             exit_code,
             seconds,
+            message,
         }
         .emit(&app);
     });

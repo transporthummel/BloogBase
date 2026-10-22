@@ -26,6 +26,7 @@ use crate::compose;
 use crate::db::Db;
 use crate::dosconf;
 use crate::error::{Error, Result};
+use crate::exit_screen;
 use crate::firing;
 use crate::library::now;
 use crate::paths::AppPaths;
@@ -116,6 +117,8 @@ pub struct PlaySessionEnded {
     pub profile_id: String,
     pub exit_code: Option<i32>,
     pub seconds: u32,
+    /// What the game printed before it ended, e.g. an error.
+    pub message: Option<String>,
 }
 
 /// Everything needed to start DOSBox for one profile.
@@ -132,9 +135,15 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
     let game = catalog::game(&profile.game_id)
         .ok_or_else(|| Error::NotFound(format!("game {}", profile.game_id)))?;
     let dirs = paths.profile(profile_id);
-    for dir in [&layers.upper, &dirs.config, &dirs.capture] {
+    for dir in [
+        &layers.upper,
+        &dirs.config,
+        &dirs.capture,
+        &dirs.exit_screen,
+    ] {
         fs::create_dir_all(dir)?;
     }
+    exit_screen::prepare(&dirs.exit_screen)?;
     let base = layers
         .lower
         .as_ref()
@@ -175,6 +184,7 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
             ],
             &rel(&lower),
             &rel(&layers.upper),
+            &rel(&dirs.exit_screen),
             &command,
         ),
         cwd: paths.root.clone(),
@@ -191,7 +201,13 @@ pub fn relative(root: &Path, path: &Path) -> String {
     rel.display().to_string()
 }
 
-fn dosbox_args(confs: &[String], lower: &str, upper: &str, command: &str) -> Vec<String> {
+fn dosbox_args(
+    confs: &[String],
+    lower: &str,
+    upper: &str,
+    exit_screen: &str,
+    command: &str,
+) -> Vec<String> {
     let mut args: Vec<String> = vec!["--noprimaryconf".into(), "--nolocalconf".into()];
     for conf in confs {
         args.push("--conf".into());
@@ -206,12 +222,14 @@ fn dosbox_args(confs: &[String], lower: &str, upper: &str, command: &str) -> Vec
     for cmd in [
         format!("mount C \"{lower}\""),
         format!("mount C \"{upper}\" -t overlay"),
+        format!("mount {} \"{exit_screen}\"", exit_screen::DRIVE),
         "C:".into(),
         if is_batch {
             format!("call {command}")
         } else {
             command.to_string()
         },
+        exit_screen::command(),
         "exit".into(),
     ] {
         args.push("-c".into());
@@ -289,7 +307,7 @@ mod tests {
 
     #[test]
     fn batch_files_are_called_so_dosbox_exits() {
-        let cmd = |c: &str| dosbox_args(&[], "l", "u", c)[10].clone();
+        let cmd = |c: &str| dosbox_args(&[], "l", "u", "x", c)[12].clone();
         assert_eq!(cmd("cool1.bat"), "call cool1.bat");
         assert_eq!(cmd("PLAY.BAT -x"), "call PLAY.BAT -x");
         assert_eq!(cmd("KEEN1.EXE"), "KEEN1.EXE");
@@ -325,9 +343,16 @@ mod tests {
                 p(&["profiles", "keen4-1", "state"])
             ),
             "-c",
+            &format!(
+                "mount X \"{}\"",
+                p(&["profiles", "keen4-1", "generated", "exit"])
+            ),
+            "-c",
             "C:",
             "-c",
             "KEEN4E.EXE",
+            "-c",
+            r"X:\SCREEN.COM X:\SCREEN.BIN",
             "-c",
             "exit",
         ]
@@ -444,7 +469,7 @@ mod tests {
             .args
             .iter()
             .rev()
-            .take(10)
+            .take(14)
             .rev()
             .map(String::as_str)
             .collect();
@@ -453,7 +478,7 @@ mod tests {
             composed.strip_prefix(&paths.root).unwrap().display()
         );
         assert_eq!(tail[1], lower);
-        assert_eq!(tail[7], "CK4PATCH.EXE MOD.PAT");
+        assert_eq!(tail[9], "CK4PATCH.EXE MOD.PAT");
         assert_eq!(fs::read(composed.join("gamemaps.ck4")).unwrap(), b"new");
         assert!(composed.join("KEEN4E.EXE").is_file());
         let names: Vec<String> = fs::read_dir(&composed)

@@ -628,6 +628,10 @@
     "upToDate": "Du hast die neueste Version.",
     "checkFailed": "Die Suche nach Updates hat nicht geklappt: {{message}}"
   },
+  "exitMessage": {
+    "title": "{{name}} hat sich mit einer Meldung beendet",
+    "text": "Das stand beim Beenden auf dem DOS-Bildschirm:"
+  },
   "quit": {
     "title_one": "Ein Spiel läuft noch",
     "title_other": "Es laufen noch Spiele",

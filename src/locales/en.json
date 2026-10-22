@@ -628,6 +628,10 @@
     "upToDate": "You have the newest version.",
     "checkFailed": "Couldn't check for updates: {{message}}"
   },
+  "exitMessage": {
+    "title": "{{name}} ended with a message",
+    "text": "This was on the DOS screen when it ended:"
+  },
   "quit": {
     "title_one": "A game is still running",
     "title_other": "Games are still running",

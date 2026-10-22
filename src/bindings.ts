@@ -604,6 +604,8 @@ export type PlaySessionEnded = {
 	profileId: string,
 	exitCode: number | null,
 	seconds: number,
+	/**  What the game printed before it ended, e.g. an error. */
+	message: string | null,
 };
 
 export type Profile = {

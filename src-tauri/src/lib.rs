@@ -9,6 +9,7 @@ mod detect;
 mod dosconf;
 mod downloads;
 mod error;
+mod exit_screen;
 mod firing;
 mod free_games;
 mod jobs;
