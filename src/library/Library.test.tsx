@@ -2,16 +2,44 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
-import { commands, type Game, type Profile, type RuntimeStatus } from "../bindings";
+import {
+  commands,
+  type Game,
+  type Install,
+  type Mod,
+  type Profile,
+  type RuntimeStatus,
+} from "../bindings";
 import { Library } from "./Library";
 import { profilesKey } from "./queries";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
 vi.mock("@tauri-apps/api/core", () => ({ convertFileSrc: (p: string) => `asset://${p}` }));
+const navigate = vi.hoisted(() => vi.fn());
 vi.mock("@tanstack/react-router", () => ({
   // Real links have an href, which makes them focusable.
   Link: (props: { to: string }) => <a href={props.to} {...props} />,
   Navigate: ({ to }: { to: string }) => <p>redirect to {to}</p>,
+  useNavigate: () => navigate,
+}));
+// Stands in for picking: one button per outcome.
+vi.mock("../mods/AddModDialog", () => ({
+  AddModDialog: (props: {
+    onInstalled: (mod: Mod) => void;
+    onGamesImported: (installs: Install[]) => void;
+  }) => (
+    <>
+      <button onClick={() => props.onInstalled({ profileId: "aurora" } as Mod)}>mod</button>
+      <button onClick={() => props.onGamesImported([{ id: "keen5-1" } as Install])}>
+        one game
+      </button>
+      <button
+        onClick={() => props.onGamesImported([{ id: "keen5-1" }, { id: "keen5-2" }] as Install[])}
+      >
+        two games
+      </button>
+    </>
+  ),
 }));
 vi.mock("../bindings", () => {
   const event = { listen: vi.fn(() => Promise.resolve(() => {})) };
@@ -83,6 +111,7 @@ function renderLibrary(container?: HTMLElement) {
 }
 
 beforeEach(() => {
+  navigate.mockClear();
   vi.mocked(commands.storageUsage).mockResolvedValue({
     status: "ok",
     data: {
@@ -249,4 +278,28 @@ test("the status bar sums up the library and its disk space", async () => {
     "title",
     expect.stringContaining("DOSBox: 40 MB"),
   );
+});
+
+test.each([
+  ["mod", "aurora"],
+  ["one game", "keen5-1"],
+])("adding a single %s opens its page", async (pick, profileId) => {
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
+  renderLibrary();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Add game or mod" }));
+  await user.click(screen.getByRole("button", { name: pick }));
+  await vi.waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith({ to: "/profiles/$profileId", params: { profileId } }),
+  );
+});
+
+test("adding several games stays in the library and counts them", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
+  renderLibrary();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Add game or mod" }));
+  await user.click(screen.getByRole("button", { name: "two games" }));
+  expect(await screen.findByText("Imported 2 games.")).toBeInTheDocument();
+  expect(navigate).not.toHaveBeenCalled();
 });

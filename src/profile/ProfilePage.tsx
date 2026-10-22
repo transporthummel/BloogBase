@@ -16,6 +16,7 @@ import { scroller } from "../library/scroll";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Authors } from "../mods/Authors";
 import { AddModDialog } from "../mods/AddModDialog";
+import { SuggestToIndex } from "../mods/KeenwikiImport";
 import { ModUpdate } from "../mods/ModUpdate";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
 import { useRuntimeStatus } from "../runtime/queries";
@@ -352,6 +353,11 @@ function Hero({
           <Notice>{t("mods.waitingHint", { game: profile.missingGame })}</Notice>
         )}
         {mod?.keenwikiUrl && <ModUpdate mod={mod} disabled={profile.running} />}
+        {mod?.source === "keenwiki" && !mod.indexId && (
+          <p className="text-sm">
+            <SuggestToIndex modId={mod.id} />
+          </p>
+        )}
         {removing && profile.modId === null && profile.installId !== null && (
           <RemoveGameDialog
             profile={profile}

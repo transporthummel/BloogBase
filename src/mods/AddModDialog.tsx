@@ -48,8 +48,8 @@ export function AddModDialog({
   replacing?: string;
   onClose: () => void;
   onInstalled: (mod: Mod) => void;
-  /** Games were picked instead of a mod and imported; how many. */
-  onGamesImported?: (count: number) => void;
+  /** Games were picked instead of a mod and imported. */
+  onGamesImported?: (installs: Install[]) => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -65,7 +65,7 @@ export function AddModDialog({
         const imported = await unwrap(commands.importGames(p));
         queryClient.invalidateQueries({ queryKey: profilesKey });
         queryClient.invalidateQueries({ queryKey: installsKey });
-        onGamesImported?.(imported.length);
+        onGamesImported?.(imported);
       }
       return found;
     },

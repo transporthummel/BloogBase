@@ -1,16 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Navigate } from "@tanstack/react-router";
+import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { Compass, Plus } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, events, type Game, type Mod, type Profile } from "../bindings";
+import { commands, events, type Game, type Install, type Profile } from "../bindings";
 import { useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { AddModDialog } from "../mods/AddModDialog";
-import { SuggestToIndex } from "../mods/KeenwikiImport";
 import { Cover } from "./Cover";
 import { useCover } from "./covers";
 import { profilesKey } from "./queries";
@@ -34,15 +33,14 @@ import { PlayButton } from "../ui/PlayButton";
 export function Library() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const games = useGames();
   const setup = useSetupStatus();
-  const profiles = useQuery({
-    queryKey: profilesKey,
-    queryFn: () => unwrap(commands.listProfiles()),
-  });
+  const profilesQuery = { queryKey: profilesKey, queryFn: () => unwrap(commands.listProfiles()) };
+  const profiles = useQuery(profilesQuery);
   const runtime = useRuntimeStatus();
   const [adding, setAdding] = useState(false);
-  const [added, setAdded] = useState<{ mod?: Mod; games?: number } | null>(null);
+  const [imported, setImported] = useState<number | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
   // Only picked (and remembered as seen) when it's shown.
   const [trivia] = useState(() => (getShowTrivia() ? startupTrivia() : null));
@@ -67,10 +65,24 @@ export function Library() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: profilesKey }),
   });
 
+  /** A single game imported opens right away; several are counted. */
+  async function showImported(installs: Install[]) {
+    if (installs.length === 1) {
+      const all = await queryClient.fetchQuery(profilesQuery).catch(() => []);
+      // The game's own play profile, not one of a mod played on it.
+      const profile = all.find((p) => p.installId === installs[0].id && !p.modId);
+      if (profile) {
+        navigate({ to: "/profiles/$profileId", params: { profileId: profile.id } });
+        return;
+      }
+    }
+    setImported(installs.length);
+  }
+
   const addButton = (
     <Button
       onClick={() => {
-        setAdded(null);
+        setImported(null);
         setAdding(true);
       }}
     >
@@ -109,12 +121,12 @@ export function Library() {
           onClose={() => setAdding(false)}
           onInstalled={(mod) => {
             setAdding(false);
-            setAdded({ mod });
             queryClient.invalidateQueries({ queryKey: profilesKey });
+            navigate({ to: "/profiles/$profileId", params: { profileId: mod.profileId } });
           }}
-          onGamesImported={(games) => {
+          onGamesImported={(installs) => {
             setAdding(false);
-            setAdded({ games });
+            showImported(installs);
           }}
         />
       )}
@@ -137,20 +149,7 @@ export function Library() {
             )}
           </Card>
         )}
-        {added?.games !== undefined && (
-          <Notice>{t("library.imported", { count: added.games })}</Notice>
-        )}
-        {added?.mod && (
-          <Notice>
-            {t("mods.installed", { name: added.mod.name })}
-            {added.mod.source === "keenwiki" && (
-              <>
-                {" "}
-                <SuggestToIndex modId={added.mod.id} />
-              </>
-            )}
-          </Notice>
-        )}
+        {imported !== null && <Notice>{t("library.imported", { count: imported })}</Notice>}
         {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
       </div>
 

@@ -84,7 +84,7 @@ const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
 function renderDialog(
   client = new QueryClient(),
   replacing?: string,
-  onGamesImported?: (count: number) => void,
+  onGamesImported?: (installs: Install[]) => void,
 ) {
   const onInstalled = vi.fn();
   render(
@@ -120,7 +120,9 @@ test("imports games picked instead of a mod", async () => {
   renderDialog(new QueryClient(), undefined, onGamesImported);
   await userEvent.setup().click(screen.getByRole("button", { name: "Choose folder…" }));
 
-  await vi.waitFor(() => expect(onGamesImported).toHaveBeenCalledWith(2));
+  await vi.waitFor(() =>
+    expect(onGamesImported).toHaveBeenCalledWith([install, { ...install, id: "keen4-2" }]),
+  );
   expect(commands.importGames).toHaveBeenCalledWith("/downloads/aurora.zip");
   expect(commands.inspectMod).not.toHaveBeenCalled();
 });
