@@ -1502,8 +1502,8 @@ mod tests {
             )
             .unwrap();
         assert_eq!(files, r#"["SAVEGAM0.CK4"]"#);
-        let mut zip = zip::ZipArchive::new(fs::File::open(archive).unwrap()).unwrap();
-        assert_eq!(zip.by_index(0).unwrap().name().unwrap(), "SAVEGAM0.CK4");
+        let mut backup = zip::ZipArchive::new(fs::File::open(archive).unwrap()).unwrap();
+        assert_eq!(backup.by_index(0).unwrap().name().unwrap(), "SAVEGAM0.CK4");
         assert_eq!(list(&db).unwrap().len(), 1);
 
         delete(&paths, &db, "aurora-2", false).unwrap();
@@ -1512,6 +1512,13 @@ mod tests {
             delete(&paths, &db, "aurora-2", false),
             Err(Error::NotFound(_))
         ));
+
+        // Installed again, it gets its id back and is offered the saves.
+        let again = install(&paths, &db, &request(&zip, info.recipes[0].recipe.clone())).unwrap();
+        assert_eq!(again.profile_id, "aurora");
+        let offer = backups::earlier(&db, "aurora").unwrap().unwrap();
+        assert_eq!(offer.backup.reason, Some(backups::Reason::ModRemoved));
+        assert!(backups::earlier(&db, "keen4-1").unwrap().is_none());
     }
 
     #[test]

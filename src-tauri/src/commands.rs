@@ -370,6 +370,33 @@ pub async fn backup_saves(app: AppHandle, backup_id: u32) -> CommandResult<Vec<S
     blocking(move || backups::saves_in(&app.state::<Db>(), backup_id)).await
 }
 
+/// The backup made when this mod or game was removed before, to offer
+/// when it's added again.
+#[tauri::command]
+#[specta::specta]
+pub async fn earlier_backup(
+    app: AppHandle,
+    profile_id: String,
+) -> CommandResult<Option<backups::EarlierBackup>> {
+    blocking(move || backups::earlier(&app.state::<Db>(), &profile_id)).await
+}
+
+/// Restores or declines the backup [`earlier_backup`] offered.
+#[tauri::command]
+#[specta::specta]
+pub async fn answer_earlier_backup(
+    app: AppHandle,
+    profile_id: String,
+    backup_id: u32,
+    restore: bool,
+) -> CommandResult<()> {
+    let id = profile_id.clone();
+    with_profile_locked(&app, &id, move |paths, db| {
+        backups::answer_earlier(paths, db, &profile_id, backup_id, restore)
+    })
+    .await
+}
+
 /// Restores a backup's saves (all its files with `include_other`), or only
 /// its `file`, optionally into the slot file `target`. What's there now is
 /// backed up first.

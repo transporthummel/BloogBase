@@ -408,6 +408,14 @@
     "otherGame": "The KeenWiki page says this mod is for {{page}}, but its files look like {{files}}.",
     "suggest": "Suggest it for the mod list"
   },
+  "earlierBackup": {
+    "title": "Restore the saves of {{name}}?",
+    "text_one": "When it was removed on {{date}}, {{count}} save was backed up.",
+    "text_other": "When it was removed on {{date}}, {{count}} saves were backed up.",
+    "otherVersion": "Backed up from {{version}}.",
+    "restore": "Restore",
+    "decline": "Start fresh"
+  },
   "profile": {
     "back": "Library",
     "notFound": "This game isn’t in the library any more.",

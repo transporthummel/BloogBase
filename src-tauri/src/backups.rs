@@ -127,6 +127,9 @@ pub struct Backup {
 struct Manifest {
     app: String,
     game_id: String,
+    /// Missing in backups made before it was recorded.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    version_id: Option<String>,
     profile_id: String,
     label: Option<String>,
     created_at: u32,
@@ -295,6 +298,7 @@ pub fn create<'a>(
     let manifest = Manifest {
         app: "BloogBase".into(),
         game_id: profile.game_id.clone(),
+        version_id: profile.version_id.clone(),
         profile_id: profile_id.to_string(),
         label: label.clone(),
         created_at,
@@ -450,6 +454,105 @@ fn get_with_archive(db: &Db, id: u32) -> Result<(Backup, String)> {
 pub fn get(db: &Db, id: u32) -> Result<Backup> {
     let b = get_with_archive(db, id)?.0;
     Ok(tally(game_of_profile(db, &b.profile_id)?, b))
+}
+
+/// The backup made when this mod or game was removed before, offered when
+/// it's added again (§9.5).
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct EarlierBackup {
+    pub backup: Backup,
+    /// The version the saves come from, when known.
+    pub version_id: Option<String>,
+}
+
+/// Settings key for the backup already restored or declined for a profile.
+fn offered_key(profile_id: &str) -> String {
+    format!("backups.offered.{profile_id}")
+}
+
+/// For a profile never played: the newest backup made before it was added,
+/// when its mod (same id) or its game (same game, any version) was removed,
+/// unless the player already answered for this profile. A profile added
+/// again later is asked again.
+pub fn earlier(db: &Db, profile_id: &str) -> Result<Option<EarlierBackup>> {
+    let (profile, _) = profiles::get(db, profile_id)?;
+    if profile.session_count > 0 {
+        return Ok(None);
+    }
+    let reason = match profile.mod_id {
+        Some(_) => Reason::ModRemoved,
+        None => Reason::GameRemoved,
+    };
+    let candidates: Vec<(Backup, String)> = {
+        let conn = db.conn();
+        // Backups of this profile, or of one that's gone.
+        let mut stmt = conn.prepare(&format!(
+            "{SELECT} b WHERE b.profile_id = ?1
+                OR NOT EXISTS (SELECT 1 FROM profiles p WHERE p.id = b.profile_id)
+             ORDER BY created_at DESC, id DESC"
+        ))?;
+        stmt.query_map([profile_id], from_row)?
+            .collect::<rusqlite::Result<_>>()?
+    };
+    let answered = settings::get(db, &offered_key(profile_id))?;
+    let game = saves::game_of(&profile.game_id)?;
+    for (backup, archive) in candidates {
+        // A mod is the same mod by its id; a copy there before isn't added again.
+        if backup.reason != Some(reason)
+            || (profile.mod_id.is_some() && backup.profile_id != profile_id)
+            || profile.added_at < backup.created_at
+        {
+            continue;
+        }
+        let manifest = match read_zip(Path::new(&archive)) {
+            Ok((_, Some(m))) => m,
+            Ok(_) => continue,
+            Err(e) => {
+                tracing::warn!("could not read backup {} at {archive}: {e}", backup.id);
+                continue;
+            }
+        };
+        if manifest.game_id != profile.game_id {
+            continue;
+        }
+        if answered == Some(format!("{}:{}", profile.added_at, backup.id)) {
+            return Ok(None);
+        }
+        return Ok(Some(EarlierBackup {
+            backup: tally(game, backup),
+            version_id: manifest.version_id,
+        }));
+    }
+    Ok(None)
+}
+
+/// Answers the offer of [`earlier`]: with `restore`, the backup and the
+/// other backups of its removed profile move to this one, and everything in
+/// it is put back. Either way it isn't offered for this profile again.
+pub fn answer_earlier(
+    paths: &AppPaths,
+    db: &Db,
+    profile_id: &str,
+    backup_id: u32,
+    restore: bool,
+) -> Result<()> {
+    let (profile, _) = profiles::get(db, profile_id)?;
+    if restore {
+        let (backup, _) = get_with_archive(db, backup_id)?;
+        if backup.profile_id != profile_id {
+            db.conn().execute(
+                "UPDATE save_backups SET profile_id = ?1 WHERE profile_id = ?2",
+                [profile_id, backup.profile_id.as_str()],
+            )?;
+        }
+        self::restore(paths, db, backup_id, None, None, true)?;
+    }
+    settings::set(
+        db,
+        &offered_key(profile_id),
+        &format!("{}:{backup_id}", profile.added_at),
+    )
 }
 
 /// A profile's backups, newest first.
@@ -628,6 +731,7 @@ pub fn import(paths: &AppPaths, db: &Db, profile_id: &str, src: &Path) -> Result
     let manifest = Manifest {
         app: "BloogBase".into(),
         game_id: profile.game_id.clone(),
+        version_id: profile.version_id.clone(),
         profile_id: profile_id.to_string(),
         label: label.clone(),
         created_at,
@@ -797,6 +901,7 @@ pub fn save_versions(db: &Db, profile_id: &str, file: &str) -> Result<Vec<SaveVe
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::library;
     use crate::saves::tests::{keen4_save, setup, state};
 
     fn names(backups: &[Backup]) -> Vec<Option<Reason>> {
@@ -1176,6 +1281,7 @@ mod tests {
             &Manifest {
                 app: "BloogBase".into(),
                 game_id: "keen1".into(),
+                version_id: None,
                 profile_id: "keen1-1".into(),
                 label: None,
                 created_at: 0,
@@ -1212,5 +1318,77 @@ mod tests {
         }
         assert_eq!(Reason::from_label("Mod removed"), Some(Reason::ModRemoved));
         assert_eq!(Reason::from_label("my label"), None);
+    }
+
+    #[test]
+    fn offers_the_removal_backup_to_a_game_added_again() {
+        let (tmp, paths, db) = setup();
+        let version = profiles::get(&db, "keen4-1").unwrap().0.version_id;
+        fs::write(state(&paths).join("SAVEGAM1.CK4"), keen4_save("old")).unwrap();
+        library::remove(&paths, &db, "keen4-1", true, false).unwrap();
+        // Left behind, so the copy added again gets another id.
+        fs::create_dir_all(state(&paths)).unwrap();
+        library::import(&paths, &db, &tmp.path().join("k4")).unwrap();
+
+        let offer = earlier(&db, "keen4-2").unwrap().unwrap();
+        assert_eq!(offer.backup.reason, Some(Reason::GameRemoved));
+        assert_eq!(offer.backup.profile_id, "keen4-1");
+        assert_eq!(offer.backup.saves, 2);
+        assert_eq!(offer.version_id, version);
+
+        answer_earlier(&paths, &db, "keen4-2", offer.backup.id, true).unwrap();
+        let restored = paths.profiles.join("keen4-2/state/SAVEGAM1.CK4");
+        assert_eq!(fs::read(restored).unwrap(), keen4_save("old"));
+        // Its backups came along; asked once per adding.
+        assert!(
+            list(&db, "keen4-2")
+                .unwrap()
+                .iter()
+                .any(|b| b.id == offer.backup.id)
+        );
+        assert!(earlier(&db, "keen4-2").unwrap().is_none());
+    }
+
+    #[test]
+    fn a_declined_backup_is_offered_again_only_after_adding_again() {
+        let (tmp, paths, db) = setup();
+        library::remove(&paths, &db, "keen4-1", true, false).unwrap();
+        library::import(&paths, &db, &tmp.path().join("k4")).unwrap();
+        let offer = earlier(&db, "keen4-1").unwrap().unwrap();
+        answer_earlier(&paths, &db, "keen4-1", offer.backup.id, false).unwrap();
+        assert!(earlier(&db, "keen4-1").unwrap().is_none());
+        assert!(!paths.profiles.join("keen4-1/state/SAVEGAM1.CK4").exists());
+
+        // Added again later, without keeping the saves this time.
+        library::remove(&paths, &db, "keen4-1", false, false).unwrap();
+        library::import(&paths, &db, &tmp.path().join("k4")).unwrap();
+        db.conn()
+            .execute("UPDATE profiles SET created_at = created_at + 1", [])
+            .unwrap();
+        assert_eq!(
+            earlier(&db, "keen4-1").unwrap().map(|o| o.backup.id),
+            Some(offer.backup.id)
+        );
+    }
+
+    #[test]
+    fn played_or_older_profiles_are_not_offered_anything() {
+        let (tmp, paths, db) = setup();
+        library::remove(&paths, &db, "keen4-1", true, false).unwrap();
+        library::import(&paths, &db, &tmp.path().join("k4")).unwrap();
+        assert!(earlier(&db, "keen4-1").unwrap().is_some());
+        db.conn()
+            .execute(
+                "INSERT INTO play_sessions (profile_id, started_at, ended_at) VALUES ('keen4-1', 1, 2)",
+                [],
+            )
+            .unwrap();
+        assert!(earlier(&db, "keen4-1").unwrap().is_none());
+        // A copy that was there before the other one went.
+        db.conn().execute("DELETE FROM play_sessions", []).unwrap();
+        db.conn()
+            .execute("UPDATE profiles SET created_at = created_at - 10", [])
+            .unwrap();
+        assert!(earlier(&db, "keen4-1").unwrap().is_none());
     }
 }

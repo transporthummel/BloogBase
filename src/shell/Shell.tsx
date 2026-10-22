@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useIndexEvents } from "../discover/queries";
 import { JobsPanel } from "../jobs/JobsPanel";
 import { DropImport } from "../library/DropImport";
+import { EarlierBackupPrompt } from "../profile/EarlierBackup";
 import { useJobEvents } from "../jobs/queries";
 import { hideSplash } from "../splash";
 import { useAppUpdate } from "../updates/queries";
@@ -32,6 +33,7 @@ export function Shell() {
     return (
       <main className="bb-starfield relative min-h-screen overflow-y-auto">
         <QuitGuard />
+        <EarlierBackupPrompt />
         <Outlet />
       </main>
     );
@@ -40,6 +42,8 @@ export function Shell() {
     <div className="flex h-screen">
       <QuitGuard />
       <DropImport />
+      {/* After DropImport, so it's above the drop's summary. */}
+      <EarlierBackupPrompt />
       <nav
         aria-label={t("nav.label")}
         className="flex w-16 shrink-0 flex-col gap-1 border-r border-border bg-surface p-2 xl:w-60 xl:p-3"

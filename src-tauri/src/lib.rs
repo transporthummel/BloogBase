@@ -69,6 +69,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::create_backup,
             commands::backup_saves,
             commands::restore_backup,
+            commands::earlier_backup,
+            commands::answer_earlier_backup,
             commands::delete_backup,
             commands::export_backup,
             commands::import_backup,

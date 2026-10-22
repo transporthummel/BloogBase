@@ -408,6 +408,14 @@
     "otherGame": "Laut KeenWiki ist diese Mod für {{page}}, ihre Dateien sehen aber nach {{files}} aus.",
     "suggest": "Für die Modliste vorschlagen"
   },
+  "earlierBackup": {
+    "title": "Spielstände von {{name}} wiederherstellen?",
+    "text_one": "Beim Entfernen am {{date}} wurde {{count}} Spielstand gesichert.",
+    "text_other": "Beim Entfernen am {{date}} wurden {{count}} Spielstände gesichert.",
+    "otherVersion": "Gesichert aus {{version}}.",
+    "restore": "Wiederherstellen",
+    "decline": "Neu anfangen"
+  },
   "profile": {
     "back": "Bibliothek",
     "notFound": "Dieses Spiel ist nicht mehr in der Bibliothek.",

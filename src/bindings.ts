@@ -70,6 +70,17 @@ export const commands = {
 	 *  backed up first.
 	 */
 	restoreBackup: (backupId: number, file: string | null, target: string | null, includeOther: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("restore_backup", { backupId, file, target, includeOther })),
+	/**
+	 *  The backup made when this mod or game was removed before, to offer
+	 *  when it's added again.
+	 */
+	earlierBackup: (profileId: string) => typedError<{
+	backup: Backup,
+	/**  The version the saves come from, when known. */
+	versionId: string | null,
+} | null, CommandError>(__TAURI_INVOKE("earlier_backup", { profileId })),
+	/**  Restores or declines the backup [`earlier_backup`] offered. */
+	answerEarlierBackup: (profileId: string, backupId: number, restore: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("answer_earlier_backup", { profileId, backupId, restore })),
 	deleteBackup: (backupId: number) => typedError<null, CommandError>(__TAURI_INVOKE("delete_backup", { backupId })),
 	exportBackup: (backupId: number, path: string) => typedError<null, CommandError>(__TAURI_INVOKE("export_backup", { backupId, path })),
 	/**  Adds a ZIP of saves as a new backup of the profile. */
@@ -287,6 +298,16 @@ export type Download = {
 
 /**  What a folder or ZIP dropped on the window holds. */
 export type Dropped = { kind: "games" } | { kind: "mod"; info: ModInfo } | { kind: "nothing" };
+
+/**
+ *  The backup made when this mod or game was removed before, offered when
+ *  it's added again (§9.5).
+ */
+export type EarlierBackup = {
+	backup: Backup,
+	/**  The version the saves come from, when known. */
+	versionId: string | null,
+};
 
 export type Engine = "vorticons" | "galaxy" | "dreams";
 
