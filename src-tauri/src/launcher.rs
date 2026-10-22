@@ -148,11 +148,11 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
         .lower
         .as_ref()
         .ok_or_else(|| Error::MissingGame(profile.missing_game.clone().unwrap_or_default()))?;
-    let firing = (firing::supports(&game.id) && firing::enabled(db)?).then_some(game);
+    let firing = firing::supports(&game.id) && firing::enabled(db)?;
     let (lower, command) = match &layers.mod_layer {
-        None if firing.is_none() => (base.clone(), None),
+        None if !firing => (base.clone(), None),
         m => (
-            compose::ensure(paths, db, profile_id, base, m.as_ref(), firing)?,
+            compose::ensure(paths, db, profile_id, base, m.as_ref(), game, firing)?,
             m.as_ref().and_then(|m| m.recipe.command()),
         ),
     };

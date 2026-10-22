@@ -1,6 +1,7 @@
 //! Composed lower layers: the install's base files with a mod's files copied
-//! on top (PLAN.md §4.2), and one-button firing patched in where it's on.
-//! Disposable; rebuilt whenever the inputs change.
+//! on top (PLAN.md §4.2), the episode unpacked for patchers that need it, and
+//! one-button firing patched in where it's on. Disposable; rebuilt whenever
+//! the inputs change.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -8,6 +9,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
+use keen_graphics::lzexe;
 use rusqlite::params;
 use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
@@ -19,7 +21,7 @@ use crate::error::Result;
 use crate::firing;
 use crate::paths::AppPaths;
 use crate::profiles::ModLayer;
-use crate::recipe::{Recipe, has_ext};
+use crate::recipe::{self, Recipe, has_ext};
 
 /// Archives inside a mod (extras, sources) are never needed by the game.
 const SKIPPED: &[&str] = &["ZIP", "RAR", "7Z"];
@@ -32,16 +34,17 @@ struct Input {
     modified: u128,
 }
 
-/// Returns the composed directory of `profile_id`, building it if it's
-/// missing or out of date. With `firing`, one-button firing is patched in
-/// for that game where it fits.
+/// Returns the composed directory of `profile_id`, a profile of `game`,
+/// building it if it's missing or out of date. With `firing`, one-button
+/// firing is patched in where it fits.
 pub fn ensure(
     paths: &AppPaths,
     db: &Db,
     profile_id: &str,
     base: &Path,
     mod_layer: Option<&ModLayer>,
-    firing: Option<&Game>,
+    game: &Game,
+    firing: bool,
 ) -> Result<PathBuf> {
     let recipe = mod_layer.map_or(&Recipe::Episode, |m| &m.recipe);
     // Upper-cased path → file. DOS names are case-insensitive, so a mod's
@@ -57,7 +60,7 @@ pub fn ensure(
         }
     }
 
-    let hash = composition_hash(&inputs, recipe, firing.is_some());
+    let hash = composition_hash(&inputs, recipe, firing);
     let dir = paths.composed(profile_id);
     let stored: Option<String> = db.conn().query_row(
         "SELECT composed_hash FROM profiles WHERE id = ?1",
@@ -79,7 +82,10 @@ pub fn ensure(
         fs::copy(&input.path, dest)?;
     }
     fs::create_dir_all(&tmp)?;
-    if let Some(game) = firing {
+    if patcher_needs_unpacked(recipe, &inputs) {
+        unpack_episode(game, &inputs, &tmp)?;
+    }
+    if firing {
         let status = firing::apply(game, recipe, &tmp)?;
         tracing::info!("one-button firing for {profile_id}: {status:?}");
     }
@@ -93,6 +99,57 @@ pub fn ensure(
         params![profile_id, hash],
     )?;
     Ok(dir)
+}
+
+/// The file at the root that DOS runs for `name`, trying `exts` if it has
+/// none.
+fn find<'a>(inputs: &'a BTreeMap<String, Input>, name: &str, exts: &[&str]) -> Option<&'a Input> {
+    let name = name
+        .trim_start_matches(".\\")
+        .trim_start_matches("C:\\")
+        .to_ascii_uppercase();
+    inputs
+        .get(&name)
+        .or_else(|| exts.iter().find_map(|e| inputs.get(&format!("{name}.{e}"))))
+}
+
+/// Whether `recipe` runs a patcher that only takes executables unpacked with
+/// UNLZEXE, as CKPatch before 0.9 does. Its error says so: "Did you remember
+/// to UNLZEXE the executable?"; mods using it may leave that to the player.
+fn patcher_needs_unpacked(recipe: &Recipe, inputs: &BTreeMap<String, Input>) -> bool {
+    let patchers: Vec<&Input> = match recipe {
+        Recipe::Patch { patcher, .. } => find(inputs, patcher, &[]).into_iter().collect(),
+        Recipe::Batch { file } => find(inputs, file, &[])
+            .and_then(|b| fs::read(&b.path).ok())
+            .map(|text| recipe::batch_commands(&String::from_utf8_lossy(&text)))
+            .unwrap_or_default()
+            .iter()
+            .filter_map(|cmd| find(inputs, &cmd[0], &["EXE", "COM"]))
+            .filter(|p| recipe::is_patcher(&p.rel))
+            .collect(),
+        Recipe::Program { .. } | Recipe::Episode => Vec::new(),
+    };
+    patchers.iter().any(|p| {
+        fs::read(&p.path)
+            .ok()
+            .and_then(|exe| lzexe::load_image(&exe).ok())
+            .is_some_and(|image| image.windows(7).any(|w| w == b"UNLZEXE"))
+    })
+}
+
+/// Writes the episode's executables in `dir` unpacked, as UNLZEXE does.
+fn unpack_episode(game: &Game, inputs: &BTreeMap<String, Input>, dir: &Path) -> Result<()> {
+    for input in game.executables.iter().filter_map(|e| find(inputs, e, &[])) {
+        let exe = fs::read(&input.path)?;
+        if !lzexe::is_lzexe91(&exe) {
+            continue;
+        }
+        match lzexe::unpack_exe(&exe) {
+            Ok(unpacked) => fs::write(dir.join(&input.rel), unpacked)?,
+            Err(e) => tracing::warn!("could not unpack {}: {e}", input.rel),
+        }
+    }
+    Ok(())
 }
 
 fn scan(root: &Path) -> Result<Vec<Input>> {
@@ -127,7 +184,8 @@ fn scan(root: &Path) -> Result<Vec<Input>> {
 /// modification times identify them well enough without reading them.
 fn composition_hash(inputs: &BTreeMap<String, Input>, recipe: &Recipe, firing: bool) -> String {
     let mut h = Sha256::new();
-    h.update(b"composed v1\n");
+    // v2: the episode unpacked for old patchers.
+    h.update(b"composed v2\n");
     h.update(serde_json::to_string(recipe).expect("recipes serialize"));
     if firing {
         h.update(b"\none-button firing v1");
@@ -147,12 +205,15 @@ fn composition_hash(inputs: &BTreeMap<String, Input>, recipe: &Recipe, firing: b
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::catalog;
     use crate::source::testutil::*;
 
-    #[test]
-    fn composes_mod_over_base_case_insensitively_and_reuses_result() {
-        let tmp = tempfile::tempdir().unwrap();
-        let paths = AppPaths::new(tmp.path().join("data"));
+    fn keen1() -> &'static Game {
+        catalog::game("keen1").unwrap()
+    }
+
+    fn setup(tmp: &Path) -> (AppPaths, Db) {
+        let paths = AppPaths::new(tmp.join("data"));
         paths.ensure().unwrap();
         let db = Db::open_in_memory().unwrap();
         db.conn()
@@ -163,6 +224,68 @@ mod tests {
                  VALUES ('p', 'keen1-1', '/s', 0);",
             )
             .unwrap();
+        (paths, db)
+    }
+
+    /// An executable packed with LZEXE 0.91 whose program is `ABC`.
+    fn packed_exe() -> Vec<u8> {
+        let mut exe = vec![0u8; 0x20];
+        let mut set = |at: usize, w: u16| exe[at..at + 2].copy_from_slice(&w.to_le_bytes());
+        set(0, 0x5A4D);
+        set(8, 2); // header paragraphs
+        set(0x16, 1); // the unpacker's segment
+        exe[0x1C..0x20].copy_from_slice(b"LZ91");
+        // Three literals, then the end: bits 1 1 1 0 1, a zero word and byte.
+        exe.extend([0x17, 0x00, b'A', b'B', b'C', 0, 0, 0]);
+        exe.resize(0x30, 0);
+        // Registers and sizes, then no relocations.
+        exe.resize(0x30 + 0x158, 0);
+        exe.extend([0, 1, 0]);
+        exe
+    }
+
+    #[test]
+    fn old_patchers_get_the_episode_unpacked() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (paths, db) = setup(tmp.path());
+        let base = tmp.path().join("base");
+        let modf = tmp.path().join("mod");
+        write_folder(&base, &[("KEEN1.EXE", &packed_exe())]);
+        let old = [b"MZ".as_slice(), &[0; 0x1E], b"Did you remember to UNLZEXE"].concat();
+        let new = [b"MZ".as_slice(), &[0; 0x1E], b"Commander Keen Patch"].concat();
+        let unpacked = |patcher: &[u8], recipe: Recipe| {
+            write_folder(
+                &modf,
+                &[("ck1patch.exe", patcher), ("GO.BAT", b"ck1patch m.pat")],
+            );
+            let layer = ModLayer {
+                files: modf.clone(),
+                recipe,
+            };
+            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false).unwrap();
+            let exe = fs::read(dir.join("KEEN1.EXE")).unwrap();
+            assert_eq!(lzexe::load_image(&exe).unwrap(), b"ABC");
+            !lzexe::is_lzexe91(&exe)
+        };
+        let patch = Recipe::Patch {
+            patcher: "CK1PATCH.EXE".into(),
+            patch: "m.pat".into(),
+            args: Vec::new(),
+        };
+        let batch = Recipe::Batch {
+            file: "GO.BAT".into(),
+        };
+        assert!(unpacked(&old, patch.clone()));
+        assert!(unpacked(&old, batch.clone()));
+        assert!(!unpacked(&new, patch));
+        assert!(!unpacked(&new, batch));
+        assert!(!unpacked(&old, Recipe::Episode));
+    }
+
+    #[test]
+    fn composes_mod_over_base_case_insensitively_and_reuses_result() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (paths, db) = setup(tmp.path());
         let base = tmp.path().join("base");
         let modf = tmp.path().join("mod");
         write_folder(&base, &[("KEEN1.EXE", b"exe"), ("LEVEL01.CK1", b"old")]);
@@ -179,7 +302,7 @@ mod tests {
             files: modf.clone(),
             recipe: Recipe::Episode,
         };
-        let dir = ensure(&paths, &db, "p", &base, Some(&episode), None).unwrap();
+        let dir = ensure(&paths, &db, "p", &base, Some(&episode), keen1(), false).unwrap();
         assert_eq!(dir, paths.composed("p"));
         let mut names: Vec<String> = fs::read_dir(&dir)
             .unwrap()
@@ -192,7 +315,7 @@ mod tests {
 
         // Unchanged inputs: the directory is reused as is.
         fs::write(dir.join("MARK"), b"").unwrap();
-        ensure(&paths, &db, "p", &base, Some(&episode), None).unwrap();
+        ensure(&paths, &db, "p", &base, Some(&episode), keen1(), false).unwrap();
         assert!(dir.join("MARK").exists());
 
         // A different recipe or changed file rebuilds it.
@@ -202,10 +325,10 @@ mod tests {
                 file: "GO.BAT".into(),
             },
         };
-        ensure(&paths, &db, "p", &base, Some(&batch), None).unwrap();
+        ensure(&paths, &db, "p", &base, Some(&batch), keen1(), false).unwrap();
         assert!(!dir.join("MARK").exists());
         fs::write(modf.join("NEW.CK1"), b"n").unwrap();
-        ensure(&paths, &db, "p", &base, Some(&batch), None).unwrap();
+        ensure(&paths, &db, "p", &base, Some(&batch), keen1(), false).unwrap();
         assert!(dir.join("NEW.CK1").exists());
         assert!(!paths.cache.join("composed/p.tmp").exists());
     }
