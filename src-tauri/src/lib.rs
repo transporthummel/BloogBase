@@ -204,6 +204,9 @@ pub fn run() {
             if let Err(e) = library::identify_unknown(&paths, &db) {
                 tracing::warn!("could not check unknown game versions: {e}");
             }
+            if let Err(e) = mods::identify_requirements(&paths, &db) {
+                tracing::warn!("could not check the versions mods need: {e}");
+            }
 
             let index = ModIndex::open(&paths, mod_index::configured_url());
             tracing::info!("mod index source: {}", index.status().url);

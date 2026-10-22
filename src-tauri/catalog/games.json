@@ -192,7 +192,8 @@
           "id": "keen4-1.4-cga",
           "label": "v1.4 CGA",
           "files": { "KEEN4C.EXE": "25a01ab813d72de0dbfc83810b5a48d5c48f0c87ca0aeb75d0eeeac1d5aeae13" },
-          "shareware": true
+          "shareware": true,
+          "patchVersion": "cga-1.4"
         },
         {
           "id": "keen4-1.4-ega-formgen",

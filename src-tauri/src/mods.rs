@@ -900,6 +900,50 @@ pub fn rehome(db: &Db, except: Option<&str>) -> Result<Vec<String>> {
     Ok(moved)
 }
 
+/// Gives mods whose patch names versions the catalog didn't know the
+/// catalog versions they now match, e.g. after an update taught the catalog
+/// what CKPatch calls a release.
+pub fn identify_requirements(paths: &AppPaths, db: &Db) -> Result<()> {
+    let unknown: Vec<(String, String, String)> = {
+        let conn = db.conn();
+        let mut stmt =
+            conn.prepare("SELECT id, game_id, recipe_json FROM mods WHERE requires_json = '[]'")?;
+        stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?
+            .collect::<rusqlite::Result<_>>()?
+    };
+    let mut found = false;
+    for (mod_id, game_id, recipe) in unknown {
+        let Some(game) = catalog::game(&game_id) else {
+            continue;
+        };
+        let Some(text) = serde_json::from_str::<Recipe>(&recipe)
+            .ok()
+            .and_then(|r| r.patch_file().map(str::to_string))
+            .and_then(|p| fs::read(paths.mods.join(&mod_id).join("files").join(p)).ok())
+        else {
+            continue;
+        };
+        let versions = recipe::patch_versions(&String::from_utf8_lossy(&text));
+        let ids = version_ids(game, &versions);
+        if ids.is_empty() {
+            continue;
+        }
+        db.conn().execute(
+            "UPDATE mods SET requires_json = ?2 WHERE id = ?1",
+            params![
+                mod_id,
+                serde_json::to_string(&ids).expect("strings serialize")
+            ],
+        )?;
+        tracing::info!("{mod_id} plays on {ids:?}");
+        found = true;
+    }
+    if found {
+        rehome(db, None)?;
+    }
+    Ok(())
+}
+
 /// The installs `mod_id` can be played on, in library order.
 pub fn fitting_installs(db: &Db, mod_id: &str) -> Result<Vec<Install>> {
     let (game_id, requires): (String, Option<String>) = db
@@ -1695,15 +1739,63 @@ mod tests {
         i.version_id = Some("keen4-1.4-ega".into());
         check_install("keen4", &option, &i).unwrap();
 
-        // A CGA-only patch: the catalog knows no CGA release, but the EGA one isn't it.
+        // A patch for a version the catalog doesn't know: the EGA one isn't it.
         let cga = RecipeOption {
-            game_versions: vec!["cga-1.4".into()],
+            game_versions: vec!["cga-2.0".into()],
             version_ids: vec![],
             ..option
         };
         assert!(check_install("keen4", &cga, &i).is_err());
         i.version_id = None;
         check_install("keen4", &cga, &i).unwrap();
+    }
+
+    #[test]
+    fn identifies_versions_the_catalog_learned_for_installed_mods() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("cga");
+        write_folder(
+            &src,
+            &[
+                (
+                    "play.bat",
+                    b"CK4PATCH.EXE KEEN4C16.PAT
+",
+                ),
+                ("CK4PATCH.EXE", b"patcher"),
+                (
+                    "KEEN4C16.PAT",
+                    b"%ext ck4
+%version cga-1.4
+",
+                ),
+            ],
+        );
+        let info = inspect(&src, None).unwrap();
+        assert_eq!(info.recipes[0].version_ids, ["keen4-1.4-cga"]);
+        let m = install(&paths, &db, &request(&src, info.recipes[0].recipe.clone())).unwrap();
+        // As installed before the catalog knew the version, its game since
+        // identified as that one.
+        db.conn()
+            .execute_batch(
+                "UPDATE mods SET requires_json = '[]';
+                 UPDATE profiles SET install_id = NULL WHERE mod_id IS NOT NULL;
+                 UPDATE installs SET version_id = 'keen4-1.4-cga';",
+            )
+            .unwrap();
+        assert!(fitting_installs(&db, &m.id).unwrap().is_empty());
+
+        identify_requirements(&paths, &db).unwrap();
+        assert_eq!(fitting_installs(&db, &m.id).unwrap()[0].id, "keen4-1");
+        let install_id: Option<String> = db
+            .conn()
+            .query_row(
+                "SELECT install_id FROM profiles WHERE mod_id = ?1",
+                [&m.id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(install_id.as_deref(), Some("keen4-1"));
     }
 
     fn curated(recipe: Recipe) -> Curated {
