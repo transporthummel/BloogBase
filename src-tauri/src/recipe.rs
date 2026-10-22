@@ -301,6 +301,94 @@ pub fn batch_commands(text: &str) -> Vec<Vec<String>> {
         .collect()
 }
 
+/// The bytes each `%patch` of a patch file writes: `$9A` a byte, `$10C5W`
+/// a word, `$0E8F0A31L` a long (`R` for relocated ones), `"text"` its
+/// characters, other numbers decimal bytes. A value that can't be read
+/// splits the run, so nothing found spans it.
+pub fn patch_bytes(text: &str) -> Vec<Vec<u8>> {
+    let mut runs: Vec<Vec<u8>> = Vec::new();
+    let mut in_patch = false;
+    for line in text.lines() {
+        let mut parts = line.split('"');
+        // Outside the quotes, everything after `#` is a comment.
+        let mut words: Vec<(bool, &str)> = Vec::new();
+        let mut quoted = false;
+        for part in parts.by_ref() {
+            if quoted {
+                words.push((true, part));
+            } else {
+                let code = part.split('#').next().unwrap_or_default();
+                words.extend(code.split_whitespace().map(|w| (false, w)));
+                if code.len() < part.len() {
+                    break;
+                }
+            }
+            quoted = !quoted;
+        }
+        let mut words = words.into_iter();
+        if let Some((false, first)) = words.clone().next()
+            && first.starts_with('%')
+        {
+            words.next();
+            in_patch = first.eq_ignore_ascii_case("%patch");
+            if !in_patch {
+                continue;
+            }
+            words.next(); // The address.
+            runs.push(Vec::new());
+        }
+        if !in_patch {
+            continue;
+        }
+        for (quoted, word) in words {
+            let Some(run) = runs.last_mut() else { break };
+            if quoted {
+                run.extend(word.bytes());
+                continue;
+            }
+            match patch_value(word) {
+                Some(bytes) => run.extend(bytes),
+                None => runs.push(Vec::new()),
+            }
+        }
+    }
+    runs.retain(|r| !r.is_empty());
+    runs
+}
+
+fn patch_value(word: &str) -> Option<Vec<u8>> {
+    let upper = word.to_ascii_uppercase();
+    let (digits, len) = match upper.strip_suffix('W').or(upper.strip_suffix('L')) {
+        Some(d) => (
+            d.strip_suffix('R').unwrap_or(d),
+            if upper.ends_with('W') { 2 } else { 4 },
+        ),
+        None => (upper.as_str(), 1),
+    };
+    let value = match digits.strip_prefix('$') {
+        Some(hex) => u32::from_str_radix(hex, 16).ok()?,
+        None => digits.parse().ok()?,
+    };
+    (len == 4 || value >> (8 * len) == 0).then(|| value.to_le_bytes()[..len].to_vec())
+}
+
+/// Whether a patch switches the CGA to 640x200 graphics with the color
+/// burst on, which only shows colors on a composite monitor (as Keen 4
+/// Composite CGA Edition does): `mov dx,3D8h`, `mov al,<mode>`,
+/// `out dx,al`, in either order of the moves.
+pub fn sets_composite_mode(text: &str) -> bool {
+    // High resolution, graphics and the burst (black-and-white bit clear).
+    let composite = |mode: u8| mode & 0b1_0110 == 0b1_0010;
+    patch_bytes(text).iter().any(|run| {
+        run.windows(6).any(|w| match w {
+            [0xBA, 0xD8, 0x03, 0xB0, mode, 0xEE] | [0xB0, mode, 0xBA, 0xD8, 0x03, 0xEE] => {
+                composite(*mode)
+            }
+            _ => false,
+        })
+    })
+}
+
 /// `%version` values of a patch file, e.g. `["1.4"]`.
 /// A version whose section says `%abort` is named only to refuse it.
 pub fn patch_versions(text: &str) -> Vec<String> {
@@ -568,6 +656,46 @@ CK4PATCH P.PAT
 %version 1.5
 ";
         assert_eq!(patch_versions(refusing), ["1.4"]);
+    }
+
+    #[test]
+    fn patch_bytes_of_all_value_kinds() {
+        let text = "%ext ck4
+%patch $1F340 \"Hi! #1\" $0A 13 # comment $FF
+  $10C5RW $0B89W
+%patchfile $20DF0 AUDIOHED.CK4
+$01
+%patch $F24C $9A $0E8F0A31RL junk $02
+";
+        assert_eq!(
+            patch_bytes(text),
+            [
+                vec![
+                    b'H', b'i', b'!', b' ', b'#', b'1', 0x0A, 13, 0xC5, 0x10, 0x89, 0x0B
+                ],
+                vec![0x9A, 0x31, 0x0A, 0x8F, 0x0E],
+                vec![0x02],
+            ]
+        );
+    }
+
+    #[test]
+    fn composite_mode_from_the_cga_mode_register() {
+        // Keen 4 Composite CGA Edition: mode 6, then 1Ah to port 3D8h.
+        let composite = "%patch $11FDD $B8 $06 $00 $CD $10 $BA $D8 $03 $B0 $1A $EE $CB";
+        assert!(sets_composite_mode(composite));
+        assert!(sets_composite_mode(
+            "%patch $1 $B0 $1A
+$BA $D8 $03 $EE"
+        ));
+        // Black and white (1Eh), or 320x200 (0Ah): no composite colors.
+        assert!(!sets_composite_mode("%patch $1 $BA $D8 $03 $B0 $1E $EE"));
+        assert!(!sets_composite_mode("%patch $1 $BA $D8 $03 $B0 $0A $EE"));
+        // Not across patches.
+        assert!(!sets_composite_mode(
+            "%patch $1 $BA $D8 $03
+%patch $9 $B0 $1A $EE"
+        ));
     }
 
     #[test]

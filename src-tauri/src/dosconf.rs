@@ -14,7 +14,8 @@ use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::keymap;
 use crate::paths::AppPaths;
-use crate::profiles;
+use crate::profiles::{self, Layers};
+use crate::recipe;
 use crate::settings;
 
 pub const GLOBAL_TEMPLATE: &str = "\
@@ -35,6 +36,41 @@ pub fn defaults(engine: Engine) -> (&'static str, &'static str) {
         Engine::Vorticons => ("vorticons", include_str!("../configs/vorticons.conf")),
         Engine::Galaxy => ("galaxy", include_str!("../configs/galaxy.conf")),
         Engine::Dreams => ("dreams", include_str!("../configs/dreams.conf")),
+    }
+}
+
+/// Added to the defaults for mods that draw for a CGA composite monitor.
+/// Staging's composite emulation (`auto`, early-era for CGA) switches itself
+/// on in their graphics mode.
+const COMPOSITE_CGA: &str =
+    "# Added for this mod: it draws its graphics for a CGA composite monitor.
+[dosbox]
+machine = cga
+";
+
+/// What a profile's mod needs on top of its engine's defaults.
+pub fn mod_defaults(layers: &Layers) -> Option<&'static str> {
+    let m = layers.mod_layer.as_ref()?;
+    let patch = m.recipe.patch_file()?;
+    // Found as DOS would, whatever the case.
+    let path = fs::read_dir(&m.files)
+        .ok()?
+        .filter_map(|e| e.ok())
+        .find(|e| e.file_name().to_string_lossy().eq_ignore_ascii_case(patch))?
+        .path();
+    let text = fs::read(path).ok()?;
+    recipe::sets_composite_mode(&String::from_utf8_lossy(&text)).then_some(COMPOSITE_CGA)
+}
+
+/// A profile's defaults layer: its engine's, plus what its mod needs.
+fn profile_defaults(engine: Engine, extra: Option<&str>) -> String {
+    let content = defaults(engine).1;
+    match extra {
+        Some(extra) => format!(
+            "{content}
+{extra}"
+        ),
+        None => content.to_string(),
     }
 }
 
@@ -174,22 +210,31 @@ pub struct LayerFiles {
 
 /// Writes all layers of a profile: defaults and options refreshed, user
 /// overrides only created when missing, the launch layer regenerated.
+/// A mod that needs more than its engine's defaults gets a defaults layer of
+/// its own.
 pub fn ensure(
     paths: &AppPaths,
     engine: Engine,
+    mod_defaults: Option<&str>,
     options: &DisplayOptions,
     profile_id: &str,
 ) -> Result<LayerFiles> {
     let (stem, content) = defaults(engine);
     let dirs = paths.profile(profile_id);
     let files = LayerFiles {
-        defaults: paths.default_conf(stem),
+        defaults: match mod_defaults {
+            Some(_) => dirs.defaults_conf.clone(),
+            None => paths.default_conf(stem),
+        },
         options: paths.options_conf(),
         global: paths.global_override_conf(),
         profile: dirs.override_conf,
         launch: dirs.launch_conf,
     };
-    write_if_changed(&files.defaults, content)?;
+    match mod_defaults {
+        Some(_) => write_if_changed(&files.defaults, &profile_defaults(engine, mod_defaults))?,
+        None => write_if_changed(&files.defaults, content)?,
+    }
     let with_keymap = keymap::ensure(&paths.configs)?;
     write_if_changed(&files.options, &options_conf(options, with_keymap))?;
     write_if_missing(&files.global, GLOBAL_TEMPLATE)?;
@@ -357,8 +402,11 @@ pub fn view(paths: &AppPaths, db: &Db, profile_id: Option<&str>) -> Result<Confi
     let profile = match profile_id {
         None => None,
         Some(id) => {
-            let engine = engine_of(db, id)?;
-            let defaults = defaults(engine).1;
+            let (profile, layers) = profiles::get(db, id)?;
+            let engine = catalog::game(&profile.game_id)
+                .ok_or_else(|| Error::NotFound(format!("game {}", profile.game_id)))?
+                .engine;
+            let defaults = &profile_defaults(engine, mod_defaults(&layers));
             let dirs = paths.profile(id);
             let text = read_or(&dirs.override_conf, PROFILE_TEMPLATE)?;
             let launch = launch_conf();
@@ -383,13 +431,6 @@ pub fn view(paths: &AppPaths, db: &Db, profile_id: Option<&str>) -> Result<Confi
         global,
         profile,
     })
-}
-
-fn engine_of(db: &Db, profile_id: &str) -> Result<Engine> {
-    let (profile, _) = profiles::get(db, profile_id)?;
-    Ok(catalog::game(&profile.game_id)
-        .ok_or_else(|| Error::NotFound(format!("game {}", profile.game_id)))?
-        .engine)
 }
 
 /// The file of the global override, or of a profile's.

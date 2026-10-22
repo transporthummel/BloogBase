@@ -79,6 +79,8 @@ pub struct ProfileDirs {
     pub override_conf: PathBuf,
     /// Written on every launch, never edited by the user.
     pub launch_conf: PathBuf,
+    /// The defaults layer of a mod that needs more than its engine's.
+    pub defaults_conf: PathBuf,
     pub capture: PathBuf,
     /// First frames of the videos in `capture`.
     pub video_thumbs: PathBuf,
@@ -122,6 +124,7 @@ impl AppPaths {
         ProfileDirs {
             override_conf: config.join("override.conf"),
             launch_conf: root.join("generated").join("launch.conf"),
+            defaults_conf: root.join("generated").join("defaults.conf"),
             capture: root.join("capture"),
             video_thumbs: root.join("generated").join("video-thumbs"),
             config,

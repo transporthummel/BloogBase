@@ -152,7 +152,13 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
         None => profiles::find_executable(game, profile.version_id.as_deref(), &lower)?,
     };
 
-    let confs = dosconf::ensure(paths, game.engine, &dosconf::options(db)?, profile_id)?;
+    let confs = dosconf::ensure(
+        paths,
+        game.engine,
+        dosconf::mod_defaults(&layers),
+        &dosconf::options(db)?,
+        profile_id,
+    )?;
 
     // DOSBox Staging 0.83 crashes on mount paths with non-ASCII characters
     // (e.g. an umlaut in the Windows user name), so DOSBox runs from the data
@@ -455,6 +461,27 @@ mod tests {
             .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
             .collect();
         assert!(!names.contains(&"GAMEMAPS.CK4".to_string()));
+        // Engine defaults only: the mod needs nothing more.
+        assert!(spec.args.iter().any(|a| a.ends_with("galaxy.conf")));
+
+        // A patch that switches on composite colors gets a CGA machine.
+        fs::write(
+            paths.mods.join("my-mod/files/MOD.PAT"),
+            "%ext ck4
+%patch $11FDD $B8 $06 $00 $CD $10 $BA $D8 $03 $B0 $1A $EE $CB
+",
+        )
+        .unwrap();
+        let spec = prepare(&paths, &db, &m.profile_id).unwrap();
+        let defaults = paths.profile(&m.profile_id).defaults_conf;
+        assert!(spec.args.contains(&relative(&paths.root, &defaults)));
+        let text = fs::read_to_string(&defaults).unwrap();
+        assert!(text.starts_with(crate::dosconf::defaults(crate::catalog::Engine::Galaxy).1));
+        assert!(text.contains(
+            "[dosbox]
+machine = cga
+"
+        ));
 
         // Without its game the mod can't start.
         crate::library::remove(&paths, &db, "keen4-1", false, false).unwrap();
