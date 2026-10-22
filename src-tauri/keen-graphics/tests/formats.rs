@@ -59,6 +59,26 @@ fn egagraph_finds_header_and_dictionary_in_the_executable() {
 }
 
 #[test]
+fn egagraph_reads_chunks_as_stored_without_a_dictionary() {
+    // As in Skater Squirrel: no Huffman compression, so the executable has
+    // no dictionary that fits, and chunk 2 points into chunk 0.
+    let table = [1u8, 0, 1, 0, 1, 0, 1, 0];
+    let mut graph = (table.len() as u32).to_le_bytes().to_vec();
+    graph.extend_from_slice(&table);
+    let pic_at = graph.len();
+    graph.extend_from_slice(&4u32.to_le_bytes());
+    graph.extend_from_slice(&[0xFF, 0x00, 0x00, 0x00]);
+    let head: Vec<u8> = [0usize, 0xFFFFFF, 6, pic_at, pic_at]
+        .iter()
+        .flat_map(|o| (*o as u32).to_le_bytes()[..3].to_vec())
+        .collect();
+
+    let g = EgaGraph::from_files(&graph, &head, 3, None, &[0x55; 2048]).unwrap();
+    assert_eq!(g.pictures().unwrap(), vec![(1, 1), (1, 1)]);
+    assert_eq!(g.picture(0).unwrap().pixels, vec![1; 8]);
+}
+
+#[test]
 fn planar_pictures_combine_four_planes() {
     // Pixel 0 in all planes (white), pixel 1 only in red and intensity.
     let data = [0b1000_0000, 0b1000_0000, 0b1100_0000, 0b1100_0000];

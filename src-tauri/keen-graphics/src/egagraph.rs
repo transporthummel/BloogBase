@@ -5,7 +5,7 @@
 //! into the executable. Instead of keeping a table of where they sit in each
 //! version, they are searched for: the header ends with the size of the
 //! graphics file, and the right dictionary is the one that decodes the
-//! picture table.
+//! picture table. If none does, the chunks may be stored as they are.
 
 use crate::huffman::{self, Dictionary};
 use crate::{Error, Image};
@@ -14,7 +14,9 @@ pub struct EgaGraph<'a> {
     data: &'a [u8],
     /// Start of each chunk; `None` for empty slots.
     offsets: Vec<Option<usize>>,
-    dict: Dictionary,
+    /// `None` if a mod switched Huffman compression off (a patch to the
+    /// executable).
+    dict: Option<Dictionary>,
     /// CGAGRAPH: pictures with 2 bits per pixel instead of 4 planes.
     cga: bool,
 }
@@ -43,7 +45,7 @@ impl<'a> EgaGraph<'a> {
                 Ok(EgaGraph {
                     data: graph,
                     offsets,
-                    dict: Dictionary::parse(d)?,
+                    dict: Some(Dictionary::parse(d)?),
                     cga: false,
                 })
             }
@@ -58,10 +60,11 @@ impl<'a> EgaGraph<'a> {
         exe: &[u8],
     ) -> Result<Self, Error> {
         let offsets = parse_header(head, offset_len, graph.len());
-        for at in huffman::candidates(exe) {
-            let Ok(dict) = Dictionary::parse(&exe[at..]) else {
-                continue;
-            };
+        let dicts = huffman::candidates(exe)
+            .filter_map(|at| Dictionary::parse(&exe[at..]).ok())
+            .map(Some)
+            .chain([None]);
+        for dict in dicts {
             let candidate = EgaGraph {
                 data: graph,
                 offsets: offsets.clone(),
@@ -89,12 +92,13 @@ impl<'a> EgaGraph<'a> {
             .copied()
             .flatten()
             .ok_or(Error::Format("empty or missing chunk"))?;
-        let end = self.offsets[n + 1..]
-            .iter()
-            .flatten()
-            .next()
-            .copied()
-            .unwrap_or(self.data.len());
+        // Without compression the game reads just the stated size, so the
+        // next chunk may start anywhere, as in Skater Squirrel.
+        let end = match self.dict {
+            Some(_) => self.offsets[n + 1..].iter().flatten().next().copied(),
+            None => None,
+        }
+        .unwrap_or(self.data.len());
         let raw = self
             .data
             .get(start..end)
@@ -104,12 +108,16 @@ impl<'a> EgaGraph<'a> {
         if len > 1 << 20 {
             return Err(Error::Format("chunk implausibly large"));
         }
-        // Mods may switch Huffman compression off (a patch to the
-        // executable); their chunks hold exactly the stated size.
-        if raw.len() - 4 == len {
-            return Ok(raw[4..].to_vec());
+        match &self.dict {
+            // Uncompressed chunks that hold exactly the stated size pass with
+            // any dictionary.
+            Some(_) if raw.len() - 4 == len => Ok(raw[4..].to_vec()),
+            Some(dict) => dict.decode(&raw[4..], len),
+            None => raw
+                .get(4..4 + len)
+                .map(<[u8]>::to_vec)
+                .ok_or(Error::Format("chunk outside the graphics file")),
         }
-        self.dict.decode(&raw[4..], len)
     }
 
     /// Width in bytes (8 pixels each) and height of every picture (chunk 0).

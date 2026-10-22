@@ -19,7 +19,7 @@ use crate::profiles;
 use crate::recipe::{Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v8";
+const VERSION: &str = "covers v9";
 
 /// The profile's cover PNG, extracting it first if its files changed since
 /// the last time. `None` if the title can't be read from them.
