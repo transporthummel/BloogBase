@@ -19,7 +19,7 @@ use crate::profiles;
 use crate::recipe::{Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v7";
+const VERSION: &str = "covers v8";
 
 /// The profile's cover PNG, extracting it first if its files changed since
 /// the last time. `None` if the title can't be read from them.
@@ -153,10 +153,12 @@ struct Patched {
     palette: Option<[[u8; 3]; 16]>,
 }
 
-/// Where Keen 1 palette patches put their 16 VGA colors, each red, green and
-/// blue from 0 to 63: adurdin's patch over the Turbo C++ message at DS:0004,
-/// and the fading palette patch, whose first palette is the bright one.
-const PALETTES: [(&str, u32); 2] = [("CK1", 0x13054), ("CK1", 0x21850)];
+/// Where palette patches put their 16 VGA colors, each red, green and blue
+/// from 0 to 63: in Keen 1, adurdin's patch over the Turbo C++ message at
+/// DS:0004 and the fading palette patch, whose first palette is the bright
+/// one; in Keen 4, K1n9_Duk3's patch over the old CheckCutFile code (as in
+/// Revival of Bliss).
+const PALETTES: [(&str, u32); 3] = [("CK1", 0x13054), ("CK1", 0x21850), ("CK4", 0x3D5E)];
 
 fn patched(text: &str, ext: &str) -> Patched {
     let mut names = Patched::default();
@@ -479,6 +481,30 @@ mod tests {
             None
         );
         assert_eq!(patched(&text.replace("$2F", "$40"), "CK1").palette, None);
+    }
+
+    #[test]
+    fn reads_keen4_palettes() {
+        // As in Revival of Bliss: the address with a comment, then the colors.
+        let mut text = String::from(
+            "%ext ck4
+%patch $3D5E	# K1n9_Duk3 mod
+",
+        );
+        for _ in 0..16 {
+            text.push_str(
+                "       00 00 42  #Blue
+",
+            );
+        }
+        text.push_str(
+            "
+#Set the palette
+%patch $3CE5  $90 $90
+",
+        );
+        assert_eq!(patched(&text, "CK4").palette, Some([[0, 0, 170]; 16]));
+        assert_eq!(patched(&text, "CK5").palette, None);
     }
 
     /// The files of a Keen 1 title: one 16x16 tile (blue), an 8x1 title
