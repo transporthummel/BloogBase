@@ -570,7 +570,9 @@
     }
   },
   "readme": {
-    "file": "File:"
+    "file": "File:",
+    "webPage": "This file is a web page and opens in your browser.",
+    "openInBrowser": "Open in browser"
   },
   "screenshots": {
     "hint": "Press {{key}} while playing to take a screenshot.",

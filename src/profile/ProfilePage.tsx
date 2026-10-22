@@ -136,8 +136,8 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
       {profile && tabsReady && (
         <Tabs tabs={tabs} selected={tab} onSelect={setTab} label={t("profile.tabs")}>
           <div className={tab === "screenshots" || tab === "videos" ? "" : "max-w-3xl"}>
-            {readmes.data && tab === "readme" && (
-              <ReadmePanel key={profile.id} readmes={readmes.data} />
+            {profile.modId && readmes.data && tab === "readme" && (
+              <ReadmePanel key={profile.id} modId={profile.modId} readmes={readmes.data} />
             )}
             {tab === "saves" && <SavesPanel profile={profile} game={game} />}
             {tab === "screenshots" && <ScreenshotsPanel profile={profile} />}

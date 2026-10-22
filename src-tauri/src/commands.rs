@@ -315,7 +315,7 @@ pub fn open_capture_folder(
     profiles::get(&db, &profile_id)?;
     let dir = paths.profile(&profile_id).capture;
     std::fs::create_dir_all(&dir).map_err(Error::from)?;
-    open_dir(&app, &dir)
+    open_path(&app, &dir)
 }
 
 /// Opens the folder with a mod's installed files.
@@ -330,14 +330,29 @@ pub fn open_mod_folder(
     if !mods::list(&db)?.iter().any(|m| m.id == mod_id) {
         return Err(Error::NotFound(format!("mod {mod_id}")).into());
     }
-    open_dir(&app, &paths.mods.join(&mod_id).join("files"))
+    open_path(&app, &paths.mods.join(&mod_id).join("files"))
 }
 
-/// Shows a folder in the system's file manager.
-fn open_dir(app: &AppHandle, dir: &Path) -> CommandResult<()> {
+/// Opens a web page shipped with a mod in the browser; the app never shows
+/// HTML itself.
+#[tauri::command]
+#[specta::specta]
+pub async fn open_mod_readme(app: AppHandle, mod_id: String, file: String) -> CommandResult<()> {
+    let path = {
+        let app = app.clone();
+        blocking(move || {
+            readme::html_path(&app.state::<AppPaths>(), &app.state::<Db>(), &mod_id, &file)
+        })
+        .await?
+    };
+    open_path(&app, &path)
+}
+
+/// Shows a folder in the system's file manager, or a file in its app.
+fn open_path(app: &AppHandle, path: &Path) -> CommandResult<()> {
     use tauri_plugin_opener::OpenerExt;
     app.opener()
-        .open_path(dir.display().to_string(), None::<&str>)
+        .open_path(path.display().to_string(), None::<&str>)
         .map_err(|e| Error::from(std::io::Error::other(e.to_string())))?;
     Ok(())
 }
@@ -613,7 +628,7 @@ pub fn list_mods(db: State<'_, Db>) -> CommandResult<Vec<Mod>> {
     Ok(mods::list(&db)?)
 }
 
-/// The documents shipped with a mod as plain text, the README first; empty
+/// The documents shipped with a mod, the README first; empty
 /// when it has none.
 #[tauri::command]
 #[specta::specta]

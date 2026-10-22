@@ -5,10 +5,11 @@
 //! ranked by name; without one, other text documents are shown instead
 //! (`changes.txt`, `story.txt`). The text goes to the UI as plain text only: DOS code page
 //! 437 or Windows-1252 is decoded, RTF is reduced to its text, control
-//! characters are dropped. HTML files are never picked.
+//! characters are dropped. HTML is never shown in the app: web pages are
+//! listed without text and open in the browser.
 
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use rusqlite::OptionalExtension;
 use serde::Serialize;
@@ -24,7 +25,10 @@ use crate::source::{Source, split_dir};
 pub struct Readme {
     /// Path of the file inside the mod or its archive.
     pub file: String,
+    /// Empty for a web page.
     pub text: String,
+    /// A web page, which opens in the browser instead.
+    pub html: bool,
 }
 
 /// Larger files are hardly a README.
@@ -33,22 +37,62 @@ const MAX_BYTES: usize = 1 << 20;
 const MAX_DEPTH: usize = 2;
 /// More would hardly fit a picker; the best-ranked come first anyway.
 const MAX_FILES: usize = 20;
+/// Of documents; files without an extension count too.
+const EXTENSIONS: &[&str] = &[
+    "txt", "md", "markdown", "nfo", "doc", "rtf", "asc", "htm", "html",
+];
 
 /// The documents of an installed mod, the README first; empty when it has
 /// none. The kept archive is searched, so files outside the installed mod
 /// folder count too.
 pub fn for_mod(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Vec<Readme>> {
+    match mod_source(paths, db, mod_id)? {
+        Some(source) => find(&source),
+        None => Ok(Vec::new()),
+    }
+}
+
+/// The web page `file` of a mod on disk, for the browser. From an archive,
+/// it is copied to the cache with the files in its folder (pictures, style
+/// sheets).
+pub fn html_path(paths: &AppPaths, db: &Db, mod_id: &str, file: &str) -> Result<PathBuf> {
+    let not_found = || Error::NotFound(format!("{file} of mod {mod_id}"));
+    let source = mod_source(paths, db, mod_id)?.ok_or_else(not_found)?;
+    let files = source.files()?;
+    if !(candidate(file).is_some_and(|(_, html, _)| html) && files.iter().any(|f| f == file)) {
+        return Err(not_found());
+    }
+    match &source {
+        Source::Folder(root) => Ok(root.join(file)),
+        Source::Zip(_) => {
+            let dest = paths.cache.join("readmes").join(mod_id);
+            // An update of the mod may have changed the page; a missing
+            // folder or a file still open elsewhere doesn't matter.
+            let _ = fs::remove_dir_all(&dest);
+            let prefix = match split_dir(file).0 {
+                "" => String::new(),
+                dir => format!("{dir}/"),
+            };
+            for f in files.iter().filter(|f| f.starts_with(&prefix)) {
+                source.copy_to(f, &dest.join(f))?;
+            }
+            Ok(dest.join(file))
+        }
+    }
+}
+
+/// The kept archive of a mod, else its installed files.
+fn mod_source(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Option<Source>> {
     db.conn()
         .query_row("SELECT 1 FROM mods WHERE id = ?1", [mod_id], |_| Ok(()))
         .optional()?
         .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))?;
     let dir = paths.mods.join(mod_id);
-    let source = match archive(&dir.join("source")) {
-        Some(zip) => Source::Zip(zip),
-        None if dir.join("files").is_dir() => Source::Folder(dir.join("files")),
-        None => return Ok(Vec::new()),
-    };
-    find(&source)
+    Ok(match archive(&dir.join("source")) {
+        Some(zip) => Some(Source::Zip(zip)),
+        None if dir.join("files").is_dir() => Some(Source::Folder(dir.join("files"))),
+        None => None,
+    })
 }
 
 fn archive(dir: &Path) -> Option<std::path::PathBuf> {
@@ -58,22 +102,27 @@ fn archive(dir: &Path) -> Option<std::path::PathBuf> {
         .find(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("zip")))
 }
 
-/// The readable candidates in `source`, best-named first.
+/// The readable candidates in `source`, best-named first; web pages after
+/// text documents of the same rank, as only text shows in the app.
 pub fn find(source: &Source) -> Result<Vec<Readme>> {
-    let mut candidates: Vec<(u8, usize, String)> = source
+    let mut candidates: Vec<((u8, bool, usize), String)> = source
         .files()?
         .into_iter()
-        .filter_map(|f| {
-            let depth = f.matches('/').count();
-            let rank = rank(split_dir(&f).1)?;
-            (depth <= MAX_DEPTH).then_some((rank, depth, f))
-        })
+        .filter_map(|f| Some((candidate(&f)?, f)))
         .collect();
     candidates.sort();
     let mut found = Vec::new();
-    for (_, _, file) in candidates {
+    for ((_, html, _), file) in candidates {
         if found.len() == MAX_FILES {
             break;
+        }
+        if html {
+            found.push(Readme {
+                file,
+                text: String::new(),
+                html,
+            });
+            continue;
         }
         let bytes = match source.read(&file) {
             Ok(b) => b,
@@ -89,19 +138,28 @@ pub fn find(source: &Source) -> Result<Vec<Readme>> {
             && !text.trim().is_empty()
             && !is_patch_script(&text)
         {
-            found.push(Readme { file, text });
+            found.push(Readme { file, text, html });
         }
     }
     Ok(found)
+}
+
+/// Rank, whether it is a web page, and depth of a document; `None` for
+/// other files.
+fn candidate(rel: &str) -> Option<(u8, bool, usize)> {
+    let depth = rel.matches('/').count();
+    let name = split_dir(rel).1;
+    let html = name
+        .rsplit_once('.')
+        .is_some_and(|(_, e)| e.eq_ignore_ascii_case("htm") || e.eq_ignore_ascii_case("html"));
+    (depth <= MAX_DEPTH).then_some((rank(name)?, html, depth))
 }
 
 /// Lower is better; `None` for files that are no README.
 fn rank(name: &str) -> Option<u8> {
     let lower = name.to_ascii_lowercase();
     let (stem, ext) = match lower.rsplit_once('.') {
-        Some((s, e)) if ["txt", "md", "markdown", "nfo", "doc", "rtf", "asc"].contains(&e) => {
-            (s, e)
-        }
+        Some((s, e)) if EXTENSIONS.contains(&e) => (s, e),
         // `READ.ME`, `README.1ST`
         Some((_, "me" | "1st")) => (lower.as_str(), ""),
         Some(_) => return None,
@@ -426,9 +484,9 @@ mod tests {
         assert_eq!(rank("ChangeLog15Y.txt"), Some(4));
         assert_eq!(rank("Hints Sheet.txt"), Some(5));
         assert_eq!(rank("HINTS..txt"), Some(5));
+        assert_eq!(rank("README.HTM"), Some(0));
+        assert_eq!(rank("story.html"), Some(3));
         for name in [
-            "readme.html",
-            "readme.htm",
             "README.EXE",
             "readme.pdf",
             "HELP",
@@ -463,32 +521,95 @@ mod tests {
             found[0],
             Readme {
                 file: "readme.txt".into(),
-                text: "top".into()
+                text: "top".into(),
+                html: false
             }
         );
         assert_eq!(
             names(&Source::Folder(tmp.path().into())),
-            ["readme.txt", "Mod/docs/readme.txt", "Mod/Help.txt"]
+            [
+                "readme.txt",
+                "Mod/docs/readme.txt",
+                "readme.html",
+                "Mod/Help.txt"
+            ]
         );
     }
 
     #[test]
-    fn skips_empty_and_binary_candidates_and_html() {
+    fn skips_empty_and_binary_candidates() {
         let tmp = tempfile::tempdir().unwrap();
         write_folder(
             tmp.path(),
             &[
                 ("README.TXT", b"\r\n  \r\n\x1a\0\0"),
                 ("readme.doc", b"\xD0\xCF\x11\xE0\0\0binary"),
-                ("readme.html", b"<b>hi</b>"),
                 ("INFO.TXT", b"info"),
             ],
         );
         assert_eq!(names(&Source::Folder(tmp.path().into())), ["INFO.TXT"]);
+    }
 
+    #[test]
+    fn lists_web_pages_without_their_text() {
         let tmp = tempfile::tempdir().unwrap();
-        write_folder(tmp.path(), &[("readme.htm", b"<b>hi</b>"), ("1.TXT", b"")]);
-        assert_eq!(find(&Source::Folder(tmp.path().into())).unwrap(), []);
+        write_folder(tmp.path(), &[("README.HTM", b"<script>alert(1)</script>")]);
+        assert_eq!(
+            find(&Source::Folder(tmp.path().into())).unwrap(),
+            [Readme {
+                file: "README.HTM".into(),
+                text: String::new(),
+                html: true
+            }]
+        );
+    }
+
+    #[test]
+    fn web_pages_open_from_disk_with_their_pictures() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(tmp.path().join("data"));
+        let db = Db::open_in_memory().unwrap();
+        db.conn()
+            .execute(
+                "INSERT INTO mods (id, game_id, name, authors, recipe_json, path, source, added_at)
+                 VALUES ('shadow', 'keen2', 'Shadow', '[]', '{}', '/x', 'manual', 0)",
+                [],
+            )
+            .unwrap();
+        let dir = paths.mods.join("shadow");
+        write_folder(&dir.join("files"), &[("README.HTM", b"<p>hi")]);
+        assert_eq!(
+            html_path(&paths, &db, "shadow", "README.HTM").unwrap(),
+            dir.join("files/README.HTM")
+        );
+
+        fs::create_dir_all(dir.join("source")).unwrap();
+        write_zip(
+            &dir.join("source/shadow.zip"),
+            &[
+                ("Files/README.HTM", b"<img src=README_files/a.gif>"),
+                ("Files/README_files/a.gif", b"GIF"),
+                ("Files/README.TXT", b"text"),
+                ("Menu.exe", b"MZ"),
+            ],
+        );
+        let page = html_path(&paths, &db, "shadow", "Files/README.HTM").unwrap();
+        let copy = paths.cache.join("readmes/shadow/Files");
+        assert_eq!(page, copy.join("README.HTM"));
+        assert_eq!(fs::read(copy.join("README_files/a.gif")).unwrap(), b"GIF");
+        assert!(!paths.cache.join("readmes/shadow/Menu.exe").exists());
+
+        // Only the mod's web pages open.
+        for file in ["Files/README.TXT", "Menu.exe", "README.HTM", "../x.htm"] {
+            assert!(matches!(
+                html_path(&paths, &db, "shadow", file),
+                Err(Error::NotFound(_))
+            ));
+        }
+        assert!(matches!(
+            html_path(&paths, &db, "other", "README.HTM"),
+            Err(Error::NotFound(_))
+        ));
     }
 
     #[test]

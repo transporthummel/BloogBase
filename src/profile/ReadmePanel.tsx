@@ -1,21 +1,29 @@
+import { useMutation } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { FileText } from "lucide-react";
+import { ExternalLink, FileText } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Readme } from "../bindings";
+import { commands, type Readme } from "../bindings";
+import { errorMessage } from "../errors";
+import { unwrap } from "../ipc";
+import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+import { Notice } from "../ui/Notice";
 import { linkify } from "./readme";
 
 /**
  * A mod's README, with a picker for its other documents. Shown as plain text
  * only (React escapes it); links open in the browser, never in the app's
- * window.
+ * window. Web pages are never shown here, only opened in the browser.
  */
-export function ReadmePanel({ readmes }: { readmes: Readme[] }) {
+export function ReadmePanel({ modId, readmes }: { modId: string; readmes: Readme[] }) {
   const { t } = useTranslation();
   const pickerId = useId();
   const [file, setFile] = useState(readmes[0].file);
   const readme = readmes.find((r) => r.file === file) ?? readmes[0];
+  const openPage = useMutation({
+    mutationFn: (file: string) => unwrap(commands.openModReadme(modId, file)),
+  });
   return (
     <Card>
       <div className="flex items-center gap-2 border-b border-border px-4 py-2 text-xs text-muted">
@@ -45,22 +53,33 @@ export function ReadmePanel({ readmes }: { readmes: Readme[] }) {
           </p>
         )}
       </div>
-      <pre className="p-4 font-mono text-sm leading-snug break-words whitespace-pre-wrap">
-        {linkify(readme.text).map((part, i) =>
-          "url" in part ? (
-            <button
-              key={i}
-              type="button"
-              onClick={() => openUrl(part.url)}
-              className="text-left break-all text-accent underline hover:text-ink"
-            >
-              {part.url}
-            </button>
-          ) : (
-            part.text
-          ),
-        )}
-      </pre>
+      {readme.html ? (
+        <div className="grid justify-items-start gap-3 p-4">
+          <p className="text-sm text-muted">{t("readme.webPage")}</p>
+          <Button variant="secondary" onClick={() => openPage.mutate(readme.file)}>
+            <ExternalLink className="size-4" aria-hidden />
+            {t("readme.openInBrowser")}
+          </Button>
+          {openPage.error && <Notice tone="error">{errorMessage(t, openPage.error)}</Notice>}
+        </div>
+      ) : (
+        <pre className="p-4 font-mono text-sm leading-snug break-words whitespace-pre-wrap">
+          {linkify(readme.text).map((part, i) =>
+            "url" in part ? (
+              <button
+                key={i}
+                type="button"
+                onClick={() => openUrl(part.url)}
+                className="text-left break-all text-accent underline hover:text-ink"
+              >
+                {part.url}
+              </button>
+            ) : (
+              part.text
+            ),
+          )}
+        </pre>
+      )}
     </Card>
   );
 }

@@ -71,6 +71,7 @@ vi.mock("../bindings", () => {
     "listMods",
     "modReadmes",
     "openModFolder",
+    "openModReadme",
     "deleteMod",
     "modInstalls",
     "setModInstall",
@@ -379,6 +380,7 @@ test("a mod's README is the first tab, shown as text with links opening outside"
       {
         file: "Aurora/READ ME.txt",
         text: '<img src=x onerror="alert(1)"><script>alert(2)</script>\nSee https://pckf.com/aurora.',
+        html: false,
       },
     ]),
   );
@@ -402,8 +404,8 @@ test("other documents of a mod can be picked in the README tab", async () => {
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
   vi.mocked(commands.modReadmes).mockResolvedValue(
     ok([
-      { file: "changes.txt", text: "v1.1: fixed a crash" },
-      { file: "Hints Sheet.txt", text: "The key is behind the wall" },
+      { file: "changes.txt", text: "v1.1: fixed a crash", html: false },
+      { file: "Hints Sheet.txt", text: "The key is behind the wall", html: false },
     ]),
   );
   renderDetail();
@@ -414,6 +416,23 @@ test("other documents of a mod can be picked in the README tab", async () => {
   await userEvent.selectOptions(picker, "Hints Sheet.txt");
   expect(panel).toHaveTextContent("The key is behind the wall");
   expect(panel).not.toHaveTextContent("v1.1");
+});
+
+test("a web page of a mod opens in the browser instead of the app", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
+  );
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  vi.mocked(commands.modReadmes).mockResolvedValue(
+    ok([{ file: "Files/README.HTM", text: "", html: true }]),
+  );
+  vi.mocked(commands.openModReadme).mockResolvedValue(ok(null));
+  renderDetail();
+  const panel = await screen.findByRole("tabpanel");
+  expect(panel).toHaveTextContent("Files/README.HTM");
+  expect(panel.querySelector("pre")).toBeNull();
+  await userEvent.click(within(panel).getByRole("button", { name: "Open in browser" }));
+  expect(commands.openModReadme).toHaveBeenCalledWith("aurora-bliss", "Files/README.HTM");
 });
 
 test("without a README there is no README tab", async () => {

@@ -123,12 +123,17 @@ export const commands = {
 	installMod: (request: InstallModRequest) => typedError<Mod, CommandError>(__TAURI_INVOKE("install_mod", { request })),
 	listMods: () => typedError<Mod[], CommandError>(__TAURI_INVOKE("list_mods")),
 	/**
-	 *  The documents shipped with a mod as plain text, the README first; empty
+	 *  The documents shipped with a mod, the README first; empty
 	 *  when it has none.
 	 */
 	modReadmes: (modId: string) => typedError<Readme[], CommandError>(__TAURI_INVOKE("mod_readmes", { modId })),
 	/**  Opens the folder with a mod's installed files. */
 	openModFolder: (modId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_folder", { modId })),
+	/**
+	 *  Opens a web page shipped with a mod in the browser; the app never shows
+	 *  HTML itself.
+	 */
+	openModReadme: (modId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_readme", { modId, file })),
 	/**  The installs a mod can be played on. */
 	modInstalls: (modId: string) => typedError<Install[], CommandError>(__TAURI_INVOKE("mod_installs", { modId })),
 	/**  Plays a mod on another install it fits. */
@@ -645,7 +650,10 @@ export type QuitRequested = {
 export type Readme = {
 	/**  Path of the file inside the mod or its archive. */
 	file: string,
+	/**  Empty for a web page. */
 	text: string,
+	/**  A web page, which opens in the browser instead. */
+	html: boolean,
 };
 
 /**
