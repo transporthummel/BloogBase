@@ -468,3 +468,20 @@ fn cga_pictures_have_four_pixels_per_byte() {
     assert_eq!(image.pixels, [0, 11, 13, 15, 15, 13, 11, 0]);
     assert!(Image::from_cga(&[0], 8, 1).is_err());
 }
+
+#[test]
+fn composite_colors_follow_the_pattern_of_four_pixels() {
+    // White and black CGA pixels alternating: one-bit pixels 1100 in each
+    // carrier cycle, orange on a composite monitor.
+    let image = Image::from_cga(&[0b11_00_11_00; 4], 16, 1).unwrap();
+    let rgb = image.to_composite_rgb();
+    assert_eq!(rgb.len(), 16 * 3);
+    assert_eq!(&rgb[8 * 3..9 * 3], &[0xDB, 0x56, 0x12]);
+    // All white stays white, all black black.
+    let white = Image::from_cga(&[0xFF; 4], 16, 1)
+        .unwrap()
+        .to_composite_rgb();
+    assert_eq!(&white[8 * 3..9 * 3], &[0xFD; 3]);
+    let black = Image::from_cga(&[0; 4], 16, 1).unwrap().to_composite_rgb();
+    assert!(black.iter().all(|&c| c == 0));
+}

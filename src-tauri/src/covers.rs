@@ -16,10 +16,10 @@ use crate::detect::hex;
 use crate::error::{Error, Result};
 use crate::paths::AppPaths;
 use crate::profiles;
-use crate::recipe::{Recipe, has_ext};
+use crate::recipe::{self, Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v9";
+const VERSION: &str = "covers v10";
 
 /// The profile's cover PNG, extracting it first if its files changed since
 /// the last time. `None` if the title can't be read from them.
@@ -44,8 +44,8 @@ pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<PathB
     let title = extract(game, profile.version_id.as_deref(), recipe, &files);
     fs::create_dir_all(stamp.parent().expect("covers have a folder"))?;
     let state = match title {
-        Ok((image, palette)) => {
-            write_png(&image, &palette, &png)?;
+        Ok((image, colors)) => {
+            write_png(&image, &colors, &png)?;
             tracing::info!("extracted the title screen of {profile_id}");
             "png"
         }
@@ -151,6 +151,18 @@ struct Patched {
     renamed: Vec<String>,
     /// The colors the game sets instead of the EGA ones.
     palette: Option<[[u8; 3]; 16]>,
+    /// Files patched into the executable, e.g. a CGA mod's `C16HEAD.CK4`.
+    patched_in: Vec<String>,
+    /// The game draws for a CGA composite monitor.
+    composite: bool,
+}
+
+/// How a title's pixels become colors.
+#[derive(Debug, PartialEq, Eq)]
+enum Colors {
+    Palette([[u8; 3]; 16]),
+    /// CGA pixels as a composite monitor shows them.
+    Composite,
 }
 
 /// Where palette patches put their 16 VGA colors, each red, green and blue
@@ -176,6 +188,9 @@ fn patched(text: &str, ext: &str) -> Patched {
         match first.as_str() {
             "%egahead" => names.egahead = argument(),
             "%egadict" => names.egadict = argument(),
+            "%patchfile" => names
+                .patched_in
+                .extend(words.nth(1).map(|w| w.trim_matches('"').to_string())),
             "%patch" => {
                 if names.palette.is_none() {
                     names.palette = words
@@ -198,6 +213,7 @@ fn patched(text: &str, ext: &str) -> Patched {
             _ => {}
         }
     }
+    names.composite = recipe::sets_composite_mode(text);
     names
 }
 
@@ -244,15 +260,20 @@ fn extract(
     version_id: Option<&str>,
     recipe: Option<&Recipe>,
     files: &Files,
-) -> std::result::Result<(Image, [[u8; 3]; 16]), String> {
+) -> std::result::Result<(Image, Colors), String> {
     let ext = extension(game);
     let patch = recipe
         .and_then(Recipe::patch_file)
         .and_then(|p| files.read(p))
         .map(|t| patched(&String::from_utf8_lossy(&t), &ext))
         .unwrap_or_default();
-    let palette = patch.palette.unwrap_or(keen_graphics::EGA_PALETTE);
-    title(game, version_id, recipe, files, &ext, &patch).map(|image| (image, palette))
+    let (image, cga) = title(game, version_id, recipe, files, &ext, &patch)?;
+    let colors = match patch.palette {
+        _ if cga && patch.composite => Colors::Composite,
+        Some(palette) => Colors::Palette(palette),
+        None => Colors::Palette(keen_graphics::EGA_PALETTE),
+    };
+    Ok((image, colors))
 }
 
 fn title(
@@ -262,7 +283,7 @@ fn title(
     files: &Files,
     ext: &str,
     patch: &Patched,
-) -> std::result::Result<Image, String> {
+) -> std::result::Result<(Image, bool), String> {
     let need = |name: &str| files.read(name).ok_or(format!("{name} missing"));
     // Renamed files come first; only existing ones of the right kind count.
     let candidates = |ext: &str, standard: String| -> Vec<String> {
@@ -291,12 +312,13 @@ fn title(
                 &need(&format!("LEVEL90.{ext}"))?,
                 tileset.as_deref(),
             )
+            .map(|image| (image, false))
             .map_err(|e| e.to_string())
         }
         Engine::Dreams => {
             for name in candidates("CMP", "KDREAMS.CMP".into()) {
                 match files.read(&name).map(|c| keen_graphics::dreams_title(&c)) {
-                    Some(Ok(image)) => return Ok(image),
+                    Some(Ok(image)) => return Ok((image, false)),
                     Some(Err(e)) => last = format!("{name}: {e}"),
                     None => last = format!("{name} missing"),
                 }
@@ -346,21 +368,45 @@ fn title(
                         head.as_deref(),
                         dict.as_deref(),
                     ) {
-                        Ok(image) => return Ok(image),
+                        Ok(image) => return Ok((image, false)),
                         Err(e) => last = format!("{graph_name} with {exe_name}: {e}"),
                     }
                 }
             }
-            // The CGA releases.
-            let cga_name = format!("CGAGRAPH.{ext}");
-            if let Some(graph) = files.read(&cga_name) {
+            // The CGA releases. Mods may rename CGAGRAPH (as C16GRAPH in
+            // Keen 4 Composite CGA Edition) and patch their own header in.
+            let cga = format!("CGAGRAPH.{ext}");
+            let mut cga_names: Vec<String> = files
+                .names()
+                .filter(|n| {
+                    let upper = n.to_ascii_uppercase();
+                    upper.ends_with(&format!("GRAPH.{ext}"))
+                        && upper != format!("EGAGRAPH.{ext}")
+                        && upper != cga
+                })
+                .map(str::to_string)
+                .collect();
+            cga_names.push(cga);
+            let heads: Vec<Vec<u8>> = patch
+                .patched_in
+                .iter()
+                .filter(|n| n.to_ascii_uppercase().ends_with(&format!("HEAD.{ext}")))
+                .filter_map(|n| files.read(n))
+                .collect();
+            for cga_name in cga_names {
+                let Some(graph) = files.read(&cga_name) else {
+                    continue;
+                };
                 for exe_name in &exes {
                     let Some(exe) = files.read(exe_name) else {
                         continue;
                     };
-                    match keen_graphics::galaxy_cga_title(&exe, &graph) {
-                        Ok(image) => return Ok(image),
-                        Err(e) => last = format!("{cga_name} with {exe_name}: {e}"),
+                    let heads = heads.iter().map(|h| Some(h.as_slice())).chain([None]);
+                    for head in heads {
+                        match keen_graphics::galaxy_cga_title(&exe, &graph, head) {
+                            Ok(image) => return Ok((image, true)),
+                            Err(e) => last = format!("{cga_name} with {exe_name}: {e}"),
+                        }
                     }
                 }
             }
@@ -369,13 +415,12 @@ fn title(
     }
 }
 
-fn write_png(image: &Image, palette: &[[u8; 3]; 16], path: &Path) -> Result<()> {
-    write_rgb_png(
-        image.width as u32,
-        image.height as u32,
-        &image.to_rgb_with(palette),
-        path,
-    )
+fn write_png(image: &Image, colors: &Colors, path: &Path) -> Result<()> {
+    let rgb = match colors {
+        Colors::Palette(palette) => image.to_rgb_with(palette),
+        Colors::Composite => image.to_composite_rgb(),
+    };
+    write_rgb_png(image.width as u32, image.height as u32, &rgb, path)
 }
 
 pub fn write_rgb_png(width: u32, height: u32, rgb: &[u8], path: &Path) -> Result<()> {
@@ -417,6 +462,8 @@ mod tests {
                 egadict: Some("dict.ck4".into()),
                 renamed: vec!["KDREAMS2.CMP".into(), "meminfo.txt".into()],
                 palette: None,
+                patched_in: vec!["STORY.CK4".into()],
+                composite: false,
             }
         );
     }
@@ -560,7 +607,7 @@ mod tests {
     fn extract_from(
         game: &str,
         files: &[(&str, Vec<u8>)],
-    ) -> std::result::Result<(Image, [[u8; 3]; 16]), String> {
+    ) -> std::result::Result<(Image, Colors), String> {
         let tmp = tempfile::tempdir().unwrap();
         for (name, data) in files {
             fs::write(tmp.path().join(name), data).unwrap();
@@ -600,23 +647,26 @@ mod tests {
 
     #[test]
     fn draws_covers_in_the_palette_the_patch_sets() {
-        let (image, palette) = extract_from("keen1", &keen1_title()).unwrap();
-        assert_eq!(palette, keen_graphics::EGA_PALETTE);
+        let (image, colors) = extract_from("keen1", &keen1_title()).unwrap();
+        assert_eq!(colors, Colors::Palette(keen_graphics::EGA_PALETTE));
 
         let mut text = String::from("%ext ck1\n%patch $13054\n");
         for i in 0..16 {
             text += &format!("{} 0 0\n", i * 4);
         }
         let files = [keen1_title(), vec![("MOD.PAT", text.into_bytes())]].concat();
-        let (patched_image, palette) = extract_from("keen1", &files).unwrap();
+        let (patched_image, colors) = extract_from("keen1", &files).unwrap();
         assert_eq!(patched_image, image);
+        let Colors::Palette(palette) = colors else {
+            panic!("{colors:?}")
+        };
         assert_eq!(palette[1], [16, 0, 0]);
         assert_eq!(palette[8], [130, 0, 0]);
 
         // The PNG has the patch's colors: the blue tile, the grey title.
         let tmp = tempfile::tempdir().unwrap();
         let png_path = tmp.path().join("cover.png");
-        write_png(&image, &palette, &png_path).unwrap();
+        write_png(&image, &Colors::Palette(palette), &png_path).unwrap();
         let decoder = png::Decoder::new(io::BufReader::new(fs::File::open(&png_path).unwrap()));
         let mut reader = decoder.read_info().unwrap();
         let mut rgb = vec![0; reader.output_buffer_size().unwrap()];
@@ -711,8 +761,8 @@ mod tests {
             let files = Files::new(&[&root, &base]).unwrap();
             let name = root.file_name().unwrap().to_string_lossy().into_owned();
             match extract(game, None, Some(recipe), &files) {
-                Ok((image, palette)) => {
-                    write_png(&image, &palette, &out.join(format!("{name}.png"))).unwrap()
+                Ok((image, colors)) => {
+                    write_png(&image, &colors, &out.join(format!("{name}.png"))).unwrap()
                 }
                 Err(e) => failed.push(format!("{name}: {e}")),
             }

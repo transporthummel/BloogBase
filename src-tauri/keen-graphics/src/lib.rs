@@ -12,6 +12,7 @@
 
 use std::fmt;
 
+pub mod composite;
 pub mod egagraph;
 pub mod huffman;
 pub mod ilbm;
@@ -118,6 +119,12 @@ impl Image {
         self.to_rgb_with(&EGA_PALETTE)
     }
 
+    /// 8-bit RGB of a CGA picture as a composite monitor shows it, for
+    /// mods that draw in its artifact colors (see [`composite`]).
+    pub fn to_composite_rgb(&self) -> Vec<u8> {
+        composite::to_rgb(self)
+    }
+
     /// 8-bit RGB in another palette, like one a mod sets.
     pub fn to_rgb_with(&self, palette: &[[u8; 3]; 16]) -> Vec<u8> {
         self.pixels
@@ -164,11 +171,19 @@ pub fn galaxy_title(
 }
 
 /// The title screen of a CGA release of Keen 4-6 from its executable and
-/// CGAGRAPH.
-pub fn galaxy_cga_title(exe: &[u8], cgagraph: &[u8]) -> Result<Image, Error> {
-    egagraph::EgaGraph::from_exe(cgagraph, &load_image(exe)?, 3)?
-        .cga()
-        .title()
+/// CGAGRAPH, with the header from a mod's own file if it has one.
+pub fn galaxy_cga_title(
+    exe: &[u8],
+    cgagraph: &[u8],
+    cgahead: Option<&[u8]>,
+) -> Result<Image, Error> {
+    let image = load_image(exe)?;
+    match cgahead {
+        Some(head) => egagraph::EgaGraph::from_files(cgagraph, head, 3, None, &image)?,
+        None => egagraph::EgaGraph::from_exe(cgagraph, &image, 3)?,
+    }
+    .cga()
+    .title()
 }
 
 /// The title screen of Keen Dreams 1.13 from `KDREAMS.CMP`.
