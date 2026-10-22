@@ -632,6 +632,9 @@
     "upToDate": "You have the newest version.",
     "checkFailed": "Couldn't check for updates: {{message}}"
   },
+  "launch": {
+    "starting": "Starting {{name}}…"
+  },
   "exitMessage": {
     "title": "{{name}} ended with a message",
     "text": "This was on the DOS screen when it ended:"

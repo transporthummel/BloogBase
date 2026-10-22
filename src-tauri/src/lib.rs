@@ -121,6 +121,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         ])
         .events(collect_events![
             jobs::JobUpdated,
+            launcher::GameLaunch,
             launcher::PlaySessionEnded,
             launcher::QuitRequested,
             mod_index::IndexUpdated

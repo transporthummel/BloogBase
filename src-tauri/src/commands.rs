@@ -21,7 +21,7 @@ use crate::firing::{self, Firing};
 use crate::free_games::{self, FreeGame};
 use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
 use crate::keenwiki::{self, UpdateStatus, WikiMod};
-use crate::launcher::{self, PlaySessionEnded, Playing, Running};
+use crate::launcher::{self, GameLaunch, LaunchPhase, PlaySessionEnded, Playing, Running};
 use crate::library::{self, Install};
 use crate::mod_index::{self, IndexMod, IndexStatus, IndexUpdated, ModIndex};
 use crate::mods::{self, Curated, Dropped, InstallModRequest, Mod, ModInfo};
@@ -109,24 +109,43 @@ pub async fn storage_usage(app: AppHandle) -> CommandResult<StorageUsage> {
 }
 
 /// Starts a profile in DOSBox. Returns once the process is running; emits
-/// `PlaySessionEnded` when it exits.
+/// `GameLaunch` as it gets going and `PlaySessionEnded` when it exits.
 #[tauri::command]
 #[specta::specta]
 pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult<()> {
     let runtime = runtime::active(&app.state::<Db>())?;
     app.state::<Running>().claim(&profile_id)?;
+    let launch = |phase| {
+        let _ = GameLaunch {
+            profile_id: profile_id.clone(),
+            phase,
+        }
+        .emit(&app);
+    };
+    launch(LaunchPhase::Starting);
     let a = app.clone();
     let id = profile_id.clone();
     let started = blocking(move || {
         let backup = backups::before_launch(&a.state::<AppPaths>(), &a.state::<Db>(), &id);
         let spec = launcher::prepare(&a.state::<AppPaths>(), &a.state::<Db>(), &id)?;
-        let (child, session) = launcher::spawn(&runtime, &spec, &a.state::<Db>(), &id)?;
+        let shown = {
+            let (app, profile_id) = (a.clone(), id.clone());
+            move || {
+                let _ = GameLaunch {
+                    profile_id,
+                    phase: LaunchPhase::Shown,
+                }
+                .emit(&app);
+            }
+        };
+        let (child, session) = launcher::spawn(&runtime, &spec, &a.state::<Db>(), &id, shown)?;
         Ok((child, session, backup))
     })
     .await;
     let (mut child, session, backup) = match started {
         Ok(s) => s,
         Err(e) => {
+            launch(LaunchPhase::Failed);
             app.state::<Running>().release(&profile_id);
             return Err(e);
         }

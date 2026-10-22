@@ -141,3 +141,40 @@ body {
 .bb-hop {
   animation: bb-hop 0.7s steps(4) infinite;
 }
+
+/* The launch overlay fades in after a moment, so quick starts don't flash
+   it; its card rises a little. */
+@keyframes bb-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes bb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.bb-fade {
+  animation: bb-fade 0.3s ease-out 0.15s backwards;
+}
+
+.bb-rise {
+  animation: bb-rise 0.3s ease-out 0.15s backwards;
+}
+
+/* A short bar sweeping across, for waits of unknown length. */
+@keyframes bb-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.bb-sweep {
+  animation: bb-sweep 1.4s ease-in-out infinite;
+}

@@ -17,7 +17,7 @@ export const commands = {
 	storageUsage: () => typedError<StorageUsage, CommandError>(__TAURI_INVOKE("storage_usage")),
 	/**
 	 *  Starts a profile in DOSBox. Returns once the process is running; emits
-	 *  `PlaySessionEnded` when it exits.
+	 *  `GameLaunch` as it gets going and `PlaySessionEnded` when it exits.
 	 */
 	launchProfile: (profileId: string) => typedError<null, CommandError>(__TAURI_INVOKE("launch_profile", { profileId })),
 	listSaves: (profileId: string) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("list_saves", { profileId })),
@@ -206,6 +206,7 @@ export const commands = {
 
 /** Events */
 export const events = {
+	gameLaunch: makeEvent<GameLaunch>("game-launch"),
 	indexUpdated: makeEvent<IndexUpdated>("index-updated"),
 	jobUpdated: makeEvent<JobUpdated>("job-updated"),
 	playSessionEnded: makeEvent<PlaySessionEnded>("play-session-ended"),
@@ -381,6 +382,15 @@ export type Game = {
 	preferredVersions?: string[],
 };
 
+/**
+ *  How far a launch has got, so the frontend can cover the seconds until
+ *  DOSBox shows its window. [`PlaySessionEnded`] follows when it closes.
+ */
+export type GameLaunch = {
+	profileId: string,
+	phase: LaunchPhase,
+};
+
 export type GameVersion = {
 	id: string,
 	label: string,
@@ -551,6 +561,12 @@ export type KeenwikiOrigin = {
 	/**  `YYYY-MM-DD`, when known. */
 	released?: string | null,
 };
+
+export type LaunchPhase = "starting" | 
+/**  DOSBox's window is up. */
+"shown" | 
+/**  It didn't start; the command returns the error. */
+"failed";
 
 export type Links = {
 	keenwiki?: string | null,

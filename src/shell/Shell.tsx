@@ -8,6 +8,7 @@ import { JobsPanel } from "../jobs/JobsPanel";
 import { DropImport } from "../library/DropImport";
 import { EarlierBackupPrompt } from "../profile/EarlierBackup";
 import { ExitMessage } from "./ExitMessage";
+import { LaunchOverlay } from "./LaunchOverlay";
 import { useJobEvents } from "../jobs/queries";
 import { hideSplash } from "../splash";
 import { useAppUpdate } from "../updates/queries";
@@ -45,6 +46,7 @@ export function Shell() {
       <DropImport />
       {/* After DropImport, so it's above the drop's summary. */}
       <EarlierBackupPrompt />
+      <LaunchOverlay />
       <ExitMessage />
       <nav
         aria-label={t("nav.label")}

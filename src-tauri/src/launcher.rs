@@ -12,6 +12,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
@@ -19,6 +20,8 @@ use std::sync::Mutex;
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use specta::Type;
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::ChildStderr;
 use tokio::sync::oneshot;
 
 use crate::catalog;
@@ -109,6 +112,25 @@ impl Playing {
 #[serde(rename_all = "camelCase")]
 pub struct QuitRequested {
     pub games: Vec<String>,
+}
+
+/// How far a launch has got, so the frontend can cover the seconds until
+/// DOSBox shows its window. [`PlaySessionEnded`] follows when it closes.
+#[derive(Debug, Clone, Serialize, Deserialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct GameLaunch {
+    pub profile_id: String,
+    pub phase: LaunchPhase,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum LaunchPhase {
+    Starting,
+    /// DOSBox's window is up.
+    Shown,
+    /// It didn't start; the command returns the error.
+    Failed,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type, tauri_specta::Event)]
@@ -238,13 +260,15 @@ fn dosbox_args(
     args
 }
 
-/// Starts DOSBox and records the session start. Returns the running child and
-/// the session id to pass to [`finish`].
+/// Starts DOSBox and records the session start; `shown` is called once its
+/// window is up. Returns the running child and the session id to pass to
+/// [`finish`].
 pub fn spawn(
     runtime: &Runtime,
     spec: &LaunchSpec,
     db: &Db,
     profile_id: &str,
+    shown: impl FnOnce() + Send + 'static,
 ) -> Result<(tokio::process::Child, i64)> {
     let log = File::create(&spec.log)?;
     let mut cmd = Command::new(&runtime.path);
@@ -252,12 +276,44 @@ pub fn spawn(
         .current_dir(&spec.cwd)
         .stdin(Stdio::null())
         .stdout(log.try_clone()?)
-        .stderr(log);
+        .stderr(Stdio::piped());
     runtime::hide_console(&mut cmd);
     tracing::info!("launching {profile_id}: {} {:?}", runtime.path, spec.args);
-    let child = tokio::process::Command::from(cmd).spawn()?;
+    let mut child = tokio::process::Command::from(cmd).spawn()?;
+    if let Some(stderr) = child.stderr.take() {
+        tokio::spawn(watch(stderr, log, shown));
+    }
     let session = start_session(db, profile_id, now())?;
     Ok((child, session))
+}
+
+/// Copies DOSBox's log output to `log` and calls `shown` at the first video
+/// mode it presents. Reads to the end, so DOSBox never blocks on a full pipe.
+async fn watch(stderr: ChildStderr, mut log: File, shown: impl FnOnce()) {
+    let mut reader = BufReader::new(stderr);
+    let mut shown = Some(shown);
+    let mut line = Vec::new();
+    loop {
+        line.clear();
+        match reader.read_until(b'\n', &mut line).await {
+            Ok(0) | Err(_) => break,
+            Ok(_) => {}
+        }
+        let _ = log.write_all(&line);
+        if shows_window(&line)
+            && let Some(shown) = shown.take()
+        {
+            shown();
+        }
+    }
+}
+
+/// E.g. `DISPLAY: VGA 720x400 16-colour text mode 03h at 70.087 Hz, scaled
+/// to 1067x800 pixels …`, logged once the window shows that mode; earlier
+/// `DISPLAY:` lines only plan the window.
+fn shows_window(line: &[u8]) -> bool {
+    let line = String::from_utf8_lossy(line);
+    line.contains("DISPLAY: ") && line.contains(" mode ") && line.contains(" scaled to ")
 }
 
 fn start_session(db: &Db, profile_id: &str, at: i64) -> Result<i64> {
@@ -517,6 +573,21 @@ machine = cga
     }
 
     #[test]
+    fn the_first_presented_mode_means_the_window_is_up() {
+        let shows = |l: &str| shows_window(l.as_bytes());
+        assert!(!shows(
+            "16:54:38.921 | DISPLAY: Using 948x711 window size in windowed mode on display-0\n"
+        ));
+        assert!(shows(
+            "16:54:42.962 | DISPLAY: VGA 720x400 16-colour text mode 03h at 70.087 Hz, \
+             scaled to 1067x800 pixels with 1:1.35 (20:27) pixel aspect ratio\n"
+        ));
+        assert!(!shows(
+            "16:54:42.962 | DISPLAY: Presenting at DOS rate without vsync\n"
+        ));
+    }
+
+    #[test]
     fn sessions_are_tracked() {
         let (_tmp, _paths, db) = setup();
         let id = start_session(&db, "keen4-1", 100).unwrap();
@@ -596,7 +667,7 @@ mod e2e {
         let installs = library::import(&paths, &db, Path::new(&game)).unwrap();
         let id = &installs[0].id;
         let spec = prepare(&paths, &db, id).unwrap();
-        let (mut child, session) = spawn(&rt, &spec, &db, id).unwrap();
+        let (mut child, session) = spawn(&rt, &spec, &db, id, || {}).unwrap();
         tokio::time::sleep(Duration::from_secs(8)).await;
         assert!(
             child.try_wait().unwrap().is_none(),
@@ -719,7 +790,7 @@ $bmp.Save($env:SHOT_PATH)
                 };
                 tried = true;
                 let spec = prepare(&paths, &db, &m.profile_id).unwrap();
-                let (mut child, session) = spawn(&rt, &spec, &db, &m.profile_id).unwrap();
+                let (mut child, session) = spawn(&rt, &spec, &db, &m.profile_id, || {}).unwrap();
                 tokio::time::sleep(Duration::from_secs(7)).await;
                 let exited = child.try_wait().unwrap();
                 if let (None, Some(pid)) = (exited, child.id()) {
