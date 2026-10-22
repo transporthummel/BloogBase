@@ -615,6 +615,8 @@
     "license": "BloogBase ist freie Software unter der MIT-Lizenz.",
     "dosbox": "Die Spiele laufen in <strong>DOSBox Staging</strong> {{version}}. BloogBase lädt es aus den offiziellen Releases herunter und startet es als eigenes Programm. DOSBox Staging ist freie Software unter der GNU General Public License, Version 2 oder später; der Quellcode ist beim DOSBox-Staging-Projekt erhältlich.",
     "dosboxSource": "Quellcode {{version}}",
+    "cwsdpmi": "Mods mit DJGPP-Programmen bekommen CWSDPMI r7 dazugelegt, unverändert. CWSDPMI ist Copyright © 1995–2010 Charles W. Sandmann. Du hast das Recht, den Quellcode und Updates von CWSDPMI zu erhalten.",
+    "cwsdpmiSource": "CWSDPMI-Quellcode",
     "fonts": "Schriften: Inter und Press Start 2P, beide unter der SIL Open Font License 1.1. Icons: Lucide (ISC-Lizenz).",
     "thirdParty": "Open-Source-Lizenzen",
     "licensesMissing": "Die Lizenzliste wird für Release-Builds erzeugt. Mit pnpm licenses:generate lässt sie sich erstellen."

@@ -1,11 +1,11 @@
 //! Composed lower layers: the install's base files with a mod's files copied
-//! on top (PLAN.md §4.2), the episode unpacked for patchers that need it, and
-//! one-button firing patched in where it's on. Disposable; rebuilt whenever
-//! the inputs change.
+//! on top (PLAN.md §4.2), the episode unpacked for patchers that need it, a
+//! DPMI host for DJGPP programs, and one-button firing patched in where it's
+//! on. Disposable; rebuilt whenever the inputs change.
 
 use std::collections::BTreeMap;
-use std::fs;
-use std::io;
+use std::fs::{self, File};
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
@@ -25,6 +25,10 @@ use crate::recipe::{self, Recipe, has_ext};
 
 /// Archives inside a mod (extras, sources) are never needed by the game.
 const SKIPPED: &[&str] = &["ZIP", "RAR", "7Z"];
+
+/// CWSDPMI r7, unmodified, which DJGPP programs load for DPMI; DOSBox has
+/// none built in. Its license and source: `assets/cwsdpmi/cwsdpmi.doc`.
+const CWSDPMI: &[u8] = include_bytes!("../assets/cwsdpmi/CWSDPMI.EXE");
 
 struct Input {
     path: PathBuf,
@@ -84,6 +88,9 @@ pub fn ensure(
     fs::create_dir_all(&tmp)?;
     if patcher_needs_unpacked(recipe, &inputs) {
         unpack_episode(game, &inputs, &tmp)?;
+    }
+    if needs_dpmi(&inputs) {
+        fs::write(tmp.join("CWSDPMI.EXE"), CWSDPMI)?;
     }
     if firing {
         let status = firing::apply(game, recipe, &tmp)?;
@@ -152,6 +159,25 @@ fn unpack_episode(game: &Game, inputs: &BTreeMap<String, Input>, dir: &Path) -> 
     Ok(())
 }
 
+/// Whether a program at the root was built with DJGPP and has no
+/// CWSDPMI.EXE next to it, as Simulator Keen's level generator. Without it,
+/// it stops with "no DPMI - Get csdpmi*b.zip".
+fn needs_dpmi(inputs: &BTreeMap<String, Input>) -> bool {
+    !inputs.contains_key("CWSDPMI.EXE")
+        && inputs
+            .values()
+            .any(|i| !i.rel.contains('/') && has_ext(&i.rel, "EXE") && is_djgpp(&i.path))
+}
+
+/// DJGPP's stub loader fills the first 2 KB of its programs.
+fn is_djgpp(path: &Path) -> bool {
+    let mut stub = Vec::new();
+    File::open(path)
+        .and_then(|f| f.take(2048).read_to_end(&mut stub))
+        .is_ok()
+        && stub.windows(8).any(|w| w == b"go32stub")
+}
+
 fn scan(root: &Path) -> Result<Vec<Input>> {
     let mut out = Vec::new();
     for entry in WalkDir::new(root).follow_links(false) {
@@ -184,8 +210,8 @@ fn scan(root: &Path) -> Result<Vec<Input>> {
 /// modification times identify them well enough without reading them.
 fn composition_hash(inputs: &BTreeMap<String, Input>, recipe: &Recipe, firing: bool) -> String {
     let mut h = Sha256::new();
-    // v2: the episode unpacked for old patchers.
-    h.update(b"composed v2\n");
+    // v2: the episode unpacked for old patchers; v3: CWSDPMI.
+    h.update(b"composed v3\n");
     h.update(serde_json::to_string(recipe).expect("recipes serialize"));
     if firing {
         h.update(b"\none-button firing v1");
@@ -280,6 +306,34 @@ mod tests {
         assert!(!unpacked(&new, patch));
         assert!(!unpacked(&new, batch));
         assert!(!unpacked(&old, Recipe::Episode));
+    }
+
+    #[test]
+    fn djgpp_programs_get_a_dpmi_host() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (paths, db) = setup(tmp.path());
+        let base = tmp.path().join("base");
+        let modf = tmp.path().join("mod");
+        write_folder(&base, &[("KEEN1.EXE", b"MZ")]);
+        let djgpp = [b"MZ".as_slice(), &[0; 0x200], b"go32stub, v 2.05T"].concat();
+        let compose = |files: &[(&str, &[u8])]| {
+            let _ = fs::remove_dir_all(&modf);
+            write_folder(&modf, files);
+            let layer = ModLayer {
+                files: modf.clone(),
+                recipe: Recipe::Episode,
+            };
+            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false).unwrap();
+            fs::read(dir.join("CWSDPMI.EXE")).ok()
+        };
+        assert_eq!(compose(&[("random.exe", &djgpp)]).as_deref(), Some(CWSDPMI));
+        // The mod's own copy stays; deeper programs and others don't count.
+        assert_eq!(
+            compose(&[("random.exe", &djgpp), ("CWSDPMI.EXE", b"own")]).as_deref(),
+            Some(b"own".as_slice())
+        );
+        assert_eq!(compose(&[("tools/random.exe", &djgpp)]), None);
+        assert_eq!(compose(&[("MENU.EXE", b"MZ go32")]), None);
     }
 
     #[test]

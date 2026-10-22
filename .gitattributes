@@ -2,3 +2,4 @@
 *.ico binary
 *.icns binary
 *.png binary
+src-tauri/assets/cwsdpmi/* -text

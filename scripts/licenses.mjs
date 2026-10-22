@@ -1,5 +1,5 @@
-// Collects the licenses of everything shipped inside the app (Rust crates
-// and npm packages, without dev dependencies) into
+// Collects the licenses of everything shipped inside the app (Rust crates,
+// npm packages without dev dependencies, and bundled DOS programs) into
 // public/third-party-licenses.txt, which the About page shows.
 // Run before release builds: `pnpm licenses:generate`.
 import { execFileSync, execSync } from "node:child_process";
@@ -81,6 +81,18 @@ for (const [license, packages] of Object.entries(npm)) {
     );
   }
 }
+
+// DOS programs put next to games, unmodified.
+components.push({
+  name: "CWSDPMI",
+  version: "r7",
+  license: "source: https://www.delorie.com/pub/djgpp/current/v2misc/csdpmi7s.zip",
+  texts: [
+    readFileSync(join(root, "src-tauri", "assets", "cwsdpmi", "cwsdpmi.doc"), "latin1")
+      .replace(/\r\n/g, "\n")
+      .trim(),
+  ],
+});
 
 // One copy of each distinct text, with the components that use it.
 const byText = new Map();

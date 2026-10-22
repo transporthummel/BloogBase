@@ -18,6 +18,7 @@ export const REPO_URL = "https://github.com/transporthummel/BloogBase";
 const DOSBOX_URL = "https://www.dosbox-staging.org/";
 const DOSBOX_SOURCE = "https://github.com/dosbox-staging/dosbox-staging";
 const GPL_URL = "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html";
+const CWSDPMI_SOURCE = "https://www.delorie.com/pub/djgpp/current/v2misc/csdpmi7s.zip";
 const AUTHOR_URL = "https://pckf.com/memberlist.php?mode=viewprofile&u=16709";
 
 /** Version, credits, licenses and the trademark notice (PLAN.md §13 M8, §14). */
@@ -102,6 +103,10 @@ export function About() {
             {t("about.dosboxSource", { version: dosboxVersion ?? "" })}
           </LinkButton>
           <LinkButton url={GPL_URL}>GPL 2.0</LinkButton>
+        </div>
+        <p>{t("about.cwsdpmi")}</p>
+        <div className="flex flex-wrap gap-2">
+          <LinkButton url={CWSDPMI_SOURCE}>{t("about.cwsdpmiSource")}</LinkButton>
         </div>
         <p>{t("about.fonts")}</p>
         <div>
