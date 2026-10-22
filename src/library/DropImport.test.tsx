@@ -2,7 +2,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
-import { commands, type Game, type Install, type Mod, type ModInfo } from "../bindings";
+import {
+  commands,
+  type Game,
+  type Install,
+  type Mod,
+  type ModInfo,
+  type Profile,
+} from "../bindings";
 import { DropImport } from "./DropImport";
 
 type Payload = { type: "enter" | "drop"; paths: string[] } | { type: "over" } | { type: "leave" };
@@ -17,6 +24,8 @@ vi.mock("@tauri-apps/api/webview", () => ({
 }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
+const navigate = vi.hoisted(() => vi.fn());
+vi.mock("@tanstack/react-router", () => ({ useNavigate: () => navigate }));
 vi.mock("../bindings", () => ({
   commands: {
     inspectDropped: vi.fn(),
@@ -64,6 +73,8 @@ const info: ModInfo = {
   fileCount: 3,
 };
 
+const aurora = { id: "aurora-bliss", name: "Aurora Bliss", profileId: "aurora-bliss" } as Mod;
+
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
 
 beforeEach(() => {
@@ -101,7 +112,7 @@ test("imports games, confirms mods and reports what didn't work", async () => {
     ),
   );
   vi.mocked(commands.importGames).mockReturnValue(ok([install, { ...install, id: "keen4-2" }]));
-  vi.mocked(commands.installMod).mockReturnValue(ok({ name: "Aurora Bliss" } as Mod));
+  vi.mocked(commands.installMod).mockReturnValue(ok(aurora));
   renderDrop();
   act(() =>
     emit({ type: "drop", paths: ["C:\\Keen\\games", "C:\\Downloads\\aurora.zip", "/tmp/photos"] }),
@@ -121,4 +132,43 @@ test("imports games, confirms mods and reports what didn't work", async () => {
   expect(
     screen.getByText("Neither a Commander Keen game nor a mod was found there."),
   ).toBeInTheDocument();
+  // Several things were added, so there's no one page to open.
+  expect(screen.queryByRole("button", { name: "Details & Play" })).toBeNull();
+});
+
+test("one mod dropped offers its page", async () => {
+  vi.mocked(commands.inspectDropped).mockReturnValue(ok({ kind: "mod" as const, info }));
+  vi.mocked(commands.installMod).mockReturnValue(ok(aurora));
+  renderDrop();
+  act(() => emit({ type: "drop", paths: ["C:\\Downloads\\aurora.zip"] }));
+  await userEvent.click(await screen.findByRole("button", { name: "Install" }));
+
+  const open = await screen.findByRole("button", { name: "Details & Play" });
+  expect(open).toHaveFocus();
+  await userEvent.click(open);
+  expect(navigate).toHaveBeenCalledWith({
+    to: "/profiles/$profileId",
+    params: { profileId: "aurora-bliss" },
+  });
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+test("one game dropped offers its own page, not a mod's", async () => {
+  vi.mocked(commands.inspectDropped).mockReturnValue(ok({ kind: "games" as const }));
+  vi.mocked(commands.importGames).mockReturnValue(ok([install]));
+  vi.mocked(commands.listProfiles).mockReturnValue(
+    ok([
+      { id: "aurora-bliss", installId: "keen4-1", modId: "aurora-bliss" },
+      { id: "keen4-1", installId: "keen4-1", modId: null },
+    ] as Profile[]),
+  );
+  renderDrop();
+  act(() => emit({ type: "drop", paths: ["C:\\Keen\\games"] }));
+  await userEvent.click(await screen.findByRole("button", { name: "Details & Play" }));
+  await vi.waitFor(() =>
+    expect(navigate).toHaveBeenCalledWith({
+      to: "/profiles/$profileId",
+      params: { profileId: "keen4-1" },
+    }),
+  );
 });
