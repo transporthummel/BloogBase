@@ -532,6 +532,62 @@ mod tests {
     }
 
     #[test]
+    fn keeps_to_the_first_files_and_skips_huge_ones() {
+        let tmp = tempfile::tempdir().unwrap();
+        let huge = vec![b'x'; MAX_BYTES + 1];
+        let mut files: Vec<(String, &[u8])> = vec![("README.TXT".into(), &huge)];
+        files.extend((0..MAX_FILES + 5).map(|i| (format!("doc{i:02}.txt"), &b"text"[..])));
+        let files: Vec<(&str, &[u8])> = files.iter().map(|(n, d)| (n.as_str(), *d)).collect();
+        write_folder(tmp.path(), &files);
+        let found = names(&Source::Folder(tmp.path().into()));
+        assert_eq!(found.len(), MAX_FILES);
+        assert_eq!(found[0], "doc00.txt");
+    }
+
+    #[test]
+    fn reads_an_installed_mod_from_its_archive_or_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(tmp.path().join("data"));
+        let db = Db::open_in_memory().unwrap();
+        assert!(matches!(
+            for_mod(&paths, &db, "aurora"),
+            Err(Error::NotFound(_))
+        ));
+        db.conn()
+            .execute(
+                "INSERT INTO mods (id, game_id, name, authors, recipe_json, path, source, added_at)
+                 VALUES ('aurora', 'keen4', 'Aurora', '[]', '{}', '/x', 'manual', 0)",
+                [],
+            )
+            .unwrap();
+        assert_eq!(for_mod(&paths, &db, "aurora").unwrap(), []);
+
+        // The installed files only, without an archive.
+        let dir = paths.mods.join("aurora");
+        write_folder(&dir.join("files"), &[("README.TXT", b"installed")]);
+        let texts = |db: &Db| -> Vec<String> {
+            for_mod(&paths, db, "aurora")
+                .unwrap()
+                .into_iter()
+                .map(|r| r.text)
+                .collect()
+        };
+        assert_eq!(texts(&db), ["installed"]);
+
+        // The kept archive has files the installed folder lacks.
+        fs::create_dir_all(dir.join("source")).unwrap();
+        fs::write(dir.join("source/notes.bin"), b"no zip").unwrap();
+        write_zip(
+            &dir.join("source/Aurora.ZIP"),
+            &[
+                ("Aurora/README.TXT", b"archived"),
+                ("Extras/story.txt", b"story"),
+            ],
+        );
+        assert_eq!(texts(&db), ["archived", "story"]);
+    }
+
+    #[test]
     fn code_page_437_has_all_characters() {
         assert_eq!(cp437(0x80), 'Ç');
         assert_eq!(cp437(0xFE), '■');

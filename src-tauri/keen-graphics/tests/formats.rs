@@ -249,6 +249,35 @@ fn vorticons_title_draws_the_bitmap_over_the_level() {
     assert_eq!(keen_graphics::vorticons_tileset_name(&tilehead, 91), None);
 }
 
+#[test]
+fn vorticons_full_screen_titles_hide_the_level() {
+    // A 320x200 TITLE bitmap after one tile; like Mura, the level's tiles
+    // aren't in EGALATCH, here not even the level is readable.
+    let plane_size = 32 + 40 * 200;
+    let mut head = vec![0u8; 48];
+    head[0..4].copy_from_slice(&(plane_size as u32).to_le_bytes());
+    head[8..12].copy_from_slice(&48u32.to_le_bytes());
+    head[28..30].copy_from_slice(&1u16.to_le_bytes());
+    head[34..36].copy_from_slice(&1u16.to_le_bytes());
+    head[36..40].copy_from_slice(&32u32.to_le_bytes());
+    head.extend_from_slice(&40u16.to_le_bytes());
+    head.extend_from_slice(&200u16.to_le_bytes());
+    head.extend_from_slice(&0u32.to_le_bytes());
+    head.extend_from_slice(b"TITLE\0\0\0");
+    let mut latch = Vec::new();
+    for plane in 0..4 {
+        latch.extend([0u8; 32]);
+        latch.extend(vec![if plane == 3 { 0xFF } else { 0 }; plane_size - 32]);
+    }
+
+    let image = keen_graphics::vorticons_title(&head, &latch, b"broken", Some(b"x")).unwrap();
+    assert!(image.pixels.iter().all(|&p| p == 8));
+
+    // One row less, and the level shows below it.
+    head[50..52].copy_from_slice(&199u16.to_le_bytes());
+    assert!(keen_graphics::vorticons_title(&head, &latch, b"broken", None).is_err());
+}
+
 /// Checks the real games in `$KEEN_GAMES/<folder>` (game folders as in
 /// `.local/games`): every title is a full, colorful 320x200 picture.
 ///

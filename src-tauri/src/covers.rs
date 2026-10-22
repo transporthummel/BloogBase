@@ -466,6 +466,194 @@ mod tests {
     }
 
     #[test]
+    fn reads_hex_palettes_at_the_fading_patch() {
+        let colors: Vec<String> = (0..48).map(|i| format!("${:02X}", i % 64)).collect();
+        let text = format!("%patch $21850 {}\n%end\n", colors.join(" "));
+        let palette = patched(&text, "CK1").palette.unwrap();
+        assert_eq!(palette[0], [0, 4, 8]);
+        assert_eq!(palette[15], [182, 186, 190]);
+
+        // Elsewhere, or with a value over 63, it's no palette.
+        assert_eq!(
+            patched(&text.replace("$21850", "$21852"), "CK1").palette,
+            None
+        );
+        assert_eq!(patched(&text.replace("$2F", "$40"), "CK1").palette, None);
+    }
+
+    /// The files of a Keen 1 title: one 16x16 tile (blue), an 8x1 title
+    /// bitmap (dark grey) and a 22x15 level of that tile, as in
+    /// `keen-graphics/tests/formats.rs`.
+    fn keen1_title() -> Vec<(&'static str, Vec<u8>)> {
+        let mut head = vec![0u8; 48];
+        head[0..4].copy_from_slice(&33u32.to_le_bytes()); // plane size
+        head[8..12].copy_from_slice(&48u32.to_le_bytes()); // bitmap table
+        head[28..30].copy_from_slice(&1u16.to_le_bytes()); // 16x16 tiles
+        head[34..36].copy_from_slice(&1u16.to_le_bytes()); // bitmaps
+        head[36..40].copy_from_slice(&32u32.to_le_bytes());
+        head.extend([1, 0, 1, 0, 0, 0, 0, 0]); // 1 byte wide, 1 row, at 0
+        head.extend(b"TITLE\0\0\0");
+
+        let mut latch = Vec::new();
+        for plane in 0..4 {
+            latch.extend([if plane == 0 { 0xFF } else { 0 }; 32]);
+            latch.push(if plane == 3 { 0xFF } else { 0 });
+        }
+
+        let (w, h) = (22u16, 15u16);
+        let mut level = ((16 + 2 * u32::from(w * h)) * 2).to_le_bytes().to_vec();
+        for word in [w, h, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] {
+            level.extend(word.to_le_bytes());
+        }
+        for word in [0xFEFE, w * h, 0, 0xFEFE, w * h, 0] {
+            level.extend(word.to_le_bytes());
+        }
+        vec![
+            ("EGAHEAD.CK1", head),
+            ("EGALATCH.CK1", latch),
+            ("LEVEL90.CK1", level),
+        ]
+    }
+
+    /// A tileset loader file with one red tile, and the TILEHEAD naming it
+    /// for the title level.
+    fn tileset(name: &str) -> [(&'static str, Vec<u8>); 2] {
+        let mut tls = vec![0u8; 64];
+        tls[0..2].copy_from_slice(&1u16.to_le_bytes()); // tiles
+        tls[4..6].copy_from_slice(&32u16.to_le_bytes()); // plane length
+        tls[14..18].copy_from_slice(&64u32.to_le_bytes());
+        for plane in 0..4 {
+            tls.extend([if plane == 2 { 0xFF } else { 0 }; 32]);
+        }
+        let mut tilehead = vec![0u8; 91 * 16];
+        tilehead[90 * 16..][..name.len()].copy_from_slice(name.as_bytes());
+        [("TILEHEAD.CK1", tilehead), ("TITLE.TLS", tls)]
+    }
+
+    /// Extracts the title of `game` from `files` with a patch recipe.
+    fn extract_from(
+        game: &str,
+        files: &[(&str, Vec<u8>)],
+    ) -> std::result::Result<(Image, [[u8; 3]; 16]), String> {
+        let tmp = tempfile::tempdir().unwrap();
+        for (name, data) in files {
+            fs::write(tmp.path().join(name), data).unwrap();
+        }
+        let recipe = Recipe::Patch {
+            patcher: "CKPATCH.EXE".into(),
+            patch: "MOD.PAT".into(),
+            args: Vec::new(),
+        };
+        let files = Files::new(&[tmp.path()]).unwrap();
+        extract(catalog::game(game).unwrap(), None, Some(&recipe), &files)
+    }
+
+    #[test]
+    fn draws_keen1_levels_from_the_named_tileset_or_egalatch() {
+        let pixel = |files: &[(&str, Vec<u8>)]| extract_from("keen1", files).unwrap().0.pixels;
+
+        let plain = keen1_title();
+        let pixels = pixel(&plain);
+        assert_eq!((pixels[0], pixels[320 + 32]), (1, 8));
+
+        // DOS names are case-insensitive: title.tls is TITLE.TLS.
+        let with_tileset = [plain.clone(), tileset("title.tls LS\0").into()].concat();
+        let pixels = pixel(&with_tileset);
+        assert_eq!((pixels[0], pixels[320 + 32]), (4, 8));
+
+        // A TILEHEAD naming a file the mod lacks, like Fireblaze's.
+        let [tilehead, _] = tileset("MISSING.TLS");
+        assert_eq!(pixel(&[plain.clone(), vec![tilehead]].concat())[0], 1);
+
+        let without_level: Vec<_> = plain.into_iter().filter(|f| f.0 != "LEVEL90.CK1").collect();
+        assert_eq!(
+            extract_from("keen1", &without_level).unwrap_err(),
+            "LEVEL90.CK1 missing"
+        );
+    }
+
+    #[test]
+    fn draws_covers_in_the_palette_the_patch_sets() {
+        let (image, palette) = extract_from("keen1", &keen1_title()).unwrap();
+        assert_eq!(palette, keen_graphics::EGA_PALETTE);
+
+        let mut text = String::from("%ext ck1\n%patch $13054\n");
+        for i in 0..16 {
+            text += &format!("{} 0 0\n", i * 4);
+        }
+        let files = [keen1_title(), vec![("MOD.PAT", text.into_bytes())]].concat();
+        let (patched_image, palette) = extract_from("keen1", &files).unwrap();
+        assert_eq!(patched_image, image);
+        assert_eq!(palette[1], [16, 0, 0]);
+        assert_eq!(palette[8], [130, 0, 0]);
+
+        // The PNG has the patch's colors: the blue tile, the grey title.
+        let tmp = tempfile::tempdir().unwrap();
+        let png_path = tmp.path().join("cover.png");
+        write_png(&image, &palette, &png_path).unwrap();
+        let decoder = png::Decoder::new(io::BufReader::new(fs::File::open(&png_path).unwrap()));
+        let mut reader = decoder.read_info().unwrap();
+        let mut rgb = vec![0; reader.output_buffer_size().unwrap()];
+        reader.next_frame(&mut rgb).unwrap();
+        assert_eq!(&rgb[..3], &[16, 0, 0]);
+        let title = (320 + 32) * 3;
+        assert_eq!(&rgb[title..title + 3], &[130, 0, 0]);
+    }
+
+    /// A Softdisk library holding a 16x1 one-plane `TITLESCR.LBM` whose
+    /// first `left` pixels are set.
+    fn dreams_cmp(left: u8) -> Vec<u8> {
+        let mut bmhd = [0u8; 20];
+        bmhd[0..2].copy_from_slice(&16u16.to_be_bytes());
+        bmhd[2..4].copy_from_slice(&1u16.to_be_bytes());
+        bmhd[8] = 1; // one plane
+        let row = (!(u16::MAX >> left)).to_be_bytes();
+        let mut form = b"ILBM".to_vec();
+        for (id, data) in [(b"BMHD", &bmhd[..]), (b"BODY", &row[..])] {
+            form.extend(id);
+            form.extend((data.len() as u32).to_be_bytes());
+            form.extend(data);
+        }
+        let mut lbm = b"FORM".to_vec();
+        lbm.extend((form.len() as u32).to_be_bytes());
+        lbm.extend(form);
+
+        let mut lib = b"SLIB\x02\x00\x01\x00".to_vec();
+        lib.extend(b"TITLESCR.LBM\0\0\0\0");
+        lib.extend(0u32.to_le_bytes());
+        lib.extend(((lbm.len() + 10) as u32).to_le_bytes());
+        lib.extend((lbm.len() as u32).to_le_bytes());
+        lib.extend(0u16.to_le_bytes());
+        lib.extend(b"CUNK");
+        lib.extend((lbm.len() as u32).to_le_bytes());
+        lib.extend(0u16.to_le_bytes());
+        lib.extend(lbm);
+        lib
+    }
+
+    #[test]
+    fn prefers_a_renamed_keen_dreams_library_that_works() {
+        let lit = |files: &[(&str, Vec<u8>)]| {
+            let image = extract_from("kdreams", files).unwrap().0;
+            image.pixels.iter().filter(|&&p| p != 0).count()
+        };
+        let patch = (
+            "MOD.PAT",
+            b"%ext kdr\n%patch $23DFD \"KDREAMS2.CMP\"\n".to_vec(),
+        );
+        let original = ("KDREAMS.CMP", dreams_cmp(1));
+
+        assert_eq!(lit(std::slice::from_ref(&original)), 1);
+        let renamed = ("KDREAMS2.CMP", dreams_cmp(3));
+        assert_eq!(lit(&[patch.clone(), original.clone(), renamed]), 3);
+        // A renamed file that's missing or no library leaves the original.
+        assert_eq!(lit(&[patch.clone(), original.clone()]), 1);
+        let broken = ("KDREAMS2.CMP", b"nonsense".to_vec());
+        assert_eq!(lit(&[patch.clone(), original, broken.clone()]), 1);
+        assert!(extract_from("kdreams", &[patch, broken]).is_err());
+    }
+
+    #[test]
     fn extension_follows_the_game() {
         let ext = |id: &str| extension(catalog::game(id).unwrap());
         assert_eq!(
