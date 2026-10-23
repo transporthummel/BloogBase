@@ -15,6 +15,14 @@ export function useReadmes(modId: string | null) {
   });
 }
 
+/** The documents in a folder or ZIP not installed yet. */
+export function useReadmesAt(path: string) {
+  return useQuery({
+    queryKey: [...readmeKeys, "at", path],
+    queryFn: () => unwrap(commands.readmesAt(path)),
+  });
+}
+
 export type Part = { text: string } | { url: string };
 
 const URL = /\bhttps?:\/\/[^\s<>"'`]+/gi;

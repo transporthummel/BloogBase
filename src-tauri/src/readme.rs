@@ -1,4 +1,4 @@
-//! README files shipped with mods, for the detail page.
+//! README files shipped with mods, for the detail page and before installing.
 //!
 //! Mods name their documentation freely (`README.TXT`, `Read Me.txt`,
 //! `READ.ME`, `CHEEKY README.rtf`, `LIESMICH.TXT`, …), so candidates are
@@ -52,23 +52,42 @@ pub fn for_mod(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Vec<Readme>> {
     }
 }
 
+/// The documents in a folder or ZIP not installed yet, as in [`for_mod`].
+pub fn at(path: &Path) -> Result<Vec<Readme>> {
+    find(&Source::open(path)?)
+}
+
 /// The web page `file` of a mod on disk, for the browser. From an archive,
 /// it is copied to the cache with the files in its folder (pictures, style
 /// sheets).
 pub fn html_path(paths: &AppPaths, db: &Db, mod_id: &str, file: &str) -> Result<PathBuf> {
     let not_found = || Error::NotFound(format!("{file} of mod {mod_id}"));
     let source = mod_source(paths, db, mod_id)?.ok_or_else(not_found)?;
+    page(&source, file, &paths.cache.join("readmes").join(mod_id))
+}
+
+/// The web page `file` in a folder or ZIP not installed yet, as in
+/// [`html_path`].
+pub fn html_path_at(paths: &AppPaths, path: &Path, file: &str) -> Result<PathBuf> {
+    page(
+        &Source::open(path)?,
+        file,
+        &paths.cache.join("readme-preview"),
+    )
+}
+
+/// The web page `file` of `source` on disk, copied to `dest` from an archive.
+fn page(source: &Source, file: &str, dest: &Path) -> Result<PathBuf> {
     let files = source.files()?;
     if !(candidate(file).is_some_and(|(_, html, _)| html) && files.iter().any(|f| f == file)) {
-        return Err(not_found());
+        return Err(Error::NotFound(file.to_string()));
     }
-    match &source {
+    match source {
         Source::Folder(root) => Ok(root.join(file)),
         Source::Zip(_) => {
-            let dest = paths.cache.join("readmes").join(mod_id);
             // An update of the mod may have changed the page; a missing
             // folder or a file still open elsewhere doesn't matter.
-            let _ = fs::remove_dir_all(&dest);
+            let _ = fs::remove_dir_all(dest);
             let prefix = match split_dir(file).0 {
                 "" => String::new(),
                 dir => format!("{dir}/"),
@@ -608,6 +627,29 @@ mod tests {
         }
         assert!(matches!(
             html_path(&paths, &db, "other", "README.HTM"),
+            Err(Error::NotFound(_))
+        ));
+    }
+
+    #[test]
+    fn reads_a_mod_not_installed_yet() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(tmp.path().join("data"));
+        let zip = tmp.path().join("aurora.zip");
+        write_zip(
+            &zip,
+            &[
+                ("Aurora/README.TXT", b"hi"),
+                ("Aurora/story.htm", b"<p>story"),
+            ],
+        );
+        let found = at(&zip).unwrap();
+        assert_eq!(found[0].text, "hi");
+        let page = html_path_at(&paths, &zip, "Aurora/story.htm").unwrap();
+        assert_eq!(page, paths.cache.join("readme-preview/Aurora/story.htm"));
+        assert!(page.is_file());
+        assert!(matches!(
+            html_path_at(&paths, &zip, "Aurora/README.TXT"),
             Err(Error::NotFound(_))
         ));
     }

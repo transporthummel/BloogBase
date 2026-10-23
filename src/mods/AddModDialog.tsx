@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FileArchive, FolderOpen } from "lucide-react";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import {
   commands,
   type Dropped,
@@ -18,7 +18,8 @@ import { formatLooseDate } from "../format";
 import { unwrap } from "../ipc";
 import { coverKey } from "../library/covers";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
-import { readmeKey } from "../profile/readme";
+import { ReadmePanel } from "../profile/ReadmePanel";
+import { readmeKey, useReadmesAt } from "../profile/readme";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
@@ -319,7 +320,7 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
         ) : (
           <fieldset className="grid gap-2 text-sm">
             <legend className="mb-1 font-medium">{t("mods.helpTitle")}</legend>
-            <p className="text-muted">{t("mods.helpHint")}</p>
+            <HelpHint path={path} />
             <RecipeChoice info={info} value={recipeIndex} onChange={setRecipeIndex} />
           </fieldset>
         ))}
@@ -431,6 +432,43 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
         </Button>
       </div>
     </form>
+  );
+}
+
+/** The hint for picking how to start; "readme" opens the mod's documents, if any. */
+function HelpHint({ path }: { path: string }) {
+  const { t } = useTranslation();
+  const readmes = useReadmesAt(path);
+  const [reading, setReading] = useState(false);
+  return (
+    <>
+      <p className="text-muted">
+        <Trans
+          i18nKey="mods.helpHint"
+          components={{
+            readme: readmes.data?.length ? (
+              <button
+                type="button"
+                className="text-accent underline hover:text-ink"
+                onClick={() => setReading(true)}
+              />
+            ) : (
+              <span />
+            ),
+          }}
+        />
+      </p>
+      {reading && readmes.data && (
+        <Dialog title={t("readme.title")} wide onClose={() => setReading(false)}>
+          <ReadmePanel path={path} readmes={readmes.data} />
+          <div className="flex justify-end">
+            <Button variant="ghost" onClick={() => setReading(false)} data-autofocus>
+              {t("common.close")}
+            </Button>
+          </div>
+        </Dialog>
+      )}
+    </>
   );
 }
 

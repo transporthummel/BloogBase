@@ -265,7 +265,7 @@
     "helpTitle": "Wir brauchen deine Hilfe",
     "inIndex": "Diese Datei kennt die BloogBase-Modliste: Die Mod wird so installiert, wie sie dort getestet ist.",
     "setUpMyself": "Lieber selbst einrichten",
-    "helpHint": "Diese Mod lässt sich auf mehrere Arten starten. Wenn du unsicher bist, nimm die erste; die Readme der Mod verrät vielleicht mehr.",
+    "helpHint": "Diese Mod lässt sich auf mehrere Arten starten. Wenn du unsicher bist, nimm die erste; die <readme>Readme</readme> der Mod verrät vielleicht mehr.",
     "recipe": {
       "patch": "Patch der Mod laden",
       "program": "Eigenes Programm der Mod starten",
@@ -572,6 +572,7 @@
     }
   },
   "readme": {
+    "title": "Readme",
     "file": "Datei:",
     "webPage": "Diese Datei ist eine Webseite und öffnet sich in deinem Browser.",
     "openInBrowser": "Im Browser öffnen"

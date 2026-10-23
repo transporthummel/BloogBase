@@ -4,9 +4,10 @@ const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
- * Modal dialog over a dimmed page. Escape and the backdrop close it; Tab
- * stays inside, and focus goes back where it was on close. Opening focuses
- * the element marked `data-autofocus`, else the panel.
+ * Modal dialog over a dimmed page, or over the dialog rendering it. Escape
+ * and the backdrop close it; Tab stays inside, and focus goes back where it
+ * was on close. Opening focuses the element marked `data-autofocus`, else
+ * the panel.
  */
 export function Dialog({
   title,
@@ -32,6 +33,8 @@ export function Dialog({
     const previous = document.activeElement as HTMLElement | null;
     (panel.current?.querySelector<HTMLElement>("[data-autofocus]") ?? panel.current)?.focus();
     const onKey = (e: KeyboardEvent) => {
+      // A dialog opened over this one takes the keys.
+      if (panel.current?.querySelector('[role="dialog"]')) return;
       if (e.key === "Escape") close.current();
       if (e.key !== "Tab" || !panel.current) return;
       const items = [...panel.current.querySelectorAll<HTMLElement>(FOCUSABLE)];

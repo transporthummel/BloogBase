@@ -51,3 +51,18 @@ test("focuses the element marked data-autofocus", () => {
   );
   expect(screen.getByRole("textbox", { name: "Link" })).toHaveFocus();
 });
+
+test("Escape closes only the topmost of two dialogs", async () => {
+  const outer = vi.fn();
+  const inner = vi.fn();
+  render(
+    <Dialog title="Outer" onClose={outer}>
+      <Dialog title="Inner" onClose={inner}>
+        <button type="button">Inner button</button>
+      </Dialog>
+    </Dialog>,
+  );
+  await userEvent.keyboard("{Escape}");
+  expect(inner).toHaveBeenCalledOnce();
+  expect(outer).not.toHaveBeenCalled();
+});

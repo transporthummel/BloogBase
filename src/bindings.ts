@@ -134,6 +134,10 @@ export const commands = {
 	 *  HTML itself.
 	 */
 	openModReadme: (modId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_readme", { modId, file })),
+	/**  The documents in a folder or ZIP not installed yet, the README first. */
+	readmesAt: (path: string) => typedError<Readme[], CommandError>(__TAURI_INVOKE("readmes_at", { path })),
+	/**  Opens a web page in a folder or ZIP not installed yet in the browser. */
+	openReadmeAt: (path: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_readme_at", { path, file })),
 	/**  The installs a mod can be played on. */
 	modInstalls: (modId: string) => typedError<Install[], CommandError>(__TAURI_INVOKE("mod_installs", { modId })),
 	/**  Plays a mod on another install it fits. */

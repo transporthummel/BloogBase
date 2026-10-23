@@ -32,6 +32,8 @@ vi.mock("../bindings", () => ({
     indexMods: vi.fn(),
     installIndexMod: vi.fn(),
     listJobs: vi.fn(),
+    readmesAt: vi.fn(),
+    openReadmeAt: vi.fn(),
   },
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
@@ -109,6 +111,7 @@ beforeEach(() => {
   vi.mocked(commands.listMods).mockReturnValue(ok([]));
   vi.mocked(commands.listProfiles).mockReturnValue(ok([]));
   vi.mocked(open).mockResolvedValue("/downloads/aurora.zip");
+  vi.mocked(commands.readmesAt).mockReturnValue(ok([]));
   // Whatever a test makes inspectMod find is what a pick holds.
   vi.mocked(commands.inspectDropped).mockImplementation(async (path) => {
     const found = await commands.inspectMod(path);
@@ -316,6 +319,35 @@ test("asks which recipe to use when unsure", async () => {
   expect(radios).toHaveLength(2);
   expect(radios[0]).toBeChecked();
   expect(screen.getByText("CK4PATCH.EXE abiathar.pat -nowait")).toBeInTheDocument();
+});
+
+test("shows the readme of a mod that isn't installed yet", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(
+    ok({ ...info, confident: false, recipes: [info.recipes[0], info.recipes[0]] }),
+  );
+  vi.mocked(commands.readmesAt).mockReturnValue(
+    ok([
+      { file: "README.TXT", text: "Start it with the patch.", html: false },
+      { file: "story.htm", text: "", html: true },
+    ]),
+  );
+  vi.mocked(commands.openReadmeAt).mockReturnValue(ok(null));
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  await user.click(await screen.findByRole("button", { name: "readme" }));
+  expect(commands.readmesAt).toHaveBeenCalledWith("/downloads/aurora.zip");
+  const dialog = screen.getByRole("dialog", { name: "Readme" });
+  expect(dialog).toHaveTextContent("Start it with the patch.");
+  await user.selectOptions(screen.getByLabelText("File:"), "story.htm");
+  await user.click(screen.getByRole("button", { name: "Open in browser" }));
+  expect(commands.openReadmeAt).toHaveBeenCalledWith("/downloads/aurora.zip", "story.htm");
+
+  // Escape closes the readme only.
+  await user.keyboard("{Escape}");
+  expect(dialog).not.toBeInTheDocument();
+  expect(screen.getByText("We need your help")).toBeInTheDocument();
 });
 
 test("asks before installing a mod without its game", async () => {

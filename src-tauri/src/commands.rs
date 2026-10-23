@@ -368,6 +368,25 @@ pub async fn open_mod_readme(app: AppHandle, mod_id: String, file: String) -> Co
     open_path(&app, &path)
 }
 
+/// The documents in a folder or ZIP not installed yet, the README first.
+#[tauri::command]
+#[specta::specta]
+pub async fn readmes_at(path: String) -> CommandResult<Vec<Readme>> {
+    blocking(move || readme::at(Path::new(&path))).await
+}
+
+/// Opens a web page in a folder or ZIP not installed yet in the browser.
+#[tauri::command]
+#[specta::specta]
+pub async fn open_readme_at(app: AppHandle, path: String, file: String) -> CommandResult<()> {
+    let page = {
+        let app = app.clone();
+        blocking(move || readme::html_path_at(&app.state::<AppPaths>(), Path::new(&path), &file))
+            .await?
+    };
+    open_path(&app, &page)
+}
+
 /// Shows a folder in the system's file manager, or a file in its app.
 fn open_path(app: &AppHandle, path: &Path) -> CommandResult<()> {
     use tauri_plugin_opener::OpenerExt;

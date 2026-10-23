@@ -92,6 +92,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::mod_readmes,
             commands::open_mod_folder,
             commands::open_mod_readme,
+            commands::readmes_at,
+            commands::open_readme_at,
             commands::mod_installs,
             commands::set_mod_install,
             commands::delete_mod,

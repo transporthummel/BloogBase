@@ -265,7 +265,7 @@
     "helpTitle": "We need your help",
     "inIndex": "The BloogBase mod list knows this file: the mod is installed the way it was tested there.",
     "setUpMyself": "Set it up myself instead",
-    "helpHint": "This mod can be started in more than one way. If you are not sure, keep the first one; the mod’s readme may tell you more.",
+    "helpHint": "This mod can be started in more than one way. If you are not sure, keep the first one; the mod’s <readme>readme</readme> may tell you more.",
     "recipe": {
       "patch": "Load the mod’s patch",
       "program": "Run the mod’s own program",
@@ -572,6 +572,7 @@
     }
   },
   "readme": {
+    "title": "Readme",
     "file": "File:",
     "webPage": "This file is a web page and opens in your browser.",
     "openInBrowser": "Open in browser"

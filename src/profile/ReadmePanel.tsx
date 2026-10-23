@@ -15,14 +15,23 @@ import { linkify } from "./readme";
  * A mod's README, with a picker for its other documents. Shown as plain text
  * only (React escapes it); links open in the browser, never in the app's
  * window. Web pages are never shown here, only opened in the browser.
+ * The mod is installed (`modId`) or still a folder or ZIP (`path`).
  */
-export function ReadmePanel({ modId, readmes }: { modId: string; readmes: Readme[] }) {
+export function ReadmePanel({
+  readmes,
+  ...from
+}: { readmes: Readme[] } & ({ modId: string } | { path: string })) {
   const { t } = useTranslation();
   const pickerId = useId();
   const [file, setFile] = useState(readmes[0].file);
   const readme = readmes.find((r) => r.file === file) ?? readmes[0];
   const openPage = useMutation({
-    mutationFn: (file: string) => unwrap(commands.openModReadme(modId, file)),
+    mutationFn: (file: string) =>
+      unwrap(
+        "modId" in from
+          ? commands.openModReadme(from.modId, file)
+          : commands.openReadmeAt(from.path, file),
+      ),
   });
   return (
     <Card>
