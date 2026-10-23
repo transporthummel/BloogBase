@@ -286,7 +286,6 @@
     "baseGame": "Läuft mit {{game}} {{version}}",
     "new": "Neu",
     "remove": "Entfernen",
-    "removeNamed": "{{name}} entfernen",
     "removeTitle": "{{name}} entfernen?",
     "removeHint": "Die Dateien der Mod werden gelöscht. Das Spiel selbst bleibt in deiner Bibliothek.",
     "removeHint_noGame": "Die Dateien der Mod werden gelöscht.",
@@ -433,6 +432,8 @@
     "shareware": "Shareware",
     "released": "Erschienen {{date}}",
     "links": "Links",
+    "more": "Weitere Aktionen",
+    "playOn": "Mit anderer Spielkopie spielen…",
     "openModFolder": "Mod-Ordner öffnen",
     "replaceMod": "Durch lokale Kopie ersetzen…",
     "firing": {
@@ -441,7 +442,6 @@
       "unavailable": "Schießen mit einer Taste ist hier nicht verfügbar: Dieses Spiel oder diese Mod ändert die Steuerung anders."
     },
     "removeGame": "Deinstallieren",
-    "removeGameNamed": "{{name}} deinstallieren",
     "removeGameTitle": "{{name}} deinstallieren?",
     "removeGameHint": "BloogBase löscht seine Kopie des Spiels. Der Ordner oder das Archiv, aus dem du es hinzugefügt hast, bleibt unberührt.",
     "removeGameMods_one": "Auch die Mod für dieses Spiel deinstallieren",

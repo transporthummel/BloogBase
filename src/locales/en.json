@@ -286,7 +286,6 @@
     "baseGame": "Runs on {{game}} {{version}}",
     "new": "New",
     "remove": "Remove",
-    "removeNamed": "Remove {{name}}",
     "removeTitle": "Remove {{name}}?",
     "removeHint": "The mod’s files are deleted. The game itself stays in your library.",
     "removeHint_noGame": "The mod’s files are deleted.",
@@ -433,6 +432,8 @@
     "shareware": "Shareware",
     "released": "Released {{date}}",
     "links": "Links",
+    "more": "More actions",
+    "playOn": "Play with another copy…",
     "openModFolder": "Open mod folder",
     "replaceMod": "Replace with a local copy…",
     "firing": {
@@ -441,7 +442,6 @@
       "unavailable": "One-button firing isn’t available here: this game or mod changes the controls differently."
     },
     "removeGame": "Uninstall",
-    "removeGameNamed": "Uninstall {{name}}",
     "removeGameTitle": "Uninstall {{name}}?",
     "removeGameHint": "BloogBase deletes its copy of the game. The folder or archive you added it from stays untouched.",
     "removeGameMods_one": "Also uninstall the mod played on it",

@@ -1,10 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { ArrowLeft, ExternalLink, FileArchive, FolderOpen, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowLeftRight,
+  Ellipsis,
+  ExternalLink,
+  FileArchive,
+  FolderOpen,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, events, type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
+import {
+  commands,
+  events,
+  type Game,
+  type IndexEntry,
+  type Install,
+  type Mod,
+  type Profile,
+} from "../bindings";
 import { useGames } from "../catalog";
 import { useIndexMods } from "../discover/queries";
 import { errorMessage } from "../errors";
@@ -18,11 +35,14 @@ import { Authors } from "../mods/Authors";
 import { AddModDialog } from "../mods/AddModDialog";
 import { SuggestToIndex } from "../mods/KeenwikiImport";
 import { ModUpdate } from "../mods/ModUpdate";
+import { useModUpdateCheck } from "../mods/modUpdateCheck";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
 import { useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
+import { Dialog } from "../ui/Dialog";
+import { Menu, type MenuItem } from "../ui/Menu";
 import { Notice } from "../ui/Notice";
 import { PlayButton } from "../ui/PlayButton";
 import { RelativeTime } from "../ui/RelativeTime";
@@ -150,7 +170,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   );
 }
 
-/** Picture, title, credits, description, links and stats. */
+/** Picture, title, credits, description, links and stats; Play, and the rest in a menu. */
 function Hero({
   profile,
   game,
@@ -182,6 +202,14 @@ function Hero({
   });
   const [removing, setRemoving] = useState(false);
   const [replacing, setReplacing] = useState(false);
+  const [picking, setPicking] = useState(false);
+  const installs = useQuery({
+    // Under the installs key, so it follows changes to the library.
+    queryKey: [...installsKey, "mod", profile.modId],
+    queryFn: () => unwrap(commands.modInstalls(profile.modId!)),
+    enabled: profile.modId !== null,
+  });
+  const check = useModUpdateCheck(profile.modId ?? "");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -211,6 +239,43 @@ function Hero({
   ];
   if (added !== undefined) stats.push([t("profile.added"), formatDate(i18n.language, added)]);
 
+  const actions: MenuItem[] = [];
+  if (mod && installs.data && installs.data.length > 1)
+    actions.push({
+      label: t("profile.playOn"),
+      icon: <ArrowLeftRight className="size-4" />,
+      onSelect: () => setPicking(true),
+      disabled: profile.running,
+    });
+  if (mod) {
+    actions.push({
+      label: t("profile.openModFolder"),
+      icon: <FolderOpen className="size-4" />,
+      onSelect: () => openFolder.mutate(mod.id),
+    });
+    if (mod.keenwikiUrl)
+      actions.push({
+        label: t("modUpdate.check"),
+        icon: <RefreshCw className="size-4" />,
+        onSelect: () => check.mutate(),
+        disabled: check.isPending,
+      });
+    actions.push({
+      label: t("profile.replaceMod"),
+      icon: <FileArchive className="size-4" />,
+      onSelect: () => setReplacing(true),
+      disabled: profile.running,
+    });
+  }
+  actions.push({
+    label: mod ? t("mods.remove") : t("profile.removeGame"),
+    icon: <Trash2 className="size-4" />,
+    onSelect: () => setRemoving(true),
+    disabled: profile.running,
+    danger: true,
+    separated: actions.length > 0,
+  });
+
   return (
     <Card ref={cardRef} className="mb-6 flex flex-col md:flex-row">
       {/* As tall as the text, at 4:3. Where the width limits get in the way,
@@ -231,175 +296,158 @@ function Hero({
           />
         )}
       </div>
-      <div ref={textRef} className="grid min-w-0 flex-1 content-start gap-4 p-5">
-        <div className="grid gap-2">
-          <h1 className="font-pixel text-lg leading-relaxed">{profile.label}</h1>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-            {profile.missingGame !== null && (
-              <span>{t("mods.waitsFor", { game: profile.missingGame })}</span>
-            )}
-            {profile.modId !== null && profile.missingGame === null && game && (
-              <span>
-                {t("mods.baseGame", {
-                  game: game.title,
-                  version: version?.label ?? t("library.unknownVersion"),
-                })}
-              </span>
-            )}
-            {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
-            {profile.modId === null && (
-              <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>
-            )}
-            {profile.modId === null && version?.shareware && (
-              <Badge>{t("profile.shareware")}</Badge>
-            )}
-            {mod?.version && <Badge>{t("mods.version", { version: mod.version })}</Badge>}
-          </div>
-          {mod && mod.authors.length > 0 && (
-            <p className="text-sm">
-              <Authors
-                authors={mod.authors}
-                links={{ ...mod.authorLinks, ...entry?.authorLinks }}
-              />
-            </p>
-          )}
-          {mod?.released && (
-            <p className="text-sm text-muted">
-              {t("profile.released", { date: formatLooseDate(i18n.language, mod.released) })}
-            </p>
-          )}
-        </div>
-        {description && (
-          <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line">{description}</p>
-        )}
-        {links.length > 0 && (
-          <ul className="flex flex-wrap gap-2" aria-label={t("profile.links")}>
-            {links.map(([label, url]) => (
-              <li key={url}>
-                <Button variant="secondary" className="px-3 py-1.5" onClick={() => openUrl(url)}>
-                  <ExternalLink className="size-4" aria-hidden />
-                  {label}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-        <dl className="flex flex-wrap gap-x-6 gap-y-2">
-          {stats.map(([label, value]) => (
-            <div key={label} className="grid gap-1">
-              <dt className="text-xs text-muted">{label}</dt>
-              <dd className="text-sm font-semibold">{value}</dd>
+      {/* About it on top, playing it at the bottom. */}
+      <div ref={textRef} className="flex min-w-0 flex-1 flex-col justify-between gap-5 p-5">
+        <div className="grid content-start gap-4">
+          <div className="grid gap-2">
+            <h1 className="font-pixel text-lg leading-relaxed">{profile.label}</h1>
+            <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
+              {profile.missingGame !== null && (
+                <span>{t("mods.waitsFor", { game: profile.missingGame })}</span>
+              )}
+              {profile.modId !== null && profile.missingGame === null && game && (
+                <span>
+                  {t("mods.baseGame", {
+                    game: game.title,
+                    version: version?.label ?? t("library.unknownVersion"),
+                  })}
+                </span>
+              )}
+              {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
+              {profile.modId === null && (
+                <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>
+              )}
+              {profile.modId === null && version?.shareware && (
+                <Badge>{t("profile.shareware")}</Badge>
+              )}
+              {mod?.version && <Badge>{t("mods.version", { version: mod.version })}</Badge>}
             </div>
-          ))}
-        </dl>
-        {profile.modId !== null && profile.installId !== null && (
-          <GamePicker
-            modId={profile.modId}
-            installId={profile.installId}
-            game={game}
-            disabled={profile.running}
-          />
-        )}
-        <div className="flex flex-wrap items-center gap-3">
-          <PlayButton
-            onClick={onPlay}
-            disabled={!canPlay || profile.running || profile.missingGame !== null}
-            className="px-6 py-3 text-base"
-          >
-            {profile.missingGame !== null
-              ? t("mods.gameMissing")
-              : profile.running
-                ? t("library.running")
-                : t("library.play")}
-          </PlayButton>
-          {mod && (
-            <>
-              <Button variant="secondary" onClick={() => openFolder.mutate(mod.id)}>
-                <FolderOpen className="size-4" aria-hidden />
-                {t("profile.openModFolder")}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => setReplacing(true)}
-                disabled={profile.running}
+            {mod && mod.authors.length > 0 && (
+              <p className="text-sm">
+                <Authors
+                  authors={mod.authors}
+                  links={{ ...mod.authorLinks, ...entry?.authorLinks }}
+                />
+              </p>
+            )}
+            {mod?.released && (
+              <p className="text-sm text-muted">
+                {t("profile.released", { date: formatLooseDate(i18n.language, mod.released) })}
+              </p>
+            )}
+            {links.length > 0 && (
+              <ul
+                className="flex flex-wrap gap-x-4 gap-y-1 text-sm"
+                aria-label={t("profile.links")}
               >
-                <FileArchive className="size-4" aria-hidden />
-                {t("profile.replaceMod")}
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setRemoving(true)}
-                disabled={profile.running}
-                aria-label={t("mods.removeNamed", { name: profile.label })}
-              >
-                <Trash2 className="size-4" aria-hidden />
-                {t("mods.remove")}
-              </Button>
-            </>
+                {links.map(([label, url]) => (
+                  <li key={url}>
+                    <button
+                      type="button"
+                      onClick={() => openUrl(url)}
+                      className="inline-flex items-center gap-1 text-muted underline-offset-2 hover:text-accent hover:underline"
+                    >
+                      <ExternalLink className="size-3.5" aria-hidden />
+                      {label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {description && (
+            <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line">{description}</p>
           )}
-          {profile.modId === null && (
-            <Button
-              variant="ghost"
-              onClick={() => setRemoving(true)}
-              disabled={profile.running}
-              aria-label={t("profile.removeGameNamed", { name: profile.label })}
-            >
-              <Trash2 className="size-4" aria-hidden />
-              {t("profile.removeGame")}
-            </Button>
-          )}
+          <dl className="flex flex-wrap gap-x-6 gap-y-2">
+            {stats.map(([label, value]) => (
+              <div key={label} className="grid gap-1">
+                <dt className="text-xs text-muted">{label}</dt>
+                <dd className="text-sm font-semibold">{value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
-        {profile.missingGame !== null && (
-          <Notice>{t("mods.waitingHint", { game: profile.missingGame })}</Notice>
-        )}
-        {mod?.keenwikiUrl && <ModUpdate mod={mod} disabled={profile.running} />}
-        {mod?.source === "keenwiki" && !mod.indexId && (
-          <p className="text-sm">
-            <SuggestToIndex modId={mod.id} />
-          </p>
-        )}
-        {removing && profile.modId === null && profile.installId !== null && (
-          <RemoveGameDialog
-            profile={profile}
-            installId={profile.installId}
-            modCount={modCount}
-            onClose={() => setRemoving(false)}
-            onRemoved={() => {
-              queryClient.invalidateQueries({ queryKey: profilesKey });
-              queryClient.invalidateQueries({ queryKey: modsKey });
-              queryClient.invalidateQueries({ queryKey: installsKey });
-              navigate({ to: "/" });
-              // Ids are used again, and the game's mods may be gone too.
-              queryClient.removeQueries({ queryKey: coverKeys });
-            }}
-          />
-        )}
-        {removing && profile.modId !== null && (
-          <RemoveModDialog
-            profile={{ ...profile, modId: profile.modId }}
-            onClose={() => setRemoving(false)}
-            onRemoved={() => {
-              queryClient.invalidateQueries({ queryKey: profilesKey });
-              queryClient.invalidateQueries({ queryKey: modsKey });
-              navigate({ to: "/" });
-              // Installing it again gets the same id, and a new cover.
-              queryClient.removeQueries({ queryKey: coverKey(profile.id) });
-            }}
-          />
-        )}
-        {replacing && mod && (
-          <AddModDialog
-            replacing={mod.id}
-            onClose={() => setReplacing(false)}
-            onInstalled={() => {
-              setReplacing(false);
-              queryClient.invalidateQueries({ queryKey: profilesKey });
-            }}
-          />
-        )}
-        <FiringNote profileId={profile.id} />
-        {openFolder.error && <Notice tone="error">{errorMessage(t, openFolder.error)}</Notice>}
+        <div className="grid gap-3">
+          <div className="flex items-stretch gap-2">
+            <PlayButton
+              onClick={onPlay}
+              disabled={!canPlay || profile.running || profile.missingGame !== null}
+              className="px-6 py-3 text-base"
+            >
+              {profile.missingGame !== null
+                ? t("mods.gameMissing")
+                : profile.running
+                  ? t("library.running")
+                  : t("library.play")}
+            </PlayButton>
+            <Menu
+              label={t("profile.more")}
+              trigger={<Ellipsis className="size-5" aria-hidden />}
+              items={actions}
+            />
+          </div>
+          {profile.missingGame !== null && (
+            <Notice>{t("mods.waitingHint", { game: profile.missingGame })}</Notice>
+          )}
+          {mod?.keenwikiUrl && <ModUpdate mod={mod} check={check} disabled={profile.running} />}
+          {mod?.source === "keenwiki" && !mod.indexId && (
+            <p className="text-sm">
+              <SuggestToIndex modId={mod.id} />
+            </p>
+          )}
+          <FiringNote profileId={profile.id} />
+          {openFolder.error && <Notice tone="error">{errorMessage(t, openFolder.error)}</Notice>}
+        </div>
       </div>
+      {removing && profile.modId === null && profile.installId !== null && (
+        <RemoveGameDialog
+          profile={profile}
+          installId={profile.installId}
+          modCount={modCount}
+          onClose={() => setRemoving(false)}
+          onRemoved={() => {
+            queryClient.invalidateQueries({ queryKey: profilesKey });
+            queryClient.invalidateQueries({ queryKey: modsKey });
+            queryClient.invalidateQueries({ queryKey: installsKey });
+            navigate({ to: "/" });
+            // Ids are used again, and the game's mods may be gone too.
+            queryClient.removeQueries({ queryKey: coverKeys });
+          }}
+        />
+      )}
+      {removing && profile.modId !== null && (
+        <RemoveModDialog
+          profile={{ ...profile, modId: profile.modId }}
+          onClose={() => setRemoving(false)}
+          onRemoved={() => {
+            queryClient.invalidateQueries({ queryKey: profilesKey });
+            queryClient.invalidateQueries({ queryKey: modsKey });
+            navigate({ to: "/" });
+            // Installing it again gets the same id, and a new cover.
+            queryClient.removeQueries({ queryKey: coverKey(profile.id) });
+          }}
+        />
+      )}
+      {replacing && mod && (
+        <AddModDialog
+          replacing={mod.id}
+          onClose={() => setReplacing(false)}
+          onInstalled={() => {
+            setReplacing(false);
+            queryClient.invalidateQueries({ queryKey: profilesKey });
+          }}
+        />
+      )}
+      {picking && mod && profile.installId !== null && installs.data && (
+        <GamePicker
+          modId={mod.id}
+          installId={profile.installId}
+          installs={installs.data}
+          game={game}
+          disabled={profile.running}
+          onClose={() => setPicking(false)}
+        />
+      )}
     </Card>
   );
 }
@@ -408,21 +456,20 @@ function Hero({
 function GamePicker({
   modId,
   installId,
+  installs,
   game,
   disabled,
+  onClose,
 }: {
   modId: string;
   installId: string;
+  installs: Install[];
   game?: Game;
   disabled: boolean;
+  onClose: () => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const installs = useQuery({
-    // Under the installs key, so it follows changes to the library.
-    queryKey: [...installsKey, "mod", modId],
-    queryFn: () => unwrap(commands.modInstalls(modId)),
-  });
   const change = useMutation({
     mutationFn: (id: string) => unwrap(commands.setModInstall(modId, id)),
     onSuccess: () => {
@@ -430,30 +477,33 @@ function GamePicker({
       queryClient.invalidateQueries({ queryKey: profileFiringKey(modId) });
     },
   });
-  if (!installs.data || installs.data.length < 2) return null;
   const versionLabel = (versionId: string | null) =>
     game?.versions.find((v) => v.id === versionId)?.label ?? t("library.unknownVersion");
 
   return (
-    <div className="grid max-w-md gap-1">
-      <label className="grid grid-cols-1 gap-1 text-xs">
-        <span className="text-muted">{t("mods.playOn")}</span>
-        <select
-          className="min-w-0 truncate rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-sm"
-          value={installId}
-          disabled={disabled || change.isPending}
-          onChange={(e) => change.mutate(e.target.value)}
-        >
-          {installs.data.map((i) => (
-            <option key={i.id} value={i.id}>
-              {game?.shortTitle ?? i.label} ({versionLabel(i.versionId)})
-            </option>
-          ))}
-        </select>
-      </label>
-      <p className="text-xs text-muted">{t("mods.changeGameHint")}</p>
+    <Dialog title={t("mods.playOn")} onClose={onClose}>
+      <select
+        aria-label={t("mods.playOn")}
+        data-autofocus
+        className="min-w-0 truncate rounded-lg border border-border bg-surface-raised px-2 py-1.5 text-sm"
+        value={installId}
+        disabled={disabled || change.isPending}
+        onChange={(e) => change.mutate(e.target.value)}
+      >
+        {installs.map((i) => (
+          <option key={i.id} value={i.id}>
+            {game?.shortTitle ?? i.label} ({versionLabel(i.versionId)})
+          </option>
+        ))}
+      </select>
+      <p className="text-sm text-muted">{t("mods.changeGameHint")}</p>
       {change.error && <Notice tone="error">{errorMessage(t, change.error)}</Notice>}
-    </div>
+      <div className="flex justify-end">
+        <Button variant="secondary" onClick={onClose}>
+          {t("common.close")}
+        </Button>
+      </div>
+    </Dialog>
   );
 }
 

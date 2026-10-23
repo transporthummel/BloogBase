@@ -11,6 +11,7 @@ import {
   type WikiMod,
 } from "../bindings";
 import { ModUpdate } from "./ModUpdate";
+import { useModUpdateCheck } from "./modUpdateCheck";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
@@ -77,10 +78,21 @@ const install: Install = {
   addedAt: 0,
 };
 
+/** The detail page asks from its menu. */
+function Checked({ mod }: { mod: Mod }) {
+  const check = useModUpdateCheck(mod.id);
+  return (
+    <>
+      <button onClick={() => check.mutate()}>Check for updates</button>
+      <ModUpdate mod={mod} check={check} disabled={false} />
+    </>
+  );
+}
+
 function renderUpdate(m = mod) {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <ModUpdate mod={m} disabled={false} />
+      <Checked mod={m} />
     </QueryClientProvider>,
   );
   return userEvent.setup();

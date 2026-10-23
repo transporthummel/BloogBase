@@ -209,6 +209,12 @@ const aurora: Mod = {
   profileId: "aurora-bliss",
 };
 
+/** Picks one of the actions in the hero's menu. */
+async function pick(action: string) {
+  await userEvent.click(await screen.findByRole("button", { name: "More actions" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: action }));
+}
+
 const shot = (file: string, takenAt: number): Screenshot => ({
   file,
   path: `/data/profiles/keen4-1/capture/${file}`,
@@ -237,7 +243,7 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   expect(screen.getByRole("button", { name: "Suggest it for the mod list" })).toBeInTheDocument();
   expect(screen.getByText("Sessions").nextSibling).toHaveTextContent("1");
   vi.mocked(commands.openModFolder).mockResolvedValue(ok(null));
-  await userEvent.click(screen.getByRole("button", { name: "Open mod folder" }));
+  await pick("Open mod folder");
   expect(commands.openModFolder).toHaveBeenCalledWith("aurora-bliss");
 });
 
@@ -260,7 +266,10 @@ test("a mod's page changes the copy of the game it plays on", async () => {
   );
   vi.mocked(commands.setModInstall).mockResolvedValue(ok(null));
   renderDetail();
-  const picker = await screen.findByRole("combobox", { name: "Play with" });
+  // Only offered with more than one copy.
+  await vi.waitFor(() => expect(commands.modInstalls).toHaveBeenCalled());
+  await pick("Play with another copy…");
+  const picker = screen.getByRole("combobox", { name: "Play with" });
   expect(picker).toHaveValue("keen4-1");
   await userEvent.selectOptions(picker, "keen4-2");
   expect(commands.setModInstall).toHaveBeenCalledWith("aurora-bliss", "keen4-2");
@@ -275,7 +284,7 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   const client = new QueryClient();
   const remove = vi.spyOn(client, "removeQueries");
   renderDetail(client);
-  await userEvent.click(await screen.findByRole("button", { name: "Remove Aurora Bliss" }));
+  await pick("Remove");
   const dialog = screen.getByRole("dialog");
   await userEvent.click(within(dialog).getByRole("checkbox"));
   await userEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
@@ -304,13 +313,14 @@ test("a mod can be replaced with a local copy, unless it runs", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue(ok([mine]));
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
   renderDetail();
-  await userEvent.click(await screen.findByRole("button", { name: "Replace with a local copy…" }));
+  await pick("Replace with a local copy…");
   expect(screen.getByRole("dialog", { name: "Replace with another copy" })).toBeInTheDocument();
 
   cleanup();
   vi.mocked(commands.listProfiles).mockResolvedValue(ok([{ ...mine, running: true }]));
   renderDetail();
-  expect(await screen.findByRole("button", { name: "Replace with a local copy…" })).toBeDisabled();
+  await userEvent.click(await screen.findByRole("button", { name: "More actions" }));
+  expect(screen.getByRole("menuitem", { name: "Replace with a local copy…" })).toBeDisabled();
 });
 
 test("a game is uninstalled from its page, with its mods if asked", async () => {
@@ -326,8 +336,9 @@ test("a game is uninstalled from its page, with its mods if asked", async () => 
   const remove = vi.spyOn(client, "removeQueries");
   renderDetail(client);
   const user = userEvent.setup();
-  expect(screen.queryByRole("button", { name: /^Remove/ })).toBeNull();
-  await user.click(await screen.findByRole("button", { name: `Uninstall ${keen4.title}` }));
+  await user.click(await screen.findByRole("button", { name: "More actions" }));
+  expect(screen.queryByRole("menuitem", { name: "Remove" })).toBeNull();
+  await user.click(screen.getByRole("menuitem", { name: "Uninstall" }));
   const dialog = screen.getByRole("dialog");
   // Only the mod on this copy of the game counts.
   const withMods = within(dialog).getByRole("checkbox", {
@@ -361,10 +372,11 @@ test("a mod waiting for its game says which one and can't be played", async () =
   ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Game missing" })).toBeDisabled();
   expect(screen.queryByText(/^Runs on/)).toBeNull();
-  expect(screen.queryByRole("button", { name: /^Uninstall/ })).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "More actions" }));
+  expect(screen.queryByRole("menuitem", { name: "Uninstall" })).toBeNull();
 
   // Removing it doesn't mention a game that stays.
-  await userEvent.click(await screen.findByRole("button", { name: "Remove Aurora Bliss" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
   const dialog = screen.getByRole("dialog");
   expect(dialog).toHaveTextContent("The mod’s files are deleted.");
   expect(dialog).not.toHaveTextContent("The game itself stays");
