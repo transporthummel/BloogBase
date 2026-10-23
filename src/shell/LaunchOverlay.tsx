@@ -58,7 +58,7 @@ function Starting({ profile, onClose }: { profile: Profile; onClose: () => void 
       className="bb-fade fixed inset-0 z-50 flex items-center justify-center bg-bg/60 p-8 backdrop-blur-sm"
       onMouseDown={onClose}
     >
-      <div className="bb-rise w-[min(22rem,80vw)] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
+      <div className="bb-rise w-[min(32rem,80vw,90vh)] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
         <Cover
           gameId={profile.gameId}
           game={game}
@@ -70,7 +70,7 @@ function Starting({ profile, onClose }: { profile: Profile; onClose: () => void 
         </div>
         <div className="flex items-center gap-3 px-4 py-3">
           <Bloog className="bb-hop size-6 shrink-0" />
-          <span className="truncate text-sm text-muted">
+          <span className="line-clamp-2 text-sm text-muted">
             {t("launch.starting", { name: profile.label })}
           </span>
         </div>
