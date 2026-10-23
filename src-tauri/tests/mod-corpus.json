@@ -372,7 +372,7 @@
       "url": "https://files.shikadi.net/keenwiki/mods/Keen3/m.keen_community.patchwork_mod_iii.k3.2008-10-29.zip",
       "sha256": "8c48d1c49477571f50802e26c52e9b35b39c2924867f0bd5f008834d8037ea63",
       "gameId": "keen3",
-      "name": "Patchwork Mod Iii",
+      "name": "Patchwork Mod III",
       "recipe": {
         "type": "patch",
         "patcher": "CK3PATCH.EXE",

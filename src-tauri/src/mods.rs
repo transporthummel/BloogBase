@@ -560,6 +560,9 @@ fn title_case(s: &str) -> String {
             if i > 0 && SMALL.contains(&w) {
                 return w.to_string();
             }
+            if is_roman_numeral(w) {
+                return w.to_ascii_uppercase();
+            }
             let mut c = w.chars();
             c.next()
                 .map(|f| f.to_uppercase().chain(c).collect())
@@ -567,6 +570,16 @@ fn title_case(s: &str) -> String {
         })
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+/// Whether `w` is a sequel number from I to XXXIX, as in "Patchwork Mod III".
+fn is_roman_numeral(w: &str) -> bool {
+    let w = w.to_ascii_uppercase();
+    let rest = w.trim_start_matches('X');
+    if w.len() - rest.len() > 3 {
+        return false;
+    }
+    !w.is_empty() && ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"].contains(&rest)
 }
 
 /// What gets stored for a mod, whatever its source.
@@ -2423,6 +2436,15 @@ mod tests {
             "BTOWER"
         );
         assert_eq!(guess_metadata(Path::new("x/my_mod.zip"), "").name, "My Mod");
+        assert_eq!(
+            guess_metadata(
+                Path::new("m.keen_community.patchwork_mod_iii.k3.2008-10-29.zip"),
+                ""
+            )
+            .name,
+            "Patchwork Mod III"
+        );
+        assert_eq!(title_case("vi xiv mix ivy x"), "VI XIV Mix Ivy X");
         assert_eq!(
             guess_metadata(Path::new("x/magnet.zip"), "stuff/magnet").name,
             "Magnet"
