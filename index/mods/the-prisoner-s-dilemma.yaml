@@ -1,0 +1,22 @@
+id: the-prisoner-s-dilemma
+name: The Prisoner's Dilemma
+game: keen6
+requires: [keen6-1.4-ega]
+authors: [Kohntarkosz_]
+version: "1.1"
+released: 2021-07-16
+updated: 2024-08-15
+added: 2026-10-23
+type: episode
+description: The sequel to Bounty Hunting Brouhaha, played as Keen or as Rick Uller, who can't use poles but launches himself off bars. Version 1.1 is K1n9_Duk3's unofficial bugfix release.
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Prisoner%27s_Dilemma
+  pckf: https://pckf.com/viewtopic.php?f=4&t=11632
+downloads:
+  - version: "1.1"
+    url: https://files.shikadi.net/keenwiki/mods/Keen6/m.kohntarkosz_.the_prisoner's_dilemma_v1.1_unofficial.k6.2024-08-15.zip
+    sha256: 8e250a1bd43df6101124f9a0138fb0d38e44aa3a660041bf3667ccc41e8f887e
+    size: 794600
+recipe:
+  type: program
+  program: DILEMMA.EXE
