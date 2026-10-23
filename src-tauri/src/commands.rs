@@ -907,6 +907,8 @@ pub fn install_index_mod(
             description: entry.description.clone(),
             released: entry.released.clone(),
             recipe: entry.recipe.clone(),
+            version_recipes: entry.version_recipes.clone(),
+            copy_to_root: entry.copy_to_root.clone(),
             requires: entry.requires.clone(),
             keenwiki_url: entry.links.keenwiki.clone(),
             url: download.url.clone(),

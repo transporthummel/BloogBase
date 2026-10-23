@@ -13,7 +13,7 @@ use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::mods;
 use crate::overlay_view;
-use crate::recipe::Recipe;
+use crate::recipe::{self, Recipe, VersionRecipes};
 
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -86,7 +86,8 @@ pub struct ModLayer {
 const SELECT: &str = "
     SELECT p.id, p.install_id, COALESCE(i.game_id, m.game_id), i.version_id, p.mod_id,
            COALESCE(m.name, i.label), s.session_count, s.play_seconds, s.last_played_at,
-           p.state_path, i.path, m.path, m.recipe_json, p.created_at, m.requires_json
+           p.state_path, i.path, m.path, m.recipe_json, p.created_at, m.requires_json,
+           m.version_recipes_json
     FROM profiles p
     LEFT JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id
@@ -112,17 +113,26 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
     let state_path: String = r.get(9)?;
     let mod_path: Option<String> = r.get(11)?;
     let recipe: Option<String> = r.get(12)?;
-    let mod_layer = mod_path.zip(recipe).map(|(path, recipe)| ModLayer {
-        files: Path::new(&path).join("files"),
+    let version_id: Option<String> = r.get(3)?;
+    let by_version: VersionRecipes = r
+        .get::<_, Option<String>>(15)?
+        .and_then(|j| serde_json::from_str(&j).ok())
+        .unwrap_or_default();
+    let mod_layer = mod_path.zip(recipe).map(|(path, recipe)| {
         // Written by `mods::install`; an unreadable one falls back to the episode.
-        recipe: serde_json::from_str(&recipe).unwrap_or(Recipe::Episode),
+        let recipe = serde_json::from_str(&recipe).unwrap_or(Recipe::Episode);
+        ModLayer {
+            files: Path::new(&path).join("files"),
+            recipe: recipe::for_version(&recipe, &by_version, &game_id, version_id.as_deref())
+                .clone(),
+        }
     });
     Ok(ProfileRow {
         profile: Profile {
             id: r.get(0)?,
             install_id: r.get(1)?,
             game_id,
-            version_id: r.get(3)?,
+            version_id,
             mod_id: r.get(4)?,
             label: r.get(5)?,
             session_count: r.get(6)?,

@@ -20,7 +20,7 @@ use crate::downloads::USER_AGENT;
 use crate::error::{CommandError, Error, Result};
 use crate::library::now;
 use crate::paths::AppPaths;
-use crate::recipe::Recipe;
+use crate::recipe::{Recipe, VersionRecipes};
 
 /// Where the published index lives (`index/` in the repository, built and
 /// signed by `.github/workflows/index.yml`).
@@ -68,6 +68,12 @@ pub struct IndexEntry {
     /// Newest first.
     pub downloads: Vec<Download>,
     pub recipe: Recipe,
+    /// Instead of `recipe` on these catalog versions.
+    #[serde(default)]
+    pub version_recipes: VersionRecipes,
+    /// Folders in the mod's root whose files also go into the root.
+    #[serde(default)]
+    pub copy_to_root: Vec<String>,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]

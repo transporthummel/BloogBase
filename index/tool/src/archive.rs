@@ -8,7 +8,7 @@ use std::time::Duration;
 
 use sha2::{Digest, Sha256};
 
-use crate::entry::{Download, Entry};
+use crate::entry::{Download, Entry, Recipe};
 
 const USER_AGENT: &str = concat!(
     "BloogBase-index/",
@@ -94,20 +94,37 @@ pub fn problems(entry: &Entry, download: &Download, data: &[u8]) -> Vec<String> 
             return out;
         }
     };
-    let wanted = entry.recipe.files();
-    // All recipe files have to sit together in one folder, the mod's root.
-    let found = names.iter().map(|n| dir_of(n)).any(|dir| {
+    let wanted: Vec<&str> = entry.recipes().flat_map(Recipe::files).collect();
+    // All recipe files have to sit together in one folder, the mod's root,
+    // and the folders to copy from have to be right in it.
+    let holds_all = |dir: &str| {
         wanted.iter().all(|w| {
             names
                 .iter()
                 .any(|n| dir_of(n) == dir && file_of(n).eq_ignore_ascii_case(w))
+        }) && entry.copy_to_root.iter().all(|folder| {
+            names.iter().any(|n| {
+                let sub = dir_of(n);
+                let inner = if dir.is_empty() {
+                    Some(sub)
+                } else {
+                    sub.strip_prefix(dir).and_then(|s| s.strip_prefix('/'))
+                };
+                inner.is_some_and(|i| i.eq_ignore_ascii_case(folder))
+            })
         })
-    });
-    if !wanted.is_empty() && !found {
+    };
+    let found = names.iter().map(|n| dir_of(n)).any(holds_all);
+    if !(wanted.is_empty() && entry.copy_to_root.is_empty()) && !found {
+        let all: Vec<String> = wanted
+            .iter()
+            .map(|w| w.to_string())
+            .chain(entry.copy_to_root.iter().map(|f| format!("{f}/")))
+            .collect();
         out.push(format!(
             "{}: no folder holds all of {}",
             download.url,
-            wanted.join(", ")
+            all.join(", ")
         ));
     }
     out
@@ -175,6 +192,20 @@ mod tests {
         let split = zip(&[("a/CK4PATCH.EXE", b"p"), ("b/x.pat", b"x")]);
         let e = entry_for(&split);
         assert_eq!(problems(&e, &e.downloads[0], &split).len(), 1);
+    }
+
+    #[test]
+    fn folders_to_copy_must_be_in_the_root() {
+        let data = zip(&[
+            ("Mod/CK4PATCH.EXE", b"p"),
+            ("Mod/x.pat", b"x"),
+            ("Mod/1/A.CK4", b"a"),
+        ]);
+        let mut e = entry_for(&data);
+        e.copy_to_root = vec!["1".into()];
+        assert_eq!(problems(&e, &e.downloads[0], &data), Vec::<String>::new());
+        e.copy_to_root = vec!["2".into()];
+        assert_eq!(problems(&e, &e.downloads[0], &data).len(), 1);
     }
 
     #[test]

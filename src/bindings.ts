@@ -442,6 +442,10 @@ export type IndexEntry = {
 	/**  Newest first. */
 	downloads: Download[],
 	recipe: Recipe,
+	/**  Instead of `recipe` on these catalog versions. */
+	versionRecipes?: { [key in string]: Recipe },
+	/**  Folders in the mod's root whose files also go into the root. */
+	copyToRoot?: string[],
 	tags?: string[],
 	featured?: boolean,
 	minAppVersion?: string | null,

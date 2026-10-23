@@ -38,6 +38,14 @@ pub struct Entry {
     /// Newest first; the app installs the first one.
     pub downloads: Vec<Download>,
     pub recipe: Recipe,
+    /// Catalog version id → recipe used instead of `recipe` on it, for mods
+    /// that start differently per game version.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub version_recipes: BTreeMap<String, Recipe>,
+    /// Folders in the mod's root whose files the readme says to copy into
+    /// the root.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub copy_to_root: Vec<String>,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]
@@ -104,6 +112,13 @@ pub enum Recipe {
     Episode,
 }
 
+impl Entry {
+    /// `recipe` and the ones for particular game versions.
+    pub fn recipes(&self) -> impl Iterator<Item = &Recipe> {
+        std::iter::once(&self.recipe).chain(self.version_recipes.values())
+    }
+}
+
 impl Recipe {
     /// Files the recipe runs, which have to be in the mod's folder.
     pub fn files(&self) -> Vec<&str> {
@@ -168,6 +183,16 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
                     fail(format!("`{v}` is not a version of {}", entry.game));
                 }
             }
+            for v in entry.version_recipes.keys() {
+                if !versions.contains(v) {
+                    fail(format!(
+                        "versionRecipes: `{v}` is not a version of {}",
+                        entry.game
+                    ));
+                } else if !entry.requires.is_empty() && !entry.requires.contains(v) {
+                    fail(format!("versionRecipes: `{v}` is not in requires"));
+                }
+            }
         }
     }
     if entry.authors.is_empty() || entry.authors.iter().any(|a| a.trim().is_empty()) {
@@ -227,12 +252,24 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
         }
     }
 
-    for file in entry.recipe.files() {
-        if file.is_empty() || file.contains(['/', '\\', ' ']) {
+    for file in entry.recipes().flat_map(Recipe::files) {
+        if !is_plain_name(file) {
             fail(format!(
                 "recipe file `{file}` must be a plain DOS file name"
             ));
         }
+    }
+    for folder in &entry.copy_to_root {
+        if !is_plain_name(folder) || folder == "." || folder == ".." {
+            fail(format!(
+                "copyToRoot: `{folder}` must be a folder right in the mod's root"
+            ));
+        }
+    }
+    if (!entry.version_recipes.is_empty() || !entry.copy_to_root.is_empty())
+        && entry.min_app_version.is_none()
+    {
+        fail("versionRecipes and copyToRoot need a minAppVersion".into());
     }
     for t in &entry.tags {
         if !is_slug(t) {
@@ -240,6 +277,10 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
         }
     }
     out
+}
+
+fn is_plain_name(s: &str) -> bool {
+    !s.is_empty() && !s.contains(['/', '\\', ' '])
 }
 
 fn is_slug(s: &str) -> bool {
@@ -347,6 +388,29 @@ recipe:
         let mut e = parse(AURORA).unwrap();
         e.requires = vec!["keen4-1.0".into()];
         assert_eq!(problems(&e, "aurora-bliss", &catalog()).len(), 1);
+    }
+
+    #[test]
+    fn version_recipes_and_copies() {
+        let yaml = format!(
+            "{AURORA}versionRecipes:\n  keen4-1.4-ega: {{type: patch, patcher: X.EXE, patch: Y.PT}}\n\
+             copyToRoot: [\"1\"]\nminAppVersion: 0.2.0\n"
+        );
+        let e = parse(&yaml).unwrap();
+        assert_eq!(e.recipes().count(), 2);
+        assert_eq!(e.copy_to_root, ["1"]);
+        assert_eq!(
+            problems(&e, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+
+        let mut bad = e.clone();
+        bad.min_app_version = None;
+        bad.copy_to_root = vec!["a/b".into()];
+        bad.version_recipes
+            .insert("keen4-1.0".into(), Recipe::Episode);
+        let p = problems(&bad, "aurora-bliss", &catalog());
+        assert_eq!(p.len(), 3, "{p:#?}");
     }
 
     #[test]

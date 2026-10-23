@@ -20,7 +20,7 @@ use crate::detect::{detect, sha256_hex};
 use crate::error::{Error, Result};
 use crate::library::{self, Install, now};
 use crate::paths::AppPaths;
-use crate::recipe::{self, Recipe, has_ext, patcher_game};
+use crate::recipe::{self, Recipe, VersionRecipes, has_ext, patcher_game};
 use crate::source::{Source, split_dir};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
@@ -152,6 +152,8 @@ struct Analysis {
     root: String,
     /// Files to install, relative to the source.
     files: Vec<String>,
+    /// More places for some of them: source path → path in the mod.
+    copies: Vec<(String, String)>,
     info: ModInfo,
 }
 
@@ -301,6 +303,7 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
         },
         root,
         files,
+        copies: Vec::new(),
     })
 }
 
@@ -568,6 +571,7 @@ struct Stored<'a> {
     description: Option<String>,
     released: Option<String>,
     recipe: Recipe,
+    version_recipes: VersionRecipes,
     /// Catalog versions it plays on; `None` for any.
     requires: Option<Vec<String>>,
     source: ModSource,
@@ -642,6 +646,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
                 .clone()
                 .or_else(|| analysis.info.released.clone()),
             recipe: option.recipe.clone(),
+            version_recipes: VersionRecipes::new(),
             requires: requires.clone(),
             source: ModSource::Keenwiki,
             index_id: None,
@@ -657,6 +662,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             description: None,
             released: analysis.info.released.clone(),
             recipe: option.recipe.clone(),
+            version_recipes: VersionRecipes::new(),
             requires,
             source: ModSource::Manual,
             index_id: None,
@@ -698,6 +704,11 @@ pub struct Curated {
     pub description: Option<String>,
     pub released: Option<String>,
     pub recipe: Recipe,
+    /// Instead of `recipe` on these game versions.
+    pub version_recipes: VersionRecipes,
+    /// Folders in the mod's root whose files also go into the root, as the
+    /// readme asks the player to copy them.
+    pub copy_to_root: Vec<String>,
     /// Catalog versions it works with; empty: any.
     pub requires: Vec<String>,
     pub keenwiki_url: Option<String>,
@@ -716,7 +727,7 @@ pub fn install_curated(
     without_game: bool,
 ) -> Result<Mod> {
     let source = Source::open(archive)?;
-    let analysis = analyze(&source, archive, Some(&c.game_id))?;
+    let mut analysis = analyze(&source, archive, Some(&c.game_id))?;
     if analysis.info.game_id != c.game_id {
         return Err(Error::UnexpectedContent(format!(
             "the download looks like a mod for {}, not {}",
@@ -729,11 +740,13 @@ pub fn install_curated(
         .filter(|f| split_dir(f).0 == analysis.root)
         .map(|f| split_dir(f).1)
         .collect();
-    for file in c.recipe.files() {
+    let recipes = std::iter::once(&c.recipe).chain(c.version_recipes.values());
+    for file in recipes.flat_map(Recipe::files) {
         if !in_root.iter().any(|n| n.eq_ignore_ascii_case(file)) {
             return Err(Error::UnexpectedContent(format!("{file} is missing")));
         }
     }
+    analysis.copies = copies_to_root(&analysis, &c.copy_to_root)?;
 
     let stored = Stored {
         name: c.name.clone(),
@@ -743,6 +756,7 @@ pub fn install_curated(
         description: c.description.clone(),
         released: c.released.clone(),
         recipe: c.recipe.clone(),
+        version_recipes: c.version_recipes.clone(),
         requires: requires(&c.requires),
         source: ModSource::Index,
         index_id: Some(&c.index_id),
@@ -1026,6 +1040,9 @@ fn stage(
         };
         source.copy_to(rel, &staging.join("files").join(inner))?;
     }
+    for (rel, inner) in &analysis.copies {
+        source.copy_to(rel, &staging.join("files").join(inner))?;
+    }
     if let Source::Zip(zip) = source {
         fs::create_dir_all(staging.join("source"))?;
         let name = archive_name
@@ -1041,6 +1058,38 @@ fn archive_sha256(source: &Source) -> Result<Option<String>> {
         Source::Zip(zip) => Some(sha256_hex(&fs::read(zip)?)),
         Source::Folder(_) => None,
     })
+}
+
+fn version_recipes_json(s: &Stored) -> Option<String> {
+    (!s.version_recipes.is_empty())
+        .then(|| serde_json::to_string(&s.version_recipes).expect("recipes serialize"))
+}
+
+/// Where the files of `folders` (in the mod's root) go when also copied into
+/// the root: source path → path in the mod.
+fn copies_to_root(analysis: &Analysis, folders: &[String]) -> Result<Vec<(String, String)>> {
+    let mut out = Vec::new();
+    for folder in folders {
+        let dir = if analysis.root.is_empty() {
+            folder.clone()
+        } else {
+            format!("{}/{folder}", analysis.root)
+        };
+        let before = out.len();
+        out.extend(
+            analysis
+                .files
+                .iter()
+                .filter(|f| split_dir(f).0.eq_ignore_ascii_case(&dir))
+                .map(|f| (f.clone(), split_dir(f).1.to_string())),
+        );
+        if out.len() == before {
+            return Err(Error::UnexpectedContent(format!(
+                "folder {folder} is missing"
+            )));
+        }
+    }
+    Ok(out)
 }
 
 fn requires_json(s: &Stored) -> Option<String> {
@@ -1092,8 +1141,10 @@ fn store(
         tx.execute(
             "INSERT INTO mods (id, game_id, index_id, keenwiki_url, name, authors, version,
                                recipe_json, path, source, source_url, archive_sha256, added_at,
-                               description, released, author_links, requires_json)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+                               description, released, author_links, requires_json,
+                               version_recipes_json)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
+                     ?18)",
             params![
                 m.id,
                 m.game_id,
@@ -1111,7 +1162,8 @@ fn store(
                 m.description,
                 m.released,
                 serde_json::to_string(&m.author_links).expect("strings serialize"),
-                requires_json(s)
+                requires_json(s),
+                version_recipes_json(s)
             ],
         )?;
         tx.execute(
@@ -1183,7 +1235,8 @@ fn update(
             "UPDATE mods SET authors = ?2, version = ?3, recipe_json = ?4, keenwiki_url = ?5,
                              source_url = ?6, archive_sha256 = ?7, description = ?8,
                              released = ?9, author_links = ?10, requires_json = ?11,
-                             name = ?12, source = ?13, index_id = ?14
+                             name = ?12, source = ?13, index_id = ?14,
+                             version_recipes_json = ?15
              WHERE id = ?1",
             params![
                 mod_id,
@@ -1199,7 +1252,8 @@ fn update(
                 requires_json(s),
                 s.name,
                 s.source.as_str(),
-                s.index_id
+                s.index_id,
+                version_recipes_json(s)
             ],
         )?;
         tx.execute(
@@ -1289,17 +1343,28 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
     let mut stmt = conn.prepare(
         "SELECT m.id, m.game_id, m.name, m.authors, m.version, m.recipe_json, m.source,
                 m.added_at, p.id, m.index_id, m.keenwiki_url, m.description, m.released,
-                m.author_links
+                m.author_links, m.version_recipes_json, i.version_id
          FROM mods m JOIN profiles p ON p.mod_id = m.id
+         LEFT JOIN installs i ON i.id = p.install_id
          ORDER BY m.added_at, m.id",
     )?;
     let rows = stmt.query_map([], |r| {
         let authors: String = r.get(3)?;
         let recipe: String = r.get(5)?;
         let source: String = r.get(6)?;
+        let game_id: String = r.get(1)?;
+        let recipe = serde_json::from_str(&recipe).unwrap_or(Recipe::Episode);
+        let by_version: VersionRecipes = r
+            .get::<_, Option<String>>(14)?
+            .and_then(|j| serde_json::from_str(&j).ok())
+            .unwrap_or_default();
+        let version_id: Option<String> = r.get(15)?;
+        // The one it starts with on its game.
+        let recipe =
+            recipe::for_version(&recipe, &by_version, &game_id, version_id.as_deref()).clone();
         Ok(Mod {
             id: r.get(0)?,
-            game_id: r.get(1)?,
+            game_id,
             name: r.get(2)?,
             authors: serde_json::from_str(&authors).unwrap_or_default(),
             author_links: r
@@ -1307,7 +1372,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
                 .and_then(|j| serde_json::from_str(&j).ok())
                 .unwrap_or_default(),
             version: r.get(4)?,
-            recipe: serde_json::from_str(&recipe).unwrap_or(Recipe::Episode),
+            recipe,
             source: ModSource::parse(&source).expect("valid mod source"),
             added_at: r.get(7)?,
             profile_id: r.get(8)?,
@@ -1833,6 +1898,8 @@ mod tests {
             description: Some("A Keen 4 mod.".into()),
             released: None,
             recipe,
+            version_recipes: VersionRecipes::new(),
+            copy_to_root: Vec::new(),
             requires: vec!["keen4-1.4-ega".into()],
             keenwiki_url: Some("https://keenwiki.shikadi.net/wiki/Aurora_Bliss".into()),
             url: "https://example.com/m.dave216.aurora.zip".into(),
@@ -2229,6 +2296,62 @@ mod tests {
         };
         assert_eq!(recipes, [&patch("PLASMA.NY3"), &patch("MAGMA.NY3")]);
         assert!(!a.info.confident);
+    }
+
+    #[test]
+    fn curated_version_recipes_and_copies_to_root() {
+        let (tmp, paths, db) = setup();
+        let zip = tmp.path().join("aurora.zip");
+        let mut files: Vec<(&str, &[u8])> = AURORA.to_vec();
+        files.push(("Aurora/other.pat", b"%ext ck4\n"));
+        files.push(("Aurora/1/CREATURE.CK4", b"big sprites"));
+        write_zip(&zip, &files);
+        let other = Recipe::Patch {
+            patcher: "CK4PATCH.EXE".into(),
+            patch: "other.pat".into(),
+            args: Vec::new(),
+        };
+        let c = Curated {
+            version_recipes: [("keen4-1.4-ega".to_string(), other.clone())].into(),
+            copy_to_root: vec!["1".into()],
+            ..curated(aurora_patch(&[]))
+        };
+        let m = install_curated(&paths, &db, &zip, &c, None, false).unwrap();
+        let files_dir = paths.mods.join(&m.id).join("files");
+        assert_eq!(
+            fs::read(files_dir.join("CREATURE.CK4")).unwrap(),
+            b"big sprites"
+        );
+        assert!(files_dir.join("1/CREATURE.CK4").exists());
+        // Played on 1.4 EGA, the mod starts with that version's recipe.
+        assert_eq!(list(&db).unwrap()[0].recipe, aurora_patch(&[]));
+        db.conn()
+            .execute("UPDATE installs SET version_id = 'keen4-1.4-ega'", [])
+            .unwrap();
+        assert_eq!(list(&db).unwrap()[0].recipe, other);
+        let (_, layers) = profiles::get(&db, &m.profile_id).unwrap();
+        assert_eq!(layers.mod_layer.unwrap().recipe, other);
+
+        // Elsewhere the default one.
+        let by_version = c.version_recipes.clone();
+        let default = aurora_patch(&[]);
+        assert_eq!(
+            recipe::for_version(&default, &by_version, "keen4", Some("keen4-1.4-cga")),
+            &default
+        );
+        assert_eq!(
+            recipe::for_version(&default, &by_version, "keen4", None),
+            &default
+        );
+
+        let missing = Curated {
+            copy_to_root: vec!["2".into()],
+            ..c
+        };
+        assert!(matches!(
+            install_curated(&paths, &db, &zip, &missing, None, false),
+            Err(Error::UnexpectedContent(_))
+        ));
     }
 
     #[test]

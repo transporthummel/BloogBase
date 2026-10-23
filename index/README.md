@@ -16,28 +16,33 @@ authors and link back to KeenWiki and PCKF.
    it.
 2. Fill it in:
 
-   | Field           | Meaning                                                                                     |
-   | --------------- | ------------------------------------------------------------------------------------------- |
-   | `name`          | As the authors call it                                                                      |
-   | `game`          | `keen1` … `keen6`, `kdreams`                                                                |
-   | `requires`      | Game versions it works with (ids from `src-tauri/catalog/games.json`); leave out for any    |
-   | `authors`       | Names as on KeenWiki                                                                        |
-   | `authorLinks`   | Name: page for authors whose name KeenWiki links (their `User:` page); leave out red links  |
-   | `version`       | The mod's version, in quotes                                                                |
-   | `released`      | First release, `YYYY-MM-DD`; `updated` for the latest one                                   |
-   | `added`         | Today: when the entry joined the index (drives the "New" badge)                             |
-   | `type`          | `episode` (a new adventure), `levelpack` or `conversion` (something else entirely)          |
-   | `description`   | One or two sentences in your own words                                                      |
-   | `links`         | `keenwiki`, `pckf`, `homepage`                                                              |
-   | `downloads`     | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`             |
-   | `recipe`        | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode` |
-   | `featured`      | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
-   | `minAppVersion` | Oldest BloogBase that can install it, if it needs something new                             |
+   | Field            | Meaning                                                                                     |
+   | ---------------- | ------------------------------------------------------------------------------------------- |
+   | `name`           | As the authors call it                                                                      |
+   | `game`           | `keen1` … `keen6`, `kdreams`                                                                |
+   | `requires`       | Game versions it works with (ids from `src-tauri/catalog/games.json`); leave out for any    |
+   | `authors`        | Names as on KeenWiki                                                                        |
+   | `authorLinks`    | Name: page for authors whose name KeenWiki links (their `User:` page); leave out red links  |
+   | `version`        | The mod's version, in quotes                                                                |
+   | `released`       | First release, `YYYY-MM-DD`; `updated` for the latest one                                   |
+   | `added`          | Today: when the entry joined the index (drives the "New" badge)                             |
+   | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (something else entirely)          |
+   | `description`    | One or two sentences in your own words                                                      |
+   | `links`          | `keenwiki`, `pckf`, `homepage`                                                              |
+   | `downloads`      | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`             |
+   | `recipe`         | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode` |
+   | `versionRecipes` | Version id: recipe, for game versions the mod starts differently on (one patch per version) |
+   | `copyToRoot`     | Folders in the mod's root whose files the readme says to copy into the root                 |
+   | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
+   | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
 
    `sha256` and `size`: `certutil -hashfile <file> SHA256` (Windows) or
    `sha256sum <file>`; the size is in the file's properties. The recipe files
    must be in the same folder of the archive; the "Add mod" dialog of the app
    shows what it detects, which is usually right.
+
+   `versionRecipes` and `copyToRoot` need a `minAppVersion`; older apps
+   would install the mod without them. `norp-the-yorp-3.yaml` uses both.
 
 3. Check it, including the download:
 

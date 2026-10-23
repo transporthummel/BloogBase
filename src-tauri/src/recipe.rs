@@ -4,7 +4,7 @@
 //! Most mods ship a batch file that runs the episode's patcher (`CK4PATCH`,
 //! `KDRPATCH`, ...) with a `.pat` file, so batch files are the strongest hint.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -65,6 +65,30 @@ impl Recipe {
             _ => None,
         }
     }
+}
+
+/// Recipes for some game versions, by catalog version id, where a mod starts
+/// differently on them (Norp the Yorp 3 has a patch file per version).
+pub type VersionRecipes = BTreeMap<String, Recipe>;
+
+/// The recipe for playing on `version_id` of `game_id`: that version's own,
+/// or its original release's for a third-party build, else `default`.
+pub fn for_version<'a>(
+    default: &'a Recipe,
+    by_version: &'a VersionRecipes,
+    game_id: &str,
+    version_id: Option<&str>,
+) -> &'a Recipe {
+    let Some(id) = version_id else {
+        return default;
+    };
+    let original = crate::catalog::game(game_id)
+        .and_then(|g| g.versions.iter().find(|v| v.id == id))
+        .and_then(|v| v.original.as_deref());
+    by_version
+        .get(id)
+        .or_else(|| original.and_then(|o| by_version.get(o)))
+        .unwrap_or(default)
 }
 
 /// A recipe the heuristics consider, with the file that suggested it.
