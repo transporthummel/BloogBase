@@ -227,7 +227,7 @@ pub fn guess(
         }
     }
 
-    // Tier 3: a program of the mod's own.
+    // Tier 3: a program of the mod's own; a menu goes before tier 2.
     let programs: Vec<Candidate> = names
         .iter()
         .filter(|n| has_ext(n, "EXE") || has_ext(n, "COM"))
@@ -242,17 +242,17 @@ pub fn guess(
         })
         .collect();
 
+    // Next to a patcher, a program is only worth trying without batch files:
+    // then it's most likely a menu that runs the patcher itself (The
+    // Prisoner's Dilemma's DILEMMA.EXE picks Keen's or Rick's patch).
+    let (menus, programs) = match patcher {
+        None => (Vec::new(), programs),
+        Some(_) if from_batches.is_empty() => (programs, Vec::new()),
+        Some(_) => (Vec::new(), Vec::new()),
+    };
     let from_batches = dedup(from_batches);
     let patches = dedup(patches);
-    let tiers: [Vec<Candidate>; 3] = [
-        from_batches,
-        patches,
-        if patcher.is_none() {
-            programs
-        } else {
-            Vec::new()
-        },
-    ];
+    let tiers: [Vec<Candidate>; 4] = [from_batches, menus, patches, programs];
     let confident = tiers
         .iter()
         .find(|t| !t.is_empty())
@@ -645,6 +645,56 @@ mod tests {
             patch("CK4PATCH.EXE", "MOD.PAT", &[])
         );
         assert_eq!(g.candidates.len(), 2);
+    }
+
+    #[test]
+    fn menu_program_next_to_a_patcher_goes_first() {
+        // The Prisoner's Dilemma: DILEMMA.EXE runs CK6PATCH with patch1 or patch2.
+        let g = run(&[
+            ("CK6PATCH.EXE", ""),
+            ("DILEMMA.EXE", ""),
+            (
+                "patch1.ck6",
+                "%ext ck6
+%patch $1 $2",
+            ),
+            (
+                "patch2.ck6",
+                "%ext ck6
+%patch $1 $2
+%patch $3 $4",
+            ),
+            ("readme.txt", "Run DILEMMA.EXE"),
+        ]);
+        assert!(g.confident);
+        let recipes: Vec<_> = g.candidates.iter().map(|c| c.recipe.clone()).collect();
+        assert_eq!(
+            recipes,
+            [
+                Recipe::Program {
+                    program: "DILEMMA.EXE".into(),
+                    args: vec![]
+                },
+                patch("CK6PATCH.EXE", "patch2.ck6", &[]),
+                patch("CK6PATCH.EXE", "patch1.ck6", &[]),
+            ]
+        );
+
+        // With a batch file, other programs are helpers (Simulator Keen's RANDOM.EXE).
+        let g = run(&[
+            (
+                "play.bat",
+                "random
+ck4patch p.pat",
+            ),
+            ("RANDOM.EXE", ""),
+            ("CK4PATCH.EXE", ""),
+            ("p.pat", "%ext ck4"),
+        ]);
+        assert!(g.candidates.iter().all(|c| !matches!(
+            &c.recipe,
+            Recipe::Program { program, .. } if program == "RANDOM.EXE"
+        )));
     }
 
     #[test]
