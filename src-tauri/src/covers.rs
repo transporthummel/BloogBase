@@ -19,7 +19,7 @@ use crate::profiles;
 use crate::recipe::{self, Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v10";
+const VERSION: &str = "covers v11";
 
 /// The profile's cover PNG, extracting it first if its files changed since
 /// the last time. `None` if the title can't be read from them.
@@ -155,6 +155,8 @@ struct Patched {
     patched_in: Vec<String>,
     /// The game draws for a CGA composite monitor.
     composite: bool,
+    /// `%patch <address> "text"` lines: text written over the executable.
+    texts: Vec<(usize, String)>,
 }
 
 /// How a title's pixels become colors.
@@ -199,6 +201,13 @@ fn patched(text: &str, ext: &str) -> Patched {
                         .and_then(|a| u32::from_str_radix(a.strip_prefix('$')?, 16).ok())
                         .filter(|&a| PALETTES.contains(&(ext, a)))
                         .and_then(|_| palette(&lines[i..]));
+                }
+                let address = words.clone().next().and_then(|a| {
+                    let hex = a.strip_prefix('$').or_else(|| a.strip_prefix("0x"))?;
+                    usize::from_str_radix(hex, 16).ok()
+                });
+                if let (Some(address), Some(text)) = (address, line.split('"').nth(1)) {
+                    names.texts.push((address, text.to_string()));
                 }
                 // Text comes in quotes; file names have a dot.
                 names.renamed.extend(
@@ -276,6 +285,48 @@ fn extract(
     Ok((image, colors))
 }
 
+/// The names a Vorticons game opens its files under, from a stem like
+/// `EGAHEAD` or `LEVEL90`. A patch may write new names over the executable's
+/// own (`EGAHEAD`, `LEVEL`, the extension), as Norp the Yorp 3 does to open
+/// `TITLES1.NY3`; they count where a `%patch` starts right on one of those,
+/// found in the unpacked executable.
+fn vorticons_names(
+    game: &Game,
+    files: &Files,
+    texts: &[(usize, String)],
+    ext: &str,
+) -> impl Fn(&str) -> String {
+    let image = if texts.is_empty() {
+        None
+    } else {
+        game.executables
+            .iter()
+            .find_map(|e| files.read(e))
+            .and_then(|exe| keen_graphics::load_image(&exe).ok())
+    };
+    let patched = move |original: &str| -> String {
+        let renamed = image.as_ref().and_then(|image| {
+            let at: Vec<usize> = image
+                .windows(original.len())
+                .enumerate()
+                .filter(|(_, w)| *w == original.as_bytes())
+                .map(|(i, _)| i)
+                .collect();
+            texts
+                .iter()
+                .find(|(address, _)| at.contains(address))
+                .map(|(_, text)| text.trim_end_matches('\0').to_string())
+        });
+        renamed.unwrap_or_else(|| original.to_string())
+    };
+    let ext = patched(ext);
+    move |stem: &str| {
+        let digits = stem.trim_start_matches(|c: char| !c.is_ascii_digit());
+        let base = &stem[..stem.len() - digits.len()];
+        format!("{}{digits}.{ext}", patched(base))
+    }
+}
+
 fn title(
     game: &Game,
     version_id: Option<&str>,
@@ -302,14 +353,15 @@ fn title(
             // Mods with the tileset loader patch keep the title level's
             // tiles in a file of their own. Some ship a TILEHEAD naming files
             // they lack, like Fireblaze; their game draws from EGALATCH.
+            let name = vorticons_names(game, files, &patch.texts, ext);
             let tileset = files
-                .read(&format!("TILEHEAD.{ext}"))
+                .read(&name("TILEHEAD"))
                 .and_then(|t| keen_graphics::vorticons_tileset_name(&t, 90))
                 .and_then(|name| files.read(&name));
             keen_graphics::vorticons_title(
-                &need(&format!("EGAHEAD.{ext}"))?,
-                &need(&format!("EGALATCH.{ext}"))?,
-                &need(&format!("LEVEL90.{ext}"))?,
+                &need(&name("EGAHEAD"))?,
+                &need(&name("EGALATCH"))?,
+                &need(&name("LEVEL90"))?,
                 tileset.as_deref(),
             )
             .map(|image| (image, false))
@@ -464,6 +516,11 @@ mod tests {
                 palette: None,
                 patched_in: vec!["STORY.CK4".into()],
                 composite: false,
+                texts: vec![
+                    (0x23DFD, "KDREAMS2.CMP".into()),
+                    (0x2F1A5, "meminfo.txt".into()),
+                    (0x1000, "Press a key".into()),
+                ],
             }
         );
     }
@@ -619,6 +676,25 @@ mod tests {
         };
         let files = Files::new(&[tmp.path()]).unwrap();
         extract(catalog::game(game).unwrap(), None, Some(&recipe), &files)
+    }
+
+    #[test]
+    fn finds_vorticons_files_renamed_in_the_executable() {
+        // As Norp the Yorp 3: new names written over the executable's.
+        let strings = b"EGAHEAD\0EGALATCH\0LEVEL\0CK1\0";
+        // A header of two paragraphs; the load image starts after it.
+        let exe = [b"MZ".as_slice(), &[0; 6], &[2, 0], &[0; 0x16], strings].concat();
+        let patch = "%patch 0x0 \"TITLES1\"\n%patch 0x8 \"LANDSCAP\"\n\
+                     %patch 0x11 \"N3MAP\"\n%patch 0x17 \"NY1\"\n";
+        let mut files: Vec<(&str, Vec<u8>)> = keen1_title()
+            .into_iter()
+            .zip(["TITLES1.NY1", "LANDSCAP.NY1", "N3MAP90.NY1"])
+            .map(|((_, data), name)| (name, data))
+            .collect();
+        files.push(("KEEN1.EXE", exe));
+        files.push(("MOD.PAT", patch.as_bytes().to_vec()));
+        let pixels = extract_from("keen1", &files).unwrap().0.pixels;
+        assert_eq!((pixels[0], pixels[320 + 32]), (1, 8));
     }
 
     #[test]
