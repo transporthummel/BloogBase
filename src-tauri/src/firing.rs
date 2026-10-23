@@ -244,7 +244,7 @@ fn targets(game: &Game, recipe: &Recipe, files: &Files) -> Vec<Target> {
                 let program = files.find_with(&cmd[0], &["EXE", "COM"]);
                 let name = program.as_ref().and_then(|p| p.file_name());
                 let name = name.map(|n| n.to_string_lossy().into_owned());
-                if name.as_deref().is_some_and(recipe::is_patcher) {
+                if program.as_deref().is_some_and(recipe::is_patcher_at) {
                     out.extend(
                         cmd.get(1)
                             .and_then(|p| files.find_with(p, &["PAT"]))
@@ -639,6 +639,10 @@ pub mod tests {
                     b"ck1patch easy.pat\r\nck1patch plain.pat\r\nkeen1\r\n",
                 ),
                 ("menu.bat", b"choice\r\ngoto end\r\n"),
+                // A renamed patcher and patch, as Norp the Yorp 3 ships.
+                ("NORPER.EXE", b"MZ\0\0\0\0\0\0\x02\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Usage: CK1PATCH {patchfile}"),
+                ("EASY.NY1", built_in.as_bytes()),
+                ("renamed.bat", b"norper easy.ny1\r\n"),
             ],
         );
         let dirs = [modf.as_path(), base.as_path()];
@@ -654,6 +658,10 @@ pub mod tests {
         assert_eq!(
             status(keen1(), &batch("menu.bat"), &dirs),
             Some(Firing::Unavailable)
+        );
+        assert_eq!(
+            status(keen1(), &batch("renamed.bat"), &dirs),
+            Some(Firing::BuiltIn)
         );
         assert_eq!(
             status(catalog::game("keen4").unwrap(), &Recipe::Episode, &dirs),

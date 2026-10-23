@@ -497,6 +497,17 @@ pub fn patcher_game_of(exe: &[u8]) -> Option<&'static str> {
         .then(|| patcher_game(&format!("{name}.EXE")))?
 }
 
+/// Whether the program at `path` is a patcher: by its name, or by the
+/// usage line of a renamed one.
+pub fn is_patcher_at(path: &std::path::Path) -> bool {
+    path.file_name()
+        .is_some_and(|n| is_patcher(&n.to_string_lossy()))
+        || std::fs::read(path)
+            .ok()
+            .and_then(|exe| patcher_game_of(&exe))
+            .is_some()
+}
+
 /// `CK1PATCH.EXE` ... `CK6PATCH.EXE`, `KDRPATCH.EXE`.
 pub fn is_patcher(name: &str) -> bool {
     patcher_game(name).is_some()

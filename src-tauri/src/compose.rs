@@ -132,7 +132,7 @@ fn patcher_needs_unpacked(recipe: &Recipe, inputs: &BTreeMap<String, Input>) -> 
             .unwrap_or_default()
             .iter()
             .filter_map(|cmd| find(inputs, &cmd[0], &["EXE", "COM"]))
-            .filter(|p| recipe::is_patcher(&p.rel))
+            .filter(|p| recipe::is_patcher_at(&p.path))
             .collect(),
         Recipe::Program { .. } | Recipe::Episode => Vec::new(),
     };
@@ -306,6 +306,23 @@ mod tests {
         assert!(!unpacked(&new, patch));
         assert!(!unpacked(&new, batch));
         assert!(!unpacked(&old, Recipe::Episode));
+
+        // A renamed one, run by a batch file, as Norp the Yorp 3 ships.
+        let renamed = [old.as_slice(), b"\0Usage: CK1PATCH {patchfile|patchdir}"].concat();
+        write_folder(
+            &modf,
+            &[("norper.exe", &renamed), ("RUN.BAT", b"norper m.pat")],
+        );
+        let layer = ModLayer {
+            files: modf.clone(),
+            recipe: Recipe::Batch {
+                file: "RUN.BAT".into(),
+            },
+        };
+        let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false).unwrap();
+        assert!(!lzexe::is_lzexe91(
+            &fs::read(dir.join("KEEN1.EXE")).unwrap()
+        ));
     }
 
     #[test]
