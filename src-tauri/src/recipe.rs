@@ -179,6 +179,14 @@ pub fn guess(
             continue;
         }
         seen.push(key);
+        // Setup steps start nothing; Patchwork Mod III's "~Install.BAT" only
+        // renames the real batch file into place and deletes itself.
+        if commands
+            .iter()
+            .all(|c| FILE_COMMANDS.contains(&c[0].to_ascii_uppercase().as_str()))
+        {
+            continue;
+        }
         let recipe = match commands.as_slice() {
             [] => continue,
             [cmd] => single_command(cmd, &resolve, &is_patcher, &is_episode_exe),
@@ -312,6 +320,12 @@ const COSMETIC: &[&str] = &[
     "ECHO", "REM", "PAUSE", "CLS", "EXIT", "TYPE", "COLOR", "MODE",
 ];
 
+/// Batch commands that only move files around.
+const FILE_COMMANDS: &[&str] = &[
+    "REN", "RENAME", "DEL", "ERASE", "COPY", "XCOPY", "MOVE", "MD", "MKDIR", "RD", "RMDIR", "CD",
+    "CHDIR", "ATTRIB",
+];
+
 /// The commands of a batch file that start something, split into words.
 /// Comments and screen output are left out.
 pub fn batch_commands(text: &str) -> Vec<Vec<String>> {
@@ -323,7 +337,9 @@ pub fn batch_commands(text: &str) -> Vec<Vec<String>> {
         .filter_map(|l| {
             let words: Vec<String> = l.split_whitespace().map(str::to_string).collect();
             let first = words[0].to_ascii_uppercase();
-            let skip = COSMETIC.contains(&first.as_str()) || first.starts_with("ECHO.");
+            let skip = COSMETIC.contains(&first.as_str())
+                || first.starts_with("ECHO.")
+                || first.starts_with("ECHO:");
             (!skip).then_some(words)
         })
         .collect()
@@ -717,6 +733,26 @@ CK4PATCH P.PAT
                 "@ECHO OFF\r\n:: x\r\nrem y\r\necho. \r\n  cls\r\nKDRPATCH MartGold.pat\r\nPause\r\n"
             ),
             [vec!["KDRPATCH".to_string(), "MartGold.pat".into()]]
+        );
+    }
+
+    #[test]
+    fn setup_batch_files_are_passed_over() {
+        // As Patchwork Mod III: the batch file it starts with only renames
+        // the real one, which has another extension until then.
+        let g = run(&[
+            (
+                "~Install.BAT",
+                "echo:off\r\ncls\r\n@echo Welcome\r\npause\r\nrename ~Install.DAT ~PMIII.BAT\r\ndel ~Install.BAT",
+            ),
+            ("~Install.DAT", "echo off\r\nCK4PATCH patches.PAT\r\n"),
+            ("CK4PATCH.EXE", ""),
+            ("patches.PAT", "%ext ck4"),
+        ]);
+        assert!(g.confident);
+        assert_eq!(
+            g.candidates[0].recipe,
+            patch("CK4PATCH.EXE", "patches.PAT", &[])
         );
     }
 
