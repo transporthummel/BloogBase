@@ -1,0 +1,30 @@
+id: norp-the-yorp-2
+name: "Norp the Yorp 2: Diffusion"
+game: keen2
+requires: [keen2-1.0, keen2-1.31]
+authors: [Xtraverse]
+authorLinks:
+  Xtraverse: https://keenwiki.shikadi.net/wiki/Xtraverse
+released: 2002-12-23
+added: 2026-10-23
+type: episode
+description: "Keen's pet Yorp boards a solar bomb hovering near the sun and has to destroy the mushrooms powering it, past cavemen, junglemen and dragons."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Norp_the_Yorp_2
+  pckf: https://archive.shikadi.net/pckf/other/537.htm
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.xtraverse.norp_the_yorp_2.k2.2002-12-23.zip
+    sha256: d4893934fc21813bbbef86d5089b8808f92a27294da0e4b0663bbe7868c5e6a1
+    size: 89088
+# CK2PATCH 0.5.1; the readme runs it with one patch file per game version
+# (Norp2v131.bat, Norp2v100.bat).
+recipe:
+  type: patch
+  patcher: CK2PATCH.EXE
+  patch: plasma2.ny2
+versionRecipes:
+  keen2-1.0:
+    type: patch
+    patcher: CK2PATCH.EXE
+    patch: plasma.ny2
+minAppVersion: 0.1.0
