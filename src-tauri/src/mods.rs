@@ -202,7 +202,22 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
         .into_iter()
         .filter(|f| !is_junk(split_dir(f).1))
         .collect();
-    let root = find_root(&files).ok_or(Error::NoModFound)?;
+    // Patchers by name, or by the usage line of renamed ones.
+    let patchers: BTreeMap<&str, &'static str> = files
+        .iter()
+        .filter_map(|f| {
+            let name = split_dir(f).1;
+            if !(has_ext(name, "EXE") || has_ext(name, "COM")) {
+                return None;
+            }
+            let game = patcher_game(name).or_else(|| {
+                let exe = source.read(f).ok()?;
+                recipe::patcher_game_of(&exe)
+            })?;
+            Some((f.as_str(), game))
+        })
+        .collect();
+    let root = find_root(&files, |f| patchers.contains_key(f)).ok_or(Error::NoModFound)?;
     let in_root = |f: &&String| root.is_empty() || f.starts_with(&format!("{root}/"));
     let mut files: Vec<String> = files.iter().filter(in_root).cloned().collect();
     // Bare names in the mod root, where recipes have to live.
@@ -226,7 +241,12 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
     };
 
     let meta = guess_metadata(path, &root);
-    let game = find_game(&names, &read, meta.episode.or(game_hint)).ok_or(Error::NoModFound)?;
+    let is_patcher = |name: &str| patchers.contains_key(rel(name).as_str());
+    let by_patcher = names
+        .iter()
+        .find_map(|n| patchers.get(rel(n).as_str()).copied());
+    let game = find_game(&names, &read, by_patcher, meta.episode.or(game_hint))
+        .ok_or(Error::NoModFound)?;
 
     // Pristine game executables would hide the install's own version.
     let mut pristine = Vec::new();
@@ -248,7 +268,7 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
     }
     files.retain(|f| !pristine.contains(f));
 
-    let guess = recipe::guess(&names, read, &game.executables);
+    let guess = recipe::guess(&names, read, &game.executables, is_patcher);
     let recipes = guess
         .candidates
         .into_iter()
@@ -318,11 +338,12 @@ fn episode_of_ext(name: &str) -> Option<&'static str> {
 
 /// The directory with the most Keen files directly inside it; the shallowest
 /// one on a tie. Mods are often zipped with a folder around them.
-fn find_root(files: &[String]) -> Option<String> {
+/// `is_patcher` takes a path and also knows renamed patchers.
+fn find_root(files: &[String], is_patcher: impl Fn(&str) -> bool) -> Option<String> {
     let mut score: BTreeMap<&str, usize> = BTreeMap::new();
     for f in files {
         let (dir, name) = split_dir(f);
-        if is_keen_file(name) {
+        if is_keen_file(name) || is_patcher(f) {
             *score.entry(dir).or_default() += 1;
         }
     }
@@ -349,14 +370,17 @@ fn depth(dir: &str) -> usize {
 fn find_game(
     names: &[String],
     read: &impl Fn(&str) -> Option<String>,
+    by_patcher: Option<&'static str>,
     hint: Option<&str>,
 ) -> Option<&'static Game> {
-    let by_patcher = names.iter().find_map(|n| patcher_game(n));
     let by_ext = || {
         names
             .iter()
-            .filter(|n| has_ext(n, "PAT"))
-            .filter_map(|n| read(n).and_then(|t| recipe::patch_ext(&t)))
+            .filter_map(|n| {
+                let text = read(n)?;
+                (has_ext(n, "PAT") || recipe::is_patch_text(n, &text)).then_some(text)
+            })
+            .filter_map(|t| recipe::patch_ext(&t))
             .find_map(|ext| episode_of_ext(&format!("x.{ext}")))
     };
     let by_data = || {
@@ -2175,6 +2199,39 @@ mod tests {
     }
 
     #[test]
+    fn renamed_patcher_and_patch_files_are_found() {
+        // As Norp the Yorp 3: CK3PATCH as NORPER.EXE, one `.NY3` patch per
+        // game version, each run by its own batch file.
+        let tmp = tempfile::tempdir().unwrap();
+        let norper = [b"MZ".as_slice(), &[0; 0x1E], b"Usage: CK3PATCH {patchfile}"].concat();
+        let patch = b"#Text Files
+%patchfile 0x17b00 DRAGON.NY3
+%patch 0x1ba4c \"N3MAP\"
+";
+        write_folder(
+            tmp.path(),
+            &[
+                ("NORPER.EXE", &norper),
+                ("MAGMA.NY3", patch),
+                ("PLASMA.NY3", patch),
+                ("NORP3v131.bat", b"norper magma.ny3"),
+                ("NORP3v10.bat", b"norper plasma.ny3"),
+                ("N3MAP01.NY3", b""),
+            ],
+        );
+        let a = analyze(&Source::open(tmp.path()).unwrap(), tmp.path(), None).unwrap();
+        assert_eq!(a.info.game_id, "keen3");
+        let recipes: Vec<&Recipe> = a.info.recipes.iter().map(|o| &o.recipe).collect();
+        let patch = |p: &str| Recipe::Patch {
+            patcher: "NORPER.EXE".into(),
+            patch: p.into(),
+            args: Vec::new(),
+        };
+        assert_eq!(recipes, [&patch("PLASMA.NY3"), &patch("MAGMA.NY3")]);
+        assert!(!a.info.confident);
+    }
+
+    #[test]
     fn root_is_the_folder_with_most_keen_files() {
         let files: Vec<String> = [
             "Mod/LEVEL01.CK1",
@@ -2185,8 +2242,8 @@ mod tests {
         .iter()
         .map(|s| s.to_string())
         .collect();
-        assert_eq!(find_root(&files).as_deref(), Some("Mod"));
-        assert_eq!(find_root(&["a.txt".to_string()]), None);
+        assert_eq!(find_root(&files, |_| false).as_deref(), Some("Mod"));
+        assert_eq!(find_root(&["a.txt".to_string()], |_| false), None);
     }
 
     #[test]

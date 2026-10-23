@@ -93,11 +93,13 @@ const PREFERRED_BATCH: &[&str] = &["PLAY", "START", "RUN", "GO"];
 
 /// Guesses the recipe from the files in the mod root. `names` are the bare
 /// file names there; `read` returns a file's text; `episode_exes` are the
-/// catalog executables of the target game.
+/// catalog executables of the target game; `is_patcher` says which names are
+/// patchers, renamed ones included.
 pub fn guess(
     names: &[String],
     read: impl Fn(&str) -> Option<String>,
     episode_exes: &[String],
+    is_patcher: impl Fn(&str) -> bool,
 ) -> Guess {
     let by_upper: HashMap<String, &str> = names
         .iter()
@@ -119,7 +121,6 @@ pub fn guess(
             .find_map(|e| by_upper.get(&format!("{token}.{e}")))
             .map(|n| n.to_string())
     };
-    let is_patcher = |name: &str| is_patcher(name);
     // With or without extension, as batch files spell it.
     let is_episode_exe = |name: &str| {
         episode_exes
@@ -175,8 +176,11 @@ pub fn guess(
     if let Some(patcher) = patcher {
         let mut pats: Vec<(&String, usize)> = names
             .iter()
-            .filter(|n| has_ext(n, "PAT") && !used.contains(&n.as_str()))
-            .map(|n| (n, read(n).map_or(0, |t| t.len())))
+            .filter(|n| !used.contains(&n.as_str()))
+            .filter_map(|n| {
+                let text = read(n)?;
+                (has_ext(n, "PAT") || is_patch_text(n, &text)).then_some((n, text.len()))
+            })
             .collect();
         pats.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
         for (pat, _) in pats {
@@ -433,6 +437,42 @@ fn patch_directives<'a>(text: &'a str, name: &'a str) -> impl Iterator<Item = St
     })
 }
 
+/// Documents, which may quote patches without being one.
+const DOCUMENTS: &[&str] = &["TXT", "DOC", "HTM", "HTML", "NFO", "ME", "1ST", "BAT"];
+
+/// Whether a file with another extension than `.PAT` is a patch file, as
+/// Norp the Yorp 3's `.NY3` ones: text with patch directives starting lines.
+pub fn is_patch_text(name: &str, text: &str) -> bool {
+    if DOCUMENTS.iter().any(|e| has_ext(name, e)) || text.contains(' ') {
+        return false;
+    }
+    let directives = text
+        .lines()
+        .filter_map(|l| l.split_whitespace().next())
+        .filter(|w| {
+            ["%ext", "%version", "%patch", "%patchfile", "%end"]
+                .iter()
+                .any(|d| w.eq_ignore_ascii_case(d))
+        })
+        .count();
+    directives >= 2
+}
+
+/// The game a CKPatch build is for, from the usage line it prints, so a
+/// renamed one counts too (Norp the Yorp 3 ships CK3PATCH as NORPER.EXE).
+pub fn patcher_game_of(exe: &[u8]) -> Option<&'static str> {
+    let image = keen_graphics::load_image(exe).ok()?;
+    let at = image.windows(7).position(|w| w == b"Usage: ")? + 7;
+    let name: String = image[at..]
+        .iter()
+        .take_while(|b| b.is_ascii_alphanumeric())
+        .map(|&b| b as char)
+        .collect();
+    image[at + name.len()..]
+        .starts_with(b" {patchfile")
+        .then(|| patcher_game(&format!("{name}.EXE")))?
+}
+
 /// `CK1PATCH.EXE` ... `CK6PATCH.EXE`, `KDRPATCH.EXE`.
 pub fn is_patcher(name: &str) -> bool {
     patcher_game(name).is_some()
@@ -476,7 +516,12 @@ mod tests {
                 .find(|(f, _)| *f == n)
                 .map(|(_, t)| t.to_string())
         };
-        guess(&names, read, &["KEEN4E.EXE".into(), "KEEN4C.EXE".into()])
+        guess(
+            &names,
+            read,
+            &["KEEN4E.EXE".into(), "KEEN4C.EXE".into()],
+            is_patcher,
+        )
     }
 
     fn patch(patcher: &str, patch: &str, args: &[&str]) -> Recipe {
@@ -704,6 +749,55 @@ $BA $D8 $03 $EE"
         assert_eq!(patcher_game("KDRPATCH.EXE"), Some("kdreams"));
         assert_eq!(patcher_game("CK4PATCH.PAT"), None);
         assert_eq!(patcher_game("CKPATCH.EXE"), None);
+    }
+
+    #[test]
+    fn renamed_patchers_by_usage_line() {
+        let exe = |text: &[u8]| [b"MZ".as_slice(), &[0; 0x1E], text].concat();
+        let usage = b"Usage: CK3PATCH {patchfile|patchdir} [game arguments]";
+        assert_eq!(patcher_game_of(&exe(usage)), Some("keen3"));
+        assert_eq!(
+            patcher_game_of(&exe(b"Usage: KDRPATCH {patchfile}")),
+            Some("kdreams")
+        );
+        assert_eq!(patcher_game_of(&exe(b"Usage: FOO {patchfile}")), None);
+        assert_eq!(patcher_game_of(&exe(b"Usage: CK3PATCH file")), None);
+        assert_eq!(patcher_game_of(usage), None);
+    }
+
+    #[test]
+    fn patch_files_by_content() {
+        let text = "#Text Files
+%patchfile 0x17b00 DRAGON.NY3
+%patch 0x1ba4c \"N3MAP\"
+";
+        assert!(is_patch_text("MAGMA.NY3", text));
+        assert!(!is_patch_text("README.TXT", text));
+        assert!(!is_patch_text(
+            "LEVEL01.NY3",
+            "%patch 1
+ %end"
+        ));
+        assert!(!is_patch_text(
+            "NOTES.NY3",
+            "%patch 0x1 2
+"
+        ));
+        // Next to a patcher, without a batch file.
+        let g = run(&[
+            ("CK4PATCH.EXE", ""),
+            (
+                "MOD.NY4",
+                "%ext ck4
+%patch 0x1 2
+%end
+",
+            ),
+        ]);
+        assert_eq!(
+            g.candidates[0].recipe,
+            patch("CK4PATCH.EXE", "MOD.NY4", &[])
+        );
     }
 
     #[test]
