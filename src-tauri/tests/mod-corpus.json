@@ -346,7 +346,9 @@
         "patch": "KEEN5C16.PAT",
         "args": []
       },
-      "versionIds": [],
+      "versionIds": [
+        "keen5-1.4-cga"
+      ],
       "confident": true
     },
     {

@@ -245,7 +245,8 @@
           "id": "keen5-1.4-cga",
           "label": "v1.4 CGA",
           "files": { "KEEN5C.EXE": "052ab57005a7767bdceef1da7690e8b1a4f145b6d4b529cde254149e23fa83e9" },
-          "shareware": false
+          "shareware": false,
+          "patchVersion": "cga-1.4"
         },
         {
           "id": "keen5-1.4-ega-gt",
