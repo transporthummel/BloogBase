@@ -79,8 +79,16 @@ function Result({
   return null;
 }
 
-/** The link is in the index: install the tested entry instead. */
-function IndexHit({ id }: { id: string }) {
+/** The mod is in the index: install the tested entry instead, from `archive` when given. */
+export function IndexHit({
+  id,
+  archive,
+  notice = "keenwiki.inIndex",
+}: {
+  id: string;
+  archive?: string;
+  notice?: "keenwiki.inIndex" | "mods.inIndex";
+}) {
   const { t } = useTranslation();
   const mods = useIndexMods();
   const games = useGames();
@@ -92,11 +100,12 @@ function IndexHit({ id }: { id: string }) {
   if (!mod || !games.data || !installs.data) return null;
   return (
     <div className="grid gap-2">
-      <Notice>{t("keenwiki.inIndex")}</Notice>
+      <Notice>{t(notice)}</Notice>
       <ModCard
         mod={mod}
         installs={installs.data.filter((i) => i.gameId === mod.entry.game)}
         games={games.data}
+        archive={archive}
       />
     </div>
   );

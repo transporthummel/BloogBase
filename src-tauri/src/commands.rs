@@ -13,6 +13,7 @@ use crate::captures::{self, Kind, Screenshot, Video, VideoIndex};
 use crate::catalog::{self, Game};
 use crate::covers;
 use crate::db::Db;
+use crate::detect;
 use crate::dosconf::{self, ConfigView, ConfigWarning};
 use crate::downloads;
 use crate::error::{CommandResult, Error, Result};
@@ -604,15 +605,34 @@ pub fn reset_config(
 /// Looks at a folder or ZIP and reports the mod found in it, for the user to confirm.
 #[tauri::command]
 #[specta::specta]
-pub async fn inspect_mod(path: String) -> CommandResult<ModInfo> {
-    blocking(move || mods::inspect(Path::new(&path), None)).await
+pub async fn inspect_mod(app: AppHandle, path: String) -> CommandResult<ModInfo> {
+    blocking(move || {
+        let mut info = mods::inspect(Path::new(&path), None)?;
+        info.index_id = index_match(&app, &path, &info);
+        Ok(info)
+    })
+    .await
+}
+
+/// The index entry whose download `path` is, for `info` found in it.
+fn index_match(app: &AppHandle, path: &str, info: &ModInfo) -> Option<String> {
+    app.state::<ModIndex>()
+        .entry_for_archive(Path::new(path), &info.game_id)
+        .map(|e| e.id)
 }
 
 /// Whether a folder or ZIP dropped on the window holds games or a mod.
 #[tauri::command]
 #[specta::specta]
-pub async fn inspect_dropped(path: String) -> CommandResult<Dropped> {
-    blocking(move || mods::classify(Path::new(&path))).await
+pub async fn inspect_dropped(app: AppHandle, path: String) -> CommandResult<Dropped> {
+    blocking(move || {
+        let mut dropped = mods::classify(Path::new(&path))?;
+        if let Dropped::Mod { info } = &mut dropped {
+            info.index_id = index_match(&app, &path, info);
+        }
+        Ok(dropped)
+    })
+    .await
 }
 
 /// Installs a mod inspected with `inspect_mod` and creates its play profile.
@@ -862,7 +882,8 @@ pub fn index_mods(index: State<'_, ModIndex>, db: State<'_, Db>) -> CommandResul
 /// Downloads a mod from the index and installs it, or updates it when it's
 /// installed already. Without `install_id` it goes on the best fitting game,
 /// once a free episode for it has finished downloading; with none,
-/// `without_game` lets it wait for one.
+/// `without_game` lets it wait for one. `archive` is a copy of the download
+/// the player has already, used instead of downloading it.
 #[tauri::command]
 #[specta::specta]
 pub fn install_index_mod(
@@ -870,6 +891,7 @@ pub fn install_index_mod(
     index_id: String,
     install_id: Option<String>,
     without_game: bool,
+    archive: Option<String>,
 ) -> Job {
     let a = app.clone();
     let id = index_id.clone();
@@ -880,15 +902,31 @@ pub fn install_index_mod(
             .ok_or_else(|| Error::NotFound(format!("{id} in the mod index")))?;
         let download = entry.downloads[0].clone();
         let size = u64::from(download.size);
-        let archive = a
-            .state::<AppPaths>()
-            .cache
-            .join("downloads")
-            .join(format!("index-{id}.zip"));
-        downloads::fetch(&download.url, &download.sha256, size, &archive, &|r, t| {
-            report.progress(JobPhase::Downloading, r, t)
-        })
-        .await?;
+        let local = archive.map(PathBuf::from);
+        let archive = match &local {
+            Some(path) => {
+                let hash = detect::sha256_hex(&tokio::fs::read(path).await?);
+                if !hash.eq_ignore_ascii_case(&download.sha256) {
+                    return Err(Error::UnexpectedContent(format!(
+                        "{} is not the download of {id}",
+                        path.display()
+                    )));
+                }
+                path.clone()
+            }
+            None => {
+                let archive = a
+                    .state::<AppPaths>()
+                    .cache
+                    .join("downloads")
+                    .join(format!("index-{id}.zip"));
+                downloads::fetch(&download.url, &download.sha256, size, &archive, &|r, t| {
+                    report.progress(JobPhase::Downloading, r, t)
+                })
+                .await?;
+                archive
+            }
+        };
         report.progress(JobPhase::Installing, size, size);
         // Right after the setup wizard the game may still be on its way.
         while a.state::<Jobs>().is_running(JobKind::FreeGame, |v| {
@@ -939,7 +977,10 @@ pub fn install_index_mod(
         .await
         .map_err(Error::from)
         .and_then(|r| r);
-        let _ = std::fs::remove_file(&archive);
+        // The player's own copy stays.
+        if local.is_none() {
+            let _ = std::fs::remove_file(&archive);
+        }
         result.map(drop)
     })
 }

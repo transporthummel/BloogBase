@@ -119,6 +119,7 @@ test("downloads a newer version and replaces the installed one", async () => {
         recipes: [{ recipe: patch, origin: "play.bat", gameVersions: [], versionIds: [] }],
         confident: true,
         fileCount: 3,
+        indexId: null,
       },
     }),
   );

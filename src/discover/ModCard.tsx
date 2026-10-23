@@ -22,10 +22,13 @@ export function ModCard({
   mod,
   installs,
   games,
+  archive,
 }: {
   mod: IndexMod;
   installs: Install[];
   games: Game[];
+  /** The player's own copy of the download, installed instead of downloading it. */
+  archive?: string;
 }) {
   const { t, i18n } = useTranslation();
   const { entry } = mod;
@@ -85,7 +88,13 @@ export function ModCard({
           </p>
         )}
         <div className="mt-auto grid grid-cols-1 gap-2 pt-1">
-          <InstallAction mod={mod} installs={installs} games={games} size={latest?.size ?? 0} />
+          <InstallAction
+            mod={mod}
+            installs={installs}
+            games={games}
+            size={latest?.size ?? 0}
+            archive={archive}
+          />
         </div>
       </div>
     </Card>
@@ -97,17 +106,19 @@ function InstallAction({
   installs,
   games,
   size,
+  archive,
 }: {
   mod: IndexMod;
   installs: Install[];
   games: Game[];
   size: number;
+  archive?: string;
 }) {
   const { t } = useTranslation();
   const { entry } = mod;
   const job = useJob("mod", entry.id);
   const start = useStartJob((installId: string | null) =>
-    commands.installIndexMod(entry.id, installId, installId === null),
+    commands.installIndexMod(entry.id, installId, installId === null, archive ?? null),
   );
   const [confirming, setConfirming] = useState(false);
   const candidates = fitting(entry, installs, games);
@@ -121,6 +132,10 @@ function InstallAction({
   const versionLabel = (i: Install) =>
     games.find((g) => g.id === i.gameId)?.versions.find((v) => v.id === i.versionId)?.label ??
     t("library.unknownVersion");
+  // A copy the player has needs no download.
+  const installLabel = archive
+    ? t("mods.install")
+    : t("discover.install", { size: formatMegabytes(size) });
 
   if (job && !isFinished(job)) return <JobRow job={job} label={entry.name} />;
   const failed = job?.phase === "failed" && <JobRow job={job} label={entry.name} />;
@@ -185,7 +200,7 @@ function InstallAction({
                   start.mutate(null);
                 }}
               >
-                {t("discover.install", { size: formatMegabytes(size) })}
+                {installLabel}
               </Button>
             </div>
           </Dialog>
@@ -214,7 +229,7 @@ function InstallAction({
       )}
       <Button onClick={() => start.mutate(target.id)} disabled={start.isPending}>
         <Download className="size-4" aria-hidden />
-        {t("discover.install", { size: formatMegabytes(size) })}
+        {installLabel}
       </Button>
     </>
   );

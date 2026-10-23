@@ -186,7 +186,7 @@ test("shows what each mod needs and installs on the chosen game", async () => {
   const aurora = within(card("Aurora"));
   await user.selectOptions(aurora.getByRole("combobox"), "keen4-b");
   await user.click(aurora.getByRole("button", { name: "Install (2.0 MB)" }));
-  expect(commands.installIndexMod).toHaveBeenCalledWith("Aurora", "keen4-b", false);
+  expect(commands.installIndexMod).toHaveBeenCalledWith("Aurora", "keen4-b", false, null);
 });
 
 test("asks before installing a mod without its game", async () => {
@@ -208,7 +208,7 @@ test("asks before installing a mod without its game", async () => {
   expect(dialog).toHaveTextContent("Commander Keen 6 (v1.4 EGA) isn’t in your library.");
   expect(commands.installIndexMod).not.toHaveBeenCalled();
   await user.click(within(dialog).getByRole("button", { name: "Install (2.0 MB)" }));
-  expect(commands.installIndexMod).toHaveBeenCalledWith("Fribbulus", null, true);
+  expect(commands.installIndexMod).toHaveBeenCalledWith("Fribbulus", null, true, null);
 });
 
 test("filters by text, type and what the library can play", async () => {

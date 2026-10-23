@@ -71,6 +71,7 @@ const info: ModInfo = {
   recipes: [{ recipe: { type: "episode" }, origin: "", gameVersions: [], versionIds: [] }],
   confident: true,
   fileCount: 3,
+  indexId: null,
 };
 
 const aurora = { id: "aurora-bliss", name: "Aurora Bliss", profileId: "aurora-bliss" } as Mod;

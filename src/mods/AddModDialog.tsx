@@ -22,7 +22,7 @@ import { readmeKey } from "../profile/readme";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
-import { KeenwikiImport } from "./KeenwikiImport";
+import { IndexHit, KeenwikiImport } from "./KeenwikiImport";
 import type { Downloaded } from "./wikiDownload";
 import { RecipeLabel } from "./RecipeLabel";
 import { fits } from "./recipes";
@@ -148,14 +148,7 @@ export function AddModDialog({
   );
 }
 
-function Confirm({
-  path,
-  info,
-  origin = null,
-  replacing,
-  onCancel,
-  onInstalled,
-}: {
+type ConfirmProps = {
   path: string;
   info: ModInfo;
   /** Set for a mod from a KeenWiki page, whose details win over the guesses. */
@@ -164,7 +157,30 @@ function Confirm({
   replacing?: string;
   onCancel: () => void;
   onInstalled: (mod: Mod) => void;
-}) {
+};
+
+/** A file that is an index download installs as that entry, unless the player sets it up. */
+function Confirm(props: ConfirmProps) {
+  const { t } = useTranslation();
+  const [myself, setMyself] = useState(false);
+  const { info, path, replacing, onCancel } = props;
+  if (!info.indexId || replacing || myself) return <SetUp {...props} />;
+  return (
+    <div className="grid gap-4">
+      <IndexHit id={info.indexId} archive={path} notice="mods.inIndex" />
+      <div className="flex justify-end gap-3">
+        <Button variant="ghost" onClick={() => setMyself(true)}>
+          {t("mods.setUpMyself")}
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>
+          {t("common.close")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: ConfirmProps) {
   const { t, i18n } = useTranslation();
   const games = useGames();
   const installs = useQuery({

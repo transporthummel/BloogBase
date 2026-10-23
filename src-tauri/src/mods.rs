@@ -65,6 +65,8 @@ pub struct ModInfo {
     /// False when the user should pick from `recipes`.
     pub confident: bool,
     pub file_count: u32,
+    /// The index entry whose download this is, byte for byte.
+    pub index_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Type)]
@@ -300,6 +302,7 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
             recipes,
             confident: guess.confident,
             file_count: files.len() as u32,
+            index_id: None,
         },
         root,
         files,

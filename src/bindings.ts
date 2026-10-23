@@ -154,9 +154,10 @@ export const commands = {
 	 *  Downloads a mod from the index and installs it, or updates it when it's
 	 *  installed already. Without `install_id` it goes on the best fitting game,
 	 *  once a free episode for it has finished downloading; with none,
-	 *  `without_game` lets it wait for one.
+	 *  `without_game` lets it wait for one. `archive` is a copy of the download
+	 *  the player has already, used instead of downloading it.
 	 */
-	installIndexMod: (indexId: string, installId: string | null, withoutGame: boolean) => __TAURI_INVOKE<Job>("install_index_mod", { indexId, installId, withoutGame }),
+	installIndexMod: (indexId: string, installId: string | null, withoutGame: boolean, archive: string | null) => __TAURI_INVOKE<Job>("install_index_mod", { indexId, installId, withoutGame, archive }),
 	lookupKeenwiki: (url: string) => typedError<KeenwikiLookup, CommandError>(__TAURI_INVOKE("lookup_keenwiki", { url })),
 	/**
 	 *  Checks a mod's KeenWiki page for a newer download. The page comes from
@@ -613,6 +614,8 @@ export type ModInfo = {
 	/**  False when the user should pick from `recipes`. */
 	confident: boolean,
 	fileCount: number,
+	/**  The index entry whose download this is, byte for byte. */
+	indexId: string | null,
 };
 
 export type ModKind = "episode" | "levelpack" | "conversion";

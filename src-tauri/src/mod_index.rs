@@ -16,6 +16,7 @@ use specta::Type;
 
 use crate::catalog;
 use crate::db::Db;
+use crate::detect::sha256_hex;
 use crate::downloads::USER_AGENT;
 use crate::error::{CommandError, Error, Result};
 use crate::library::now;
@@ -276,6 +277,26 @@ impl ModIndex {
 
     pub fn entry(&self, id: &str) -> Option<IndexEntry> {
         self.entries().into_iter().find(|e| e.id == id)
+    }
+
+    /// The entry whose newest download is the archive at `path`, so a mod
+    /// added from a file gets the tested recipe. Older downloads don't
+    /// count: the entry's recipe may not fit them.
+    pub fn entry_for_archive(&self, path: &Path, game_id: &str) -> Option<IndexEntry> {
+        if !path.is_file() {
+            return None;
+        }
+        let entries = self.entries();
+        if !entries.iter().any(|e| e.game == game_id) {
+            return None;
+        }
+        let hash = sha256_hex(&std::fs::read(path).ok()?);
+        entries.into_iter().find(|e| {
+            e.game == game_id
+                && e.downloads
+                    .first()
+                    .is_some_and(|d| d.sha256.eq_ignore_ascii_case(&hash))
+        })
     }
 
     /// Checks for a new index, unless that happened less than
@@ -616,6 +637,27 @@ mod tests {
         let st = again.refresh(true).await;
         assert!(st.error.is_some());
         assert_eq!(st.mod_count, 1);
+    }
+
+    #[tokio::test]
+    async fn finds_the_entry_of_a_downloaded_archive() {
+        let (tmp, paths) = setup();
+        let k = keys();
+        let zip = tmp.path().join("copy.zip");
+        std::fs::write(&zip, b"the download").unwrap();
+        let hash = sha256_hex(b"the download");
+        let json = SAMPLE.replace(&"1".repeat(64), &hash.to_uppercase());
+        let url = publish(tmp.path(), &k, &json);
+        let index = ModIndex::with_keys(&paths, url, &[&k.pk]);
+        index.refresh(false).await;
+
+        let found = |path: &Path, game: &str| index.entry_for_archive(path, game).map(|e| e.id);
+        assert_eq!(found(&zip, "keen4").as_deref(), Some("sample-patch"));
+        // Another game's mod, another file or a folder: no match.
+        assert_eq!(found(&zip, "keen5"), None);
+        std::fs::write(tmp.path().join("other.zip"), b"other").unwrap();
+        assert_eq!(found(&tmp.path().join("other.zip"), "keen4"), None);
+        assert_eq!(found(tmp.path(), "keen4"), None);
     }
 
     #[tokio::test]

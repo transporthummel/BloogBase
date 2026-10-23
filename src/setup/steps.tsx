@@ -489,7 +489,9 @@ export function ModsStep({ next, back }: StepProps) {
   });
   const free = useFreeGames();
   const jobs = useJobs().data ?? [];
-  const start = useStartJob((indexId: string) => commands.installIndexMod(indexId, null, false));
+  const start = useStartJob((indexId: string) =>
+    commands.installIndexMod(indexId, null, false, null),
+  );
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
   const coming: Owned[] = (free.data ?? [])

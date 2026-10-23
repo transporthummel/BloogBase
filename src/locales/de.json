@@ -263,6 +263,8 @@
     "version": "Version {{version}}",
     "startAdvanced": "Wie sie startet (für Fortgeschrittene)",
     "helpTitle": "Wir brauchen deine Hilfe",
+    "inIndex": "Diese Datei kennt die BloogBase-Modliste: Die Mod wird so installiert, wie sie dort getestet ist.",
+    "setUpMyself": "Lieber selbst einrichten",
     "helpHint": "Diese Mod lässt sich auf mehrere Arten starten. Wenn du unsicher bist, nimm die erste; die Readme der Mod verrät vielleicht mehr.",
     "recipe": {
       "patch": "Patch der Mod laden",

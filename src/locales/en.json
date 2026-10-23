@@ -263,6 +263,8 @@
     "version": "version {{version}}",
     "startAdvanced": "How it starts (advanced)",
     "helpTitle": "We need your help",
+    "inIndex": "The BloogBase mod list knows this file: the mod is installed the way it was tested there.",
+    "setUpMyself": "Set it up myself instead",
     "helpHint": "This mod can be started in more than one way. If you are not sure, keep the first one; the mod’s readme may tell you more.",
     "recipe": {
       "patch": "Load the mod’s patch",

@@ -6,6 +6,7 @@ import { beforeEach, expect, test, vi } from "vitest";
 import {
   commands,
   type Game,
+  type IndexMod,
   type Install,
   type Mod,
   type ModInfo,
@@ -29,6 +30,7 @@ vi.mock("../bindings", () => ({
     lookupKeenwiki: vi.fn(),
     downloadKeenwikiMod: vi.fn(),
     indexMods: vi.fn(),
+    installIndexMod: vi.fn(),
     listJobs: vi.fn(),
   },
 }));
@@ -77,6 +79,7 @@ const info: ModInfo = {
   recipes: [patch],
   confident: true,
   fileCount: 18,
+  indexId: null,
 };
 
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
@@ -484,44 +487,81 @@ test("warns when the page and the files disagree about the game", async () => {
   ).toBeInTheDocument();
 });
 
+const auroraInIndex: IndexMod = {
+  entry: {
+    id: "aurora-bliss",
+    name: "Aurora Bliss",
+    game: "keen4",
+    requires: [],
+    authors: ["Dave216"],
+    version: "1.2",
+    released: null,
+    updated: null,
+    added: "2026-10-17",
+    type: "episode",
+    description: null,
+    links: { keenwiki: page.pageUrl, pckf: null, homepage: null },
+    downloads: [{ version: "1.2", url: "https://x/a.zip", sha256: "00", size: 1 }],
+    recipe: patch.recipe,
+    tags: [],
+    featured: false,
+    minAppVersion: null,
+  },
+  modId: null,
+  updateAvailable: false,
+};
+
 test("offers the index entry when the link is in the index", async () => {
   vi.mocked(commands.listJobs).mockResolvedValue([]);
   vi.mocked(commands.lookupKeenwiki).mockReturnValue(
     ok({ pageUrl: page.pageUrl, indexId: "aurora-bliss", page: null }),
   );
-  vi.mocked(commands.indexMods).mockReturnValue(
-    ok([
-      {
-        entry: {
-          id: "aurora-bliss",
-          name: "Aurora Bliss",
-          game: "keen4",
-          requires: [],
-          authors: ["Dave216"],
-          version: "1.2",
-          released: null,
-          updated: null,
-          added: "2026-10-17",
-          type: "episode",
-          description: null,
-          links: { keenwiki: page.pageUrl, pckf: null, homepage: null },
-          downloads: [{ version: "1.2", url: "https://x/a.zip", sha256: "00", size: 1 }],
-          recipe: patch.recipe,
-          tags: [],
-          featured: false,
-          minAppVersion: null,
-        },
-        modId: null,
-        updateAvailable: false,
-      },
-    ]),
-  );
+  vi.mocked(commands.indexMods).mockReturnValue(ok([auroraInIndex]));
   renderDialog();
   await lookUp();
 
   expect(await screen.findByText(/tested and ready to install/)).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
   expect(commands.downloadKeenwikiMod).not.toHaveBeenCalled();
+});
+
+test("installs a picked copy of an index download as that entry", async () => {
+  vi.mocked(commands.listJobs).mockResolvedValue([]);
+  vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, indexId: "aurora-bliss" }));
+  vi.mocked(commands.indexMods).mockReturnValue(ok([auroraInIndex]));
+  vi.mocked(commands.installIndexMod).mockResolvedValue({
+    id: 1,
+    kind: "mod",
+    subject: "aurora-bliss",
+    phase: "installing",
+    received: 0,
+    total: 0,
+    error: null,
+  });
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  expect(await screen.findByText(/The BloogBase mod list knows this file/)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Install" }));
+  expect(commands.installIndexMod).toHaveBeenCalledWith(
+    "aurora-bliss",
+    "keen4-1",
+    false,
+    "/downloads/aurora.zip",
+  );
+});
+
+test("lets the player set up an index download themselves", async () => {
+  vi.mocked(commands.listJobs).mockResolvedValue([]);
+  vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, indexId: "aurora-bliss" }));
+  vi.mocked(commands.indexMods).mockReturnValue(ok([auroraInIndex]));
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+  await user.click(await screen.findByRole("button", { name: "Set it up myself instead" }));
+
+  expect(await screen.findByRole("textbox", { name: "Name" })).toHaveValue("Aurora Bliss");
 });
 
 test("explains links that aren't KeenWiki pages", async () => {
