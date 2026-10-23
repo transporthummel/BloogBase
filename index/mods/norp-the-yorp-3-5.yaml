@@ -1,0 +1,24 @@
+id: norp-the-yorp-3-5
+name: "Norp the Yorp 3.5: The Maze of Doom"
+game: keen1
+requires: [keen1-1.31]
+authors: [Xtraverse]
+authorLinks:
+  Xtraverse: https://keenwiki.shikadi.net/wiki/Xtraverse
+released: 2005-03-23
+added: 2026-10-23
+type: episode
+description: "Norp the Yorp returns in a one-level mod: a single large maze to find his way through."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Norp_the_Yorp_3.5
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.xtraverse.norp_the_yorp_3_5.k1.2005-03-23.zip
+    sha256: 31984577d36210128de87d44d87318b8a786a26271abffe6ec9ade7e99e2fef3
+    size: 159712
+# Norp.bat renames FOO.CK1, an unpacked copy of KEEN1.EXE 1.31, to KEEN1.EXE
+# for CK1PATCH and back afterwards; both fail next to the game's own
+# KEEN1.EXE. CK1PATCH 0.9 unpacks that one itself.
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: norp.pat
