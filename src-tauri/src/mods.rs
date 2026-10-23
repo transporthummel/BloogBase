@@ -343,14 +343,18 @@ fn episode_of_ext(name: &str) -> Option<&'static str> {
 }
 
 /// The directory with the most Keen files directly inside it; the shallowest
-/// one on a tie. Mods are often zipped with a folder around them.
+/// one on a tie. Mods are often zipped with a folder around them. Folders the
+/// mod can start from (a patcher, a patch or a game executable) come first:
+/// Keen Rescue keeps more levels in `levels/` than files next to its patcher.
 /// `is_patcher` takes a path and also knows renamed patchers.
 fn find_root(files: &[String], is_patcher: impl Fn(&str) -> bool) -> Option<String> {
-    let mut score: BTreeMap<&str, usize> = BTreeMap::new();
+    let mut score: BTreeMap<&str, (bool, usize)> = BTreeMap::new();
     for f in files {
         let (dir, name) = split_dir(f);
         if is_keen_file(name) || is_patcher(f) {
-            *score.entry(dir).or_default() += 1;
+            let s = score.entry(dir).or_default();
+            s.0 |= episode_of_ext(name).is_none();
+            s.1 += 1;
         }
     }
     score
@@ -2370,6 +2374,15 @@ mod tests {
         .collect();
         assert_eq!(find_root(&files, |_| false).as_deref(), Some("Mod"));
         assert_eq!(find_root(&["a.txt".to_string()], |_| false), None);
+
+        // As Keen Rescue: more levels in a subfolder than files next to the
+        // patcher.
+        let mut files = vec![
+            "krescue/CK3PATCH.EXE".to_string(),
+            "krescue/martakr.pat".into(),
+        ];
+        files.extend((1..=5).map(|n| format!("krescue/levels/LEVEL0{n}.CK3")));
+        assert_eq!(find_root(&files, |_| false).as_deref(), Some("krescue"));
     }
 
     #[test]

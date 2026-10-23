@@ -348,6 +348,25 @@
       },
       "versionIds": [],
       "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen3/m.paramultart_vikingboybilly.keen_rescue.k3.2012-03-14.zip",
+      "sha256": "8dbaefd7d72cb210706b72d6cde05902aa3ae586c37b8b6beec5cc4f17fbf631",
+      "gameId": "keen3",
+      "name": "Keen Rescue",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK3PATCH.EXE",
+        "patch": "martakr.pat",
+        "args": [
+          "-nowait"
+        ]
+      },
+      "versionIds": [
+        "keen3-1.0",
+        "keen3-1.31"
+      ],
+      "confident": true
     }
   ]
 }
