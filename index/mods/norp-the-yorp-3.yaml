@@ -1,0 +1,34 @@
+id: norp-the-yorp-3
+name: "Norp the Yorp 3: Brain Damage"
+game: keen3
+requires: [keen3-1.0, keen3-1.31]
+authors: [Xtraverse]
+authorLinks:
+  Xtraverse: https://keenwiki.shikadi.net/wiki/Xtraverse
+version: "1.0"
+released: 2003-02-03
+added: 2026-10-23
+type: episode
+description: "Keen's pet Yorp gets swallowed by a giant Mortimer McMire and has to fight his way out through his body, past viruses and white blood cells."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Norp_the_Yorp_3
+  pckf: https://archive.shikadi.net/pckf/unofficial/692.htm
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.xtraverse.norp_the_yorp_3.k3.2003-02-03.zip
+    sha256: 020d5751a2f9a4a81e65f44b5896d09d4d1f90020c01c534de484f06c32eea6c
+    size: 179863
+# NORPER.EXE is CK3PATCH 0.5.1; the readme runs it with one patch file per
+# game version (NORP3v131.bat, NORP3v10.bat).
+recipe:
+  type: patch
+  patcher: NORPER.EXE
+  patch: MAGMA.NY3
+versionRecipes:
+  keen3-1.0:
+    type: patch
+    patcher: NORPER.EXE
+    patch: PLASMA.NY3
+# Folders 1 to 4 hold ever smaller sprites for PCs short of memory; the
+# readme says to start with 1.
+copyToRoot: ["1"]
+minAppVersion: 0.1.0
