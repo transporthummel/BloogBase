@@ -1,0 +1,22 @@
+id: norp-the-yorp-1
+name: "Norp the Yorp 1: Inside Mortimer's Computer"
+game: keen1
+authors: [Xtraverse]
+authorLinks:
+  Xtraverse: https://keenwiki.shikadi.net/wiki/Xtraverse
+released: 2002-08-31
+added: 2026-10-23
+type: episode
+description: "Keen's pet Yorp finds Mars turned into Mortimer McMire's factory, gets shrunk into his computer and has to pull out the four chips that run it."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Norp_the_Yorp_1
+  pckf: https://archive.shikadi.net/pckf/unofficial/533.htm
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.xtraverse.norp_the_yorp_1.k1.2002-08-31.zip
+    sha256: ec8894501812adbd7d08351472236d645ff5079f67806cd5b28bd3e5b64257a2
+    size: 135164
+# Ships KEEN1.EXE 1.31 unpacked, so it runs on any version of the game.
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: Norp.pat
