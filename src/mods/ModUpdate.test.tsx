@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import {
@@ -176,4 +177,17 @@ test("warns that an index mod leaves the index", async () => {
       "After this update, the mod no longer gets updates from the BloogBase mod list.",
     ),
   ).toBeInTheDocument();
+});
+
+test("offers a download BloogBase can't open in the browser", async () => {
+  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page }));
+  vi.mocked(commands.downloadKeenwikiMod).mockResolvedValue({
+    status: "error",
+    error: { kind: "unsupportedDownload", message: "RAR archive" },
+  });
+  const user = renderUpdate();
+  await user.click(screen.getByRole("button", { name: "Check for updates" }));
+  await user.click(await screen.findByRole("button", { name: "Update" }));
+  await user.click(await screen.findByRole("button", { name: "Download it in your browser" }));
+  expect(openUrl).toHaveBeenCalledWith("https://files.example/aurora_v1.2.zip");
 });

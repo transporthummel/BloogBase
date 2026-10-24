@@ -146,7 +146,7 @@
     "deadLink": "Dieser Download-Link funktioniert nicht mehr. Vielleicht nennt die Seite einen anderen, oder die Mod ist umgezogen.",
     "tooLarge": "Der Download ist viel zu groß für eine Commander-Keen-Mod und wurde abgebrochen.",
     "webPage": "Der Link führt zu einer Webseite statt zu einer Datei. Öffne ihn im Browser, lade die Mod dort herunter und füge sie als ZIP-Datei oder Ordner hinzu.",
-    "unsupportedDownload": "BloogBase kann diesen Download noch nicht öffnen ({{message}}). Lade ihn im Browser herunter, entpacke ihn und füge den Ordner hinzu.",
+    "unsupportedDownload": "BloogBase kann diesen Download noch nicht öffnen ({{message}}). <browser>Lade ihn im Browser herunter</browser>, entpacke ihn und füge den Ordner hinzu.",
     "noSavesFound": "In dieser Datei wurden keine Spielstände für dieses Spiel gefunden.",
     "otherGame": "Diese Sicherung gehört zu einem anderen Spiel ({{message}})."
   },

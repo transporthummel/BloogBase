@@ -13,6 +13,7 @@ import { unwrap } from "../ipc";
 import { installsKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
+import { DownloadError } from "./DownloadError";
 import { downloaded, type Downloaded } from "./wikiDownload";
 
 /**
@@ -250,7 +251,7 @@ function WikiCard({
         )}
       </section>
       {download.isPending && <Notice>{t("keenwiki.downloading")}</Notice>}
-      {download.error && <Notice tone="error">{errorMessage(t, download.error)}</Notice>}
+      {download.error && <DownloadError error={download.error} url={chosen.url} />}
       <Footer {...actions} busy={download.isPending}>
         {chosen && (
           <Button onClick={() => download.mutate()} disabled={download.isPending}>

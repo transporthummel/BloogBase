@@ -9,6 +9,7 @@ import { profilesKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
 import { AddModDialog } from "./AddModDialog";
+import { DownloadError } from "./DownloadError";
 import type { ModUpdateCheck } from "./modUpdateCheck";
 import { downloaded, type Downloaded } from "./wikiDownload";
 
@@ -63,7 +64,9 @@ export function ModUpdate({
           </Button>
         </>
       )}
-      {download.error && <Notice tone="error">{errorMessage(t, download.error)}</Notice>}
+      {download.error && download.variables && (
+        <DownloadError error={download.error} url={download.variables.page.downloads[0].url} />
+      )}
       {fetched && (
         <AddModDialog
           downloaded={fetched}

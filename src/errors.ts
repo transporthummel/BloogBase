@@ -33,7 +33,8 @@ const translated: ErrorKind[] = [
 export function errorMessage(t: TFunction, err: unknown): string {
   if (isCommandError(err)) {
     if (translated.includes(err.kind)) {
-      return t(`errors.${err.kind}`, { message: err.message });
+      // Drops the link markup DownloadError renders as a link.
+      return t(`errors.${err.kind}`, { message: err.message }).replace(/<\/?browser>/g, "");
     }
     return t("errors.generic", { message: err.message });
   }
