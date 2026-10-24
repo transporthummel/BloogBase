@@ -231,6 +231,14 @@
       "install_other": "Install {{count}} mods"
     }
   },
+  "archiveDamaged": {
+    "title_one": "A file may be damaged",
+    "title_other": "Some files may be damaged",
+    "body_one": "{{name}} was added, but this file in its ZIP failed its checksum, so its contents may have changed:",
+    "body_other": "{{name}} was added, but these files in its ZIP failed their checksum, so their contents may have changed:",
+    "hint_one": "Often it still works. If it doesn’t, try another copy of the download.",
+    "hint_other": "Often they still work. If they don’t, try another copy of the download."
+  },
   "common": {
     "cancel": "Cancel",
     "back": "Back",

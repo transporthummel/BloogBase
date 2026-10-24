@@ -14,6 +14,7 @@ import { hideSplash } from "../splash";
 import { useAppUpdate } from "../updates/queries";
 import { UpdateCard } from "../updates/UpdateCard";
 import { PageFooterContext } from "./pageFooterContext";
+import { ArchiveWarning } from "./ArchiveWarning";
 import { QuitGuard } from "./QuitGuard";
 
 /**
@@ -36,6 +37,7 @@ export function Shell() {
       <main className="bb-starfield relative min-h-screen overflow-y-auto">
         <QuitGuard />
         <EarlierBackupPrompt />
+        <ArchiveWarning />
         <Outlet />
       </main>
     );
@@ -46,6 +48,7 @@ export function Shell() {
       <DropImport />
       {/* After DropImport, so it's above the drop's summary. */}
       <EarlierBackupPrompt />
+      <ArchiveWarning />
       <LaunchOverlay />
       <ExitMessage />
       <nav

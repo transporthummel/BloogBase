@@ -126,7 +126,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             launcher::GameLaunch,
             launcher::PlaySessionEnded,
             launcher::QuitRequested,
-            mod_index::IndexUpdated
+            mod_index::IndexUpdated,
+            source::ArchiveDamaged
         ])
 }
 

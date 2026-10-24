@@ -211,6 +211,7 @@ export const commands = {
 
 /** Events */
 export const events = {
+	archiveDamaged: makeEvent<ArchiveDamaged>("archive-damaged"),
 	gameLaunch: makeEvent<GameLaunch>("game-launch"),
 	indexUpdated: makeEvent<IndexUpdated>("index-updated"),
 	jobUpdated: makeEvent<JobUpdated>("job-updated"),
@@ -224,6 +225,16 @@ export type AppInfo = {
 	dataDir: string,
 	defaultDataDir: string,
 	schemaVersion: number,
+};
+
+/**
+ *  Sent after importing from a ZIP with damaged entries, so the frontend
+ *  can warn that they may not work.
+ */
+export type ArchiveDamaged = {
+	/**  The mod's name, or the archive's for games. */
+	name: string,
+	files: string[],
 };
 
 export type Backup = {

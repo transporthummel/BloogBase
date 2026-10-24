@@ -231,6 +231,14 @@
       "install_other": "{{count}} Mods installieren"
     }
   },
+  "archiveDamaged": {
+    "title_one": "Eine Datei ist möglicherweise beschädigt",
+    "title_other": "Einige Dateien sind möglicherweise beschädigt",
+    "body_one": "{{name}} wurde hinzugefügt, aber bei dieser Datei im ZIP stimmt die Prüfsumme nicht, ihr Inhalt hat sich also womöglich verändert:",
+    "body_other": "{{name}} wurde hinzugefügt, aber bei diesen Dateien im ZIP stimmt die Prüfsumme nicht, ihr Inhalt hat sich also womöglich verändert:",
+    "hint_one": "Oft funktioniert sie trotzdem. Wenn nicht, versuch es mit einer anderen Kopie des Downloads.",
+    "hint_other": "Oft funktionieren sie trotzdem. Wenn nicht, versuch es mit einer anderen Kopie des Downloads."
+  },
   "common": {
     "cancel": "Abbrechen",
     "back": "Zurück",

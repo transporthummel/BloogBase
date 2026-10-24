@@ -5,8 +5,10 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::path::{Component, Path, PathBuf};
 
+use serde::{Deserialize, Serialize};
+use specta::Type;
 use walkdir::WalkDir;
-use zip::ZipArchive;
+use zip::{CompressionMethod, ZipArchive, ZipReadOptions};
 
 use crate::error::{Error, Result};
 
@@ -91,10 +93,84 @@ impl Source {
                             .is_some_and(|n| to_rel_string(&n) == rel)
                     })
                     .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, rel.to_string()))?;
-                f(&mut zip.by_index(index)?)?
+                f(&mut read_entry(&mut zip, index)?.as_slice())?
             }
         }
         Ok(())
+    }
+
+    /// Entries of a ZIP whose data doesn't match its checksum, or can't be
+    /// read at all. Reading skips the check, as 7-Zip does: in old archives
+    /// a file with a bad checksum often still works.
+    pub fn damaged(&self) -> Result<Vec<String>> {
+        let Source::Zip(path) = self else {
+            return Ok(Vec::new());
+        };
+        let mut zip = open_zip(path)?;
+        let mut out = Vec::new();
+        for i in 0..zip.len() {
+            let file = zip.by_index_raw(i)?;
+            let Some(name) = file.enclosed_name().filter(|_| !file.is_dir()) else {
+                continue;
+            };
+            let expected = file.crc32();
+            drop(file);
+            let intact = read_entry(&mut zip, i).is_ok_and(|data| {
+                let mut crc = flate2::Crc::new();
+                crc.update(&data);
+                crc.sum() == expected
+            });
+            if !intact {
+                out.push(to_rel_string(&name));
+            }
+        }
+        out.retain(|p| !p.starts_with("__MACOSX/"));
+        out.sort();
+        Ok(out)
+    }
+}
+
+/// Sent after importing from a ZIP with damaged entries, so the frontend
+/// can warn that they may not work.
+#[derive(Debug, Clone, Serialize, Deserialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct ArchiveDamaged {
+    /// The mod's name, or the archive's for games.
+    pub name: String,
+    pub files: Vec<String>,
+}
+
+/// An entry's data, without checking its checksum.
+fn read_entry(zip: &mut ZipArchive<File>, index: usize) -> Result<Vec<u8>> {
+    let mut data = Vec::new();
+    let options = ZipReadOptions::new().ignore_crc32(true);
+    let Err(err) = zip
+        .by_index_with_options(index, options)?
+        .read_to_end(&mut data)
+    else {
+        return Ok(data);
+    };
+    let mut raw = zip.by_index_raw(index)?;
+    if raw.compression() != CompressionMethod::Deflated {
+        return Err(err.into());
+    }
+    let size = raw.size();
+    let mut compressed = Vec::new();
+    raw.read_to_end(&mut compressed)?;
+    inflate_with_zero_window(&compressed, size).ok_or_else(|| err.into())
+}
+
+/// Inflates deflate data that refers back to before its start, taking the
+/// bytes there as zeros. Info-ZIP and 7-Zip do the same, so damaged files
+/// come out as they do there.
+fn inflate_with_zero_window(compressed: &[u8], size: u64) -> Option<Vec<u8>> {
+    let mut inflate = flate2::Decompress::new(false);
+    inflate.set_dictionary(&[0; 32 * 1024]).ok()?;
+    // Never more than the entry claims to hold.
+    let mut out = Vec::with_capacity(usize::try_from(size).ok()?);
+    match inflate.decompress_vec(compressed, &mut out, flate2::FlushDecompress::Finish) {
+        Ok(flate2::Status::StreamEnd) => Some(out),
+        _ => None,
     }
 }
 
@@ -218,6 +294,60 @@ mod tests {
             Err(Error::UnsupportedSource(_))
         ));
         assert!(Source::open(&tmp.path().join("missing")).is_err());
+    }
+
+    #[test]
+    fn zip_entry_with_bad_checksum_is_read_and_reported() {
+        use std::io::Write;
+        use zip::write::SimpleFileOptions;
+        let tmp = tempfile::tempdir().unwrap();
+        let zip = tmp.path().join("mod.zip");
+        let mut w = zip::ZipWriter::new(std::fs::File::create(&zip).unwrap());
+        let stored =
+            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+        for (name, data) in [("LEVEL01.CK1", b"level one"), ("LEVEL06.CK1", b"level six")] {
+            w.start_file(name, stored).unwrap();
+            w.write_all(data).unwrap();
+        }
+        w.finish().unwrap();
+        // Uncompressed, so this changes the data but not its checksum.
+        let mut bytes = std::fs::read(&zip).unwrap();
+        let at = bytes.windows(9).position(|w| w == b"level six").unwrap();
+        bytes[at] = b'L';
+        std::fs::write(&zip, bytes).unwrap();
+
+        let source = Source::open(&zip).unwrap();
+        assert_eq!(source.read("LEVEL06.CK1").unwrap(), b"Level six");
+        assert_eq!(source.damaged().unwrap(), ["LEVEL06.CK1"]);
+        let folder = tmp.path().join("folder");
+        write_folder(&folder, FILES);
+        assert!(Source::open(&folder).unwrap().damaged().unwrap().is_empty());
+    }
+
+    #[test]
+    fn deflate_data_referring_back_past_its_start_reads_zeros_there() {
+        use flate2::{Compress, Compression, Decompress, FlushCompress, FlushDecompress};
+        // Compressed against a window of zeros, the leading zeros become a
+        // reference to before the start.
+        let data = [&[0; 300][..], b"keen"].concat();
+        let mut deflate = Compress::new(Compression::best(), false);
+        deflate.set_dictionary(&[0; 32 * 1024]).unwrap();
+        let mut compressed = Vec::with_capacity(100);
+        deflate
+            .compress_vec(&data, &mut compressed, FlushCompress::Finish)
+            .unwrap();
+        let mut out = Vec::with_capacity(data.len());
+        assert!(
+            Decompress::new(false)
+                .decompress_vec(&compressed, &mut out, FlushDecompress::Finish)
+                .is_err()
+        );
+
+        assert_eq!(
+            inflate_with_zero_window(&compressed, data.len() as u64).unwrap(),
+            data
+        );
+        assert!(inflate_with_zero_window(&compressed, 10).is_none());
     }
 
     #[test]

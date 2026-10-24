@@ -33,6 +33,7 @@ use crate::recipe::Recipe;
 use crate::runtime::{self, RuntimeStatus};
 use crate::saves::{self, SaveFile};
 use crate::settings::{self, SetupStatus};
+use crate::source::{ArchiveDamaged, Source};
 use crate::storage::{self, StorageUsage};
 use crate::stores::{self, Store, StoreInstall};
 
@@ -84,11 +85,11 @@ pub fn list_installs(db: State<'_, Db>) -> CommandResult<Vec<Install>> {
 #[specta::specta]
 pub async fn import_games(app: AppHandle, path: String) -> CommandResult<Vec<Install>> {
     blocking(move || {
-        library::import(
-            &app.state::<AppPaths>(),
-            &app.state::<Db>(),
-            Path::new(&path),
-        )
+        let path = Path::new(&path);
+        let installs = library::import(&app.state::<AppPaths>(), &app.state::<Db>(), path)?;
+        let name = path.file_name().unwrap_or_default().to_string_lossy();
+        warn_if_damaged(&app, path, &name);
+        Ok(installs)
     })
     .await
 }
@@ -670,6 +671,7 @@ pub async fn install_mod(app: AppHandle, request: InstallModRequest) -> CommandR
             running.release(id);
         }
         let m = m?;
+        warn_if_damaged(&app, Path::new(&request.path), &m.name);
         // The mod keeps its own copy of the archive.
         let downloads = keenwiki_downloads(&paths);
         if Path::new(&request.path).starts_with(&downloads) {
@@ -996,6 +998,9 @@ pub fn install_index_mod(
         .await
         .map_err(Error::from)
         .and_then(|r| r);
+        if let Ok(m) = &result {
+            warn_if_damaged(&a, &archive, &m.name);
+        }
         // The player's own copy stays.
         if local.is_none() {
             let _ = std::fs::remove_file(&archive);
@@ -1170,6 +1175,22 @@ pub async fn quit_app(app: AppHandle, stop_games: bool) {
 }
 
 /// Runs file system heavy work off the async runtime.
+/// Tells the frontend when files imported from `path` failed their checksum.
+fn warn_if_damaged(app: &AppHandle, path: &Path, name: &str) {
+    match Source::open(path).and_then(|s| s.damaged()) {
+        Ok(files) if files.is_empty() => {}
+        Ok(files) => {
+            tracing::warn!("damaged in {}: {}", path.display(), files.join(", "));
+            let _ = ArchiveDamaged {
+                name: name.to_string(),
+                files,
+            }
+            .emit(app);
+        }
+        Err(e) => tracing::warn!("could not check {}: {e}", path.display()),
+    }
+}
+
 async fn blocking<T: Send + 'static>(
     f: impl FnOnce() -> Result<T> + Send + 'static,
 ) -> CommandResult<T> {

@@ -49,7 +49,7 @@ lzma-rs = "0.3.0"
 keen-saves = { path = "keen-saves" }
 keen-graphics = { path = "keen-graphics" }
 png = "0.18"
-flate2 = "1"
+flate2 = { version = "1", features = ["zlib-rs"] }
 tauri-plugin-updater = "2.14.0"
 tauri-plugin-window-state = "2.5.0"
 
