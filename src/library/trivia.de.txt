@@ -6,7 +6,7 @@ Mortimer führt ein Notizbuch mit dem Titel „Wie ich dramatischer werde als Bi
 Das Galaktische Alphabet hat ein Satzzeichen für „Das war Absicht“.
 Vorticon-Köche finden, dass Suppe besser schmeckt, wenn man sie in einem Raumschiffteil serviert.
 Im Wartezimmer des Orakels soll man eine Nummer ziehen.
-Der Lieblingssport des Blauen Vogels ist Wettstarren mit einer Wand.
+Der Lieblingssport des Blue Birds ist Wettstarren mit einer Wand.
 Die Meeps haben den Ausdruck „noch fünf Minuten“ für ein langes Nickerchen erfunden.
 Das Armaturenbrett der MegaRocket hat einen Knopf mit der Aufschrift „Wird schon passen“.
 Mortimer übt sein böses Lachen vor einem Spiegel, der konstruktive Kritik gibt.
@@ -55,7 +55,7 @@ Jedes Vorticon-Raumschiff hat eine Schublade mit unbekannten Kabeln.
 Gargs finden, dass ein Flur mit Teppich einschüchternder wirkt.
 Mortimers Roboter wetteifern um den theatralischsten Statusbericht.
 Das Galaktische Alphabet hat ein Zeichen für betretenes Schweigen.
-Giftschnecken beurteilen Architektur danach, wie gemütlich ihre Ecken sind.
+Poison Slugs beurteilen Architektur danach, wie gemütlich ihre Ecken sind.
 Mortimer ändert sein Passwort jede Woche und schreibt es auf einen Zettel daneben.
 Gargs feiern den Frühling, indem sie alle gleichzeitig einmal hüpfen.
 Für Vorticons ist eine ordentliche Sockenschublade ein Zeichen von Führungsstärke.
@@ -149,7 +149,7 @@ Die Hauptstadt von Vorticon VI ist mit glänzenden Linoleumfliesen gepflastert.
 Vorticon-Frauen sind doppelt so groß und viermal so grantig wie die Männer.
 Die Bibliothek von Vorticon VI enthält kein einziges Buch, nur Comics.
 Im Thronsaal des Grand Intellect hallt ein Echo 14 Sekunden lang nach.
-Panzerroboter sind schlecht im Fußball, weil sie keine Knöchel haben.
+Tank Robots sind schlecht im Fußball, weil sie keine Knöchel haben.
 Vorticon-Frauen regieren den ganzen Planeten, während die Männer leere Hallen bewachen.
 Die Parkbänke auf Vorticon VI sind aus massivem, kaltem Eisen.
 Der Gedankenkontrollhelm des Grand Intellect summt leise ein Lied.
@@ -158,11 +158,11 @@ König Boobus Tuber besteht zu 98 % aus Stärke und zu 2 % aus purem Bösen.
 Die Bürger von Tuberia halten Abstand zu Riesenreiben.
 Broccolash schlägt so hart zu, weil er nie einen Armtag ausgelassen hat.
 Broccolash hasst nichts so sehr wie geschmolzene Käsesoße.
-Saure Trauben werden süß, wenn man ihnen einen wirklich guten Witz erzählt.
+Sour Grapes werden süß, wenn man ihnen einen wirklich guten Witz erzählt.
 Das Schloss von König Boobus Tuber riecht wie ein Ofenkartoffel-Buffet.
 In Tuberia sind Butter, Sauerrahm und Schnittlauch komplett verboten.
 Broccolash föhnt täglich drei Stunden lang seine Röschenfrisur.
-Saure Trauben sind bis zu drei Jahre lang nachtragend.
+Sour Grapes sind bis zu drei Jahre lang nachtragend.
 Ratsmitglieder sind so langsam, weil ihre Roben fast vierzig Kilo wiegen.
 Bounder springen so hoch, weil ihr Inneres aus Gummi ist.
 Mad Mushrooms springen höher, wenn laute Synthpop-Musik läuft.
@@ -176,7 +176,7 @@ Skypests fliegen schneller, wenn man sie komplett ignoriert.
 Licks rösten mit ihrer Feuerzunge in kühlen Nächten Marshmallows.
 Mimics dienen in den Wohnzimmern der Ratsmitglieder als Fußhocker.
 Bounder können drei Wochen lang ununterbrochen hüpfen, ohne müde zu werden.
-Die Wälder der Schattenlande riechen nach feuchtem Herbstlaub und uraltem Stein.
+Die Wälder der Shadowlands riechen nach feuchtem Herbstlaub und uraltem Stein.
 Shikadi-Meister rühren ihren Morgentee mit Schockstäben um.
 Der Sicherheitsschalter des Quantum Explosion Dynamo ist mit „Ups“ beschriftet.
 Shikadi bestehen aus reiner elektrischer Energie und schlechter Laune.
@@ -205,12 +205,12 @@ Blooglets tragen Schnuller, damit sie nicht auf Atommüll herumkauen.
 Babobbas explodieren, wenn man ihre Singstimme lobt.
 Bloogs halten Molly für eine seltene Art von haarlosem Yorp.
 Fleex haben fünf Augen, damit sie fünf Fernsehsendungen gleichzeitig schauen können.
-Bip-Piloten navigieren, indem sie aus winzigen Seitenfenstern schauen.
+Bipship-Piloten navigieren, indem sie aus winzigen Seitenfenstern schauen.
 Bloogs essen zu Mittag Steine mit scharfer Peperonisoße.
 Blooglets hüpfen auf und ab, wenn sie Süßigkeiten wollen.
 Bloogguards üben, mit ihren Keulen nach fliegenden Melonen zu schlagen.
 Giks zirpen wie Grillen, wenn sie gut gelaunt sind.
-Bip-Schiffe fahren mit Diesel, gemischt mit Pflaumensaft.
+Bipships fahren mit Diesel, gemischt mit Pflaumensaft.
 Das Gras auf Fribbulus Xax schmeckt nach saurem Apfelkaugummi.
 Blooglets spielen Bockspringen über schlafende Bloogguards.
 Fleex können mit ihren Augen in fünf völlig verschiedene Richtungen schauen.
