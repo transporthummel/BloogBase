@@ -171,6 +171,9 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        // Restores the last size and position, then shows the window (it
+        // starts hidden so it doesn't jump from the default size).
+        .plugin(tauri_plugin_window_state::Builder::new().build())
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
