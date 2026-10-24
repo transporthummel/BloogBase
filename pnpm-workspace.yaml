@@ -1,5 +1,8 @@
 minimumReleaseAgeExclude:
   - "@tanstack/query-core@5.104.4"
   - "@tanstack/react-query@5.104.4"
-  - i18next@26.5.2
-  - react-i18next@17.1.0
+  - i18next@26.5.2 || 26.5.10
+  - react-i18next@17.1.0 || 17.1.7
+permissions:
+  '@tanstack/react-router':
+    skills: true
