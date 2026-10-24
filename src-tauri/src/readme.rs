@@ -5,10 +5,12 @@
 //! ranked by name; without one, other text documents are shown instead
 //! (`changes.txt`, `story.txt`). The text goes to the UI as plain text only: DOS code page
 //! 437 or Windows-1252 is decoded, RTF is reduced to its text, control
-//! characters are dropped. HTML is never shown in the app: web pages are
+//! characters are dropped, Word documents are reduced to their text and
+//! also open in their app. HTML is never shown in the app: web pages are
 //! listed without text and open in the browser.
 
 use std::fs;
+use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
 
 use rusqlite::OptionalExtension;
@@ -29,6 +31,9 @@ pub struct Readme {
     pub text: String,
     /// A web page, which opens in the browser instead.
     pub html: bool,
+    /// A Word document; `text` is only its text (empty if unreadable), so it
+    /// opens in its app too.
+    pub word: bool,
 }
 
 /// Larger files are hardly a README.
@@ -57,18 +62,18 @@ pub fn at(path: &Path) -> Result<Vec<Readme>> {
     find(&Source::open(path)?)
 }
 
-/// The web page `file` of a mod on disk, for the browser. From an archive,
-/// it is copied to the cache with the files in its folder (pictures, style
-/// sheets).
-pub fn html_path(paths: &AppPaths, db: &Db, mod_id: &str, file: &str) -> Result<PathBuf> {
+/// The web page or Word document `file` of a mod on disk, for the browser
+/// or its app. From an archive, it is copied to the cache, a web page with
+/// the files in its folder (pictures, style sheets).
+pub fn file_path(paths: &AppPaths, db: &Db, mod_id: &str, file: &str) -> Result<PathBuf> {
     let not_found = || Error::NotFound(format!("{file} of mod {mod_id}"));
     let source = mod_source(paths, db, mod_id)?.ok_or_else(not_found)?;
     page(&source, file, &paths.cache.join("readmes").join(mod_id))
 }
 
-/// The web page `file` in a folder or ZIP not installed yet, as in
-/// [`html_path`].
-pub fn html_path_at(paths: &AppPaths, path: &Path, file: &str) -> Result<PathBuf> {
+/// The web page or Word document `file` in a folder or ZIP not installed
+/// yet, as in [`file_path`].
+pub fn file_path_at(paths: &AppPaths, path: &Path, file: &str) -> Result<PathBuf> {
     page(
         &Source::open(path)?,
         file,
@@ -76,10 +81,12 @@ pub fn html_path_at(paths: &AppPaths, path: &Path, file: &str) -> Result<PathBuf
     )
 }
 
-/// The web page `file` of `source` on disk, copied to `dest` from an archive.
+/// The web page or Word document `file` of `source` on disk, copied to
+/// `dest` from an archive.
 fn page(source: &Source, file: &str, dest: &Path) -> Result<PathBuf> {
     let files = source.files()?;
-    if !(candidate(file).is_some_and(|(_, html, _)| html) && files.iter().any(|f| f == file)) {
+    let html = candidate(file).is_some_and(|(_, html, _)| html);
+    if !((html || is_word_name(file)) && files.iter().any(|f| f == file)) {
         return Err(Error::NotFound(file.to_string()));
     }
     match source {
@@ -88,6 +95,10 @@ fn page(source: &Source, file: &str, dest: &Path) -> Result<PathBuf> {
             // An update of the mod may have changed the page; a missing
             // folder or a file still open elsewhere doesn't matter.
             let _ = fs::remove_dir_all(dest);
+            if !html {
+                source.copy_to(file, &dest.join(file))?;
+                return Ok(dest.join(file));
+            }
             let prefix = match split_dir(file).0 {
                 "" => String::new(),
                 dir => format!("{dir}/"),
@@ -140,6 +151,7 @@ pub fn find(source: &Source) -> Result<Vec<Readme>> {
                 file,
                 text: String::new(),
                 html,
+                word: false,
             });
             continue;
         }
@@ -153,11 +165,27 @@ pub fn find(source: &Source) -> Result<Vec<Readme>> {
         if bytes.len() > MAX_BYTES {
             continue;
         }
+        // Some `.doc` files are plain text, shown as such.
+        if is_word_name(&file) && bytes.starts_with(OLE_MAGIC) {
+            let text = word_to_text(&bytes).map(|t| clean(&t)).unwrap_or_default();
+            found.push(Readme {
+                file,
+                text,
+                html,
+                word: true,
+            });
+            continue;
+        }
         if let Some(text) = to_text(&bytes)
             && !text.trim().is_empty()
             && !is_patch_script(&text)
         {
-            found.push(Readme { file, text, html });
+            found.push(Readme {
+                file,
+                text,
+                html,
+                word: false,
+            });
         }
     }
     Ok(found)
@@ -451,6 +479,119 @@ fn rtf_to_text(bytes: &[u8]) -> String {
     out
 }
 
+/// Compound files: Word 97–2003, also Word 6/95.
+const OLE_MAGIC: &[u8] = b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1";
+
+fn is_word_name(rel: &str) -> bool {
+    split_dir(rel)
+        .1
+        .rsplit_once('.')
+        .is_some_and(|(_, e)| e.eq_ignore_ascii_case("doc"))
+}
+
+/// The main text of a Word document, without headers, footnotes and field
+/// codes (field results stay); `None` for encrypted, fast-saved Word 6/95 or
+/// damaged documents.
+fn word_to_text(bytes: &[u8]) -> Option<String> {
+    let mut doc = cfb::CompoundFile::open(Cursor::new(bytes)).ok()?;
+    let main = stream(&mut doc, "/WordDocument")?;
+    if le16(&main, 0)? != 0xA5EC {
+        return None;
+    }
+    let flags = le16(&main, 0x0A)?;
+    // Encrypted
+    if flags & 0x0100 != 0 {
+        return None;
+    }
+    let mut text = String::new();
+    if le16(&main, 2)? < 0x00C1 {
+        // Word 6/95 keeps the text in one run unless it was saved fast.
+        if flags & 0x0004 != 0 {
+            return None;
+        }
+        let start = le32(&main, 0x18)? as usize;
+        let end = (start + le32(&main, 0x34)? as usize).min(le32(&main, 0x1C)? as usize);
+        text.extend(main.get(start..end)?.iter().map(|&b| cp1252(b)));
+    } else {
+        // Word 97 and later: pieces of 8-bit or UTF-16 text, listed in the
+        // piece table of the table stream.
+        let ccp_text = le32(&main, 0x4C)? as usize;
+        let table_name = if flags & 0x0200 != 0 {
+            "/1Table"
+        } else {
+            "/0Table"
+        };
+        let table = stream(&mut doc, table_name)?;
+        let at = le32(&main, 0x01A2)? as usize;
+        let mut clx = table.get(at..at.checked_add(le32(&main, 0x01A6)? as usize)?)?;
+        // Formatting comes first.
+        while clx.first() == Some(&1) {
+            clx = clx.get(3 + le16(clx, 1)? as usize..)?;
+        }
+        if clx.first() != Some(&2) {
+            return None;
+        }
+        let len = le32(clx, 1)? as usize;
+        let plc = clx.get(5..5usize.checked_add(len)?)?;
+        let pieces = len.checked_sub(4)? / 12;
+        for i in 0..pieces {
+            let start = le32(plc, 4 * i)? as usize;
+            let end = (le32(plc, 4 * (i + 1))? as usize).min(ccp_text);
+            if start >= end {
+                break;
+            }
+            let count = end - start;
+            let fc = le32(plc, 4 * (pieces + 1) + 8 * i + 2)?;
+            if fc & 0x4000_0000 != 0 {
+                let at = (fc & !0x4000_0000) as usize / 2;
+                text.extend(main.get(at..at + count)?.iter().map(|&b| cp1252(b)));
+            } else {
+                let at = fc as usize;
+                text.push_str(&utf16(main.get(at..at + 2 * count)?, u16::from_le_bytes));
+            }
+        }
+    }
+    let mut out = String::with_capacity(text.len());
+    // Per open field, whether its result has begun.
+    let mut fields: Vec<bool> = Vec::new();
+    for c in text.chars() {
+        match c {
+            '\u{13}' => fields.push(false),
+            '\u{14}' => {
+                if let Some(result) = fields.last_mut() {
+                    *result = true;
+                }
+            }
+            '\u{15}' => {
+                fields.pop();
+            }
+            _ if fields.contains(&false) => {}
+            '\r' | '\u{0B}' => out.push('\n'),
+            // End of a table cell or row
+            '\u{07}' => out.push('\t'),
+            // Non-breaking and optional hyphens
+            '\u{1E}' => out.push('-'),
+            '\u{1F}' => {}
+            c => out.push(c),
+        }
+    }
+    Some(out)
+}
+
+fn stream(doc: &mut cfb::CompoundFile<Cursor<&[u8]>>, name: &str) -> Option<Vec<u8>> {
+    let mut data = Vec::new();
+    doc.open_stream(name).ok()?.read_to_end(&mut data).ok()?;
+    Some(data)
+}
+
+fn le16(data: &[u8], at: usize) -> Option<u16> {
+    Some(u16::from_le_bytes(*data.get(at..)?.first_chunk()?))
+}
+
+fn le32(data: &[u8], at: usize) -> Option<u32> {
+    Some(u32::from_le_bytes(*data.get(at..)?.first_chunk()?))
+}
+
 fn cp1252(b: u8) -> char {
     const HIGH: [char; 32] = [
         '€', '\u{81}', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\u{8D}', 'Ž',
@@ -541,7 +682,8 @@ mod tests {
             Readme {
                 file: "readme.txt".into(),
                 text: "top".into(),
-                html: false
+                html: false,
+                word: false
             }
         );
         assert_eq!(
@@ -578,8 +720,96 @@ mod tests {
             [Readme {
                 file: "README.HTM".into(),
                 text: String::new(),
-                html: true
+                html: true,
+                word: false
             }]
+        );
+    }
+
+    /// A Word 97 document of `pieces`, 8-bit or UTF-16 text, with a
+    /// footnote after the main text.
+    fn word97(pieces: &[(&str, bool)]) -> Vec<u8> {
+        let mut main = vec![0u8; 0x200];
+        main[0..2].copy_from_slice(&0xA5ECu16.to_le_bytes());
+        main[2..4].copy_from_slice(&0x00C1u16.to_le_bytes());
+        main[0x0A..0x0C].copy_from_slice(&0x0200u16.to_le_bytes());
+        let (mut cps, mut pcds) = (vec![0u32], Vec::new());
+        for (i, &(text, wide)) in pieces.iter().enumerate() {
+            let fc = main.len() as u32;
+            let mut text = text.to_string();
+            if i == pieces.len() - 1 {
+                text.push_str("footnote");
+            }
+            if wide {
+                main.extend(text.encode_utf16().flat_map(u16::to_le_bytes));
+                pcds.push(fc);
+            } else {
+                main.extend(text.chars().map(|c| c as u8));
+                pcds.push((fc * 2) | 0x4000_0000);
+            }
+            cps.push(cps[i] + text.chars().count() as u32);
+        }
+        let ccp_text = cps[pieces.len()] - "footnote".len() as u32;
+        main[0x4C..0x50].copy_from_slice(&ccp_text.to_le_bytes());
+        // Formatting, then the piece table
+        let mut clx = vec![1, 2, 0, 0xAA, 0xBB, 2];
+        let plc: Vec<u8> = cps
+            .iter()
+            .flat_map(|cp| cp.to_le_bytes())
+            .chain(pcds.iter().flat_map(|fc| {
+                let mut pcd = [0u8; 8];
+                pcd[2..6].copy_from_slice(&fc.to_le_bytes());
+                pcd
+            }))
+            .collect();
+        clx.extend((plc.len() as u32).to_le_bytes());
+        clx.extend(plc);
+        main[0x01A6..0x01AA].copy_from_slice(&(clx.len() as u32).to_le_bytes());
+        let mut doc = cfb::CompoundFile::create(Cursor::new(Vec::new())).unwrap();
+        for (name, data) in [("/WordDocument", main), ("/1Table", clx)] {
+            std::io::Write::write_all(&mut doc.create_stream(name).unwrap(), &data).unwrap();
+        }
+        doc.into_inner().into_inner()
+    }
+
+    #[test]
+    fn reads_the_text_of_word_documents() {
+        let doc = word97(&[
+            (
+                "Commander Keen\r\rBy \u{13} AUTHOR \u{14}CrazyKeen\u{15}\x0bfor \u{93}you\u{94}",
+                false,
+            ),
+            ("\r€ \u{13}HYPERLINK \u{13}x\u{15}\u{15}café\x07", true),
+        ]);
+        assert_eq!(
+            word_to_text(&doc).unwrap(),
+            "Commander Keen\n\nBy CrazyKeen\nfor “you”\n€ café\t"
+        );
+    }
+
+    #[test]
+    fn lists_word_documents_with_their_text() {
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(
+            tmp.path(),
+            &[
+                ("keenstatic.doc", &word97(&[("Static\r", false)])),
+                ("story.doc", b"Plain text"),
+                ("hints.doc", OLE_MAGIC),
+            ],
+        );
+        let found = find(&Source::Folder(tmp.path().into())).unwrap();
+        let summary: Vec<_> = found
+            .iter()
+            .map(|r| (r.file.as_str(), r.text.as_str(), r.word))
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                ("keenstatic.doc", "Static", true),
+                ("story.doc", "Plain text", false),
+                ("hints.doc", "", true)
+            ]
         );
     }
 
@@ -598,7 +828,7 @@ mod tests {
         let dir = paths.mods.join("shadow");
         write_folder(&dir.join("files"), &[("README.HTM", b"<p>hi")]);
         assert_eq!(
-            html_path(&paths, &db, "shadow", "README.HTM").unwrap(),
+            file_path(&paths, &db, "shadow", "README.HTM").unwrap(),
             dir.join("files/README.HTM")
         );
 
@@ -609,24 +839,29 @@ mod tests {
                 ("Files/README.HTM", b"<img src=README_files/a.gif>"),
                 ("Files/README_files/a.gif", b"GIF"),
                 ("Files/README.TXT", b"text"),
+                ("Files/Story.DOC", OLE_MAGIC),
                 ("Menu.exe", b"MZ"),
             ],
         );
-        let page = html_path(&paths, &db, "shadow", "Files/README.HTM").unwrap();
+        let page = file_path(&paths, &db, "shadow", "Files/README.HTM").unwrap();
         let copy = paths.cache.join("readmes/shadow/Files");
         assert_eq!(page, copy.join("README.HTM"));
         assert_eq!(fs::read(copy.join("README_files/a.gif")).unwrap(), b"GIF");
         assert!(!paths.cache.join("readmes/shadow/Menu.exe").exists());
 
-        // Only the mod's web pages open.
+        let story = file_path(&paths, &db, "shadow", "Files/Story.DOC").unwrap();
+        assert_eq!(story, copy.join("Story.DOC"));
+        assert!(!copy.join("README_files").exists());
+
+        // Only the mod's web pages and Word documents open.
         for file in ["Files/README.TXT", "Menu.exe", "README.HTM", "../x.htm"] {
             assert!(matches!(
-                html_path(&paths, &db, "shadow", file),
+                file_path(&paths, &db, "shadow", file),
                 Err(Error::NotFound(_))
             ));
         }
         assert!(matches!(
-            html_path(&paths, &db, "other", "README.HTM"),
+            file_path(&paths, &db, "other", "README.HTM"),
             Err(Error::NotFound(_))
         ));
     }
@@ -645,11 +880,11 @@ mod tests {
         );
         let found = at(&zip).unwrap();
         assert_eq!(found[0].text, "hi");
-        let page = html_path_at(&paths, &zip, "Aurora/story.htm").unwrap();
+        let page = file_path_at(&paths, &zip, "Aurora/story.htm").unwrap();
         assert_eq!(page, paths.cache.join("readme-preview/Aurora/story.htm"));
         assert!(page.is_file());
         assert!(matches!(
-            html_path_at(&paths, &zip, "Aurora/README.TXT"),
+            file_path_at(&paths, &zip, "Aurora/README.TXT"),
             Err(Error::NotFound(_))
         ));
     }

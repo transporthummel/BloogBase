@@ -354,15 +354,15 @@ pub fn open_mod_folder(
     open_path(&app, &paths.mods.join(&mod_id).join("files"))
 }
 
-/// Opens a web page shipped with a mod in the browser; the app never shows
-/// HTML itself.
+/// Opens a web page or Word document shipped with a mod in the browser or
+/// its app; the app never shows HTML itself.
 #[tauri::command]
 #[specta::specta]
 pub async fn open_mod_readme(app: AppHandle, mod_id: String, file: String) -> CommandResult<()> {
     let path = {
         let app = app.clone();
         blocking(move || {
-            readme::html_path(&app.state::<AppPaths>(), &app.state::<Db>(), &mod_id, &file)
+            readme::file_path(&app.state::<AppPaths>(), &app.state::<Db>(), &mod_id, &file)
         })
         .await?
     };
@@ -376,13 +376,14 @@ pub async fn readmes_at(path: String) -> CommandResult<Vec<Readme>> {
     blocking(move || readme::at(Path::new(&path))).await
 }
 
-/// Opens a web page in a folder or ZIP not installed yet in the browser.
+/// Opens a web page or Word document in a folder or ZIP not installed yet,
+/// as [`open_mod_readme`].
 #[tauri::command]
 #[specta::specta]
 pub async fn open_readme_at(app: AppHandle, path: String, file: String) -> CommandResult<()> {
     let page = {
         let app = app.clone();
-        blocking(move || readme::html_path_at(&app.state::<AppPaths>(), Path::new(&path), &file))
+        blocking(move || readme::file_path_at(&app.state::<AppPaths>(), Path::new(&path), &file))
             .await?
     };
     open_path(&app, &page)

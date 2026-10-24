@@ -327,8 +327,8 @@ test("shows the readme of a mod that isn't installed yet", async () => {
   );
   vi.mocked(commands.readmesAt).mockReturnValue(
     ok([
-      { file: "README.TXT", text: "Start it with the patch.", html: false },
-      { file: "story.htm", text: "", html: true },
+      { file: "README.TXT", text: "Start it with the patch.", html: false, word: false },
+      { file: "story.htm", text: "", html: true, word: false },
     ]),
   );
   vi.mocked(commands.openReadmeAt).mockReturnValue(ok(null));

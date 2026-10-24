@@ -52,6 +52,7 @@ png = "0.18"
 flate2 = { version = "1", features = ["zlib-rs"] }
 tauri-plugin-updater = "2.14.0"
 tauri-plugin-window-state = "2.5.0"
+cfb = "0.15.0"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging"] }

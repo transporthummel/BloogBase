@@ -130,13 +130,16 @@ export const commands = {
 	/**  Opens the folder with a mod's installed files. */
 	openModFolder: (modId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_folder", { modId })),
 	/**
-	 *  Opens a web page shipped with a mod in the browser; the app never shows
-	 *  HTML itself.
+	 *  Opens a web page or Word document shipped with a mod in the browser or
+	 *  its app; the app never shows HTML itself.
 	 */
 	openModReadme: (modId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_readme", { modId, file })),
 	/**  The documents in a folder or ZIP not installed yet, the README first. */
 	readmesAt: (path: string) => typedError<Readme[], CommandError>(__TAURI_INVOKE("readmes_at", { path })),
-	/**  Opens a web page in a folder or ZIP not installed yet in the browser. */
+	/**
+	 *  Opens a web page or Word document in a folder or ZIP not installed yet,
+	 *  as [`open_mod_readme`].
+	 */
 	openReadmeAt: (path: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_readme_at", { path, file })),
 	/**  The installs a mod can be played on. */
 	modInstalls: (modId: string) => typedError<Install[], CommandError>(__TAURI_INVOKE("mod_installs", { modId })),
@@ -692,6 +695,11 @@ export type Readme = {
 	text: string,
 	/**  A web page, which opens in the browser instead. */
 	html: boolean,
+	/**
+	 *  A Word document; `text` is only its text (empty if unreadable), so it
+	 *  opens in its app too.
+	 */
+	word: boolean,
 };
 
 /**

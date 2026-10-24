@@ -14,7 +14,8 @@ import { linkify } from "./readme";
 /**
  * A mod's README, with a picker for its other documents. Shown as plain text
  * only (React escapes it); links open in the browser, never in the app's
- * window. Web pages are never shown here, only opened in the browser.
+ * window. Web pages are never shown here, only opened in the browser; Word
+ * documents show their text and open in their app for everything else.
  * The mod is installed (`modId`) or still a folder or ZIP (`path`).
  */
 export function ReadmePanel({
@@ -25,7 +26,7 @@ export function ReadmePanel({
   const pickerId = useId();
   const [file, setFile] = useState(readmes[0].file);
   const readme = readmes.find((r) => r.file === file) ?? readmes[0];
-  const openPage = useMutation({
+  const open = useMutation({
     mutationFn: (file: string) =>
       unwrap(
         "modId" in from
@@ -62,16 +63,27 @@ export function ReadmePanel({
           </p>
         )}
       </div>
-      {readme.html ? (
-        <div className="grid justify-items-start gap-3 p-4">
-          <p className="text-sm text-muted">{t("readme.webPage")}</p>
-          <Button variant="secondary" onClick={() => openPage.mutate(readme.file)}>
+      {(readme.html || readme.word) && (
+        <div
+          className={`grid justify-items-start gap-3 p-4 ${readme.text ? "border-b border-border" : ""}`}
+        >
+          <p className="text-sm text-muted">
+            {t(
+              readme.html
+                ? "readme.webPage"
+                : readme.text
+                  ? "readme.wordDocument"
+                  : "readme.wordUnreadable",
+            )}
+          </p>
+          <Button variant="secondary" onClick={() => open.mutate(readme.file)}>
             <ExternalLink className="size-4" aria-hidden />
-            {t("readme.openInBrowser")}
+            {t(readme.html ? "readme.openInBrowser" : "readme.openInApp")}
           </Button>
-          {openPage.error && <Notice tone="error">{errorMessage(t, openPage.error)}</Notice>}
+          {open.error && <Notice tone="error">{errorMessage(t, open.error)}</Notice>}
         </div>
-      ) : (
+      )}
+      {readme.text && (
         <pre className="p-4 font-mono text-sm leading-snug break-words whitespace-pre-wrap">
           {linkify(readme.text).map((part, i) =>
             "url" in part ? (

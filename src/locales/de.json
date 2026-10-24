@@ -584,7 +584,10 @@
     "title": "Readme",
     "file": "Datei:",
     "webPage": "Diese Datei ist eine Webseite und öffnet sich in deinem Browser.",
-    "openInBrowser": "Im Browser öffnen"
+    "openInBrowser": "Im Browser öffnen",
+    "wordDocument": "Diese Datei ist ein Word-Dokument. Hier siehst du nur ihren Text; Formatierung, Tabellen und Bilder zeigt dein Textprogramm.",
+    "wordUnreadable": "Diese Datei ist ein Word-Dokument, dessen Text BloogBase nicht lesen kann. Öffne sie in deinem Textprogramm.",
+    "openInApp": "Im Standardprogramm öffnen"
   },
   "screenshots": {
     "hint": "Drücke beim Spielen {{key}}, um einen Screenshot zu machen.",
