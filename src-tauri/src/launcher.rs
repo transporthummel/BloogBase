@@ -241,15 +241,18 @@ fn dosbox_args(
         .split_whitespace()
         .next()
         .is_some_and(|f| f.to_ascii_uppercase().ends_with(".BAT"));
+    // `@` and `> NUL` keep our commands and their messages off the screen,
+    // so the game's output comes first. Batch files still echo, as in DOS.
+    // The screen saver stays visible: it marks the end of the game's output.
     for cmd in [
-        format!("mount C \"{lower}\""),
-        format!("mount C \"{upper}\" -t overlay"),
-        format!("mount {} \"{exit_screen}\"", exit_screen::DRIVE),
-        "C:".into(),
+        format!("@mount C \"{lower}\" > NUL"),
+        format!("@mount C \"{upper}\" -t overlay > NUL"),
+        format!("@mount {} \"{exit_screen}\" > NUL", exit_screen::DRIVE),
+        "@C:".into(),
         if is_batch {
-            format!("call {command}")
+            format!("@call {command}")
         } else {
-            command.to_string()
+            format!("@{command}")
         },
         exit_screen::command(),
         "exit".into(),
@@ -364,9 +367,9 @@ mod tests {
     #[test]
     fn batch_files_are_called_so_dosbox_exits() {
         let cmd = |c: &str| dosbox_args(&[], "l", "u", "x", c)[12].clone();
-        assert_eq!(cmd("cool1.bat"), "call cool1.bat");
-        assert_eq!(cmd("PLAY.BAT -x"), "call PLAY.BAT -x");
-        assert_eq!(cmd("KEEN1.EXE"), "KEEN1.EXE");
+        assert_eq!(cmd("cool1.bat"), "@call cool1.bat");
+        assert_eq!(cmd("PLAY.BAT -x"), "@call PLAY.BAT -x");
+        assert_eq!(cmd("KEEN1.EXE"), "@KEEN1.EXE");
     }
 
     #[test]
@@ -392,21 +395,21 @@ mod tests {
             &p(&["profiles", "keen4-1", "generated", "launch.conf"]),
             "--noautoexec",
             "-c",
-            &format!("mount C \"{}\"", p(&["library", "keen4-1", "base"])),
+            &format!("@mount C \"{}\" > NUL", p(&["library", "keen4-1", "base"])),
             "-c",
             &format!(
-                "mount C \"{}\" -t overlay",
+                "@mount C \"{}\" -t overlay > NUL",
                 p(&["profiles", "keen4-1", "state"])
             ),
             "-c",
             &format!(
-                "mount X \"{}\"",
+                "@mount X \"{}\" > NUL",
                 p(&["profiles", "keen4-1", "generated", "exit"])
             ),
             "-c",
-            "C:",
+            "@C:",
             "-c",
-            "KEEN4E.EXE",
+            "@KEEN4E.EXE",
             "-c",
             r"X:\SCREEN.COM X:\SCREEN.BIN",
             "-c",
@@ -530,11 +533,11 @@ mod tests {
             .map(String::as_str)
             .collect();
         let lower = format!(
-            "mount C \"{}\"",
+            "@mount C \"{}\" > NUL",
             composed.strip_prefix(&paths.root).unwrap().display()
         );
         assert_eq!(tail[1], lower);
-        assert_eq!(tail[9], "CK4PATCH.EXE MOD.PAT");
+        assert_eq!(tail[9], "@CK4PATCH.EXE MOD.PAT");
         assert_eq!(fs::read(composed.join("gamemaps.ck4")).unwrap(), b"new");
         assert!(composed.join("KEEN4E.EXE").is_file());
         let names: Vec<String> = fs::read_dir(&composed)
