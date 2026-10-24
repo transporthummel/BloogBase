@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FileArchive, FolderOpen } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import {
   commands,
@@ -23,6 +23,7 @@ import { readmeKey, useReadmesAt } from "../profile/readme";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
+import { useEnterAction } from "../ui/useEnterAction";
 import { IndexHit, KeenwikiImport } from "./KeenwikiImport";
 import type { Downloaded } from "./wikiDownload";
 import { RecipeLabel } from "./RecipeLabel";
@@ -285,6 +286,20 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
     },
   });
 
+  // Enter installs, unless there's a warning to read or a choice to make.
+  const otherGame = !!origin?.gameId && origin.gameId !== info.gameId;
+  const missingGame = !!installs.data && candidates.length === 0;
+  const modifiedGame = !!target && option.recipe.type === "patch" && isModified(versionOf(target));
+  const versionUnchecked = !!target && target.versionId === null && option.gameVersions.length > 0;
+  const choose = (info.recipes.length > 1 && !info.confident) || (others.length > 0 && !replacing);
+  const careful =
+    otherGame || missingGame || !!likelyWrongVersion || modifiedGame || versionUnchecked || choose;
+  const form = useRef<HTMLFormElement>(null);
+  const submit = () => {
+    if (ready && !install.isPending) install.mutate();
+  };
+  useEnterAction(form, careful ? null : submit);
+
   const authors = origin?.authors.length ? origin.authors : info.authors;
   const version = origin?.version ?? info.version;
   const details = [
@@ -295,10 +310,11 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
 
   return (
     <form
+      ref={form}
       className="grid gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (ready) install.mutate();
+        submit();
       }}
     >
       <label className="grid gap-1 text-sm">
@@ -307,6 +323,9 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
           className="rounded-lg border border-border bg-surface-raised px-3 py-2"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && careful) e.preventDefault();
+          }}
           required
         />
       </label>
@@ -344,7 +363,7 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
           </fieldset>
         ))}
 
-      {origin?.gameId && origin.gameId !== info.gameId && (
+      {otherGame && origin?.gameId && (
         <Notice>
           {t("keenwiki.otherGame", {
             page: gameTitle(games.data, origin.gameId),
@@ -395,7 +414,7 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
           </label>
         </fieldset>
       )}
-      {installs.data && candidates.length === 0 && (
+      {missingGame && (
         <Notice>
           {t("mods.missingGame", {
             game: game?.title ?? info.gameId,
@@ -428,12 +447,8 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
           })}
         </Notice>
       )}
-      {target && option.recipe.type === "patch" && isModified(versionOf(target)) && (
-        <Notice>{t("mods.modifiedGame")}</Notice>
-      )}
-      {target && target.versionId === null && option.gameVersions.length > 0 && (
-        <Notice>{t("mods.versionUnchecked")}</Notice>
-      )}
+      {modifiedGame && <Notice>{t("mods.modifiedGame")}</Notice>}
+      {versionUnchecked && <Notice>{t("mods.versionUnchecked")}</Notice>}
 
       {install.error && <Notice tone="error">{errorMessage(t, install.error)}</Notice>}
       <div className="flex justify-end gap-3">

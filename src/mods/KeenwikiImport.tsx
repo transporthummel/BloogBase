@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ArrowLeft, Download, ExternalLink, Search } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type KeenwikiLookup, type WikiMod } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
@@ -13,6 +13,7 @@ import { unwrap } from "../ipc";
 import { installsKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
+import { useEnterAction } from "../ui/useEnterAction";
 import { DownloadError } from "./DownloadError";
 import { downloaded, type Downloaded } from "./wikiDownload";
 
@@ -158,6 +159,7 @@ export function IndexHit({
         installs={installs.data.filter((i) => i.gameId === mod.entry.game)}
         games={games.data}
         archive={archive}
+        enterInstalls
       />
     </div>
   );
@@ -180,6 +182,8 @@ function WikiCard({
     mutationFn: () => unwrap(commands.downloadKeenwikiMod(chosen.url, page.gameId)),
     onSuccess: (d) => onDownloaded(downloaded(page, chosen, d)),
   });
+  const card = useRef<HTMLDivElement>(null);
+  useEnterAction(card, chosen && !download.isPending ? () => download.mutate() : null);
 
   const facts: [string, string | null][] = [
     [t("mods.forGame"), page.gameId ? gameTitle(games.data, page.gameId) : null],
@@ -197,7 +201,7 @@ function WikiCard({
     d.note ? `${d.label} (${d.note})` : d.label;
 
   return (
-    <div className="grid gap-4">
+    <div ref={card} className="grid gap-4">
       <section className="grid gap-3 rounded-lg border border-border p-4" aria-label={page.name}>
         <h3 className="font-semibold">{page.name}</h3>
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">

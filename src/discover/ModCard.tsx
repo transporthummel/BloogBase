@@ -1,6 +1,6 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Download, ExternalLink, RefreshCw } from "lucide-react";
-import { Fragment, useState } from "react";
+import { Fragment, type RefObject, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Game, type IndexMod, type Install } from "../bindings";
 import { bestFit, gameTitle, shortGameTitle } from "../catalog";
@@ -15,6 +15,7 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
+import { useEnterAction } from "../ui/useEnterAction";
 import { fitting, isNew, requiredLabels } from "./fit";
 
 /** A mod from the index with everything needed to install it. */
@@ -23,14 +24,18 @@ export function ModCard({
   installs,
   games,
   archive,
+  enterInstalls = false,
 }: {
   mod: IndexMod;
   installs: Install[];
   games: Game[];
   /** The player's own copy of the download, installed instead of downloading it. */
   archive?: string;
+  /** Enter installs or updates it, unless there's a warning to read. */
+  enterInstalls?: boolean;
 }) {
   const { t, i18n } = useTranslation();
+  const actions = useRef<HTMLDivElement>(null);
   const { entry } = mod;
   const game = games.find((g) => g.id === entry.game);
   const latest = entry.downloads[0];
@@ -87,8 +92,9 @@ export function ModCard({
             ))}
           </p>
         )}
-        <div className="mt-auto grid grid-cols-1 gap-2 pt-1">
+        <div ref={actions} className="mt-auto grid grid-cols-1 gap-2 pt-1">
           <InstallAction
+            enter={enterInstalls ? actions : null}
             mod={mod}
             installs={installs}
             games={games}
@@ -107,12 +113,15 @@ function InstallAction({
   games,
   size,
   archive,
+  enter,
 }: {
   mod: IndexMod;
   installs: Install[];
   games: Game[];
   size: number;
   archive?: string;
+  /** Where Enter installs, if it does. */
+  enter: RefObject<HTMLDivElement | null> | null;
 }) {
   const { t } = useTranslation();
   const { entry } = mod;
@@ -136,6 +145,14 @@ function InstallAction({
   const installLabel = archive
     ? t("mods.install")
     : t("discover.install", { size: formatMegabytes(size) });
+  const busy = start.isPending || (job !== undefined && !isFinished(job));
+  // Not without the game: that comes with a warning.
+  const update = mod.modId && mod.updateAvailable;
+  const enterInstall = update ? null : !mod.modId ? target?.id : undefined;
+  useEnterAction(
+    enter,
+    !busy && enterInstall !== undefined ? () => start.mutate(enterInstall) : null,
+  );
 
   if (job && !isFinished(job)) return <JobRow job={job} label={entry.name} />;
   const failed = job?.phase === "failed" && <JobRow job={job} label={entry.name} />;

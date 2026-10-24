@@ -364,6 +364,10 @@ test("asks before installing a mod without its game", async () => {
     ),
   ).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Install" })).toBeNull();
+  // With a warning, Enter doesn't install, in the name field neither.
+  await user.keyboard("{Enter}");
+  await user.type(screen.getByRole("textbox", { name: "Name" }), "{Enter}");
+  expect(commands.installMod).not.toHaveBeenCalled();
   await user.click(screen.getByRole("button", { name: "Install anyway" }));
   expect(commands.installMod).toHaveBeenCalledWith(expect.objectContaining({ installId: null }));
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
@@ -503,6 +507,30 @@ test("installs a mod from a KeenWiki page with the page's details", async () => 
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
 });
 
+test("Enter goes from the link to downloading to installing", async () => {
+  vi.mocked(commands.lookupKeenwiki).mockReturnValue(
+    ok({ pageUrl: page.pageUrl, indexId: null, page }),
+  );
+  vi.mocked(commands.downloadKeenwikiMod).mockReturnValue(ok({ path: "/c/a.zip", info }));
+  vi.mocked(commands.installMod).mockReturnValue(new Promise(() => {}));
+  renderDialog();
+  const user = userEvent.setup();
+  await user.type(
+    screen.getByRole("textbox", { name: "Add a mod from KeenWiki" }),
+    `${page.pageUrl}{Enter}`,
+  );
+
+  // The buttons are the default, without taking the focus.
+  const fetch = await screen.findByRole("button", { name: "Download and check" });
+  expect(fetch).not.toHaveFocus();
+  await user.keyboard("{Enter}");
+  const install = await screen.findByRole("button", { name: "Install" });
+  await vi.waitFor(() => expect(install).toBeEnabled());
+  expect(install).not.toHaveFocus();
+  await user.keyboard("{Enter}");
+  expect(commands.installMod).toHaveBeenCalledTimes(1);
+});
+
 test("warns when the page and the files disagree about the game", async () => {
   vi.mocked(commands.lookupKeenwiki).mockReturnValue(
     ok({ pageUrl: page.pageUrl, indexId: null, page: { ...page, gameId: "keen5" } }),
@@ -549,12 +577,16 @@ test("offers the index entry when the link is in the index", async () => {
     ok({ pageUrl: page.pageUrl, indexId: "aurora-bliss", page: null }),
   );
   vi.mocked(commands.indexMods).mockReturnValue(ok([auroraInIndex]));
+  vi.mocked(commands.installIndexMod).mockReturnValue(new Promise(() => {}));
   renderDialog();
-  await lookUp();
+  const user = await lookUp();
 
   expect(await screen.findByText(/tested and ready to install/)).toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
   expect(commands.downloadKeenwikiMod).not.toHaveBeenCalled();
+  // Enter installs it.
+  await user.keyboard("{Enter}");
+  expect(commands.installIndexMod).toHaveBeenCalledWith("aurora-bliss", "keen4-1", false, null);
 });
 
 test("installs a picked copy of an index download as that entry", async () => {
@@ -575,7 +607,7 @@ test("installs a picked copy of an index download as that entry", async () => {
   await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
 
   expect(await screen.findByText(/The BloogBase mod list knows this file/)).toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Install" }));
+  await user.keyboard("{Enter}");
   expect(commands.installIndexMod).toHaveBeenCalledWith(
     "aurora-bliss",
     "keen4-1",
