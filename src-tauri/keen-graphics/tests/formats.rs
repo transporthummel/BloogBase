@@ -229,7 +229,12 @@ fn vorticons_title_draws_the_bitmap_over_the_level() {
     );
     assert_eq!(image.pixels[199 * 320 + 319], 1);
 
-    assert!(keen_graphics::vorticons_title(&head, &latch[..100], &level, None).is_err());
+    // A short EGALATCH leaves the planes it lacks empty, as the game does
+    // (Keen Static): no intensity, so the title is black. Less than one
+    // plane is no EGALATCH.
+    let short = keen_graphics::vorticons_title(&head, &latch[..99], &level, None).unwrap();
+    assert_eq!(&short.pixels[320 + 31..320 + 34], &[1, 0, 0]);
+    assert!(keen_graphics::vorticons_title(&head, &latch[..32], &level, None).is_err());
     assert!(keen_graphics::vorticons_title(&head[..40], &latch, &level, None).is_err());
 
     // Keen 1 1.32 and later: 6 more bytes before the tile count, a 64-byte

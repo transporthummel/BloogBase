@@ -109,12 +109,20 @@ pub fn title(
     tileset: Option<&[u8]>,
 ) -> Result<Image, Error> {
     let header = Header::parse(egahead)?;
-    let latch = if header.compressed() {
+    let mut latch = if header.compressed() {
         lzw(egalatch)?
     } else {
         egalatch.to_vec()
     };
-    if header.plane_size == 0 || latch.len() < header.plane_size * 4 {
+    if header.plane_size == 0 || latch.len() < header.plane_size {
+        return Err(Error::Format("EGALATCH too short"));
+    }
+    // The game reads what the file has and leaves the rest of the planes
+    // empty, as Keen Static's scrambled graphics show: a Keen 3 header
+    // over Keen 1's compressed EGALATCH, read as is.
+    if !header.compressed() {
+        latch.resize(latch.len().max(header.plane_size * 4), 0);
+    } else if latch.len() < header.plane_size * 4 {
         return Err(Error::Format("EGALATCH too short"));
     }
     let planes: Vec<&[u8]> = latch.chunks_exact(header.plane_size).take(4).collect();
