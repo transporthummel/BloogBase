@@ -4,7 +4,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   ArrowLeft,
   ArrowLeftRight,
-  Ellipsis,
+  ChevronDown,
   ExternalLink,
   FileArchive,
   FolderOpen,
@@ -382,7 +382,13 @@ function Hero({
             </PlayButton>
             <Menu
               label={t("profile.more")}
-              trigger={<Ellipsis className="size-5" aria-hidden />}
+              trigger={
+                <>
+                  {t("profile.more")}
+                  <ChevronDown className="size-4" aria-hidden />
+                </>
+              }
+              className="px-4 text-base"
               items={actions}
             />
           </div>

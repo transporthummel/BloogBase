@@ -211,7 +211,7 @@ const aurora: Mod = {
 
 /** Picks one of the actions in the hero's menu. */
 async function pick(action: string) {
-  await userEvent.click(await screen.findByRole("button", { name: "More actions" }));
+  await userEvent.click(await screen.findByRole("button", { name: "More" }));
   await userEvent.click(screen.getByRole("menuitem", { name: action }));
 }
 
@@ -319,7 +319,7 @@ test("a mod can be replaced with a local copy, unless it runs", async () => {
   cleanup();
   vi.mocked(commands.listProfiles).mockResolvedValue(ok([{ ...mine, running: true }]));
   renderDetail();
-  await userEvent.click(await screen.findByRole("button", { name: "More actions" }));
+  await userEvent.click(await screen.findByRole("button", { name: "More" }));
   expect(screen.getByRole("menuitem", { name: "Replace with a local copy…" })).toBeDisabled();
 });
 
@@ -336,7 +336,7 @@ test("a game is uninstalled from its page, with its mods if asked", async () => 
   const remove = vi.spyOn(client, "removeQueries");
   renderDetail(client);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "More actions" }));
+  await user.click(await screen.findByRole("button", { name: "More" }));
   expect(screen.queryByRole("menuitem", { name: "Remove" })).toBeNull();
   await user.click(screen.getByRole("menuitem", { name: "Uninstall" }));
   const dialog = screen.getByRole("dialog");
@@ -372,7 +372,7 @@ test("a mod waiting for its game says which one and can't be played", async () =
   ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Game missing" })).toBeDisabled();
   expect(screen.queryByText(/^Runs on/)).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: "More actions" }));
+  await userEvent.click(screen.getByRole("button", { name: "More" }));
   expect(screen.queryByRole("menuitem", { name: "Uninstall" })).toBeNull();
 
   // Removing it doesn't mention a game that stays.
