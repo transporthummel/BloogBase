@@ -191,3 +191,16 @@ test("offers a download BloogBase can't open in the browser", async () => {
   await user.click(await screen.findByRole("button", { name: "Download it in your browser" }));
   expect(openUrl).toHaveBeenCalledWith("https://files.example/aurora_v1.2.zip");
 });
+
+test("offers a link that leads to a web page in the browser", async () => {
+  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page }));
+  vi.mocked(commands.downloadKeenwikiMod).mockResolvedValue({
+    status: "error",
+    error: { kind: "webPage", message: "" },
+  });
+  const user = renderUpdate();
+  await user.click(screen.getByRole("button", { name: "Check for updates" }));
+  await user.click(await screen.findByRole("button", { name: "Update" }));
+  await user.click(await screen.findByRole("button", { name: "Open it in your browser" }));
+  expect(openUrl).toHaveBeenCalledWith("https://files.example/aurora_v1.2.zip");
+});

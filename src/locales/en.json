@@ -145,7 +145,7 @@
     "notAModPage": "That KeenWiki page doesn't describe a mod.",
     "deadLink": "That download link doesn't work any more. Maybe the page lists another one, or the mod has moved.",
     "tooLarge": "The download is far too big for a Commander Keen mod, so it was stopped.",
-    "webPage": "The link leads to a web page instead of a file. Open it in your browser, download the mod there and add it as a ZIP file or folder.",
+    "webPage": "The link leads to a web page instead of a file. <browser>Open it in your browser</browser>, download the mod there and add it as a ZIP file or folder.",
     "unsupportedDownload": "BloogBase can't open this download yet ({{message}}). <browser>Download it in your browser</browser>, unpack it and add the folder.",
     "noSavesFound": "No saved games for this game were found in that file.",
     "otherGame": "That backup belongs to another game ({{message}})."
