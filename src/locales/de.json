@@ -233,6 +233,7 @@
   },
   "common": {
     "cancel": "Abbrechen",
+    "back": "Zurück",
     "loading": "Wird geladen…",
     "close": "Schließen"
   },

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FileArchive, FolderOpen } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import {
   commands,
@@ -112,8 +112,12 @@ export function AddModDialog({
           onInstalled={onInstalled}
         />
       ) : (
-        <>
-          {!replacing && <KeenwikiImport disabled={inspect.isPending} onDownloaded={setFromWiki} />}
+        <AddFrom
+          wiki={!replacing}
+          disabled={inspect.isPending}
+          onDownloaded={setFromWiki}
+          onCancel={onClose}
+        >
           <p className="text-sm text-muted">
             {t(replacing ? "mods.replaceIntro" : "mods.addHint")}
           </p>
@@ -143,10 +147,25 @@ export function AddModDialog({
               {t("common.cancel")}
             </Button>
           </div>
-        </>
+        </AddFrom>
       )}
     </Dialog>
   );
+}
+
+/** The ways to add a mod; a KeenWiki find replaces the others. */
+function AddFrom({
+  wiki,
+  children,
+  ...props
+}: {
+  wiki: boolean;
+  disabled: boolean;
+  onDownloaded: (d: Downloaded) => void;
+  onCancel: () => void;
+  children: ReactNode;
+}) {
+  return wiki ? <KeenwikiImport {...props}>{children}</KeenwikiImport> : <>{children}</>;
 }
 
 type ConfirmProps = {

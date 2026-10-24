@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Download, ExternalLink, Search } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Download, ExternalLink, Search } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type KeenwikiLookup, type WikiMod } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
@@ -15,20 +15,38 @@ import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
 import { downloaded, type Downloaded } from "./wikiDownload";
 
-/** Paste a KeenWiki link: shows the index entry for it, or the page's details. */
+/**
+ * Paste a KeenWiki link: shows the index entry for it, or the page's details.
+ * Once a mod is found, only that is shown; `children` (other ways to add one) until then.
+ */
 export function KeenwikiImport({
   disabled,
   onDownloaded,
+  onCancel,
+  children,
 }: {
   disabled: boolean;
   onDownloaded: (d: Downloaded) => void;
+  onCancel: () => void;
+  children: ReactNode;
 }) {
   const { t } = useTranslation();
   const [url, setUrl] = useState("");
   const lookup = useMutation({
     mutationFn: (u: string) => unwrap(commands.lookupKeenwiki(u)),
   });
+  const found = lookup.data?.indexId || lookup.data?.page ? lookup.data : null;
 
+  if (found) {
+    return (
+      <Result
+        lookup={found}
+        onDownloaded={onDownloaded}
+        onBack={() => lookup.reset()}
+        onCancel={onCancel}
+      />
+    );
+  }
   return (
     <div className="grid gap-3">
       <form
@@ -62,21 +80,54 @@ export function KeenwikiImport({
       </form>
       {lookup.isPending && <Notice>{t("keenwiki.looking")}</Notice>}
       {lookup.error && <Notice tone="error">{errorMessage(t, lookup.error)}</Notice>}
-      {lookup.data && <Result lookup={lookup.data} onDownloaded={onDownloaded} />}
+      {children}
     </div>
   );
 }
 
+type Actions = { onBack: () => void; onCancel: () => void };
+
 function Result({
   lookup,
   onDownloaded,
-}: {
+  ...actions
+}: Actions & {
   lookup: KeenwikiLookup;
   onDownloaded: (d: Downloaded) => void;
 }) {
-  if (lookup.indexId) return <IndexHit id={lookup.indexId} />;
-  if (lookup.page) return <WikiCard page={lookup.page} onDownloaded={onDownloaded} />;
-  return null;
+  if (lookup.page && !lookup.indexId) {
+    return <WikiCard page={lookup.page} onDownloaded={onDownloaded} {...actions} />;
+  }
+  return (
+    <div className="grid gap-4">
+      {lookup.indexId && <IndexHit id={lookup.indexId} />}
+      <Footer {...actions} />
+    </div>
+  );
+}
+
+/** Back to the link field, cancel, and the step's own action, if any. */
+function Footer({
+  onBack,
+  onCancel,
+  busy = false,
+  children,
+}: Actions & { busy?: boolean; children?: ReactNode }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-wrap justify-between gap-3">
+      <Button variant="ghost" onClick={onBack} disabled={busy}>
+        <ArrowLeft className="size-4" aria-hidden />
+        {t("common.back")}
+      </Button>
+      <div className="flex flex-wrap justify-end gap-3">
+        <Button variant="ghost" onClick={onCancel}>
+          {t("common.cancel")}
+        </Button>
+        {children}
+      </div>
+    </div>
+  );
 }
 
 /** The mod is in the index: install the tested entry instead, from `archive` when given. */
@@ -115,7 +166,8 @@ export function IndexHit({
 function WikiCard({
   page,
   onDownloaded,
-}: {
+  ...actions
+}: Actions & {
   page: WikiMod;
   onDownloaded: (d: Downloaded) => void;
 }) {
@@ -144,66 +196,70 @@ function WikiCard({
     d.note ? `${d.label} (${d.note})` : d.label;
 
   return (
-    <section className="grid gap-3 rounded-lg border border-border p-4" aria-label={page.name}>
-      <h3 className="font-semibold">{page.name}</h3>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-        {facts
-          .filter(([, value]) => value)
-          .map(([label, value]) => (
-            <div key={label} className="contents">
-              <dt className="text-muted">{label}</dt>
-              <dd>{value}</dd>
-            </div>
+    <div className="grid gap-4">
+      <section className="grid gap-3 rounded-lg border border-border p-4" aria-label={page.name}>
+        <h3 className="font-semibold">{page.name}</h3>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+          {facts
+            .filter(([, value]) => value)
+            .map(([label, value]) => (
+              <div key={label} className="contents">
+                <dt className="text-muted">{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+        </dl>
+        {page.description && <p className="line-clamp-4 text-sm">{page.description}</p>}
+        <p className="flex flex-wrap gap-3 text-xs">
+          {links.map(([label, url]) => (
+            <button
+              key={label}
+              type="button"
+              className="inline-flex items-center gap-1 text-ink underline underline-offset-2"
+              onClick={() => openUrl(url)}
+            >
+              {label}
+              <ExternalLink className="size-3" aria-hidden />
+            </button>
           ))}
-      </dl>
-      {page.description && <p className="line-clamp-4 text-sm">{page.description}</p>}
-      <p className="flex flex-wrap gap-3 text-xs">
-        {links.map(([label, url]) => (
-          <button
-            key={label}
-            type="button"
-            className="inline-flex items-center gap-1 text-ink underline underline-offset-2"
-            onClick={() => openUrl(url)}
-          >
-            {label}
-            <ExternalLink className="size-3" aria-hidden />
-          </button>
-        ))}
-      </p>
+        </p>
 
-      {page.downloads.length === 0 ? (
-        <Notice tone="error">{t("keenwiki.noDownload")}</Notice>
-      ) : (
-        <>
-          {page.downloads.length > 1 && (
-            <fieldset className="grid gap-1 text-sm">
-              <legend className="mb-1 font-medium">{t("keenwiki.download")}</legend>
-              {page.downloads.map((d, i) => (
-                <label key={d.url} className="flex items-start gap-2">
-                  <input
-                    type="radio"
-                    name="keenwiki-download"
-                    className="mt-1"
-                    checked={choice === i}
-                    onChange={() => setChoice(i)}
-                  />
-                  <span>{downloadLabel(d)}</span>
-                </label>
-              ))}
-            </fieldset>
-          )}
-          <p className="text-xs break-all text-muted">{chosen.url}</p>
-          {download.isPending && <Notice>{t("keenwiki.downloading")}</Notice>}
-          {download.error && <Notice tone="error">{errorMessage(t, download.error)}</Notice>}
-          <div className="flex justify-end">
-            <Button onClick={() => download.mutate()} disabled={download.isPending}>
-              <Download className="size-4" aria-hidden />
-              {t("keenwiki.fetch")}
-            </Button>
-          </div>
-        </>
-      )}
-    </section>
+        {page.downloads.length === 0 ? (
+          <Notice tone="error">{t("keenwiki.noDownload")}</Notice>
+        ) : (
+          <>
+            {page.downloads.length > 1 && (
+              <fieldset className="grid gap-1 text-sm">
+                <legend className="mb-1 font-medium">{t("keenwiki.download")}</legend>
+                {page.downloads.map((d, i) => (
+                  <label key={d.url} className="flex items-start gap-2">
+                    <input
+                      type="radio"
+                      name="keenwiki-download"
+                      className="mt-1"
+                      checked={choice === i}
+                      onChange={() => setChoice(i)}
+                    />
+                    <span>{downloadLabel(d)}</span>
+                  </label>
+                ))}
+              </fieldset>
+            )}
+            <p className="text-xs break-all text-muted">{chosen.url}</p>
+          </>
+        )}
+      </section>
+      {download.isPending && <Notice>{t("keenwiki.downloading")}</Notice>}
+      {download.error && <Notice tone="error">{errorMessage(t, download.error)}</Notice>}
+      <Footer {...actions} busy={download.isPending}>
+        {chosen && (
+          <Button onClick={() => download.mutate()} disabled={download.isPending}>
+            <Download className="size-4" aria-hidden />
+            {t("keenwiki.fetch")}
+          </Button>
+        )}
+      </Footer>
+    </div>
   );
 }
 

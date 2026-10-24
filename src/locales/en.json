@@ -233,6 +233,7 @@
   },
   "common": {
     "cancel": "Cancel",
+    "back": "Back",
     "loading": "Loading…",
     "close": "Close"
   },

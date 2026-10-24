@@ -610,3 +610,22 @@ test("explains links that aren't KeenWiki pages", async () => {
     "Please paste a link to a mod page on keenwiki.shikadi.net",
   );
 });
+
+test("shows only the found mod until the player goes back", async () => {
+  vi.mocked(commands.lookupKeenwiki).mockReturnValue(
+    ok({ pageUrl: page.pageUrl, indexId: null, page }),
+  );
+  renderDialog();
+  const user = await lookUp();
+
+  await screen.findByRole("region", { name: "Aurora Bliss" });
+  expect(screen.queryByRole("textbox", { name: "Add a mod from KeenWiki" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Choose ZIP file…" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Download and check" })).toBeEnabled();
+
+  await user.click(screen.getByRole("button", { name: "Back" }));
+  expect(screen.getByRole("textbox", { name: "Add a mod from KeenWiki" })).toHaveValue(
+    page.pageUrl,
+  );
+  expect(screen.getByRole("button", { name: "Choose ZIP file…" })).toBeInTheDocument();
+});
