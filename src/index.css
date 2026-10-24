@@ -24,6 +24,7 @@
   --bb-accent: var(--bb-ega-bright-green);
   --bb-accent-ink: #082b08;
   --bb-danger: var(--bb-ega-bright-red);
+  --bb-warning: var(--bb-ega-yellow);
   --bb-focus: var(--bb-ega-yellow);
   --bb-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
 
@@ -44,6 +45,7 @@
   --bb-accent: #1e9e1e;
   --bb-accent-ink: #ffffff;
   --bb-danger: #c62828;
+  --bb-warning: var(--bb-ega-brown);
   --bb-focus: var(--bb-ega-blue);
   --bb-shadow: 0 4px 16px rgb(23 21 46 / 0.08);
 
@@ -60,6 +62,7 @@
   --color-accent: var(--bb-accent);
   --color-accent-ink: var(--bb-accent-ink);
   --color-danger: var(--bb-danger);
+  --color-warning: var(--bb-warning);
   --color-focus: var(--bb-focus);
   --color-vorticons: var(--bb-vorticons);
   --color-galaxy: var(--bb-galaxy);

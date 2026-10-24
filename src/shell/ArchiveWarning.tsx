@@ -1,3 +1,4 @@
+import { TriangleAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { events, type ArchiveDamaged } from "../bindings";
@@ -22,7 +23,11 @@ export function ArchiveWarning() {
   const close = () => setQueue((q) => q.slice(1));
   const count = current.files.length;
   return (
-    <Dialog title={t("archiveDamaged.title", { count })} onClose={close}>
+    <Dialog
+      title={t("archiveDamaged.title", { count })}
+      icon={<TriangleAlert className="size-6 shrink-0 text-warning" aria-hidden />}
+      onClose={close}
+    >
       <p className="text-sm">{t("archiveDamaged.body", { count, name: current.name })}</p>
       <ul className="list-disc pl-6 font-mono text-sm">
         {current.files.map((f) => (

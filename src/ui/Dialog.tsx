@@ -12,11 +12,14 @@ const FOCUSABLE =
 export function Dialog({
   title,
   onClose,
+  icon,
   wide = false,
   children,
 }: {
   title: string;
   onClose: () => void;
+  /** Shown before the title, e.g. to mark a warning. */
+  icon?: ReactNode;
   /** For pictures. */
   wide?: boolean;
   children: ReactNode;
@@ -70,7 +73,8 @@ export function Dialog({
         tabIndex={-1}
         className={`grid max-h-full w-full gap-4 overflow-y-auto rounded-xl border border-border bg-surface p-5 shadow-card outline-none ${wide ? "max-w-4xl" : "max-w-lg"}`}
       >
-        <h2 id={titleId} className="text-lg font-semibold">
+        <h2 id={titleId} className="flex items-center gap-2 text-lg font-semibold">
+          {icon}
           {title}
         </h2>
         {children}
