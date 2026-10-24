@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { commands, type FreeGame, type Game } from "../bindings";
@@ -10,6 +9,7 @@ import { unwrap } from "../ipc";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { Cover } from "../library/Cover";
+import { DetailsLink } from "./DetailsLink";
 import { profilesKey } from "../library/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -103,15 +103,7 @@ function FreeGameAction({ free, label }: { free: FreeGame; label: string }) {
   if (free.installed) {
     // The game's own play profile, not one of a mod played on it.
     const profile = profiles.data?.find((p) => p.versionId === free.versionId && !p.modId);
-    return profile ? (
-      <Link
-        to="/profiles/$profileId"
-        params={{ profileId: profile.id }}
-        className="text-sm text-ink underline underline-offset-2"
-      >
-        {t("discover.openDetails")}
-      </Link>
-    ) : null;
+    return profile ? <DetailsLink profileId={profile.id} /> : null;
   }
   return (
     <>

@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Download, ExternalLink, RefreshCw } from "lucide-react";
 import { Fragment, useState } from "react";
@@ -9,6 +8,7 @@ import { formatLooseDate, formatMegabytes } from "../format";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { Cover } from "../library/Cover";
+import { DetailsLink } from "./DetailsLink";
 import { Authors } from "../mods/Authors";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -143,13 +143,7 @@ function InstallAction({
   if (mod.modId && !mod.updateAvailable) {
     return (
       // A mod's play profile has the mod's id.
-      <Link
-        to="/profiles/$profileId"
-        params={{ profileId: mod.modId }}
-        className="text-sm text-ink underline underline-offset-2"
-      >
-        {t("discover.openDetails")}
-      </Link>
+      <DetailsLink profileId={mod.modId} />
     );
   }
   if (mod.modId) {
