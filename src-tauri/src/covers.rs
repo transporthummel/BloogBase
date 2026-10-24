@@ -19,11 +19,20 @@ use crate::profiles;
 use crate::recipe::{self, Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v12";
+const VERSION: &str = "covers v13";
+
+/// A profile's cover.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Cover {
+    pub png: PathBuf,
+    /// The graphics files don't fit together, so the game shows scrambled
+    /// graphics, like the cover (as Keen Static does on purpose).
+    pub scrambled: bool,
+}
 
 /// The profile's cover PNG, extracting it first if its files changed since
 /// the last time. `None` if the title can't be read from them.
-pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<PathBuf>> {
+pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<Cover>> {
     let (profile, layers) = profiles::get(db, profile_id)?;
     let game = catalog::game(&profile.game_id)
         .ok_or_else(|| Error::NotFound(format!("game {}", profile.game_id)))?;
@@ -35,19 +44,28 @@ pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<PathB
     let (png, stamp) = cache_files(paths, profile_id);
     let key = files.fingerprint(recipe);
     let wanted = |state: &str| format!("{key} {state}");
+    let found = |state: &str| match state {
+        "none" => None,
+        _ => Some(Cover {
+            png: png.clone(),
+            scrambled: state == "scrambled",
+        }),
+    };
     match fs::read_to_string(&stamp) {
-        Ok(s) if s == wanted("png") && png.is_file() => return Ok(Some(png)),
         Ok(s) if s == wanted("none") => return Ok(None),
+        Ok(s) if [wanted("png"), wanted("scrambled")].contains(&s) && png.is_file() => {
+            return Ok(found(&s[key.len() + 1..]));
+        }
         _ => {}
     }
 
     let title = extract(game, profile.version_id.as_deref(), recipe, &files);
     fs::create_dir_all(stamp.parent().expect("covers have a folder"))?;
     let state = match title {
-        Ok((image, colors)) => {
-            write_png(&image, &colors, &png)?;
+        Ok(title) => {
+            write_png(&title.image, &title.colors, &png)?;
             tracing::info!("extracted the title screen of {profile_id}");
-            "png"
+            if title.scrambled { "scrambled" } else { "png" }
         }
         Err(e) => {
             tracing::info!("no title screen for {profile_id}: {e}");
@@ -56,7 +74,7 @@ pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<PathB
         }
     };
     fs::write(&stamp, wanted(state))?;
-    Ok((state == "png").then_some(png))
+    Ok(found(state))
 }
 
 /// Forgets the cover of a removed profile.
@@ -264,25 +282,38 @@ fn extension(game: &Game) -> String {
     }
 }
 
+/// A title screen and how to show it.
+#[derive(Debug)]
+struct Title {
+    image: Image,
+    colors: Colors,
+    /// See [`Cover::scrambled`].
+    scrambled: bool,
+}
+
 fn extract(
     game: &Game,
     version_id: Option<&str>,
     recipe: Option<&Recipe>,
     files: &Files,
-) -> std::result::Result<(Image, Colors), String> {
+) -> std::result::Result<Title, String> {
     let ext = extension(game);
     let patch = recipe
         .and_then(Recipe::patch_file)
         .and_then(|p| files.read(p))
         .map(|t| patched(&String::from_utf8_lossy(&t), &ext))
         .unwrap_or_default();
-    let (image, cga) = title(game, version_id, recipe, files, &ext, &patch)?;
+    let (image, cga, scrambled) = title(game, version_id, recipe, files, &ext, &patch)?;
     let colors = match patch.palette {
         _ if cga && patch.composite => Colors::Composite,
         Some(palette) => Colors::Palette(palette),
         None => Colors::Palette(keen_graphics::EGA_PALETTE),
     };
-    Ok((image, colors))
+    Ok(Title {
+        image,
+        colors,
+        scrambled,
+    })
 }
 
 /// The names a Vorticons game opens its files under, from a stem like
@@ -334,7 +365,7 @@ fn title(
     files: &Files,
     ext: &str,
     patch: &Patched,
-) -> std::result::Result<(Image, bool), String> {
+) -> std::result::Result<(Image, bool, bool), String> {
     let need = |name: &str| files.read(name).ok_or(format!("{name} missing"));
     // Renamed files come first; only existing ones of the right kind count.
     let candidates = |ext: &str, standard: String| -> Vec<String> {
@@ -358,19 +389,23 @@ fn title(
                 .read(&name("TILEHEAD"))
                 .and_then(|t| keen_graphics::vorticons_tileset_name(&t, 90))
                 .and_then(|name| files.read(&name));
+            let (head, latch) = (need(&name("EGAHEAD"))?, need(&name("EGALATCH"))?);
             keen_graphics::vorticons_title(
-                &need(&name("EGAHEAD"))?,
-                &need(&name("EGALATCH"))?,
+                &head,
+                &latch,
                 &need(&name("LEVEL90"))?,
                 tileset.as_deref(),
             )
-            .map(|image| (image, false))
+            .map(|image| {
+                let scrambled = keen_graphics::vorticons_latch_is_short(&head, &latch);
+                (image, false, scrambled)
+            })
             .map_err(|e| e.to_string())
         }
         Engine::Dreams => {
             for name in candidates("CMP", "KDREAMS.CMP".into()) {
                 match files.read(&name).map(|c| keen_graphics::dreams_title(&c)) {
-                    Some(Ok(image)) => return Ok((image, false)),
+                    Some(Ok(image)) => return Ok((image, false, false)),
                     Some(Err(e)) => last = format!("{name}: {e}"),
                     None => last = format!("{name} missing"),
                 }
@@ -420,7 +455,7 @@ fn title(
                         head.as_deref(),
                         dict.as_deref(),
                     ) {
-                        Ok(image) => return Ok((image, false)),
+                        Ok(image) => return Ok((image, false, false)),
                         Err(e) => last = format!("{graph_name} with {exe_name}: {e}"),
                     }
                 }
@@ -456,7 +491,7 @@ fn title(
                     let heads = heads.iter().map(|h| Some(h.as_slice())).chain([None]);
                     for head in heads {
                         match keen_graphics::galaxy_cga_title(&exe, &graph, head) {
-                            Ok(image) => return Ok((image, true)),
+                            Ok(image) => return Ok((image, true, false)),
                             Err(e) => last = format!("{cga_name} with {exe_name}: {e}"),
                         }
                     }
@@ -661,10 +696,7 @@ mod tests {
     }
 
     /// Extracts the title of `game` from `files` with a patch recipe.
-    fn extract_from(
-        game: &str,
-        files: &[(&str, Vec<u8>)],
-    ) -> std::result::Result<(Image, Colors), String> {
+    fn extract_from(game: &str, files: &[(&str, Vec<u8>)]) -> std::result::Result<Title, String> {
         let tmp = tempfile::tempdir().unwrap();
         for (name, data) in files {
             fs::write(tmp.path().join(name), data).unwrap();
@@ -693,17 +725,25 @@ mod tests {
             .collect();
         files.push(("KEEN1.EXE", exe));
         files.push(("MOD.PAT", patch.as_bytes().to_vec()));
-        let pixels = extract_from("keen1", &files).unwrap().0.pixels;
+        let pixels = extract_from("keen1", &files).unwrap().image.pixels;
         assert_eq!((pixels[0], pixels[320 + 32]), (1, 8));
     }
 
     #[test]
     fn draws_keen1_levels_from_the_named_tileset_or_egalatch() {
-        let pixel = |files: &[(&str, Vec<u8>)]| extract_from("keen1", files).unwrap().0.pixels;
+        let pixel = |files: &[(&str, Vec<u8>)]| extract_from("keen1", files).unwrap().image.pixels;
 
         let plain = keen1_title();
         let pixels = pixel(&plain);
         assert_eq!((pixels[0], pixels[320 + 32]), (1, 8));
+        assert!(!extract_from("keen1", &plain).unwrap().scrambled);
+
+        // An EGALATCH shorter than EGAHEAD says, as in Keen Static.
+        let mut short = plain.clone();
+        short[1].1.truncate(99);
+        let title = extract_from("keen1", &short).unwrap();
+        assert!(title.scrambled);
+        assert_eq!(title.image.pixels[320 + 32], 0);
 
         // DOS names are case-insensitive: title.tls is TITLE.TLS.
         let with_tileset = [plain.clone(), tileset("title.tls LS\0").into()].concat();
@@ -723,7 +763,7 @@ mod tests {
 
     #[test]
     fn draws_covers_in_the_palette_the_patch_sets() {
-        let (image, colors) = extract_from("keen1", &keen1_title()).unwrap();
+        let Title { image, colors, .. } = extract_from("keen1", &keen1_title()).unwrap();
         assert_eq!(colors, Colors::Palette(keen_graphics::EGA_PALETTE));
 
         let mut text = String::from("%ext ck1\n%patch $13054\n");
@@ -731,7 +771,11 @@ mod tests {
             text += &format!("{} 0 0\n", i * 4);
         }
         let files = [keen1_title(), vec![("MOD.PAT", text.into_bytes())]].concat();
-        let (patched_image, colors) = extract_from("keen1", &files).unwrap();
+        let Title {
+            image: patched_image,
+            colors,
+            ..
+        } = extract_from("keen1", &files).unwrap();
         assert_eq!(patched_image, image);
         let Colors::Palette(palette) = colors else {
             panic!("{colors:?}")
@@ -786,7 +830,7 @@ mod tests {
     #[test]
     fn prefers_a_renamed_keen_dreams_library_that_works() {
         let lit = |files: &[(&str, Vec<u8>)]| {
-            let image = extract_from("kdreams", files).unwrap().0;
+            let image = extract_from("kdreams", files).unwrap().image;
             image.pixels.iter().filter(|&&p| p != 0).count()
         };
         let patch = (
@@ -837,9 +881,12 @@ mod tests {
             let files = Files::new(&[&root, &base]).unwrap();
             let name = root.file_name().unwrap().to_string_lossy().into_owned();
             match extract(game, None, Some(recipe), &files) {
-                Ok((image, colors)) => {
-                    write_png(&image, &colors, &out.join(format!("{name}.png"))).unwrap()
-                }
+                Ok(title) => write_png(
+                    &title.image,
+                    &title.colors,
+                    &out.join(format!("{name}.png")),
+                )
+                .unwrap(),
                 Err(e) => failed.push(format!("{name}: {e}")),
             }
         }

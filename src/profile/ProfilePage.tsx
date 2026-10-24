@@ -10,6 +10,7 @@ import {
   FolderOpen,
   RefreshCw,
   Trash2,
+  TriangleAlert,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -285,7 +286,7 @@ function Hero({
           <Cover
             gameId={profile.gameId}
             game={game}
-            src={cover.data}
+            src={cover.data?.src}
             className={`aspect-[4/3] w-full text-7xl ${cover.data ? "" : "h-full"}`}
           />
         ) : (
@@ -357,6 +358,12 @@ function Hero({
           </div>
           {description && (
             <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line">{description}</p>
+          )}
+          {cover.data?.scrambled && (
+            <p className="flex max-w-prose items-start gap-2 text-sm">
+              <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+              {t("profile.scrambled")}
+            </p>
           )}
           <dl className="flex flex-wrap gap-x-6 gap-y-2">
             {stats.map(([label, value]) => (

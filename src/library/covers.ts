@@ -13,16 +13,18 @@ export const coverKey = (profileId: string) => [...coverKeys, profileId] as cons
 
 /**
  * The image URL of a profile's title screen, extracted from its game files
- * on first use; `null` keeps the placeholder. A mod that gets its game gets
- * an install, and with it another try.
+ * on first use, and whether its graphics are scrambled; `null` keeps the
+ * placeholder. A mod that gets its game gets an install, and with it another
+ * try.
  */
 export function useCover(profileId: string, installId: string | null) {
   return useQuery({
     queryKey: [...coverKey(profileId), installId],
     queryFn: async () => {
-      const path = await unwrap(commands.profileCover(profileId));
+      const cover = await unwrap(commands.profileCover(profileId));
+      if (cover === null) return null;
       // A new extraction keeps the file name, so the URL has to change.
-      return path === null ? null : `${convertFileSrc(path)}?v=${Date.now()}`;
+      return { src: `${convertFileSrc(cover.path)}?v=${Date.now()}`, scrambled: cover.scrambled };
     },
     staleTime: Infinity,
     retry: false,

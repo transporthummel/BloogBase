@@ -62,7 +62,7 @@ function Starting({ profile, onClose }: { profile: Profile; onClose: () => void 
         <Cover
           gameId={profile.gameId}
           game={game}
-          src={cover.data}
+          src={cover.data?.src}
           className="block aspect-[4/3] w-full text-6xl"
         />
         <div className="h-0.5 overflow-hidden bg-surface-raised">

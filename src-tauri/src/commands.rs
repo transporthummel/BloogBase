@@ -310,15 +310,31 @@ pub async fn video_index(
     .await
 }
 
+#[derive(Debug, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileCover {
+    pub path: String,
+    /// The graphics files don't fit together, so the game shows scrambled
+    /// graphics (as Keen Static does on purpose).
+    pub scrambled: bool,
+}
+
 /// The profile's title screen as a PNG path, extracted on first use; `None`
 /// keeps the placeholder.
 #[tauri::command]
 #[specta::specta]
-pub async fn profile_cover(app: AppHandle, profile_id: String) -> CommandResult<Option<String>> {
+pub async fn profile_cover(
+    app: AppHandle,
+    profile_id: String,
+) -> CommandResult<Option<ProfileCover>> {
     blocking(move || {
         Ok(
-            covers::cover(&app.state::<AppPaths>(), &app.state::<Db>(), &profile_id)?
-                .map(|p| p.display().to_string()),
+            covers::cover(&app.state::<AppPaths>(), &app.state::<Db>(), &profile_id)?.map(|c| {
+                ProfileCover {
+                    path: c.png.display().to_string(),
+                    scrambled: c.scrambled,
+                }
+            }),
         )
     })
     .await

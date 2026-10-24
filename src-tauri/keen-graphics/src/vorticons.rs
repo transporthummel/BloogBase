@@ -100,6 +100,12 @@ pub fn tileset_name(tilehead: &[u8], level: usize) -> Option<String> {
     (!name.is_empty()).then_some(name)
 }
 
+/// Whether `EGALATCH` is shorter than `EGAHEAD` says, so the game leaves
+/// parts of its graphics empty and scrambles the rest.
+pub fn latch_is_short(egahead: &[u8], egalatch: &[u8]) -> bool {
+    Header::parse(egahead).is_ok_and(|h| !h.compressed() && egalatch.len() < h.plane_size * 4)
+}
+
 /// The title screen from `EGAHEAD`, `EGALATCH` and `LEVEL90` of Keen 1-3,
 /// with the tiles from a `tileset` file if the mod has one.
 pub fn title(

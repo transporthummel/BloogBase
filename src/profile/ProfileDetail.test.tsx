@@ -525,13 +525,24 @@ test("the title screen is the picture, else the latest screenshot", async () => 
   ).toHaveAttribute("src", "asset:///data/profiles/keen4-1/capture/image0001.png");
   unmount();
 
-  vi.mocked(commands.profileCover).mockResolvedValue(ok("/data/cache/covers/keen4-1.png"));
-  const { container } = renderDetail();
+  vi.mocked(commands.profileCover).mockResolvedValue(
+    ok({ path: "/data/cache/covers/keen4-1.png", scrambled: false }),
+  );
+  const { container, unmount: unmountCover } = renderDetail();
   await vi.waitFor(() =>
     expect(container.querySelector("img")?.getAttribute("src")).toMatch(
       /^asset:\/\/\/data\/cache\/covers\/keen4-1\.png\?v=\d+$/,
     ),
   );
+  expect(screen.queryByText(/graphics files don't fit together/)).toBeNull();
+  unmountCover();
+
+  // Scrambled graphics, as in Keen Static, get a warning.
+  vi.mocked(commands.profileCover).mockResolvedValue(
+    ok({ path: "/data/cache/covers/keen4-1.png", scrambled: true }),
+  );
+  renderDetail();
+  expect(await screen.findByText(/graphics files don't fit together/)).toBeInTheDocument();
 });
 
 test("tabs follow the arrow keys", async () => {

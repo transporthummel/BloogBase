@@ -218,7 +218,7 @@ test("a mod gets its title screen once its game is there", async () => {
 
   vi.mocked(commands.profileCover).mockResolvedValue({
     status: "ok",
-    data: "/covers/galactic.png",
+    data: { path: "/covers/galactic.png", scrambled: false },
   });
   vi.mocked(commands.listProfiles).mockResolvedValue({
     status: "ok",

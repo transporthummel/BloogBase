@@ -269,7 +269,7 @@ function ProfileCard({
         aria-hidden
         className="block"
       >
-        <Cover gameId={profile.gameId} game={game} src={cover.data} />
+        <Cover gameId={profile.gameId} game={game} src={cover.data?.src} />
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="grid gap-0.5">

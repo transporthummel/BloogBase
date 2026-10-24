@@ -31,7 +31,14 @@ export const commands = {
 	 *  The profile's title screen as a PNG path, extracted on first use; `None`
 	 *  keeps the placeholder.
 	 */
-	profileCover: (profileId: string) => typedError<string | null, CommandError>(__TAURI_INVOKE("profile_cover", { profileId })),
+	profileCover: (profileId: string) => typedError<{
+	path: string,
+	/**
+	 *  The graphics files don't fit together, so the game shows scrambled
+	 *  graphics (as Keen Static does on purpose).
+	 */
+	scrambled: boolean,
+} | null, CommandError>(__TAURI_INVOKE("profile_cover", { profileId })),
 	deleteScreenshot: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_screenshot", { profileId, file })),
 	/**  Videos recorded in DOSBox, newest first. */
 	listVideos: (profileId: string) => typedError<Video[], CommandError>(__TAURI_INVOKE("list_videos", { profileId })),
@@ -681,6 +688,15 @@ export type ProfileConfig = {
 	text: string,
 	warnings: ConfigWarning[],
 	effective: Setting[],
+};
+
+export type ProfileCover = {
+	path: string,
+	/**
+	 *  The graphics files don't fit together, so the game shows scrambled
+	 *  graphics (as Keen Static does on purpose).
+	 */
+	scrambled: boolean,
 };
 
 /**  Quitting was asked for while these games run; the frontend asks what to do. */

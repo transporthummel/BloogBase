@@ -234,6 +234,8 @@ fn vorticons_title_draws_the_bitmap_over_the_level() {
     // plane is no EGALATCH.
     let short = keen_graphics::vorticons_title(&head, &latch[..99], &level, None).unwrap();
     assert_eq!(&short.pixels[320 + 31..320 + 34], &[1, 0, 0]);
+    assert!(keen_graphics::vorticons_latch_is_short(&head, &latch[..99]));
+    assert!(!keen_graphics::vorticons_latch_is_short(&head, &latch));
     assert!(keen_graphics::vorticons_title(&head, &latch[..32], &level, None).is_err());
     assert!(keen_graphics::vorticons_title(&head[..40], &latch, &level, None).is_err());
 

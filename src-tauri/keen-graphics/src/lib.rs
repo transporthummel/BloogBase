@@ -146,6 +146,12 @@ pub fn vorticons_title(
     vorticons::title(egahead, egalatch, level90, tileset)
 }
 
+/// Whether a Keen 1-3 `EGALATCH` is shorter than its `EGAHEAD` says, as in
+/// Keen Static: the game then shows scrambled graphics.
+pub fn vorticons_latch_is_short(egahead: &[u8], egalatch: &[u8]) -> bool {
+    vorticons::latch_is_short(egahead, egalatch)
+}
+
 /// The tileset file a mod's `TILEHEAD` names for `level`.
 pub fn vorticons_tileset_name(tilehead: &[u8], level: usize) -> Option<String> {
     vorticons::tileset_name(tilehead, level)
