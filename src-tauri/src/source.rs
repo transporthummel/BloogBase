@@ -190,6 +190,25 @@ mod tests {
     }
 
     #[test]
+    fn zip_source_with_spanning_marker() {
+        use std::io::Write;
+        use zip::write::SimpleFileOptions;
+        // As old PKZIP wrote it: offsets count the marker in.
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("old.zip");
+        let mut file = std::fs::File::create(&path).unwrap();
+        file.write_all(b"PK00").unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        for (rel, data) in FILES {
+            zip.start_file(*rel, SimpleFileOptions::default()).unwrap();
+            zip.write_all(data).unwrap();
+        }
+        zip.finish().unwrap();
+        assert!(std::fs::read(&path).unwrap().starts_with(b"PK00PK"));
+        check(&Source::open(&path).unwrap(), tmp.path());
+    }
+
+    #[test]
     fn rejects_other_files() {
         let tmp = tempfile::tempdir().unwrap();
         let path = tmp.path().join("game.rar");

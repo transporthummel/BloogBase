@@ -545,7 +545,9 @@ enum Kind {
 
 fn sniff(head: &[u8]) -> Kind {
     let trimmed = head.trim_ascii_start();
-    if head.starts_with(b"PK\x03\x04") || head.starts_with(b"PK\x05\x06") {
+    // Old PKZIP put a spanning marker (`PK00`) before single-disk archives too.
+    let zip = head.strip_prefix(b"PK00").unwrap_or(head);
+    if zip.starts_with(b"PK\x03\x04") || zip.starts_with(b"PK\x05\x06") {
         Kind::Zip
     } else if head.starts_with(b"Rar!") {
         Kind::Rar
@@ -937,6 +939,8 @@ mod tests {
     #[test]
     fn downloads_are_sniffed() {
         assert_eq!(sniff(b"PK\x03\x04rest"), Kind::Zip);
+        assert_eq!(sniff(b"PK00PK\x03\x04rest"), Kind::Zip);
+        assert_eq!(sniff(b"PK00rest"), Kind::Other);
         assert_eq!(sniff(b"Rar!\x1a\x07"), Kind::Rar);
         assert_eq!(sniff(b"7z\xBC\xAF\x27\x1C"), Kind::SevenZip);
         assert_eq!(sniff(b"MZ\x90\x00"), Kind::Exe);
