@@ -207,6 +207,7 @@ const aurora: Mod = {
   indexId: null,
   extends: null,
   keenwikiUrl: "https://keenwiki.shikadi.net/wiki/Aurora_Bliss",
+  homepage: "https://aurora.example/",
   addedAt: 1_700_000_000,
   profileId: "aurora-bliss",
 };
@@ -262,6 +263,8 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   );
   await userEvent.click(screen.getByRole("button", { name: "KeenWiki" }));
   expect(openUrl).toHaveBeenCalledWith(aurora.keenwikiUrl);
+  await userEvent.click(screen.getByRole("button", { name: "Website" }));
+  expect(openUrl).toHaveBeenCalledWith(aurora.homepage);
   // Not in the index yet.
   expect(screen.getByRole("button", { name: "Suggest it for the mod list" })).toBeInTheDocument();
   expect(screen.getByText("Sessions").nextSibling).toHaveTextContent("1");

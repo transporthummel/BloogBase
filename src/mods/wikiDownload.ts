@@ -21,6 +21,7 @@ export function downloaded(
       version: chosen.version,
       description: page.description,
       released: page.released,
+      homepage: page.homepage,
     },
   };
 }

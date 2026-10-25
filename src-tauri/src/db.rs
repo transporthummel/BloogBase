@@ -20,6 +20,7 @@ const MIGRATIONS_SLICE: &[M<'_>] = &[
     M::up(include_str!("../migrations/0007_backup_files.sql")),
     M::up(include_str!("../migrations/0008_version_recipes.sql")),
     M::up(include_str!("../migrations/0009_extends.sql")),
+    M::up(include_str!("../migrations/0010_homepage.sql")),
 ];
 const MIGRATIONS: Migrations<'_> = Migrations::from_slice(MIGRATIONS_SLICE);
 

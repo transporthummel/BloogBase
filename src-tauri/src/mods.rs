@@ -155,6 +155,9 @@ pub struct KeenwikiOrigin {
     /// `YYYY-MM-DD`, when known.
     #[serde(default)]
     pub released: Option<String>,
+    /// The mod's own website.
+    #[serde(default)]
+    pub homepage: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]
@@ -177,6 +180,8 @@ pub struct Mod {
     /// The installed mod it's played over.
     pub extends: Option<String>,
     pub keenwiki_url: Option<String>,
+    /// The mod's own website, from its KeenWiki page.
+    pub homepage: Option<String>,
     /// Unix epoch seconds.
     #[specta(type = u32)]
     pub added_at: i64,
@@ -797,6 +802,7 @@ struct Stored<'a> {
     /// The installed mod it's played over.
     extends: Option<String>,
     keenwiki_url: Option<&'a str>,
+    homepage: Option<String>,
     /// The picked folder or ZIP, or the download URL.
     source_url: &'a str,
     /// Name for the kept copy of the archive; default: its own.
@@ -896,6 +902,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             index_id: None,
             extends: req.extends.clone(),
             keenwiki_url: Some(&o.page_url),
+            homepage: o.homepage.clone(),
             source_url: &o.download_url,
             archive_name: None,
         },
@@ -913,6 +920,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             index_id: None,
             extends: req.extends.clone(),
             keenwiki_url: None,
+            homepage: None,
             source_url: &req.path,
             archive_name: None,
         },
@@ -926,6 +934,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
     }
     stored.description = stored.description.or_else(|| old.description.clone());
     stored.keenwiki_url = stored.keenwiki_url.or(old.keenwiki_url.as_deref());
+    stored.homepage = stored.homepage.or_else(|| old.homepage.clone());
     update(
         paths,
         db,
@@ -1022,6 +1031,8 @@ pub fn install_curated(
         index_id: Some(&c.index_id),
         extends: base_id,
         keenwiki_url: c.keenwiki_url.as_deref(),
+        // The index entry links it.
+        homepage: None,
         source_url: &c.url,
         archive_name: c.url.rsplit('/').next().filter(|n| !n.is_empty()),
     };
@@ -1395,6 +1406,7 @@ fn store(
             index_id: s.index_id.map(str::to_string),
             extends: s.extends.clone(),
             keenwiki_url: s.keenwiki_url.map(str::to_string),
+            homepage: s.homepage.clone(),
             added_at: now(),
             profile_id: id.clone(),
         };
@@ -1404,9 +1416,9 @@ fn store(
             "INSERT INTO mods (id, game_id, index_id, keenwiki_url, name, authors, version,
                                recipe_json, path, source, source_url, archive_sha256, added_at,
                                description, released, author_links, requires_json,
-                               version_recipes_json, extends)
+                               version_recipes_json, extends, homepage)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19)",
+                     ?18, ?19, ?20)",
             params![
                 m.id,
                 m.game_id,
@@ -1426,7 +1438,8 @@ fn store(
                 serde_json::to_string(&m.author_links).expect("strings serialize"),
                 requires_json(s),
                 version_recipes_json(s),
-                s.extends
+                s.extends,
+                s.homepage
             ],
         )?;
         tx.execute(
@@ -1499,7 +1512,7 @@ fn update(
                              source_url = ?6, archive_sha256 = ?7, description = ?8,
                              released = ?9, author_links = ?10, requires_json = ?11,
                              name = ?12, source = ?13, index_id = ?14,
-                             version_recipes_json = ?15, extends = ?16
+                             version_recipes_json = ?15, extends = ?16, homepage = ?17
              WHERE id = ?1",
             params![
                 mod_id,
@@ -1517,7 +1530,8 @@ fn update(
                 s.source.as_str(),
                 s.index_id,
                 version_recipes_json(s),
-                s.extends
+                s.extends,
+                s.homepage
             ],
         )?;
         tx.execute(
@@ -1653,7 +1667,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
     let mut stmt = conn.prepare(
         "SELECT m.id, m.game_id, m.name, m.authors, m.version, m.recipe_json, m.source,
                 m.added_at, p.id, m.index_id, m.keenwiki_url, m.description, m.released,
-                m.author_links, m.version_recipes_json, i.version_id, m.extends
+                m.author_links, m.version_recipes_json, i.version_id, m.extends, m.homepage
          FROM mods m JOIN profiles p ON p.mod_id = m.id
          LEFT JOIN installs i ON i.id = p.install_id
          ORDER BY m.added_at, m.id",
@@ -1689,6 +1703,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
             index_id: r.get(9)?,
             extends: r.get(16)?,
             keenwiki_url: r.get(10)?,
+            homepage: r.get(17)?,
             description: r.get(11)?,
             released: r.get(12)?,
         })
@@ -1730,6 +1745,7 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
         version,
         recipe,
         keenwiki_url,
+        homepage,
         ..
     } = m;
     let size = fs::read_dir(Path::new(&path).join("source"))
@@ -1761,6 +1777,9 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
     yaml += "type: episode  # episode | levelpack | conversion\nlinks:\n";
     if let Some(url) = &keenwiki_url {
         yaml += &format!("  keenwiki: {url}\n");
+    }
+    if let Some(url) = &homepage {
+        yaml += &format!("  homepage: {url}\n");
     }
     yaml += "downloads:\n";
     yaml += &format!(
@@ -2014,6 +2033,7 @@ mod tests {
             version: Some("1.2".into()),
             description: Some("Blissful.".into()),
             released: Some("2012-05-01".into()),
+            homepage: Some("http://aurora.example/".into()),
         });
         let m = install(&paths, &db, &req).unwrap();
         assert_eq!(m.source, ModSource::Keenwiki);
@@ -2024,6 +2044,7 @@ mod tests {
         assert_eq!(listed.keenwiki_url.as_deref(), Some(page));
         assert_eq!(listed.description.as_deref(), Some("Blissful."));
         assert_eq!(listed.released.as_deref(), Some("2012-05-01"));
+        assert_eq!(listed.homepage.as_deref(), Some("http://aurora.example/"));
         assert_eq!(
             listed.author_links["Dave216"],
             "https://keenwiki.shikadi.net/wiki/User:Dave216"
@@ -2044,7 +2065,7 @@ mod tests {
             "game: keen4\n",
             "authors: [\"Dave216\"]\n",
             "authorLinks:\n  \"Dave216\": https://keenwiki.shikadi.net/wiki/User:Dave216\n",
-            &format!("  keenwiki: {page}\n"),
+            &format!("  keenwiki: {page}\n  homepage: http://aurora.example/\n"),
             &format!("  - url: {download}\n    sha256: {sha}\n    version: \"1.2\"\n"),
             "recipe:\n  type: \"episode\"\n",
         ] {
@@ -2072,6 +2093,7 @@ mod tests {
             version: Some("1.1".into()),
             description: Some("Blissful.".into()),
             released: None,
+            homepage: Some("http://aurora.example/".into()),
         });
         let old = install(&paths, &db, &req).unwrap();
         fs::write(paths.profiles.join("aurora/state/SAVEGAM0.CK4"), b"save").unwrap();
@@ -2094,6 +2116,7 @@ mod tests {
         assert_eq!(m.version.as_deref(), Some("1.2"));
         assert_eq!(m.description.as_deref(), Some("Blissful."));
         assert_eq!(m.keenwiki_url, old.keenwiki_url);
+        assert_eq!(m.homepage, old.homepage);
         assert_eq!(list(&db).unwrap().len(), 1);
         let files = paths.mods.join("aurora/files");
         assert_eq!(fs::read(files.join("GAMEMAPS.CK4")).unwrap(), b"newer maps");

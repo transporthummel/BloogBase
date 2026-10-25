@@ -69,6 +69,8 @@ pub struct WikiMod {
     pub levels: Option<String>,
     /// The first discussion thread, usually on PCKF.
     pub discussion: Option<String>,
+    /// The mod's own website.
+    pub homepage: Option<String>,
     pub description: Option<String>,
     pub credits: Vec<String>,
     /// As listed; the first one is the newest.
@@ -217,12 +219,14 @@ pub fn parse(html: &str, page_url: &str) -> Result<WikiMod> {
     let authors = row_text("Author(s)")
         .map(|t| split_names(&t))
         .unwrap_or_default();
-    let discussion = row("Discussion(s)").and_then(|td| {
-        td.select(&selector("a[href]"))
-            .filter_map(|a| a.value().attr("href"))
-            .find(|h| h.starts_with("http"))
-            .map(str::to_string)
-    });
+    let first_link = |label: &str| {
+        row(label).and_then(|td| {
+            td.select(&selector("a[href]"))
+                .filter_map(|a| a.value().attr("href"))
+                .find(|h| h.starts_with("http"))
+                .map(str::to_string)
+        })
+    };
     let base = Url::parse(page_url).ok();
     let author_links = row("Author(s)")
         .map(|td| author_links(td, base.as_ref(), &authors))
@@ -253,7 +257,8 @@ pub fn parse(html: &str, page_url: &str) -> Result<WikiMod> {
         released: row_text("Release date"),
         updated: row_text("Latest update"),
         levels: row_text("Number of levels"),
-        discussion,
+        discussion: first_link("Discussion(s)"),
+        homepage: first_link("Homepage"),
         description: doc
             .select(&selector(".mw-parser-output > p"))
             .map(text)
@@ -631,6 +636,7 @@ mod tests {
             m.discussion.as_deref(),
             Some("https://pckf.com/viewtopic.php?f=4&t=4086")
         );
+        assert_eq!(m.homepage, None);
         assert!(
             m.description
                 .as_deref()
@@ -753,6 +759,19 @@ mod tests {
                 "Nisaba".to_string(),
                 format!("https://{HOST}/wiki/User:Nisaba")
             )])
+        );
+    }
+
+    #[test]
+    fn homepage_is_the_first_web_link() {
+        let html = r#"<table class="infobox"><tr><th>Modded episode</th><td>Keen 1</td></tr>
+            <tr><th>Homepage</th><td><a class="external text"
+              href="http://web.archive.org/web/20050507103508/http://www.avk.frac.dk/">AvK Official Site</a></td></tr>
+            </table>"#;
+        let m = parse(html, &format!("https://{HOST}/wiki/Aliens_vs._Keen")).unwrap();
+        assert_eq!(
+            m.homepage.as_deref(),
+            Some("http://web.archive.org/web/20050507103508/http://www.avk.frac.dk/")
         );
     }
 

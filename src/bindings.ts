@@ -618,6 +618,8 @@ export type KeenwikiOrigin = {
 	description?: string | null,
 	/**  `YYYY-MM-DD`, when known. */
 	released?: string | null,
+	/**  The mod's own website. */
+	homepage?: string | null,
 };
 
 export type LaunchPhase = "starting" | 
@@ -650,6 +652,8 @@ export type Mod = {
 	/**  The installed mod it's played over. */
 	extends: string | null,
 	keenwikiUrl: string | null,
+	/**  The mod's own website, from its KeenWiki page. */
+	homepage: string | null,
 	/**  Unix epoch seconds. */
 	addedAt: number,
 	/**  The play profile created for the mod. */
@@ -987,6 +991,8 @@ export type WikiMod = {
 	levels: string | null,
 	/**  The first discussion thread, usually on PCKF. */
 	discussion: string | null,
+	/**  The mod's own website. */
+	homepage: string | null,
 	description: string | null,
 	credits: string[],
 	/**  As listed; the first one is the newest. */
