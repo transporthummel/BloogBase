@@ -65,12 +65,13 @@ impl Layers {
     }
 
     /// The folders DOS sees in the drive root, top first: the mod's files
-    /// over the base game's, as far as there are any.
+    /// over those of the mod it extends and the base game's, as far as there
+    /// are any.
     pub fn sources(&self) -> Vec<&Path> {
-        self.mod_layer
-            .as_ref()
-            .map(|m| m.files.as_path())
+        let m = self.mod_layer.as_ref();
+        m.map(|m| m.files.as_path())
             .into_iter()
+            .chain(m.and_then(|m| m.base.as_deref()))
             .chain(self.lower.as_deref())
             .collect()
     }
@@ -80,6 +81,8 @@ impl Layers {
 #[derive(Debug, Clone)]
 pub struct ModLayer {
     pub files: PathBuf,
+    /// The files of the mod it's played over, below its own.
+    pub base: Option<PathBuf>,
     pub recipe: Recipe,
 }
 
@@ -87,7 +90,8 @@ const SELECT: &str = "
     SELECT p.id, p.install_id, COALESCE(i.game_id, m.game_id), i.version_id, p.mod_id,
            COALESCE(m.name, i.label), s.session_count, s.play_seconds, s.last_played_at,
            p.state_path, i.path, m.path, m.recipe_json, p.created_at, m.requires_json,
-           m.version_recipes_json
+           m.version_recipes_json, m.extends,
+           (SELECT b.path FROM mods b WHERE b.index_id = m.extends ORDER BY b.added_at LIMIT 1)
     FROM profiles p
     LEFT JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id
@@ -102,7 +106,11 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
     let install_path: Option<String> = r.get(10)?;
     let game_id: String = r.get(2)?;
     let requires: Option<String> = r.get(14)?;
+    let extends: Option<String> = r.get(16)?;
+    let base_path: Option<String> = r.get(17)?;
     let missing_game = match (&install_path, catalog::game(&game_id)) {
+        // Removing a mod removes the ones played over it; just in case.
+        _ if extends.is_some() && base_path.is_none() => extends,
         (Some(_), _) => None,
         (None, Some(game)) => Some(mods::needed_game(
             game,
@@ -123,6 +131,7 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
         let recipe = serde_json::from_str(&recipe).unwrap_or(Recipe::Episode);
         ModLayer {
             files: Path::new(&path).join("files"),
+            base: base_path.map(|b| Path::new(&b).join("files")),
             recipe: recipe::for_version(&recipe, &by_version, &game_id, version_id.as_deref())
                 .clone(),
         }

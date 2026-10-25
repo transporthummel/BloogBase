@@ -482,6 +482,8 @@ export type IndexEntry = {
 	versionRecipes?: { [key in string]: Recipe },
 	/**  Folders in the mod's root whose files also go into the root. */
 	copyToRoot?: string[],
+	/**  The index mod this one is played over, e.g. a level pack for a mod. */
+	extends?: string | null,
 	tags?: string[],
 	featured?: boolean,
 	minAppVersion?: string | null,
@@ -629,6 +631,8 @@ export type Mod = {
 	source: ModSource,
 	/**  The index entry it was installed from. */
 	indexId: string | null,
+	/**  The index mod it's played over. */
+	extends: string | null,
 	keenwikiUrl: string | null,
 	/**  Unix epoch seconds. */
 	addedAt: number,

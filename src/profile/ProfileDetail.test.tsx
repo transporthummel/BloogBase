@@ -204,6 +204,7 @@ const aurora: Mod = {
   recipe: { type: "episode" },
   source: "keenwiki",
   indexId: null,
+  extends: null,
   keenwikiUrl: "https://keenwiki.shikadi.net/wiki/Aurora_Bliss",
   addedAt: 1_700_000_000,
   profileId: "aurora-bliss",

@@ -141,6 +141,8 @@ pub struct Mod {
     pub source: ModSource,
     /// The index entry it was installed from.
     pub index_id: Option<String>,
+    /// The index mod it's played over.
+    pub extends: Option<String>,
     pub keenwiki_url: Option<String>,
     /// Unix epoch seconds.
     #[specta(type = u32)]
@@ -622,6 +624,8 @@ struct Stored<'a> {
     requires: Option<Vec<String>>,
     source: ModSource,
     index_id: Option<&'a str>,
+    /// The index mod it's played over.
+    extends: Option<&'a str>,
     keenwiki_url: Option<&'a str>,
     /// The picked folder or ZIP, or the download URL.
     source_url: &'a str,
@@ -696,6 +700,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             requires: requires.clone(),
             source: ModSource::Keenwiki,
             index_id: None,
+            extends: None,
             keenwiki_url: Some(&o.page_url),
             source_url: &o.download_url,
             archive_name: None,
@@ -712,6 +717,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             requires,
             source: ModSource::Manual,
             index_id: None,
+            extends: None,
             keenwiki_url: None,
             source_url: &req.path,
             archive_name: None,
@@ -757,6 +763,8 @@ pub struct Curated {
     pub copy_to_root: Vec<String>,
     /// Catalog versions it works with; empty: any.
     pub requires: Vec<String>,
+    /// The index mod it's played over, which has to be installed first.
+    pub extends: Option<String>,
     pub keenwiki_url: Option<String>,
     pub url: String,
 }
@@ -780,12 +788,19 @@ pub fn install_curated(
             analysis.info.game_id, c.game_id
         )));
     }
-    let in_root: Vec<&str> = analysis
+    let mut in_root: Vec<String> = analysis
         .files
         .iter()
         .filter(|f| split_dir(f).0 == analysis.root)
-        .map(|f| split_dir(f).1)
+        .map(|f| split_dir(f).1.to_string())
         .collect();
+    // The recipe may run files of the mod it's played over.
+    if let Some(base) = &c.extends {
+        let base_id = find_by_index(db, base)?.ok_or_else(|| Error::MissingGame(base.clone()))?;
+        for entry in fs::read_dir(paths.mods.join(base_id).join("files"))? {
+            in_root.push(entry?.file_name().to_string_lossy().into_owned());
+        }
+    }
     let recipes = std::iter::once(&c.recipe).chain(c.version_recipes.values());
     for file in recipes.flat_map(Recipe::files) {
         if !in_root.iter().any(|n| n.eq_ignore_ascii_case(file)) {
@@ -806,6 +821,7 @@ pub fn install_curated(
         requires: requires(&c.requires),
         source: ModSource::Index,
         index_id: Some(&c.index_id),
+        extends: c.extends.as_deref(),
         keenwiki_url: c.keenwiki_url.as_deref(),
         source_url: &c.url,
         archive_name: c.url.rsplit('/').next().filter(|n| !n.is_empty()),
@@ -1178,6 +1194,7 @@ fn store(
             recipe: s.recipe.clone(),
             source: s.source,
             index_id: s.index_id.map(str::to_string),
+            extends: s.extends.map(str::to_string),
             keenwiki_url: s.keenwiki_url.map(str::to_string),
             added_at: now(),
             profile_id: id.clone(),
@@ -1188,9 +1205,9 @@ fn store(
             "INSERT INTO mods (id, game_id, index_id, keenwiki_url, name, authors, version,
                                recipe_json, path, source, source_url, archive_sha256, added_at,
                                description, released, author_links, requires_json,
-                               version_recipes_json)
+                               version_recipes_json, extends)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18)",
+                     ?18, ?19)",
             params![
                 m.id,
                 m.game_id,
@@ -1209,7 +1226,8 @@ fn store(
                 m.released,
                 serde_json::to_string(&m.author_links).expect("strings serialize"),
                 requires_json(s),
-                version_recipes_json(s)
+                version_recipes_json(s),
+                s.extends
             ],
         )?;
         tx.execute(
@@ -1282,7 +1300,7 @@ fn update(
                              source_url = ?6, archive_sha256 = ?7, description = ?8,
                              released = ?9, author_links = ?10, requires_json = ?11,
                              name = ?12, source = ?13, index_id = ?14,
-                             version_recipes_json = ?15
+                             version_recipes_json = ?15, extends = ?16
              WHERE id = ?1",
             params![
                 mod_id,
@@ -1299,7 +1317,8 @@ fn update(
                 s.name,
                 s.source.as_str(),
                 s.index_id,
-                version_recipes_json(s)
+                version_recipes_json(s),
+                s.extends
             ],
         )?;
         tx.execute(
@@ -1389,7 +1408,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
     let mut stmt = conn.prepare(
         "SELECT m.id, m.game_id, m.name, m.authors, m.version, m.recipe_json, m.source,
                 m.added_at, p.id, m.index_id, m.keenwiki_url, m.description, m.released,
-                m.author_links, m.version_recipes_json, i.version_id
+                m.author_links, m.version_recipes_json, i.version_id, m.extends
          FROM mods m JOIN profiles p ON p.mod_id = m.id
          LEFT JOIN installs i ON i.id = p.install_id
          ORDER BY m.added_at, m.id",
@@ -1423,6 +1442,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
             added_at: r.get(7)?,
             profile_id: r.get(8)?,
             index_id: r.get(9)?,
+            extends: r.get(16)?,
             keenwiki_url: r.get(10)?,
             description: r.get(11)?,
             released: r.get(12)?,
@@ -1533,9 +1553,27 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
     Ok(url.to_string())
 }
 
-/// Removes a mod with its profile. With `keep_saves`, what the game wrote is
-/// archived into `backups/` first (§9.5).
+/// The mods played over `mod_id`, unless another copy of it stays.
+pub fn extensions(db: &Db, mod_id: &str) -> Result<Vec<String>> {
+    let conn = db.conn();
+    let mut stmt = conn.prepare(
+        "SELECT e.id FROM mods e JOIN mods m ON e.extends = m.index_id
+         WHERE m.id = ?1
+           AND NOT EXISTS (SELECT 1 FROM mods o WHERE o.index_id = m.index_id AND o.id <> m.id)
+         ORDER BY e.added_at, e.id",
+    )?;
+    let ids = stmt
+        .query_map([mod_id], |r| r.get(0))?
+        .collect::<rusqlite::Result<_>>()?;
+    Ok(ids)
+}
+
+/// Removes a mod with its profile, and the mods played over it. With
+/// `keep_saves`, what the game wrote is archived into `backups/` first (§9.5).
 pub fn delete(paths: &AppPaths, db: &Db, mod_id: &str, keep_saves: bool) -> Result<()> {
+    for extension in extensions(db, mod_id)? {
+        delete(paths, db, &extension, keep_saves)?;
+    }
     let profile_id: String = db
         .conn()
         .query_row("SELECT id FROM profiles WHERE mod_id = ?1", [mod_id], |r| {
@@ -1978,6 +2016,7 @@ mod tests {
             recipe,
             version_recipes: VersionRecipes::new(),
             copy_to_root: Vec::new(),
+            extends: None,
             requires: vec!["keen4-1.4-ega".into()],
             keenwiki_url: Some("https://keenwiki.shikadi.net/wiki/Aurora_Bliss".into()),
             url: "https://example.com/m.dave216.aurora.zip".into(),
@@ -2048,6 +2087,52 @@ mod tests {
         assert_eq!(sha, sha256_hex(&fs::read(&zip).unwrap()));
         assert_eq!(composed, None);
         assert!(!paths.cache.join("mod-aurora-bliss-update").exists());
+    }
+
+    #[test]
+    fn mods_played_over_another_need_it_and_go_with_it() {
+        let (tmp, paths, db) = setup();
+        let zip = tmp.path().join("index-pack.zip");
+        // Levels only: the patcher and patch come from the mod below.
+        write_zip(&zip, &[("Pack/GAMEMAPS.CK4", b"pack maps")]);
+        let pack = Curated {
+            index_id: "aurora-pack".into(),
+            name: "Aurora Pack".into(),
+            extends: Some("aurora-bliss".into()),
+            url: "https://example.com/pack.zip".into(),
+            ..curated(aurora_patch(&[]))
+        };
+        assert!(matches!(
+            install_curated(&paths, &db, &zip, &pack, None, false),
+            Err(Error::MissingGame(m)) if m == "aurora-bliss"
+        ));
+
+        let base = tmp.path().join("index-aurora-bliss.zip");
+        write_zip(&base, AURORA);
+        install_curated(&paths, &db, &base, &curated(aurora_patch(&[])), None, false).unwrap();
+        let m = install_curated(&paths, &db, &zip, &pack, None, false).unwrap();
+        assert_eq!(m.extends.as_deref(), Some("aurora-bliss"));
+        let (profile, layers) = profiles::get(&db, &m.profile_id).unwrap();
+        assert_eq!(profile.missing_game, None);
+        let layer = layers.mod_layer.as_ref().unwrap();
+        assert_eq!(layer.base, Some(paths.mods.join("aurora-bliss/files")));
+        assert_eq!(layers.sources().len(), 3);
+        // A patch the mod below doesn't have either is still missing.
+        let other = Curated {
+            recipe: Recipe::Batch {
+                file: "START.BAT".into(),
+            },
+            ..pack.clone()
+        };
+        assert!(matches!(
+            install_curated(&paths, &db, &zip, &other, None, false),
+            Err(Error::UnexpectedContent(_))
+        ));
+
+        assert_eq!(extensions(&db, "aurora-bliss").unwrap(), ["aurora-pack"]);
+        delete(&paths, &db, "aurora-bliss", false).unwrap();
+        assert!(list(&db).unwrap().is_empty());
+        assert!(!paths.mods.join("aurora-pack").exists());
     }
 
     #[test]

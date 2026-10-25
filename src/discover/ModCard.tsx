@@ -17,6 +17,7 @@ import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
 import { useEnterAction } from "../ui/useEnterAction";
 import { fitting, isNew, requiredLabels } from "./fit";
+import { useIndexMods } from "./queries";
 
 /** A mod from the index with everything needed to install it. */
 export function ModCard({
@@ -39,6 +40,10 @@ export function ModCard({
   const { entry } = mod;
   const game = games.find((g) => g.id === entry.game);
   const latest = entry.downloads[0];
+  // The mod it's played over, installed along with it when missing.
+  const index = useIndexMods();
+  const base = entry.extends ? index.data?.find((m) => m.entry.id === entry.extends) : undefined;
+  const baseMissing = base !== undefined && base.modId === null;
   const date = entry.updated ?? entry.released;
   const details = [
     entry.authors.length > 0 && <Authors authors={entry.authors} links={entry.authorLinks} />,
@@ -58,6 +63,13 @@ export function ModCard({
         <div className="grid gap-1">
           <h2 className="leading-tight font-semibold">{entry.name}</h2>
           <p className="text-xs text-muted">{gameTitle(games, entry.game)}</p>
+          {base && (
+            <p className="text-xs text-muted">
+              {t(baseMissing ? "discover.extendsInstall" : "discover.extends", {
+                name: base.entry.name,
+              })}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-1">
           <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
@@ -98,7 +110,7 @@ export function ModCard({
             mod={mod}
             installs={installs}
             games={games}
-            size={latest?.size ?? 0}
+            size={(latest?.size ?? 0) + (baseMissing ? (base.entry.downloads[0]?.size ?? 0) : 0)}
             archive={archive}
           />
         </div>

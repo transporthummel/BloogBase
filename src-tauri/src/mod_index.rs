@@ -75,6 +75,9 @@ pub struct IndexEntry {
     /// Folders in the mod's root whose files also go into the root.
     #[serde(default)]
     pub copy_to_root: Vec<String>,
+    /// The index mod this one is played over, e.g. a level pack for a mod.
+    #[serde(default)]
+    pub extends: Option<String>,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]

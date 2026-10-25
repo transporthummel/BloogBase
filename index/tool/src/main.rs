@@ -109,6 +109,7 @@ fn load(args: &mut Args) -> Result<Vec<Entry>, String> {
             Err(e) => problems.push(format!("{name}: {e}")),
         }
     }
+    problems.extend(entry::extends_problems(&entries));
     if problems.is_empty() {
         Ok(entries)
     } else {
@@ -142,9 +143,17 @@ fn check(mut args: Args) -> Result<(), String> {
             let found = archive::fetch(d, &cache).and_then(|path| {
                 std::fs::read(&path).map_err(|err| format!("{}: {err}", path.display()))
             });
+            // The recipe may run files of the mod it's played over.
+            let inherited = match base_files(e, &entries, &cache) {
+                Ok(names) => names,
+                Err(err) => {
+                    problems.push(format!("{}: {err}", e.id));
+                    continue;
+                }
+            };
             match found {
                 Ok(data) => problems.extend(
-                    archive::problems(e, d, &data)
+                    archive::problems(e, d, &data, &inherited)
                         .into_iter()
                         .map(|p| format!("{}: {p}", e.id)),
                 ),
@@ -162,6 +171,24 @@ fn check(mut args: Args) -> Result<(), String> {
             problems.join("\n  ")
         ))
     }
+}
+
+/// The file names in the newest download of the entry `e` extends.
+fn base_files(e: &Entry, entries: &[Entry], cache: &Path) -> Result<Vec<String>, String> {
+    let Some(base) = e
+        .extends
+        .as_ref()
+        .and_then(|id| entries.iter().find(|b| b.id == *id))
+    else {
+        return Ok(Vec::new());
+    };
+    let download = base
+        .downloads
+        .first()
+        .ok_or("the mod it extends has no download")?;
+    let path = archive::fetch(download, cache)?;
+    let data = std::fs::read(&path).map_err(|err| format!("{}: {err}", path.display()))?;
+    archive::file_names(&data).map_err(|err| format!("{}: {err}", download.url))
 }
 
 fn build(mut args: Args) -> Result<(), String> {

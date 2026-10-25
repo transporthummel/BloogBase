@@ -327,3 +327,19 @@ test("offers shareware episodes and demos on their own tabs", async () => {
   expect(versions()).toEqual(["Special demo"]);
   expect(screen.getByText("Demo")).toBeInTheDocument();
 });
+
+test("a mod played over another says so and counts its download too", async () => {
+  vi.mocked(commands.indexMods).mockResolvedValue({
+    status: "ok",
+    data: [
+      mod(entry("Aurora")),
+      mod(entry("Pack", { type: "levelpack", extends: "Aurora", requires: [] })),
+    ],
+  });
+  renderDiscover();
+
+  await screen.findByRole("heading", { name: "Pack" });
+  const pack = within(card("Pack"));
+  expect(pack.getByText("Played over Aurora, which is installed with it")).toBeInTheDocument();
+  expect(pack.getByRole("button", { name: "Install (4.0 MB)" })).toBeInTheDocument();
+});

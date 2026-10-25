@@ -741,14 +741,23 @@ pub async fn set_mod_install(
 #[tauri::command]
 #[specta::specta]
 pub async fn delete_mod(app: AppHandle, mod_id: String, keep_saves: bool) -> CommandResult<()> {
-    // The profile id equals the mod id; claiming it keeps a launch from racing the removal.
-    app.state::<Running>().claim(&mod_id)?;
+    // Profile ids equal mod ids; claiming them keeps a launch from racing the
+    // removal, of the mods played over this one too.
+    let mut claimed = vec![mod_id.clone()];
+    claimed.extend(mods::extensions(&app.state::<Db>(), &mod_id)?);
+    let running = app.state::<Running>();
+    for (n, id) in claimed.iter().enumerate() {
+        if let Err(e) = running.claim(id) {
+            claimed[..n].iter().for_each(|c| running.release(c));
+            return Err(e.into());
+        }
+    }
     let a = app.clone();
     let id = mod_id.clone();
     let result =
         blocking(move || mods::delete(&a.state::<AppPaths>(), &a.state::<Db>(), &id, keep_saves))
             .await;
-    app.state::<Running>().release(&mod_id);
+    claimed.iter().for_each(|c| running.release(c));
     result
 }
 
@@ -935,96 +944,122 @@ pub fn install_index_mod(
     let a = app.clone();
     let id = index_id.clone();
     jobs::start(&app, JobKind::Mod, Some(index_id), |report| async move {
-        let entry = a
-            .state::<ModIndex>()
+        let index = a.state::<ModIndex>();
+        let entry = index
             .entry(&id)
             .ok_or_else(|| Error::NotFound(format!("{id} in the mod index")))?;
-        let download = entry.downloads[0].clone();
-        let size = u64::from(download.size);
-        let local = archive.map(PathBuf::from);
-        let archive = match &local {
-            Some(path) => {
-                let hash = detect::sha256_hex(&tokio::fs::read(path).await?);
-                if !hash.eq_ignore_ascii_case(&download.sha256) {
-                    return Err(Error::UnexpectedContent(format!(
-                        "{} is not the download of {id}",
-                        path.display()
-                    )));
-                }
-                path.clone()
-            }
-            None => {
-                let archive = a
-                    .state::<AppPaths>()
-                    .cache
-                    .join("downloads")
-                    .join(format!("index-{id}.zip"));
-                downloads::fetch(&download.url, &download.sha256, size, &archive, &|r, t| {
-                    report.progress(JobPhase::Downloading, r, t)
-                })
-                .await?;
-                archive
-            }
+        // A mod played over another one needs that one first.
+        let base = match &entry.extends {
+            Some(base) if mods::find_by_index(&a.state::<Db>(), base)?.is_none() => Some(
+                index
+                    .entry(base)
+                    .ok_or_else(|| Error::NotFound(format!("{base} in the mod index")))?,
+            ),
+            _ => None,
         };
-        report.progress(JobPhase::Installing, size, size);
-        // Right after the setup wizard the game may still be on its way.
-        while a.state::<Jobs>().is_running(JobKind::FreeGame, |v| {
-            free_games::game_of(v) == Some(entry.game.as_str())
-        }) {
-            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        if let Some(base) = base {
+            install_entry(&a, &report, base, None, install_id.clone(), without_game).await?;
         }
-
-        let curated = Curated {
-            index_id: entry.id.clone(),
-            game_id: entry.game.clone(),
-            name: entry.name.clone(),
-            authors: entry.authors.clone(),
-            author_links: entry.author_links.clone(),
-            version: entry.version.clone(),
-            description: entry.description.clone(),
-            released: entry.released.clone(),
-            recipe: entry.recipe.clone(),
-            version_recipes: entry.version_recipes.clone(),
-            copy_to_root: entry.copy_to_root.clone(),
-            requires: entry.requires.clone(),
-            keenwiki_url: entry.links.keenwiki.clone(),
-            url: download.url.clone(),
-        };
-        let b = a.clone();
-        let file = archive.clone();
-        let result = tauri::async_runtime::spawn_blocking(move || {
-            let (paths, db, running) =
-                (b.state::<AppPaths>(), b.state::<Db>(), b.state::<Running>());
-            // An update must not swap files under a running game.
-            let existing = mods::find_by_index(&db, &curated.index_id)?;
-            if let Some(m) = &existing {
-                running.claim(m)?;
-            }
-            let result = mods::install_curated(
-                &paths,
-                &db,
-                &file,
-                &curated,
-                install_id.as_deref(),
-                without_game,
-            );
-            if let Some(m) = &existing {
-                running.release(m);
-            }
-            result
-        })
-        .await
-        .map_err(Error::from)
-        .and_then(|r| r);
-        if let Ok(m) = &result {
-            warn_if_damaged(&a, &archive, &m.name);
-        }
-        // The player's own copy stays.
-        if local.is_none() {
-            let _ = std::fs::remove_file(&archive);
-        }
-        result.map(drop)
+        install_entry(&a, &report, entry, archive, install_id, without_game).await
     })
+}
+
+/// Downloads (unless `archive` is the player's copy) and installs one index
+/// mod for [`install_index_mod`].
+async fn install_entry(
+    a: &AppHandle,
+    report: &jobs::Reporter,
+    entry: mod_index::IndexEntry,
+    archive: Option<String>,
+    install_id: Option<String>,
+    without_game: bool,
+) -> Result<()> {
+    let id = entry.id.clone();
+    let download = entry.downloads[0].clone();
+    let size = u64::from(download.size);
+    let local = archive.map(PathBuf::from);
+    let archive = match &local {
+        Some(path) => {
+            let hash = detect::sha256_hex(&tokio::fs::read(path).await?);
+            if !hash.eq_ignore_ascii_case(&download.sha256) {
+                return Err(Error::UnexpectedContent(format!(
+                    "{} is not the download of {id}",
+                    path.display()
+                )));
+            }
+            path.clone()
+        }
+        None => {
+            let archive = a
+                .state::<AppPaths>()
+                .cache
+                .join("downloads")
+                .join(format!("index-{id}.zip"));
+            downloads::fetch(&download.url, &download.sha256, size, &archive, &|r, t| {
+                report.progress(JobPhase::Downloading, r, t)
+            })
+            .await?;
+            archive
+        }
+    };
+    report.progress(JobPhase::Installing, size, size);
+    // Right after the setup wizard the game may still be on its way.
+    while a.state::<Jobs>().is_running(JobKind::FreeGame, |v| {
+        free_games::game_of(v) == Some(entry.game.as_str())
+    }) {
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    }
+
+    let curated = Curated {
+        index_id: entry.id.clone(),
+        game_id: entry.game.clone(),
+        name: entry.name.clone(),
+        authors: entry.authors.clone(),
+        author_links: entry.author_links.clone(),
+        version: entry.version.clone(),
+        description: entry.description.clone(),
+        released: entry.released.clone(),
+        recipe: entry.recipe.clone(),
+        version_recipes: entry.version_recipes.clone(),
+        copy_to_root: entry.copy_to_root.clone(),
+        extends: entry.extends.clone(),
+        requires: entry.requires.clone(),
+        keenwiki_url: entry.links.keenwiki.clone(),
+        url: download.url.clone(),
+    };
+    let b = a.clone();
+    let file = archive.clone();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        let (paths, db, running) = (b.state::<AppPaths>(), b.state::<Db>(), b.state::<Running>());
+        // An update must not swap files under a running game.
+        let existing = mods::find_by_index(&db, &curated.index_id)?;
+        if let Some(m) = &existing {
+            running.claim(m)?;
+        }
+        let result = mods::install_curated(
+            &paths,
+            &db,
+            &file,
+            &curated,
+            install_id.as_deref(),
+            without_game,
+        );
+        if let Some(m) = &existing {
+            running.release(m);
+        }
+        result
+    })
+    .await
+    .map_err(Error::from)
+    .and_then(|r| r);
+    if let Ok(m) = &result {
+        warn_if_damaged(a, &archive, &m.name);
+    }
+    // The player's own copy stays.
+    if local.is_none() {
+        let _ = std::fs::remove_file(&archive);
+    }
+    result.map(drop)
 }
 
 #[tauri::command]

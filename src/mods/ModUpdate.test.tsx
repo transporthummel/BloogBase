@@ -45,6 +45,7 @@ const mod: Mod = {
   recipe: patch,
   source: "keenwiki",
   indexId: null,
+  extends: null,
   keenwikiUrl: "https://keenwiki.shikadi.net/wiki/Aurora_Bliss",
   addedAt: 0,
   profileId: "aurora-bliss",

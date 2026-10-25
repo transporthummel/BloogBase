@@ -311,7 +311,8 @@ pub fn remove(
             .collect::<rusqlite::Result<_>>()?)
     };
     if with_mods {
-        for mod_id in on_it(true)? {
+        // One at a time: removing a mod removes those played over it too.
+        while let Some(mod_id) = on_it(true)?.into_iter().next() {
             mods::delete(paths, db, &mod_id, keep_saves)?;
         }
     }

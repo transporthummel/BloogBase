@@ -46,6 +46,10 @@ pub struct Entry {
     /// the root.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub copy_to_root: Vec<String>,
+    /// The entry this mod is played over, e.g. a level pack for a mod: its
+    /// files go below this one's, and the recipe may run them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extends: Option<String>,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]
@@ -266,14 +270,41 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
             ));
         }
     }
-    if (!entry.version_recipes.is_empty() || !entry.copy_to_root.is_empty())
+    if (!entry.version_recipes.is_empty()
+        || !entry.copy_to_root.is_empty()
+        || entry.extends.is_some())
         && entry.min_app_version.is_none()
     {
-        fail("versionRecipes and copyToRoot need a minAppVersion".into());
+        fail("versionRecipes, copyToRoot and extends need a minAppVersion".into());
+    }
+    if entry.extends.as_deref() == Some(entry.id.as_str()) {
+        fail("extends names the entry itself".into());
     }
     for t in &entry.tags {
         if !is_slug(t) {
             fail(format!("tag `{t}` must be lower-case with dashes"));
+        }
+    }
+    out
+}
+
+/// What's wrong with the `extends` of `entries` among each other: the entry
+/// it names has to exist, be for the same game and not extend another one.
+pub fn extends_problems(entries: &[Entry]) -> Vec<String> {
+    let mut out = Vec::new();
+    for e in entries {
+        let Some(base_id) = &e.extends else { continue };
+        match entries.iter().find(|b| b.id == *base_id) {
+            None => out.push(format!("{}: extends unknown entry `{base_id}`", e.id)),
+            Some(b) if b.game != e.game => out.push(format!(
+                "{}: extends `{base_id}`, a mod for {}",
+                e.id, b.game
+            )),
+            Some(b) if b.extends.is_some() => out.push(format!(
+                "{}: extends `{base_id}`, which extends another mod itself",
+                e.id
+            )),
+            Some(_) => {}
         }
     }
     out
@@ -411,6 +442,32 @@ recipe:
             .insert("keen4-1.0".into(), Recipe::Episode);
         let p = problems(&bad, "aurora-bliss", &catalog());
         assert_eq!(p.len(), 3, "{p:#?}");
+    }
+
+    #[test]
+    fn extends_another_entry_of_the_same_game() {
+        let base = parse(AURORA).unwrap();
+        let mut pack = base.clone();
+        pack.id = "aurora-pack".into();
+        pack.extends = Some("aurora-bliss".into());
+        assert_eq!(problems(&pack, "aurora-pack", &catalog()).len(), 1);
+        pack.min_app_version = Some("0.1.0".into());
+        assert_eq!(
+            problems(&pack, "aurora-pack", &catalog()),
+            Vec::<String>::new()
+        );
+        assert_eq!(
+            extends_problems(&[base.clone(), pack.clone()]),
+            Vec::<String>::new()
+        );
+
+        assert_eq!(extends_problems(std::slice::from_ref(&pack)).len(), 1);
+        let mut other_game = base.clone();
+        other_game.game = "keen5".into();
+        assert_eq!(extends_problems(&[other_game, pack.clone()]).len(), 1);
+        let mut chained = base.clone();
+        chained.extends = Some("x".into());
+        assert_eq!(extends_problems(&[chained, pack]).len(), 2);
     }
 
     #[test]

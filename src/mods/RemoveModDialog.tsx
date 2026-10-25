@@ -1,9 +1,10 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Profile } from "../bindings";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
+import { modsKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
@@ -20,6 +21,10 @@ export function RemoveModDialog({
 }) {
   const { t } = useTranslation();
   const [keepSaves, setKeepSaves] = useState(true);
+  const mods = useQuery({ queryKey: modsKey, queryFn: () => unwrap(commands.listMods()) });
+  // Mods played over this one go with it.
+  const indexId = mods.data?.find((m) => m.id === profile.modId)?.indexId;
+  const extensions = indexId ? (mods.data ?? []).filter((m) => m.extends === indexId) : [];
   const remove = useMutation({
     mutationFn: () => unwrap(commands.deleteMod(profile.modId, keepSaves)),
     onSuccess: onRemoved,
@@ -33,6 +38,11 @@ export function RemoveModDialog({
           context: profile.missingGame === null ? undefined : "noGame",
         })}
       </p>
+      {extensions.length > 0 && (
+        <p className="text-sm text-muted">
+          {t("mods.removeExtensions", { names: extensions.map((m) => m.name).join(", ") })}
+        </p>
+      )}
       {profile.saveCount > 0 && (
         <label className="flex items-center gap-2 text-sm">
           <input

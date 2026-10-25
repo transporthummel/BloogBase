@@ -33,6 +33,7 @@ authors and link back to KeenWiki and PCKF.
    | `recipe`         | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode` |
    | `versionRecipes` | Version id: recipe, for game versions the mod starts differently on (one patch per version) |
    | `copyToRoot`     | Folders in the mod's root whose files the readme says to copy into the root                 |
+   | `extends`        | Id of the entry this mod is copied over, e.g. a level pack for a mod; installed with it     |
    | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
    | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
 
@@ -41,8 +42,11 @@ authors and link back to KeenWiki and PCKF.
    must be in the same folder of the archive; the "Add mod" dialog of the app
    shows what it detects, which is usually right.
 
-   `versionRecipes` and `copyToRoot` need a `minAppVersion`; older apps
-   would install the mod without them. `norp-the-yorp-3.yaml` uses both.
+   `versionRecipes`, `copyToRoot` and `extends` need a `minAppVersion`;
+   older apps would install the mod without them. `norp-the-yorp-3.yaml`
+   uses the first two, `lego-levels.yaml` the last: its files go over Lego
+   Keen's, and its recipe may run files of Lego Keen (here `CK1PATCH.EXE`).
+   The entry it names must be for the same game and not extend another one.
 
 3. Check it, including the download:
 

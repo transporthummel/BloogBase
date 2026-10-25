@@ -76,8 +76,23 @@ pub fn fetch(download: &Download, cache: &Path) -> Result<PathBuf, String> {
     Ok(path)
 }
 
-/// Problems with the downloaded archive of `entry`.
-pub fn problems(entry: &Entry, download: &Download, data: &[u8]) -> Vec<String> {
+/// The names of the files in an archive, without their folders.
+pub fn file_names(data: &[u8]) -> Result<Vec<String>, String> {
+    Ok(zip_files(data)
+        .map_err(|e| e.to_string())?
+        .iter()
+        .map(|n| file_of(n).to_string())
+        .collect())
+}
+
+/// Problems with the downloaded archive of `entry`. Recipe files named in
+/// `inherited` come from the mod it's played over.
+pub fn problems(
+    entry: &Entry,
+    download: &Download,
+    data: &[u8],
+    inherited: &[String],
+) -> Vec<String> {
     let mut out = Vec::new();
     let hash = sha256_hex(data);
     if !hash.eq_ignore_ascii_case(&download.sha256) {
@@ -94,7 +109,11 @@ pub fn problems(entry: &Entry, download: &Download, data: &[u8]) -> Vec<String> 
             return out;
         }
     };
-    let wanted: Vec<&str> = entry.recipes().flat_map(Recipe::files).collect();
+    let wanted: Vec<&str> = entry
+        .recipes()
+        .flat_map(Recipe::files)
+        .filter(|w| !inherited.iter().any(|n| n.eq_ignore_ascii_case(w)))
+        .collect();
     // All recipe files have to sit together in one folder, the mod's root,
     // and the folders to copy from have to be right in it.
     let holds_all = |dir: &str| {
@@ -187,11 +206,24 @@ mod tests {
     fn recipe_files_must_share_a_folder() {
         let good = zip(&[("Mod/ck4patch.exe", b"p"), ("Mod/X.PAT", b"x")]);
         let e = entry_for(&good);
-        assert_eq!(problems(&e, &e.downloads[0], &good), Vec::<String>::new());
+        assert_eq!(
+            problems(&e, &e.downloads[0], &good, &[]),
+            Vec::<String>::new()
+        );
 
         let split = zip(&[("a/CK4PATCH.EXE", b"p"), ("b/x.pat", b"x")]);
         let e = entry_for(&split);
-        assert_eq!(problems(&e, &e.downloads[0], &split).len(), 1);
+        assert_eq!(problems(&e, &e.downloads[0], &split, &[]).len(), 1);
+
+        // Levels only, played over a mod that has the patcher and patch.
+        let levels = zip(&[("LEVEL01.CK4", b"l")]);
+        let e = entry_for(&levels);
+        let below = ["ck4patch.exe".to_string(), "X.PAT".to_string()];
+        assert_eq!(
+            problems(&e, &e.downloads[0], &levels, &below),
+            Vec::<String>::new()
+        );
+        assert_eq!(problems(&e, &e.downloads[0], &levels, &below[..1]).len(), 1);
     }
 
     #[test]
@@ -203,9 +235,12 @@ mod tests {
         ]);
         let mut e = entry_for(&data);
         e.copy_to_root = vec!["1".into()];
-        assert_eq!(problems(&e, &e.downloads[0], &data), Vec::<String>::new());
+        assert_eq!(
+            problems(&e, &e.downloads[0], &data, &[]),
+            Vec::<String>::new()
+        );
         e.copy_to_root = vec!["2".into()];
-        assert_eq!(problems(&e, &e.downloads[0], &data).len(), 1);
+        assert_eq!(problems(&e, &e.downloads[0], &data, &[]).len(), 1);
     }
 
     #[test]
@@ -213,11 +248,11 @@ mod tests {
         let data = zip(&[("CK4PATCH.EXE", b"p"), ("x.pat", b"x")]);
         let mut e = entry_for(&data);
         e.downloads[0].size += 1;
-        assert_eq!(problems(&e, &e.downloads[0], &data).len(), 1);
+        assert_eq!(problems(&e, &e.downloads[0], &data, &[]).len(), 1);
         e.downloads[0].sha256 = "00".repeat(32);
-        let p = problems(&e, &e.downloads[0], &data);
+        let p = problems(&e, &e.downloads[0], &data, &[]);
         assert!(p[0].contains("sha256"), "{p:?}");
         let e = entry_for(b"not a zip");
-        assert!(problems(&e, &e.downloads[0], b"not a zip")[0].contains("ZIP"));
+        assert!(problems(&e, &e.downloads[0], b"not a zip", &[])[0].contains("ZIP"));
     }
 }

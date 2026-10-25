@@ -1,0 +1,31 @@
+id: lego-levels
+name: Lego Levels
+game: keen1
+authors: [KeenRush, Entropicdecay, Tulip, Xky Rauh, Levellass, Mink, Shikadi]
+authorLinks:
+  KeenRush: https://keenwiki.shikadi.net/wiki/User:KeenRush
+  Entropicdecay: https://keenwiki.shikadi.net/wiki/User:Entropicdecay
+  Tulip: https://keenwiki.shikadi.net/wiki/User:Tulip
+  Xky Rauh: https://keenwiki.shikadi.net/wiki/User:XkyRauh
+  Levellass: https://keenwiki.shikadi.net/wiki/User:Levellass
+  Mink: https://keenwiki.shikadi.net/wiki/User:Mink
+  Shikadi: https://keenwiki.shikadi.net/wiki/User:Shikadi
+released: 2010-02-10
+added: 2026-10-25
+type: levelpack
+description: "Seven new levels for Lego Keen from the Keen community, on a new world map. Keen loses his ammo and pogo stick whenever he leaves a level."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Lego_Levels
+  pckf: https://pckf.com/viewtopic.php?t=1040
+downloads:
+  - url: https://files.shikadi.net/keenwiki/Packs/ModPacks/l.keen_community.lego_keen.2012-02-10.zip
+    sha256: 4f5cfe050c1a4e88199b741a7950b431c9744c4e91c870575b3f924856655635
+    size: 15402
+# The readme says to copy the pack over Lego Keen and run its lego.bat;
+# the pack's own lego.pat replaces Lego Keen's.
+extends: lego-keen
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: lego.pat
+minAppVersion: 0.1.0

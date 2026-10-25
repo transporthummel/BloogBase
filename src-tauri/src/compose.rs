@@ -14,7 +14,7 @@ use rusqlite::params;
 use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
 
-use crate::catalog::Game;
+use crate::catalog::{Game, glob_match};
 use crate::ckpatch;
 use crate::db::Db;
 use crate::detect::hex;
@@ -30,6 +30,14 @@ const SKIPPED: &[&str] = &["ZIP", "RAR", "7Z"];
 /// CWSDPMI r7, unmodified, which DJGPP programs load for DPMI; DOSBox has
 /// none built in. Its license and source: `assets/cwsdpmi/cwsdpmi.doc`.
 const CWSDPMI: &[u8] = include_bytes!("../assets/cwsdpmi/CWSDPMI.EXE");
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Layer {
+    Game,
+    /// The mod a mod is played over.
+    Below,
+    Mod,
+}
 
 struct Input {
     path: PathBuf,
@@ -55,10 +63,20 @@ pub fn ensure(
     // Upper-cased path → file. DOS names are case-insensitive, so a mod's
     // `level01.ck1` replaces the base's `LEVEL01.CK1`.
     let mut inputs: BTreeMap<String, Input> = BTreeMap::new();
-    let mod_root = mod_layer.map(|m| (m.files.as_path(), true));
-    for (root, is_mod) in std::iter::once((base, false)).chain(mod_root) {
+    // A mod played over another one goes over that one's files, but not its
+    // saves: they are for the levels this one replaces.
+    let below = mod_layer.and_then(|m| m.base.as_deref());
+    let layers = [
+        (Some(base), Layer::Game),
+        (below, Layer::Below),
+        (mod_layer.map(|m| m.files.as_path()), Layer::Mod),
+    ];
+    for (root, layer) in layers.into_iter().filter_map(|(r, l)| Some((r?, l))) {
         for input in scan(root)? {
-            if is_mod && SKIPPED.iter().any(|e| has_ext(&input.rel, e)) {
+            if layer != Layer::Game && SKIPPED.iter().any(|e| has_ext(&input.rel, e)) {
+                continue;
+            }
+            if layer == Layer::Below && game.saves.iter().any(|p| glob_match(p, &input.rel)) {
                 continue;
             }
             inputs.insert(input.rel.to_ascii_uppercase(), input);
@@ -341,6 +359,7 @@ mod tests {
             );
             let layer = ModLayer {
                 files: modf.clone(),
+                base: None,
                 recipe,
             };
             let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false).unwrap();
@@ -370,6 +389,7 @@ mod tests {
         );
         let layer = ModLayer {
             files: modf.clone(),
+            base: None,
             recipe: Recipe::Batch {
                 file: "RUN.BAT".into(),
             },
@@ -393,6 +413,7 @@ mod tests {
             write_folder(&modf, files);
             let layer = ModLayer {
                 files: modf.clone(),
+                base: None,
                 recipe: Recipe::Episode,
             };
             let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false).unwrap();
@@ -421,6 +442,7 @@ mod tests {
             write_folder(&modf, files);
             let layer = ModLayer {
                 files: modf.clone(),
+                base: None,
                 recipe: Recipe::Program {
                     program: "ROBOKEEN.EXE".into(),
                     args: Vec::new(),
@@ -479,6 +501,7 @@ mod tests {
 
         let episode = ModLayer {
             files: modf.clone(),
+            base: None,
             recipe: Recipe::Episode,
         };
         let dir = ensure(&paths, &db, "p", &base, Some(&episode), keen1(), false).unwrap();
@@ -500,6 +523,7 @@ mod tests {
         // A different recipe or changed file rebuilds it.
         let batch = ModLayer {
             files: modf.clone(),
+            base: None,
             recipe: Recipe::Batch {
                 file: "GO.BAT".into(),
             },
@@ -510,5 +534,50 @@ mod tests {
         ensure(&paths, &db, "p", &base, Some(&batch), keen1(), false).unwrap();
         assert!(dir.join("NEW.CK1").exists());
         assert!(!paths.cache.join("composed/p.tmp").exists());
+    }
+
+    #[test]
+    fn composes_a_mod_over_the_mod_it_extends() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (paths, db) = setup(tmp.path());
+        let base = tmp.path().join("base");
+        let lego = tmp.path().join("lego");
+        let levels = tmp.path().join("levels");
+        write_folder(&base, &[("KEEN1.EXE", b"exe"), ("LEVEL04.CK1", b"game")]);
+        // As Lego Keen and Lego Levels spell them.
+        write_folder(
+            &lego,
+            &[
+                ("Level04.ck1", b"lego"),
+                ("lego.pat", b"keen"),
+                ("LEVEL05.CK1", b"5"),
+                ("SAVED6.CK1", b"for other levels"),
+            ],
+        );
+        write_folder(&levels, &[("LEVEL04.CK1", b"pack"), ("lego.pat", b"pack")]);
+        let layer = ModLayer {
+            files: levels.clone(),
+            base: Some(lego.clone()),
+            recipe: Recipe::Episode,
+        };
+        let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false).unwrap();
+        let mut names: Vec<String> = fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        names.sort();
+        assert_eq!(
+            names,
+            ["KEEN1.EXE", "LEVEL04.CK1", "LEVEL05.CK1", "lego.pat"]
+        );
+        assert_eq!(fs::read(dir.join("LEVEL04.CK1")).unwrap(), b"pack");
+        assert_eq!(fs::read(dir.join("lego.pat")).unwrap(), b"pack");
+
+        // A changed file of the mod below rebuilds it.
+        fs::write(dir.join("MARK"), b"").unwrap();
+        fs::write(lego.join("LEVEL06.CK1"), b"6").unwrap();
+        ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false).unwrap();
+        assert!(!dir.join("MARK").exists());
+        assert!(dir.join("LEVEL06.CK1").exists());
     }
 }
