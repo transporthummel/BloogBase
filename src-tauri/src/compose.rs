@@ -95,6 +95,7 @@ pub fn ensure(
     }
     if let Some((name, exe)) = missing_patcher(game, &inputs) {
         fs::write(tmp.join(name), exe)?;
+        adapt_patches(game, &inputs, &tmp)?;
     }
     if firing {
         let status = firing::apply(game, recipe, &tmp)?;
@@ -180,12 +181,6 @@ fn missing_patcher(
     inputs: &BTreeMap<String, Input>,
 ) -> Option<(&'static str, &'static [u8])> {
     let root: Vec<&Input> = inputs.values().filter(|i| !i.rel.contains('/')).collect();
-    let text = |i: &Input| {
-        (i.size <= 1 << 20)
-            .then(|| fs::read(&i.path).ok())
-            .flatten()
-            .map(|b| String::from_utf8_lossy(&b).into_owned())
-    };
     let is_patcher = |name: &str| {
         recipe::is_patcher(name)
             || root
@@ -199,6 +194,33 @@ fn missing_patcher(
     )
     .then(|| ckpatch::bundled(&game.id))
     .flatten()
+}
+
+/// Rewrites the patch files at the root of `dir` for the bundled CKPatch,
+/// where it reads them differently from the versions they were made for.
+fn adapt_patches(game: &Game, inputs: &BTreeMap<String, Input>, dir: &Path) -> Result<()> {
+    for input in inputs.values().filter(|i| !i.rel.contains('/')) {
+        let Some(text) = text(input) else { continue };
+        if !ckpatch::is_patch_for(&game.id, &input.rel, &text) {
+            continue;
+        }
+        // Byte for byte: comments may be in any code page.
+        let bytes = fs::read(&input.path)?;
+        let latin1: String = bytes.iter().map(|&b| char::from(b)).collect();
+        if let Some(adapted) = ckpatch::as_older_versions(&latin1) {
+            let bytes: Vec<u8> = adapted.chars().map(|c| c as u8).collect();
+            fs::write(dir.join(&input.rel), bytes)?;
+        }
+    }
+    Ok(())
+}
+
+/// A file's text, if it's small enough to be a script.
+fn text(input: &Input) -> Option<String> {
+    (input.size <= 1 << 20)
+        .then(|| fs::read(&input.path).ok())
+        .flatten()
+        .map(|b| String::from_utf8_lossy(&b).into_owned())
 }
 
 /// DJGPP's stub loader fills the first 2 KB of its programs.
@@ -242,8 +264,9 @@ fn scan(root: &Path) -> Result<Vec<Input>> {
 /// modification times identify them well enough without reading them.
 fn composition_hash(inputs: &BTreeMap<String, Input>, recipe: &Recipe, firing: bool) -> String {
     let mut h = Sha256::new();
-    // v2: the episode unpacked for old patchers; v3: CWSDPMI; v4: CKPatch.
-    h.update(b"composed v4\n");
+    // v2: the episode unpacked for old patchers; v3: CWSDPMI; v4: CKPatch;
+    // v5: patch files adapted to it.
+    h.update(b"composed v5\n");
     h.update(serde_json::to_string(recipe).expect("recipes serialize"));
     if firing {
         h.update(b"\none-button firing v1");
@@ -423,6 +446,19 @@ mod tests {
             None
         );
         assert_eq!(compose(&[("ROBOKEEN.EXE", b"MZ")]), None);
+
+        // Its values over a byte, as CKPatch 0.9 wrote them; other bytes,
+        // like a CP437 comment, stay. The mod's own patcher reads them as is.
+        let old: &[u8] = b"%ext ck1\n%patch $81D6 $1000 # \xB0\xB1\n%end\n";
+        let adapted = |files: &[(&str, &[u8])]| {
+            compose(files);
+            fs::read(paths.composed("p").join("ckrr.pat")).unwrap()
+        };
+        assert_eq!(
+            adapted(&[("ckrr.pat", old)]),
+            b"%ext ck1\n%patch $81D6 $00 # \xB0\xB1\n%end\n"
+        );
+        assert_eq!(adapted(&[("ckrr.pat", old), ("CK1PATCH.EXE", b"own")]), old);
     }
 
     #[test]
