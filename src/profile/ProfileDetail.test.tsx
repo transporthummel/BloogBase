@@ -232,7 +232,7 @@ test("a mod's page shows its credits, description, links and stats", async () =>
         id: "keen4-1",
         modId: "aurora-bliss",
         label: "Aurora Bliss",
-        playedOver: "Lego Keen",
+        playedOver: { profileId: "lego-keen", name: "Lego Keen" },
       },
     ]),
   );
@@ -257,9 +257,9 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   expect(screen.getByText("Played over it:").parentElement).toHaveTextContent(
     /^Played over it: Pack$/,
   );
-  expect(
-    screen.getByText(`Runs on ${keen4.title} Unknown version and Lego Keen`),
-  ).toBeInTheDocument();
+  expect(screen.getByText("Lego Keen").parentElement).toHaveTextContent(
+    `Runs on ${keen4.title} Unknown version and Lego Keen`,
+  );
   await userEvent.click(screen.getByRole("button", { name: "KeenWiki" }));
   expect(openUrl).toHaveBeenCalledWith(aurora.keenwikiUrl);
   // Not in the index yet.

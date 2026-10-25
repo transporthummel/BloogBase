@@ -293,7 +293,7 @@
     "installed": "{{name}} ist bereit zum Spielen.",
     "badge": "Mod",
     "baseGame": "Läuft mit {{game}} {{version}}",
-    "baseGame_over": "Läuft mit {{game}} {{version}} und {{mod}}",
+    "baseGame_over": "Läuft mit {{game}} {{version}} und <mod>{{mod}}</mod>",
     "new": "Neu",
     "remove": "Entfernen",
     "removeTitle": "{{name}} entfernen?",

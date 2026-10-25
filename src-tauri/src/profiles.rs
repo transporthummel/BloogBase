@@ -36,8 +36,16 @@ pub struct Profile {
     pub running: bool,
     /// The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`.
     pub missing_game: Option<String>,
-    /// The name of the mod a mod is played over, e.g. `Lego Keen`.
-    pub played_over: Option<String>,
+    /// The mod a mod is played over, e.g. Lego Keen.
+    pub played_over: Option<PlayedOver>,
+}
+
+/// The mod another one is played over.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayedOver {
+    pub profile_id: String,
+    pub name: String,
 }
 
 /// Where a profile's files live on disk.
@@ -94,7 +102,8 @@ const SELECT: &str = "
            p.state_path, i.path, m.path, m.recipe_json, p.created_at, m.requires_json,
            m.version_recipes_json, m.extends,
            (SELECT b.path FROM mods b WHERE b.id = m.extends),
-           (SELECT b.name FROM mods b WHERE b.id = m.extends)
+           (SELECT b.name FROM mods b WHERE b.id = m.extends),
+           (SELECT bp.id FROM profiles bp WHERE bp.mod_id = m.extends)
     FROM profiles p
     LEFT JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id
@@ -154,7 +163,10 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             save_count: 0,
             running: false,
             missing_game,
-            played_over: r.get(18)?,
+            played_over: r
+                .get::<_, Option<String>>(18)?
+                .zip(r.get::<_, Option<String>>(19)?)
+                .map(|(name, profile_id)| PlayedOver { profile_id, name }),
         },
         layers: Layers {
             lower: install_path.map(|p| Path::new(&p).join("base")),

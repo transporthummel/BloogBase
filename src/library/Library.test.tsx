@@ -167,11 +167,12 @@ test("a mod played over another one names it with its game", async () => {
     id: "pack",
     modId: "pack",
     label: "Pack",
-    playedOver: "Galactic",
+    playedOver: { profileId: "galactic", name: "Galactic" },
   };
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [pack] });
   renderLibrary();
-  expect(await screen.findByText("Runs on Keen 5 v1.4 EGA and Galactic")).toBeInTheDocument();
+  const link = await screen.findByRole("link", { name: "Galactic" });
+  expect(link.parentElement).toHaveTextContent(/^Runs on Keen 5 v1\.4 EGA and Galactic$/);
 });
 
 test("coming back from a details page keeps the place and shows the card", async () => {

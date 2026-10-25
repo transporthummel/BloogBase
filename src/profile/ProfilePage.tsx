@@ -39,6 +39,7 @@ import { SuggestToIndex } from "../mods/KeenwikiImport";
 import { ModUpdate } from "../mods/ModUpdate";
 import { useModUpdateCheck } from "../mods/modUpdateCheck";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
+import { RunsOn } from "../mods/RunsOn";
 import { useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -311,12 +312,11 @@ function Hero({
               )}
               {profile.modId !== null && profile.missingGame === null && game && (
                 <span>
-                  {t("mods.baseGame", {
-                    game: game.title,
-                    version: version?.label ?? t("library.unknownVersion"),
-                    mod: profile.playedOver,
-                    context: profile.playedOver ? "over" : undefined,
-                  })}
+                  <RunsOn
+                    profile={profile}
+                    game={game.title}
+                    version={version?.label ?? t("library.unknownVersion")}
+                  />
                 </span>
               )}
               {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}

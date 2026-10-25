@@ -10,6 +10,7 @@ import { formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { AddModDialog } from "../mods/AddModDialog";
+import { RunsOn } from "../mods/RunsOn";
 import { Cover } from "./Cover";
 import { useCover } from "./covers";
 import { profilesKey } from "./queries";
@@ -291,12 +292,11 @@ function ProfileCard({
             profile.modId !== null &&
             game && (
               <p className="text-xs text-muted">
-                {t("mods.baseGame", {
-                  game: game.shortTitle,
-                  version: version?.label ?? t("library.unknownVersion"),
-                  mod: profile.playedOver,
-                  context: profile.playedOver ? "over" : undefined,
-                })}
+                <RunsOn
+                  profile={profile}
+                  game={game.shortTitle}
+                  version={version?.label ?? t("library.unknownVersion")}
+                />
               </p>
             )
           )}

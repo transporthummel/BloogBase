@@ -691,6 +691,12 @@ export type PlaySessionEnded = {
 	message: string | null,
 };
 
+/**  The mod another one is played over. */
+export type PlayedOver = {
+	profileId: string,
+	name: string,
+};
+
 export type Profile = {
 	id: string,
 	/**  `None` for a mod waiting for its game. */
@@ -710,8 +716,8 @@ export type Profile = {
 	running: boolean,
 	/**  The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`. */
 	missingGame: string | null,
-	/**  The name of the mod a mod is played over, e.g. `Lego Keen`. */
-	playedOver: string | null,
+	/**  The mod a mod is played over, e.g. Lego Keen. */
+	playedOver: PlayedOver | null,
 };
 
 export type ProfileConfig = {
