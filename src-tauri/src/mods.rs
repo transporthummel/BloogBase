@@ -271,6 +271,15 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
         }
     }
     files.retain(|f| !pristine.contains(f));
+    // Keen 1-3's settings: a mod's are its author's keys and sound, which the
+    // game's own menus change, so the game starts with its defaults instead.
+    files.retain(|f| {
+        let (dir, name) = split_dir(f);
+        let settings = name
+            .rsplit_once('.')
+            .is_some_and(|(stem, _)| stem.eq_ignore_ascii_case("CTLPANEL"));
+        !(dir == root && settings && episode_of_ext(name) == Some(game.id.as_str()))
+    });
 
     let guess = recipe::guess(&names, read, &game.executables, is_patcher);
     let recipes = guess
@@ -2267,6 +2276,29 @@ mod tests {
             Dropped::Mod { .. }
         ));
         assert!(matches!(decide(false, None), Dropped::Nothing));
+    }
+
+    #[test]
+    fn leaves_out_keen_1_3_settings() {
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(
+            tmp.path(),
+            &[
+                ("Ctlpanel.ck1", b"keys"),
+                ("LEVEL01.CK1", b""),
+                ("KEEN1.EXE", b"modded"),
+                ("EXTRA/CTLPANEL.CK1", b"keys"),
+            ],
+        );
+        let a = analyze(&Source::open(tmp.path()).unwrap(), tmp.path(), None).unwrap();
+        assert_eq!(a.info.game_id, "keen1");
+        assert!(
+            !a.files
+                .iter()
+                .any(|f| f.eq_ignore_ascii_case("CTLPANEL.CK1"))
+        );
+        assert!(a.files.contains(&"LEVEL01.CK1".to_string()));
+        assert!(a.files.contains(&"EXTRA/CTLPANEL.CK1".to_string()));
     }
 
     #[test]
