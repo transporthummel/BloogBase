@@ -119,6 +119,15 @@ export const commands = {
  *  patch is for.
  */
 "otherVersion" | null, CommandError>(__TAURI_INVOKE("profile_firing", { profileId })),
+	/**  The machine a profile's mod needs instead of the default one, if any. */
+	profileMachine: (profileId: string) => typedError<
+/**
+ *  It draws for a CGA composite monitor. Staging's composite emulation
+ *  (`auto`, early-era for CGA) switches itself on in its graphics mode.
+ */
+"compositeCga" | 
+/**  It uses video memory only a Paradise SVGA gives it. */
+"paradiseSvga" | null, CommandError>(__TAURI_INVOKE("profile_machine", { profileId })),
 	/**
 	 *  The DOSBox config layers: the global override, and with `profile_id`
 	 *  that profile's layers and the effective result.
@@ -633,6 +642,16 @@ export type Links = {
 	pckf?: string | null,
 	homepage?: string | null,
 };
+
+/**  A machine a mod needs instead of the default S3 SVGA, as its patch shows. */
+export type Machine = 
+/**
+ *  It draws for a CGA composite monitor. Staging's composite emulation
+ *  (`auto`, early-era for CGA) switches itself on in its graphics mode.
+ */
+"compositeCga" | 
+/**  It uses video memory only a Paradise SVGA gives it. */
+"paradiseSvga";
 
 export type Mod = {
 	id: string,

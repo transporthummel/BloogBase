@@ -9,6 +9,7 @@ import {
   FileArchive,
   FolderOpen,
   Keyboard,
+  MonitorCog,
   RefreshCw,
   Trash2,
   TriangleAlert,
@@ -433,6 +434,7 @@ function Hero({
             </p>
           )}
           <FiringNote profileId={profile.id} />
+          <MachineNote profileId={profile.id} />
           {openFolder.error && <Notice tone="error">{errorMessage(t, openFolder.error)}</Notice>}
         </div>
       </div>
@@ -562,6 +564,22 @@ function FiringNote({ profileId }: { profileId: string }) {
     <p className="flex items-start gap-1.5 text-sm text-muted">
       <Keyboard className="mt-0.5 size-4 shrink-0" aria-hidden />
       {t(`profile.firing.${s === "patchable" ? "on" : s}`)}
+    </p>
+  );
+}
+
+/** The machine DOSBox runs as for a mod that needs another than the usual one. */
+function MachineNote({ profileId }: { profileId: string }) {
+  const { t } = useTranslation();
+  const machine = useQuery({
+    queryKey: ["machine", profileId],
+    queryFn: () => unwrap(commands.profileMachine(profileId)),
+  });
+  if (!machine.data) return null;
+  return (
+    <p className="flex items-start gap-1.5 text-sm text-muted">
+      <MonitorCog className="mt-0.5 size-4 shrink-0" aria-hidden />
+      {t(`profile.machine.${machine.data}`)}
     </p>
   );
 }

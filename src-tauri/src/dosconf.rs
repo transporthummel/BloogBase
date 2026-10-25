@@ -39,25 +39,39 @@ pub fn defaults(engine: Engine) -> (&'static str, &'static str) {
     }
 }
 
-/// Added to the defaults for mods that draw for a CGA composite monitor.
-/// Staging's composite emulation (`auto`, early-era for CGA) switches itself
-/// on in their graphics mode.
-const COMPOSITE_CGA: &str =
-    "# Added for this mod: it draws its graphics for a CGA composite monitor.
+/// A machine a mod needs instead of the default S3 SVGA, as its patch shows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum Machine {
+    /// It draws for a CGA composite monitor. Staging's composite emulation
+    /// (`auto`, early-era for CGA) switches itself on in its graphics mode.
+    CompositeCga,
+    /// It uses video memory only a Paradise SVGA gives it.
+    ParadiseSvga,
+}
+
+impl Machine {
+    /// What it adds to the defaults.
+    fn conf(self) -> &'static str {
+        match self {
+            Machine::CompositeCga => {
+                "# Added for this mod: it draws its graphics for a CGA composite monitor.
 [dosbox]
 machine = cga
-";
-
-/// Added to the defaults for mods that need more video memory than the
-/// default S3 maps for them.
-const PARADISE_SVGA: &str =
-    "# Added for this mod: it uses video memory only a Paradise SVGA gives it.
+"
+            }
+            Machine::ParadiseSvga => {
+                "# Added for this mod: it uses video memory only a Paradise SVGA gives it.
 [dosbox]
 machine = svga_paradise
-";
+"
+            }
+        }
+    }
+}
 
-/// What a profile's mod needs on top of its engine's defaults.
-pub fn mod_defaults(layers: &Layers) -> Option<&'static str> {
+/// The machine a profile's mod needs, if not the default one.
+pub fn mod_machine(layers: &Layers) -> Option<Machine> {
     let m = layers.mod_layer.as_ref()?;
     let patch = m.recipe.patch_file()?;
     // Found as DOS would, whatever the case.
@@ -69,10 +83,15 @@ pub fn mod_defaults(layers: &Layers) -> Option<&'static str> {
     let text = fs::read(path).ok()?;
     let text = String::from_utf8_lossy(&text);
     if recipe::sets_composite_mode(&text) {
-        Some(COMPOSITE_CGA)
+        Some(Machine::CompositeCga)
     } else {
-        recipe::maps_128k_video_memory(&text).then_some(PARADISE_SVGA)
+        recipe::maps_128k_video_memory(&text).then_some(Machine::ParadiseSvga)
     }
+}
+
+/// What a profile's mod needs on top of its engine's defaults.
+pub fn mod_defaults(layers: &Layers) -> Option<&'static str> {
+    mod_machine(layers).map(Machine::conf)
 }
 
 /// A profile's defaults layer: its engine's, plus what its mod needs.

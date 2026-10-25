@@ -86,6 +86,7 @@ vi.mock("../bindings", () => {
     "openCaptureFolder",
     "oneButtonFiring",
     "profileFiring",
+    "profileMachine",
   ];
   return {
     commands: Object.fromEntries(names.map((n) => [n, vi.fn()])),
@@ -190,6 +191,7 @@ beforeEach(() => {
   vi.mocked(commands.profileCover).mockResolvedValue(ok(null));
   vi.mocked(commands.oneButtonFiring).mockResolvedValue(ok(false));
   vi.mocked(commands.profileFiring).mockResolvedValue(ok(null));
+  vi.mocked(commands.profileMachine).mockResolvedValue(ok(null));
   vi.mocked(commands.modInstalls).mockResolvedValue(ok([]));
 });
 
@@ -548,6 +550,18 @@ test("says how Keen 1-3 shoot where the setting or the mod changes it", async ()
   vi.mocked(commands.profileFiring).mockResolvedValue(ok("otherVersion"));
   renderDetail();
   expect(await screen.findByText(/only available for version 1\.31/)).toBeInTheDocument();
+});
+
+test("says which machine DOSBox runs as for a mod that needs another", async () => {
+  renderDetail();
+  await screen.findByRole("heading", { name: keen4.title });
+  expect(commands.profileMachine).toHaveBeenCalledWith("keen4-1");
+  expect(screen.queryByText(/DOSBox runs as/)).toBeNull();
+  cleanup();
+
+  vi.mocked(commands.profileMachine).mockResolvedValue(ok("paradiseSvga"));
+  renderDetail();
+  expect(await screen.findByText(/DOSBox runs as a Paradise SVGA card/)).toBeInTheDocument();
 });
 
 test("the title screen is the picture, else the latest screenshot", async () => {

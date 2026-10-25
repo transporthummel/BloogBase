@@ -462,6 +462,10 @@
       "unavailable": "One-button firing isn’t available here: this game or mod changes the controls differently.",
       "otherVersion": "One-button firing is only available for version 1.31 of the game, and this copy is a different one."
     },
+    "machine": {
+      "compositeCga": "This mod is made for a CGA composite monitor: DOSBox runs as a CGA card with composite colors for it.",
+      "paradiseSvga": "This mod needs more video memory than the usual graphics card gives it: DOSBox runs as a Paradise SVGA card for it."
+    },
     "removeGame": "Uninstall",
     "removeGameTitle": "Uninstall {{name}}?",
     "removeGameHint": "BloogBase deletes its copy of the game. The folder or archive you added it from stays untouched.",

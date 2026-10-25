@@ -83,6 +83,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::one_button_firing,
             commands::set_one_button_firing,
             commands::profile_firing,
+            commands::profile_machine,
             commands::config_view,
             commands::save_config,
             commands::reset_config,

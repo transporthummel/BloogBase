@@ -14,7 +14,7 @@ use crate::catalog::{self, Game};
 use crate::covers;
 use crate::db::Db;
 use crate::detect;
-use crate::dosconf::{self, ConfigView, ConfigWarning};
+use crate::dosconf::{self, ConfigView, ConfigWarning, Machine};
 use crate::downloads;
 use crate::error::{CommandResult, Error, Result};
 use crate::exit_screen;
@@ -604,6 +604,14 @@ pub fn profile_firing(db: State<'_, Db>, profile_id: String) -> CommandResult<Op
         &layers.sources(),
         profile.version_id.as_deref(),
     ))
+}
+
+/// The machine a profile's mod needs instead of the default one, if any.
+#[tauri::command]
+#[specta::specta]
+pub fn profile_machine(db: State<'_, Db>, profile_id: String) -> CommandResult<Option<Machine>> {
+    let (_, layers) = profiles::get(&db, &profile_id)?;
+    Ok(dosconf::mod_machine(&layers))
 }
 
 /// The DOSBox config layers: the global override, and with `profile_id`

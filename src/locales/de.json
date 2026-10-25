@@ -462,6 +462,10 @@
       "unavailable": "Schießen mit einer Taste ist hier nicht verfügbar: Dieses Spiel oder diese Mod ändert die Steuerung anders.",
       "otherVersion": "Schießen mit einer Taste gibt es nur für Version 1.31 des Spiels, und diese Spielkopie ist eine andere."
     },
+    "machine": {
+      "compositeCga": "Diese Mod ist für einen CGA-Composite-Monitor gemacht: DOSBox läuft dafür als CGA-Karte mit Composite-Farben.",
+      "paradiseSvga": "Diese Mod braucht mehr Grafikspeicher, als die übliche Grafikkarte ihr gibt: DOSBox läuft dafür als Paradise-SVGA-Karte."
+    },
     "removeGame": "Deinstallieren",
     "removeGameTitle": "{{name}} deinstallieren?",
     "removeGameHint": "BloogBase löscht seine Kopie des Spiels. Der Ordner oder das Archiv, aus dem du es hinzugefügt hast, bleibt unberührt.",
