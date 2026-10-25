@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FileArchive, FolderOpen } from "lucide-react";
+import { FileArchive, FolderOpen, Puzzle } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -457,13 +457,15 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
       )}
       {modifiedGame && <Notice>{t("mods.modifiedGame")}</Notice>}
       {incomplete && (
-        <Notice>
+        // Set apart: the mod won't run like this.
+        <p role="status" className="flex items-start gap-2 text-sm">
+          <Puzzle className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
           {t("mods.missingFiles", {
             mod: info.needsMod,
             files: info.missingFiles.join(", "),
             context: info.needsMod ? "mod" : undefined,
           })}
-        </Notice>
+        </p>
       )}
       {versionUnchecked && <Notice>{t("mods.versionUnchecked")}</Notice>}
 

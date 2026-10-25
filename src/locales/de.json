@@ -299,7 +299,7 @@
     "removeHint": "Die Dateien der Mod werden gelöscht. Das Spiel selbst bleibt in deiner Bibliothek.",
     "removeHint_noGame": "Die Dateien der Mod werden gelöscht.",
     "missingFiles": "Dieser Mod fehlt {{files}}, das ihre Patch-Datei lädt. Vielleicht gehört sie über eine andere Mod kopiert; das steht meist im Readme.",
-    "missingFiles_mod": "Diese Mod gehört über {{mod}} kopiert und läuft nicht ohne: Ihr fehlt {{files}}.",
+    "missingFiles_mod": "Diese Mod muss über {{mod}} kopiert werden und läuft nicht ohne: Ihr fehlt {{files}}.",
     "removeExtensions": "{{names}} wird darüber gespielt und ebenfalls entfernt.",
     "keepSaves_one": "Den Spielstand als Sicherung behalten",
     "keepSaves_other": "Die {{count}} Spielstände als Sicherung behalten",
