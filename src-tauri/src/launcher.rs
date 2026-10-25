@@ -568,6 +568,21 @@ machine = cga
 "
         ));
 
+        // One that maps 128K of video memory gets a Paradise SVGA.
+        fs::write(
+            paths.mods.join("my-mod/files/MOD.PAT"),
+            "%ext ck4
+%patch $6E51 $BA $CE $03 $B0 $06 $EE $42 $EC $24 $F3 $EE
+",
+        )
+        .unwrap();
+        prepare(&paths, &db, &m.profile_id).unwrap();
+        assert!(fs::read_to_string(&defaults).unwrap().contains(
+            "[dosbox]
+machine = svga_paradise
+"
+        ));
+
         // Without its game the mod can't start.
         crate::library::remove(&paths, &db, "keen4-1", false, false).unwrap();
         match prepare(&paths, &db, &m.profile_id) {

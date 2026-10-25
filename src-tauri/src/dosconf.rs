@@ -48,6 +48,14 @@ const COMPOSITE_CGA: &str =
 machine = cga
 ";
 
+/// Added to the defaults for mods that need more video memory than the
+/// default S3 maps for them.
+const PARADISE_SVGA: &str =
+    "# Added for this mod: it uses video memory only a Paradise SVGA gives it.
+[dosbox]
+machine = svga_paradise
+";
+
 /// What a profile's mod needs on top of its engine's defaults.
 pub fn mod_defaults(layers: &Layers) -> Option<&'static str> {
     let m = layers.mod_layer.as_ref()?;
@@ -59,7 +67,12 @@ pub fn mod_defaults(layers: &Layers) -> Option<&'static str> {
         .find(|e| e.file_name().to_string_lossy().eq_ignore_ascii_case(patch))?
         .path();
     let text = fs::read(path).ok()?;
-    recipe::sets_composite_mode(&String::from_utf8_lossy(&text)).then_some(COMPOSITE_CGA)
+    let text = String::from_utf8_lossy(&text);
+    if recipe::sets_composite_mode(&text) {
+        Some(COMPOSITE_CGA)
+    } else {
+        recipe::maps_128k_video_memory(&text).then_some(PARADISE_SVGA)
+    }
 }
 
 /// A profile's defaults layer: its engine's, plus what its mod needs.

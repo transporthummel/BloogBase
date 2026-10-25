@@ -495,6 +495,20 @@ pub fn sets_composite_mode(text: &str) -> bool {
     })
 }
 
+/// Whether a patch maps 128K of video memory from A0000h, which only
+/// DOSBox's Paradise SVGA gives the game (Keen 1 640x480 Redux, whose README
+/// asks for it): it clears the memory map bits of the graphics controller's
+/// register 6, `mov dx,3CEh`, `mov al,6`, `out dx,al`, `inc dx`,
+/// `in al,dx`, `and al,<mask>`.
+pub fn maps_128k_video_memory(text: &str) -> bool {
+    patch_bytes(text).iter().any(|run| {
+        run.windows(10).any(|w| match w {
+            [0xBA, 0xCE, 0x03, 0xB0, 0x06, 0xEE, 0x42, 0xEC, 0x24, mask] => mask & 0x0C == 0,
+            _ => false,
+        })
+    })
+}
+
 /// `%version` values of a patch file, e.g. `["1.4"]`.
 /// A version whose section says `%abort` is named only to refuse it, and
 /// `%version all` is for every version (The Last Moon has it).
@@ -1054,6 +1068,18 @@ $BA $D8 $03 $EE"
         assert!(!sets_composite_mode(
             "%patch $1 $BA $D8 $03
 %patch $9 $B0 $1A $EE"
+        ));
+    }
+
+    #[test]
+    fn vga_modes_of_keen1_640x480_redux() {
+        let text = "%patch $6E51 $BA $CE $03 $B0 $06 $EE $42 $EC $24 $F3 $EE $EB $15
+%patch $6CB0 $E8 $C4 $FA # palette fading
+             $B8 $12 $00 $CD $10 #set mode 12h";
+        assert!(maps_128k_video_memory(text));
+        // The memory map left at 64K (bits 2-3 kept).
+        assert!(!maps_128k_video_memory(
+            "%patch $1 $BA $CE $03 $B0 $06 $EE $42 $EC $24 $FF $EE"
         ));
     }
 
