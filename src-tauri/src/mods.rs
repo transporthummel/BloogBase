@@ -207,8 +207,10 @@ pub fn inspect(path: &Path, game_hint: Option<&str>) -> Result<ModInfo> {
     Ok(analyze(&Source::open(path)?, path, game_hint)?.info)
 }
 
-/// The mod a way to start a mod lacks `missing_files` of: the first of
-/// `candidates` that has them all, installed or as its index entry says.
+/// The mod a way to start a mod lacks `missing_files` of, among `candidates`:
+/// an installed one that has them all, else an index entry that says it
+/// provides them. Installed first: one added from KeenWiki isn't tied to
+/// its index entry, which would install it again.
 pub fn needed_mod(missing_files: &[String], candidates: &[BaseCandidate]) -> Option<BaseMod> {
     if missing_files.is_empty() {
         return None;
@@ -228,9 +230,8 @@ pub fn needed_mod(missing_files: &[String], candidates: &[BaseCandidate]) -> Opt
     };
     candidates
         .iter()
-        .find(|c| {
-            has_all(&c.provides) || c.files.as_deref().is_some_and(|d| has_all(&installed(d)))
-        })
+        .find(|c| c.files.as_deref().is_some_and(|d| has_all(&installed(d))))
+        .or_else(|| candidates.iter().find(|c| has_all(&c.provides)))
         .map(|c| BaseMod {
             name: c.name.clone(),
             mod_id: c.mod_id.clone(),
@@ -2492,6 +2493,13 @@ mod tests {
         let found = needed_mod(missing, &installed).unwrap();
         assert_eq!(found.mod_id.as_deref(), Some("blocks"));
         assert_eq!(needed_mod(missing, &installed[..1]), None);
+        // Before an index entry listed first: added from KeenWiki, the
+        // installed copy isn't tied to it.
+        let both = [entries[1].clone(), installed[1].clone()];
+        assert_eq!(
+            needed_mod(missing, &both).unwrap().mod_id.as_deref(),
+            Some("blocks")
+        );
 
         // Nothing missing: nothing needed.
         assert_eq!(needed_mod(&[], &entries), None);
