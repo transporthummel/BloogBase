@@ -203,12 +203,23 @@ pub fn parse(html: &str, page_url: &str) -> Result<WikiMod> {
     // Game pages have an infobox too, without this row.
     let episode = row("Modded episode").ok_or(Error::NotAModPage)?;
 
+    let heading = doc
+        .select(&selector("#firstHeading"))
+        .next()
+        .map(text)
+        .and_then(non_empty);
     let name = infobox
         .select(&selector("[itemprop=name]"))
         .next()
-        .or_else(|| doc.select(&selector("#firstHeading")).next())
         .map(text)
         .and_then(non_empty)
+        // The infobox shows the page title, which MediaWiki capitalizes; the
+        // heading keeps a lowercase start set with `DISPLAYTITLE`.
+        .map(|n| match &heading {
+            Some(h) if h.to_lowercase() == n.to_lowercase() => h.clone(),
+            _ => n,
+        })
+        .or(heading)
         .unwrap_or_else(|| {
             page_url
                 .rsplit('/')
@@ -723,6 +734,13 @@ mod tests {
             m.discussion.as_deref(),
             Some("https://keenmodding.org/viewtopic.php?f=13&t=3224")
         );
+    }
+
+    #[test]
+    fn names_keep_a_lowercase_start() {
+        let m = fixture("Xky1tuned");
+        assert_eq!(m.name, "xky1tuned");
+        assert_eq!(m.game_id.as_deref(), Some("keen1"));
     }
 
     #[test]
