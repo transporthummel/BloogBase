@@ -109,8 +109,14 @@ pub struct Guess {
 
 /// Programs that come with mods but don't start them.
 const TOOLS: &[&str] = &[
-    "UNLZEXE", "LZEXE", "TSRMUSIC", "LIST", "PKUNZIP", "SETUP", "INSTALL",
+    "UNLZEXE", "LZEXE", "TSRMUSIC", "LIST", "BROWSE", "PKUNZIP", "SETUP", "INSTALL",
 ];
+
+/// Whether a batch file's command runs one of the `TOOLS`.
+fn is_tool(command: &str) -> bool {
+    let name = command.rsplit(['\\', ':']).next().unwrap_or(command);
+    TOOLS.contains(&stem(name).to_ascii_uppercase().as_str())
+}
 
 /// Batch files with these names are tried first.
 const PREFERRED_BATCH: &[&str] = &["PLAY", "START", "RUN", "GO"];
@@ -180,10 +186,11 @@ pub fn guess(
         }
         seen.push(key);
         // Setup steps start nothing; Patchwork Mod III's "~Install.BAT" only
-        // renames the real batch file into place and deletes itself.
+        // renames the real batch file into place and deletes itself. Nor do
+        // tools: Ice Planet's "Go.bat" shows the documentation with LIST.
         if commands
             .iter()
-            .all(|c| FILE_COMMANDS.contains(&c[0].to_ascii_uppercase().as_str()))
+            .all(|c| FILE_COMMANDS.contains(&c[0].to_ascii_uppercase().as_str()) || is_tool(&c[0]))
         {
             continue;
         }
@@ -602,6 +609,29 @@ mod tests {
             patch("CK4PATCH.EXE", "abiathar.pat", &[])
         );
         assert_eq!(g.candidates[0].origin, "play.bat");
+    }
+
+    #[test]
+    fn batches_that_only_run_tools_start_nothing() {
+        // As Ice Planet: shareware Keen 1's extras without its executable.
+        let g = run(&[
+            ("Go.bat", "cls\r\nlist readall.txt"),
+            (
+                "Read.bat",
+                "ECHO OFF\r\nCLS\r\nECHO COMMANDER KEEN\r\nPAUSE\r\n",
+            ),
+            (
+                "Cop.bat",
+                "MKDIR C:\\KEEN\r\nCOPY *.* C:\\KEEN\r\nPAUSE\r\n",
+            ),
+            ("Print.bat", "copy readall.txt prn:\r\n"),
+            ("List.exe", ""),
+            ("Browse.com", ""),
+            ("Readall.txt", ""),
+        ]);
+        assert!(g.confident);
+        let recipes: Vec<_> = g.candidates.iter().map(|c| c.recipe.clone()).collect();
+        assert_eq!(recipes, [Recipe::Episode]);
     }
 
     #[test]
