@@ -21,6 +21,8 @@ const GPL_URL = "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html";
 const CWSDPMI_SOURCE = "https://www.delorie.com/pub/djgpp/current/v2misc/csdpmi7s.zip";
 const CKPATCH_SOURCE =
   "https://files.shikadi.net/keenwiki/tools/t.ckpatch_v.0.10_src.andrew_durdin.2007-11-23.zip";
+const KDRPATCH_SOURCE =
+  "https://files.shikadi.net/keenwiki/tools/t.kdrpatch_v.0.9.0.multimania.2004-08-21.zip";
 const AUTHOR_URL = "https://pckf.com/memberlist.php?mode=viewprofile&u=16709";
 
 /** Version, credits, licenses and the trademark notice (PLAN.md §13 M8, §14). */
@@ -113,6 +115,7 @@ export function About() {
         <p>{t("about.ckpatch")}</p>
         <div className="flex flex-wrap gap-2">
           <LinkButton url={CKPATCH_SOURCE}>{t("about.ckpatchSource")}</LinkButton>
+          <LinkButton url={KDRPATCH_SOURCE}>{t("about.kdrpatchSource")}</LinkButton>
         </div>
         <p>{t("about.fonts")}</p>
         <div>

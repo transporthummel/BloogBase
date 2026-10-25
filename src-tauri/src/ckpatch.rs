@@ -1,11 +1,17 @@
-//! CKPatch 0.10 for Keen 1-3, unmodified, for mods that run it but don't
-//! ship it: their README says to put it next to the game first (Robot
-//! Rebellion's ROBOKEEN.EXE runs `ck1patch ckrr.pat`). GPL 2; license and
-//! source: `assets/ckpatch/`.
+//! CKPatch for mods that run it but don't ship it: their README says to put
+//! it next to the game first (Robot Rebellion's ROBOKEEN.EXE runs `ck1patch
+//! ckrr.pat`). Unmodified: CKPatch 0.10 for Keen 1-6, and MultiMania's
+//! KDrPatch 0.9.0, built on CKPatch 0.9, for Keen Dreams. GPL 2; licenses
+//! and sources: `assets/ckpatch/`, `assets/kdrpatch/`.
 
 use crate::recipe::{self, has_ext};
 
-const PATCHERS: [(&str, &str, &[u8]); 3] = [
+const PATCHERS: [(&str, &str, &[u8]); 7] = [
+    (
+        "kdreams",
+        "KDRPATCH.EXE",
+        include_bytes!("../assets/kdrpatch/KDRPATCH.EXE"),
+    ),
     (
         "keen1",
         "CK1PATCH.EXE",
@@ -20,6 +26,21 @@ const PATCHERS: [(&str, &str, &[u8]); 3] = [
         "keen3",
         "CK3PATCH.EXE",
         include_bytes!("../assets/ckpatch/CK3PATCH.EXE"),
+    ),
+    (
+        "keen4",
+        "CK4PATCH.EXE",
+        include_bytes!("../assets/ckpatch/CK4PATCH.EXE"),
+    ),
+    (
+        "keen5",
+        "CK5PATCH.EXE",
+        include_bytes!("../assets/ckpatch/CK5PATCH.EXE"),
+    ),
+    (
+        "keen6",
+        "CK6PATCH.EXE",
+        include_bytes!("../assets/ckpatch/CK6PATCH.EXE"),
     ),
 ];
 
@@ -42,7 +63,7 @@ pub fn needed<'a>(
     let Some((patcher, _)) = bundled(game_id) else {
         return false;
     };
-    // "CK1"; `%ext` names the episode's data files.
+    // "CK1" or "KDR"; `%ext` names the episode's data files.
     let ext = &patcher[..3];
     let mut patch = false;
     for (name, text) in files.by_ref() {
@@ -77,8 +98,13 @@ mod tests {
         // For another episode, or no patch at all.
         assert!(!needs("keen2", &[("ckrr.pat", pat)]));
         assert!(!needs("keen1", &[("LEVEL01.CK1", "")]));
-        // CKPatch for Keen 4-6 isn't bundled.
-        assert!(!needs("keen4", &[("m.pat", "%ext ck4\n%end\n")]));
-        assert_eq!(bundled("keen3").map(|(n, _)| n), Some("CK3PATCH.EXE"));
+        assert!(needs("keen4", &[("m.pat", "%ext ck4\n%end\n")]));
+        assert!(needs("kdreams", &[("m.pat", "%ext kdr\n%end\n")]));
+        assert!(!needs(
+            "kdreams",
+            &[("m.pat", "%ext kdr\n"), ("KDRPATCH.EXE", "")]
+        ));
+        assert_eq!(bundled("keen6").map(|(n, _)| n), Some("CK6PATCH.EXE"));
+        assert_eq!(bundled("keen7"), None);
     }
 }

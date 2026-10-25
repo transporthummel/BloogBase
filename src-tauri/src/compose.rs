@@ -1,6 +1,6 @@
 //! Composed lower layers: the install's base files with a mod's files copied
 //! on top (PLAN.md §4.2), the episode unpacked for patchers that need it, a
-//! DPMI host for DJGPP programs, CKPatch for Keen 1-3 mods without one, and
+//! DPMI host for DJGPP programs, CKPatch for mods without one, and
 //! one-button firing patched in where it's on. Disposable; rebuilt whenever the inputs change.
 
 use std::collections::BTreeMap;

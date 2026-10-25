@@ -634,8 +634,9 @@
     "dosboxSource": "Source code {{version}}",
     "cwsdpmi": "Mods with DJGPP programs get CWSDPMI r7 put next to them, unmodified. CWSDPMI is Copyright © 1995–2010 Charles W. Sandmann. You have the right to receive the source code and updates of CWSDPMI.",
     "cwsdpmiSource": "CWSDPMI source code",
-    "ckpatch": "Keen 1–3 mods that need CKPatch but don’t include it get CKPatch 0.10 put next to them, unmodified. CKPatch is Copyright © Bryan Rodgers and Andrew Durdin and licensed under the GNU GPL 2.0.",
+    "ckpatch": "Mods that need CKPatch but don’t include it get it put next to them, unmodified: CKPatch 0.10 for Keen 1–6, KDrPatch 0.9.0 for Keen Dreams. CKPatch is Copyright © Bryan Rodgers and Andrew Durdin, KDrPatch is MultiMania’s version of it; both are licensed under the GNU GPL 2.0.",
     "ckpatchSource": "CKPatch source code",
+    "kdrpatchSource": "KDrPatch source code",
     "fonts": "Fonts: Inter and Press Start 2P, both under the SIL Open Font License 1.1. Icons: Lucide (ISC license).",
     "thirdParty": "Open source licenses",
     "licensesMissing": "The license list is created for release builds. Run pnpm licenses:generate to create it."
