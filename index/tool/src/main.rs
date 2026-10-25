@@ -110,6 +110,7 @@ fn load(args: &mut Args) -> Result<Vec<Entry>, String> {
         }
     }
     problems.extend(entry::extends_problems(&entries));
+    problems.extend(entry::provides_problems(&entries));
     if problems.is_empty() {
         Ok(entries)
     } else {

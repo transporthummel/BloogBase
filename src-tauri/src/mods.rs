@@ -80,8 +80,6 @@ pub struct BaseMod {
     pub mod_id: Option<String>,
     /// Its index entry, to install it from.
     pub index_id: Option<String>,
-    /// Found by the missing files, not only by its name in the documents.
-    pub by_files: bool,
 }
 
 /// A mod [`needed_mod`] may pick.
@@ -92,6 +90,8 @@ pub struct BaseCandidate {
     pub index_id: Option<String>,
     /// The installed mod's files.
     pub files: Option<PathBuf>,
+    /// Files its index entry says mods copied over it lack.
+    pub provides: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Type)]
@@ -207,55 +207,35 @@ pub fn inspect(path: &Path, game_hint: Option<&str>) -> Result<ModInfo> {
     Ok(analyze(&Source::open(path)?, path, game_hint)?.info)
 }
 
-/// The mod a way to start a mod lacks `missing_files` of, among `candidates`: an installed one that
-/// has them all, else one of the index the documents at `path` name; the
-/// longest name, as "Lego Keen 2" also says "Lego Keen". Installed mods
-/// have to have the files: a level pack's readme names itself too.
-pub fn needed_mod(
-    path: &Path,
-    missing_files: &[String],
-    candidates: &[BaseCandidate],
-) -> Option<BaseMod> {
+/// The mod a way to start a mod lacks `missing_files` of: the first of
+/// `candidates` that has them all, installed or as its index entry says.
+pub fn needed_mod(missing_files: &[String], candidates: &[BaseCandidate]) -> Option<BaseMod> {
     if missing_files.is_empty() {
         return None;
     }
-    let holds_all = |dir: &Path| {
-        let names: Vec<String> = fs::read_dir(dir)
-            .map(|d| {
-                d.filter_map(|e| Some(e.ok()?.file_name().to_string_lossy().into_owned()))
-                    .collect()
-            })
-            .unwrap_or_default();
+    let has_all = |names: &[String]| {
         missing_files
             .iter()
             .all(|m| names.iter().any(|n| n.eq_ignore_ascii_case(m)))
     };
-    let found = |c: &BaseCandidate, by_files| BaseMod {
-        name: c.name.clone(),
-        mod_id: c.mod_id.clone(),
-        index_id: c.index_id.clone(),
-        by_files,
+    let installed = |dir: &Path| -> Vec<String> {
+        fs::read_dir(dir)
+            .map(|d| {
+                d.filter_map(|e| Some(e.ok()?.file_name().to_string_lossy().into_owned()))
+                    .collect()
+            })
+            .unwrap_or_default()
     };
-    let installed = candidates
-        .iter()
-        .filter(|c| c.files.as_deref().is_some_and(holds_all))
-        .max_by_key(|c| c.name.len());
-    if let Some(c) = installed {
-        return Some(found(c, true));
-    }
-    let docs: Vec<String> = crate::readme::at(path)
-        .ok()?
-        .into_iter()
-        .map(|r| r.text.to_lowercase())
-        .collect();
     candidates
         .iter()
-        .filter(|c| {
-            let name = c.name.to_lowercase();
-            c.files.is_none() && docs.iter().any(|d| d.contains(&name))
+        .find(|c| {
+            has_all(&c.provides) || c.files.as_deref().is_some_and(|d| has_all(&installed(d)))
         })
-        .max_by_key(|c| c.name.len())
-        .map(|c| found(c, false))
+        .map(|c| BaseMod {
+            name: c.name.clone(),
+            mod_id: c.mod_id.clone(),
+            index_id: c.index_id.clone(),
+        })
 }
 
 /// What a folder or ZIP dropped on the window holds.
@@ -2452,7 +2432,7 @@ mod tests {
     }
 
     #[test]
-    fn mods_made_to_be_copied_over_another_say_which() {
+    fn mods_made_to_be_copied_over_another_are_found_by_its_files() {
         let tmp = tempfile::tempdir().unwrap();
         let zip = tmp.path().join("legolevs.zip");
         // As Lego Levels: its patch loads Lego Keen's tiles.
@@ -2473,26 +2453,30 @@ mod tests {
         let info = inspect(&zip, None).unwrap();
         let missing = &info.recipes[0].missing_files;
         assert_eq!(missing, &["lego.tli"]);
-        // From the index, named in the readme.
-        let index = |n: &str| BaseCandidate {
+        // From the index, by the files its entry says it has; its name in
+        // the readme doesn't count.
+        let index = |n: &str, provides: &[&str]| BaseCandidate {
             name: n.into(),
             mod_id: None,
             index_id: Some(slug(n)),
             files: None,
+            provides: provides.iter().map(|p| p.to_string()).collect(),
         };
-        let names = [index("Lego"), index("Lego Keen"), index("Lego Rescue")];
+        let entries = [
+            index("Lego Keen", &[]),
+            index("Bricks", &["lego.pat", "LEGO.TLI"]),
+        ];
         assert_eq!(
-            needed_mod(&zip, missing, &names),
+            needed_mod(missing, &entries),
             Some(BaseMod {
-                name: "Lego Keen".into(),
+                name: "Bricks".into(),
                 mod_id: None,
-                index_id: Some("lego-keen".into()),
-                by_files: false,
+                index_id: Some("bricks".into()),
             })
         );
+        assert_eq!(needed_mod(missing, &entries[..1]), None);
 
-        // An installed mod with the files counts, named or not; one without
-        // them doesn't, though the readme names it.
+        // An installed mod with the files counts too.
         let has = tmp.path().join("has");
         let lacks = tmp.path().join("lacks");
         write_folder(&has, &[("LEGO.TLI", b"t")]);
@@ -2502,15 +2486,15 @@ mod tests {
             mod_id: Some(slug(n)),
             index_id: None,
             files: Some(files.to_path_buf()),
+            provides: Vec::new(),
         };
-        let installed = [installed("Bricks", &has), installed("Lego Levels", &lacks)];
-        let found = needed_mod(&zip, missing, &installed).unwrap();
-        assert_eq!(found.mod_id.as_deref(), Some("bricks"));
-        assert!(found.by_files);
-        assert_eq!(needed_mod(&zip, missing, &installed[1..]), None);
+        let installed = [installed("Lego Levels", &lacks), installed("Blocks", &has)];
+        let found = needed_mod(missing, &installed).unwrap();
+        assert_eq!(found.mod_id.as_deref(), Some("blocks"));
+        assert_eq!(needed_mod(missing, &installed[..1]), None);
 
-        // Nothing missing: nothing needed, whatever the documents say.
-        assert_eq!(needed_mod(&zip, &[], &names), None);
+        // Nothing missing: nothing needed.
+        assert_eq!(needed_mod(&[], &entries), None);
     }
 
     #[test]

@@ -203,7 +203,7 @@ test("plays one made to be copied over a mod from the index over it", async () =
         {
           ...patch,
           missingFiles: ["lego.tli"],
-          baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen", byFiles: false },
+          baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen" },
         },
       ],
     }),
@@ -278,7 +278,7 @@ test("doesn't install one made to be copied over a mod whose download failed", a
         {
           ...patch,
           missingFiles: ["lego.tli"],
-          baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen", byFiles: false },
+          baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen" },
         },
       ],
     }),
@@ -310,7 +310,7 @@ test("installs one made to be copied over an installed mod alone when unticked",
         {
           ...patch,
           missingFiles: ["lego.tli"],
-          baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null, byFiles: true },
+          baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null },
         },
       ],
     }),
@@ -470,7 +470,7 @@ test("checks again for missing files when another way to start is picked", async
     recipe: { type: "patch", patcher: "CK4PATCH.EXE", patch: "tileinfo.pat", args: [] },
     origin: "tileinfo.pat",
     missingFiles: ["tileinfo.tli"],
-    baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null, byFiles: true },
+    baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null },
   };
   vi.mocked(commands.inspectMod).mockReturnValue(
     ok({ ...info, confident: false, recipes: [patch, leftover] }),

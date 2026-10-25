@@ -34,6 +34,7 @@ authors and link back to KeenWiki and PCKF.
    | `versionRecipes` | Version id: recipe, for game versions the mod starts differently on (one patch per version) |
    | `copyToRoot`     | Folders in the mod's root whose files the readme says to copy into the root                 |
    | `extends`        | Id of the entry this mod is copied over, e.g. a level pack for a mod; installed with it     |
+   | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)           |
    | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
    | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
 
@@ -48,7 +49,12 @@ authors and link back to KeenWiki and PCKF.
    entry it names, and its recipe may run that mod's files (e.g. its
    patcher). The entry must be for the same game and not extend another one.
    Packs like that usually need no entry: when the player adds one by hand,
-   BloogBase finds the mod it belongs over and plays it there.
+   BloogBase finds the mod it belongs over and plays it there. It goes by
+   the files the pack lacks: those its patch loads (Lego Levels lacks Lego
+   Keen's `lego.tli`) or, for levels alone, the start its readme names
+   (xky1rooms says to run Episode X's `XkyKeen1.bat`). List such files in
+   the base mod's `provides`, only ones no other mod of the game has; the
+   check makes sure the download has them. Older apps ignore `provides`.
 
 3. Check it, including the download:
 

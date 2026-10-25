@@ -78,6 +78,9 @@ pub struct IndexEntry {
     /// The index mod this one is played over, e.g. a level pack for a mod.
     #[serde(default)]
     pub extends: Option<String>,
+    /// Files of its own that mods copied over it lack, e.g. a start batch.
+    #[serde(default)]
+    pub provides: Vec<String>,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]

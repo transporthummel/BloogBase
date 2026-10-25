@@ -50,6 +50,10 @@ pub struct Entry {
     /// files go below this one's, and the recipe may run them.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub extends: Option<String>,
+    /// Files of this mod that mods copied over it lack, e.g. its start batch:
+    /// the app finds the mod they need by them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub provides: Vec<String>,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]
@@ -263,6 +267,11 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
             ));
         }
     }
+    for file in &entry.provides {
+        if !is_plain_name(file) {
+            fail(format!("provides: `{file}` must be a plain DOS file name"));
+        }
+    }
     for folder in &entry.copy_to_root {
         if !is_plain_name(folder) || folder == "." || folder == ".." {
             fail(format!(
@@ -305,6 +314,23 @@ pub fn extends_problems(entries: &[Entry]) -> Vec<String> {
                 e.id
             )),
             Some(_) => {}
+        }
+    }
+    out
+}
+
+/// Files more than one entry of a game `provides`: the app couldn't tell
+/// which mod lacks them.
+pub fn provides_problems(entries: &[Entry]) -> Vec<String> {
+    let mut out = Vec::new();
+    for (i, e) in entries.iter().enumerate() {
+        for file in &e.provides {
+            let other = entries[..i].iter().find(|o| {
+                o.game == e.game && o.provides.iter().any(|f| f.eq_ignore_ascii_case(file))
+            });
+            if let Some(o) = other {
+                out.push(format!("{}: `{file}` is provided by `{}` too", e.id, o.id));
+            }
         }
     }
     out
@@ -442,6 +468,26 @@ recipe:
             .insert("keen4-1.0".into(), Recipe::Episode);
         let p = problems(&bad, "aurora-bliss", &catalog());
         assert_eq!(p.len(), 3, "{p:#?}");
+    }
+
+    #[test]
+    fn provided_files_are_plain_and_of_one_entry_per_game() {
+        let mut base = parse(AURORA).unwrap();
+        base.provides = vec!["AURORA.BAT".into()];
+        assert_eq!(
+            problems(&base, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+        let mut bad = base.clone();
+        bad.provides = vec!["sub/aurora.bat".into()];
+        assert_eq!(problems(&bad, "aurora-bliss", &catalog()).len(), 1);
+
+        let mut other = base.clone();
+        other.id = "aurora-2".into();
+        other.provides = vec!["aurora.bat".into()];
+        assert_eq!(provides_problems(&[base.clone(), other.clone()]).len(), 1);
+        other.game = "keen5".into();
+        assert_eq!(provides_problems(&[base, other]), Vec::<String>::new());
     }
 
     #[test]

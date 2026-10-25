@@ -294,8 +294,6 @@ export type BaseMod = {
 	modId: string | null,
 	/**  Its index entry, to install it from. */
 	indexId: string | null,
-	/**  Found by the missing files, not only by its name in the documents. */
-	byFiles: boolean,
 };
 
 /**  The error shape every command returns to the frontend. */
@@ -504,6 +502,8 @@ export type IndexEntry = {
 	copyToRoot?: string[],
 	/**  The index mod this one is played over, e.g. a level pack for a mod. */
 	extends?: string | null,
+	/**  Files of its own that mods copied over it lack, e.g. a start batch. */
+	provides?: string[],
 	tags?: string[],
 	featured?: boolean,
 	minAppVersion?: string | null,

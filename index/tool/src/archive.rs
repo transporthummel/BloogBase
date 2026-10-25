@@ -146,6 +146,14 @@ pub fn problems(
             all.join(", ")
         ));
     }
+    for file in &entry.provides {
+        if !names.iter().any(|n| file_of(n).eq_ignore_ascii_case(file)) {
+            out.push(format!(
+                "{}: provides `{file}`, which it lacks",
+                download.url
+            ));
+        }
+    }
     out
 }
 
@@ -240,6 +248,23 @@ mod tests {
             Vec::<String>::new()
         );
         e.copy_to_root = vec!["2".into()];
+        assert_eq!(problems(&e, &e.downloads[0], &data, &[]).len(), 1);
+    }
+
+    #[test]
+    fn provided_files_must_be_in_it() {
+        let data = zip(&[
+            ("Mod/CK4PATCH.EXE", b"p"),
+            ("Mod/x.pat", b"x"),
+            ("Mod/GO.BAT", b"g"),
+        ]);
+        let mut e = entry_for(&data);
+        e.provides = vec!["go.bat".into()];
+        assert_eq!(
+            problems(&e, &e.downloads[0], &data, &[]),
+            Vec::<String>::new()
+        );
+        e.provides.push("gone.bat".into());
         assert_eq!(problems(&e, &e.downloads[0], &data, &[]).len(), 1);
     }
 

@@ -22,3 +22,5 @@ recipe:
   type: patch
   patcher: CK1PATCH.EXE
   patch: lego.pat
+# Lego Levels' patch loads Lego Keen's tiles.
+provides: [lego.tli]
