@@ -188,10 +188,20 @@ pub fn guess(
         // Setup steps start nothing; Patchwork Mod III's "~Install.BAT" only
         // renames the real batch file into place and deletes itself. Nor do
         // tools: Ice Planet's "Go.bat" shows the documentation with LIST.
-        if commands
-            .iter()
-            .all(|c| FILE_COMMANDS.contains(&c[0].to_ascii_uppercase().as_str()) || is_tool(&c[0]))
-        {
+        // Nor programs the mod doesn't have: Rorie's Birthday Mod's
+        // "_Setup.BAT" renames files and runs a "virus.exe" it doesn't ship.
+        let missing = |word: &str| {
+            !BUILTINS.contains(&word.to_ascii_uppercase().as_str())
+                && !word.starts_with(':')
+                && !is_episode_exe(word)
+                && !is_patcher(word)
+                && !names.iter().any(|n| dos_runs(word, n))
+        };
+        if commands.iter().all(|c| {
+            FILE_COMMANDS.contains(&c[0].to_ascii_uppercase().as_str())
+                || is_tool(&c[0])
+                || missing(&c[0])
+        }) {
             continue;
         }
         let recipe = match commands.as_slice() {
@@ -331,6 +341,39 @@ const COSMETIC: &[&str] = &[
 const FILE_COMMANDS: &[&str] = &[
     "REN", "RENAME", "DEL", "ERASE", "COPY", "XCOPY", "MOVE", "MD", "MKDIR", "RD", "RMDIR", "CD",
     "CHDIR", "ATTRIB",
+];
+
+/// Whether DOS runs the program `name` for the command `word`: with or
+/// without extension, cut to 8.3 as DOS does (Rescue of the Last runs
+/// `ck4patcher.exe` for CK4PATCH.EXE), or by its short alias (ShadowKeen2
+/// runs `dunepa~1.EXE` for dunepatch.EXE).
+fn dos_runs(word: &str, name: &str) -> bool {
+    let word = word.rsplit(['\\', ':']).next().unwrap_or(word);
+    let (stem, ext) = word.rsplit_once('.').unwrap_or((word, ""));
+    let (name_stem, name_ext) = name.rsplit_once('.').unwrap_or((name, ""));
+    let name_ext = name_ext.to_ascii_uppercase();
+    let ext = ext.to_ascii_uppercase();
+    let runnable = ["EXE", "COM", "BAT"].contains(&name_ext.as_str());
+    let ext_fits = runnable && (ext.is_empty() || ext.chars().take(3).eq(name_ext.chars()));
+    let short = |s: &str| -> String {
+        s.chars()
+            .filter(|c| !c.is_whitespace() && *c != '.')
+            .take(8)
+            .collect::<String>()
+            .to_ascii_uppercase()
+    };
+    let stem_fits = match stem.split_once('~') {
+        Some((prefix, _)) => short(name_stem).starts_with(&prefix.to_ascii_uppercase()),
+        None => short(stem) == short(name_stem),
+    };
+    ext_fits && stem_fits
+}
+
+/// Commands DOS has built in, or programs it ships, which a batch file may
+/// run without the mod having them.
+const BUILTINS: &[&str] = &[
+    "CALL", "IF", "GOTO", "FOR", "SET", "SHIFT", "CHOICE", "LH", "LOADHIGH", "PATH", "PROMPT",
+    "VER", "BREAK", "VERIFY", "CHCP", "CTTY", "DATE", "TIME", "MEM", "KEYB",
 ];
 
 /// The commands of a batch file that start something, split into words.
@@ -634,6 +677,56 @@ mod tests {
         assert!(g.confident);
         let recipes: Vec<_> = g.candidates.iter().map(|c| c.recipe.clone()).collect();
         assert_eq!(recipes, [Recipe::Episode]);
+    }
+
+    #[test]
+    fn batches_that_only_run_missing_programs_start_nothing() {
+        // As Rorie's Birthday Mod: the real batch files hide as `1.CK1` and
+        // `2.CK1`, so it's the two patches, and the player picks.
+        let g = run(&[
+            (
+                "_Setup.BAT",
+                "echo off\r\npause\r\nrename 1.CK1 _Bush.BAT\r\nrename 2.CK1 _Kerry.BAT\r\n\
+                 virus.exe\r\ndel virus.exe\r\ndel _Setup.BAT\r\n",
+            ),
+            ("CK4PATCH.EXE", ""),
+            ("bush.PAT", "%ext ck4\n%patch $1 $2\n"),
+            ("Kerry.PAT", "%ext ck4\n%patch $1 $2\n%patch $3 $4\n"),
+        ]);
+        assert!(!g.confident);
+        let recipes: Vec<_> = g.candidates.iter().map(|c| c.recipe.clone()).collect();
+        assert_eq!(
+            recipes,
+            [
+                patch("CK4PATCH.EXE", "Kerry.PAT", &[]),
+                patch("CK4PATCH.EXE", "bush.PAT", &[])
+            ]
+        );
+
+        // DOS's own commands, the episode, other batch files and the
+        // patcher count.
+        for start in ["choice /c:yn", "call PLAY.BAT", "KEEN4E", "ck4patch x.pat"] {
+            let g = run(&[
+                ("RUN.BAT", &format!("ren a b\r\n{start}\r\n")),
+                ("PLAY.BAT", "KEEN4E"),
+                ("CK4PATCH.EXE", ""),
+            ]);
+            assert!(
+                g.candidates.iter().any(|c| c.origin == "RUN.BAT"),
+                "{start}"
+            );
+        }
+    }
+
+    #[test]
+    fn dos_runs_short_names() {
+        assert!(dos_runs("ck4patcher.exe", "CK4PATCH.EXE"));
+        assert!(dos_runs("dunepa~1.EXE", "dunepatch.EXE"));
+        assert!(dos_runs("C:\\KEEN\\keen4e", "KEEN4E.EXE"));
+        assert!(dos_runs("play", "PLAY.BAT"));
+        assert!(!dos_runs("virus.exe", "VIRUS.CK1"));
+        assert!(!dos_runs("1.CK1", "1.CK1"));
+        assert!(!dos_runs("ck4patch", "CK4PATCH.PAT"));
     }
 
     #[test]
