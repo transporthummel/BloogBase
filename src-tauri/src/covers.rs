@@ -19,7 +19,7 @@ use crate::profiles;
 use crate::recipe::{self, Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v13";
+const VERSION: &str = "covers v14";
 
 /// A profile's cover.
 #[derive(Debug, PartialEq, Eq)]
@@ -173,6 +173,8 @@ struct Patched {
     patched_in: Vec<String>,
     /// The game draws for a CGA composite monitor.
     composite: bool,
+    /// The game switches to VGA's 640x480 mode.
+    vga_640x480: bool,
     /// `%patch <address> "text"` lines: text written over the executable.
     texts: Vec<(usize, String)>,
 }
@@ -241,6 +243,7 @@ fn patched(text: &str, ext: &str) -> Patched {
         }
     }
     names.composite = recipe::sets_composite_mode(text);
+    names.vga_640x480 = recipe::sets_vga_640x480(text);
     names
 }
 
@@ -390,11 +393,18 @@ fn title(
                 .and_then(|t| keen_graphics::vorticons_tileset_name(&t, 90))
                 .and_then(|name| files.read(&name));
             let (head, latch) = (need(&name("EGAHEAD"))?, need(&name("EGALATCH"))?);
-            keen_graphics::vorticons_title(
+            let (width, height) = if patch.vga_640x480 {
+                (640, 480)
+            } else {
+                (320, 200)
+            };
+            keen_graphics::vorticons_title_sized(
                 &head,
                 &latch,
                 &need(&name("LEVEL90"))?,
                 tileset.as_deref(),
+                width,
+                height,
             )
             .map(|image| {
                 let scrambled = keen_graphics::vorticons_latch_is_short(&head, &latch);
@@ -551,6 +561,7 @@ mod tests {
                 palette: None,
                 patched_in: vec!["STORY.CK4".into()],
                 composite: false,
+                vga_640x480: false,
                 texts: vec![
                     (0x23DFD, "KDREAMS2.CMP".into()),
                     (0x2F1A5, "meminfo.txt".into()),
@@ -727,6 +738,16 @@ mod tests {
         files.push(("MOD.PAT", patch.as_bytes().to_vec()));
         let pixels = extract_from("keen1", &files).unwrap().image.pixels;
         assert_eq!((pixels[0], pixels[320 + 32]), (1, 8));
+    }
+
+    #[test]
+    fn draws_the_whole_screen_of_640x480_mods() {
+        // As Keen 1 640x480 Redux: mode 12h.
+        let mut files = keen1_title();
+        files.push(("MOD.PAT", b"%patch $6CB0 $B8 $12 $00 $CD $10".to_vec()));
+        let image = extract_from("keen1", &files).unwrap().image;
+        assert_eq!((image.width, image.height), (640, 480));
+        assert_eq!((image.pixels[0], image.pixels[640 + 32]), (1, 8));
     }
 
     #[test]

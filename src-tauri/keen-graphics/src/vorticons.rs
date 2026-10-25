@@ -107,12 +107,15 @@ pub fn latch_is_short(egahead: &[u8], egalatch: &[u8]) -> bool {
 }
 
 /// The title screen from `EGAHEAD`, `EGALATCH` and `LEVEL90` of Keen 1-3,
-/// with the tiles from a `tileset` file if the mod has one.
+/// with the tiles from a `tileset` file if the mod has one, on a screen
+/// `width` by `height` pixels: 320x200, or more for mods that switch to a
+/// bigger video mode.
 pub fn title(
     egahead: &[u8],
     egalatch: &[u8],
     level: &[u8],
     tileset: Option<&[u8]>,
+    (width, height): (usize, usize),
 ) -> Result<Image, Error> {
     let header = Header::parse(egahead)?;
     let mut latch = if header.compressed() {
@@ -133,13 +136,15 @@ pub fn title(
     }
     let planes: Vec<&[u8]> = latch.chunks_exact(header.plane_size).take(4).collect();
     let mut screen = Screen {
-        pixels: vec![0; WIDTH * HEIGHT],
+        width,
+        height,
+        pixels: vec![0; width * height],
     };
 
     let (w, h, at) = header.title().ok_or(Error::Format("no title bitmap"))?;
     // The level as the game shows it behind the title: scrolled past the
     // two-tile border. A full-screen title hides it.
-    if w * 8 < WIDTH || h < HEIGHT {
+    if w * 8 < width || h < height {
         let (tile_planes, tile_count, tiles_at) = match tileset {
             Some(tls) => {
                 let tileset = Tileset::parse(tls)?;
@@ -148,8 +153,8 @@ pub fn title(
             None => (planes.clone(), header.tile_count, header.tiles16),
         };
         let (map_w, map_h, tiles) = level_tiles(level)?;
-        for ty in 0..HEIGHT.div_ceil(16).min(map_h.saturating_sub(2)) {
-            for tx in 0..(WIDTH / 16).min(map_w.saturating_sub(2)) {
+        for ty in 0..height.div_ceil(16).min(map_h.saturating_sub(2)) {
+            for tx in 0..(width / 16).min(map_w.saturating_sub(2)) {
                 let tile = usize::from(tiles[(ty + 2) * map_w + tx + 2]);
                 if tile < tile_count {
                     screen.draw(&tile_planes, tiles_at + tile * 32, 2, 16, tx * 16, ty * 16)?;
@@ -159,24 +164,23 @@ pub fn title(
     }
     // Mods with a bigger title get it in the corner, as far as it fits.
     let (x, y) = TITLE_AT;
-    let x = if w * 8 + x > WIDTH { 0 } else { x };
-    let y = if h + y > HEIGHT { 0 } else { y };
+    let x = if w * 8 + x > width { 0 } else { x };
+    let y = if h + y > height { 0 } else { y };
     screen.draw(&planes, header.bitmaps + at, w, h, x, y)?;
     Ok(Image {
-        width: WIDTH,
-        height: HEIGHT,
+        width,
+        height,
         pixels: screen.pixels,
     })
 }
-
-const WIDTH: usize = 320;
-const HEIGHT: usize = 200;
 
 /// Where the game draws the title bitmap. Its "Press F1 for help" sign is
 /// left out: it sits somewhere else in each episode.
 const TITLE_AT: (usize, usize) = (32, 1);
 
 struct Screen {
+    width: usize,
+    height: usize,
     pixels: Vec<u8>,
 }
 
@@ -197,10 +201,10 @@ impl Screen {
             let data = plane
                 .get(start..start + w * h)
                 .ok_or(Error::Format("graphic outside EGALATCH"))?;
-            for row in 0..h.min(HEIGHT.saturating_sub(y)) {
-                for col in 0..(w * 8).min(WIDTH.saturating_sub(x)) {
+            for row in 0..h.min(self.height.saturating_sub(y)) {
+                for col in 0..(w * 8).min(self.width.saturating_sub(x)) {
                     let bit = (data[row * w + col / 8] >> (7 - col % 8)) & 1;
-                    let px = &mut self.pixels[(y + row) * WIDTH + x + col];
+                    let px = &mut self.pixels[(y + row) * self.width + x + col];
                     *px = if p == 0 { bit } else { *px | bit << p };
                 }
             }

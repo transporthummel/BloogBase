@@ -495,6 +495,14 @@ pub fn sets_composite_mode(text: &str) -> bool {
     })
 }
 
+/// Whether a patch switches to VGA's 640x480 16-color mode 12h (as Keen 1
+/// 640x480 Redux does): `mov ax,12h`, `int 10h`.
+pub fn sets_vga_640x480(text: &str) -> bool {
+    patch_bytes(text)
+        .iter()
+        .any(|run| run.windows(5).any(|w| w == [0xB8, 0x12, 0x00, 0xCD, 0x10]))
+}
+
 /// Whether a patch maps 128K of video memory from A0000h, which only
 /// DOSBox's Paradise SVGA gives the game (Keen 1 640x480 Redux, whose README
 /// asks for it): it clears the memory map bits of the graphics controller's
@@ -1076,8 +1084,10 @@ $BA $D8 $03 $EE"
         let text = "%patch $6E51 $BA $CE $03 $B0 $06 $EE $42 $EC $24 $F3 $EE $EB $15
 %patch $6CB0 $E8 $C4 $FA # palette fading
              $B8 $12 $00 $CD $10 #set mode 12h";
+        assert!(sets_vga_640x480(text));
         assert!(maps_128k_video_memory(text));
-        // The memory map left at 64K (bits 2-3 kept).
+        // Mode 0Dh; the memory map left at 64K (bits 2-3 kept).
+        assert!(!sets_vga_640x480("%patch $1 $B8 $0D $00 $CD $10"));
         assert!(!maps_128k_video_memory(
             "%patch $1 $BA $CE $03 $B0 $06 $EE $42 $EC $24 $FF $EE"
         ));

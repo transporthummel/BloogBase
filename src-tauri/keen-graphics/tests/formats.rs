@@ -229,6 +229,13 @@ fn vorticons_title_draws_the_bitmap_over_the_level() {
     );
     assert_eq!(image.pixels[199 * 320 + 319], 1);
 
+    // On a 640x480 screen the level shows as far as it reaches.
+    let big = keen_graphics::vorticons_title_sized(&head, &latch, &level, None, 640, 480).unwrap();
+    assert_eq!((big.width, big.height), (640, 480));
+    assert_eq!(&big.pixels[640 + 31..640 + 34], &[1, 8, 8]);
+    assert_eq!((big.pixels[207 * 640 + 319], big.pixels[320]), (1, 0));
+    assert_eq!(big.pixels[208 * 640], 0);
+
     // A short EGALATCH leaves the planes it lacks empty, as the game does
     // (Keen Static): no intensity, so the title is black. Less than one
     // plane is no EGALATCH.

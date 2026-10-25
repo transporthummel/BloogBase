@@ -143,7 +143,21 @@ pub fn vorticons_title(
     level90: &[u8],
     tileset: Option<&[u8]>,
 ) -> Result<Image, Error> {
-    vorticons::title(egahead, egalatch, level90, tileset)
+    vorticons::title(egahead, egalatch, level90, tileset, (320, 200))
+}
+
+/// [`vorticons_title`] on a bigger screen, for mods that switch to another
+/// video mode, as Keen 1 640x480 Redux does to VGA mode 12h: the level shows
+/// as far as the screen reaches.
+pub fn vorticons_title_sized(
+    egahead: &[u8],
+    egalatch: &[u8],
+    level90: &[u8],
+    tileset: Option<&[u8]>,
+    width: usize,
+    height: usize,
+) -> Result<Image, Error> {
+    vorticons::title(egahead, egalatch, level90, tileset, (width, height))
 }
 
 /// Whether a Keen 1-3 `EGALATCH` is shorter than its `EGAHEAD` says, as in
