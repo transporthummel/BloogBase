@@ -2525,7 +2525,8 @@ mod tests {
             )
             .unwrap();
         assert_eq!(requires.as_deref(), Some(r#"["keen4-1.4-ega"]"#));
-        let (_, layers) = profiles::get(&db, &m.profile_id).unwrap();
+        let (profile, layers) = profiles::get(&db, &m.profile_id).unwrap();
+        assert_eq!(profile.played_over.as_deref(), Some("Aurora Bliss"));
         assert_eq!(
             layers.mod_layer.unwrap().base,
             Some(paths.mods.join("aurora-bliss/files"))

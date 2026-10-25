@@ -297,6 +297,7 @@ test("offers shareware episodes and demos on their own tabs", async () => {
         saveCount: 0,
         running: false,
         missingGame: null,
+        playedOver: null,
       },
     ],
   });

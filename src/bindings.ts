@@ -710,6 +710,8 @@ export type Profile = {
 	running: boolean,
 	/**  The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`. */
 	missingGame: string | null,
+	/**  The name of the mod a mod is played over, e.g. `Lego Keen`. */
+	playedOver: string | null,
 };
 
 export type ProfileConfig = {

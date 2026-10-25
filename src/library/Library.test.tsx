@@ -88,6 +88,7 @@ const profile: Profile = {
   saveCount: 1,
   running: false,
   missingGame: null,
+  playedOver: null,
 };
 
 const runtime = { id: "dosbox-staging-0.83.0", version: "0.83.0", path: "/x", managed: true };
@@ -158,6 +159,19 @@ test("lists profiles with version and play stats", async () => {
   expect(screen.getByText("Played 1 h 5 min")).toBeInTheDocument();
   // On the card and in the status bar.
   expect(screen.getAllByText("1 saved game")).toHaveLength(2);
+});
+
+test("a mod played over another one names it with its game", async () => {
+  const pack: Profile = {
+    ...profile,
+    id: "pack",
+    modId: "pack",
+    label: "Pack",
+    playedOver: "Galactic",
+  };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [pack] });
+  renderLibrary();
+  expect(await screen.findByText("Runs on Keen 5 v1.4 EGA and Galactic")).toBeInTheDocument();
 });
 
 test("coming back from a details page keeps the place and shows the card", async () => {

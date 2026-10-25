@@ -312,6 +312,8 @@ function Hero({
                   {t("mods.baseGame", {
                     game: game.title,
                     version: version?.label ?? t("library.unknownVersion"),
+                    mod: profile.playedOver,
+                    context: profile.playedOver ? "over" : undefined,
                   })}
                 </span>
               )}

@@ -119,6 +119,7 @@ const profile: Profile = {
   saveCount: 2,
   running: false,
   missingGame: null,
+  playedOver: null,
 };
 
 const save = (file: string, slot: number, name: string | null): SaveFile => ({
@@ -225,7 +226,15 @@ const shot = (file: string, takenAt: number): Screenshot => ({
 
 test("a mod's page shows its credits, description, links and stats", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue(
-    ok([{ ...profile, id: "keen4-1", modId: "aurora-bliss", label: "Aurora Bliss" }]),
+    ok([
+      {
+        ...profile,
+        id: "keen4-1",
+        modId: "aurora-bliss",
+        label: "Aurora Bliss",
+        playedOver: "Lego Keen",
+      },
+    ]),
   );
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
   renderDetail();
@@ -237,7 +246,9 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   await userEvent.click(author);
   expect(openUrl).toHaveBeenCalledWith("https://keenwiki.shikadi.net/wiki/User:Dave216");
   expect(screen.getByText("A colourful journey.")).toBeInTheDocument();
-  expect(screen.getByText(`Runs on ${keen4.title} Unknown version`)).toBeInTheDocument();
+  expect(
+    screen.getByText(`Runs on ${keen4.title} Unknown version and Lego Keen`),
+  ).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "KeenWiki" }));
   expect(openUrl).toHaveBeenCalledWith(aurora.keenwikiUrl);
   // Not in the index yet.
