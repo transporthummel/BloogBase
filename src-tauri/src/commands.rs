@@ -710,28 +710,7 @@ pub async fn inspect_dropped(app: AppHandle, path: String) -> CommandResult<Drop
 /// Installs a mod inspected with `inspect_mod` and creates its play profile.
 #[tauri::command]
 #[specta::specta]
-pub async fn install_mod(app: AppHandle, mut request: InstallModRequest) -> CommandResult<Mod> {
-    // The mod it's played over comes from the index first, unless it's there.
-    if request.extends.is_none()
-        && let Some(index_id) = request.extends_index.clone()
-    {
-        let installed = mods::find_by_index(&app.state::<Db>(), &index_id)?;
-        let base = match installed {
-            Some(id) => id,
-            None => {
-                let entry = app
-                    .state::<ModIndex>()
-                    .entry(&index_id)
-                    .ok_or_else(|| Error::NotFound(format!("{index_id} in the mod index")))?;
-                let install_id = request.install_id.clone();
-                let without_game = install_id.is_none();
-                install_entry(&app, None, entry, None, install_id, without_game).await?;
-                mods::find_by_index(&app.state::<Db>(), &index_id)?
-                    .ok_or_else(|| Error::NotFound(format!("mod {index_id}")))?
-            }
-        };
-        request.extends = Some(base);
-    }
+pub async fn install_mod(app: AppHandle, request: InstallModRequest) -> CommandResult<Mod> {
     blocking(move || {
         let paths = app.state::<AppPaths>();
         // Replacing must not swap files under a running game.
@@ -1019,25 +998,17 @@ pub fn install_index_mod(
             _ => None,
         };
         if let Some(base) = base {
-            install_entry(
-                &a,
-                Some(&report),
-                base,
-                None,
-                install_id.clone(),
-                without_game,
-            )
-            .await?;
+            install_entry(&a, &report, base, None, install_id.clone(), without_game).await?;
         }
-        install_entry(&a, Some(&report), entry, archive, install_id, without_game).await
+        install_entry(&a, &report, entry, archive, install_id, without_game).await
     })
 }
 
 /// Downloads (unless `archive` is the player's copy) and installs one index
-/// mod, for [`install_index_mod`] or a mod played over it.
+/// mod for [`install_index_mod`].
 async fn install_entry(
     a: &AppHandle,
-    report: Option<&jobs::Reporter>,
+    report: &jobs::Reporter,
     entry: mod_index::IndexEntry,
     archive: Option<String>,
     install_id: Option<String>,
@@ -1065,17 +1036,13 @@ async fn install_entry(
                 .join("downloads")
                 .join(format!("index-{id}.zip"));
             downloads::fetch(&download.url, &download.sha256, size, &archive, &|r, t| {
-                if let Some(report) = report {
-                    report.progress(JobPhase::Downloading, r, t)
-                }
+                report.progress(JobPhase::Downloading, r, t)
             })
             .await?;
             archive
         }
     };
-    if let Some(report) = report {
-        report.progress(JobPhase::Installing, size, size);
-    }
+    report.progress(JobPhase::Installing, size, size);
     // Right after the setup wizard the game may still be on its way.
     while a.state::<Jobs>().is_running(JobKind::FreeGame, |v| {
         free_games::game_of(v) == Some(entry.game.as_str())

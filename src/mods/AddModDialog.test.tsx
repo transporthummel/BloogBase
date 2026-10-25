@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import {
@@ -8,12 +8,14 @@ import {
   type Game,
   type IndexMod,
   type Install,
+  type Job,
   type Mod,
   type ModInfo,
   type Profile,
   type RecipeOption,
   type WikiMod,
 } from "../bindings";
+import { jobsKey } from "../jobs/queries";
 import { AddModDialog } from "./AddModDialog";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
@@ -187,7 +189,6 @@ test("inspects the picked ZIP and installs the mod on the matching game", async 
     installId: "keen4-1",
     keenwiki: null,
     extends: null,
-    extendsIndex: null,
     replace: null,
   });
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
@@ -201,8 +202,20 @@ test("plays one made to be copied over a mod from the index over it", async () =
       baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen", byFiles: false },
     }),
   );
+  const job: Job = {
+    id: 7,
+    kind: "mod",
+    subject: "lego-keen",
+    phase: "downloading",
+    received: 512 * 1024,
+    total: 1024 * 1024,
+    error: null,
+  };
+  vi.mocked(commands.listJobs).mockResolvedValue([]);
+  vi.mocked(commands.installIndexMod).mockResolvedValue(job);
   vi.mocked(commands.installMod).mockReturnValue(new Promise(() => {}));
-  renderDialog();
+  const client = new QueryClient();
+  renderDialog(client);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
 
@@ -215,9 +228,66 @@ test("plays one made to be copied over a mod from the index over it", async () =
     screen.getByRole("checkbox", { name: "Play it over Lego Keen, which is installed with it" }),
   ).toBeChecked();
   await user.click(screen.getByRole("button", { name: "Install" }));
-  expect(commands.installMod).toHaveBeenCalledWith(
-    expect.objectContaining({ extends: null, extendsIndex: "lego-keen" }),
+  expect(commands.installIndexMod).toHaveBeenCalledWith("lego-keen", "keen4-1", false, null);
+  // Its download shows, and the mod waits for it.
+  expect(await screen.findByText("0.5 of 1.0 MB")).toBeInTheDocument();
+  expect(screen.getByText("Lego Keen")).toBeInTheDocument();
+  expect(commands.installMod).not.toHaveBeenCalled();
+
+  vi.mocked(commands.listMods).mockReturnValue(
+    ok([
+      {
+        id: "lego-keen",
+        gameId: "keen4",
+        name: "Lego Keen",
+        authors: [],
+        authorLinks: {},
+        version: null,
+        description: null,
+        released: null,
+        recipe: patch.recipe,
+        source: "index",
+        indexId: "lego-keen",
+        extends: null,
+        keenwikiUrl: null,
+        addedAt: 0,
+        profileId: "lego-keen",
+      },
+    ]),
   );
+  act(() => client.setQueryData(jobsKey, [{ ...job, phase: "done" }]));
+  await vi.waitFor(() =>
+    expect(commands.installMod).toHaveBeenCalledWith(
+      expect.objectContaining({ extends: "lego-keen" }),
+    ),
+  );
+});
+
+test("doesn't install one made to be copied over a mod whose download failed", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(
+    ok({
+      ...info,
+      missingFiles: ["lego.tli"],
+      baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen", byFiles: false },
+    }),
+  );
+  vi.mocked(commands.listJobs).mockResolvedValue([]);
+  vi.mocked(commands.installIndexMod).mockResolvedValue({
+    id: 8,
+    kind: "mod",
+    subject: "lego-keen",
+    phase: "failed",
+    received: 0,
+    total: 0,
+    error: { kind: "network", message: "offline" },
+  });
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+  await user.click(await screen.findByRole("button", { name: "Install" }));
+
+  expect(await screen.findByRole("alert")).toBeInTheDocument();
+  expect(commands.installMod).not.toHaveBeenCalled();
 });
 
 test("installs one made to be copied over an installed mod alone when unticked", async () => {
@@ -235,9 +305,7 @@ test("installs one made to be copied over an installed mod alone when unticked",
 
   await user.click(await screen.findByRole("checkbox", { name: "Play it over Lego Keen" }));
   await user.click(screen.getByRole("button", { name: "Install" }));
-  expect(commands.installMod).toHaveBeenCalledWith(
-    expect.objectContaining({ extends: null, extendsIndex: null }),
-  );
+  expect(commands.installMod).toHaveBeenCalledWith(expect.objectContaining({ extends: null }));
 });
 
 test("asks whether another version replaces the installed one", async () => {
@@ -573,7 +641,6 @@ test("installs a mod from a KeenWiki page with the page's details", async () => 
       released: page.released,
     },
     extends: null,
-    extendsIndex: null,
     replace: null,
   });
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());

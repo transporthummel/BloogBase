@@ -17,6 +17,8 @@ import { errorMessage } from "../errors";
 import { formatLooseDate } from "../format";
 import { unwrap } from "../ipc";
 import { coverKey } from "../library/covers";
+import { JobRow } from "../jobs/JobList";
+import { isFinished, useJob, useStartJob, waitForJob } from "../jobs/queries";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { ReadmePanel } from "../profile/ReadmePanel";
 import { readmeKey, useReadmesAt } from "../profile/readme";
@@ -261,9 +263,25 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
   const likelyWrongVersion =
     target && assumedVersion && versionOf(target) !== undefined && !isAssumed(target);
 
+  // The mod it belongs over, which it's played over unless unticked.
+  const base = info.baseMod;
+  const [playOver, setPlayOver] = useState(true);
+  const overBase = !!base && playOver;
+  // The mod below, installed from the index first when it isn't yet.
+  const startBase = useStartJob((indexId: string) =>
+    commands.installIndexMod(indexId, target?.id ?? null, !target, null),
+  );
+  const baseJob = useJob("mod", base?.indexId ?? null);
   const install = useMutation({
-    mutationFn: () =>
-      unwrap(
+    mutationFn: async () => {
+      let below = overBase ? (base?.modId ?? null) : null;
+      if (overBase && base && !below && base.indexId) {
+        const indexId = base.indexId;
+        const job = await waitForJob(queryClient, (await startBase.mutateAsync(indexId)).id);
+        if (job.phase === "failed") throw job.error;
+        below = (await unwrap(commands.listMods())).find((m) => m.indexId === indexId)?.id ?? null;
+      }
+      return unwrap(
         commands.installMod({
           path,
           name,
@@ -271,13 +289,12 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
           // Without a fitting game, the player agreed to install anyway.
           installId: target?.id ?? null,
           keenwiki: origin,
-          // The mod below, or its index entry when it isn't installed yet.
-          extends: overBase ? (base?.modId ?? null) : null,
-          extendsIndex: overBase && !base?.modId ? (base?.indexId ?? null) : null,
+          extends: below,
           // Renaming may have made it no longer match.
           replace: replaced?.id ?? null,
         }),
-      ),
+      );
+    },
     onSuccess: (mod) => {
       queryClient.invalidateQueries({ queryKey: modsKey });
       // The new version may have another title screen and README.
@@ -297,10 +314,6 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
   // Made to be copied over another mod, which isn't part of it.
   const incomplete = info.missingFiles.length > 0;
   const readme = useReadmeLink(path);
-  // The mod it belongs over, which it's played over unless unticked.
-  const base = info.baseMod;
-  const [playOver, setPlayOver] = useState(true);
-  const overBase = !!base && playOver;
   const choose = (info.recipes.length > 1 && !info.confident) || (others.length > 0 && !replacing);
   const careful =
     otherGame ||
@@ -497,6 +510,11 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
       {readme.dialog}
       {versionUnchecked && <Notice>{t("mods.versionUnchecked")}</Notice>}
 
+      {install.isPending && base && baseJob && !isFinished(baseJob) && (
+        <div className="grid gap-1.5">
+          <JobRow job={baseJob} label={base.name} />
+        </div>
+      )}
       {install.error && <Notice tone="error">{errorMessage(t, install.error)}</Notice>}
       <div className="flex justify-end gap-3">
         <Button variant="ghost" onClick={onCancel}>

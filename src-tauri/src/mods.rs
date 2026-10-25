@@ -130,9 +130,6 @@ pub struct InstallModRequest {
     /// made to be copied over that one.
     #[serde(default)]
     pub extends: Option<String>,
-    /// Or the index entry of that mod, installed first unless it is.
-    #[serde(default)]
-    pub extends_index: Option<String>,
     /// An installed mod of the same game this one replaces, e.g. an older
     /// version. Its id and saves stay; `None` installs alongside.
     #[serde(default)]
@@ -1835,7 +1832,6 @@ mod tests {
             install_id: Some("keen4-1".into()),
             keenwiki: None,
             extends: None,
-            extends_index: None,
             replace: None,
         }
     }

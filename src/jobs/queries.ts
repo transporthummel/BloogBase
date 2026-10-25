@@ -67,6 +67,22 @@ export function useJobEvents() {
   }, [client]);
 }
 
+/** Resolves with job `id` once it's done or failed, as the job events report it. */
+export function waitForJob(client: QueryClient, id: number): Promise<Job> {
+  return new Promise((resolve) => {
+    let stop = () => {};
+    const check = () => {
+      const job = client.getQueryData<Job[]>(jobsKey)?.find((j) => j.id === id);
+      if (job && isFinished(job)) {
+        stop();
+        resolve(job);
+      }
+    };
+    stop = client.getQueryCache().subscribe(check);
+    check();
+  });
+}
+
 /** Starts a job through a command that returns it right away. */
 export function useStartJob<A>(start: (arg: A) => Promise<Job>) {
   const client = useQueryClient();

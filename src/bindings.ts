@@ -554,8 +554,6 @@ export type InstallModRequest = {
 	 *  made to be copied over that one.
 	 */
 	extends?: string | null,
-	/**  Or the index entry of that mod, installed first unless it is. */
-	extendsIndex?: string | null,
 	/**
 	 *  An installed mod of the same game this one replaces, e.g. an older
 	 *  version. Its id and saves stay; `None` installs alongside.
