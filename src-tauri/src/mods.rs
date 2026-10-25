@@ -986,7 +986,8 @@ pub fn rehome(db: &Db, except: Option<&str>) -> Result<Vec<String>> {
 
 /// Gives mods whose patch names versions the catalog didn't know the
 /// catalog versions they now match, e.g. after an update taught the catalog
-/// what CKPatch calls a release.
+/// what CKPatch calls a release. Those that turn out to name none, as
+/// earlier `%version all` did, fit every version.
 pub fn identify_requirements(paths: &AppPaths, db: &Db) -> Result<()> {
     let unknown: Vec<(String, String, String)> = {
         let conn = db.conn();
@@ -1009,15 +1010,14 @@ pub fn identify_requirements(paths: &AppPaths, db: &Db) -> Result<()> {
         };
         let versions = recipe::patch_versions(&String::from_utf8_lossy(&text));
         let ids = version_ids(game, &versions);
-        if ids.is_empty() {
+        if ids.is_empty() && !versions.is_empty() {
             continue;
         }
+        let requires =
+            (!versions.is_empty()).then(|| serde_json::to_string(&ids).expect("strings serialize"));
         db.conn().execute(
             "UPDATE mods SET requires_json = ?2 WHERE id = ?1",
-            params![
-                mod_id,
-                serde_json::to_string(&ids).expect("strings serialize")
-            ],
+            params![mod_id, requires],
         )?;
         tracing::info!("{mod_id} plays on {ids:?}");
         found = true;
@@ -1931,6 +1931,38 @@ mod tests {
             )
             .unwrap();
         assert_eq!(install_id.as_deref(), Some("keen4-1"));
+    }
+
+    #[test]
+    fn patches_for_all_versions_fit_every_version() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("moon");
+        write_folder(
+            &src,
+            &[
+                ("CK4PATCH.EXE", b"patcher"),
+                ("MOON.PAT", b"%ext ck4\n%version all\n%patch $1 $2\n"),
+            ],
+        );
+        let info = inspect(&src, None).unwrap();
+        assert!(info.recipes[0].game_versions.is_empty());
+        let m = install(&paths, &db, &request(&src, info.recipes[0].recipe.clone())).unwrap();
+        // As The Last Moon was installed, when "all" counted as a version.
+        db.conn()
+            .execute_batch(
+                "UPDATE mods SET requires_json = '[]';
+                 UPDATE installs SET version_id = 'keen4-1.4-ega';",
+            )
+            .unwrap();
+        assert!(fitting_installs(&db, &m.id).unwrap().is_empty());
+
+        identify_requirements(&paths, &db).unwrap();
+        let requires: Option<String> = db
+            .conn()
+            .query_row("SELECT requires_json FROM mods", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(requires, None);
+        assert_eq!(fitting_installs(&db, &m.id).unwrap()[0].id, "keen4-1");
     }
 
     fn curated(recipe: Recipe) -> Curated {

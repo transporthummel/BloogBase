@@ -441,7 +441,8 @@ pub fn sets_composite_mode(text: &str) -> bool {
 }
 
 /// `%version` values of a patch file, e.g. `["1.4"]`.
-/// A version whose section says `%abort` is named only to refuse it.
+/// A version whose section says `%abort` is named only to refuse it, and
+/// `%version all` is for every version (The Last Moon has it).
 pub fn patch_versions(text: &str) -> Vec<String> {
     let mut named: Vec<String> = Vec::new();
     let mut aborted: Vec<String> = Vec::new();
@@ -452,6 +453,7 @@ pub fn patch_versions(text: &str) -> Vec<String> {
         if first.eq_ignore_ascii_case("%version") {
             current = words.next().map(str::to_string);
             if let Some(v) = &current
+                && !v.eq_ignore_ascii_case("ALL")
                 && !named.contains(v)
             {
                 named.push(v.clone());
@@ -852,6 +854,25 @@ CK4PATCH P.PAT
 %version 1.5
 ";
         assert_eq!(patch_versions(refusing), ["1.4"]);
+        assert!(
+            patch_versions(
+                "%ext ck1
+%version all
+%patch $1 $2
+"
+            )
+            .is_empty()
+        );
+        assert_eq!(
+            patch_versions(
+                "%version ALL
+%patch $1 $2
+%version 1.31
+%patch $3 $4
+"
+            ),
+            ["1.31"]
+        );
     }
 
     #[test]
