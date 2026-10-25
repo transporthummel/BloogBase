@@ -382,21 +382,15 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
                 .as_deref()
                 .is_some_and(|b| b.eq_ignore_ascii_case(name))
     };
-    let mut missing_files: Vec<String> = Vec::new();
-    for name in &names {
-        let Some(text) =
-            read(name).filter(|t| has_ext(name, "PAT") || recipe::is_patch_text(name, t))
-        else {
-            continue;
-        };
-        for file in recipe::patch_files(&text) {
-            let known = |n: &String| n.eq_ignore_ascii_case(&file);
-            if !names.iter().any(known) && !missing_files.iter().any(known) {
-                missing_files.push(file);
-            }
-        }
-    }
     let guess = recipe::guess(&with_bundled, read, &game.executables, is_patcher);
+    let missing_files = missing_files(
+        guess.candidates.first(),
+        &files,
+        &root,
+        &with_bundled,
+        read,
+        is_patcher,
+    );
     let recipes = guess
         .candidates
         .into_iter()
@@ -434,6 +428,67 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
         files,
         copies: Vec::new(),
     })
+}
+
+/// Files the patch files a mod starts with load (`%patchfile`) that it
+/// doesn't have, anywhere in its root (`files`, relative to the source). The
+/// patch files come from the best recipe, or its batch file's patcher call;
+/// others lying around may be leftovers (The Electromagnet's `tileinfo.pat`,
+/// offered as another way to start it).
+fn missing_files(
+    best: Option<&recipe::Candidate>,
+    files: &[String],
+    root: &str,
+    names: &[String],
+    read: impl Fn(&str) -> Option<String>,
+    is_patcher: impl Fn(&str) -> bool,
+) -> Vec<String> {
+    let in_mod: Vec<String> = files
+        .iter()
+        .map(|f| {
+            let inner = if root.is_empty() {
+                f.as_str()
+            } else {
+                &f[root.len() + 1..]
+            };
+            inner.to_ascii_lowercase()
+        })
+        .collect();
+    // A batch file's `ck1patch lego.pat` names the patcher without `.EXE`.
+    let runs_patcher = |cmd: &str| {
+        names.iter().any(|n| {
+            let stem = n.rsplit_once('.').map_or(n.as_str(), |(s, _)| s);
+            (n.eq_ignore_ascii_case(cmd) || stem.eq_ignore_ascii_case(cmd)) && is_patcher(n)
+        })
+    };
+    let mut patches: Vec<String> = Vec::new();
+    if let Some(c) = best {
+        match &c.recipe {
+            Recipe::Patch { patch, .. } => patches.push(patch.clone()),
+            Recipe::Batch { file } => patches.extend(
+                read(file)
+                    .map(|t| recipe::batch_commands(&t))
+                    .unwrap_or_default()
+                    .into_iter()
+                    .filter(|cmd| cmd.len() > 1 && runs_patcher(&cmd[0]))
+                    .map(|cmd| cmd[1].clone()),
+            ),
+            Recipe::Program { .. } | Recipe::Episode => {}
+        }
+    }
+    let mut missing: Vec<String> = Vec::new();
+    for patch in &patches {
+        for file in read(patch)
+            .map(|t| recipe::patch_files(&t))
+            .unwrap_or_default()
+        {
+            let path = file.replace('\\', "/").to_ascii_lowercase();
+            if !in_mod.contains(&path) && !missing.iter().any(|m| m.eq_ignore_ascii_case(&file)) {
+                missing.push(file);
+            }
+        }
+    }
+    missing
 }
 
 fn is_junk(name: &str) -> bool {
@@ -2383,6 +2438,48 @@ mod tests {
             ..info
         };
         assert_eq!(needed_mod(&zip, &complete, &names), None);
+    }
+
+    #[test]
+    fn only_files_the_starting_patch_loads_can_be_missing() {
+        let tmp = tempfile::tempdir().unwrap();
+        let zip = tmp.path().join("mod.zip");
+        let patch: &[u8] = b"%ext ck1\n%patchfile $100 patch\\Loader.bin\n%end\n";
+        // As Mura: a file in a folder, named with a backslash. As The
+        // Electromagnet: another patch file it doesn't start with, loading a
+        // file that isn't there.
+        write_zip(
+            &zip,
+            &[
+                ("Mod/play.bat", b"ck1patch mura.pat\r\n"),
+                ("Mod/CK1PATCH.EXE", b"MZ"),
+                ("Mod/mura.pat", patch),
+                ("Mod/patch/loader.bin", b"b"),
+                (
+                    "Mod/tileinfo.pat",
+                    b"%ext ck1\n%patchfile $200 tileinfo.tli\n%end\n",
+                ),
+                ("Mod/LEVEL01.CK1", b"l"),
+            ],
+        );
+        let info = inspect(&zip, None).unwrap();
+        assert_eq!(info.recipes[0].origin, "play.bat");
+        assert_eq!(info.missing_files, Vec::<String>::new());
+
+        // Without the folder, the file it starts with is missing.
+        write_zip(
+            &zip,
+            &[
+                ("Mod/play.bat", b"ck1patch mura.pat\r\n"),
+                ("Mod/CK1PATCH.EXE", b"MZ"),
+                ("Mod/mura.pat", patch),
+                ("Mod/LEVEL01.CK1", b"l"),
+            ],
+        );
+        assert_eq!(
+            inspect(&zip, None).unwrap().missing_files,
+            ["patch\\Loader.bin"]
+        );
     }
 
     #[test]
