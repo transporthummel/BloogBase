@@ -298,7 +298,7 @@
     "removeTitle": "Remove {{name}}?",
     "removeHint": "The mod’s files are deleted. The game itself stays in your library.",
     "removeHint_noGame": "The mod’s files are deleted.",
-    "missingFiles": "This mod lacks {{files}}, which its patch loads. It may be made to be copied over another mod; its readme usually says.",
+    "missingFiles": "This mod lacks {{files}}, which its patch loads. It may be made to be copied over another mod; its <readme>readme</readme> usually says.",
     "missingFiles_mod": "This mod is made to be copied over {{mod}} and won’t work without it: it lacks {{files}}.",
     "removeExtensions": "{{names}} is played over it and is removed too.",
     "keepSaves_one": "Keep the saved game as a backup",

@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import {
@@ -366,6 +366,22 @@ test("shows the readme of a mod that isn't installed yet", async () => {
   await user.keyboard("{Escape}");
   expect(dialog).not.toBeInTheDocument();
   expect(screen.getByText("We need your help")).toBeInTheDocument();
+});
+
+test("links the readme when it can't tell which mod one lacks files of", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, missingFiles: ["lego.tli"] }));
+  vi.mocked(commands.readmesAt).mockReturnValue(
+    ok([{ file: "readme.txt", text: "First install Lego Keen.", html: false, word: false }]),
+  );
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  const hint = await screen.findByText(/^This mod lacks lego\.tli/);
+  await user.click(within(hint).getByRole("button", { name: "readme" }));
+  expect(screen.getByRole("dialog", { name: "Readme" })).toHaveTextContent(
+    "First install Lego Keen.",
+  );
 });
 
 test("asks before installing a mod without its game", async () => {

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FileArchive, FolderOpen, Puzzle } from "lucide-react";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactElement, type ReactNode, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import {
   commands,
@@ -293,6 +293,7 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
   const versionUnchecked = !!target && target.versionId === null && option.gameVersions.length > 0;
   // Made to be copied over another mod, which isn't part of it.
   const incomplete = info.missingFiles.length > 0;
+  const readme = useReadmeLink(path);
   const choose = (info.recipes.length > 1 && !info.confident) || (others.length > 0 && !replacing);
   const careful =
     otherGame ||
@@ -460,13 +461,17 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
         // Set apart: the mod won't run like this.
         <p role="status" className="flex items-start gap-2 text-sm">
           <Puzzle className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
-          {t("mods.missingFiles", {
-            mod: info.needsMod,
-            files: info.missingFiles.join(", "),
-            context: info.needsMod ? "mod" : undefined,
-          })}
+          <span>
+            <Trans
+              i18nKey="mods.missingFiles"
+              context={info.needsMod ? "mod" : undefined}
+              values={{ mod: info.needsMod, files: info.missingFiles.join(", ") }}
+              components={{ readme: readme.link }}
+            />
+          </span>
         </p>
       )}
+      {readme.dialog}
       {versionUnchecked && <Notice>{t("mods.versionUnchecked")}</Notice>}
 
       {install.error && <Notice tone="error">{errorMessage(t, install.error)}</Notice>}
@@ -488,39 +493,45 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
   );
 }
 
-/** The hint for picking how to start; "readme" opens the mod's documents, if any. */
-function HelpHint({ path }: { path: string }) {
+/**
+ * For a `<readme>` in a text: a link opening the mod's documents, plain text
+ * when it has none, and the dialog to render next to the text.
+ */
+function useReadmeLink(path: string): { link: ReactElement; dialog: ReactNode } {
   const { t } = useTranslation();
   const readmes = useReadmesAt(path);
   const [reading, setReading] = useState(false);
+  const link = readmes.data?.length ? (
+    <button
+      type="button"
+      className="text-accent underline hover:text-ink"
+      onClick={() => setReading(true)}
+    />
+  ) : (
+    <span />
+  );
+  const dialog = reading && readmes.data && (
+    <Dialog title={t("readme.title")} wide onClose={() => setReading(false)}>
+      <ReadmePanel path={path} readmes={readmes.data} />
+      <div className="flex justify-end">
+        <Button variant="ghost" onClick={() => setReading(false)} data-autofocus>
+          {t("common.close")}
+        </Button>
+      </div>
+    </Dialog>
+  );
+  return { link, dialog };
+}
+
+/** The hint for picking how to start; "readme" opens the mod's documents, if any. */
+function HelpHint({ path }: { path: string }) {
+  const readme = useReadmeLink(path);
   return (
     <>
       <p className="text-muted">
-        <Trans
-          i18nKey="mods.helpHint"
-          components={{
-            readme: readmes.data?.length ? (
-              <button
-                type="button"
-                className="text-accent underline hover:text-ink"
-                onClick={() => setReading(true)}
-              />
-            ) : (
-              <span />
-            ),
-          }}
-        />
+        <Trans i18nKey="mods.helpHint" components={{ readme: readme.link }} />
       </p>
-      {reading && readmes.data && (
-        <Dialog title={t("readme.title")} wide onClose={() => setReading(false)}>
-          <ReadmePanel path={path} readmes={readmes.data} />
-          <div className="flex justify-end">
-            <Button variant="ghost" onClick={() => setReading(false)} data-autofocus>
-              {t("common.close")}
-            </Button>
-          </div>
-        </Dialog>
-      )}
+      {readme.dialog}
     </>
   );
 }
