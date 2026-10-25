@@ -68,12 +68,19 @@ const info: ModInfo = {
   version: null,
   released: null,
   gameId: "keen4",
-  recipes: [{ recipe: { type: "episode" }, origin: "", gameVersions: [], versionIds: [] }],
+  recipes: [
+    {
+      recipe: { type: "episode" },
+      origin: "",
+      gameVersions: [],
+      versionIds: [],
+      missingFiles: [],
+      baseMod: null,
+    },
+  ],
   confident: true,
   fileCount: 3,
   indexId: null,
-  missingFiles: [],
-  baseMod: null,
 };
 
 const aurora = { id: "aurora-bliss", name: "Aurora Bliss", profileId: "aurora-bliss" } as Mod;

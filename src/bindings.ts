@@ -671,16 +671,6 @@ export type ModInfo = {
 	fileCount: number,
 	/**  The index entry whose download this is, byte for byte. */
 	indexId: string | null,
-	/**
-	 *  Files its patch files load that it doesn't have, as a mod made to be
-	 *  copied over another one (Lego Levels over Lego Keen).
-	 */
-	missingFiles: string[],
-	/**
-	 *  The mod it's made to be copied over, when files are missing and
-	 *  BloogBase knows one that fits.
-	 */
-	baseMod: BaseMod | null,
 };
 
 export type ModKind = "episode" | "levelpack" | "conversion";
@@ -790,6 +780,16 @@ export type RecipeOption = {
 	 *  may do, or the catalog doesn't know the named versions.
 	 */
 	versionIds: string[],
+	/**
+	 *  Files its patch file loads that the mod doesn't have, as a mod made to
+	 *  be copied over another one (Lego Levels over Lego Keen).
+	 */
+	missingFiles: string[],
+	/**
+	 *  The mod it's made to be copied over, when files are missing and
+	 *  BloogBase knows one that fits.
+	 */
+	baseMod: BaseMod | null,
 };
 
 export type Runtime = {

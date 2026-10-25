@@ -647,7 +647,7 @@ pub async fn inspect_mod(app: AppHandle, path: String) -> CommandResult<ModInfo>
     blocking(move || {
         let mut info = mods::inspect(Path::new(&path), None)?;
         info.index_id = index_match(&app, &path, &info);
-        info.base_mod = needed_mod(&app, &path, &info);
+        find_base_mods(&app, &path, &mut info);
         Ok(info)
     })
     .await
@@ -660,10 +660,13 @@ fn index_match(app: &AppHandle, path: &str, info: &ModInfo) -> Option<String> {
         .map(|e| e.id)
 }
 
-/// The mod `info` is made to be copied over (see [`mods::needed_mod`]),
-/// among the index's and the library's for the same game. Mods played over
-/// another one never are.
-fn needed_mod(app: &AppHandle, path: &str, info: &ModInfo) -> Option<mods::BaseMod> {
+/// For each way to start `info` that lacks files, the mod it's made to be
+/// copied over (see [`mods::needed_mod`]), among the index's and the
+/// library's for the same game. Mods played over another one never are.
+fn find_base_mods(app: &AppHandle, path: &str, info: &mut ModInfo) {
+    if info.recipes.iter().all(|o| o.missing_files.is_empty()) {
+        return;
+    }
     let paths = app.state::<AppPaths>();
     let db = app.state::<Db>();
     let index = app.state::<ModIndex>().entries();
@@ -689,7 +692,9 @@ fn needed_mod(app: &AppHandle, path: &str, info: &ModInfo) -> Option<mods::BaseM
                 }),
         )
         .collect();
-    mods::needed_mod(Path::new(path), info, &candidates)
+    for option in &mut info.recipes {
+        option.base_mod = mods::needed_mod(Path::new(path), &option.missing_files, &candidates);
+    }
 }
 
 /// Whether a folder or ZIP dropped on the window holds games or a mod.
@@ -700,7 +705,7 @@ pub async fn inspect_dropped(app: AppHandle, path: String) -> CommandResult<Drop
         let mut dropped = mods::classify(Path::new(&path))?;
         if let Dropped::Mod { info } = &mut dropped {
             info.index_id = index_match(&app, &path, info);
-            info.base_mod = needed_mod(&app, &path, info);
+            find_base_mods(&app, &path, info);
         }
         Ok(dropped)
     })
@@ -924,7 +929,7 @@ pub async fn download_keenwiki_mod(
     let a = app.clone();
     let info = blocking(move || {
         let mut info = mods::inspect(&p, game_id.as_deref())?;
-        info.base_mod = needed_mod(&a, &p.display().to_string(), &info);
+        find_base_mods(&a, &p.display().to_string(), &mut info);
         Ok(info)
     })
     .await?;

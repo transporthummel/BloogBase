@@ -130,12 +130,19 @@ test("downloads a newer version and replaces the installed one", async () => {
         version: null,
         released: null,
         gameId: "keen4",
-        recipes: [{ recipe: patch, origin: "play.bat", gameVersions: [], versionIds: [] }],
+        recipes: [
+          {
+            recipe: patch,
+            origin: "play.bat",
+            gameVersions: [],
+            versionIds: [],
+            missingFiles: [],
+            baseMod: null,
+          },
+        ],
         confident: true,
         fileCount: 3,
         indexId: null,
-        missingFiles: [],
-        baseMod: null,
       },
     }),
   );

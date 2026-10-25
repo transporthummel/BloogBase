@@ -72,6 +72,8 @@ const patch: RecipeOption = {
   origin: "play.bat",
   gameVersions: ["1.4"],
   versionIds: ["keen4-1.4-ega"],
+  missingFiles: [],
+  baseMod: null,
 };
 
 const info: ModInfo = {
@@ -84,8 +86,6 @@ const info: ModInfo = {
   confident: true,
   fileCount: 18,
   indexId: null,
-  missingFiles: [],
-  baseMod: null,
 };
 
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
@@ -198,8 +198,13 @@ test("plays one made to be copied over a mod from the index over it", async () =
   vi.mocked(commands.inspectMod).mockReturnValue(
     ok({
       ...info,
-      missingFiles: ["lego.tli"],
-      baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen", byFiles: false },
+      recipes: [
+        {
+          ...patch,
+          missingFiles: ["lego.tli"],
+          baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen", byFiles: false },
+        },
+      ],
     }),
   );
   const job: Job = {
@@ -267,8 +272,13 @@ test("doesn't install one made to be copied over a mod whose download failed", a
   vi.mocked(commands.inspectMod).mockReturnValue(
     ok({
       ...info,
-      missingFiles: ["lego.tli"],
-      baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen", byFiles: false },
+      recipes: [
+        {
+          ...patch,
+          missingFiles: ["lego.tli"],
+          baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen", byFiles: false },
+        },
+      ],
     }),
   );
   vi.mocked(commands.listJobs).mockResolvedValue([]);
@@ -294,8 +304,13 @@ test("installs one made to be copied over an installed mod alone when unticked",
   vi.mocked(commands.inspectMod).mockReturnValue(
     ok({
       ...info,
-      missingFiles: ["lego.tli"],
-      baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null, byFiles: true },
+      recipes: [
+        {
+          ...patch,
+          missingFiles: ["lego.tli"],
+          baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null, byFiles: true },
+        },
+      ],
     }),
   );
   vi.mocked(commands.installMod).mockReturnValue(new Promise(() => {}));
@@ -417,6 +432,8 @@ test("asks which recipe to use when unsure", async () => {
           origin: "BTOWER.BAT",
           gameVersions: [],
           versionIds: [],
+          missingFiles: [],
+          baseMod: null,
         },
         {
           recipe: {
@@ -428,6 +445,8 @@ test("asks which recipe to use when unsure", async () => {
           origin: "BTRNOMUS.BAT",
           gameVersions: [],
           versionIds: [],
+          missingFiles: [],
+          baseMod: null,
         },
       ],
     }),
@@ -440,6 +459,32 @@ test("asks which recipe to use when unsure", async () => {
   expect(radios).toHaveLength(2);
   expect(radios[0]).toBeChecked();
   expect(screen.getByText("CK4PATCH.EXE abiathar.pat -nowait")).toBeInTheDocument();
+});
+
+test("checks again for missing files when another way to start is picked", async () => {
+  const leftover: RecipeOption = {
+    ...patch,
+    recipe: { type: "patch", patcher: "CK4PATCH.EXE", patch: "tileinfo.pat", args: [] },
+    origin: "tileinfo.pat",
+    missingFiles: ["tileinfo.tli"],
+    baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null, byFiles: true },
+  };
+  vi.mocked(commands.inspectMod).mockReturnValue(
+    ok({ ...info, confident: false, recipes: [patch, leftover] }),
+  );
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  await screen.findByText("We need your help");
+  const hint = /it lacks tileinfo\.tli/;
+  expect(screen.queryByText(hint)).not.toBeInTheDocument();
+  await user.click(screen.getAllByRole("radio")[1]);
+  expect(screen.getByText(hint)).toBeInTheDocument();
+  expect(screen.getByRole("checkbox", { name: "Play it over Lego Keen" })).toBeChecked();
+  await user.click(screen.getAllByRole("radio")[0]);
+  expect(screen.queryByText(hint)).not.toBeInTheDocument();
+  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
 });
 
 test("shows the readme of a mod that isn't installed yet", async () => {
@@ -472,7 +517,9 @@ test("shows the readme of a mod that isn't installed yet", async () => {
 });
 
 test("links the readme when it can't tell which mod one lacks files of", async () => {
-  vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, missingFiles: ["lego.tli"] }));
+  vi.mocked(commands.inspectMod).mockReturnValue(
+    ok({ ...info, recipes: [{ ...patch, missingFiles: ["lego.tli"] }] }),
+  );
   vi.mocked(commands.readmesAt).mockReturnValue(
     ok([{ file: "readme.txt", text: "First install Lego Keen.", html: false, word: false }]),
   );

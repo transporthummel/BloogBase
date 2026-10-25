@@ -264,7 +264,7 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
     target && assumedVersion && versionOf(target) !== undefined && !isAssumed(target);
 
   // The mod it belongs over, which it's played over unless unticked.
-  const base = info.baseMod;
+  const base = option.baseMod;
   const [playOver, setPlayOver] = useState(true);
   const overBase = !!base && playOver;
   // The mod below, installed from the index first when it isn't yet.
@@ -312,7 +312,7 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
   const modifiedGame = !!target && option.recipe.type === "patch" && isModified(versionOf(target));
   const versionUnchecked = !!target && target.versionId === null && option.gameVersions.length > 0;
   // Made to be copied over another mod, which isn't part of it.
-  const incomplete = info.missingFiles.length > 0;
+  const incomplete = option.missingFiles.length > 0;
   const readme = useReadmeLink(path);
   const choose = (info.recipes.length > 1 && !info.confident) || (others.length > 0 && !replacing);
   const careful =
@@ -486,7 +486,7 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
               <Trans
                 i18nKey="mods.missingFiles"
                 context={base ? "mod" : undefined}
-                values={{ mod: base?.name, files: info.missingFiles.join(", ") }}
+                values={{ mod: base?.name, files: option.missingFiles.join(", ") }}
                 components={{ readme: readme.link }}
               />
             </span>

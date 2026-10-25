@@ -68,12 +68,6 @@ pub struct ModInfo {
     pub file_count: u32,
     /// The index entry whose download this is, byte for byte.
     pub index_id: Option<String>,
-    /// Files its patch files load that it doesn't have, as a mod made to be
-    /// copied over another one (Lego Levels over Lego Keen).
-    pub missing_files: Vec<String>,
-    /// The mod it's made to be copied over, when files are missing and
-    /// BloogBase knows one that fits.
-    pub base_mod: Option<BaseMod>,
 }
 
 /// A mod another one is made to be copied over, installed or in the index.
@@ -110,6 +104,12 @@ pub struct RecipeOption {
     /// Catalog versions matching `game_versions`. Empty when any version
     /// may do, or the catalog doesn't know the named versions.
     pub version_ids: Vec<String>,
+    /// Files its patch file loads that the mod doesn't have, as a mod made to
+    /// be copied over another one (Lego Levels over Lego Keen).
+    pub missing_files: Vec<String>,
+    /// The mod it's made to be copied over, when files are missing and
+    /// BloogBase knows one that fits.
+    pub base_mod: Option<BaseMod>,
 }
 
 #[derive(Debug, Clone, Deserialize, Type)]
@@ -200,12 +200,16 @@ pub fn inspect(path: &Path, game_hint: Option<&str>) -> Result<ModInfo> {
     Ok(analyze(&Source::open(path)?, path, game_hint)?.info)
 }
 
-/// The mod `info` lacks files of, among `candidates`: an installed one that
+/// The mod a way to start a mod lacks `missing_files` of, among `candidates`: an installed one that
 /// has them all, else one of the index the documents at `path` name; the
 /// longest name, as "Lego Keen 2" also says "Lego Keen". Installed mods
 /// have to have the files: a level pack's readme names itself too.
-pub fn needed_mod(path: &Path, info: &ModInfo, candidates: &[BaseCandidate]) -> Option<BaseMod> {
-    if info.missing_files.is_empty() {
+pub fn needed_mod(
+    path: &Path,
+    missing_files: &[String],
+    candidates: &[BaseCandidate],
+) -> Option<BaseMod> {
+    if missing_files.is_empty() {
         return None;
     }
     let holds_all = |dir: &Path| {
@@ -215,7 +219,7 @@ pub fn needed_mod(path: &Path, info: &ModInfo, candidates: &[BaseCandidate]) -> 
                     .collect()
             })
             .unwrap_or_default();
-        info.missing_files
+        missing_files
             .iter()
             .all(|m| names.iter().any(|n| n.eq_ignore_ascii_case(m)))
     };
@@ -383,14 +387,6 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
                 .is_some_and(|b| b.eq_ignore_ascii_case(name))
     };
     let guess = recipe::guess(&with_bundled, read, &game.executables, is_patcher);
-    let missing_files = missing_files(
-        guess.candidates.first(),
-        &files,
-        &root,
-        &with_bundled,
-        read,
-        is_patcher,
-    );
     let recipes = guess
         .candidates
         .into_iter()
@@ -404,6 +400,15 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
             RecipeOption {
                 version_ids: version_ids(game, &game_versions),
                 game_versions,
+                missing_files: missing_files(
+                    &c.recipe,
+                    &files,
+                    &root,
+                    &with_bundled,
+                    read,
+                    is_patcher,
+                ),
+                base_mod: None,
                 recipe: c.recipe,
                 origin: c.origin,
             }
@@ -421,8 +426,6 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
             confident: guess.confident,
             file_count: files.len() as u32,
             index_id: None,
-            missing_files,
-            base_mod: None,
         },
         root,
         files,
@@ -430,13 +433,13 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
     })
 }
 
-/// Files the patch files a mod starts with load (`%patchfile`) that it
-/// doesn't have, anywhere in its root (`files`, relative to the source). The
-/// patch files come from the best recipe, or its batch file's patcher call;
-/// others lying around may be leftovers (The Electromagnet's `tileinfo.pat`,
-/// offered as another way to start it).
+/// Files the patch file `start` starts the mod with loads (`%patchfile`)
+/// that the mod doesn't have, anywhere in its root (`files`, relative to the
+/// source): a patch recipe's, or what its batch file passes to the patcher.
+/// Only that one counts: others lying around may be leftovers (The
+/// Electromagnet's `tileinfo.pat`).
 fn missing_files(
-    best: Option<&recipe::Candidate>,
+    start: &Recipe,
     files: &[String],
     root: &str,
     names: &[String],
@@ -461,21 +464,17 @@ fn missing_files(
             (n.eq_ignore_ascii_case(cmd) || stem.eq_ignore_ascii_case(cmd)) && is_patcher(n)
         })
     };
-    let mut patches: Vec<String> = Vec::new();
-    if let Some(c) = best {
-        match &c.recipe {
-            Recipe::Patch { patch, .. } => patches.push(patch.clone()),
-            Recipe::Batch { file } => patches.extend(
-                read(file)
-                    .map(|t| recipe::batch_commands(&t))
-                    .unwrap_or_default()
-                    .into_iter()
-                    .filter(|cmd| cmd.len() > 1 && runs_patcher(&cmd[0]))
-                    .map(|cmd| cmd[1].clone()),
-            ),
-            Recipe::Program { .. } | Recipe::Episode => {}
-        }
-    }
+    let patches: Vec<String> = match start {
+        Recipe::Patch { patch, .. } => vec![patch.clone()],
+        Recipe::Batch { file } => read(file)
+            .map(|t| recipe::batch_commands(&t))
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|cmd| cmd.len() > 1 && runs_patcher(&cmd[0]))
+            .map(|cmd| cmd[1].clone())
+            .collect(),
+        Recipe::Program { .. } | Recipe::Episode => Vec::new(),
+    };
     let mut missing: Vec<String> = Vec::new();
     for patch in &patches {
         for file in read(patch)
@@ -1555,6 +1554,8 @@ impl Base {
             origin: self.name.clone(),
             game_versions: Vec::new(),
             version_ids: Vec::new(),
+            missing_files: Vec::new(),
+            base_mod: None,
         }
     }
 }
@@ -1917,6 +1918,8 @@ mod tests {
                 origin: "play.bat".into(),
                 game_versions: vec!["1.4".into()],
                 version_ids: vec!["keen4-1.4-ega".into()],
+                missing_files: vec![],
+                base_mod: None,
             }
         );
     }
@@ -2144,6 +2147,8 @@ mod tests {
             origin: String::new(),
             game_versions: vec!["1.4".into()],
             version_ids: vec!["keen4-1.4-ega".into()],
+            missing_files: vec![],
+            base_mod: None,
         };
         let mut i = library::list(&db).unwrap().remove(0);
         check_install("keen4", &option, &i).unwrap();
@@ -2395,7 +2400,8 @@ mod tests {
             ],
         );
         let info = inspect(&zip, None).unwrap();
-        assert_eq!(info.missing_files, ["lego.tli"]);
+        let missing = &info.recipes[0].missing_files;
+        assert_eq!(missing, &["lego.tli"]);
         // From the index, named in the readme.
         let index = |n: &str| BaseCandidate {
             name: n.into(),
@@ -2405,7 +2411,7 @@ mod tests {
         };
         let names = [index("Lego"), index("Lego Keen"), index("Lego Rescue")];
         assert_eq!(
-            needed_mod(&zip, &info, &names),
+            needed_mod(&zip, missing, &names),
             Some(BaseMod {
                 name: "Lego Keen".into(),
                 mod_id: None,
@@ -2427,17 +2433,13 @@ mod tests {
             files: Some(files.to_path_buf()),
         };
         let installed = [installed("Bricks", &has), installed("Lego Levels", &lacks)];
-        let found = needed_mod(&zip, &info, &installed).unwrap();
+        let found = needed_mod(&zip, missing, &installed).unwrap();
         assert_eq!(found.mod_id.as_deref(), Some("bricks"));
         assert!(found.by_files);
-        assert_eq!(needed_mod(&zip, &info, &installed[1..]), None);
+        assert_eq!(needed_mod(&zip, missing, &installed[1..]), None);
 
         // Nothing missing: nothing needed, whatever the documents say.
-        let complete = ModInfo {
-            missing_files: Vec::new(),
-            ..info
-        };
-        assert_eq!(needed_mod(&zip, &complete, &names), None);
+        assert_eq!(needed_mod(&zip, &[], &names), None);
     }
 
     #[test]
@@ -2464,7 +2466,14 @@ mod tests {
         );
         let info = inspect(&zip, None).unwrap();
         assert_eq!(info.recipes[0].origin, "play.bat");
-        assert_eq!(info.missing_files, Vec::<String>::new());
+        assert_eq!(info.recipes[0].missing_files, Vec::<String>::new());
+        // Picked instead, the leftover lacks its file.
+        let leftover = info
+            .recipes
+            .iter()
+            .find(|o| o.recipe.patch_file() == Some("tileinfo.pat"))
+            .unwrap();
+        assert_eq!(leftover.missing_files, ["tileinfo.tli"]);
 
         // Without the folder, the file it starts with is missing.
         write_zip(
@@ -2477,7 +2486,7 @@ mod tests {
             ],
         );
         assert_eq!(
-            inspect(&zip, None).unwrap().missing_files,
+            inspect(&zip, None).unwrap().recipes[0].missing_files,
             ["patch\\Loader.bin"]
         );
     }
@@ -2805,6 +2814,8 @@ mod tests {
                 origin: "x".into(),
                 game_versions: vec![],
                 version_ids: vec![],
+                missing_files: vec![],
+                base_mod: None,
             }],
             ..(*patched).clone()
         };
