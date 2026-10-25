@@ -449,7 +449,8 @@
     "firing": {
       "on": "Space shoots, Enter opens the status window.",
       "builtIn": "This mod already shoots with Space.",
-      "unavailable": "One-button firing isn’t available here: this game or mod changes the controls differently."
+      "unavailable": "One-button firing isn’t available here: this game or mod changes the controls differently.",
+      "otherVersion": "One-button firing is only available for version 1.31 of the game, and this copy is a different one."
     },
     "removeGame": "Uninstall",
     "removeGameTitle": "Uninstall {{name}}?",

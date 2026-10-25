@@ -515,6 +515,13 @@ test("says how Keen 1-3 shoot where the setting or the mod changes it", async ()
   vi.mocked(commands.profileFiring).mockResolvedValue(ok("builtIn"));
   renderDetail();
   expect(await screen.findByText("This mod already shoots with Space.")).toBeInTheDocument();
+  cleanup();
+
+  // On another version of the game, it says which one the patch is for.
+  vi.mocked(commands.oneButtonFiring).mockResolvedValue(ok(true));
+  vi.mocked(commands.profileFiring).mockResolvedValue(ok("otherVersion"));
+  renderDetail();
+  expect(await screen.findByText(/only available for version 1\.31/)).toBeInTheDocument();
 });
 
 test("the title screen is the picture, else the latest screenshot", async () => {

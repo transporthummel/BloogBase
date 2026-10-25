@@ -598,10 +598,11 @@ pub fn profile_firing(db: State<'_, Db>, profile_id: String) -> CommandResult<Op
         return Ok(None);
     };
     let recipe = layers.mod_layer.as_ref().map(|m| &m.recipe);
-    Ok(firing::status(
+    Ok(firing::profile_status(
         game,
         recipe.unwrap_or(&Recipe::Episode),
         &layers.sources(),
+        profile.version_id.as_deref(),
     ))
 }
 

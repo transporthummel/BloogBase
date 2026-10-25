@@ -41,6 +41,9 @@ pub enum Firing {
     /// The code isn't as the patch expects: another version, or a mod that
     /// changed it differently.
     Unavailable,
+    /// The game's own executable is another version than 1.31, the one the
+    /// patch is for.
+    OtherVersion,
 }
 
 /// The patch's addresses in one episode, as offsets into the load image.
@@ -299,6 +302,29 @@ pub fn status(game: &Game, recipe: &Recipe, dirs: &[&Path]) -> Option<Firing> {
             Firing::BuiltIn
         } else {
             Firing::Patchable
+        },
+    )
+}
+
+/// Like `status` for a profile on an install of `version_id`, the last of
+/// `dirs`: where the episode's executable is the install's own and not
+/// version 1.31, that's why the patch doesn't fit.
+pub fn profile_status(
+    game: &Game,
+    recipe: &Recipe,
+    dirs: &[&Path],
+    version_id: Option<&str>,
+) -> Option<Firing> {
+    let status = status(game, recipe, dirs)?;
+    let other_version = version_id.is_some_and(|v| v != format!("{}-1.31", game.id));
+    let install_exe = Files(dirs)
+        .episode_exe(game)
+        .is_some_and(|exe| dirs.last().is_some_and(|d| exe.starts_with(d)));
+    Some(
+        if status == Firing::Unavailable && other_version && install_exe {
+            Firing::OtherVersion
+        } else {
+            status
         },
     )
 }
@@ -667,6 +693,26 @@ pub mod tests {
             status(catalog::game("keen4").unwrap(), &Recipe::Episode, &dirs),
             None
         );
+    }
+
+    #[test]
+    fn other_versions_of_the_game_are_named() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (base, modf) = (tmp.path().join("base"), tmp.path().join("mod"));
+        // A beta's executable: the code is elsewhere.
+        write_folder(&base, &[("KEEN1.EXE", b"MZ       ")]);
+        write_folder(&modf, &[("LEVEL01.CK1", b"l")]);
+        let dirs = [modf.as_path(), base.as_path()];
+        let status = |v| profile_status(keen1(), &Recipe::Episode, &dirs, v);
+        assert_eq!(status(Some("keen1-beta-dec")), Some(Firing::OtherVersion));
+        assert_eq!(status(Some("keen1-1.31")), Some(Firing::Unavailable));
+        assert_eq!(status(None), Some(Firing::Unavailable));
+
+        // With its own executable the mod doesn't depend on the version.
+        write_folder(&modf, &[("KEEN1.EXE", b"MZ       ")]);
+        assert_eq!(status(Some("keen1-beta-dec")), Some(Firing::Unavailable));
+        write_folder(&modf, &[("KEEN1.EXE", &exe())]);
+        assert_eq!(status(Some("keen1-beta-dec")), Some(Firing::Patchable));
     }
 
     #[test]

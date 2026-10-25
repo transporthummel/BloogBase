@@ -449,7 +449,8 @@
     "firing": {
       "on": "Space schießt, Enter öffnet das Statusfenster.",
       "builtIn": "Diese Mod schießt schon mit Space.",
-      "unavailable": "Schießen mit einer Taste ist hier nicht verfügbar: Dieses Spiel oder diese Mod ändert die Steuerung anders."
+      "unavailable": "Schießen mit einer Taste ist hier nicht verfügbar: Dieses Spiel oder diese Mod ändert die Steuerung anders.",
+      "otherVersion": "Schießen mit einer Taste gibt es nur für Version 1.31 des Spiels, und diese Spielkopie ist eine andere."
     },
     "removeGame": "Deinstallieren",
     "removeGameTitle": "{{name}} deinstallieren?",

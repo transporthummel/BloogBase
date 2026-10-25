@@ -113,7 +113,12 @@ export const commands = {
  *  The code isn't as the patch expects: another version, or a mod that
  *  changed it differently.
  */
-"unavailable" | null, CommandError>(__TAURI_INVOKE("profile_firing", { profileId })),
+"unavailable" | 
+/**
+ *  The game's own executable is another version than 1.31, the one the
+ *  patch is for.
+ */
+"otherVersion" | null, CommandError>(__TAURI_INVOKE("profile_firing", { profileId })),
 	/**
 	 *  The DOSBox config layers: the global override, and with `profile_id`
 	 *  that profile's layers and the effective result.
@@ -356,7 +361,12 @@ export type Firing =
  *  The code isn't as the patch expects: another version, or a mod that
  *  changed it differently.
  */
-"unavailable";
+"unavailable" | 
+/**
+ *  The game's own executable is another version than 1.31, the one the
+ *  patch is for.
+ */
+"otherVersion";
 
 export type FoundGame = {
 	gameId: string,
