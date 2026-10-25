@@ -241,6 +241,7 @@ pub fn run() {
             tauri::async_runtime::spawn(async move {
                 loop {
                     let status = handle.state::<ModIndex>().refresh(false).await;
+                    commands::link_installed(&handle);
                     let _ = IndexUpdated(status).emit(&handle);
                     tokio::time::sleep(mod_index::REFRESH_EVERY).await;
                 }

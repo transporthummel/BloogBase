@@ -739,6 +739,8 @@ pub async fn install_mod(app: AppHandle, request: InstallModRequest) -> CommandR
         }
         let m = m?;
         warn_if_damaged(&app, Path::new(&request.path), &m.name);
+        // Installed by hand from an index download.
+        link_installed(&app);
         // The mod keeps its own copy of the archive.
         let downloads = keenwiki_downloads(&paths);
         if Path::new(&request.path).starts_with(&downloads) {
@@ -939,6 +941,8 @@ pub async fn download_keenwiki_mod(
     let a = app.clone();
     let info = blocking(move || {
         let mut info = mods::inspect(&p, game_id.as_deref())?;
+        // The page may not be the one the index links, the download may be.
+        info.index_id = index_match(&a, &p.display().to_string(), &info);
         find_base_mods(&a, &mut info);
         Ok(info)
     })
@@ -971,8 +975,16 @@ pub fn index_status(index: State<'_, ModIndex>) -> IndexStatus {
 #[specta::specta]
 pub async fn refresh_index(app: AppHandle, force: bool) -> IndexStatus {
     let status = app.state::<ModIndex>().refresh(force).await;
+    link_installed(&app);
     let _ = IndexUpdated(status.clone()).emit(&app);
     status
+}
+
+/// See [`mod_index::link_installed`]; a failure only leaves mods untied.
+pub fn link_installed(app: &AppHandle) {
+    if let Err(e) = mod_index::link_installed(&app.state::<ModIndex>(), &app.state::<Db>()) {
+        tracing::warn!("could not tie installed mods to the index: {e}");
+    }
 }
 
 /// The mods in the index, with what's installed already.

@@ -10,7 +10,7 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use minisign_verify::{PublicKey, Signature};
-use rusqlite::params_from_iter;
+use rusqlite::{params, params_from_iter};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
@@ -510,6 +510,24 @@ fn version_at_least(version: &str, min: &str) -> bool {
     a >= b
 }
 
+/// Ties installed mods that aren't tied to an entry to the one whose
+/// download they were installed from, byte for byte: added from KeenWiki
+/// or a file, maybe before the entry joined the index. An older download
+/// counts too, so the entry offers the update.
+pub fn link_installed(index: &ModIndex, db: &Db) -> Result<()> {
+    let conn = db.conn();
+    for e in index.entries() {
+        for d in &e.downloads {
+            conn.execute(
+                "UPDATE mods SET index_id = ?1 WHERE index_id IS NULL AND game_id = ?2
+                 AND lower(archive_sha256) = lower(?3)",
+                params![e.id, e.game, d.sha256],
+            )?;
+        }
+    }
+    Ok(())
+}
+
 /// The index entries with their install state.
 pub fn list(index: &ModIndex, db: &Db) -> Result<Vec<IndexMod>> {
     let entries = index.entries();
@@ -789,5 +807,53 @@ mod tests {
             .execute("UPDATE mods SET archive_sha256 = ?1", [sha])
             .unwrap();
         assert!(!list(&index, &db).unwrap()[0].update_available);
+    }
+
+    #[test]
+    fn ties_installed_mods_to_the_entry_of_their_download() {
+        let (tmp, paths) = setup();
+        let k = keys();
+        let url = publish(tmp.path(), &k, SAMPLE);
+        let index = ModIndex::with_keys(&paths, url, &[&k.pk]);
+        tauri::async_runtime::block_on(index.refresh(false));
+        let db = Db::open_in_memory().unwrap();
+        let sha = index.entry("sample-patch").unwrap().downloads[0]
+            .sha256
+            .clone();
+        // Added from KeenWiki, the same download; another game; another
+        // download; already tied to another entry.
+        for (id, game, index_id, sha) in [
+            ("wiki", "keen4", None, sha.to_uppercase()),
+            ("k5", "keen5", None, sha.clone()),
+            ("other", "keen4", None, "ab".into()),
+            ("tied", "keen4", Some("elsewhere"), sha.clone()),
+        ] {
+            db.conn()
+                .execute(
+                    "INSERT INTO mods (id, game_id, index_id, name, authors, recipe_json, path,
+                                       source, archive_sha256, added_at)
+                     VALUES (?1, ?2, ?3, 'x', '[]', '{}', '/x', 'keenwiki', ?4, 0)",
+                    params![id, game, index_id, sha],
+                )
+                .unwrap();
+        }
+        link_installed(&index, &db).unwrap();
+        let tied: Vec<(String, Option<String>)> = db
+            .conn()
+            .prepare("SELECT id, index_id FROM mods ORDER BY id")
+            .unwrap()
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        let of = |id: &str| tied.iter().find(|(m, _)| m == id).unwrap().1.clone();
+        assert_eq!(of("wiki").as_deref(), Some("sample-patch"));
+        assert_eq!(of("k5"), None);
+        assert_eq!(of("other"), None);
+        assert_eq!(of("tied").as_deref(), Some("elsewhere"));
+        assert_eq!(
+            list(&index, &db).unwrap()[0].mod_id.as_deref(),
+            Some("wiki")
+        );
     }
 }
