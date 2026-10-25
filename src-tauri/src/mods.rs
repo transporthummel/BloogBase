@@ -625,6 +625,24 @@ fn guess_metadata(path: &Path, root: &str) -> Metadata {
             episode: Some(episode),
         };
     }
+    // Without the episode, as KeenWiki's packs for mods: a level pack's
+    // name is the mod its levels are for (`l.keen_community.lego_keen`).
+    if parts.len() >= 4 && parts[0].len() == 1 && is_date(parts[parts.len() - 1]) {
+        let raw = parts[2..parts.len() - 1].join(".");
+        let (name, version) = split_version(&raw);
+        let name = title_case(&name.replace('_', " "));
+        return Metadata {
+            name: if parts[0].eq_ignore_ascii_case("l") {
+                format!("{name} Level Pack")
+            } else {
+                name
+            },
+            authors: vec![parts[1].to_string()],
+            version,
+            released: Some(parts[parts.len() - 1].to_string()),
+            episode: None,
+        };
+    }
 
     let folder = split_dir(root).1;
     let name = if folder.is_empty() { stem } else { folder };
@@ -2933,6 +2951,19 @@ mod tests {
         assert_eq!(
             (m.name.as_str(), m.episode),
             ("Shikadi Level Pack", Some("keen1"))
+        );
+        // KeenWiki's packs for mods name no episode; a level pack's name is
+        // the mod it's for, which it mustn't pass for.
+        let m = guess_metadata(Path::new("l.keen_community.lego_keen.2012-02-10.zip"), "");
+        assert_eq!(
+            (m.name.as_str(), m.episode, m.released.as_deref()),
+            ("Lego Keen Level Pack", None, Some("2012-02-10"))
+        );
+        assert_eq!(m.authors, ["keen_community"]);
+        let m = guess_metadata(Path::new("m.someone.bricks_v2.1.2015-01-01.zip"), "");
+        assert_eq!(
+            (m.name.as_str(), m.version.as_deref()),
+            ("Bricks", Some("2.1"))
         );
 
         assert_eq!(
