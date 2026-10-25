@@ -1,0 +1,24 @@
+id: episode-x
+name: Episode X
+game: keen1
+authors: [Xkylyr Rauh]
+authorLinks:
+  Xkylyr Rauh: https://keenwiki.shikadi.net/wiki/User:XkyRauh
+released: 2002-06-30
+added: 2026-10-25
+type: episode
+description: "One of the very first Keen mods: a lighthearted what-if Keen 1 adventure over 18 levels, winner of the 2002 Keen Awards."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Episode_X
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.xky_rauh.episode_x.k1.2002-06-30.zip
+    sha256: 311d864e7e140539a92b22b59c2b55e66ab1527a9d95644b367eec6211165511
+    size: 147143
+# XkyKeen1.bat runs `ck1patch xkykeen.pat`. The mod brings its own
+# KEEN1.EXE, so it plays on any copy of Keen 1.
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: XkyKeen.pat
+# Level packs like xky1rooms say to run XkyKeen1.bat.
+provides: [XkyKeen1.bat]
