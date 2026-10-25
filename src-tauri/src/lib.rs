@@ -1,6 +1,7 @@
 mod backups;
 mod captures;
 mod catalog;
+mod ckpatch;
 mod commands;
 mod compose;
 mod covers;

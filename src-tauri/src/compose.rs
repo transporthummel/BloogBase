@@ -1,7 +1,7 @@
 //! Composed lower layers: the install's base files with a mod's files copied
 //! on top (PLAN.md §4.2), the episode unpacked for patchers that need it, a
-//! DPMI host for DJGPP programs, and one-button firing patched in where it's
-//! on. Disposable; rebuilt whenever the inputs change.
+//! DPMI host for DJGPP programs, CKPatch for Keen 1-3 mods without one, and
+//! one-button firing patched in where it's on. Disposable; rebuilt whenever the inputs change.
 
 use std::collections::BTreeMap;
 use std::fs::{self, File};
@@ -15,6 +15,7 @@ use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
 
 use crate::catalog::Game;
+use crate::ckpatch;
 use crate::db::Db;
 use crate::detect::hex;
 use crate::error::Result;
@@ -91,6 +92,9 @@ pub fn ensure(
     }
     if needs_dpmi(&inputs) {
         fs::write(tmp.join("CWSDPMI.EXE"), CWSDPMI)?;
+    }
+    if let Some((name, exe)) = missing_patcher(game, &inputs) {
+        fs::write(tmp.join(name), exe)?;
     }
     if firing {
         let status = firing::apply(game, recipe, &tmp)?;
@@ -169,6 +173,34 @@ fn needs_dpmi(inputs: &BTreeMap<String, Input>) -> bool {
             .any(|i| !i.rel.contains('/') && has_ext(&i.rel, "EXE") && is_djgpp(&i.path))
 }
 
+/// The bundled CKPatch, where a patch file at the root has no patcher next
+/// to it.
+fn missing_patcher(
+    game: &Game,
+    inputs: &BTreeMap<String, Input>,
+) -> Option<(&'static str, &'static [u8])> {
+    let root: Vec<&Input> = inputs.values().filter(|i| !i.rel.contains('/')).collect();
+    let text = |i: &Input| {
+        (i.size <= 1 << 20)
+            .then(|| fs::read(&i.path).ok())
+            .flatten()
+            .map(|b| String::from_utf8_lossy(&b).into_owned())
+    };
+    let is_patcher = |name: &str| {
+        recipe::is_patcher(name)
+            || root
+                .iter()
+                .any(|i| i.rel == name && recipe::is_patcher_at(&i.path))
+    };
+    ckpatch::needed(
+        &game.id,
+        root.iter().map(|i| (i.rel.as_str(), text(i))),
+        is_patcher,
+    )
+    .then(|| ckpatch::bundled(&game.id))
+    .flatten()
+}
+
 /// DJGPP's stub loader fills the first 2 KB of its programs.
 fn is_djgpp(path: &Path) -> bool {
     let mut stub = Vec::new();
@@ -210,8 +242,8 @@ fn scan(root: &Path) -> Result<Vec<Input>> {
 /// modification times identify them well enough without reading them.
 fn composition_hash(inputs: &BTreeMap<String, Input>, recipe: &Recipe, firing: bool) -> String {
     let mut h = Sha256::new();
-    // v2: the episode unpacked for old patchers; v3: CWSDPMI.
-    h.update(b"composed v3\n");
+    // v2: the episode unpacked for old patchers; v3: CWSDPMI; v4: CKPatch.
+    h.update(b"composed v4\n");
     h.update(serde_json::to_string(recipe).expect("recipes serialize"));
     if firing {
         h.update(b"\none-button firing v1");
@@ -351,6 +383,46 @@ mod tests {
         );
         assert_eq!(compose(&[("tools/random.exe", &djgpp)]), None);
         assert_eq!(compose(&[("MENU.EXE", b"MZ go32")]), None);
+    }
+
+    #[test]
+    fn patch_files_without_a_patcher_get_ckpatch() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (paths, db) = setup(tmp.path());
+        let base = tmp.path().join("base");
+        let modf = tmp.path().join("mod");
+        write_folder(&base, &[("KEEN1.EXE", b"MZ")]);
+        let pat: &[u8] = b"%ext ck1\n%patch $10 $01\n%end\n";
+        let compose = |files: &[(&str, &[u8])]| {
+            let _ = fs::remove_dir_all(&modf);
+            write_folder(&modf, files);
+            let layer = ModLayer {
+                files: modf.clone(),
+                recipe: Recipe::Program {
+                    program: "ROBOKEEN.EXE".into(),
+                    args: Vec::new(),
+                },
+            };
+            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false).unwrap();
+            fs::read(dir.join("CK1PATCH.EXE")).ok()
+        };
+        // As Robot Rebellion, whose ROBOKEEN.EXE runs `ck1patch ckrr.pat`.
+        let bundled = ckpatch::bundled("keen1").unwrap().1;
+        assert_eq!(
+            compose(&[("ROBOKEEN.EXE", b"MZ"), ("ckrr.pat", pat)]).as_deref(),
+            Some(bundled)
+        );
+        // The mod's own patcher stays, renamed ones count; no patch, no patcher.
+        assert_eq!(
+            compose(&[("ckrr.pat", pat), ("CK1PATCH.EXE", b"own")]).as_deref(),
+            Some(b"own".as_slice())
+        );
+        let renamed = [b"MZ".as_slice(), &[0; 0x1E], b"Usage: CK1PATCH {patchfile}"].concat();
+        assert_eq!(
+            compose(&[("ckrr.pat", pat), ("NORPER.EXE", &renamed)]),
+            None
+        );
+        assert_eq!(compose(&[("ROBOKEEN.EXE", b"MZ")]), None);
     }
 
     #[test]

@@ -3,3 +3,4 @@
 *.icns binary
 *.png binary
 src-tauri/assets/cwsdpmi/* -text
+src-tauri/assets/ckpatch/* -text

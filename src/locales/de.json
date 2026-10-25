@@ -634,6 +634,8 @@
     "dosboxSource": "Quellcode {{version}}",
     "cwsdpmi": "Mods mit DJGPP-Programmen bekommen CWSDPMI r7 dazugelegt, unverändert. CWSDPMI ist Copyright © 1995–2010 Charles W. Sandmann. Du hast das Recht, den Quellcode und Updates von CWSDPMI zu erhalten.",
     "cwsdpmiSource": "CWSDPMI-Quellcode",
+    "ckpatch": "Keen-1–3-Mods, die CKPatch brauchen, aber nicht mitbringen, bekommen CKPatch 0.10 dazugelegt, unverändert. CKPatch ist Copyright © Bryan Rodgers und Andrew Durdin und steht unter der GNU GPL 2.0.",
+    "ckpatchSource": "CKPatch-Quellcode",
     "fonts": "Schriften: Inter und Press Start 2P, beide unter der SIL Open Font License 1.1. Icons: Lucide (ISC-Lizenz).",
     "thirdParty": "Open-Source-Lizenzen",
     "licensesMissing": "Die Lizenzliste wird für Release-Builds erzeugt. Mit pnpm licenses:generate lässt sie sich erstellen."

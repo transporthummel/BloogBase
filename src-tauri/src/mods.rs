@@ -15,6 +15,7 @@ use specta::Type;
 
 use crate::backups::{self, Contents, Reason};
 use crate::catalog::{self, Game, GameVersion};
+use crate::ckpatch;
 use crate::db::Db;
 use crate::detect::{detect, sha256_hex};
 use crate::error::{Error, Result};
@@ -281,7 +282,23 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
         !(dir == root && settings && episode_of_ext(name) == Some(game.id.as_str()))
     });
 
-    let guess = recipe::guess(&names, read, &game.executables, is_patcher);
+    // Without a patcher of its own, a patch file runs with BloogBase's.
+    let bundled = ckpatch::needed(
+        &game.id,
+        names.iter().map(|n| (n.as_str(), read(n))),
+        is_patcher,
+    )
+    .then(|| ckpatch::bundled(&game.id))
+    .flatten()
+    .map(|(name, _)| name.to_string());
+    let with_bundled: Vec<String> = names.iter().cloned().chain(bundled.clone()).collect();
+    let is_patcher = |name: &str| {
+        is_patcher(name)
+            || bundled
+                .as_deref()
+                .is_some_and(|b| b.eq_ignore_ascii_case(name))
+    };
+    let guess = recipe::guess(&with_bundled, read, &game.executables, is_patcher);
     let recipes = guess
         .candidates
         .into_iter()
@@ -2299,6 +2316,43 @@ mod tests {
         );
         assert!(a.files.contains(&"LEVEL01.CK1".to_string()));
         assert!(a.files.contains(&"EXTRA/CTLPANEL.CK1".to_string()));
+    }
+
+    #[test]
+    fn patch_files_without_a_patcher_use_the_bundled_one() {
+        // As Robot Rebellion: its menu runs `ck1patch ckrr.pat`, which the
+        // player was to have already.
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(
+            tmp.path(),
+            &[
+                ("ROBOKEEN.EXE", b"MZ"),
+                (
+                    "ckrr.pat",
+                    b"%ext ck1\n%patchfile 0x12087 CKSCREEN.CK1\n%end\n",
+                ),
+                ("LEVEL01.CK1", b""),
+            ],
+        );
+        let a = analyze(&Source::open(tmp.path()).unwrap(), tmp.path(), None).unwrap();
+        assert_eq!(a.info.game_id, "keen1");
+        let recipes: Vec<&Recipe> = a.info.recipes.iter().map(|o| &o.recipe).collect();
+        let program = Recipe::Program {
+            program: "ROBOKEEN.EXE".into(),
+            args: Vec::new(),
+        };
+        let patch = Recipe::Patch {
+            patcher: "CK1PATCH.EXE".into(),
+            patch: "ckrr.pat".into(),
+            args: Vec::new(),
+        };
+        assert_eq!(recipes, [&program, &patch]);
+        // The patcher isn't one of the mod's files.
+        assert!(
+            !a.files
+                .iter()
+                .any(|f| f.eq_ignore_ascii_case("CK1PATCH.EXE"))
+        );
     }
 
     #[test]

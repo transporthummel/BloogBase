@@ -93,6 +93,17 @@ components.push({
       .trim(),
   ],
 });
+components.push({
+  name: "CKPatch",
+  version: "0.10",
+  license:
+    "GPL-2.0, source: https://files.shikadi.net/keenwiki/tools/t.ckpatch_v.0.10_src.andrew_durdin.2007-11-23.zip",
+  texts: ["LICENSE.TXT", "COPYING.TXT"].map((f) =>
+    readFileSync(join(root, "src-tauri", "assets", "ckpatch", f), "latin1")
+      .replace(/\r\n/g, "\n")
+      .trim(),
+  ),
+});
 
 // One copy of each distinct text, with the components that use it.
 const byText = new Map();
