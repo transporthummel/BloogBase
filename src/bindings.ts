@@ -813,7 +813,8 @@ export type RecipeOption = {
 	versionIds: string[],
 	/**
 	 *  Files its patch file loads that the mod doesn't have, as a mod made to
-	 *  be copied over another one (Lego Levels over Lego Keen).
+	 *  be copied over another one (Lego Levels over Lego Keen); for levels
+	 *  alone, the start its readme names (xky1rooms' `XkyKeen1.bat`).
 	 */
 	missingFiles: string[],
 	/**

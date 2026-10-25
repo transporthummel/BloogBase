@@ -21,6 +21,7 @@ use crate::detect::{detect, sha256_hex};
 use crate::error::{Error, Result};
 use crate::library::{self, Install, now};
 use crate::paths::AppPaths;
+use crate::readme;
 use crate::recipe::{self, Recipe, VersionRecipes, has_ext, patcher_game};
 use crate::source::{Source, split_dir};
 
@@ -105,7 +106,8 @@ pub struct RecipeOption {
     /// may do, or the catalog doesn't know the named versions.
     pub version_ids: Vec<String>,
     /// Files its patch file loads that the mod doesn't have, as a mod made to
-    /// be copied over another one (Lego Levels over Lego Keen).
+    /// be copied over another one (Lego Levels over Lego Keen); for levels
+    /// alone, the start its readme names (xky1rooms' `XkyKeen1.bat`).
     pub missing_files: Vec<String>,
     /// The mod it's made to be copied over, when files are missing and
     /// BloogBase knows one that fits.
@@ -392,7 +394,7 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
                 .is_some_and(|b| b.eq_ignore_ascii_case(name))
     };
     let guess = recipe::guess(&with_bundled, read, &game.executables, is_patcher);
-    let recipes = guess
+    let mut recipes: Vec<RecipeOption> = guess
         .candidates
         .into_iter()
         .map(|c| {
@@ -419,6 +421,22 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
             }
         })
         .collect();
+    // Levels alone have nothing that loads the files they lack, but their
+    // readme may say how the mod they go over starts: xky1rooms' "Then run
+    // XkyKeen1.bat".
+    if let [only] = recipes.as_mut_slice()
+        && only.recipe == Recipe::Episode
+        && only.origin.is_empty()
+    {
+        let docs = readme::find(source).unwrap_or_default();
+        only.missing_files = named_starts(docs.iter().map(|d| d.text.as_str()), &files, |name| {
+            recipe::is_patcher(name)
+                || game
+                    .executables
+                    .iter()
+                    .any(|e| e.eq_ignore_ascii_case(name))
+        });
+    }
 
     Ok(Analysis {
         info: ModInfo {
@@ -493,6 +511,36 @@ fn missing_files(
         }
     }
     missing
+}
+
+/// Batch files and programs the documents `docs` name that the mod (`files`)
+/// lacks, other than the `common` ones every copy of the game brings.
+fn named_starts<'a>(
+    docs: impl Iterator<Item = &'a str>,
+    files: &[String],
+    common: impl Fn(&str) -> bool,
+) -> Vec<String> {
+    let mut named: Vec<String> = Vec::new();
+    for word in
+        docs.flat_map(|t| t.split(|c: char| !(c.is_ascii_alphanumeric() || "_-.".contains(c))))
+    {
+        let word = word.trim_end_matches('.');
+        // DOS names; `.COM` would also catch web addresses.
+        let start = word
+            .rsplit_once('.')
+            .is_some_and(|(stem, _)| (1..=8).contains(&stem.len()) && !stem.contains('.'))
+            && (has_ext(word, "BAT") || has_ext(word, "EXE"));
+        if start
+            && !common(word)
+            && !files
+                .iter()
+                .any(|f| split_dir(f).1.eq_ignore_ascii_case(word))
+            && !named.iter().any(|n| n.eq_ignore_ascii_case(word))
+        {
+            named.push(word.to_string());
+        }
+    }
+    named
 }
 
 fn is_junk(name: &str) -> bool {
@@ -2463,6 +2511,46 @@ mod tests {
 
         // Nothing missing: nothing needed, whatever the documents say.
         assert_eq!(needed_mod(&zip, &[], &names), None);
+    }
+
+    #[test]
+    fn levels_alone_lack_the_start_their_readme_names() {
+        let tmp = tempfile::tempdir().unwrap();
+        let zip = tmp.path().join("xky1rooms.zip");
+        // As xky1rooms, over Episode X. The game's own executable, the
+        // patcher and web addresses don't count.
+        let readme: &[u8] = b"To play, take a clean copy of XkyKeen1 and replace the \
+            existing files. Then run XkyKeen1.bat.\nNot KEEN1.EXE, not ck1patch.exe, \
+            see pckf.com. Again: xkykeen1.bat!\n";
+        write_zip(&zip, &[("LEVEL01.CK1", b"l"), ("xky1rooms.txt", readme)]);
+        let info = inspect(&zip, None).unwrap();
+        assert_eq!(info.recipes.len(), 1);
+        assert_eq!(info.recipes[0].recipe, Recipe::Episode);
+        assert_eq!(info.recipes[0].missing_files, ["XkyKeen1.bat"]);
+
+        // Shipped along, it's there.
+        write_zip(
+            &zip,
+            &[
+                ("LEVEL01.CK1", b"l"),
+                ("xky1rooms.txt", readme),
+                ("XKYKEEN1.BAT", b"keen1\r\n"),
+            ],
+        );
+        let info = inspect(&zip, None).unwrap();
+        assert!(info.recipes.iter().all(|o| o.missing_files.is_empty()));
+
+        // A mod with a start of its own may name other ones.
+        write_zip(
+            &zip,
+            &[
+                ("LEVEL01.CK1", b"l"),
+                ("readme.txt", b"Run gox.bat to play.\n"),
+                ("go.bat", b"keen1\r\n"),
+            ],
+        );
+        let info = inspect(&zip, None).unwrap();
+        assert!(info.recipes.iter().all(|o| o.missing_files.is_empty()));
     }
 
     #[test]
