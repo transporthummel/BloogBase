@@ -11,6 +11,14 @@ use std::path::{Path, PathBuf};
 use crate::dosconf::write_if_changed;
 use crate::error::Result;
 
+/// Lines that tools print on their way out, not the game: TSRMUSIC.COM
+/// (Adlib music for Keen 1-3) says goodbye when a mod's batch file
+/// uninstalls it after the game.
+const FAREWELLS: &[&str] = &[
+    "Keen 1-3 Adlib Music TSR - by Napalm",
+    "Uninstalled from INT 0x",
+];
+
 /// The drive the folder with the program and the saved screen is mounted as.
 pub const DRIVE: char = 'X';
 const PROGRAM: &str = "SCREEN.COM";
@@ -112,7 +120,11 @@ fn message_from(screen: &[u8]) -> Option<String> {
         .iter()
         .rposition(|r| is_prompt(&text(r)))
         .map_or(0, |p| p + 1);
-    let output = &rows[start..saved];
+    let output: Vec<&[[u8; 2]]> = rows[start..saved]
+        .iter()
+        .copied()
+        .filter(|r| !FAREWELLS.iter().any(|f| text(r).starts_with(f)))
+        .collect();
     let plain = output
         .iter()
         .flat_map(|r| r.iter())
@@ -183,6 +195,18 @@ mod tests {
             message_from(&screen(&["C:\\>KEEN4E.EXE", &saved], 0x07)),
             None
         );
+        // TSRMUSIC.COM uninstalled after the game.
+        let s = screen(
+            &[
+                "C:\\>BLEEN.BAT",
+                "Keen 1-3 Adlib Music TSR - by Napalm",
+                "Uninstalled from INT 0x65",
+                "",
+                &saved,
+            ],
+            0x07,
+        );
+        assert_eq!(message_from(&s), None);
         // Not saved by us, or no screen at all.
         assert_eq!(message_from(&screen(&["Error"], 0x07)), None);
         assert_eq!(message_from(&[]), None);
