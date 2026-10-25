@@ -655,6 +655,13 @@ export type ModInfo = {
 	fileCount: number,
 	/**  The index entry whose download this is, byte for byte. */
 	indexId: string | null,
+	/**
+	 *  Files its patch files load that it doesn't have, as a mod made to be
+	 *  copied over another one (Lego Levels over Lego Keen).
+	 */
+	missingFiles: string[],
+	/**  The mod its documents name, when files are missing. */
+	needsMod: string | null,
 };
 
 export type ModKind = "episode" | "levelpack" | "conversion";

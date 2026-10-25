@@ -72,6 +72,8 @@ const info: ModInfo = {
   confident: true,
   fileCount: 3,
   indexId: null,
+  missingFiles: [],
+  needsMod: null,
 };
 
 const aurora = { id: "aurora-bliss", name: "Aurora Bliss", profileId: "aurora-bliss" } as Mod;

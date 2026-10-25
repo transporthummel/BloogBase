@@ -82,6 +82,8 @@ const info: ModInfo = {
   confident: true,
   fileCount: 18,
   indexId: null,
+  missingFiles: [],
+  needsMod: null,
 };
 
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
@@ -187,6 +189,20 @@ test("inspects the picked ZIP and installs the mod on the matching game", async 
     replace: null,
   });
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
+});
+
+test("says which mod one made to be copied over lacks", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(
+    ok({ ...info, missingFiles: ["lego.tli"], needsMod: "Lego Keen" }),
+  );
+  renderDialog();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  expect(
+    await screen.findByText(
+      "This mod is made to be copied over Lego Keen and won’t work without it: it lacks lego.tli.",
+    ),
+  ).toBeInTheDocument();
 });
 
 test("asks whether another version replaces the installed one", async () => {

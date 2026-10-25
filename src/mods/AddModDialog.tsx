@@ -291,9 +291,17 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
   const missingGame = !!installs.data && candidates.length === 0;
   const modifiedGame = !!target && option.recipe.type === "patch" && isModified(versionOf(target));
   const versionUnchecked = !!target && target.versionId === null && option.gameVersions.length > 0;
+  // Made to be copied over another mod, which isn't part of it.
+  const incomplete = info.missingFiles.length > 0;
   const choose = (info.recipes.length > 1 && !info.confident) || (others.length > 0 && !replacing);
   const careful =
-    otherGame || missingGame || !!likelyWrongVersion || modifiedGame || versionUnchecked || choose;
+    otherGame ||
+    missingGame ||
+    !!likelyWrongVersion ||
+    modifiedGame ||
+    versionUnchecked ||
+    choose ||
+    incomplete;
   const form = useRef<HTMLFormElement>(null);
   const submit = () => {
     if (ready && !install.isPending) install.mutate();
@@ -448,6 +456,15 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
         </Notice>
       )}
       {modifiedGame && <Notice>{t("mods.modifiedGame")}</Notice>}
+      {incomplete && (
+        <Notice>
+          {t("mods.missingFiles", {
+            mod: info.needsMod,
+            files: info.missingFiles.join(", "),
+            context: info.needsMod ? "mod" : undefined,
+          })}
+        </Notice>
+      )}
       {versionUnchecked && <Notice>{t("mods.versionUnchecked")}</Notice>}
 
       {install.error && <Notice tone="error">{errorMessage(t, install.error)}</Notice>}

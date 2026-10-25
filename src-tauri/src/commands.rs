@@ -647,6 +647,7 @@ pub async fn inspect_mod(app: AppHandle, path: String) -> CommandResult<ModInfo>
     blocking(move || {
         let mut info = mods::inspect(Path::new(&path), None)?;
         info.index_id = index_match(&app, &path, &info);
+        info.needs_mod = needed_mod(&app, &path, &info);
         Ok(info)
     })
     .await
@@ -659,6 +660,27 @@ fn index_match(app: &AppHandle, path: &str, info: &ModInfo) -> Option<String> {
         .map(|e| e.id)
 }
 
+/// The mod `info` is made to be copied over (see [`mods::needed_mod`]),
+/// among the index's and the library's for the same game. Mods played over
+/// another one never are.
+fn needed_mod(app: &AppHandle, path: &str, info: &ModInfo) -> Option<String> {
+    let paths = app.state::<AppPaths>();
+    let index = app.state::<ModIndex>().entries();
+    let installed = mods::list(&app.state::<Db>()).unwrap_or_default();
+    let candidates: Vec<(String, Option<PathBuf>)> = index
+        .into_iter()
+        .filter(|e| e.game == info.game_id && e.extends.is_none())
+        .map(|e| (e.name, None))
+        .chain(
+            installed
+                .into_iter()
+                .filter(|m| m.game_id == info.game_id && m.extends.is_none())
+                .map(|m| (m.name, Some(paths.mods.join(&m.id).join("files")))),
+        )
+        .collect();
+    mods::needed_mod(Path::new(path), info, &candidates)
+}
+
 /// Whether a folder or ZIP dropped on the window holds games or a mod.
 #[tauri::command]
 #[specta::specta]
@@ -667,6 +689,7 @@ pub async fn inspect_dropped(app: AppHandle, path: String) -> CommandResult<Drop
         let mut dropped = mods::classify(Path::new(&path))?;
         if let Dropped::Mod { info } = &mut dropped {
             info.index_id = index_match(&app, &path, info);
+            info.needs_mod = needed_mod(&app, &path, info);
         }
         Ok(dropped)
     })
@@ -887,7 +910,13 @@ pub async fn download_keenwiki_mod(
     let dir = keenwiki_downloads(&app.state::<AppPaths>());
     let path = keenwiki::download(&dir, &url).await?;
     let p = path.clone();
-    let info = blocking(move || mods::inspect(&p, game_id.as_deref())).await?;
+    let a = app.clone();
+    let info = blocking(move || {
+        let mut info = mods::inspect(&p, game_id.as_deref())?;
+        info.needs_mod = needed_mod(&a, &p.display().to_string(), &info);
+        Ok(info)
+    })
+    .await?;
     Ok(KeenwikiDownload {
         path: path.display().to_string(),
         info,

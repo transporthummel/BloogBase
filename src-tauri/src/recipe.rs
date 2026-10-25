@@ -530,6 +530,20 @@ pub fn patch_ext(text: &str) -> Option<String> {
         .map(|e| e.to_ascii_uppercase())
 }
 
+/// The files a patch file loads with `%patchfile`, e.g. `["lego.tli"]`.
+pub fn patch_files(text: &str) -> Vec<String> {
+    text.lines()
+        .filter_map(|l| {
+            let mut words = l.split_whitespace();
+            if !words.next()?.eq_ignore_ascii_case("%patchfile") {
+                return None;
+            }
+            let name = words.nth(1)?.trim_matches('"');
+            (!name.is_empty()).then(|| name.to_string())
+        })
+        .collect()
+}
+
 fn patch_directives<'a>(text: &'a str, name: &'a str) -> impl Iterator<Item = String> + 'a {
     text.lines().filter_map(move |l| {
         let mut words = l.split_whitespace();
@@ -967,6 +981,11 @@ CK4PATCH P.PAT
         assert_eq!(patch_versions(text), ["1.0", "1.31"]);
         assert_eq!(patch_ext(text).as_deref(), Some("CK2"));
         assert_eq!(patch_ext("# nothing"), None);
+        assert_eq!(patch_files(text), ["a.tli"]);
+        assert_eq!(
+            patch_files("%PATCHFILE $1EE40 \"STORY.CK4\"\n"),
+            ["STORY.CK4"]
+        );
 
         let refusing = "%ext ck6
 %version 1.0

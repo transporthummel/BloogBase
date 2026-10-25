@@ -7,7 +7,7 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use rusqlite::{OptionalExtension, params};
 use serde::{Deserialize, Serialize};
@@ -68,6 +68,11 @@ pub struct ModInfo {
     pub file_count: u32,
     /// The index entry whose download this is, byte for byte.
     pub index_id: Option<String>,
+    /// Files its patch files load that it doesn't have, as a mod made to be
+    /// copied over another one (Lego Levels over Lego Keen).
+    pub missing_files: Vec<String>,
+    /// The mod its documents name, when files are missing.
+    pub needs_mod: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Type)]
@@ -167,12 +172,60 @@ pub fn inspect(path: &Path, game_hint: Option<&str>) -> Result<ModInfo> {
     Ok(analyze(&Source::open(path)?, path, game_hint)?.info)
 }
 
+/// The mod `info` lacks files of, among `candidates` (name, and for an
+/// installed mod its files): an installed one that has them all, else one
+/// the documents at `path` name; the longest name, as "Lego Keen 2" also
+/// says "Lego Keen". Installed mods have to have the files: a level pack's
+/// readme names itself too.
+pub fn needed_mod(
+    path: &Path,
+    info: &ModInfo,
+    candidates: &[(String, Option<PathBuf>)],
+) -> Option<String> {
+    if info.missing_files.is_empty() {
+        return None;
+    }
+    let holds_all = |dir: &Path| {
+        let names: Vec<String> = fs::read_dir(dir)
+            .map(|d| {
+                d.filter_map(|e| Some(e.ok()?.file_name().to_string_lossy().into_owned()))
+                    .collect()
+            })
+            .unwrap_or_default();
+        info.missing_files
+            .iter()
+            .all(|m| names.iter().any(|n| n.eq_ignore_ascii_case(m)))
+    };
+    let installed = candidates
+        .iter()
+        .filter(|(_, files)| files.as_deref().is_some_and(holds_all))
+        .map(|(name, _)| name)
+        .max_by_key(|n| n.len());
+    if let Some(name) = installed {
+        return Some(name.clone());
+    }
+    let docs: Vec<String> = crate::readme::at(path)
+        .ok()?
+        .into_iter()
+        .map(|r| r.text.to_lowercase())
+        .collect();
+    candidates
+        .iter()
+        .filter(|(name, files)| {
+            let name = name.to_lowercase();
+            files.is_none() && docs.iter().any(|d| d.contains(&name))
+        })
+        .map(|(name, _)| name)
+        .max_by_key(|n| n.len())
+        .cloned()
+}
+
 /// What a folder or ZIP dropped on the window holds.
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum Dropped {
     Games,
-    Mod { info: ModInfo },
+    Mod { info: Box<ModInfo> },
     Nothing,
 }
 
@@ -198,7 +251,9 @@ fn decide(game: bool, info: Option<ModInfo>) -> Dropped {
     });
     match info {
         _ if game && !started_by_mod => Dropped::Games,
-        Some(info) => Dropped::Mod { info },
+        Some(info) => Dropped::Mod {
+            info: Box::new(info),
+        },
         None => Dropped::Nothing,
     }
 }
@@ -300,6 +355,20 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
                 .as_deref()
                 .is_some_and(|b| b.eq_ignore_ascii_case(name))
     };
+    let mut missing_files: Vec<String> = Vec::new();
+    for name in &names {
+        let Some(text) =
+            read(name).filter(|t| has_ext(name, "PAT") || recipe::is_patch_text(name, t))
+        else {
+            continue;
+        };
+        for file in recipe::patch_files(&text) {
+            let known = |n: &String| n.eq_ignore_ascii_case(&file);
+            if !names.iter().any(known) && !missing_files.iter().any(known) {
+                missing_files.push(file);
+            }
+        }
+    }
     let guess = recipe::guess(&with_bundled, read, &game.executables, is_patcher);
     let recipes = guess
         .candidates
@@ -331,6 +400,8 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
             confident: guess.confident,
             file_count: files.len() as u32,
             index_id: None,
+            missing_files,
+            needs_mod: None,
         },
         root,
         files,
@@ -2136,6 +2207,59 @@ mod tests {
     }
 
     #[test]
+    fn mods_made_to_be_copied_over_another_say_which() {
+        let tmp = tempfile::tempdir().unwrap();
+        let zip = tmp.path().join("legolevs.zip");
+        // As Lego Levels: its patch loads Lego Keen's tiles.
+        write_zip(
+            &zip,
+            &[
+                (
+                    "lego.pat",
+                    b"%ext ck1\n%patchfile 0x130F8 lego.tli\n%patch $8041 $90\n%end\n",
+                ),
+                ("LEVEL01.CK1", b"l"),
+                (
+                    "readme.txt",
+                    b"LEGO LEVELS\nTo install, first install Lego Keen.\n",
+                ),
+            ],
+        );
+        let info = inspect(&zip, None).unwrap();
+        assert_eq!(info.missing_files, ["lego.tli"]);
+        // From the index, named in the readme.
+        let index = |n: &str| (n.to_string(), None);
+        let names = [index("Lego"), index("Lego Keen"), index("Lego Rescue")];
+        assert_eq!(
+            needed_mod(&zip, &info, &names).as_deref(),
+            Some("Lego Keen")
+        );
+
+        // An installed mod with the files counts, named or not; one without
+        // them doesn't, though the readme names it.
+        let has = tmp.path().join("has");
+        let lacks = tmp.path().join("lacks");
+        write_folder(&has, &[("LEGO.TLI", b"t")]);
+        write_folder(&lacks, &[("lego.pat", b"p")]);
+        let installed = [
+            ("Bricks".to_string(), Some(has)),
+            ("Lego Levels".to_string(), Some(lacks)),
+        ];
+        assert_eq!(
+            needed_mod(&zip, &info, &installed).as_deref(),
+            Some("Bricks")
+        );
+        assert_eq!(needed_mod(&zip, &info, &installed[1..]), None);
+
+        // Nothing missing: nothing needed, whatever the documents say.
+        let complete = ModInfo {
+            missing_files: Vec::new(),
+            ..info
+        };
+        assert_eq!(needed_mod(&zip, &complete, &names), None);
+    }
+
+    #[test]
     fn curated_install_checks_the_download_and_the_library() {
         let (tmp, paths, db) = setup();
         let zip = tmp.path().join("index-x.zip");
@@ -2394,7 +2518,7 @@ mod tests {
                 game_versions: vec![],
                 version_ids: vec![],
             }],
-            ..patched.clone()
+            ..(*patched).clone()
         };
         let batch = with(Recipe::Batch {
             file: "PLAY.BAT".into(),
