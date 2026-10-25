@@ -448,6 +448,8 @@
     "added": "Hinzugefügt",
     "shareware": "Shareware",
     "released": "Erschienen {{date}}",
+    "playedOverIt_one": "Darüber läuft:",
+    "playedOverIt_other": "Darüber laufen:",
     "scrambled": "Die Grafikdateien passen nicht zusammen, deshalb zeigt das Spiel verstümmelte Grafik.",
     "links": "Links",
     "more": "Mehr",

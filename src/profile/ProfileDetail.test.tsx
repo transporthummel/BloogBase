@@ -236,7 +236,14 @@ test("a mod's page shows its credits, description, links and stats", async () =>
       },
     ]),
   );
-  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  const pack: Mod = {
+    ...aurora,
+    id: "pack",
+    name: "Pack",
+    extends: "aurora-bliss",
+    profileId: "pack",
+  };
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora, pack]));
   renderDetail();
   expect(await screen.findByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
   const author = await screen.findByRole("button", { name: "Dave216" });
@@ -246,6 +253,10 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   await userEvent.click(author);
   expect(openUrl).toHaveBeenCalledWith("https://keenwiki.shikadi.net/wiki/User:Dave216");
   expect(screen.getByText("A colourful journey.")).toBeInTheDocument();
+  // The mods played over it.
+  expect(screen.getByText("Played over it:").parentElement).toHaveTextContent(
+    /^Played over it: Pack$/,
+  );
   expect(
     screen.getByText(`Runs on ${keen4.title} Unknown version and Lego Keen`),
   ).toBeInTheDocument();

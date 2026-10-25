@@ -13,7 +13,7 @@ import {
   Trash2,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   commands,
@@ -216,6 +216,8 @@ function Hero({
   const navigate = useNavigate();
 
   const mod = mods.data?.find((m) => m.id === profile.modId);
+  // Mods played over this one, as level packs for it.
+  const extensions = mod ? (mods.data ?? []).filter((m) => m.extends === mod.id) : [];
   const entry = mod?.indexId
     ? index.data?.find((x) => x.entry.id === mod.indexId)?.entry
     : undefined;
@@ -337,6 +339,25 @@ function Hero({
             {mod?.released && (
               <p className="text-sm text-muted">
                 {t("profile.released", { date: formatLooseDate(i18n.language, mod.released) })}
+              </p>
+            )}
+            {extensions.length > 0 && (
+              <p className="text-sm">
+                <span className="text-muted">
+                  {t("profile.playedOverIt", { count: extensions.length })}
+                </span>{" "}
+                {extensions.map((m, i) => (
+                  <Fragment key={m.id}>
+                    {i > 0 && ", "}
+                    <Link
+                      to="/profiles/$profileId"
+                      params={{ profileId: m.profileId }}
+                      className="underline-offset-2 hover:text-accent hover:underline"
+                    >
+                      {m.name}
+                    </Link>
+                  </Fragment>
+                ))}
               </p>
             )}
             {links.length > 0 && (

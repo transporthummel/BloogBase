@@ -448,6 +448,8 @@
     "added": "Added",
     "shareware": "Shareware",
     "released": "Released {{date}}",
+    "playedOverIt_one": "Played over it:",
+    "playedOverIt_other": "Played over it:",
     "scrambled": "The graphics files don't fit together, so the game shows scrambled graphics.",
     "links": "Links",
     "more": "More",
