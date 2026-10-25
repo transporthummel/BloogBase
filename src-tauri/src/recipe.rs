@@ -381,11 +381,23 @@ const BUILTINS: &[&str] = &[
 pub fn batch_commands(text: &str) -> Vec<Vec<String>> {
     // DOS editors end files with Ctrl-Z.
     let text = text.split('').next().unwrap_or("");
+    // NUL counts as a space: several mods' batch files end with one right
+    // after the patch file's name, as The Oracle Janitor's
+    // `ck1patch 1lm.pat\0`.
+    let blank = |c: char| c.is_whitespace() || c == '\0';
     text.lines()
-        .map(|l| l.trim().trim_start_matches('@').trim())
+        .map(|l| {
+            l.trim_matches(blank)
+                .trim_start_matches('@')
+                .trim_matches(blank)
+        })
         .filter(|l| !l.is_empty() && !l.starts_with("::"))
         .filter_map(|l| {
-            let words: Vec<String> = l.split_whitespace().map(str::to_string).collect();
+            let words: Vec<String> = l
+                .split(blank)
+                .filter(|w| !w.is_empty())
+                .map(str::to_string)
+                .collect();
             let first = words[0].to_ascii_uppercase();
             let skip = COSMETIC.contains(&first.as_str())
                 || first.starts_with("ECHO.")
@@ -716,6 +728,24 @@ mod tests {
                 "{start}"
             );
         }
+    }
+
+    #[test]
+    fn nul_in_batch_files_is_a_space() {
+        // As The Oracle Janitor's oj1.bat.
+        assert_eq!(
+            batch_commands("ck1patch 1lm.pat\0"),
+            [vec!["ck1patch".to_string(), "1lm.pat".to_string()]]
+        );
+        let g = run(&[
+            ("oj4.bat", "ck4patch 1lm.pat\0"),
+            ("CK4PATCH.EXE", ""),
+            ("1lm.pat", "%ext ck4\n%patch $1 $2\n"),
+        ]);
+        assert_eq!(
+            g.candidates[0].recipe,
+            patch("CK4PATCH.EXE", "1lm.pat", &[])
+        );
     }
 
     #[test]
