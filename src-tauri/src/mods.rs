@@ -71,8 +71,32 @@ pub struct ModInfo {
     /// Files its patch files load that it doesn't have, as a mod made to be
     /// copied over another one (Lego Levels over Lego Keen).
     pub missing_files: Vec<String>,
-    /// The mod its documents name, when files are missing.
-    pub needs_mod: Option<String>,
+    /// The mod it's made to be copied over, when files are missing and
+    /// BloogBase knows one that fits.
+    pub base_mod: Option<BaseMod>,
+}
+
+/// A mod another one is made to be copied over, installed or in the index.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct BaseMod {
+    pub name: String,
+    /// The installed mod, if it is.
+    pub mod_id: Option<String>,
+    /// Its index entry, to install it from.
+    pub index_id: Option<String>,
+    /// Found by the missing files, not only by its name in the documents.
+    pub by_files: bool,
+}
+
+/// A mod [`needed_mod`] may pick.
+#[derive(Debug, Clone)]
+pub struct BaseCandidate {
+    pub name: String,
+    pub mod_id: Option<String>,
+    pub index_id: Option<String>,
+    /// The installed mod's files.
+    pub files: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Type)]
@@ -102,6 +126,13 @@ pub struct InstallModRequest {
     /// Set when the mod came from a KeenWiki page.
     #[serde(default)]
     pub keenwiki: Option<KeenwikiOrigin>,
+    /// An installed mod of the same game this one is played over, as it's
+    /// made to be copied over that one.
+    #[serde(default)]
+    pub extends: Option<String>,
+    /// Or the index entry of that mod, installed first unless it is.
+    #[serde(default)]
+    pub extends_index: Option<String>,
     /// An installed mod of the same game this one replaces, e.g. an older
     /// version. Its id and saves stay; `None` installs alongside.
     #[serde(default)]
@@ -146,7 +177,7 @@ pub struct Mod {
     pub source: ModSource,
     /// The index entry it was installed from.
     pub index_id: Option<String>,
-    /// The index mod it's played over.
+    /// The installed mod it's played over.
     pub extends: Option<String>,
     pub keenwiki_url: Option<String>,
     /// Unix epoch seconds.
@@ -172,16 +203,11 @@ pub fn inspect(path: &Path, game_hint: Option<&str>) -> Result<ModInfo> {
     Ok(analyze(&Source::open(path)?, path, game_hint)?.info)
 }
 
-/// The mod `info` lacks files of, among `candidates` (name, and for an
-/// installed mod its files): an installed one that has them all, else one
-/// the documents at `path` name; the longest name, as "Lego Keen 2" also
-/// says "Lego Keen". Installed mods have to have the files: a level pack's
-/// readme names itself too.
-pub fn needed_mod(
-    path: &Path,
-    info: &ModInfo,
-    candidates: &[(String, Option<PathBuf>)],
-) -> Option<String> {
+/// The mod `info` lacks files of, among `candidates`: an installed one that
+/// has them all, else one of the index the documents at `path` name; the
+/// longest name, as "Lego Keen 2" also says "Lego Keen". Installed mods
+/// have to have the files: a level pack's readme names itself too.
+pub fn needed_mod(path: &Path, info: &ModInfo, candidates: &[BaseCandidate]) -> Option<BaseMod> {
     if info.missing_files.is_empty() {
         return None;
     }
@@ -196,13 +222,18 @@ pub fn needed_mod(
             .iter()
             .all(|m| names.iter().any(|n| n.eq_ignore_ascii_case(m)))
     };
+    let found = |c: &BaseCandidate, by_files| BaseMod {
+        name: c.name.clone(),
+        mod_id: c.mod_id.clone(),
+        index_id: c.index_id.clone(),
+        by_files,
+    };
     let installed = candidates
         .iter()
-        .filter(|(_, files)| files.as_deref().is_some_and(holds_all))
-        .map(|(name, _)| name)
-        .max_by_key(|n| n.len());
-    if let Some(name) = installed {
-        return Some(name.clone());
+        .filter(|c| c.files.as_deref().is_some_and(holds_all))
+        .max_by_key(|c| c.name.len());
+    if let Some(c) = installed {
+        return Some(found(c, true));
     }
     let docs: Vec<String> = crate::readme::at(path)
         .ok()?
@@ -211,13 +242,12 @@ pub fn needed_mod(
         .collect();
     candidates
         .iter()
-        .filter(|(name, files)| {
-            let name = name.to_lowercase();
-            files.is_none() && docs.iter().any(|d| d.contains(&name))
+        .filter(|c| {
+            let name = c.name.to_lowercase();
+            c.files.is_none() && docs.iter().any(|d| d.contains(&name))
         })
-        .map(|(name, _)| name)
-        .max_by_key(|n| n.len())
-        .cloned()
+        .max_by_key(|c| c.name.len())
+        .map(|c| found(c, false))
 }
 
 /// What a folder or ZIP dropped on the window holds.
@@ -401,7 +431,7 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
             file_count: files.len() as u32,
             index_id: None,
             missing_files,
-            needs_mod: None,
+            base_mod: None,
         },
         root,
         files,
@@ -695,8 +725,8 @@ struct Stored<'a> {
     requires: Option<Vec<String>>,
     source: ModSource,
     index_id: Option<&'a str>,
-    /// The index mod it's played over.
-    extends: Option<&'a str>,
+    /// The installed mod it's played over.
+    extends: Option<String>,
     keenwiki_url: Option<&'a str>,
     /// The picked folder or ZIP, or the download URL.
     source_url: &'a str,
@@ -711,25 +741,49 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
     let source = Source::open(path)?;
     let origin = req.keenwiki.as_ref();
     let analysis = analyze(&source, path, origin.and_then(|o| o.game_id.as_deref()))?;
-    let option = analysis
+    let base = match &req.extends {
+        Some(id) => Some(base_of(db, id, &analysis.info.game_id)?),
+        None => None,
+    };
+    let own = analysis
         .info
         .recipes
         .iter()
         .find(|o| o.recipe == req.recipe)
-        .ok_or_else(|| Error::IncompatibleInstall("unknown recipe".into()))?;
+        .cloned();
+    // Levels alone start with the mod below's recipe, which it may also pick.
+    let option = match (&base, own) {
+        (Some(b), Some(o)) if o.recipe == Recipe::Episode => b.option(),
+        (_, Some(o)) => o,
+        (Some(b), None) if b.recipe == req.recipe => b.option(),
+        _ => return Err(Error::IncompatibleInstall("unknown recipe".into())),
+    };
+    // Like `check_install`: a patch that names versions plays on those only;
+    // else where the mod below plays.
+    let requires = if option.game_versions.is_empty() {
+        base.as_ref().and_then(|b| b.requires.clone())
+    } else {
+        Some(option.version_ids.clone())
+    };
     let target = match &req.install_id {
         Some(id) => {
             let target = library::list(db)?
                 .into_iter()
                 .find(|i| i.id == *id)
                 .ok_or_else(|| Error::NotFound(format!("install {id}")))?;
-            check_install(&analysis.info.game_id, option, &target)?;
+            check_install(&analysis.info.game_id, &option, &target)?;
+            let game = catalog::game(&target.game_id)
+                .ok_or_else(|| Error::NotFound(format!("game {}", target.game_id)))?;
+            if !fits(game, requires.as_deref(), &target) {
+                return Err(Error::IncompatibleInstall(format!(
+                    "the mod it's played over doesn't fit {}",
+                    target.id
+                )));
+            }
             Some(target)
         }
         None => None,
     };
-    // Like `check_install`: a patch that names versions plays on those only.
-    let requires = (!option.game_versions.is_empty()).then(|| option.version_ids.clone());
 
     let name = match req.name.trim() {
         "" => analysis.info.name.clone(),
@@ -771,7 +825,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             requires: requires.clone(),
             source: ModSource::Keenwiki,
             index_id: None,
-            extends: None,
+            extends: req.extends.clone(),
             keenwiki_url: Some(&o.page_url),
             source_url: &o.download_url,
             archive_name: None,
@@ -788,7 +842,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             requires,
             source: ModSource::Manual,
             index_id: None,
-            extends: None,
+            extends: req.extends.clone(),
             keenwiki_url: None,
             source_url: &req.path,
             archive_name: None,
@@ -865,9 +919,14 @@ pub fn install_curated(
         .filter(|f| split_dir(f).0 == analysis.root)
         .map(|f| split_dir(f).1.to_string())
         .collect();
+    let base_id = match &c.extends {
+        Some(base) => {
+            Some(find_by_index(db, base)?.ok_or_else(|| Error::MissingGame(base.clone()))?)
+        }
+        None => None,
+    };
     // The recipe may run files of the mod it's played over.
-    if let Some(base) = &c.extends {
-        let base_id = find_by_index(db, base)?.ok_or_else(|| Error::MissingGame(base.clone()))?;
+    if let Some(base_id) = &base_id {
         for entry in fs::read_dir(paths.mods.join(base_id).join("files"))? {
             in_root.push(entry?.file_name().to_string_lossy().into_owned());
         }
@@ -892,7 +951,7 @@ pub fn install_curated(
         requires: requires(&c.requires),
         source: ModSource::Index,
         index_id: Some(&c.index_id),
-        extends: c.extends.as_deref(),
+        extends: base_id,
         keenwiki_url: c.keenwiki_url.as_deref(),
         source_url: &c.url,
         archive_name: c.url.rsplit('/').next().filter(|n| !n.is_empty()),
@@ -1265,7 +1324,7 @@ fn store(
             recipe: s.recipe.clone(),
             source: s.source,
             index_id: s.index_id.map(str::to_string),
-            extends: s.extends.map(str::to_string),
+            extends: s.extends.clone(),
             keenwiki_url: s.keenwiki_url.map(str::to_string),
             added_at: now(),
             profile_id: id.clone(),
@@ -1409,6 +1468,50 @@ fn update(
         .into_iter()
         .find(|m| m.id == mod_id)
         .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))
+}
+
+/// An installed mod another one is played over.
+struct Base {
+    name: String,
+    recipe: Recipe,
+    requires: Option<Vec<String>>,
+}
+
+impl Base {
+    /// Its recipe, as a choice for the mod played over it.
+    fn option(&self) -> RecipeOption {
+        RecipeOption {
+            recipe: self.recipe.clone(),
+            origin: self.name.clone(),
+            game_versions: Vec::new(),
+            version_ids: Vec::new(),
+        }
+    }
+}
+
+/// The installed mod `mod_id` for a mod of `game_id` to be played over: same
+/// game, and not played over another one itself.
+fn base_of(db: &Db, mod_id: &str, game_id: &str) -> Result<Base> {
+    type Row = (String, String, String, Option<String>, Option<String>);
+    let (name, game, recipe, requires, extends): Row = db
+        .conn()
+        .query_row(
+            "SELECT name, game_id, recipe_json, requires_json, extends FROM mods WHERE id = ?1",
+            [mod_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
+        )
+        .optional()?
+        .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))?;
+    if game != game_id || extends.is_some() {
+        return Err(Error::IncompatibleInstall(format!(
+            "it can't be played over {name}"
+        )));
+    }
+    Ok(Base {
+        name,
+        recipe: serde_json::from_str(&recipe).unwrap_or(Recipe::Episode),
+        requires: parse_requires(requires.as_deref()),
+    })
 }
 
 /// Whether the mod can be played on `install`. Installs of an unknown
@@ -1624,15 +1727,10 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
     Ok(url.to_string())
 }
 
-/// The mods played over `mod_id`, unless another copy of it stays.
+/// The mods played over `mod_id`.
 pub fn extensions(db: &Db, mod_id: &str) -> Result<Vec<String>> {
     let conn = db.conn();
-    let mut stmt = conn.prepare(
-        "SELECT e.id FROM mods e JOIN mods m ON e.extends = m.index_id
-         WHERE m.id = ?1
-           AND NOT EXISTS (SELECT 1 FROM mods o WHERE o.index_id = m.index_id AND o.id <> m.id)
-         ORDER BY e.added_at, e.id",
-    )?;
+    let mut stmt = conn.prepare("SELECT id FROM mods WHERE extends = ?1 ORDER BY added_at, id")?;
     let ids = stmt
         .query_map([mod_id], |r| r.get(0))?
         .collect::<rusqlite::Result<_>>()?;
@@ -1718,6 +1816,8 @@ mod tests {
             recipe,
             install_id: Some("keen4-1".into()),
             keenwiki: None,
+            extends: None,
+            extends_index: None,
             replace: None,
         }
     }
@@ -2228,11 +2328,21 @@ mod tests {
         let info = inspect(&zip, None).unwrap();
         assert_eq!(info.missing_files, ["lego.tli"]);
         // From the index, named in the readme.
-        let index = |n: &str| (n.to_string(), None);
+        let index = |n: &str| BaseCandidate {
+            name: n.into(),
+            mod_id: None,
+            index_id: Some(slug(n)),
+            files: None,
+        };
         let names = [index("Lego"), index("Lego Keen"), index("Lego Rescue")];
         assert_eq!(
-            needed_mod(&zip, &info, &names).as_deref(),
-            Some("Lego Keen")
+            needed_mod(&zip, &info, &names),
+            Some(BaseMod {
+                name: "Lego Keen".into(),
+                mod_id: None,
+                index_id: Some("lego-keen".into()),
+                by_files: false,
+            })
         );
 
         // An installed mod with the files counts, named or not; one without
@@ -2241,14 +2351,16 @@ mod tests {
         let lacks = tmp.path().join("lacks");
         write_folder(&has, &[("LEGO.TLI", b"t")]);
         write_folder(&lacks, &[("lego.pat", b"p")]);
-        let installed = [
-            ("Bricks".to_string(), Some(has)),
-            ("Lego Levels".to_string(), Some(lacks)),
-        ];
-        assert_eq!(
-            needed_mod(&zip, &info, &installed).as_deref(),
-            Some("Bricks")
-        );
+        let installed = |n: &str, files: &Path| BaseCandidate {
+            name: n.into(),
+            mod_id: Some(slug(n)),
+            index_id: None,
+            files: Some(files.to_path_buf()),
+        };
+        let installed = [installed("Bricks", &has), installed("Lego Levels", &lacks)];
+        let found = needed_mod(&zip, &info, &installed).unwrap();
+        assert_eq!(found.mod_id.as_deref(), Some("bricks"));
+        assert!(found.by_files);
         assert_eq!(needed_mod(&zip, &info, &installed[1..]), None);
 
         // Nothing missing: nothing needed, whatever the documents say.
@@ -2257,6 +2369,71 @@ mod tests {
             ..info
         };
         assert_eq!(needed_mod(&zip, &complete, &names), None);
+    }
+
+    #[test]
+    fn levels_added_by_hand_play_over_the_mod_they_name() {
+        let (tmp, paths, db) = setup();
+        let base = tmp.path().join("index-aurora-bliss.zip");
+        write_zip(&base, AURORA);
+        install_curated(&paths, &db, &base, &curated(aurora_patch(&[])), None, false).unwrap();
+
+        // Levels only: they start the way the mod below does.
+        let zip = tmp.path().join("pack.zip");
+        write_zip(
+            &zip,
+            &[("Pack/LEVEL01.CK4", b"l"), ("Pack/GAMEMAPS.CK4", b"maps")],
+        );
+        assert_eq!(
+            inspect(&zip, None).unwrap().recipes[0].recipe,
+            Recipe::Episode
+        );
+        let req = InstallModRequest {
+            name: "Pack".into(),
+            extends: Some("aurora-bliss".into()),
+            ..request(&zip, Recipe::Episode)
+        };
+        let m = install(&paths, &db, &req).unwrap();
+        assert_eq!(m.extends.as_deref(), Some("aurora-bliss"));
+        assert_eq!(m.recipe, aurora_patch(&[]));
+        let requires: Option<String> = db
+            .conn()
+            .query_row(
+                "SELECT requires_json FROM mods WHERE id = ?1",
+                [&m.id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(requires.as_deref(), Some(r#"["keen4-1.4-ega"]"#));
+        let (_, layers) = profiles::get(&db, &m.profile_id).unwrap();
+        assert_eq!(
+            layers.mod_layer.unwrap().base,
+            Some(paths.mods.join("aurora-bliss/files"))
+        );
+
+        // Not over a mod that's played over another one, nor another game's.
+        let again = InstallModRequest {
+            extends: Some(m.id.clone()),
+            ..req.clone()
+        };
+        assert!(matches!(
+            install(&paths, &db, &again),
+            Err(Error::IncompatibleInstall(_))
+        ));
+        let k5 = tmp.path().join("k5.zip");
+        write_zip(&k5, &[("LEVEL01.CK5", b"l")]);
+        let other = InstallModRequest {
+            install_id: None,
+            ..request(&k5, Recipe::Episode)
+        };
+        let other = InstallModRequest {
+            extends: Some(m.id.clone()),
+            ..other
+        };
+        assert!(install(&paths, &db, &other).is_err());
+
+        delete(&paths, &db, "aurora-bliss", false).unwrap();
+        assert!(list(&db).unwrap().is_empty());
     }
 
     #[test]

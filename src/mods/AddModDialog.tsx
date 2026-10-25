@@ -271,6 +271,9 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
           // Without a fitting game, the player agreed to install anyway.
           installId: target?.id ?? null,
           keenwiki: origin,
+          // The mod below, or its index entry when it isn't installed yet.
+          extends: overBase ? (base?.modId ?? null) : null,
+          extendsIndex: overBase && !base?.modId ? (base?.indexId ?? null) : null,
           // Renaming may have made it no longer match.
           replace: replaced?.id ?? null,
         }),
@@ -294,6 +297,10 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
   // Made to be copied over another mod, which isn't part of it.
   const incomplete = info.missingFiles.length > 0;
   const readme = useReadmeLink(path);
+  // The mod it belongs over, which it's played over unless unticked.
+  const base = info.baseMod;
+  const [playOver, setPlayOver] = useState(true);
+  const overBase = !!base && playOver;
   const choose = (info.recipes.length > 1 && !info.confident) || (others.length > 0 && !replacing);
   const careful =
     otherGame ||
@@ -458,18 +465,34 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
       )}
       {modifiedGame && <Notice>{t("mods.modifiedGame")}</Notice>}
       {incomplete && (
-        // Set apart: the mod won't run like this.
-        <p role="status" className="flex items-start gap-2 text-sm">
-          <Puzzle className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
-          <span>
-            <Trans
-              i18nKey="mods.missingFiles"
-              context={info.needsMod ? "mod" : undefined}
-              values={{ mod: info.needsMod, files: info.missingFiles.join(", ") }}
-              components={{ readme: readme.link }}
-            />
-          </span>
-        </p>
+        // Set apart: the mod won't run on its own.
+        <div className="grid gap-2 text-sm">
+          <p role="status" className="flex items-start gap-2">
+            <Puzzle className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
+            <span>
+              <Trans
+                i18nKey="mods.missingFiles"
+                context={base ? "mod" : undefined}
+                values={{ mod: base?.name, files: info.missingFiles.join(", ") }}
+                components={{ readme: readme.link }}
+              />
+            </span>
+          </p>
+          {base && (
+            <label className="flex items-start gap-2 pl-6">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={playOver}
+                onChange={(e) => setPlayOver(e.target.checked)}
+              />
+              {t("mods.playOver", {
+                mod: base.name,
+                context: base.modId ? undefined : "install",
+              })}
+            </label>
+          )}
+        </div>
       )}
       {readme.dialog}
       {versionUnchecked && <Notice>{t("mods.versionUnchecked")}</Notice>}

@@ -91,7 +91,7 @@ const SELECT: &str = "
            COALESCE(m.name, i.label), s.session_count, s.play_seconds, s.last_played_at,
            p.state_path, i.path, m.path, m.recipe_json, p.created_at, m.requires_json,
            m.version_recipes_json, m.extends,
-           (SELECT b.path FROM mods b WHERE b.index_id = m.extends ORDER BY b.added_at LIMIT 1)
+           (SELECT b.path FROM mods b WHERE b.id = m.extends)
     FROM profiles p
     LEFT JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id

@@ -83,7 +83,7 @@ const info: ModInfo = {
   fileCount: 18,
   indexId: null,
   missingFiles: [],
-  needsMod: null,
+  baseMod: null,
 };
 
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
@@ -186,23 +186,58 @@ test("inspects the picked ZIP and installs the mod on the matching game", async 
     recipe: patch.recipe,
     installId: "keen4-1",
     keenwiki: null,
+    extends: null,
+    extendsIndex: null,
     replace: null,
   });
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
 });
 
-test("says which mod one made to be copied over lacks", async () => {
+test("plays one made to be copied over a mod from the index over it", async () => {
   vi.mocked(commands.inspectMod).mockReturnValue(
-    ok({ ...info, missingFiles: ["lego.tli"], needsMod: "Lego Keen" }),
+    ok({
+      ...info,
+      missingFiles: ["lego.tli"],
+      baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen", byFiles: false },
+    }),
   );
+  vi.mocked(commands.installMod).mockReturnValue(new Promise(() => {}));
   renderDialog();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
 
   expect(
     await screen.findByText(
       "This mod is made to be copied over Lego Keen and won’t work without it: it lacks lego.tli.",
     ),
   ).toBeInTheDocument();
+  expect(
+    screen.getByRole("checkbox", { name: "Play it over Lego Keen, which is installed with it" }),
+  ).toBeChecked();
+  await user.click(screen.getByRole("button", { name: "Install" }));
+  expect(commands.installMod).toHaveBeenCalledWith(
+    expect.objectContaining({ extends: null, extendsIndex: "lego-keen" }),
+  );
+});
+
+test("installs one made to be copied over an installed mod alone when unticked", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(
+    ok({
+      ...info,
+      missingFiles: ["lego.tli"],
+      baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null, byFiles: true },
+    }),
+  );
+  vi.mocked(commands.installMod).mockReturnValue(new Promise(() => {}));
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  await user.click(await screen.findByRole("checkbox", { name: "Play it over Lego Keen" }));
+  await user.click(screen.getByRole("button", { name: "Install" }));
+  expect(commands.installMod).toHaveBeenCalledWith(
+    expect.objectContaining({ extends: null, extendsIndex: null }),
+  );
 });
 
 test("asks whether another version replaces the installed one", async () => {
@@ -537,6 +572,8 @@ test("installs a mod from a KeenWiki page with the page's details", async () => 
       description: "A Keen 4 mod.",
       released: page.released,
     },
+    extends: null,
+    extendsIndex: null,
     replace: null,
   });
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());

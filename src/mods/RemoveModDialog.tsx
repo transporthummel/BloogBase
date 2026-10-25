@@ -23,8 +23,7 @@ export function RemoveModDialog({
   const [keepSaves, setKeepSaves] = useState(true);
   const mods = useQuery({ queryKey: modsKey, queryFn: () => unwrap(commands.listMods()) });
   // Mods played over this one go with it.
-  const indexId = mods.data?.find((m) => m.id === profile.modId)?.indexId;
-  const extensions = indexId ? (mods.data ?? []).filter((m) => m.extends === indexId) : [];
+  const extensions = (mods.data ?? []).filter((m) => m.extends === profile.modId);
   const remove = useMutation({
     mutationFn: () => unwrap(commands.deleteMod(profile.modId, keepSaves)),
     onSuccess: onRemoved,

@@ -73,7 +73,7 @@ const info: ModInfo = {
   fileCount: 3,
   indexId: null,
   missingFiles: [],
-  needsMod: null,
+  baseMod: null,
 };
 
 const aurora = { id: "aurora-bliss", name: "Aurora Bliss", profileId: "aurora-bliss" } as Mod;

@@ -278,6 +278,17 @@ export type BackupSettings = {
 	keep: number,
 };
 
+/**  A mod another one is made to be copied over, installed or in the index. */
+export type BaseMod = {
+	name: string,
+	/**  The installed mod, if it is. */
+	modId: string | null,
+	/**  Its index entry, to install it from. */
+	indexId: string | null,
+	/**  Found by the missing files, not only by its name in the documents. */
+	byFiles: boolean,
+};
+
 /**  The error shape every command returns to the frontend. */
 export type CommandError = {
 	kind: ErrorKind,
@@ -539,6 +550,13 @@ export type InstallModRequest = {
 	/**  Set when the mod came from a KeenWiki page. */
 	keenwiki?: KeenwikiOrigin | null,
 	/**
+	 *  An installed mod of the same game this one is played over, as it's
+	 *  made to be copied over that one.
+	 */
+	extends?: string | null,
+	/**  Or the index entry of that mod, installed first unless it is. */
+	extendsIndex?: string | null,
+	/**
 	 *  An installed mod of the same game this one replaces, e.g. an older
 	 *  version. Its id and saves stay; `None` installs alongside.
 	 */
@@ -631,7 +649,7 @@ export type Mod = {
 	source: ModSource,
 	/**  The index entry it was installed from. */
 	indexId: string | null,
-	/**  The index mod it's played over. */
+	/**  The installed mod it's played over. */
 	extends: string | null,
 	keenwikiUrl: string | null,
 	/**  Unix epoch seconds. */
@@ -660,8 +678,11 @@ export type ModInfo = {
 	 *  copied over another one (Lego Levels over Lego Keen).
 	 */
 	missingFiles: string[],
-	/**  The mod its documents name, when files are missing. */
-	needsMod: string | null,
+	/**
+	 *  The mod it's made to be copied over, when files are missing and
+	 *  BloogBase knows one that fits.
+	 */
+	baseMod: BaseMod | null,
 };
 
 export type ModKind = "episode" | "levelpack" | "conversion";

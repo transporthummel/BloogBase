@@ -135,7 +135,7 @@ test("downloads a newer version and replaces the installed one", async () => {
         fileCount: 3,
         indexId: null,
         missingFiles: [],
-        needsMod: null,
+        baseMod: null,
       },
     }),
   );

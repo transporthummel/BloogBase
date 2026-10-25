@@ -44,9 +44,11 @@ authors and link back to KeenWiki and PCKF.
 
    `versionRecipes`, `copyToRoot` and `extends` need a `minAppVersion`;
    older apps would install the mod without them. `norp-the-yorp-3.yaml`
-   uses the first two, `lego-levels.yaml` the last: its files go over Lego
-   Keen's, and its recipe may run files of Lego Keen (here `CK1PATCH.EXE`).
-   The entry it names must be for the same game and not extend another one.
+   uses the first two. With `extends`, the mod's files go over those of the
+   entry it names, and its recipe may run that mod's files (e.g. its
+   patcher). The entry must be for the same game and not extend another one.
+   Packs like that usually need no entry: when the player adds one by hand,
+   BloogBase finds the mod it belongs over and plays it there.
 
 3. Check it, including the download:
 
