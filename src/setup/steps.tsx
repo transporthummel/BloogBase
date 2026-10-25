@@ -358,7 +358,7 @@ export function OwnedStep({ next, back }: StepProps) {
             <button
               key={store}
               type="button"
-              className="text-ink underline underline-offset-2"
+              className="cursor-pointer text-ink underline underline-offset-2"
               onClick={() => openUrl(STORE_LINKS[store])}
             >
               {t(`setup.owned.store.${store}`)}

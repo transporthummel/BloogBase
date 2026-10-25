@@ -95,7 +95,7 @@ export function ModCard({
               <button
                 key={label}
                 type="button"
-                className="inline-flex items-center gap-1 text-ink underline underline-offset-2"
+                className="inline-flex cursor-pointer items-center gap-1 text-ink underline underline-offset-2"
                 onClick={() => openUrl(url)}
               >
                 {label}

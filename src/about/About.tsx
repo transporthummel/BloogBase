@@ -55,7 +55,7 @@ export function About() {
                   profile: (
                     <button
                       type="button"
-                      className="font-semibold text-accent underline-offset-2 hover:underline"
+                      className="cursor-pointer font-semibold text-accent underline-offset-2 hover:underline"
                       title={t("about.authorProfile")}
                       onClick={() => openUrl(AUTHOR_URL)}
                     />

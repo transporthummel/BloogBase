@@ -18,7 +18,7 @@ export function DownloadError({ error, url }: { error: unknown; url: string }) {
             browser: (
               <button
                 type="button"
-                className="text-accent underline hover:text-ink"
+                className="cursor-pointer text-accent underline hover:text-ink"
                 onClick={() => openUrl(url)}
               />
             ),
