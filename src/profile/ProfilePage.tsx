@@ -8,6 +8,7 @@ import {
   ExternalLink,
   FileArchive,
   FolderOpen,
+  Keyboard,
   RefreshCw,
   Trash2,
   TriangleAlert,
@@ -535,7 +536,10 @@ function FiringNote({ profileId }: { profileId: string }) {
   // A mod's own one-button firing is worth knowing even with the setting off.
   if (!s || (s !== "builtIn" && !enabled.data)) return null;
   return (
-    <p className="text-sm text-muted">{t(`profile.firing.${s === "patchable" ? "on" : s}`)}</p>
+    <p className="flex items-start gap-1.5 text-sm text-muted">
+      <Keyboard className="mt-0.5 size-4 shrink-0" aria-hidden />
+      {t(`profile.firing.${s === "patchable" ? "on" : s}`)}
+    </p>
   );
 }
 
