@@ -15,10 +15,13 @@ export function useIndexMods() {
   return useQuery({ queryKey: indexModsKey, queryFn: () => unwrap(commands.indexMods()) });
 }
 
+export type Installed = "current" | "outdated" | null;
+
 /** Whether the index entry `id` is installed already, so there's nothing to cancel. */
-export function useIndexInstalled(id: string | null) {
-  const mods = useIndexMods();
-  return !!id && !!mods.data?.some((m) => m.entry.id === id && m.modId);
+export function useIndexInstalled(id: string | null): Installed {
+  const mod = useIndexMods().data?.find((m) => m.entry.id === id && m.modId);
+  if (!id || !mod) return null;
+  return mod.updateAvailable ? "outdated" : "current";
 }
 
 /** Shareware episodes, demos and betas BloogBase can download. */

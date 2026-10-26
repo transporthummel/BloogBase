@@ -27,7 +27,7 @@ import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
 import { useEnterAction } from "../ui/useEnterAction";
-import { IndexHit, KeenwikiImport } from "./KeenwikiImport";
+import { IndexHit, KeenwikiImport, OkButton } from "./KeenwikiImport";
 import type { Downloaded } from "./wikiDownload";
 import { RecipeLabel } from "./RecipeLabel";
 import { fits } from "./recipes";
@@ -197,9 +197,7 @@ function Confirm(props: ConfirmProps) {
         <Button variant="ghost" onClick={() => setMyself(true)}>
           {t("mods.setUpMyself")}
         </Button>
-        <Button variant={installed ? "primary" : "ghost"} onClick={onCancel}>
-          {t(installed ? "common.ok" : "common.close")}
-        </Button>
+        <OkButton installed={installed} onClick={onCancel} label={t("common.close")} />
       </div>
     </div>
   );

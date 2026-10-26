@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { commands, type KeenwikiLookup, type WikiMod } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { ModCard } from "../discover/ModCard";
-import { useIndexInstalled, useIndexMods } from "../discover/queries";
+import { type Installed, useIndexInstalled, useIndexMods } from "../discover/queries";
 import { errorMessage } from "../errors";
 import { formatLooseDate } from "../format";
 import { unwrap } from "../ipc";
@@ -104,19 +104,22 @@ function Result({
   return (
     <div className="grid gap-4">
       {lookup.indexId && <IndexHit id={lookup.indexId} />}
-      <Footer {...actions} done={installed} />
+      <Footer {...actions} installed={installed} />
     </div>
   );
 }
 
-/** Back to the link field, cancel (OK when `done`), and the step's own action, if any. */
+/**
+ * Back to the link field, cancel (OK when the mod is `installed`, quiet beside
+ * the update), and the step's own action, if any.
+ */
 function Footer({
   onBack,
   onCancel,
   busy = false,
-  done = false,
+  installed = null,
   children,
-}: Actions & { busy?: boolean; done?: boolean; children?: ReactNode }) {
+}: Actions & { busy?: boolean; installed?: Installed; children?: ReactNode }) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-wrap justify-between gap-3">
@@ -125,12 +128,30 @@ function Footer({
         {t("common.back")}
       </Button>
       <div className="flex flex-wrap justify-end gap-3">
-        <Button variant={done ? "primary" : "ghost"} onClick={onCancel}>
-          {t(done ? "common.ok" : "common.cancel")}
-        </Button>
+        <OkButton installed={installed} onClick={onCancel} label={t("common.cancel")} />
         {children}
       </div>
     </div>
+  );
+}
+
+/** Closes the dialog: OK once the mod is installed, in the accent colour unless an update is offered. */
+export function OkButton({
+  installed,
+  label,
+  onClick,
+}: {
+  installed: Installed;
+  /** While it isn't installed. */
+  label: string;
+  onClick: () => void;
+}) {
+  const { t } = useTranslation();
+  const variant = installed === "current" ? "primary" : installed ? "secondary" : "ghost";
+  return (
+    <Button variant={variant} onClick={onClick}>
+      {installed ? t("common.ok") : label}
+    </Button>
   );
 }
 
