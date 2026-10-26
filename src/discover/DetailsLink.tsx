@@ -7,11 +7,7 @@ import { buttonClass } from "../ui/buttonClass";
 export function DetailsLink({ profileId }: { profileId: string }) {
   const { t } = useTranslation();
   return (
-    <Link
-      to="/profiles/$profileId"
-      params={{ profileId }}
-      className={buttonClass("secondary")}
-    >
+    <Link to="/profiles/$profileId" params={{ profileId }} className={buttonClass("secondary")}>
       {t("discover.openDetails")}
       <ArrowRight className="size-4" aria-hidden />
     </Link>
