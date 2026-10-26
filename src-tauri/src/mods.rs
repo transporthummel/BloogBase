@@ -70,6 +70,10 @@ pub struct ModInfo {
     pub file_count: u32,
     /// The index entry whose download this is, byte for byte.
     pub index_id: Option<String>,
+    /// The mod a level pack's archive name says its levels are for
+    /// (`l.keen_community.episode_smile`), for [`named_mod`].
+    #[serde(skip)]
+    pub made_for: Option<String>,
 }
 
 /// A mod another one is made to be copied over, installed or in the index.
@@ -247,11 +251,34 @@ pub fn needed_mod(missing_files: &[String], candidates: &[BaseCandidate]) -> Opt
                 .iter()
                 .find(|c| c.files.as_deref().is_some_and(|d| has_all(&installed(d))))
         })
-        .map(|c| BaseMod {
-            name: c.name.clone(),
-            mod_id: c.mod_id.clone(),
-            index_id: c.index_id.clone(),
-        })
+        .map(BaseCandidate::base)
+}
+
+/// The mod levels alone are for when nothing tells by its files: the one of
+/// `candidates` named as `made_for` says, punctuation and case aside
+/// (Community Smile Levelpack's `episode_smile` for Episode Smile).
+pub fn named_mod(made_for: &str, candidates: &[BaseCandidate]) -> Option<BaseMod> {
+    let key = |s: &str| {
+        s.chars()
+            .filter(|c| c.is_alphanumeric())
+            .flat_map(char::to_lowercase)
+            .collect::<String>()
+    };
+    let wanted = key(made_for);
+    candidates
+        .iter()
+        .find(|c| !wanted.is_empty() && key(&c.name) == wanted)
+        .map(BaseCandidate::base)
+}
+
+impl BaseCandidate {
+    fn base(&self) -> BaseMod {
+        BaseMod {
+            name: self.name.clone(),
+            mod_id: self.mod_id.clone(),
+            index_id: self.index_id.clone(),
+        }
+    }
 }
 
 /// What a folder or ZIP dropped on the window holds.
@@ -445,6 +472,7 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
             confident: guess.confident,
             file_count: files.len() as u32,
             index_id: None,
+            made_for: meta.made_for,
         },
         root,
         files,
@@ -676,6 +704,8 @@ struct Metadata {
     version: Option<String>,
     released: Option<String>,
     episode: Option<&'static str>,
+    /// The mod a level pack is for, as its name says.
+    made_for: Option<String>,
 }
 
 /// Name and details from the file name. Understands the archive naming
@@ -708,6 +738,7 @@ fn guess_metadata(path: &Path, root: &str) -> Metadata {
             version: None,
             released: Some(parts[3].to_string()),
             episode: Some(episode),
+            made_for: None,
         };
     }
     if parts.len() >= 5
@@ -723,6 +754,7 @@ fn guess_metadata(path: &Path, root: &str) -> Metadata {
             version,
             released: Some(parts[parts.len() - 1].to_string()),
             episode: Some(episode),
+            made_for: None,
         };
     }
     // Without the episode, as KeenWiki's packs for mods: a level pack's
@@ -731,16 +763,18 @@ fn guess_metadata(path: &Path, root: &str) -> Metadata {
         let raw = parts[2..parts.len() - 1].join(".");
         let (name, version) = split_version(&raw);
         let name = title_case(&name.replace('_', " "));
+        let levels = parts[0].eq_ignore_ascii_case("l");
         return Metadata {
-            name: if parts[0].eq_ignore_ascii_case("l") {
+            name: if levels {
                 format!("{name} Level Pack")
             } else {
-                name
+                name.clone()
             },
             authors: vec![parts[1].to_string()],
             version,
             released: Some(parts[parts.len() - 1].to_string()),
             episode: None,
+            made_for: levels.then_some(name),
         };
     }
 
@@ -758,6 +792,7 @@ fn guess_metadata(path: &Path, root: &str) -> Metadata {
         version: None,
         released: None,
         episode: None,
+        made_for: None,
     }
 }
 
@@ -2728,6 +2763,39 @@ mod tests {
     }
 
     #[test]
+    fn levels_alone_are_for_the_mod_their_archive_names() {
+        let tmp = tempfile::tempdir().unwrap();
+        let zip = tmp
+            .path()
+            .join("l.keen_community.episode_smile.2009-08-30.zip");
+        write_zip(
+            &zip,
+            &[("LEVEL01.CK2", b"l"), ("LIST.txt", b"Level 1: Shikadi")],
+        );
+        let info = inspect(&zip, Some("keen2")).unwrap();
+        assert!(info.recipes[0].missing_files.is_empty());
+        assert_eq!(info.made_for.as_deref(), Some("Episode Smile"));
+
+        let candidate = |n: &str| BaseCandidate {
+            name: n.into(),
+            mod_id: Some(slug(n)),
+            index_id: None,
+            files: None,
+            provides: Vec::new(),
+        };
+        let installed = [candidate("Lego Keen"), candidate("Episode: Smile")];
+        assert_eq!(
+            named_mod("Episode Smile", &installed)
+                .unwrap()
+                .mod_id
+                .as_deref(),
+            Some("episode-smile")
+        );
+        assert_eq!(named_mod("Episode Smile", &installed[..1]), None);
+        assert_eq!(named_mod("", &[candidate("")]), None);
+    }
+
+    #[test]
     fn levels_alone_lack_the_start_their_readme_names() {
         let tmp = tempfile::tempdir().unwrap();
         let zip = tmp.path().join("xky1rooms.zip");
@@ -3396,6 +3464,7 @@ mod tests {
             ("Lego Keen Level Pack", None, Some("2012-02-10"))
         );
         assert_eq!(m.authors, ["keen_community"]);
+        assert_eq!(m.made_for.as_deref(), Some("Lego Keen"));
         let m = guess_metadata(Path::new("m.someone.bricks_v2.1.2015-01-01.zip"), "");
         assert_eq!(
             (m.name.as_str(), m.version.as_deref()),

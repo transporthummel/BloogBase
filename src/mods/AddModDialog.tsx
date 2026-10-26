@@ -313,6 +313,8 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
   const versionUnchecked = !!target && target.versionId === null && option.gameVersions.length > 0;
   // Made to be copied over another mod, which isn't part of it.
   const incomplete = option.missingFiles.length > 0;
+  // Levels alone, for the mod their archive names.
+  const levelsFor = !!base && !incomplete;
   const readme = useReadmeLink(path);
   const choose = (info.recipes.length > 1 && !info.confident) || (others.length > 0 && !replacing);
   const careful =
@@ -322,7 +324,8 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
     modifiedGame ||
     versionUnchecked ||
     choose ||
-    incomplete;
+    incomplete ||
+    levelsFor;
   const form = useRef<HTMLFormElement>(null);
   const submit = () => {
     if (ready && !install.isPending) install.mutate();
@@ -483,18 +486,22 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
         </Notice>
       )}
       {modifiedGame && <Notice>{t("mods.modifiedGame")}</Notice>}
-      {incomplete && (
+      {(incomplete || levelsFor) && (
         // Set apart: the mod won't run on its own.
         <div className="grid gap-2 text-sm">
           <p role="status" className="flex items-start gap-2">
             <Puzzle className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
             <span>
-              <Trans
-                i18nKey="mods.missingFiles"
-                context={base ? "mod" : undefined}
-                values={{ mod: base?.name, files: option.missingFiles.join(", ") }}
-                components={{ readme: readme.link }}
-              />
+              {levelsFor ? (
+                t("mods.levelsFor", { mod: base.name })
+              ) : (
+                <Trans
+                  i18nKey="mods.missingFiles"
+                  context={base ? "mod" : undefined}
+                  values={{ mod: base?.name, files: option.missingFiles.join(", ") }}
+                  components={{ readme: readme.link }}
+                />
+              )}
             </span>
           </p>
           {base && (

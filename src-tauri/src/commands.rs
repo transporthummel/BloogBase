@@ -669,10 +669,17 @@ fn index_match(app: &AppHandle, path: &str, info: &ModInfo) -> Option<String> {
 }
 
 /// For each way to start `info` that lacks files, the mod it's made to be
-/// copied over (see [`mods::needed_mod`]), among the index's and the
-/// library's for the same game. Mods played over another one never are.
+/// copied over (see [`mods::needed_mod`]); for levels alone, the one their
+/// archive names ([`mods::named_mod`]). Among the index's and the library's
+/// for the same game; mods played over another one never are.
 fn find_base_mods(app: &AppHandle, info: &mut ModInfo) {
-    if info.recipes.iter().all(|o| o.missing_files.is_empty()) {
+    let levels_for =
+        |o: &mods::RecipeOption| o.missing_files.is_empty() && o.recipe == Recipe::Episode;
+    let named = info
+        .made_for
+        .clone()
+        .filter(|_| info.recipes.iter().any(levels_for));
+    if named.is_none() && info.recipes.iter().all(|o| o.missing_files.is_empty()) {
         return;
     }
     let paths = app.state::<AppPaths>();
@@ -703,7 +710,10 @@ fn find_base_mods(app: &AppHandle, info: &mut ModInfo) {
         )
         .collect();
     for option in &mut info.recipes {
-        option.base_mod = mods::needed_mod(&option.missing_files, &candidates);
+        option.base_mod = match &named {
+            Some(name) if levels_for(option) => mods::named_mod(name, &candidates),
+            _ => mods::needed_mod(&option.missing_files, &candidates),
+        };
     }
 }
 

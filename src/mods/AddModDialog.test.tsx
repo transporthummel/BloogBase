@@ -329,6 +329,40 @@ test("installs one made to be copied over an installed mod alone when unticked",
   expect(commands.installMod).toHaveBeenCalledWith(expect.objectContaining({ extends: null }));
 });
 
+test("plays levels alone over the mod their archive names", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(
+    ok({
+      ...info,
+      name: "Episode Smile Level Pack",
+      recipes: [
+        {
+          recipe: { type: "episode" },
+          origin: "",
+          gameVersions: [],
+          versionIds: [],
+          missingFiles: [],
+          baseMod: { name: "Episode Smile", modId: "episode-smile", indexId: null },
+        },
+      ],
+    }),
+  );
+  vi.mocked(commands.installMod).mockReturnValue(new Promise(() => {}));
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  expect(
+    await screen.findByText(
+      "Its levels are made for Episode Smile and play with its graphics and patches.",
+    ),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("checkbox", { name: "Play it over Episode Smile" })).toBeChecked();
+  await user.click(screen.getByRole("button", { name: "Install" }));
+  expect(commands.installMod).toHaveBeenCalledWith(
+    expect.objectContaining({ extends: "episode-smile" }),
+  );
+});
+
 test("asks whether another version replaces the installed one", async () => {
   const older: Mod = {
     id: "aurora-bliss",
