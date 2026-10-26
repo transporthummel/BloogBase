@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { commands, type KeenwikiLookup, type WikiMod } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { ModCard } from "../discover/ModCard";
-import { useIndexMods } from "../discover/queries";
+import { useIndexInstalled, useIndexMods } from "../discover/queries";
 import { errorMessage } from "../errors";
 import { formatLooseDate } from "../format";
 import { unwrap } from "../ipc";
@@ -97,24 +97,26 @@ function Result({
   lookup: KeenwikiLookup;
   onDownloaded: (d: Downloaded) => void;
 }) {
+  const installed = useIndexInstalled(lookup.indexId);
   if (lookup.page && !lookup.indexId) {
     return <WikiCard page={lookup.page} onDownloaded={onDownloaded} {...actions} />;
   }
   return (
     <div className="grid gap-4">
       {lookup.indexId && <IndexHit id={lookup.indexId} />}
-      <Footer {...actions} />
+      <Footer {...actions} done={installed} />
     </div>
   );
 }
 
-/** Back to the link field, cancel, and the step's own action, if any. */
+/** Back to the link field, cancel (OK when `done`), and the step's own action, if any. */
 function Footer({
   onBack,
   onCancel,
   busy = false,
+  done = false,
   children,
-}: Actions & { busy?: boolean; children?: ReactNode }) {
+}: Actions & { busy?: boolean; done?: boolean; children?: ReactNode }) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-wrap justify-between gap-3">
@@ -123,8 +125,8 @@ function Footer({
         {t("common.back")}
       </Button>
       <div className="flex flex-wrap justify-end gap-3">
-        <Button variant="ghost" onClick={onCancel}>
-          {t("common.cancel")}
+        <Button variant={done ? "secondary" : "ghost"} onClick={onCancel}>
+          {t(done ? "common.ok" : "common.cancel")}
         </Button>
         {children}
       </div>
@@ -153,7 +155,15 @@ export function IndexHit({
   if (!mod || !games.data || !installs.data) return null;
   return (
     <div className="grid gap-2">
-      <Notice>{t(notice)}</Notice>
+      <Notice>
+        {t(
+          !mod.modId
+            ? notice
+            : mod.updateAvailable
+              ? "mods.inIndexInstalledUpdate"
+              : "mods.inIndexInstalled",
+        )}
+      </Notice>
       <ModCard
         mod={mod}
         installs={installs.data.filter((i) => i.gameId === mod.entry.game)}

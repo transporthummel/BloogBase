@@ -781,6 +781,39 @@ test("offers the index entry when the link is in the index", async () => {
   expect(commands.installIndexMod).toHaveBeenCalledWith("aurora-bliss", "keen4-1", false, null);
 });
 
+test("says an index mod from a link is installed already, with nothing to cancel", async () => {
+  vi.mocked(commands.listJobs).mockResolvedValue([]);
+  vi.mocked(commands.lookupKeenwiki).mockReturnValue(
+    ok({ pageUrl: page.pageUrl, indexId: "aurora-bliss", page: null }),
+  );
+  vi.mocked(commands.indexMods).mockReturnValue(ok([{ ...auroraInIndex, modId: "aurora" }]));
+  renderDialog();
+  await lookUp();
+
+  expect(
+    await screen.findByText("This mod from the BloogBase mod list is installed already:"),
+  ).toBeInTheDocument();
+  expect(screen.queryByText(/ready to install/)).toBeNull();
+  expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
+});
+
+test("says an installed index mod has a newer version in the list", async () => {
+  vi.mocked(commands.listJobs).mockResolvedValue([]);
+  vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, indexId: "aurora-bliss" }));
+  vi.mocked(commands.indexMods).mockReturnValue(
+    ok([{ ...auroraInIndex, modId: "aurora", updateAvailable: true }]),
+  );
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  expect(
+    await screen.findByText(/installed already, and the list has a newer/),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument();
+});
+
 test("installs a picked copy of an index download as that entry", async () => {
   vi.mocked(commands.listJobs).mockResolvedValue([]);
   vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, indexId: "aurora-bliss" }));

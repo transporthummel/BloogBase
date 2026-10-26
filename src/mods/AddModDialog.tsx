@@ -13,6 +13,7 @@ import {
   type ModInfo,
 } from "../bindings";
 import { bestFit, gameTitle, isModified, shortGameTitle, useGames } from "../catalog";
+import { useIndexInstalled } from "../discover/queries";
 import { errorMessage } from "../errors";
 import { formatLooseDate } from "../format";
 import { unwrap } from "../ipc";
@@ -187,6 +188,7 @@ function Confirm(props: ConfirmProps) {
   const { t } = useTranslation();
   const [myself, setMyself] = useState(false);
   const { info, path, replacing, onCancel } = props;
+  const installed = useIndexInstalled(info.indexId);
   if (!info.indexId || replacing || myself) return <SetUp {...props} />;
   return (
     <div className="grid gap-4">
@@ -195,8 +197,8 @@ function Confirm(props: ConfirmProps) {
         <Button variant="ghost" onClick={() => setMyself(true)}>
           {t("mods.setUpMyself")}
         </Button>
-        <Button variant="ghost" onClick={onCancel}>
-          {t("common.close")}
+        <Button variant={installed ? "secondary" : "ghost"} onClick={onCancel}>
+          {t(installed ? "common.ok" : "common.close")}
         </Button>
       </div>
     </div>

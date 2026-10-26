@@ -243,7 +243,8 @@
     "cancel": "Cancel",
     "back": "Back",
     "loading": "Loading…",
-    "close": "Close"
+    "close": "Close",
+    "ok": "OK"
   },
   "drop": {
     "hint": "Drop folders or ZIP files with games or mods to add them.",
@@ -273,6 +274,8 @@
     "startAdvanced": "How it starts (advanced)",
     "helpTitle": "We need your help",
     "inIndex": "The BloogBase mod list knows this file: the mod is installed the way it was tested there.",
+    "inIndexInstalled": "This mod from the BloogBase mod list is installed already:",
+    "inIndexInstalledUpdate": "This mod from the BloogBase mod list is installed already, and the list has a newer version:",
     "setUpMyself": "Set it up myself instead",
     "helpHint": "This mod can be started in more than one way. If you are not sure, keep the first one; the mod’s <readme>readme</readme> may tell you more.",
     "recipe": {

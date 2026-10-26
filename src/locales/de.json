@@ -243,7 +243,8 @@
     "cancel": "Abbrechen",
     "back": "Zurück",
     "loading": "Wird geladen…",
-    "close": "Schließen"
+    "close": "Schließen",
+    "ok": "OK"
   },
   "drop": {
     "hint": "Lass Ordner oder ZIP-Dateien mit Spielen oder Mods hier fallen, um sie hinzuzufügen.",
@@ -273,6 +274,8 @@
     "startAdvanced": "Wie sie startet (für Fortgeschrittene)",
     "helpTitle": "Wir brauchen deine Hilfe",
     "inIndex": "Diese Datei kennt die BloogBase-Modliste: Die Mod wird so installiert, wie sie dort getestet ist.",
+    "inIndexInstalled": "Diese Mod aus der BloogBase-Modliste ist schon installiert:",
+    "inIndexInstalledUpdate": "Diese Mod aus der BloogBase-Modliste ist schon installiert. Dort gibt es eine neuere Version:",
     "setUpMyself": "Lieber selbst einrichten",
     "helpHint": "Diese Mod lässt sich auf mehrere Arten starten. Wenn du unsicher bist, nimm die erste; die <readme>Readme</readme> der Mod verrät vielleicht mehr.",
     "recipe": {

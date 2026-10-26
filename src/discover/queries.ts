@@ -15,6 +15,12 @@ export function useIndexMods() {
   return useQuery({ queryKey: indexModsKey, queryFn: () => unwrap(commands.indexMods()) });
 }
 
+/** Whether the index entry `id` is installed already, so there's nothing to cancel. */
+export function useIndexInstalled(id: string | null) {
+  const mods = useIndexMods();
+  return !!id && !!mods.data?.some((m) => m.entry.id === id && m.modId);
+}
+
 /** Shareware episodes, demos and betas BloogBase can download. */
 export function useFreeGames() {
   return useQuery({ queryKey: freeGamesKey, queryFn: () => unwrap(commands.freeGames()) });
