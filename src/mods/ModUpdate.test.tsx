@@ -52,6 +52,7 @@ const mod: Mod = {
   extends: null,
   keenwikiUrl: "https://keenwiki.shikadi.net/wiki/Aurora_Bliss",
   homepage: null,
+  pckf: null,
   addedAt: 0,
   profileId: "aurora-bliss",
 };

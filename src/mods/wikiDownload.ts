@@ -22,6 +22,7 @@ export function downloaded(
       description: page.description,
       released: page.released,
       homepage: page.homepage,
+      pckf: page.discussion,
     },
   };
 }

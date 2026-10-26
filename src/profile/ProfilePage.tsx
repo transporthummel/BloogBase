@@ -217,6 +217,18 @@ function Hero({
   const navigate = useNavigate();
 
   const mod = mods.data?.find((m) => m.id === profile.modId);
+  // Mods installed from KeenWiki before their links were kept get them now.
+  useQuery({
+    queryKey: [...modsKey, "links", mod?.id],
+    queryFn: async () => {
+      const added = await unwrap(commands.fillModLinks(mod!.id));
+      if (added) queryClient.invalidateQueries({ queryKey: modsKey, exact: true });
+      return added;
+    },
+    enabled: mod?.source === "keenwiki" && !!mod.keenwikiUrl && (!mod.pckf || !mod.homepage),
+    staleTime: Infinity,
+    retry: false,
+  });
   const check = useModUpdateCheck(mod);
   // The index or the KeenWiki page may have a newer version.
   const checkable = mod && (mod.indexId || mod.keenwikiUrl);
@@ -591,7 +603,7 @@ function modLinks(
   if (!mod) return [];
   const all: [string, string | null | undefined][] = [
     ["KeenWiki", mod.keenwikiUrl ?? entry?.links.keenwiki],
-    ["PCKF", entry?.links.pckf],
+    ["PCKF", mod.pckf ?? entry?.links.pckf],
     [t("discover.homepage"), mod.homepage ?? entry?.links.homepage],
   ];
   return all.filter((l): l is [string, string] => !!l[1]);

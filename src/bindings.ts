@@ -193,6 +193,11 @@ export const commands = {
 	 */
 	checkModUpdate: (modId: string) => typedError<ModUpdate, CommandError>(__TAURI_INVOKE("check_mod_update", { modId })),
 	/**
+	 *  Fills in the PCKF and homepage links of a mod installed from KeenWiki
+	 *  without them, from its page. Returns whether any were added.
+	 */
+	fillModLinks: (modId: string) => typedError<boolean, CommandError>(__TAURI_INVOKE("fill_mod_links", { modId })),
+	/**
 	 *  Downloads one of a KeenWiki page's links and inspects it. `game_id` is
 	 *  the page's episode, used when the files don't tell.
 	 */
@@ -645,6 +650,8 @@ export type KeenwikiOrigin = {
 	released?: string | null,
 	/**  The mod's own website. */
 	homepage?: string | null,
+	/**  The discussion thread, usually on PCKF. */
+	pckf?: string | null,
 };
 
 export type LaunchPhase = "starting" | 
@@ -689,6 +696,8 @@ export type Mod = {
 	keenwikiUrl: string | null,
 	/**  The mod's own website, from its KeenWiki page. */
 	homepage: string | null,
+	/**  Its discussion thread, from its KeenWiki page. */
+	pckf: string | null,
 	/**  Unix epoch seconds. */
 	addedAt: number,
 	/**  The play profile created for the mod. */

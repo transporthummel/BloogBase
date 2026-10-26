@@ -69,6 +69,7 @@ vi.mock("../bindings", () => {
     "saveConfig",
     "resetConfig",
     "listMods",
+    "fillModLinks",
     "modReadmes",
     "openModFolder",
     "openModReadme",
@@ -193,6 +194,7 @@ beforeEach(() => {
   vi.mocked(commands.profileFiring).mockResolvedValue(ok(null));
   vi.mocked(commands.profileMachine).mockResolvedValue(ok(null));
   vi.mocked(commands.modInstalls).mockResolvedValue(ok([]));
+  vi.mocked(commands.fillModLinks).mockResolvedValue(ok(false));
 });
 
 const aurora: Mod = {
@@ -210,6 +212,7 @@ const aurora: Mod = {
   extends: null,
   keenwikiUrl: "https://keenwiki.shikadi.net/wiki/Aurora_Bliss",
   homepage: "https://aurora.example/",
+  pckf: "https://pckf.com/viewtopic.php?t=1",
   addedAt: 1_700_000_000,
   profileId: "aurora-bliss",
 };
@@ -265,14 +268,32 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   );
   await userEvent.click(screen.getByRole("button", { name: "KeenWiki" }));
   expect(openUrl).toHaveBeenCalledWith(aurora.keenwikiUrl);
+  await userEvent.click(screen.getByRole("button", { name: "PCKF" }));
+  expect(openUrl).toHaveBeenCalledWith(aurora.pckf);
   await userEvent.click(screen.getByRole("button", { name: "Website" }));
   expect(openUrl).toHaveBeenCalledWith(aurora.homepage);
+  // It has all its links.
+  expect(commands.fillModLinks).not.toHaveBeenCalled();
   // Not in the index yet.
   expect(screen.getByRole("button", { name: "Suggest it for the mod list" })).toBeInTheDocument();
   expect(screen.getByText("Sessions").nextSibling).toHaveTextContent("1");
   vi.mocked(commands.openModFolder).mockResolvedValue(ok(null));
   await pick("Open mod folder");
   expect(commands.openModFolder).toHaveBeenCalledWith("aurora-bliss");
+});
+
+test("a mod installed from KeenWiki without its PCKF link gets it from the page", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
+  );
+  vi.mocked(commands.listMods)
+    .mockResolvedValueOnce(ok([{ ...aurora, pckf: null }]))
+    .mockResolvedValue(ok([aurora]));
+  vi.mocked(commands.fillModLinks).mockResolvedValue(ok(true));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "PCKF" }));
+  expect(commands.fillModLinks).toHaveBeenCalledWith("aurora-bliss");
+  expect(openUrl).toHaveBeenCalledWith(aurora.pckf);
 });
 
 test("a mod's page changes the copy of the game it plays on", async () => {
