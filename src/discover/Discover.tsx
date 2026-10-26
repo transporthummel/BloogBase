@@ -148,6 +148,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
             />
             <input
               type="search"
+              autoComplete="off"
               className={`${field} w-full pl-9`}
               placeholder={t("discover.search")}
               value={query}

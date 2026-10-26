@@ -350,6 +350,7 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
         <span className="font-medium">{t("mods.name")}</span>
         <input
           className="rounded-lg border border-border bg-surface-raised px-3 py-2"
+          autoComplete="off"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {

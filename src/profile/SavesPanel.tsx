@@ -263,6 +263,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
         >
           <input
             className="min-w-0 flex-1 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm"
+            autoComplete="off"
             value={label}
             maxLength={80}
             onChange={(e) => setLabel(e.target.value)}
