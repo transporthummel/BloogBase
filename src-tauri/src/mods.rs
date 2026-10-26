@@ -1907,6 +1907,7 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
         keenwiki_url,
         homepage,
         pckf,
+        keenmodding,
         ..
     } = m;
     let size = fs::read_dir(Path::new(&path).join("source"))
@@ -1941,6 +1942,9 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
     }
     if let Some(url) = &pckf {
         yaml += &format!("  pckf: {url}\n");
+    }
+    if let Some(url) = &keenmodding {
+        yaml += &format!("  keenmodding: {url}\n");
     }
     if let Some(url) = &homepage {
         yaml += &format!("  homepage: {url}\n");

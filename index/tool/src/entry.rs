@@ -85,6 +85,8 @@ pub struct Links {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pckf: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub keenmodding: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub homepage: Option<String>,
 }
 
@@ -236,9 +238,13 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
     {
         fail("links.keenwiki must be a https://keenwiki.shikadi.net/wiki/ page".into());
     }
-    for url in [&entry.links.pckf, &entry.links.homepage]
-        .into_iter()
-        .flatten()
+    for url in [
+        &entry.links.pckf,
+        &entry.links.keenmodding,
+        &entry.links.homepage,
+    ]
+    .into_iter()
+    .flatten()
     {
         if !url.starts_with("https://") {
             fail(format!("link {url} must use https"));

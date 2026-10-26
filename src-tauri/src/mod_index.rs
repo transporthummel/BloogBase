@@ -103,6 +103,9 @@ pub struct Links {
     pub keenwiki: Option<String>,
     #[serde(default)]
     pub pckf: Option<String>,
+    /// The thread on the Keen: Modding forum.
+    #[serde(default)]
+    pub keenmodding: Option<String>,
     #[serde(default)]
     pub homepage: Option<String>,
 }

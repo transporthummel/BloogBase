@@ -53,6 +53,7 @@ export function ModCard({
   const links = [
     ["KeenWiki", entry.links.keenwiki],
     ["PCKF", entry.links.pckf],
+    ["Keen: Modding", entry.links.keenmodding],
     [t("discover.homepage"), entry.links.homepage],
   ].filter((l): l is [string, string] => !!l[1]);
 

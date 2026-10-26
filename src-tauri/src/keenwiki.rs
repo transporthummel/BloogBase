@@ -245,13 +245,13 @@ pub fn parse(html: &str, page_url: &str) -> Result<WikiMod> {
     };
     let first_link = |label: &str| links(label).into_iter().next();
     let discussions = links("Discussion(s)");
-    let thread = |on_forum: fn(&str) -> bool| {
+    let thread = |on_forum: fn(&str, &str) -> bool| {
         discussions
             .iter()
             .find(|h| {
                 Url::parse(h)
                     .ok()
-                    .and_then(|u| u.host_str().map(on_forum))
+                    .and_then(|u| Some(on_forum(u.host_str()?, u.path())))
                     .unwrap_or(false)
             })
             .cloned()
@@ -286,9 +286,15 @@ pub fn parse(html: &str, page_url: &str) -> Result<WikiMod> {
         released: row_text("Release date"),
         updated: row_text("Latest update"),
         levels: row_text("Number of levels"),
-        // Before pckf.com, PCKF was hosted on Yuku.
-        pckf: thread(|h| h.ends_with("pckf.com") || h.starts_with("publiccommanderkeenforum.")),
-        keenmodding: thread(|h| h.ends_with("keenmodding.org")),
+        // Before pckf.com, PCKF was hosted on Yuku; older threads are in the
+        // Shikadi archive.
+        pckf: thread(|h, _| h.ends_with("pckf.com")).or_else(|| {
+            thread(|h, p| {
+                h.starts_with("publiccommanderkeenforum.")
+                    || (h == "archive.shikadi.net" && p.starts_with("/pckf/"))
+            })
+        }),
+        keenmodding: thread(|h, _| h.ends_with("keenmodding.org")),
         homepage: first_link("Homepage"),
         description: doc
             .select(&selector(".mw-parser-output > p"))
@@ -813,6 +819,42 @@ mod tests {
             m.homepage.as_deref(),
             Some("http://web.archive.org/web/20050507103508/http://www.avk.frac.dk/")
         );
+    }
+
+    #[test]
+    fn discussions_are_told_apart_by_forum() {
+        let page = |links: &str| {
+            let html = format!(
+                r#"<table class="infobox"><tr><th>Modded episode</th><td>Keen 4</td></tr>
+                <tr><th>Discussion(s)</th><td>{links}</td></tr></table>"#
+            );
+            parse(&html, &format!("https://{HOST}/wiki/The_Keys_of_Krodacia")).unwrap()
+        };
+        // As on The Keys of Krodacia: the thread on pckf.com wins over the
+        // one from PCKF's Yuku days.
+        let m = page(
+            r#"<a href="http://publiccommanderkeenforum.yuku.com/topic/886/">PCKF</a>
+            <a href="https://pckf.com/viewtopic.php?t=566">PCKF</a>
+            <a href="http://keenmodding.org/viewtopic.php?t=834">Keen: Modding</a>"#,
+        );
+        assert_eq!(
+            m.pckf.as_deref(),
+            Some("https://pckf.com/viewtopic.php?t=566")
+        );
+        assert_eq!(
+            m.keenmodding.as_deref(),
+            Some("http://keenmodding.org/viewtopic.php?t=834")
+        );
+        // As on Lego Keen: an old thread in the Shikadi archive.
+        let m = page(
+            r#"<a href="http://archive.shikadi.net/pckf/unofficial/865.htm">PCKF</a>
+            <a href="http://archive.shikadi.net/other/1.htm">Elsewhere</a>"#,
+        );
+        assert_eq!(
+            m.pckf.as_deref(),
+            Some("http://archive.shikadi.net/pckf/unofficial/865.htm")
+        );
+        assert_eq!(m.keenmodding, None);
     }
 
     #[test]

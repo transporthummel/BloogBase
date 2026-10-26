@@ -11,6 +11,7 @@ type: episode
 description: "Norp the Yorp returns in a one-level mod: a single large maze to find his way through."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Norp_the_Yorp_3.5
+  keenmodding: https://keenmodding.org/viewtopic.php?t=524
 downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.xtraverse.norp_the_yorp_3_5.k1.2005-03-23.zip
     sha256: 31984577d36210128de87d44d87318b8a786a26271abffe6ec9ade7e99e2fef3

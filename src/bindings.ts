@@ -661,6 +661,8 @@ export type LaunchPhase = "starting" |
 export type Links = {
 	keenwiki?: string | null,
 	pckf?: string | null,
+	/**  The thread on the Keen: Modding forum. */
+	keenmodding?: string | null,
 	homepage?: string | null,
 };
 

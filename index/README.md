@@ -28,7 +28,7 @@ authors and link back to KeenWiki and PCKF.
    | `added`          | Today: when the entry joined the index (drives the "New" badge)                             |
    | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (something else entirely)          |
    | `description`    | One or two sentences in your own words                                                      |
-   | `links`          | `keenwiki`, `pckf`, `homepage`                                                              |
+   | `links`          | `keenwiki`, `pckf`, `keenmodding` (Keen: Modding forum), `homepage`                         |
    | `downloads`      | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`             |
    | `recipe`         | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode` |
    | `versionRecipes` | Version id: recipe, for game versions the mod starts differently on (one patch per version) |
