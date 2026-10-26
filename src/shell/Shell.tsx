@@ -16,6 +16,7 @@ import { UpdateCard } from "../updates/UpdateCard";
 import { PageFooterContext } from "./pageFooterContext";
 import { ArchiveWarning } from "./ArchiveWarning";
 import { QuitGuard } from "./QuitGuard";
+import { Snow } from "./Snow";
 
 /**
  * App frame (PLAN.md §8.2): full sidebar from 1200px, icon rail below. The
@@ -36,6 +37,7 @@ export function Shell() {
     return (
       <main className="bb-starfield relative min-h-screen overflow-y-auto">
         <QuitGuard />
+        <Snow />
         <EarlierBackupPrompt />
         <ArchiveWarning />
         <Outlet />
@@ -45,6 +47,7 @@ export function Shell() {
   return (
     <div className="flex h-screen">
       <QuitGuard />
+      <Snow />
       <DropImport />
       {/* After DropImport, so it's above the drop's summary. */}
       <EarlierBackupPrompt />
