@@ -44,7 +44,7 @@ const MAX_DEPTH: usize = 2;
 const MAX_FILES: usize = 20;
 /// Of documents; files without an extension count too.
 const EXTENSIONS: &[&str] = &[
-    "txt", "md", "markdown", "nfo", "doc", "rtf", "asc", "htm", "html",
+    "txt", "md", "markdown", "nfo", "doc", "docx", "rtf", "asc", "htm", "html",
 ];
 
 /// The documents of an installed mod, the README first; empty when it has
@@ -166,8 +166,13 @@ pub fn find(source: &Source) -> Result<Vec<Readme>> {
             continue;
         }
         // Some `.doc` files are plain text, shown as such.
-        if is_word_name(&file) && bytes.starts_with(OLE_MAGIC) {
-            let text = word_to_text(&bytes).map(|t| clean(&t)).unwrap_or_default();
+        if is_word_name(&file) && (bytes.starts_with(OLE_MAGIC) || bytes.starts_with(ZIP_MAGIC)) {
+            let text = if bytes.starts_with(OLE_MAGIC) {
+                word_to_text(&bytes)
+            } else {
+                docx_to_text(&bytes)
+            };
+            let text = text.map(|t| clean(&t)).unwrap_or_default();
             found.push(Readme {
                 file,
                 text,
@@ -481,12 +486,85 @@ fn rtf_to_text(bytes: &[u8]) -> String {
 
 /// Compound files: Word 97–2003, also Word 6/95.
 const OLE_MAGIC: &[u8] = b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1";
+/// Word 2007 and later: XML in a ZIP.
+const ZIP_MAGIC: &[u8] = b"PK\x03\x04";
 
 fn is_word_name(rel: &str) -> bool {
     split_dir(rel)
         .1
         .rsplit_once('.')
-        .is_some_and(|(_, e)| e.eq_ignore_ascii_case("doc"))
+        .is_some_and(|(_, e)| e.eq_ignore_ascii_case("doc") || e.eq_ignore_ascii_case("docx"))
+}
+
+/// The main text of a Word 2007 document, without headers, footnotes, field
+/// codes and deleted text; `None` for damaged documents.
+fn docx_to_text(bytes: &[u8]) -> Option<String> {
+    let mut zip = zip::ZipArchive::new(Cursor::new(bytes)).ok()?;
+    let mut xml = String::new();
+    zip.by_name("word/document.xml")
+        .ok()?
+        .take(8 * MAX_BYTES as u64)
+        .read_to_string(&mut xml)
+        .ok()?;
+    let mut out = String::new();
+    let mut in_text = false;
+    let mut rest = xml.as_str();
+    while let Some(open) = rest.find('<') {
+        if in_text {
+            out.push_str(&xml_unescape(&rest[..open]));
+        }
+        let close = open + rest[open..].find('>')?;
+        let tag = &rest[open + 1..close];
+        let name = tag
+            .trim_end_matches('/')
+            .split(char::is_whitespace)
+            .next()
+            .unwrap_or_default();
+        match name {
+            "w:t" => in_text = !tag.ends_with('/'),
+            "/w:t" => in_text = false,
+            "w:tab" => out.push('\t'),
+            "w:br" | "w:cr" | "/w:p" => out.push('\n'),
+            _ => {}
+        }
+        rest = &rest[close + 1..];
+    }
+    Some(out)
+}
+
+/// XML text with its entities and character references resolved.
+fn xml_unescape(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    let mut rest = text;
+    while let Some(at) = rest.find('&') {
+        out.push_str(&rest[..at]);
+        rest = &rest[at..];
+        let entity = rest.find(';').map(|end| (&rest[1..end], end));
+        let c = entity.and_then(|(entity, _)| match entity {
+            "amp" => Some('&'),
+            "lt" => Some('<'),
+            "gt" => Some('>'),
+            "quot" => Some('"'),
+            "apos" => Some('\''),
+            _ => match entity.strip_prefix("#x") {
+                Some(hex) => u32::from_str_radix(hex, 16).ok(),
+                None => entity.strip_prefix('#').and_then(|d| d.parse().ok()),
+            }
+            .and_then(char::from_u32),
+        });
+        match (c, entity) {
+            (Some(c), Some((_, end))) => {
+                out.push(c);
+                rest = &rest[end + 1..];
+            }
+            _ => {
+                out.push('&');
+                rest = &rest[1..];
+            }
+        }
+    }
+    out.push_str(rest);
+    out
 }
 
 /// The main text of a Word document, without headers, footnotes and field
@@ -809,6 +887,51 @@ mod tests {
                 ("keenstatic.doc", "Static", true),
                 ("story.doc", "Plain text", false),
                 ("hints.doc", "", true)
+            ]
+        );
+    }
+
+    #[test]
+    fn lists_word_2007_documents_with_their_text() {
+        // As Keen 0: Printed to Pluto's `Levels & Creatures.docx`.
+        let mut docx = zip::ZipWriter::new(Cursor::new(Vec::new()));
+        docx.start_file(
+            "word/document.xml",
+            zip::write::SimpleFileOptions::default(),
+        )
+        .unwrap();
+        std::io::Write::write_all(
+            &mut docx,
+            br#"<?xml version="1.0"?><w:document><w:body>
+                <w:p><w:r><w:t>Levels &amp; </w:t></w:r><w:r><w:t xml:space="preserve">Creatures</w:t></w:r></w:p>
+                <w:p><w:r><w:t>Yeti</w:t><w:tab/><w:t>&#8211; cold</w:t></w:r></w:p>
+                <w:p><w:r><w:delText>gone</w:delText><w:instrText>PAGE</w:instrText><w:t/></w:r></w:p>
+            </w:body></w:document>"#,
+        )
+        .unwrap();
+        let docx = docx.finish().unwrap().into_inner();
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(
+            tmp.path(),
+            &[
+                ("Levels & Creatures.docx", &docx),
+                ("broken.docx", ZIP_MAGIC),
+            ],
+        );
+        let found = find(&Source::Folder(tmp.path().into())).unwrap();
+        let summary: Vec<_> = found
+            .iter()
+            .map(|r| (r.file.as_str(), r.text.as_str(), r.word))
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                (
+                    "Levels & Creatures.docx",
+                    "Levels & Creatures\nYeti\t– cold",
+                    true
+                ),
+                ("broken.docx", "", true)
             ]
         );
     }
