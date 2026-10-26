@@ -1,0 +1,28 @@
+id: keen-is-at-it-again
+name: Keen Is At It Again!
+game: keen1
+authors: [transporthummel]
+authorLinks:
+  transporthummel: https://keenwiki.shikadi.net/wiki/User:Transporthummel
+version: "1.1"
+released: 2023-10-02
+updated: 2024-02-18
+added: 2026-10-26
+type: levelpack
+description: A Keen 1 level pack with 24 new levels, a new world map, some new graphics and a new story, made for the author's kids. A pogo stick waits halfway through.
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_Is_At_It_Again!
+  pckf: https://pckf.com/viewtopic.php?t=16821
+downloads:
+  - version: "1.1"
+    url: https://files.shikadi.net/keenwiki/Packs/Keen1/l.transporthummel.keen_is_at_it_again_1.1.k1.2024-02-18.zip
+    sha256: bf6e2c82529c15d5ab56d70da84f179e1c4b890f957f27b79a36c859a36829ce
+    size: 160069
+  - version: "1.0"
+    url: https://files.shikadi.net/keenwiki/Packs/Keen1/l.transporthummel.keen_is_at_it_again_1.0.k1.2023-10-02.zip
+    sha256: 511cc95a2ef75b5589155c2990bdb84537564a52f7b236c7df89ba42214f4729
+    size: 159940
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: KEENIAIA.PAT
