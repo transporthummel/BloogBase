@@ -19,7 +19,7 @@ use crate::profiles;
 use crate::recipe::{self, Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v15";
+const VERSION: &str = "covers v16";
 
 /// A profile's cover.
 #[derive(Debug, PartialEq, Eq)]
@@ -302,8 +302,8 @@ fn extract(
 ) -> std::result::Result<Title, String> {
     let ext = extension(game);
     let patch = recipe
-        .and_then(Recipe::patch_file)
-        .and_then(|p| files.read(p))
+        .and_then(|r| patch_file(r, files))
+        .and_then(|p| files.read(&p))
         .map(|t| patched(&String::from_utf8_lossy(&t), &ext))
         .unwrap_or_default();
     let (image, cga, scrambled) = title(game, version_id, recipe, files, &ext, &patch)?;
@@ -317,6 +317,31 @@ fn extract(
         colors,
         scrambled,
     })
+}
+
+/// The patch file a recipe applies: its own, or the first one a program it
+/// runs names, as Keen Q's `KEENQ.COM`, a compiled batch file that runs
+/// `CK2PATCH GEEL.PAT`.
+fn patch_file(recipe: &Recipe, files: &Files) -> Option<String> {
+    if let Some(patch) = recipe.patch_file() {
+        return Some(patch.to_string());
+    }
+    let Recipe::Program { program, .. } = recipe else {
+        return None;
+    };
+    let program = files.read(program)?.to_ascii_uppercase();
+    files
+        .names()
+        .filter(|n| has_ext(n, "PAT"))
+        .filter_map(|n| {
+            let name = n.to_ascii_uppercase();
+            let at = program
+                .windows(name.len())
+                .position(|w| w == name.as_bytes())?;
+            Some((at, n.to_string()))
+        })
+        .min()
+        .map(|(_, name)| name)
 }
 
 /// The names a Vorticons game opens its files under, from a stem like
@@ -746,6 +771,32 @@ mod tests {
         files.push(("MOD.PAT", patch.as_bytes().to_vec()));
         let pixels = extract_from("keen1", &files).unwrap().image.pixels;
         assert_eq!((pixels[0], pixels[320 + 32]), (1, 8));
+    }
+
+    #[test]
+    fn finds_the_patch_file_a_program_names() {
+        // As Keen Q's KEENQ.COM, a compiled batch file swapping two patches.
+        let tmp = tempfile::tempdir().unwrap();
+        let com = b"/C RENAME GEEL3.PAT GEEL.PAT\r\0CK2patch.exe\0 geel.pat\r";
+        for (name, data) in [
+            ("KEENQ.COM", com.as_slice()),
+            ("GEEL.PAT", b""),
+            ("GEEL3.PAT", b""),
+        ] {
+            fs::write(tmp.path().join(name), data).unwrap();
+        }
+        let files = Files::new(&[tmp.path()]).unwrap();
+        let program = |name: &str| Recipe::Program {
+            program: name.into(),
+            args: Vec::new(),
+        };
+        assert_eq!(
+            patch_file(&program("KEENQ.COM"), &files).as_deref(),
+            Some("GEEL3.PAT")
+        );
+        fs::write(tmp.path().join("PLAIN.EXE"), b"no patches").unwrap();
+        let files = Files::new(&[tmp.path()]).unwrap();
+        assert_eq!(patch_file(&program("PLAIN.EXE"), &files), None);
     }
 
     #[test]
