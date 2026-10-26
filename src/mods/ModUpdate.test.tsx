@@ -143,7 +143,9 @@ function inIndex(updateAvailable: boolean) {
 }
 
 test("says when the newest version is installed", async () => {
-  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "upToDate", page }));
+  vi.mocked(commands.checkModUpdate).mockReturnValue(
+    ok({ status: "upToDate", page, refreshed: [] }),
+  );
   const user = renderUpdate();
   await user.click(screen.getByRole("button", { name: "Check for updates" }));
   expect(await screen.findByText("You have the newest version.")).toBeInTheDocument();
@@ -151,8 +153,24 @@ test("says when the newest version is installed", async () => {
   expect(commands.checkModUpdate).toHaveBeenCalledWith("aurora-bliss");
 });
 
+test("says what it took over from the KeenWiki page", async () => {
+  vi.mocked(commands.checkModUpdate).mockReturnValue(
+    ok({ status: "upToDate", page, refreshed: ["description", "pckf"] }),
+  );
+  const invalidate = vi.spyOn(QueryClient.prototype, "invalidateQueries");
+  const user = renderUpdate();
+  await user.click(screen.getByRole("button", { name: "Check for updates" }));
+  expect(
+    await screen.findByText("Updated from the KeenWiki page: description, PCKF link."),
+  ).toBeInTheDocument();
+  expect(screen.getByText("You have the newest version.")).toBeInTheDocument();
+  // The mod's page shows the new details.
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["mods"] });
+  invalidate.mockRestore();
+});
+
 test("downloads a newer version and replaces the installed one", async () => {
-  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page }));
+  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page, refreshed: [] }));
   vi.mocked(commands.downloadKeenwikiMod).mockReturnValue(
     ok({
       path: "/cache/aurora_v1.2.zip",
@@ -245,7 +263,9 @@ test("a failed index check can't tell the mod is up to date", async () => {
 
 test("asks KeenWiki when the index has nothing newer, and warns it leaves the index", async () => {
   inIndex(false);
-  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "unknown", page }));
+  vi.mocked(commands.checkModUpdate).mockReturnValue(
+    ok({ status: "unknown", page, refreshed: [] }),
+  );
   const user = renderUpdate(indexMod);
   await user.click(screen.getByRole("button", { name: "Check for updates" }));
   expect(
@@ -261,7 +281,7 @@ test("asks KeenWiki when the index has nothing newer, and warns it leaves the in
 });
 
 test("offers a download BloogBase can't open in the browser", async () => {
-  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page }));
+  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page, refreshed: [] }));
   vi.mocked(commands.downloadKeenwikiMod).mockResolvedValue({
     status: "error",
     error: { kind: "unsupportedDownload", message: "RAR archive" },
@@ -274,7 +294,7 @@ test("offers a download BloogBase can't open in the browser", async () => {
 });
 
 test("offers a link that leads to a web page in the browser", async () => {
-  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page }));
+  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page, refreshed: [] }));
   vi.mocked(commands.downloadKeenwikiMod).mockResolvedValue({
     status: "error",
     error: { kind: "webPage", message: "" },
@@ -287,7 +307,7 @@ test("offers a link that leads to a web page in the browser", async () => {
 });
 
 test("dismissing an offered update hides it", async () => {
-  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page }));
+  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page, refreshed: [] }));
   const user = renderUpdate();
   await user.click(screen.getByRole("button", { name: "Check for updates" }));
   await user.click(await screen.findByRole("button", { name: "Dismiss" }));

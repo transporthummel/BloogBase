@@ -19,6 +19,7 @@ use crate::ckpatch;
 use crate::db::Db;
 use crate::detect::{detect, sha256_hex};
 use crate::error::{Error, Result};
+use crate::keenwiki::WikiMod;
 use crate::library::{self, Install, now};
 use crate::paths::AppPaths;
 use crate::readme;
@@ -1760,21 +1761,93 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
     Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 
-/// Fills in the links a mod installed from its KeenWiki page lacks, for
-/// mods installed before they were kept. Returns whether any were added.
-pub fn fill_links(
-    db: &Db,
-    mod_id: &str,
-    pckf: Option<&str>,
-    homepage: Option<&str>,
-) -> Result<bool> {
-    let changed = db.conn().execute(
-        "UPDATE mods SET pckf = COALESCE(pckf, ?2), homepage = COALESCE(homepage, ?3)
-         WHERE id = ?1 AND source = 'keenwiki'
-           AND ((pckf IS NULL AND ?2 IS NOT NULL) OR (homepage IS NULL AND ?3 IS NOT NULL))",
-        params![mod_id, pckf, homepage],
-    )?;
-    Ok(changed > 0)
+/// What a mod's KeenWiki page says about it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum PageDetail {
+    Authors,
+    Description,
+    Released,
+    Homepage,
+    Pckf,
+}
+
+/// Takes over what a mod's KeenWiki page now says about it; what the page
+/// leaves out stays. Mods from the index keep the index's details. Returns
+/// what changed.
+pub fn refresh_details(db: &Db, mod_id: &str, page: &WikiMod) -> Result<Vec<PageDetail>> {
+    type Row = (
+        String,
+        String,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+    );
+    let conn = db.conn();
+    let (source, authors, author_links, description, released, homepage, pckf): Row = conn
+        .query_row(
+            "SELECT source, authors, author_links, description, released, homepage, pckf
+             FROM mods WHERE id = ?1",
+            [mod_id],
+            |r| {
+                Ok((
+                    r.get(0)?,
+                    r.get(1)?,
+                    r.get(2)?,
+                    r.get(3)?,
+                    r.get(4)?,
+                    r.get(5)?,
+                    r.get(6)?,
+                ))
+            },
+        )
+        .optional()?
+        .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))?;
+    if source == ModSource::Index.as_str() {
+        return Ok(Vec::new());
+    }
+    let mut authors: Vec<String> = serde_json::from_str(&authors).unwrap_or_default();
+    let mut author_links: BTreeMap<String, String> = author_links
+        .and_then(|j| serde_json::from_str(&j).ok())
+        .unwrap_or_default();
+    let mut changed = Vec::new();
+    if !page.authors.is_empty() && (page.authors != authors || page.author_links != author_links) {
+        authors = page.authors.clone();
+        author_links = page.author_links.clone();
+        changed.push(PageDetail::Authors);
+    }
+    let mut take = |field: &mut Option<String>, new: &Option<String>, detail| {
+        if new.is_some() && field != new {
+            *field = new.clone();
+            changed.push(detail);
+        }
+    };
+    let (mut description, mut released, mut homepage, mut pckf) =
+        (description, released, homepage, pckf);
+    take(&mut description, &page.description, PageDetail::Description);
+    take(&mut released, &page.released, PageDetail::Released);
+    take(&mut homepage, &page.homepage, PageDetail::Homepage);
+    take(&mut pckf, &page.discussion, PageDetail::Pckf);
+    if !changed.is_empty() {
+        conn.execute(
+            "UPDATE mods SET authors = ?2, author_links = ?3, description = ?4, released = ?5,
+                             homepage = ?6, pckf = ?7
+             WHERE id = ?1",
+            params![
+                mod_id,
+                serde_json::to_string(&authors).expect("strings serialize"),
+                serde_json::to_string(&author_links).expect("strings serialize"),
+                description,
+                released,
+                homepage,
+                pckf
+            ],
+        )?;
+        tracing::info!("took {changed:?} of mod {mod_id} from its KeenWiki page");
+    }
+    Ok(changed)
 }
 
 /// Where an installed mod came from: its KeenWiki page, the download (or
@@ -2154,39 +2227,69 @@ mod tests {
     }
 
     #[test]
-    fn fills_in_links_a_keenwiki_mod_was_installed_without() {
+    fn takes_over_what_the_keenwiki_page_now_says() {
         let (tmp, paths, db) = setup();
         let zip = tmp.path().join("aurora.zip");
         write_zip(&zip, AURORA);
         let recipe = inspect(&zip, None).unwrap().recipes[0].recipe.clone();
-        let manual = install(&paths, &db, &request(&zip, recipe.clone())).unwrap();
         let mut req = request(&zip, recipe);
+        let page_url = "https://keenwiki.shikadi.net/wiki/Aurora_Bliss";
         req.keenwiki = Some(KeenwikiOrigin {
-            page_url: "https://keenwiki.shikadi.net/wiki/Aurora_Bliss".into(),
+            page_url: page_url.into(),
             download_url: "https://files.shikadi.net/aurora.zip".into(),
             game_id: Some("keen4".into()),
-            authors: vec![],
+            authors: vec!["Dave216".into()],
             author_links: BTreeMap::new(),
             version: None,
-            description: None,
-            released: None,
+            description: Some("Blissful.".into()),
+            released: Some("2012-05-01".into()),
             homepage: Some("http://aurora.example/".into()),
             pckf: None,
         });
-        let wiki = install(&paths, &db, &req).unwrap();
+        let m = install(&paths, &db, &req).unwrap();
 
-        let pckf = Some("https://pckf.com/viewtopic.php?t=1");
-        assert!(!fill_links(&db, &manual.id, pckf, None).unwrap());
-        assert!(fill_links(&db, &wiki.id, pckf, Some("http://other.example/")).unwrap());
-        assert!(!fill_links(&db, &wiki.id, pckf, None).unwrap());
-        let listed = list(&db).unwrap();
-        let get = |id: &str| listed.iter().find(|m| m.id == id).unwrap();
-        assert_eq!(get(&manual.id).pckf, None);
-        assert_eq!(get(&wiki.id).pckf.as_deref(), pckf);
-        // What it was installed with stays.
+        let mut page = WikiMod {
+            page_url: page_url.into(),
+            name: "Aurora Bliss".into(),
+            game_id: Some("keen4".into()),
+            authors: vec!["Dave216".into()],
+            author_links: BTreeMap::from([(
+                "Dave216".into(),
+                "https://keenwiki.shikadi.net/wiki/User:Dave216".into(),
+            )]),
+            status: None,
+            released: Some("2012-05-01".into()),
+            updated: None,
+            levels: None,
+            discussion: Some("https://pckf.com/viewtopic.php?t=1".into()),
+            // The page no longer says.
+            homepage: None,
+            description: Some("Even more blissful.".into()),
+            credits: vec![],
+            downloads: vec![],
+        };
         assert_eq!(
-            get(&wiki.id).homepage.as_deref(),
-            Some("http://aurora.example/")
+            refresh_details(&db, &m.id, &page).unwrap(),
+            [
+                PageDetail::Authors,
+                PageDetail::Description,
+                PageDetail::Pckf
+            ]
+        );
+        let listed = &list(&db).unwrap()[0];
+        assert_eq!(
+            listed.author_links["Dave216"],
+            "https://keenwiki.shikadi.net/wiki/User:Dave216"
+        );
+        assert_eq!(listed.description.as_deref(), Some("Even more blissful."));
+        assert_eq!(listed.pckf.as_deref(), page.discussion.as_deref());
+        assert_eq!(listed.homepage.as_deref(), Some("http://aurora.example/"));
+        // Nothing new the second time.
+        assert!(refresh_details(&db, &m.id, &page).unwrap().is_empty());
+        page.released = Some("2012-05-02".into());
+        assert_eq!(
+            refresh_details(&db, &m.id, &page).unwrap(),
+            [PageDetail::Released]
         );
     }
 

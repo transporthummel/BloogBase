@@ -336,7 +336,15 @@
     "leavesIndex": "After this update, the mod no longer gets updates from the BloogBase mod list.",
     "dismiss": "Dismiss",
     "update": "Update",
-    "downloading": "Downloading…"
+    "downloading": "Downloading…",
+    "refreshed": "Updated from the KeenWiki page: {{details}}.",
+    "detail": {
+      "authors": "authors",
+      "description": "description",
+      "released": "release date",
+      "homepage": "website",
+      "pckf": "PCKF link"
+    }
   },
   "discover": {
     "title": "Discover",

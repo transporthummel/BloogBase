@@ -336,7 +336,15 @@
     "leavesIndex": "Nach diesem Update bekommt die Mod keine Updates mehr aus der BloogBase-Modliste.",
     "dismiss": "Verwerfen",
     "update": "Aktualisieren",
-    "downloading": "Wird heruntergeladen…"
+    "downloading": "Wird heruntergeladen…",
+    "refreshed": "Von der KeenWiki-Seite übernommen: {{details}}.",
+    "detail": {
+      "authors": "Autor(en)",
+      "description": "Beschreibung",
+      "released": "Erscheinungsdatum",
+      "homepage": "Website",
+      "pckf": "PCKF-Link"
+    }
   },
   "discover": {
     "title": "Entdecken",

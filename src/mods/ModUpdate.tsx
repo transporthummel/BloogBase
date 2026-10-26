@@ -58,6 +58,13 @@ export function ModUpdate({
         ) : (
           <Notice>{t("modUpdate.notInIndex")}</Notice>
         ))}
+      {update && update.refreshed.length > 0 && (
+        <Notice>
+          {t("modUpdate.refreshed", {
+            details: update.refreshed.map((d) => t(`modUpdate.detail.${d}`)).join(", "),
+          })}
+        </Notice>
+      )}
       {update?.status === "upToDate" && <Notice>{t("modUpdate.upToDate")}</Notice>}
       {update?.status === "noDownload" && <Notice>{t("modUpdate.noDownload")}</Notice>}
       {offered && newest && (

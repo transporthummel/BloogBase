@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
 import { commands, type IndexMod, type Mod, type ModUpdate } from "../bindings";
 import { indexModsKey, indexStatusKey } from "../discover/queries";
+import { modsKey } from "../library/queries";
 import { unwrap } from "../ipc";
 
 /**
@@ -34,7 +35,10 @@ export function useModUpdateCheck(mod: Mod | undefined): ModUpdateCheck {
           return { source: "index", mod: found };
         }
       }
-      return { source: "keenwiki", update: await unwrap(commands.checkModUpdate(mod.id)) };
+      const update = await unwrap(commands.checkModUpdate(mod.id));
+      // It took over what the page now says about the mod.
+      if (update.refreshed.length) client.invalidateQueries({ queryKey: modsKey });
+      return { source: "keenwiki", update };
     },
   });
 }

@@ -900,10 +900,13 @@ pub async fn lookup_keenwiki(app: AppHandle, url: String) -> CommandResult<Keenw
 pub struct ModUpdate {
     pub status: UpdateStatus,
     pub page: WikiMod,
+    /// What was taken over from the page because it changed there.
+    pub refreshed: Vec<mods::PageDetail>,
 }
 
-/// Checks a mod's KeenWiki page for a newer download. The page comes from
-/// the cache when it was read today.
+/// Checks a mod's KeenWiki page for a newer download and takes over what the
+/// page now says about the mod. The page comes from the cache when it was
+/// read today.
 #[tauri::command]
 #[specta::specta]
 pub async fn check_mod_update(app: AppHandle, mod_id: String) -> CommandResult<ModUpdate> {
@@ -912,28 +915,12 @@ pub async fn check_mod_update(app: AppHandle, mod_id: String) -> CommandResult<M
     let cache = app.state::<AppPaths>().cache.join("keenwiki");
     let html = keenwiki::fetch(&cache, &page_url).await?;
     let page = keenwiki::parse(&html, &page_url)?;
+    let refreshed = mods::refresh_details(&app.state::<Db>(), &mod_id, &page)?;
     Ok(ModUpdate {
         status: keenwiki::update_status(&page, &url, version.as_deref()),
         page,
+        refreshed,
     })
-}
-
-/// Fills in the PCKF and homepage links of a mod installed from KeenWiki
-/// without them, from its page. Returns whether any were added.
-#[tauri::command]
-#[specta::specta]
-pub async fn fill_mod_links(app: AppHandle, mod_id: String) -> CommandResult<bool> {
-    let (page_url, _, _) = mods::origin(&app.state::<Db>(), &mod_id)?;
-    let page_url = page_url.ok_or_else(|| Error::NotFound(format!("KeenWiki page of {mod_id}")))?;
-    let cache = app.state::<AppPaths>().cache.join("keenwiki");
-    let html = keenwiki::fetch(&cache, &page_url).await?;
-    let page = keenwiki::parse(&html, &page_url)?;
-    Ok(mods::fill_links(
-        &app.state::<Db>(),
-        &mod_id,
-        page.discussion.as_deref(),
-        page.homepage.as_deref(),
-    )?)
 }
 
 /// A downloaded KeenWiki mod, ready for `install_mod`.

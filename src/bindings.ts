@@ -188,15 +188,11 @@ export const commands = {
 	installIndexMod: (indexId: string, installId: string | null, withoutGame: boolean, archive: string | null) => __TAURI_INVOKE<Job>("install_index_mod", { indexId, installId, withoutGame, archive }),
 	lookupKeenwiki: (url: string) => typedError<KeenwikiLookup, CommandError>(__TAURI_INVOKE("lookup_keenwiki", { url })),
 	/**
-	 *  Checks a mod's KeenWiki page for a newer download. The page comes from
-	 *  the cache when it was read today.
+	 *  Checks a mod's KeenWiki page for a newer download and takes over what the
+	 *  page now says about the mod. The page comes from the cache when it was
+	 *  read today.
 	 */
 	checkModUpdate: (modId: string) => typedError<ModUpdate, CommandError>(__TAURI_INVOKE("check_mod_update", { modId })),
-	/**
-	 *  Fills in the PCKF and homepage links of a mod installed from KeenWiki
-	 *  without them, from its page. Returns whether any were added.
-	 */
-	fillModLinks: (modId: string) => typedError<boolean, CommandError>(__TAURI_INVOKE("fill_mod_links", { modId })),
 	/**
 	 *  Downloads one of a KeenWiki page's links and inspects it. `game_id` is
 	 *  the page's episode, used when the files don't tell.
@@ -729,7 +725,12 @@ export type ModSource = "index" | "keenwiki" | "manual";
 export type ModUpdate = {
 	status: UpdateStatus,
 	page: WikiMod,
+	/**  What was taken over from the page because it changed there. */
+	refreshed: PageDetail[],
 };
+
+/**  What a mod's KeenWiki page says about it. */
+export type PageDetail = "authors" | "description" | "released" | "homepage" | "pckf";
 
 export type PlaySessionEnded = {
 	profileId: string,
