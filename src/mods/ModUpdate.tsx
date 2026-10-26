@@ -1,10 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Download } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Mod, type ModUpdate as Update } from "../bindings";
+import { commands, type IndexMod, type Mod, type ModUpdate as Update } from "../bindings";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
+import { JobRow } from "../jobs/JobList";
+import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { profilesKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
@@ -35,7 +37,8 @@ export function ModUpdate({
     onSuccess: setFetched,
   });
 
-  const update = check.data;
+  const found = check.data;
+  const update = found?.source === "keenwiki" ? found.update : undefined;
   const newest = update?.page.downloads[0];
   const offered = update && (update.status === "newer" || update.status === "unknown");
 
@@ -45,6 +48,12 @@ export function ModUpdate({
     <div className="grid justify-items-start gap-2">
       {check.isPending && <Notice>{t("modUpdate.checking")}</Notice>}
       {check.error && <Notice tone="error">{errorMessage(t, check.error)}</Notice>}
+      {found?.source === "index" &&
+        (found.mod ? (
+          <IndexUpdate mod={found.mod} disabled={disabled} />
+        ) : (
+          <Notice>{t("modUpdate.notInIndex")}</Notice>
+        ))}
       {update?.status === "upToDate" && <Notice>{t("modUpdate.upToDate")}</Notice>}
       {update?.status === "noDownload" && <Notice>{t("modUpdate.noDownload")}</Notice>}
       {offered && newest && (
@@ -80,5 +89,32 @@ export function ModUpdate({
         />
       )}
     </div>
+  );
+}
+
+/** The index's newer version, installed over the old one like from Discover. */
+function IndexUpdate({ mod, disabled }: { mod: IndexMod; disabled: boolean }) {
+  const { t } = useTranslation();
+  const { entry } = mod;
+  const job = useJob("mod", entry.id);
+  // The installed mod's own game version gets it.
+  const start = useStartJob(() => commands.installIndexMod(entry.id, null, true, null));
+
+  if (job && (!isFinished(job) || start.isSuccess)) return <JobRow job={job} label={entry.name} />;
+  if (!mod.updateAvailable) return <Notice>{t("modUpdate.upToDate")}</Notice>;
+  return (
+    <>
+      <Notice>
+        {t("modUpdate.inIndex", {
+          version: entry.version,
+          context: entry.version ? "version" : undefined,
+        })}
+      </Notice>
+      <Button onClick={() => start.mutate()} disabled={disabled || start.isPending}>
+        <RefreshCw className="size-4" aria-hidden />
+        {t("modUpdate.update")}
+      </Button>
+      {start.error && <Notice tone="error">{errorMessage(t, start.error)}</Notice>}
+    </>
   );
 }

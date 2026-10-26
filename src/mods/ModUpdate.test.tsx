@@ -6,6 +6,7 @@ import { beforeEach, expect, test, vi } from "vitest";
 import {
   commands,
   type Game,
+  type IndexMod,
   type Install,
   type Mod,
   type Recipe,
@@ -26,6 +27,9 @@ vi.mock("../bindings", () => ({
     listProfiles: vi.fn(),
     installMod: vi.fn(),
     indexMods: vi.fn(),
+    refreshIndex: vi.fn(),
+    installIndexMod: vi.fn(),
+    listJobs: vi.fn(),
   },
 }));
 
@@ -84,7 +88,7 @@ const install: Install = {
 
 /** The detail page asks from its menu. */
 function Checked({ mod }: { mod: Mod }) {
-  const check = useModUpdateCheck(mod.id);
+  const check = useModUpdateCheck(mod);
   return (
     <>
       <button onClick={() => check.mutate()}>Check for updates</button>
@@ -110,7 +114,32 @@ beforeEach(() => {
   vi.mocked(commands.listInstalls).mockReturnValue(ok([install]));
   vi.mocked(commands.listMods).mockReturnValue(ok([mod]));
   vi.mocked(commands.listProfiles).mockReturnValue(ok([]));
+  vi.mocked(commands.listJobs).mockResolvedValue([]);
+  vi.mocked(commands.refreshIndex).mockResolvedValue(indexStatus);
 });
+
+const indexStatus = {
+  url: "https://index.example/index.json",
+  checkedAt: 1,
+  generatedAt: 1,
+  modCount: 1,
+  hiddenCount: 0,
+  error: null,
+};
+
+const indexMod = { ...mod, indexId: "aurora-bliss", source: "index" as const };
+
+function inIndex(updateAvailable: boolean) {
+  vi.mocked(commands.indexMods).mockReturnValue(
+    ok([
+      {
+        entry: { id: "aurora-bliss", name: "Aurora Bliss", version: "1.2" },
+        modId: "aurora-bliss",
+        updateAvailable,
+      } as IndexMod,
+    ]),
+  );
+}
 
 test("says when the newest version is installed", async () => {
   vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "upToDate", page }));
@@ -175,9 +204,48 @@ test("downloads a newer version and replaces the installed one", async () => {
   await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });
 
-test("warns that an index mod leaves the index", async () => {
+test("updates an index mod from a fresh index", async () => {
+  inIndex(true);
+  vi.mocked(commands.installIndexMod).mockResolvedValue({
+    id: 1,
+    kind: "mod",
+    subject: "aurora-bliss",
+    phase: "starting",
+  } as never);
+  const user = renderUpdate(indexMod);
+  await user.click(screen.getByRole("button", { name: "Check for updates" }));
+  expect(await screen.findByText("Version 1.2 is in the BloogBase mod list.")).toBeInTheDocument();
+  expect(commands.refreshIndex).toHaveBeenCalledWith(true);
+  expect(commands.checkModUpdate).not.toHaveBeenCalled();
+
+  await user.click(screen.getByRole("button", { name: "Update" }));
+  expect(commands.installIndexMod).toHaveBeenCalledWith("aurora-bliss", null, true, null);
+});
+
+test("an index mod without a KeenWiki page asks only the index", async () => {
+  inIndex(false);
+  const user = renderUpdate({ ...indexMod, keenwikiUrl: null });
+  await user.click(screen.getByRole("button", { name: "Check for updates" }));
+  expect(await screen.findByText("You have the newest version.")).toBeInTheDocument();
+  expect(commands.checkModUpdate).not.toHaveBeenCalled();
+});
+
+test("a failed index check can't tell the mod is up to date", async () => {
+  inIndex(false);
+  vi.mocked(commands.refreshIndex).mockResolvedValue({
+    ...indexStatus,
+    error: { kind: "network", message: "offline" },
+  } as never);
+  const user = renderUpdate({ ...indexMod, keenwikiUrl: null });
+  await user.click(screen.getByRole("button", { name: "Check for updates" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(/internet connection/);
+  expect(screen.queryByText("You have the newest version.")).toBeNull();
+});
+
+test("asks KeenWiki when the index has nothing newer, and warns it leaves the index", async () => {
+  inIndex(false);
   vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "unknown", page }));
-  const user = renderUpdate({ ...mod, indexId: "aurora-bliss", source: "index" });
+  const user = renderUpdate(indexMod);
   await user.click(screen.getByRole("button", { name: "Check for updates" }));
   expect(
     await screen.findByText(

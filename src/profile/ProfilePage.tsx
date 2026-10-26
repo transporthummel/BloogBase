@@ -213,11 +213,13 @@ function Hero({
     queryFn: () => unwrap(commands.modInstalls(profile.modId!)),
     enabled: profile.modId !== null,
   });
-  const check = useModUpdateCheck(profile.modId ?? "");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const mod = mods.data?.find((m) => m.id === profile.modId);
+  const check = useModUpdateCheck(mod);
+  // The index or the KeenWiki page may have a newer version.
+  const checkable = mod && (mod.indexId || mod.keenwikiUrl);
   // Mods played over this one, as level packs for it.
   const extensions = mod ? (mods.data ?? []).filter((m) => m.extends === mod.id) : [];
   const entry = mod?.indexId
@@ -259,7 +261,7 @@ function Hero({
       icon: <FolderOpen className="size-4" />,
       onSelect: () => openFolder.mutate(mod.id),
     });
-    if (mod.keenwikiUrl)
+    if (checkable)
       actions.push({
         label: t("modUpdate.check"),
         icon: <RefreshCw className="size-4" />,
@@ -427,7 +429,7 @@ function Hero({
           {profile.missingGame !== null && (
             <Notice>{t("mods.waitingHint", { game: profile.missingGame })}</Notice>
           )}
-          {mod?.keenwikiUrl && <ModUpdate mod={mod} check={check} disabled={profile.running} />}
+          {checkable && <ModUpdate mod={mod} check={check} disabled={profile.running} />}
           {mod?.source === "keenwiki" && !mod.indexId && (
             <p className="text-sm">
               <SuggestToIndex modId={mod.id} />

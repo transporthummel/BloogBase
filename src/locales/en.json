@@ -321,12 +321,15 @@
   },
   "modUpdate": {
     "check": "Check for updates",
-    "checking": "Looking at the KeenWiki page…",
+    "checking": "Looking for a newer version…",
     "upToDate": "You have the newest version.",
     "noDownload": "The KeenWiki page has nothing to download right now.",
     "newer": "A newer version is available on KeenWiki.",
     "newer_version": "Version {{version}} is available on KeenWiki.",
     "unknown": "KeenWiki offers “{{download}}”. BloogBase can’t tell whether it is newer than yours.",
+    "inIndex": "A newer version is in the BloogBase mod list.",
+    "inIndex_version": "Version {{version}} is in the BloogBase mod list.",
+    "notInIndex": "The mod is no longer in the BloogBase mod list.",
     "leavesIndex": "After this update, the mod no longer gets updates from the BloogBase mod list.",
     "update": "Update",
     "downloading": "Downloading…"
