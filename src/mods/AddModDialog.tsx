@@ -197,7 +197,7 @@ function Confirm(props: ConfirmProps) {
         <Button variant="ghost" onClick={() => setMyself(true)}>
           {t("mods.setUpMyself")}
         </Button>
-        <Button variant={installed ? "secondary" : "ghost"} onClick={onCancel}>
+        <Button variant={installed ? "primary" : "ghost"} onClick={onCancel}>
           {t(installed ? "common.ok" : "common.close")}
         </Button>
       </div>

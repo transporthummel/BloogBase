@@ -125,7 +125,7 @@ function Footer({
         {t("common.back")}
       </Button>
       <div className="flex flex-wrap justify-end gap-3">
-        <Button variant={done ? "secondary" : "ghost"} onClick={onCancel}>
+        <Button variant={done ? "primary" : "ghost"} onClick={onCancel}>
           {t(done ? "common.ok" : "common.cancel")}
         </Button>
         {children}
