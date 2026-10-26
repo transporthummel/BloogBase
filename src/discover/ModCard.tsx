@@ -179,7 +179,7 @@ function InstallAction({
     return (
       <>
         {failed}
-        <Button variant="secondary" onClick={() => start.mutate(null)} disabled={start.isPending}>
+        <Button onClick={() => start.mutate(null)} disabled={start.isPending}>
           <RefreshCw className="size-4" aria-hidden />
           {entry.version
             ? t("discover.updateTo", { version: entry.version })
