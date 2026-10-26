@@ -13,6 +13,7 @@ import { useJobEvents } from "../jobs/queries";
 import { hideSplash } from "../splash";
 import { useAppUpdate } from "../updates/queries";
 import { UpdateCard } from "../updates/UpdateCard";
+import { WhatsNew } from "../updates/WhatsNew";
 import { PageFooterContext } from "./pageFooterContext";
 import { ArchiveWarning } from "./ArchiveWarning";
 import { QuitGuard } from "./QuitGuard";
@@ -54,6 +55,7 @@ export function Shell() {
       <ArchiveWarning />
       <LaunchOverlay />
       <ExitMessage />
+      <WhatsNew />
       <nav
         aria-label={t("nav.label")}
         className="flex w-16 shrink-0 flex-col gap-1 border-r border-border bg-surface p-2 xl:w-60 xl:p-3"

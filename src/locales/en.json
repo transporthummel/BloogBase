@@ -673,6 +673,15 @@
     "upToDate": "You have the newest version.",
     "checkFailed": "Couldn't check for updates: {{message}}"
   },
+  "news": {
+    "title": "What's new",
+    "release": "New in BloogBase {{version}}",
+    "mods_one": "New in the mod list",
+    "mods_other": "{{count}} new in the mod list",
+    "toDiscover": "Show in Discover",
+    "updates_one": "An update for one of your mods",
+    "updates_other": "Updates for {{count}} of your mods"
+  },
   "launch": {
     "starting": "Starting {{name}}…"
   },

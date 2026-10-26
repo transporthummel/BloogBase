@@ -10,9 +10,11 @@ updater. Publish the draft by hand after a smoke test.
 
 1. Bump the version in `package.json`, `src-tauri/Cargo.toml` and
    `src-tauri/tauri.conf.json` (all three must match).
-2. `git tag v1.0.0 && git push origin v1.0.0`.
-3. Wait for the workflow, download the draft's installers, try them.
-4. Write release notes into the draft (they appear in the app's update card)
+2. Add the release's changes, in English and German, at the top of
+   `src/updates/changelog.ts`. The app shows them once after updating.
+3. `git tag v1.0.0 && git push origin v1.0.0`.
+4. Wait for the workflow, download the draft's installers, try them.
+5. Write release notes into the draft (they appear in the app's update card)
    and publish it.
 
 ## Secrets
