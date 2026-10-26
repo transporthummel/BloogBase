@@ -318,8 +318,9 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   await userEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
   expect(commands.deleteMod).toHaveBeenCalledWith("aurora-bliss", false);
   expect(navigate).toHaveBeenCalledWith({ to: "/" });
-  // Installed again, it gets the same id and must not show the old cover.
-  expect(remove).toHaveBeenCalledWith({ queryKey: ["cover", "keen4-1"] });
+  // Installed again, it and the mods played over it, removed with it, get
+  // the same ids and must not show the old covers.
+  expect(remove).toHaveBeenCalledWith({ queryKey: ["cover"] });
 });
 
 test("opens at the top, wherever the library was scrolled to", async () => {

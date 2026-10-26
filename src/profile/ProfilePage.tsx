@@ -31,7 +31,7 @@ import { errorMessage } from "../errors";
 import { formatDate, formatLooseDate, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { Cover } from "../library/Cover";
-import { coverKey, coverKeys, useCover } from "../library/covers";
+import { coverKeys, useCover } from "../library/covers";
 import { scroller } from "../library/scroll";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Authors } from "../mods/Authors";
@@ -462,8 +462,9 @@ function Hero({
             queryClient.invalidateQueries({ queryKey: profilesKey });
             queryClient.invalidateQueries({ queryKey: modsKey });
             navigate({ to: "/" });
-            // Installing it again gets the same id, and a new cover.
-            queryClient.removeQueries({ queryKey: coverKey(profile.id) });
+            // Installing it again gets the same id, and a new cover; so do
+            // the mods played over it, removed with it.
+            queryClient.removeQueries({ queryKey: coverKeys });
           }}
         />
       )}
