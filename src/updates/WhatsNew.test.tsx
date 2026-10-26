@@ -2,14 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
-import { commands, type IndexMod, type IndexStatus } from "../bindings";
-import {
-  getLastVersion,
-  getOfferedModUpdates,
-  getSeenIndexMods,
-  setLastVersion,
-  setSeenIndexMods,
-} from "../preferences";
+import { commands, type IndexMod, type IndexNews, type IndexStatus } from "../bindings";
+import { getLastVersion, setLastVersion } from "../preferences";
 import { WhatsNew } from "./WhatsNew";
 
 vi.mock("@tanstack/react-router", () => ({
@@ -30,10 +24,16 @@ vi.mock("../bindings", () => ({
     listProfiles: vi.fn(),
     listJobs: vi.fn(),
     installIndexMod: vi.fn(),
+    indexNews: vi.fn(),
+    setIndexNews: vi.fn(),
   },
 }));
 
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
+
+// The library's settings table.
+let stored: IndexNews;
+const setSeenIndexMods = (seen: string[]) => (stored = { ...stored, seen });
 
 // The start's check is done.
 const status = { checkedAt: Date.now() / 1000, error: null } as IndexStatus;
@@ -72,12 +72,18 @@ beforeEach(() => {
   vi.mocked(commands.listGames).mockResolvedValue([]);
   vi.mocked(commands.listProfiles).mockReturnValue(ok([]));
   vi.mocked(commands.listJobs).mockResolvedValue([]);
+  stored = { seen: null, offered: [] };
+  vi.mocked(commands.indexNews).mockImplementation(() => ok(stored));
+  vi.mocked(commands.setIndexNews).mockImplementation((news) => {
+    stored = news;
+    return ok(null);
+  });
 });
 
 test("shows nothing on the first start and remembers what's there", async () => {
   vi.mocked(commands.indexMods).mockReturnValue(ok([indexMod("a", "Alpha", null)]));
   renderNews();
-  await vi.waitFor(() => expect(getSeenIndexMods()).toEqual(["a"]));
+  await vi.waitFor(() => expect(stored.seen).toEqual(["a"]));
   expect(getLastVersion()).toBe("0.3.0");
   expect(screen.queryByRole("dialog")).toBeNull();
 });
@@ -105,7 +111,7 @@ test("lists mods new in the mod list", async () => {
   // Installed already: not news.
   expect(screen.queryByText("Gamma")).toBeNull();
   await user.click(screen.getByRole("button", { name: "Close" }));
-  expect(getSeenIndexMods()).toEqual(["a", "b", "c"]);
+  expect(stored.seen).toEqual(["a", "b", "c"]);
 });
 
 test("offers an installed mod's update once", async () => {
@@ -124,7 +130,7 @@ test("offers an installed mod's update once", async () => {
   await user.click(screen.getByRole("button", { name: "Update" }));
   expect(commands.installIndexMod).toHaveBeenCalledWith("a", null, true, null);
   await user.click(screen.getByRole("button", { name: "Close" }));
-  expect(getOfferedModUpdates()).toEqual(["a@https://example.org/a-2.zip"]);
+  expect(stored.offered).toEqual(["a@https://example.org/a-2.zip"]);
 });
 
 test("an entry that left the mod list is new when it comes back", async () => {
@@ -132,7 +138,7 @@ test("an entry that left the mod list is new when it comes back", async () => {
   setSeenIndexMods(["a", "b"]);
   vi.mocked(commands.indexMods).mockReturnValue(ok([indexMod("a", "Alpha", null)]));
   renderNews();
-  await vi.waitFor(() => expect(getSeenIndexMods()).toEqual(["a"]));
+  await vi.waitFor(() => expect(stored.seen).toEqual(["a"]));
   expect(screen.queryByRole("dialog")).toBeNull();
 
   cleanup();

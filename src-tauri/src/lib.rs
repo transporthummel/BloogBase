@@ -119,6 +119,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::import_store_games,
             commands::setup_status,
             commands::complete_setup,
+            commands::index_news,
+            commands::set_index_news,
             commands::set_data_location,
             commands::restart_app,
             commands::quit_app,

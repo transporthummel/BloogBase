@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, RefreshCw, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type IndexMod } from "../bindings";
+import { commands, type IndexMod, type IndexNews } from "../bindings";
 import { shortGameTitle, useGames } from "../catalog";
 import { useIndexMods, useIndexStatus } from "../discover/queries";
 import { errorMessage } from "../errors";
@@ -11,14 +11,7 @@ import { unwrap } from "../ipc";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { profilesKey } from "../library/queries";
-import {
-  getLastVersion,
-  getOfferedModUpdates,
-  getSeenIndexMods,
-  setLastVersion,
-  setOfferedModUpdates,
-  setSeenIndexMods,
-} from "../preferences";
+import { getLastVersion, setLastVersion } from "../preferences";
 import { Button } from "../ui/Button";
 import { buttonClass } from "../ui/buttonClass";
 import { Dialog } from "../ui/Dialog";
@@ -31,6 +24,12 @@ type News = { releases: Release[]; mods: IndexMod[]; updates: IndexMod[] };
 // The backend checks the mod list as it starts, a moment before this page
 // loads; a check from before that was the last run's.
 const startedAt = performance.timeOrigin / 1000 - 120;
+
+/** Stores what the library knows about the mod list; not fatal when it fails. */
+function save(index: IndexNews): IndexNews {
+  commands.setIndexNews(index).catch(() => {});
+  return index;
+}
 
 function merge(a: IndexMod[], b: IndexMod[]): IndexMod[] {
   return [...a, ...b.filter((m) => !a.some((x) => x.entry.id === m.entry.id))];
@@ -52,10 +51,16 @@ export function WhatsNew() {
     queryKey: profilesKey,
     queryFn: () => unwrap(commands.listProfiles()),
   });
-  const stored = useRef({
+  // Kept with the library: what it knows about the mod list.
+  const known = useQuery({
+    queryKey: ["indexNews"],
+    queryFn: () => unwrap(commands.indexNews()),
+    staleTime: Infinity,
+  });
+  // The app version is the device's.
+  const stored = useRef<{ last: string | null; index: IndexNews | null }>({
     last: getLastVersion(),
-    seen: getSeenIndexMods(),
-    offered: getOfferedModUpdates(),
+    index: null,
   });
   const done = useRef(false);
   const [news, setNews] = useState<News | null>(null);
@@ -73,17 +78,17 @@ export function WhatsNew() {
       s.last = version;
       setLastVersion(version);
     }
+    s.index ??= known.data ?? null;
     let fresh: IndexMod[] = [];
     let updates: IndexMod[] = [];
     // An empty list hasn't loaded yet.
-    if (mods && mods.length > 0) {
-      if (s.seen === null) {
+    if (s.index && mods && mods.length > 0) {
+      if (s.index.seen === null) {
         // The first start: nothing is new yet.
-        s.seen = mods.map((m) => m.entry.id);
-        setSeenIndexMods(s.seen);
+        s.index = save({ ...s.index, seen: mods.map((m) => m.entry.id) });
       }
-      fresh = newIndexMods(mods, s.seen);
-      updates = modUpdates(mods, s.offered);
+      fresh = newIndexMods(mods, s.index.seen ?? []);
+      updates = modUpdates(mods, s.index.offered);
     }
     if (news) {
       const next = {
@@ -96,30 +101,32 @@ export function WhatsNew() {
       }
     } else if (releases.length + fresh.length + updates.length > 0) {
       setNews({ releases, mods: fresh, updates });
-    } else if (checked) {
+    } else if (checked && s.index) {
       done.current = true;
       // Entries that left the list are new again when they come back.
       const ids = new Set(mods?.map((m) => m.entry.id));
-      if (ids.size > 0 && s.seen?.some((id) => !ids.has(id))) {
-        s.seen = s.seen.filter((id) => ids.has(id));
-        setSeenIndexMods(s.seen);
+      const seen = s.index.seen;
+      if (ids.size > 0 && seen?.some((id) => !ids.has(id))) {
+        s.index = save({ ...s.index, seen: seen.filter((id) => ids.has(id)) });
       }
     }
-  }, [version, mods, checked, closed, news]);
+  }, [version, mods, checked, closed, news, known.data]);
 
   if (!news || closed) return null;
 
   const close = () => {
     setClosed(true);
     if (version) setLastVersion(version);
-    // An empty list hasn't loaded yet.
-    if (!mods || mods.length === 0) return;
     const s = stored.current;
-    setSeenIndexMods(mods.map((m) => m.entry.id));
+    // An empty list hasn't loaded yet.
+    if (!s.index || !mods || mods.length === 0) return;
     // Only updates still waiting are kept, so the list doesn't grow forever.
     const waiting = new Set(mods.filter((m) => m.modId && m.updateAvailable).map(modUpdateKey));
-    const offered = new Set([...s.offered, ...news.updates.map(modUpdateKey)]);
-    setOfferedModUpdates([...offered].filter((k) => waiting.has(k)));
+    const offered = new Set([...s.index.offered, ...news.updates.map(modUpdateKey)]);
+    s.index = save({
+      seen: mods.map((m) => m.entry.id),
+      offered: [...offered].filter((k) => waiting.has(k)),
+    });
   };
   const running = (mod: IndexMod) =>
     profiles.data?.some((p) => p.modId === mod.modId && p.running) ?? false;

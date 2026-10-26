@@ -1,7 +1,7 @@
 //! Key/value settings stored in the database.
 
 use rusqlite::{OptionalExtension, params};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::db::Db;
@@ -47,6 +47,47 @@ pub fn setup_status(db: &Db) -> Result<SetupStatus> {
     })
 }
 
+const SEEN_INDEX_MODS: &str = "news.seenIndexMods";
+const OFFERED_MOD_UPDATES: &str = "news.offeredModUpdates";
+
+/// What the news dialog on start knows already about the mod list. Kept with
+/// the library, so a new data folder starts afresh.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct IndexNews {
+    /// The entries known already; `None` before the list first loaded.
+    pub seen: Option<Vec<String>>,
+    /// Updates of installed mods offered already, as `<entry id>@<download url>`.
+    pub offered: Vec<String>,
+}
+
+fn list(db: &Db, key: &str) -> Result<Option<Vec<String>>> {
+    // A damaged value just means starting over.
+    Ok(get(db, key)?.map(|v| serde_json::from_str(&v).unwrap_or_default()))
+}
+
+pub fn index_news(db: &Db) -> Result<IndexNews> {
+    Ok(IndexNews {
+        seen: list(db, SEEN_INDEX_MODS)?,
+        offered: list(db, OFFERED_MOD_UPDATES)?.unwrap_or_default(),
+    })
+}
+
+pub fn set_index_news(db: &Db, news: &IndexNews) -> Result<()> {
+    if let Some(seen) = &news.seen {
+        set(
+            db,
+            SEEN_INDEX_MODS,
+            &serde_json::to_string(seen).expect("strings serialize"),
+        )?;
+    }
+    set(
+        db,
+        OFFERED_MOD_UPDATES,
+        &serde_json::to_string(&news.offered).expect("strings serialize"),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,5 +116,24 @@ mod tests {
         set(&db, SETUP_COMPLETED, "1").unwrap();
         let st = setup_status(&db).unwrap();
         assert!(st.completed && st.has_installs);
+    }
+
+    #[test]
+    fn index_news_round_trip() {
+        let db = Db::open_in_memory().unwrap();
+        let empty = index_news(&db).unwrap();
+        assert_eq!(
+            empty,
+            IndexNews {
+                seen: None,
+                offered: vec![]
+            }
+        );
+        let news = IndexNews {
+            seen: Some(vec!["a".into(), "b".into()]),
+            offered: vec!["a@https://example.org/a.zip".into()],
+        };
+        set_index_news(&db, &news).unwrap();
+        assert_eq!(index_news(&db).unwrap(), news);
     }
 }

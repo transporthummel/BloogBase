@@ -32,7 +32,7 @@ use crate::readme::{self, Readme};
 use crate::recipe::Recipe;
 use crate::runtime::{self, RuntimeStatus};
 use crate::saves::{self, SaveFile};
-use crate::settings::{self, SetupStatus};
+use crate::settings::{self, IndexNews, SetupStatus};
 use crate::source::{ArchiveDamaged, Source};
 use crate::storage::{self, StorageUsage};
 use crate::stores::{self, Store, StoreInstall};
@@ -1240,6 +1240,19 @@ pub fn setup_status(db: State<'_, Db>) -> CommandResult<SetupStatus> {
 #[specta::specta]
 pub fn complete_setup(db: State<'_, Db>) -> CommandResult<()> {
     Ok(settings::set(&db, settings::SETUP_COMPLETED, "1")?)
+}
+
+/// What the news dialog on start knows already about the mod list.
+#[tauri::command]
+#[specta::specta]
+pub fn index_news(db: State<'_, Db>) -> CommandResult<IndexNews> {
+    Ok(settings::index_news(&db)?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_index_news(db: State<'_, Db>, news: IndexNews) -> CommandResult<()> {
+    Ok(settings::set_index_news(&db, &news)?)
 }
 
 /// Keeps BloogBase's data in (or below) `path` from the next start on;

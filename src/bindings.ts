@@ -218,6 +218,9 @@ export const commands = {
 	importStoreGames: (store: Store, path: string, gameIds: string[]) => typedError<Install[], CommandError>(__TAURI_INVOKE("import_store_games", { store, path, gameIds })),
 	setupStatus: () => typedError<SetupStatus, CommandError>(__TAURI_INVOKE("setup_status")),
 	completeSetup: () => typedError<null, CommandError>(__TAURI_INVOKE("complete_setup")),
+	/**  What the news dialog on start knows already about the mod list. */
+	indexNews: () => typedError<IndexNews, CommandError>(__TAURI_INVOKE("index_news")),
+	setIndexNews: (news: IndexNews) => typedError<null, CommandError>(__TAURI_INVOKE("set_index_news", { news })),
 	/**
 	 *  Keeps BloogBase's data in (or below) `path` from the next start on;
 	 *  `None` goes back to the default folder. Only while the library is empty,
@@ -516,6 +519,17 @@ export type IndexMod = {
 	modId: string | null,
 	/**  Installed, but the index has a different download now. */
 	updateAvailable: boolean,
+};
+
+/**
+ *  What the news dialog on start knows already about the mod list. Kept with
+ *  the library, so a new data folder starts afresh.
+ */
+export type IndexNews = {
+	/**  The entries known already; `None` before the list first loaded. */
+	seen: string[] | null,
+	/**  Updates of installed mods offered already, as `<entry id>@<download url>`. */
+	offered: string[],
 };
 
 export type IndexStatus = {

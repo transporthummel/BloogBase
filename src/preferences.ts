@@ -115,36 +115,3 @@ export function getLastVersion(): string | null {
 export function setLastVersion(version: string) {
   write(LAST_VERSION_KEY, version);
 }
-
-function readList(key: string): string[] | null {
-  const stored = read(key);
-  if (stored === null) return null;
-  try {
-    const value: unknown = JSON.parse(stored);
-    return Array.isArray(value) ? value.filter((v) => typeof v === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-const SEEN_INDEX_MODS_KEY = "bloogbase.seenIndexMods";
-
-/** The mod list entries this device knows about; null before the list first loaded. */
-export function getSeenIndexMods(): string[] | null {
-  return readList(SEEN_INDEX_MODS_KEY);
-}
-
-export function setSeenIndexMods(ids: string[]) {
-  write(SEEN_INDEX_MODS_KEY, JSON.stringify(ids));
-}
-
-const OFFERED_MOD_UPDATES_KEY = "bloogbase.offeredModUpdates";
-
-/** Mod updates offered on start already (`modUpdateKey`), so they aren't offered again. */
-export function getOfferedModUpdates(): string[] {
-  return readList(OFFERED_MOD_UPDATES_KEY) ?? [];
-}
-
-export function setOfferedModUpdates(keys: string[]) {
-  write(OFFERED_MOD_UPDATES_KEY, JSON.stringify(keys));
-}
