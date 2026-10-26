@@ -208,9 +208,9 @@ pub fn inspect(path: &Path, game_hint: Option<&str>) -> Result<ModInfo> {
 }
 
 /// The mod a way to start a mod lacks `missing_files` of, among `candidates`:
-/// an installed one that has them all, else an index entry that says it
-/// provides them. Installed first: one added from KeenWiki isn't tied to
-/// its index entry, which would install it again.
+/// an index entry that says it provides them all, with the installed mod
+/// tied to it (see [`crate::mod_index::link_installed`]), else an installed
+/// one that has them, which may just bring the files along.
 pub fn needed_mod(missing_files: &[String], candidates: &[BaseCandidate]) -> Option<BaseMod> {
     if missing_files.is_empty() {
         return None;
@@ -230,8 +230,12 @@ pub fn needed_mod(missing_files: &[String], candidates: &[BaseCandidate]) -> Opt
     };
     candidates
         .iter()
-        .find(|c| c.files.as_deref().is_some_and(|d| has_all(&installed(d))))
-        .or_else(|| candidates.iter().find(|c| has_all(&c.provides)))
+        .find(|c| has_all(&c.provides))
+        .or_else(|| {
+            candidates
+                .iter()
+                .find(|c| c.files.as_deref().is_some_and(|d| has_all(&installed(d))))
+        })
         .map(|c| BaseMod {
             name: c.name.clone(),
             mod_id: c.mod_id.clone(),
@@ -2493,12 +2497,14 @@ mod tests {
         let found = needed_mod(missing, &installed).unwrap();
         assert_eq!(found.mod_id.as_deref(), Some("blocks"));
         assert_eq!(needed_mod(missing, &installed[..1]), None);
-        // Before an index entry listed first: added from KeenWiki, the
-        // installed copy isn't tied to it.
-        let both = [entries[1].clone(), installed[1].clone()];
+        // An entry that provides them goes first, with its installed mod;
+        // another installed one may only bring the files along.
+        let mut entry = entries[1].clone();
+        entry.mod_id = Some("bricks".into());
+        let both = [installed[1].clone(), entry];
         assert_eq!(
             needed_mod(missing, &both).unwrap().mod_id.as_deref(),
-            Some("blocks")
+            Some("bricks")
         );
 
         // Nothing missing: nothing needed.
