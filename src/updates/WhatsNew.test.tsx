@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { commands, type IndexMod, type IndexStatus } from "../bindings";
@@ -125,6 +125,22 @@ test("offers an installed mod's update once", async () => {
   expect(commands.installIndexMod).toHaveBeenCalledWith("a", null, true, null);
   await user.click(screen.getByRole("button", { name: "Close" }));
   expect(getOfferedModUpdates()).toEqual(["a@https://example.org/a-2.zip"]);
+});
+
+test("an entry that left the mod list is new when it comes back", async () => {
+  setLastVersion("0.3.0");
+  setSeenIndexMods(["a", "b"]);
+  vi.mocked(commands.indexMods).mockReturnValue(ok([indexMod("a", "Alpha", null)]));
+  renderNews();
+  await vi.waitFor(() => expect(getSeenIndexMods()).toEqual(["a"]));
+  expect(screen.queryByRole("dialog")).toBeNull();
+
+  cleanup();
+  vi.mocked(commands.indexMods).mockReturnValue(
+    ok([indexMod("a", "Alpha", null), indexMod("b", "Beta", null)]),
+  );
+  renderNews();
+  expect(await screen.findByText("Beta")).toBeInTheDocument();
 });
 
 test("stays closed when nothing is new", async () => {

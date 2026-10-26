@@ -98,6 +98,12 @@ export function WhatsNew() {
       setNews({ releases, mods: fresh, updates });
     } else if (checked) {
       done.current = true;
+      // Entries that left the list are new again when they come back.
+      const ids = new Set(mods?.map((m) => m.entry.id));
+      if (ids.size > 0 && s.seen?.some((id) => !ids.has(id))) {
+        s.seen = s.seen.filter((id) => ids.has(id));
+        setSeenIndexMods(s.seen);
+      }
     }
   }, [version, mods, checked, closed, news]);
 
@@ -106,9 +112,10 @@ export function WhatsNew() {
   const close = () => {
     setClosed(true);
     if (version) setLastVersion(version);
-    if (!mods) return;
+    // An empty list hasn't loaded yet.
+    if (!mods || mods.length === 0) return;
     const s = stored.current;
-    setSeenIndexMods([...new Set([...(s.seen ?? []), ...mods.map((m) => m.entry.id)])]);
+    setSeenIndexMods(mods.map((m) => m.entry.id));
     // Only updates still waiting are kept, so the list doesn't grow forever.
     const waiting = new Set(mods.filter((m) => m.modId && m.updateAvailable).map(modUpdateKey));
     const offered = new Set([...s.offered, ...news.updates.map(modUpdateKey)]);
