@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FileArchive, FolderOpen, Puzzle } from "lucide-react";
+import { FileArchive, FolderOpen, LibraryBig, Puzzle } from "lucide-react";
 import { type ReactElement, type ReactNode, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -411,8 +411,13 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
         </Notice>
       )}
       {others.length > 0 && (
-        <fieldset className="grid gap-2 text-sm">
-          <legend className="mb-1 font-medium">{t("mods.alreadyHave")}</legend>
+        // A box of its own, so the question and its answers read as one.
+        <fieldset className="grid gap-2 rounded-lg border border-border bg-surface-raised/50 p-3 text-sm">
+          {/* Floated, so the legend sits inside the box, not on its border. */}
+          <legend className="float-left mb-1 flex w-full items-center gap-2 font-semibold">
+            <LibraryBig className="size-4 shrink-0 text-accent" aria-hidden />
+            {t("mods.alreadyHave")}
+          </legend>
           {others.map((m) => (
             <label key={m.id} className="flex items-start gap-2">
               <input
