@@ -306,7 +306,7 @@ function Hero({
       </div>
       {/* About it on top, playing it at the bottom. */}
       <div ref={textRef} className="flex min-w-0 flex-1 flex-col justify-between gap-5 p-5">
-        <div className="grid content-start gap-4">
+        <div className="grid content-start gap-4 select-text">
           <div className="grid gap-2">
             <h1 className="font-pixel text-lg leading-relaxed">{profile.label}</h1>
             <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
@@ -384,9 +384,7 @@ function Hero({
             )}
           </div>
           {description && (
-            <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line select-text">
-              {description}
-            </p>
+            <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line">{description}</p>
           )}
           {cover.data?.scrambled && (
             <p className="flex max-w-prose items-start gap-2 text-sm">
