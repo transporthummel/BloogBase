@@ -218,6 +218,8 @@ export const commands = {
 	importStoreGames: (store: Store, path: string, gameIds: string[]) => typedError<Install[], CommandError>(__TAURI_INVOKE("import_store_games", { store, path, gameIds })),
 	setupStatus: () => typedError<SetupStatus, CommandError>(__TAURI_INVOKE("setup_status")),
 	completeSetup: () => typedError<null, CommandError>(__TAURI_INVOKE("complete_setup")),
+	/**  The wizard step to resume at; `None` once it is finished. */
+	setSetupStep: (step: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("set_setup_step", { step })),
 	/**  What the news dialog on start knows already about the mod list. */
 	indexNews: () => typedError<IndexNews, CommandError>(__TAURI_INVOKE("index_news")),
 	setIndexNews: (news: IndexNews) => typedError<null, CommandError>(__TAURI_INVOKE("set_index_news", { news })),
@@ -911,6 +913,8 @@ export type SetupStatus = {
 	completed: boolean,
 	/**  Games were imported (e.g. before the wizard existed, or by it). */
 	hasInstalls: boolean,
+	/**  The wizard step to resume at; `None` when it isn't running. */
+	step: string | null,
 };
 
 /**  Sizes in bytes. Floats, as JavaScript numbers can't hold every u64. */

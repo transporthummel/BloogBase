@@ -8,7 +8,6 @@ export type Language = "en" | "de";
 
 const THEME_KEY = "bloogbase.theme";
 const LANGUAGE_KEY = "bloogbase.language";
-const SETUP_STEP_KEY = "bloogbase.setupStep";
 
 function read(key: string): string | null {
   try {
@@ -56,15 +55,6 @@ export function getLanguage(): Language {
 
 export function setLanguage(language: Language) {
   write(LANGUAGE_KEY, language);
-}
-
-/** The setup wizard step to resume at after an interruption or restart. */
-export function getSetupStep(): string | null {
-  return read(SETUP_STEP_KEY);
-}
-
-export function setSetupStep(step: string | null) {
-  write(SETUP_STEP_KEY, step);
 }
 
 const LIBRARY_SORT_KEY = "bloogbase.librarySort";

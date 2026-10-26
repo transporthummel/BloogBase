@@ -2,14 +2,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { commands } from "../bindings";
+import { commands, type SetupStatus } from "../bindings";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
-import { getSetupStep, setSetupStep } from "../preferences";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Notice } from "../ui/Notice";
-import { setupStatusKey } from "./queries";
+import { setupStatusKey, useSetupStatus } from "./queries";
 import {
   DoneStep,
   EngineStep,
@@ -35,21 +34,25 @@ const components: Record<Step, (props: StepProps) => ReactNode> = {
   done: DoneStep,
 };
 
-function initialStep(): Step {
-  const stored = getSetupStep();
-  return STEPS.find((s) => s === stored) ?? "welcome";
-}
-
 /** First-run setup wizard. Resumes where it was left; every step can be skipped. */
 export function Setup() {
+  const status = useSetupStatus();
+  // The library keeps the step to resume at.
+  if (!status.data) return null;
+  return <Wizard resume={status.data.step} />;
+}
+
+function Wizard({ resume }: { resume: string | null }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const client = useQueryClient();
-  const [step, setStep] = useState(initialStep);
+  const [step, setStep] = useState<Step>(() => STEPS.find((s) => s === resume) ?? "welcome");
   const index = STEPS.indexOf(step);
 
   function go(to: Step) {
-    setSetupStep(to);
+    // Not fatal: the wizard just starts over after a restart.
+    commands.setSetupStep(to).catch(() => {});
+    client.setQueryData<SetupStatus>(setupStatusKey, (s) => s && { ...s, step: to });
     setStep(to);
     window.scrollTo?.(0, 0);
   }
@@ -57,7 +60,6 @@ export function Setup() {
   const finish = useMutation({
     mutationFn: () => unwrap(commands.completeSetup()),
     onSuccess: async () => {
-      setSetupStep(null);
       // The status query has no observer on most steps; refetch it anyway so
       // the library doesn't see the stale "not completed" and send us back.
       await client.invalidateQueries({ queryKey: setupStatusKey, refetchType: "all" });

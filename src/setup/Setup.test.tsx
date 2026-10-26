@@ -11,7 +11,6 @@ import {
   type RuntimeStatus,
 } from "../bindings";
 import { unwrap } from "../ipc";
-import { getSetupStep, setSetupStep } from "../preferences";
 import { Setup } from "./Setup";
 
 const navigate = vi.fn();
@@ -26,6 +25,7 @@ vi.mock("../bindings", () => {
       listGames: vi.fn(),
       setupStatus: vi.fn(),
       completeSetup: vi.fn(),
+      setSetupStep: vi.fn(),
       runtimeStatus: vi.fn(),
       installRuntime: vi.fn(),
       setCustomRuntime: vi.fn(),
@@ -84,7 +84,7 @@ function renderSetup() {
 }
 
 beforeEach(() => {
-  setSetupStep(null);
+  vi.mocked(commands.setSetupStep).mockResolvedValue({ status: "ok", data: null });
   navigate.mockReset();
   vi.mocked(commands.listGames).mockResolvedValue([
     game("keen1", "Commander Keen 1", "keen1-1.31"),
@@ -94,7 +94,7 @@ beforeEach(() => {
   vi.mocked(commands.listJobs).mockResolvedValue([]);
   vi.mocked(commands.setupStatus).mockResolvedValue({
     status: "ok",
-    data: { completed: false, hasInstalls: false },
+    data: { completed: false, hasInstalls: false, step: null },
   });
   vi.mocked(commands.appInfo).mockResolvedValue({
     status: "ok",
@@ -138,7 +138,7 @@ test("walks through all steps, skipping each, and finishes", async () => {
 
   await user.click(await screen.findByRole("button", { name: "Let's go" }));
   expect(await screen.findByText("/data")).toBeInTheDocument();
-  expect(getSetupStep()).toBe("storage");
+  expect(commands.setSetupStep).toHaveBeenLastCalledWith("storage");
   await user.click(screen.getByRole("button", { name: "Next" }));
   await screen.findByRole("button", { name: "Download DOSBox Staging 0.83.0" });
   await user.click(screen.getByRole("button", { name: "Skip" }));
@@ -152,7 +152,12 @@ test("walks through all steps, skipping each, and finishes", async () => {
 
   expect(commands.completeSetup).toHaveBeenCalled();
   await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/" }));
-  expect(getSetupStep()).toBeNull();
+});
+
+test("resumes at the step the library kept", async () => {
+  resumeAt("storage");
+  renderSetup();
+  expect(await screen.findByText("/data")).toBeInTheDocument();
 });
 
 test("skipping setup refreshes the cached status before leaving", async () => {
@@ -164,18 +169,30 @@ test("skipping setup refreshes the cached status before leaving", async () => {
   });
   vi.mocked(commands.setupStatus).mockResolvedValue({
     status: "ok",
-    data: { completed: true, hasInstalls: false },
+    data: { completed: true, hasInstalls: false, step: null },
   });
   const user = userEvent.setup();
 
   await user.click(await screen.findByRole("button", { name: "Skip setup" }));
 
   await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith({ to: "/" }));
-  expect(client.getQueryData(["setupStatus"])).toEqual({ completed: true, hasInstalls: false });
+  expect(client.getQueryData(["setupStatus"])).toEqual({
+    completed: true,
+    hasInstalls: false,
+    step: null,
+  });
 });
 
+/** Starts the wizard at `step`, as if it was interrupted there. */
+function resumeAt(step: string) {
+  vi.mocked(commands.setupStatus).mockResolvedValue({
+    status: "ok",
+    data: { completed: false, hasInstalls: false, step },
+  });
+}
+
 test("downloads the chosen free episodes as jobs", async () => {
-  setSetupStep("episodes");
+  resumeAt("episodes");
   vi.mocked(commands.freeGames).mockResolvedValue({
     status: "ok",
     data: [
@@ -198,7 +215,7 @@ test("downloads the chosen free episodes as jobs", async () => {
 });
 
 test("doesn't preselect free episodes whose full version is in the library", async () => {
-  setSetupStep("episodes");
+  resumeAt("episodes");
   vi.mocked(commands.freeGames).mockResolvedValue({
     status: "ok",
     data: [
@@ -231,7 +248,7 @@ test("doesn't preselect free episodes whose full version is in the library", asy
 });
 
 test("still preselects a free episode when only its demo is in the library", async () => {
-  setSetupStep("episodes");
+  resumeAt("episodes");
   const keen4 = game("keen4", "Commander Keen 4", "keen4-1.4-ega");
   keen4.versions.push({
     id: "keen4-demo",
@@ -268,7 +285,7 @@ test("still preselects a free episode when only its demo is in the library", asy
 });
 
 test("imports the games found in Steam and GOG folders", async () => {
-  setSetupStep("owned");
+  resumeAt("owned");
   vi.mocked(commands.scanStores).mockResolvedValue({
     status: "ok",
     data: [
@@ -296,7 +313,7 @@ test("imports the games found in Steam and GOG folders", async () => {
 });
 
 test("suggests featured mods for games on their way and queues the picked ones", async () => {
-  setSetupStep("mods");
+  resumeAt("mods");
   vi.mocked(commands.freeGames).mockResolvedValue({
     status: "ok",
     data: [{ gameId: "keen1", versionId: "keen1-1.31", setup: true, size: 1, installed: false }],

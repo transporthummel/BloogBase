@@ -9,6 +9,8 @@ use crate::error::Result;
 
 /// Set once the user finished or skipped the setup wizard.
 pub const SETUP_COMPLETED: &str = "setup.completed";
+/// The wizard step to resume at after an interruption or restart.
+const SETUP_STEP: &str = "setup.step";
 
 pub fn get(db: &Db, key: &str) -> Result<Option<String>> {
     Ok(db
@@ -17,6 +19,12 @@ pub fn get(db: &Db, key: &str) -> Result<Option<String>> {
             r.get(0)
         })
         .optional()?)
+}
+
+pub fn delete(db: &Db, key: &str) -> Result<()> {
+    db.conn()
+        .execute("DELETE FROM settings WHERE key = ?1", [key])?;
+    Ok(())
 }
 
 pub fn set(db: &Db, key: &str, value: &str) -> Result<()> {
@@ -35,6 +43,8 @@ pub struct SetupStatus {
     pub completed: bool,
     /// Games were imported (e.g. before the wizard existed, or by it).
     pub has_installs: bool,
+    /// The wizard step to resume at; `None` when it isn't running.
+    pub step: Option<String>,
 }
 
 pub fn setup_status(db: &Db) -> Result<SetupStatus> {
@@ -44,7 +54,21 @@ pub fn setup_status(db: &Db) -> Result<SetupStatus> {
     Ok(SetupStatus {
         completed: get(db, SETUP_COMPLETED)?.is_some(),
         has_installs: installs > 0,
+        step: get(db, SETUP_STEP)?,
     })
+}
+
+pub fn set_setup_step(db: &Db, step: Option<&str>) -> Result<()> {
+    match step {
+        Some(step) => set(db, SETUP_STEP, step),
+        None => delete(db, SETUP_STEP),
+    }
+}
+
+/// Takes the wizard's step along to the library in another data folder, so
+/// the wizard goes on there after the restart.
+pub fn copy_setup_step(from: &Db, to: &Db) -> Result<()> {
+    set_setup_step(to, get(from, SETUP_STEP)?.as_deref())
 }
 
 const SEEN_INDEX_MODS: &str = "news.seenIndexMods";
@@ -135,5 +159,20 @@ mod tests {
         };
         set_index_news(&db, &news).unwrap();
         assert_eq!(index_news(&db).unwrap(), news);
+    }
+
+    #[test]
+    fn setup_step_is_kept_and_taken_along() {
+        let db = Db::open_in_memory().unwrap();
+        assert_eq!(setup_status(&db).unwrap().step, None);
+        set_setup_step(&db, Some("storage")).unwrap();
+        let other = Db::open_in_memory().unwrap();
+        copy_setup_step(&db, &other).unwrap();
+        assert_eq!(
+            setup_status(&other).unwrap().step.as_deref(),
+            Some("storage")
+        );
+        set_setup_step(&db, None).unwrap();
+        assert_eq!(setup_status(&db).unwrap().step, None);
     }
 }

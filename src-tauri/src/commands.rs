@@ -1239,7 +1239,15 @@ pub fn setup_status(db: State<'_, Db>) -> CommandResult<SetupStatus> {
 #[tauri::command]
 #[specta::specta]
 pub fn complete_setup(db: State<'_, Db>) -> CommandResult<()> {
-    Ok(settings::set(&db, settings::SETUP_COMPLETED, "1")?)
+    settings::set(&db, settings::SETUP_COMPLETED, "1")?;
+    Ok(settings::set_setup_step(&db, None)?)
+}
+
+/// The wizard step to resume at; `None` once it is finished.
+#[tauri::command]
+#[specta::specta]
+pub fn set_setup_step(db: State<'_, Db>, step: Option<String>) -> CommandResult<()> {
+    Ok(settings::set_setup_step(&db, step.as_deref())?)
 }
 
 /// What the news dialog on start knows already about the mod list.
@@ -1272,6 +1280,10 @@ pub fn set_data_location(
         Some(p) => paths::root_in(Path::new(&p))?,
         None => location.default_root.clone(),
     };
+    // The wizard goes on there after the restart.
+    std::fs::create_dir_all(&root).map_err(Error::from)?;
+    let target = Db::open(&AppPaths::new(&root).database)?;
+    settings::copy_setup_step(&db, &target)?;
     paths::save_root(&location.config_dir, &location.default_root, &root)?;
     tracing::info!("data folder will be {} after a restart", root.display());
     Ok(root.display().to_string())

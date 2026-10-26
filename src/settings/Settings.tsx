@@ -12,11 +12,11 @@ import { errorMessage } from "../errors";
 import { useAppUpdate, useCheckForUpdate } from "../updates/queries";
 import { UpdateCard } from "../updates/UpdateCard";
 import { unwrap } from "../ipc";
+import { setupStatusKey } from "../setup/queries";
 import {
   getShowTrivia,
   getTheme,
   setLanguage,
-  setSetupStep,
   setShowTrivia,
   setTheme,
   type Language,
@@ -32,6 +32,7 @@ import { PageHeader } from "../ui/PageHeader";
 export function Settings() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [theme, setThemeState] = useState(getTheme);
   const [showTrivia, setShowTriviaState] = useState(getShowTrivia);
   const info = useQuery({ queryKey: ["appInfo"], queryFn: () => unwrap(commands.appInfo()) });
@@ -95,8 +96,9 @@ export function Settings() {
           <div>
             <Button
               variant="secondary"
-              onClick={() => {
-                setSetupStep("welcome");
+              onClick={async () => {
+                await commands.setSetupStep("welcome");
+                await queryClient.invalidateQueries({ queryKey: setupStatusKey });
                 navigate({ to: "/setup" });
               }}
             >

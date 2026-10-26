@@ -14,7 +14,7 @@ import { RunsOn } from "../mods/RunsOn";
 import { Cover } from "./Cover";
 import { useCover } from "./covers";
 import { profilesKey } from "./queries";
-import { getLibrarySort, getSetupStep, getShowTrivia, setLibrarySort } from "../preferences";
+import { getLibrarySort, getShowTrivia, setLibrarySort } from "../preferences";
 import { arrange, librarySorts, type LibrarySort } from "./sort";
 import { StatusBar } from "./StatusBar";
 import { leaveLibrary, returnToLibrary } from "./scroll";
@@ -93,7 +93,7 @@ export function Library() {
   );
 
   // First start, or a wizard that was interrupted after adding games.
-  if (setup.data && !setup.data.completed && (!setup.data.hasInstalls || getSetupStep()))
+  if (setup.data && !setup.data.completed && (!setup.data.hasInstalls || setup.data.step))
     return <Navigate to="/setup" />;
 
   const gameById = new Map(games.data?.map((g) => [g.id, g]));

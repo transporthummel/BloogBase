@@ -129,7 +129,7 @@ beforeEach(() => {
   vi.mocked(commands.runtimeStatus).mockResolvedValue({ status: "ok", data: ready });
   vi.mocked(commands.setupStatus).mockResolvedValue({
     status: "ok",
-    data: { completed: true, hasInstalls: true },
+    data: { completed: true, hasInstalls: true, step: null },
   });
 });
 
@@ -137,7 +137,7 @@ test("opens the setup wizard on first start", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [] });
   vi.mocked(commands.setupStatus).mockResolvedValue({
     status: "ok",
-    data: { completed: false, hasInstalls: false },
+    data: { completed: false, hasInstalls: false, step: null },
   });
   renderLibrary();
   expect(await screen.findByText("redirect to /setup")).toBeInTheDocument();
