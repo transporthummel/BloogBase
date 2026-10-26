@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Puzzle } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Profile } from "../bindings";
@@ -38,8 +39,11 @@ export function RemoveModDialog({
         })}
       </p>
       {extensions.length > 0 && (
-        <p className="text-sm text-muted">
-          {t("mods.removeExtensions", { names: extensions.map((m) => m.name).join(", ") })}
+        <p className="flex items-start gap-2 text-sm text-muted">
+          <Puzzle className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
+          <span>
+            {t("mods.removeExtensions", { names: extensions.map((m) => m.name).join(", ") })}
+          </span>
         </p>
       )}
       {profile.saveCount > 0 && (
