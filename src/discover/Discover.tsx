@@ -14,14 +14,13 @@ import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
 import { RelativeTime } from "../ui/RelativeTime";
 import { Tabs } from "../ui/Tabs";
-import { compare, fitting, type Sort } from "./fit";
+import { compare, fitting, SORTS, type Sort } from "./fit";
 import { FreeGames } from "./FreeGames";
 import { ModCard } from "./ModCard";
 import { TABS, type DiscoverTab } from "./tabs";
 import { useIndexMods, useIndexStatus, useRefreshIndex } from "./queries";
 
 const KINDS: ModKind[] = ["episode", "levelpack", "conversion"];
-const SORTS: Sort[] = ["featured", "newest", "name"];
 
 const field = "rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm";
 
@@ -30,8 +29,14 @@ export function Discover() {
   const { t } = useTranslation();
   const games = useGames().data ?? [];
   const refresh = useRefreshIndex();
-  const search: { tab?: DiscoverTab } = useSearch({ strict: false });
+  const search: { tab?: DiscoverTab; sort?: Sort } = useSearch({ strict: false });
   const [tab, setTab] = useState<DiscoverTab>(search.tab ?? "mods");
+  // A link to the page while it's open, e.g. from the news dialog, selects too.
+  const [linked, setLinked] = useState(search.tab);
+  if (linked !== search.tab) {
+    setLinked(search.tab);
+    if (search.tab) setTab(search.tab);
+  }
 
   return (
     <>
@@ -59,13 +64,17 @@ export function Discover() {
         onSelect={setTab}
         label={t("discover.tabs.label")}
       >
-        {tab === "mods" ? <Mods games={games} /> : <FreeGames category={tab} games={games} />}
+        {tab === "mods" ? (
+          <Mods games={games} sort={search.sort} />
+        ) : (
+          <FreeGames category={tab} games={games} />
+        )}
       </Tabs>
     </>
   );
 }
 
-function Mods({ games }: { games: Game[] }) {
+function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
   const { t } = useTranslation();
   const status = useIndexStatus();
   const mods = useIndexMods();
@@ -78,7 +87,12 @@ function Mods({ games }: { games: Game[] }) {
   const [game, setGame] = useState("");
   const [kind, setKind] = useState<ModKind | "">("");
   const [playable, setPlayable] = useState(false);
-  const [sort, setSort] = useState<Sort>("featured");
+  const [sort, setSort] = useState<Sort>(linkedSort ?? "featured");
+  const [linked, setLinked] = useState(linkedSort);
+  if (linked !== linkedSort) {
+    setLinked(linkedSort);
+    if (linkedSort) setSort(linkedSort);
+  }
 
   const owned = installs.data ?? [];
   const all = mods.data ?? [];

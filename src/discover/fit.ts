@@ -37,7 +37,9 @@ export function isNew(entry: IndexEntry, now = Date.now()): boolean {
   return !Number.isNaN(added) && now - added < NEW_DAYS * 24 * 60 * 60 * 1000;
 }
 
-export type Sort = "featured" | "newest" | "name";
+export const SORTS = ["featured", "newest", "name"] as const;
+export type Sort = (typeof SORTS)[number];
+export const isSort = (v: unknown): v is Sort => SORTS.includes(v as Sort);
 
 export function compare(sort: Sort) {
   const byName = (a: IndexEntry, b: IndexEntry) => a.name.localeCompare(b.name);

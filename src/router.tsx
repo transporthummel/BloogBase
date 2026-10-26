@@ -1,6 +1,7 @@
 import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 import { About } from "./about/About";
 import { Discover } from "./discover/Discover";
+import { isSort, type Sort } from "./discover/fit";
 import { isDiscoverTab, type DiscoverTab } from "./discover/tabs";
 import { Library } from "./library/Library";
 import { ProfileRoute } from "./profile/ProfilePage";
@@ -20,8 +21,10 @@ const discoverRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/discover",
   component: Discover,
-  validateSearch: (search: Record<string, unknown>): { tab?: DiscoverTab } =>
-    isDiscoverTab(search.tab) ? { tab: search.tab } : {},
+  validateSearch: (search: Record<string, unknown>): { tab?: DiscoverTab; sort?: Sort } => ({
+    ...(isDiscoverTab(search.tab) && { tab: search.tab }),
+    ...(isSort(search.sort) && { sort: search.sort }),
+  }),
 });
 
 const profileRoute = createRoute({

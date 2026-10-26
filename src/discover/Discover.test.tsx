@@ -14,6 +14,9 @@ import { Discover } from "./Discover";
 import { compare, fitsEntry, isNew } from "./fit";
 
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
+// What the page was opened with.
+let search: { tab?: string; sort?: string } = {};
+
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
     to,
@@ -28,7 +31,7 @@ vi.mock("@tanstack/react-router", () => ({
       {children}
     </a>
   ),
-  useSearch: () => ({}),
+  useSearch: () => search,
 }));
 vi.mock("../bindings", () => ({
   commands: {
@@ -136,6 +139,7 @@ function renderDiscover() {
 }
 
 beforeEach(() => {
+  search = {};
   vi.mocked(commands.listGames).mockResolvedValue(games);
   vi.mocked(commands.indexStatus).mockResolvedValue(status);
   vi.mocked(commands.listInstalls).mockResolvedValue({
@@ -229,6 +233,13 @@ test("filters by text, type and what the library can play", async () => {
   await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
   expect(screen.queryByRole("heading", { name: "Fribbulus" })).not.toBeInTheDocument();
   expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(3);
+});
+
+test("opens sorted by newest when linked that way", async () => {
+  search = { tab: "mods", sort: "newest" };
+  renderDiscover();
+  await screen.findByRole("heading", { name: "Aurora" });
+  expect(screen.getByRole("combobox", { name: "Sort by" })).toHaveValue("newest");
 });
 
 test("keeps showing the cached list when a check fails", async () => {

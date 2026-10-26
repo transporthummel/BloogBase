@@ -162,7 +162,7 @@ export function WhatsNew() {
           </ul>
           <Link
             to="/discover"
-            search={{ tab: "mods" }}
+            search={{ tab: "mods", sort: "newest" }}
             onClick={close}
             className={buttonClass("secondary", "justify-self-start")}
           >
