@@ -406,7 +406,7 @@ function Hero({
             <PlayButton
               onClick={onPlay}
               disabled={!canPlay || profile.running || profile.missingGame !== null}
-              className="px-6 py-3 text-base"
+              className="min-w-44 px-8 py-3 text-base"
             >
               {profile.missingGame !== null
                 ? t("mods.gameMissing")
