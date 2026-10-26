@@ -9,7 +9,10 @@ export function Notice({
   children: ReactNode;
 }) {
   return tone === "error" ? (
-    <p role="alert" className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm">
+    <p
+      role="alert"
+      className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-sm select-text"
+    >
       {children}
     </p>
   ) : (

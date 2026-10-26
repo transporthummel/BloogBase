@@ -59,7 +59,7 @@ export function ReadmePanel({
         ) : (
           <p>
             <span className="sr-only">{t("readme.file")}</span>
-            <span className="break-all">{readme.file}</span>
+            <span className="break-all select-text">{readme.file}</span>
           </p>
         )}
       </div>
@@ -84,7 +84,7 @@ export function ReadmePanel({
         </div>
       )}
       {readme.text && (
-        <pre className="p-4 font-mono text-sm leading-snug break-words whitespace-pre-wrap">
+        <pre className="p-4 font-mono text-sm leading-snug break-words whitespace-pre-wrap select-text">
           {linkify(readme.text).map((part, i) =>
             "url" in part ? (
               <button

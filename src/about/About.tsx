@@ -167,7 +167,7 @@ function LicensesDialog({ onClose }: { onClose: () => void }) {
       {text.isPending && <Loading />}
       {text.data === null && <Notice>{t("about.licensesMissing")}</Notice>}
       {text.data && (
-        <pre className="max-h-[65vh] overflow-auto rounded-lg bg-surface-raised p-3 text-xs whitespace-pre-wrap">
+        <pre className="max-h-[65vh] overflow-auto rounded-lg bg-surface-raised p-3 text-xs whitespace-pre-wrap select-text">
           {text.data}
         </pre>
       )}

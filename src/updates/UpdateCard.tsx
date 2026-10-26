@@ -29,7 +29,7 @@ export function UpdateCard({ update, onLater }: { update: Update; onLater?: () =
     <Card className="grid gap-3 p-4">
       <h2 className="font-semibold">{t("updates.available", { version: update.version })}</h2>
       {update.body && (
-        <p className="max-h-40 overflow-y-auto text-sm whitespace-pre-line text-muted">
+        <p className="max-h-40 overflow-y-auto text-sm whitespace-pre-line text-muted select-text">
           {update.body}
         </p>
       )}

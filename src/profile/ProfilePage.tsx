@@ -384,7 +384,9 @@ function Hero({
             )}
           </div>
           {description && (
-            <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line">{description}</p>
+            <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line select-text">
+              {description}
+            </p>
           )}
           {cover.data?.scrambled && (
             <p className="flex max-w-prose items-start gap-2 text-sm">

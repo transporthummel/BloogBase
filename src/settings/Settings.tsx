@@ -113,7 +113,7 @@ export function Settings() {
             <dt className="text-muted">{t("settings.version")}</dt>
             <dd className="font-pixel text-xs leading-5">{info.data?.version}</dd>
             <dt className="text-muted">{t("settings.dataDir")}</dt>
-            <dd className="break-all">{info.data?.dataDir}</dd>
+            <dd className="break-all select-text">{info.data?.dataDir}</dd>
           </dl>
           <p className="text-sm">
             <Link to="/about" className="underline underline-offset-2">
@@ -184,7 +184,7 @@ function RuntimeSection() {
               ? t("runtime.activeManaged", { version: active.version })
               : t("runtime.activeCustom", { version: active.version })}
       </p>
-      {active && <p className="text-xs break-all text-muted">{active.path}</p>}
+      {active && <p className="text-xs break-all text-muted select-text">{active.path}</p>}
 
       {st?.downloadAvailable && (!st.managed || managedOutdated) && (
         <InstallRuntimeButton

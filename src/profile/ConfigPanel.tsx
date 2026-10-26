@@ -61,7 +61,7 @@ export function ConfigPanel({ profileId }: { profileId: string }) {
                     <td className="py-1 pr-4 font-mono text-xs">
                       [{s.section}] {s.key}
                     </td>
-                    <td className="py-1 pr-4 font-mono text-xs break-all">{s.value}</td>
+                    <td className="py-1 pr-4 font-mono text-xs break-all select-text">{s.value}</td>
                     <td className="py-1 text-xs text-muted">{t(`config.layer.${s.layer}`)}</td>
                   </tr>
                 ))}

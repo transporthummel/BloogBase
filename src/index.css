@@ -76,8 +76,18 @@
   --font-pixel: "Press Start 2P", monospace;
 }
 
+/* Like a desktop app, the interface itself isn't selectable: a double click
+   on a button or tile shouldn't highlight text. Fields and editors still
+   are, and texts worth copying (descriptions, paths, errors) opt in with
+   `select-text`. */
 body {
-  @apply bg-bg font-sans text-ink antialiased;
+  @apply bg-bg font-sans text-ink antialiased select-none;
+}
+
+/* Images and links can't be dragged out of the window. */
+img,
+a {
+  -webkit-user-drag: none;
 }
 
 /* Keyboard and controller focus, visible on every interactive element. */

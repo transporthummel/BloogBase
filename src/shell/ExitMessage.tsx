@@ -38,7 +38,7 @@ export function ExitMessage() {
   return (
     <Dialog title={t("exitMessage.title", { name })} onClose={close}>
       <p className="text-sm">{t("exitMessage.text")}</p>
-      <pre className="max-h-[50vh] overflow-auto rounded-lg bg-black p-3 font-mono text-sm whitespace-pre-wrap text-[#aaa]">
+      <pre className="max-h-[50vh] overflow-auto rounded-lg bg-black p-3 font-mono text-sm whitespace-pre-wrap text-[#aaa] select-text">
         {first.message}
       </pre>
       <div className="flex justify-end">

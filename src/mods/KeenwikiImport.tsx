@@ -282,7 +282,7 @@ function WikiCard({
                 ))}
               </fieldset>
             )}
-            <p className="text-xs break-all text-muted">{chosen.url}</p>
+            <p className="text-xs break-all text-muted select-text">{chosen.url}</p>
           </>
         )}
       </section>

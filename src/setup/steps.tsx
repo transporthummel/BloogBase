@@ -144,7 +144,7 @@ export function StorageStep({ next, back }: StepProps) {
       <StepHeader title={t("setup.storage.title")}>
         <p>{t("setup.storage.intro")}</p>
       </StepHeader>
-      <p className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm break-all">
+      <p className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm break-all select-text">
         {info.data?.dataDir}
       </p>
       <p className="text-sm text-muted">{t("setup.storage.usage")}</p>
@@ -308,7 +308,7 @@ export function OwnedStep({ next, back }: StepProps) {
           <li key={install.path} className="grid gap-2 rounded-lg border border-border p-3">
             <p className="flex flex-wrap items-center gap-2 text-sm">
               <Badge>{t(`setup.owned.store.${install.store}`)}</Badge>
-              <span className="text-xs break-all text-muted">{install.path}</span>
+              <span className="text-xs break-all text-muted select-text">{install.path}</span>
             </p>
             {install.games.map((g) => (
               <label key={g.gameId} className="flex items-center gap-3 text-sm">
