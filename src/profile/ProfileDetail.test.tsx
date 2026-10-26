@@ -211,6 +211,7 @@ const aurora: Mod = {
   keenwikiUrl: "https://keenwiki.shikadi.net/wiki/Aurora_Bliss",
   homepage: "https://aurora.example/",
   pckf: "https://pckf.com/viewtopic.php?t=1",
+  keenmodding: "https://keenmodding.org/viewtopic.php?t=2",
   addedAt: 1_700_000_000,
   profileId: "aurora-bliss",
 };
@@ -268,6 +269,8 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   expect(openUrl).toHaveBeenCalledWith(aurora.keenwikiUrl);
   await userEvent.click(screen.getByRole("button", { name: "PCKF" }));
   expect(openUrl).toHaveBeenCalledWith(aurora.pckf);
+  await userEvent.click(screen.getByRole("button", { name: "Keen: Modding" }));
+  expect(openUrl).toHaveBeenCalledWith(aurora.keenmodding);
   await userEvent.click(screen.getByRole("button", { name: "Website" }));
   expect(openUrl).toHaveBeenCalledWith(aurora.homepage);
   // Not in the index yet.

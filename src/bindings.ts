@@ -646,8 +646,10 @@ export type KeenwikiOrigin = {
 	released?: string | null,
 	/**  The mod's own website. */
 	homepage?: string | null,
-	/**  The discussion thread, usually on PCKF. */
+	/**  The discussion thread on PCKF. */
 	pckf?: string | null,
+	/**  The discussion thread on the Keen: Modding forum. */
+	keenmodding?: string | null,
 };
 
 export type LaunchPhase = "starting" | 
@@ -692,8 +694,10 @@ export type Mod = {
 	keenwikiUrl: string | null,
 	/**  The mod's own website, from its KeenWiki page. */
 	homepage: string | null,
-	/**  Its discussion thread, from its KeenWiki page. */
+	/**  Its discussion thread on PCKF, from its KeenWiki page. */
 	pckf: string | null,
+	/**  Its thread on the Keen: Modding forum, from its KeenWiki page. */
+	keenmodding: string | null,
 	/**  Unix epoch seconds. */
 	addedAt: number,
 	/**  The play profile created for the mod. */
@@ -730,7 +734,7 @@ export type ModUpdate = {
 };
 
 /**  What a mod's KeenWiki page says about it. */
-export type PageDetail = "authors" | "description" | "released" | "homepage" | "pckf";
+export type PageDetail = "authors" | "description" | "released" | "homepage" | "pckf" | "keenmodding";
 
 export type PlaySessionEnded = {
 	profileId: string,
@@ -1037,8 +1041,10 @@ export type WikiMod = {
 	released: string | null,
 	updated: string | null,
 	levels: string | null,
-	/**  The first discussion thread, usually on PCKF. */
-	discussion: string | null,
+	/**  The discussion thread on PCKF. */
+	pckf: string | null,
+	/**  The discussion thread on the Keen: Modding forum. */
+	keenmodding: string | null,
 	/**  The mod's own website. */
 	homepage: string | null,
 	description: string | null,

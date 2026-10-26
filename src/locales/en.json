@@ -343,7 +343,8 @@
       "description": "description",
       "released": "release date",
       "homepage": "website",
-      "pckf": "PCKF link"
+      "pckf": "PCKF link",
+      "keenmodding": "Keen: Modding link"
     }
   },
   "discover": {
@@ -433,7 +434,6 @@
     "released": "Released",
     "updated": "Latest update",
     "levels": "Levels",
-    "discussion": "Discussion",
     "download": "Download",
     "noDownload": "This page has no download link. Download the mod in your browser and add it as a ZIP file or folder.",
     "downloading": "Downloading and checking the mod…",

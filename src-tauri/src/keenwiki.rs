@@ -67,8 +67,10 @@ pub struct WikiMod {
     pub released: Option<String>,
     pub updated: Option<String>,
     pub levels: Option<String>,
-    /// The first discussion thread, usually on PCKF.
-    pub discussion: Option<String>,
+    /// The discussion thread on PCKF.
+    pub pckf: Option<String>,
+    /// The discussion thread on the Keen: Modding forum.
+    pub keenmodding: Option<String>,
     /// The mod's own website.
     pub homepage: Option<String>,
     pub description: Option<String>,
@@ -230,13 +232,29 @@ pub fn parse(html: &str, page_url: &str) -> Result<WikiMod> {
     let authors = row_text("Author(s)")
         .map(|t| split_names(&t))
         .unwrap_or_default();
-    let first_link = |label: &str| {
-        row(label).and_then(|td| {
-            td.select(&selector("a[href]"))
-                .filter_map(|a| a.value().attr("href"))
-                .find(|h| h.starts_with("http"))
-                .map(str::to_string)
-        })
+    let links = |label: &str| -> Vec<String> {
+        row(label)
+            .map(|td| {
+                td.select(&selector("a[href]"))
+                    .filter_map(|a| a.value().attr("href"))
+                    .filter(|h| h.starts_with("http"))
+                    .map(str::to_string)
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let first_link = |label: &str| links(label).into_iter().next();
+    let discussions = links("Discussion(s)");
+    let thread = |on_forum: fn(&str) -> bool| {
+        discussions
+            .iter()
+            .find(|h| {
+                Url::parse(h)
+                    .ok()
+                    .and_then(|u| u.host_str().map(on_forum))
+                    .unwrap_or(false)
+            })
+            .cloned()
     };
     let base = Url::parse(page_url).ok();
     let author_links = row("Author(s)")
@@ -268,7 +286,9 @@ pub fn parse(html: &str, page_url: &str) -> Result<WikiMod> {
         released: row_text("Release date"),
         updated: row_text("Latest update"),
         levels: row_text("Number of levels"),
-        discussion: first_link("Discussion(s)"),
+        // Before pckf.com, PCKF was hosted on Yuku.
+        pckf: thread(|h| h.ends_with("pckf.com") || h.starts_with("publiccommanderkeenforum.")),
+        keenmodding: thread(|h| h.ends_with("keenmodding.org")),
         homepage: first_link("Homepage"),
         description: doc
             .select(&selector(".mw-parser-output > p"))
@@ -644,7 +664,7 @@ mod tests {
         assert_eq!(m.updated.as_deref(), Some("2026-03-14"));
         assert_eq!(m.levels.as_deref(), Some("25"));
         assert_eq!(
-            m.discussion.as_deref(),
+            m.pckf.as_deref(),
             Some("https://pckf.com/viewtopic.php?f=4&t=4086")
         );
         assert_eq!(m.homepage, None);
@@ -731,9 +751,11 @@ mod tests {
         assert_eq!(m.downloads.len(), 1);
         assert_eq!(m.downloads[0].note, None);
         assert_eq!(
-            m.discussion.as_deref(),
+            m.keenmodding.as_deref(),
             Some("https://keenmodding.org/viewtopic.php?f=13&t=3224")
         );
+        // Only on Keen: Modding.
+        assert_eq!(m.pckf, None);
     }
 
     #[test]

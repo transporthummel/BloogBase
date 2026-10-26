@@ -226,7 +226,8 @@ function WikiCard({
   ];
   const links = [
     ["KeenWiki", page.pageUrl],
-    [t("keenwiki.discussion"), page.discussion],
+    ["PCKF", page.pckf],
+    ["Keen: Modding", page.keenmodding],
     [t("discover.homepage"), page.homepage],
   ].filter((l): l is [string, string] => !!l[1]);
   const downloadLabel = (d: WikiMod["downloads"][number]) =>

@@ -592,6 +592,7 @@ function modLinks(
   const all: [string, string | null | undefined][] = [
     ["KeenWiki", mod.keenwikiUrl ?? entry?.links.keenwiki],
     ["PCKF", mod.pckf ?? entry?.links.pckf],
+    ["Keen: Modding", mod.keenmodding],
     [t("discover.homepage"), mod.homepage ?? entry?.links.homepage],
   ];
   return all.filter((l): l is [string, string] => !!l[1]);

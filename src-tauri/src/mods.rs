@@ -161,9 +161,12 @@ pub struct KeenwikiOrigin {
     /// The mod's own website.
     #[serde(default)]
     pub homepage: Option<String>,
-    /// The discussion thread, usually on PCKF.
+    /// The discussion thread on PCKF.
     #[serde(default)]
     pub pckf: Option<String>,
+    /// The discussion thread on the Keen: Modding forum.
+    #[serde(default)]
+    pub keenmodding: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]
@@ -188,8 +191,10 @@ pub struct Mod {
     pub keenwiki_url: Option<String>,
     /// The mod's own website, from its KeenWiki page.
     pub homepage: Option<String>,
-    /// Its discussion thread, from its KeenWiki page.
+    /// Its discussion thread on PCKF, from its KeenWiki page.
     pub pckf: Option<String>,
+    /// Its thread on the Keen: Modding forum, from its KeenWiki page.
+    pub keenmodding: Option<String>,
     /// Unix epoch seconds.
     #[specta(type = u32)]
     pub added_at: i64,
@@ -843,6 +848,7 @@ struct Stored<'a> {
     keenwiki_url: Option<&'a str>,
     homepage: Option<String>,
     pckf: Option<String>,
+    keenmodding: Option<String>,
     /// The picked folder or ZIP, or the download URL.
     source_url: &'a str,
     /// Name for the kept copy of the archive; default: its own.
@@ -944,6 +950,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             keenwiki_url: Some(&o.page_url),
             homepage: o.homepage.clone(),
             pckf: o.pckf.clone(),
+            keenmodding: o.keenmodding.clone(),
             source_url: &o.download_url,
             archive_name: None,
         },
@@ -963,6 +970,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
             keenwiki_url: None,
             homepage: None,
             pckf: None,
+            keenmodding: None,
             source_url: &req.path,
             archive_name: None,
         },
@@ -978,6 +986,7 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
     stored.keenwiki_url = stored.keenwiki_url.or(old.keenwiki_url.as_deref());
     stored.homepage = stored.homepage.or_else(|| old.homepage.clone());
     stored.pckf = stored.pckf.or_else(|| old.pckf.clone());
+    stored.keenmodding = stored.keenmodding.or_else(|| old.keenmodding.clone());
     update(
         paths,
         db,
@@ -1077,6 +1086,7 @@ pub fn install_curated(
         // The index entry links it.
         homepage: None,
         pckf: None,
+        keenmodding: None,
         source_url: &c.url,
         archive_name: c.url.rsplit('/').next().filter(|n| !n.is_empty()),
     };
@@ -1452,6 +1462,7 @@ fn store(
             keenwiki_url: s.keenwiki_url.map(str::to_string),
             homepage: s.homepage.clone(),
             pckf: s.pckf.clone(),
+            keenmodding: s.keenmodding.clone(),
             added_at: now(),
             profile_id: id.clone(),
         };
@@ -1461,9 +1472,10 @@ fn store(
             "INSERT INTO mods (id, game_id, index_id, keenwiki_url, name, authors, version,
                                recipe_json, path, source, source_url, archive_sha256, added_at,
                                description, released, author_links, requires_json,
-                               version_recipes_json, extends, homepage, pckf)
+                               version_recipes_json, extends, homepage, pckf,
+                               keenmodding)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?20, ?21)",
+                     ?18, ?19, ?20, ?21, ?22)",
             params![
                 m.id,
                 m.game_id,
@@ -1485,7 +1497,8 @@ fn store(
                 version_recipes_json(s),
                 s.extends,
                 s.homepage,
-                s.pckf
+                s.pckf,
+                s.keenmodding
             ],
         )?;
         tx.execute(
@@ -1559,7 +1572,7 @@ fn update(
                              released = ?9, author_links = ?10, requires_json = ?11,
                              name = ?12, source = ?13, index_id = ?14,
                              version_recipes_json = ?15, extends = ?16, homepage = ?17,
-                             pckf = ?18
+                             pckf = ?18, keenmodding = ?19
              WHERE id = ?1",
             params![
                 mod_id,
@@ -1579,7 +1592,8 @@ fn update(
                 version_recipes_json(s),
                 s.extends,
                 s.homepage,
-                s.pckf
+                s.pckf,
+                s.keenmodding
             ],
         )?;
         tx.execute(
@@ -1716,7 +1730,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
         "SELECT m.id, m.game_id, m.name, m.authors, m.version, m.recipe_json, m.source,
                 m.added_at, p.id, m.index_id, m.keenwiki_url, m.description, m.released,
                 m.author_links, m.version_recipes_json, i.version_id, m.extends, m.homepage,
-                m.pckf
+                m.pckf, m.keenmodding
          FROM mods m JOIN profiles p ON p.mod_id = m.id
          LEFT JOIN installs i ON i.id = p.install_id
          ORDER BY m.added_at, m.id",
@@ -1754,6 +1768,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
             keenwiki_url: r.get(10)?,
             homepage: r.get(17)?,
             pckf: r.get(18)?,
+            keenmodding: r.get(19)?,
             description: r.get(11)?,
             released: r.get(12)?,
         })
@@ -1770,6 +1785,7 @@ pub enum PageDetail {
     Released,
     Homepage,
     Pckf,
+    Keenmodding,
 }
 
 /// Takes over what a mod's KeenWiki page now says about it; what the page
@@ -1784,11 +1800,13 @@ pub fn refresh_details(db: &Db, mod_id: &str, page: &WikiMod) -> Result<Vec<Page
         Option<String>,
         Option<String>,
         Option<String>,
+        Option<String>,
     );
     let conn = db.conn();
-    let (source, authors, author_links, description, released, homepage, pckf): Row = conn
-        .query_row(
-            "SELECT source, authors, author_links, description, released, homepage, pckf
+    let (source, authors, author_links, description, released, homepage, pckf, keenmodding): Row =
+        conn.query_row(
+            "SELECT source, authors, author_links, description, released, homepage, pckf,
+                    keenmodding
              FROM mods WHERE id = ?1",
             [mod_id],
             |r| {
@@ -1800,6 +1818,7 @@ pub fn refresh_details(db: &Db, mod_id: &str, page: &WikiMod) -> Result<Vec<Page
                     r.get(4)?,
                     r.get(5)?,
                     r.get(6)?,
+                    r.get(7)?,
                 ))
             },
         )
@@ -1824,16 +1843,17 @@ pub fn refresh_details(db: &Db, mod_id: &str, page: &WikiMod) -> Result<Vec<Page
             changed.push(detail);
         }
     };
-    let (mut description, mut released, mut homepage, mut pckf) =
-        (description, released, homepage, pckf);
+    let (mut description, mut released, mut homepage, mut pckf, mut keenmodding) =
+        (description, released, homepage, pckf, keenmodding);
     take(&mut description, &page.description, PageDetail::Description);
     take(&mut released, &page.released, PageDetail::Released);
     take(&mut homepage, &page.homepage, PageDetail::Homepage);
-    take(&mut pckf, &page.discussion, PageDetail::Pckf);
+    take(&mut pckf, &page.pckf, PageDetail::Pckf);
+    take(&mut keenmodding, &page.keenmodding, PageDetail::Keenmodding);
     if !changed.is_empty() {
         conn.execute(
             "UPDATE mods SET authors = ?2, author_links = ?3, description = ?4, released = ?5,
-                             homepage = ?6, pckf = ?7
+                             homepage = ?6, pckf = ?7, keenmodding = ?8
              WHERE id = ?1",
             params![
                 mod_id,
@@ -1842,7 +1862,8 @@ pub fn refresh_details(db: &Db, mod_id: &str, page: &WikiMod) -> Result<Vec<Page
                 description,
                 released,
                 homepage,
-                pckf
+                pckf,
+                keenmodding
             ],
         )?;
         tracing::info!("took {changed:?} of mod {mod_id} from its KeenWiki page");
@@ -2178,6 +2199,7 @@ mod tests {
             released: Some("2012-05-01".into()),
             homepage: Some("http://aurora.example/".into()),
             pckf: Some("https://pckf.com/viewtopic.php?t=1".into()),
+            keenmodding: None,
         });
         let m = install(&paths, &db, &req).unwrap();
         assert_eq!(m.source, ModSource::Keenwiki);
@@ -2245,6 +2267,7 @@ mod tests {
             released: Some("2012-05-01".into()),
             homepage: Some("http://aurora.example/".into()),
             pckf: None,
+            keenmodding: None,
         });
         let m = install(&paths, &db, &req).unwrap();
 
@@ -2261,7 +2284,8 @@ mod tests {
             released: Some("2012-05-01".into()),
             updated: None,
             levels: None,
-            discussion: Some("https://pckf.com/viewtopic.php?t=1".into()),
+            pckf: Some("https://pckf.com/viewtopic.php?t=1".into()),
+            keenmodding: Some("https://keenmodding.org/viewtopic.php?t=2".into()),
             // The page no longer says.
             homepage: None,
             description: Some("Even more blissful.".into()),
@@ -2273,7 +2297,8 @@ mod tests {
             [
                 PageDetail::Authors,
                 PageDetail::Description,
-                PageDetail::Pckf
+                PageDetail::Pckf,
+                PageDetail::Keenmodding
             ]
         );
         let listed = &list(&db).unwrap()[0];
@@ -2282,7 +2307,8 @@ mod tests {
             "https://keenwiki.shikadi.net/wiki/User:Dave216"
         );
         assert_eq!(listed.description.as_deref(), Some("Even more blissful."));
-        assert_eq!(listed.pckf.as_deref(), page.discussion.as_deref());
+        assert_eq!(listed.pckf.as_deref(), page.pckf.as_deref());
+        assert_eq!(listed.keenmodding.as_deref(), page.keenmodding.as_deref());
         assert_eq!(listed.homepage.as_deref(), Some("http://aurora.example/"));
         // Nothing new the second time.
         assert!(refresh_details(&db, &m.id, &page).unwrap().is_empty());
@@ -2311,6 +2337,7 @@ mod tests {
             released: None,
             homepage: Some("http://aurora.example/".into()),
             pckf: Some("https://pckf.com/viewtopic.php?t=1".into()),
+            keenmodding: None,
         });
         let old = install(&paths, &db, &req).unwrap();
         fs::write(paths.profiles.join("aurora/state/SAVEGAM0.CK4"), b"save").unwrap();

@@ -53,6 +53,7 @@ const mod: Mod = {
   keenwikiUrl: "https://keenwiki.shikadi.net/wiki/Aurora_Bliss",
   homepage: null,
   pckf: null,
+  keenmodding: null,
   addedAt: 0,
   profileId: "aurora-bliss",
 };
@@ -67,7 +68,8 @@ const page: WikiMod = {
   released: null,
   updated: null,
   levels: null,
-  discussion: null,
+  pckf: null,
+  keenmodding: null,
   homepage: null,
   description: null,
   credits: [],
