@@ -183,6 +183,8 @@ pub fn run() {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
+            #[cfg(all(windows, not(debug_assertions)))]
+            disable_browser_shortcuts(app);
 
             let location = DataLocation {
                 config_dir: app.path().app_config_dir()?,
@@ -271,6 +273,33 @@ pub fn run() {
                 api.prevent_exit();
             }
         });
+}
+
+/// Turns off WebView2's browser shortcuts (reload, find, print, save, caret
+/// browsing, Alt+arrow navigation); editing keys like Ctrl+C keep working.
+/// Release only, so F12 and reload stay available while developing.
+#[cfg(all(windows, not(debug_assertions)))]
+fn disable_browser_shortcuts(app: &tauri::App) {
+    use webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Settings3;
+    use windows_core::Interface;
+
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+    let _ = window.with_webview(|webview| {
+        // SAFETY: plain COM calls on the live controller, on the main thread.
+        let result = unsafe {
+            webview
+                .controller()
+                .CoreWebView2()
+                .and_then(|core| core.Settings())
+                .and_then(|settings| settings.cast::<ICoreWebView2Settings3>())
+                .and_then(|settings| settings.SetAreBrowserAcceleratorKeysEnabled(false))
+        };
+        if let Err(e) = result {
+            tracing::warn!("could not turn off the browser shortcuts: {e}");
+        }
+    });
 }
 
 /// Whether games are running; if so, tells the frontend to ask what to do.
