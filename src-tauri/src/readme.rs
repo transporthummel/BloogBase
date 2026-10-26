@@ -3,11 +3,12 @@
 //! Mods name their documentation freely (`README.TXT`, `Read Me.txt`,
 //! `READ.ME`, `CHEEKY README.rtf`, `LIESMICH.TXT`, …), so candidates are
 //! ranked by name; without one, other text documents are shown instead
-//! (`changes.txt`, `story.txt`). The text goes to the UI as plain text only: DOS code page
-//! 437 or Windows-1252 is decoded, RTF is reduced to its text, control
-//! characters are dropped, Word documents are reduced to their text and
-//! also open in their app. HTML is never shown in the app: web pages are
-//! listed without text and open in the browser.
+//! (`changes.txt`, `story.txt`). The games' own documents, which come along
+//! with a copy of a shareware episode, are left out. The text goes to the UI
+//! as plain text only: DOS code page 437 or Windows-1252 is decoded, RTF is
+//! reduced to its text, control characters are dropped, Word documents are
+//! reduced to their text and also open in their app. HTML is never shown in
+//! the app: web pages are listed without text and open in the browser.
 
 use std::fs;
 use std::io::{Cursor, Read};
@@ -18,6 +19,7 @@ use serde::Serialize;
 use specta::Type;
 
 use crate::db::Db;
+use crate::detect::sha256_hex;
 use crate::error::{Error, Result};
 use crate::paths::AppPaths;
 use crate::source::{Source, split_dir};
@@ -184,6 +186,7 @@ pub fn find(source: &Source) -> Result<Vec<Readme>> {
         if let Some(text) = to_text(&bytes)
             && !text.trim().is_empty()
             && !is_patch_script(&text)
+            && !is_game_document(&text)
         {
             found.push(Readme {
                 file,
@@ -276,6 +279,68 @@ fn is_patch_script(text: &str) -> bool {
         .map(str::trim)
         .find(|l| !l.is_empty())
         .is_some_and(|l| l.starts_with('%'))
+}
+
+/// Documents of the games themselves, which mods often ship along with a
+/// copy of a shareware episode: SHA-256 of their text as [`to_text`] gives
+/// it, so line ends and end-of-file markers don't matter.
+const GAME_DOCUMENTS: &[&str] = &[
+    // Keen 1 v1.1, v1.3, v1.31: READALL.TXT
+    "f3aff095abd0c15c06caf15d771629d22170fd739be3a6ba9d7b8ae171e2ec22",
+    // Keen 1 v1.1: KEEN1.DOC
+    "8249fa3c2498400a8886f8c40bf02b30f4a931346d2d477ce551fd2780879da8",
+    // Keen 1 v1.3: KEEN1.DOC
+    "ec89c57c64a927323c6aaca16b5be1c6ecb9527cac4e57518411bcdc7593b346",
+    // Keen 1 v1.31: KEEN1.DOC
+    "5e6e6ba901c1d120b66a64c785735bf1ed4e001fcf0933fbcf727d8820a18a0f",
+    // Keen 1 v1.31 as found in mods, KEEN1.DOC: with Apogee's P.O. box;
+    // "Episode One" with the Goodbye Galaxy advert, with and without the
+    // sample disk offer
+    "dff69f7efb3a18aeee0c4ce72c10be7ddfcc5ae9eb9484bf6897cad86439b0b5",
+    "8bc516635244cbe73fe140787d035a5a7a69f11e0c5c800ca9aa6e78d7950c63",
+    "e7dfb83b58b88576d61640fd46a889c6bdd45801bc94c0b5cea9c5c493e6bf90",
+    // Keen 1 as found in mods: Apogee's VENDOR.DOC
+    "5159849cf3b349fe35c55513601370f9b0ac030ceb139653de4ee75acf4181b3",
+    // Keen 1 v1.34: PSP.DOC, VENDOR.DOC
+    "c6e17a87331979d6e7be95ca0af71a247af5c7801c173836292bf5ccf8519a86",
+    "50d9fe5275deec7e5b8160703fec1bdf6cc115f19b64973f4d9a5683e87721d0",
+    // Keen 4 v1.0 CGA, v1.1 CGA: README.DOC
+    "3ca05eb3d2d44bf7cb5f57bdc13149e2ae79e5a28321a647003ee9a5fc6e16b6",
+    // Keen 4 v1.1: VENDOR.DOC
+    "028e8243aeb7483ecc0787a602ecbe4d05fe7c760cebb1c05ff4fd1e1d17c85a",
+    // Keen 4 v1.2: README.DOC
+    "f7c3bc72f7f6cc0cc4dc9975b45366921482fecb76135efffcbf076c1c4f6443",
+    // Keen 4 v1.4 EGA: README.DOC
+    "8039211c33b1e581d8436648b075d67af33bbef801b50693032b389603b6d437",
+    // Keen 4 v1.4 EGA, CGA: LICENSE.DOC
+    "ffbf20324c1ef34e6779e62325f5427546b1875da012887f2224bf34fcf479e8",
+    // Keen 6 Special Demo: K6DEMO.DOC
+    "18fc68a7b379bf0918da19e82cdb4ac28b32a423408c53f6acf339e77e5b7522",
+    // Keen Dreams v1.01, v1.13: HELPINFO.TXT, README.TXT, VENDOR.TXT
+    "16ca784d258c64639b8da3d24898d1625192969c6cb90bf6912419cb864a2ff5",
+    "d8f67ebe293c40ce414d06602b86131bf5295a721c17ddee2413f70d9f9d635f",
+    "1c07fd780405f43deca192f2686be0e74ac6b5afd7743d453170353a7380e809",
+    // Keen Dreams v1.01: LICENSE.DOC, VENDOR.DOC
+    "a814ddf65a9104cee9eaef6b79d97af91f1185b4dff87de613ac8aab3db99cfa",
+    "8a87f8ceb4d7bf880932a80467c9630900ce0e1943ceb942761e30c6f27dc600",
+    // Keen Dreams v1.13: LICENSE.DOC, VENDOR.DOC
+    "a8806e40ea82132fb76930abaa87826300aacf775aea6d99578dcafbb6ea19a1",
+    "16f435cdf5a3dfc16b9a3b1a29f81f57cbabb1eefc6890a1a0c28d47ab3eed6e",
+    // Keen Dreams v1.93, id Anthology: SOLUTION.TXT
+    "242898751dea0694f942b1da08f1822db52c46d8fc7fd5b093c1d91aee350335",
+    // Keen Dreams v1.93: INSTRUCT.TXT, QUICK.TXT
+    "553cdafe0ddaf74fe40b0bd3703056289333fbc9f56bcfda0217df9280d83125",
+    "c85d3abc746e03e2014fc7b4d82a1f8a03d47c465026131589382c4279e3bf8c",
+    // Keen Dreams id Anthology: INSTRUCT.TXT, QUICK.TXT, README1-3.TXT
+    "8e10a6a84ff2cc4a16feedb224f8e1772c9196f81a9e5ae77a8d82bc2aac1bda",
+    "1134253dcc5ac110c50bc974d7eb6c060126e87e3c6a1d7486552c2e7188241c",
+    "79b7861a5dd56065b074bac987b2637db9fccbbd44f1a8f14e58a857239b1de4",
+    "e539f4e0a1cfbc94966fedd7571586ce2ab42781e25c9a43918735be98e8c13d",
+    "26d941421da5a17058d8c4995296ebc3c423b30898b57c4a10f6d07dcf2fc9ba",
+];
+
+fn is_game_document(text: &str) -> bool {
+    GAME_DOCUMENTS.contains(&sha256_hex(text.as_bytes()).as_str())
 }
 
 /// Plain text, or `None` for binary files (e.g. a Word `.doc`).
@@ -1050,6 +1115,20 @@ mod tests {
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].file, "Aurora/READ ME.txt");
         assert_eq!(found[0].text, "hi there");
+    }
+
+    #[test]
+    fn game_documents_are_sha256_hashes() {
+        let mut hashes = GAME_DOCUMENTS.to_vec();
+        assert!(hashes.iter().all(|h| {
+            h.len() == 64
+                && h.bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        }));
+        hashes.sort();
+        hashes.dedup();
+        assert_eq!(hashes.len(), GAME_DOCUMENTS.len());
+        assert!(!is_game_document("hi there"));
     }
 
     #[test]
