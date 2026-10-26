@@ -229,6 +229,17 @@ impl Files<'_> {
             .or_else(|| exts.iter().find_map(|e| self.find(&format!("{name}.{e}"))))
     }
 
+    fn names(&self) -> Vec<String> {
+        self.0
+            .iter()
+            .filter_map(|dir| fs::read_dir(dir).ok())
+            .flatten()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_ok_and(|t| t.is_file()))
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .collect()
+    }
+
     fn episode_exe(&self, game: &Game) -> Option<PathBuf> {
         game.executables.iter().find_map(|e| self.find(e))
     }
@@ -238,8 +249,24 @@ impl Files<'_> {
 fn targets(game: &Game, recipe: &Recipe, files: &Files) -> Vec<Target> {
     match recipe {
         Recipe::Patch { patch, .. } => files.find(patch).map(Target::Patch).into_iter().collect(),
+        // A launcher that runs the patcher, as Keen Q's KEENQ.COM, gets the
+        // patch in each patch file it names: it may swap them around.
         Recipe::Program { program, .. } => {
-            files.find(program).map(Target::Exe).into_iter().collect()
+            let Some(path) = files.find(program) else {
+                return Vec::new();
+            };
+            let names = files.names();
+            let patches = fs::read(&path)
+                .map(|p| recipe::patches_named_in(&p, names.iter().map(String::as_str)))
+                .unwrap_or_default();
+            if patches.is_empty() {
+                vec![Target::Exe(path)]
+            } else {
+                patches
+                    .into_iter()
+                    .filter_map(|n| files.find(n).map(Target::Patch))
+                    .collect()
+            }
         }
         Recipe::Episode => files
             .episode_exe(game)
@@ -708,6 +735,37 @@ pub mod tests {
             status(catalog::game("keen4").unwrap(), &Recipe::Episode, &dirs),
             None
         );
+    }
+
+    #[test]
+    fn launchers_patch_every_patch_file_they_name() {
+        // As Keen Q's KEENQ.COM, a compiled batch file swapping two patches.
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        write_folder(
+            dir,
+            &[
+                ("KEEN1.EXE", &exe()),
+                ("CK1PATCH.EXE", b"p"),
+                ("GEEL.PAT", b"%ext ck1\n%end\n"),
+                ("GEEL3.PAT", b"%ext ck1\n%end\n"),
+                (
+                    "KEENQ.COM",
+                    b"RENAME GEEL3.PAT GEEL.PAT\0CK1patch.exe\0 geel.pat\r",
+                ),
+            ],
+        );
+        let launcher = Recipe::Program {
+            program: "KEENQ.COM".into(),
+            args: Vec::new(),
+        };
+        assert_eq!(status(keen1(), &launcher, &[dir]), Some(Firing::Patchable));
+        assert_eq!(apply(keen1(), &launcher, dir).unwrap(), Firing::Patchable);
+        for name in ["GEEL.PAT", "GEEL3.PAT"] {
+            let text = fs::read_to_string(dir.join(name)).unwrap();
+            assert!(text.contains("%patch $3DCC $90 $90\n"), "{name}");
+        }
+        assert_eq!(status(keen1(), &launcher, &[dir]), Some(Firing::BuiltIn));
     }
 
     #[test]

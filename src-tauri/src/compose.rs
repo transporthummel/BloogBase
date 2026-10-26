@@ -283,11 +283,11 @@ fn scan(root: &Path) -> Result<Vec<Input>> {
 fn composition_hash(inputs: &BTreeMap<String, Input>, recipe: &Recipe, firing: bool) -> String {
     let mut h = Sha256::new();
     // v2: the episode unpacked for old patchers; v3: CWSDPMI; v4: CKPatch;
-    // v5: patch files adapted to it.
+    // v5: patch files adapted to it. Firing v2: patch files launchers run.
     h.update(b"composed v5\n");
     h.update(serde_json::to_string(recipe).expect("recipes serialize"));
     if firing {
-        h.update(b"\none-button firing v1");
+        h.update(b"\none-button firing v2");
     }
     for input in inputs.values() {
         h.update(format!(

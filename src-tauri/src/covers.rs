@@ -329,19 +329,10 @@ fn patch_file(recipe: &Recipe, files: &Files) -> Option<String> {
     let Recipe::Program { program, .. } = recipe else {
         return None;
     };
-    let program = files.read(program)?.to_ascii_uppercase();
-    files
-        .names()
-        .filter(|n| has_ext(n, "PAT"))
-        .filter_map(|n| {
-            let name = n.to_ascii_uppercase();
-            let at = program
-                .windows(name.len())
-                .position(|w| w == name.as_bytes())?;
-            Some((at, n.to_string()))
-        })
-        .min()
-        .map(|(_, name)| name)
+    let program = files.read(program)?;
+    recipe::patches_named_in(&program, files.names())
+        .first()
+        .map(|n| n.to_string())
 }
 
 /// The names a Vorticons game opens its files under, from a stem like

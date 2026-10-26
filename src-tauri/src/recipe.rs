@@ -545,6 +545,29 @@ pub fn patch_versions(text: &str) -> Vec<String> {
     named
 }
 
+/// The patch files among `names` that a program names, in the order it
+/// first does, as Keen Q's `KEENQ.COM`: a compiled batch file that swaps
+/// `GEEL.PAT` and `GEEL3.PAT` and runs `CK2PATCH GEEL.PAT`.
+pub fn patches_named_in<'a>(
+    program: &[u8],
+    names: impl IntoIterator<Item = &'a str>,
+) -> Vec<&'a str> {
+    let program = program.to_ascii_uppercase();
+    let mut named: Vec<(usize, &str)> = names
+        .into_iter()
+        .filter(|n| has_ext(n, "PAT"))
+        .filter_map(|n| {
+            let name = n.to_ascii_uppercase();
+            let at = program
+                .windows(name.len())
+                .position(|w| w == name.as_bytes())?;
+            Some((at, n))
+        })
+        .collect();
+    named.sort();
+    named.into_iter().map(|(_, n)| n).collect()
+}
+
 /// The `%ext` of a patch file, upper case, e.g. `CK4`.
 pub fn patch_ext(text: &str) -> Option<String> {
     patch_directives(text, "%ext")
