@@ -43,6 +43,10 @@ export function ModUpdate({
   const offered = update && (update.status === "newer" || update.status === "unknown");
 
   if (check.isIdle && !download.error && !fetched) return null;
+  const dismiss = () => {
+    check.reset();
+    download.reset();
+  };
 
   return (
     <div className="grid justify-items-start gap-2">
@@ -50,7 +54,7 @@ export function ModUpdate({
       {check.error && <Notice tone="error">{errorMessage(t, check.error)}</Notice>}
       {found?.source === "index" &&
         (found.mod ? (
-          <IndexUpdate mod={found.mod} disabled={disabled} />
+          <IndexUpdate mod={found.mod} disabled={disabled} onDismiss={dismiss} />
         ) : (
           <Notice>{t("modUpdate.notInIndex")}</Notice>
         ))}
@@ -67,10 +71,18 @@ export function ModUpdate({
               : t("modUpdate.unknown", { download: newest.label })}
           </Notice>
           {mod.indexId && <Notice>{t("modUpdate.leavesIndex")}</Notice>}
-          <Button onClick={() => download.mutate(update)} disabled={disabled || download.isPending}>
-            <Download className="size-4" aria-hidden />
-            {download.isPending ? t("modUpdate.downloading") : t("modUpdate.update")}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => download.mutate(update)}
+              disabled={disabled || download.isPending}
+            >
+              <Download className="size-4" aria-hidden />
+              {download.isPending ? t("modUpdate.downloading") : t("modUpdate.update")}
+            </Button>
+            <Button variant="secondary" onClick={dismiss} disabled={download.isPending}>
+              {t("modUpdate.dismiss")}
+            </Button>
+          </div>
         </>
       )}
       {download.error && download.variables && (
@@ -93,7 +105,15 @@ export function ModUpdate({
 }
 
 /** The index's newer version, installed over the old one like from Discover. */
-function IndexUpdate({ mod, disabled }: { mod: IndexMod; disabled: boolean }) {
+function IndexUpdate({
+  mod,
+  disabled,
+  onDismiss,
+}: {
+  mod: IndexMod;
+  disabled: boolean;
+  onDismiss: () => void;
+}) {
   const { t } = useTranslation();
   const { entry } = mod;
   const job = useJob("mod", entry.id);
@@ -110,10 +130,15 @@ function IndexUpdate({ mod, disabled }: { mod: IndexMod; disabled: boolean }) {
           context: entry.version ? "version" : undefined,
         })}
       </Notice>
-      <Button onClick={() => start.mutate()} disabled={disabled || start.isPending}>
-        <RefreshCw className="size-4" aria-hidden />
-        {t("modUpdate.update")}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={() => start.mutate()} disabled={disabled || start.isPending}>
+          <RefreshCw className="size-4" aria-hidden />
+          {t("modUpdate.update")}
+        </Button>
+        <Button variant="secondary" onClick={onDismiss} disabled={start.isPending}>
+          {t("modUpdate.dismiss")}
+        </Button>
+      </div>
       {start.error && <Notice tone="error">{errorMessage(t, start.error)}</Notice>}
     </>
   );

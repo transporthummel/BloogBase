@@ -331,6 +331,7 @@
     "inIndex_version": "Version {{version}} is in the BloogBase mod list.",
     "notInIndex": "The mod is no longer in the BloogBase mod list.",
     "leavesIndex": "After this update, the mod no longer gets updates from the BloogBase mod list.",
+    "dismiss": "Dismiss",
     "update": "Update",
     "downloading": "Downloading…"
   },

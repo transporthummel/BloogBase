@@ -331,6 +331,7 @@
     "inIndex_version": "In der BloogBase-Modliste gibt es Version {{version}}.",
     "notInIndex": "Die Mod ist nicht mehr in der BloogBase-Modliste.",
     "leavesIndex": "Nach diesem Update bekommt die Mod keine Updates mehr aus der BloogBase-Modliste.",
+    "dismiss": "Verwerfen",
     "update": "Aktualisieren",
     "downloading": "Wird heruntergeladen…"
   },

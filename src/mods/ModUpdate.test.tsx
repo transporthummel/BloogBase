@@ -284,3 +284,21 @@ test("offers a link that leads to a web page in the browser", async () => {
   await user.click(await screen.findByRole("button", { name: "Open it in your browser" }));
   expect(openUrl).toHaveBeenCalledWith("https://files.example/aurora_v1.2.zip");
 });
+
+test("dismissing an offered update hides it", async () => {
+  vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page }));
+  const user = renderUpdate();
+  await user.click(screen.getByRole("button", { name: "Check for updates" }));
+  await user.click(await screen.findByRole("button", { name: "Dismiss" }));
+  expect(screen.queryByText("Version 1.2 is available on KeenWiki.")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Update" })).toBeNull();
+});
+
+test("dismissing the index's update hides it", async () => {
+  inIndex(true);
+  const user = renderUpdate(indexMod);
+  await user.click(screen.getByRole("button", { name: "Check for updates" }));
+  await user.click(await screen.findByRole("button", { name: "Dismiss" }));
+  expect(screen.queryByText("Version 1.2 is in the BloogBase mod list.")).toBeNull();
+  expect(commands.installIndexMod).not.toHaveBeenCalled();
+});
