@@ -675,12 +675,12 @@
   },
   "news": {
     "title": "What's new",
-    "release": "New in BloogBase {{version}}",
-    "mods_one": "New in the mod list",
-    "mods_other": "{{count}} new in the mod list",
+    "release": "What's new in BloogBase {{version}}",
+    "mods_one": "A new mod has arrived",
+    "mods_other": "{{count}} new mods have arrived",
     "toDiscover": "Show in Discover",
-    "updates_one": "An update for one of your mods",
-    "updates_other": "Updates for {{count}} of your mods"
+    "updates_one": "There's an update for one of your mods",
+    "updates_other": "There are updates for {{count}} of your mods"
   },
   "launch": {
     "starting": "Starting {{name}}…"

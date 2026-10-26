@@ -91,7 +91,7 @@ test("shows nothing on the first start and remembers what's there", async () => 
 test("lists the changes since the version run before", async () => {
   setLastVersion("0.1.0");
   const user = renderNews();
-  expect(await screen.findByText("New in BloogBase 0.3.0")).toBeInTheDocument();
+  expect(await screen.findByText("What's new in BloogBase 0.3.0")).toBeInTheDocument();
   expect(screen.getByText("Snow at Christmas.")).toBeInTheDocument();
   expect(screen.getByText("A news dialog.")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Close" }));
@@ -106,7 +106,7 @@ test("lists mods new in the mod list", async () => {
     ok([indexMod("a", "Alpha", null), indexMod("b", "Beta", null), indexMod("c", "Gamma", "c")]),
   );
   const user = renderNews();
-  expect(await screen.findByText("New in the mod list")).toBeInTheDocument();
+  expect(await screen.findByText("A new mod has arrived")).toBeInTheDocument();
   expect(screen.getByText("Beta")).toBeInTheDocument();
   // Installed already: not news.
   expect(screen.queryByText("Gamma")).toBeNull();
@@ -125,7 +125,7 @@ test("offers an installed mod's update once", async () => {
     phase: "downloading",
   } as never);
   const user = renderNews();
-  expect(await screen.findByText("An update for one of your mods")).toBeInTheDocument();
+  expect(await screen.findByText("There's an update for one of your mods")).toBeInTheDocument();
   expect(screen.getByText("Version 2.0 is in the BloogBase mod list.")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Update" }));
   expect(commands.installIndexMod).toHaveBeenCalledWith("a", null, true, null);
