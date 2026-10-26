@@ -182,9 +182,7 @@ export function WhatsNew() {
         </section>
       )}
       <div className="flex justify-end">
-        <Button onClick={close} data-autofocus>
-          {t("common.close")}
-        </Button>
+        <Button onClick={close}>{t("common.close")}</Button>
       </div>
     </Dialog>
   );
