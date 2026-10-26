@@ -19,7 +19,7 @@ use crate::profiles;
 use crate::recipe::{self, Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v14";
+const VERSION: &str = "covers v15";
 
 /// A profile's cover.
 #[derive(Debug, PartialEq, Eq)]
@@ -323,13 +323,15 @@ fn extract(
 /// `EGAHEAD` or `LEVEL90`. A patch may write new names over the executable's
 /// own (`EGAHEAD`, `LEVEL`, the extension), as Norp the Yorp 3 does to open
 /// `TITLES1.NY3`; they count where a `%patch` starts right on one of those,
-/// found in the unpacked executable.
-fn vorticons_names(
+/// found in the unpacked executable. A file missing under the new extension
+/// is taken under the old one, as Keen 0: Printed to Pluto keeps its
+/// `EGAHEAD.CK1` beside `LEVEL90.CK0`.
+fn vorticons_names<'a>(
     game: &Game,
-    files: &Files,
-    texts: &[(usize, String)],
+    files: &'a Files,
+    texts: &'a [(usize, String)],
     ext: &str,
-) -> impl Fn(&str) -> String {
+) -> impl Fn(&str) -> String + 'a {
     let image = if texts.is_empty() {
         None
     } else {
@@ -353,11 +355,17 @@ fn vorticons_names(
         });
         renamed.unwrap_or_else(|| original.to_string())
     };
-    let ext = patched(ext);
+    let (old_ext, ext) = (ext.to_string(), patched(ext));
     move |stem: &str| {
         let digits = stem.trim_start_matches(|c: char| !c.is_ascii_digit());
-        let base = &stem[..stem.len() - digits.len()];
-        format!("{}{digits}.{ext}", patched(base))
+        let base = patched(&stem[..stem.len() - digits.len()]);
+        let name = format!("{base}{digits}.{ext}");
+        let old = format!("{base}{digits}.{old_ext}");
+        if files.path(&name).is_none() && files.path(&old).is_some() {
+            old
+        } else {
+            name
+        }
     }
 }
 
@@ -736,6 +744,18 @@ mod tests {
             .collect();
         files.push(("KEEN1.EXE", exe));
         files.push(("MOD.PAT", patch.as_bytes().to_vec()));
+        let pixels = extract_from("keen1", &files).unwrap().image.pixels;
+        assert_eq!((pixels[0], pixels[320 + 32]), (1, 8));
+    }
+
+    #[test]
+    fn takes_vorticons_files_missing_under_a_new_extension_under_the_old() {
+        // As Keen 0: Printed to Pluto: LEVEL90.CK0 beside EGAHEAD.CK1.
+        let exe = [b"MZ".as_slice(), &[0; 6], &[2, 0], &[0; 0x16], b"CK1\0"].concat();
+        let mut files = keen1_title();
+        files[2].0 = "LEVEL90.CK0";
+        files.push(("KEEN1.EXE", exe));
+        files.push(("MOD.PAT", b"%patch 0x0 \"CK0\"\n".to_vec()));
         let pixels = extract_from("keen1", &files).unwrap().image.pixels;
         assert_eq!((pixels[0], pixels[320 + 32]), (1, 8));
     }
