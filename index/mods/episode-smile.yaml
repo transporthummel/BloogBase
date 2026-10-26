@@ -1,0 +1,25 @@
+id: episode-smile
+name: Episode Smile
+game: keen2
+requires: [keen2-1.31]
+authors: [KeenRush]
+authorLinks:
+  KeenRush: https://keenwiki.shikadi.net/wiki/User:KeenRush
+released: 2005-01-07
+added: 2026-10-26
+type: episode
+description: "KeenRush's second full mod: a summer-holiday adventure with an all-new tileset, monsters and PC speaker sounds over 16 levels, known for its extreme difficulty."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Episode_Smile
+  keenmodding: https://keenmodding.org/viewtopic.php?t=431
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.keenrush.episode_smile.k2.2005-01-07.zip
+    sha256: 08b099c48343bd15dd0d6f4c7310f57e1ca3a8f638c918921255c0e86384b3d3
+    size: 97881
+# play.bat runs `ck2patch stuff.pat`. The patch file names no version; it's
+# one set of offsets, and Keen 2 mods of the time patched v1.31 (Norp the
+# Yorp 2 needs a patch file of its own for v1.0).
+recipe:
+  type: patch
+  patcher: CK2PATCH.EXE
+  patch: stuff.pat
