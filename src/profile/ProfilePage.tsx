@@ -31,7 +31,7 @@ import { errorMessage } from "../errors";
 import { formatDate, formatLooseDate, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { Cover } from "../library/Cover";
-import { coverKeys, useCover } from "../library/covers";
+import { forgetRemovedCovers, useCover } from "../library/covers";
 import { scroller } from "../library/scroll";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Authors } from "../mods/Authors";
@@ -447,12 +447,10 @@ function Hero({
           modCount={modCount}
           onClose={() => setRemoving(false)}
           onRemoved={() => {
-            queryClient.invalidateQueries({ queryKey: profilesKey });
+            forgetRemovedCovers(queryClient);
             queryClient.invalidateQueries({ queryKey: modsKey });
             queryClient.invalidateQueries({ queryKey: installsKey });
             navigate({ to: "/" });
-            // Ids are used again, and the game's mods may be gone too.
-            queryClient.removeQueries({ queryKey: coverKeys });
           }}
         />
       )}
@@ -461,12 +459,10 @@ function Hero({
           profile={{ ...profile, modId: profile.modId }}
           onClose={() => setRemoving(false)}
           onRemoved={() => {
-            queryClient.invalidateQueries({ queryKey: profilesKey });
+            // With the mods played over it, removed with it.
+            forgetRemovedCovers(queryClient);
             queryClient.invalidateQueries({ queryKey: modsKey });
             navigate({ to: "/" });
-            // Installing it again gets the same id, and a new cover; so do
-            // the mods played over it, removed with it.
-            queryClient.removeQueries({ queryKey: coverKeys });
           }}
         />
       )}

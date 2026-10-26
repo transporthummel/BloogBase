@@ -304,13 +304,17 @@ test("a mod's page changes the copy of the game it plays on", async () => {
 });
 
 test("a mod is removed from its page, keeping saves unless unticked", async () => {
-  vi.mocked(commands.listProfiles).mockResolvedValue(
-    ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
-  );
+  const mine = { ...profile, modId: "aurora-bliss", label: "Aurora Bliss" };
+  const others = [{ ...profile, id: "keen5-1", gameId: "keen5" }];
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([mine, ...others]));
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
-  vi.mocked(commands.deleteMod).mockResolvedValue(ok(null));
+  vi.mocked(commands.deleteMod).mockImplementation(async () => {
+    vi.mocked(commands.listProfiles).mockResolvedValue(ok(others));
+    return { status: "ok", data: null };
+  });
   const client = new QueryClient();
-  const remove = vi.spyOn(client, "removeQueries");
+  client.setQueryData(["cover", "keen4-1", null], { src: "old.png", scrambled: false });
+  client.setQueryData(["cover", "keen5-1", null], { src: "keen5.png", scrambled: false });
   renderDetail(client);
   await pick("Remove");
   const dialog = screen.getByRole("dialog");
@@ -319,8 +323,9 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   expect(commands.deleteMod).toHaveBeenCalledWith("aurora-bliss", false);
   expect(navigate).toHaveBeenCalledWith({ to: "/" });
   // Installed again, it and the mods played over it, removed with it, get
-  // the same ids and must not show the old covers.
-  expect(remove).toHaveBeenCalledWith({ queryKey: ["cover"] });
+  // the same ids and must not show the old covers; the others stay.
+  await vi.waitFor(() => expect(client.getQueryData(["cover", "keen4-1", null])).toBeUndefined());
+  expect(client.getQueryData(["cover", "keen5-1", null])).toBeDefined();
 });
 
 test("opens at the top, wherever the library was scrolled to", async () => {
@@ -360,9 +365,16 @@ test("a game is uninstalled from its page, with its mods if asked", async () => 
       { ...profile, id: "other", installId: "keen4-2", modId: "other", label: "Other" },
     ]),
   );
-  vi.mocked(commands.removeGame).mockResolvedValue(ok(null));
+  vi.mocked(commands.removeGame).mockImplementation(async () => {
+    vi.mocked(commands.listProfiles).mockResolvedValue(
+      ok([{ ...profile, id: "other", installId: "keen4-2", modId: "other", label: "Other" }]),
+    );
+    return { status: "ok", data: null };
+  });
   const client = new QueryClient();
-  const remove = vi.spyOn(client, "removeQueries");
+  for (const id of ["keen4-1", "aurora-bliss", "other"]) {
+    client.setQueryData(["cover", id, "keen4-1"], { src: `${id}.png`, scrambled: false });
+  }
   renderDetail(client);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "More" }));
@@ -378,7 +390,12 @@ test("a game is uninstalled from its page, with its mods if asked", async () => 
   await user.click(within(dialog).getByRole("button", { name: "Uninstall" }));
   expect(commands.removeGame).toHaveBeenCalledWith("keen4-1", true, true);
   expect(navigate).toHaveBeenCalledWith({ to: "/" });
-  expect(remove).toHaveBeenCalledWith({ queryKey: ["cover"] });
+  // The game and its mod are gone; the other copy's mod keeps its cover.
+  await vi.waitFor(() =>
+    expect(client.getQueryData(["cover", "keen4-1", "keen4-1"])).toBeUndefined(),
+  );
+  expect(client.getQueryData(["cover", "aurora-bliss", "keen4-1"])).toBeUndefined();
+  expect(client.getQueryData(["cover", "other", "keen4-1"])).toBeDefined();
 });
 
 test("a mod waiting for its game says which one and can't be played", async () => {
