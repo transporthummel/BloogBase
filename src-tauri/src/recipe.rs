@@ -655,6 +655,47 @@ fn stem(name: &str) -> &str {
     name.rsplit_once('.').map_or(name, |(s, _)| s)
 }
 
+/// The names DOS sees for `names`, the files of one directory: one that
+/// fits 8.3 as it is, a longer one as the alias DOSBox gives it, as
+/// `dunepatch.EXE` becomes `DUNEPA~1.EXE`. Aliases sharing a start are
+/// numbered in the order of the long names.
+pub fn short_names(names: &[&str]) -> Vec<String> {
+    let clean = |s: &str, n: usize| -> String {
+        s.chars()
+            .filter(|c| !matches!(c, ' ' | '.'))
+            .take(n)
+            .collect::<String>()
+            .to_ascii_uppercase()
+    };
+    let mut order: Vec<usize> = (0..names.len()).collect();
+    order.sort_by_key(|&i| names[i].to_ascii_uppercase());
+    let mut out = vec![String::new(); names.len()];
+    let mut taken: HashMap<(String, String), usize> = HashMap::new();
+    for i in order {
+        let name = names[i];
+        let (stem, ext) = name.rsplit_once('.').unwrap_or((name, ""));
+        let fits = (1..=8).contains(&stem.len())
+            && ext.len() <= 3
+            && !stem.contains('.')
+            && name.chars().all(|c| c.is_ascii_graphic());
+        if fits {
+            out[i] = name.to_ascii_uppercase();
+            continue;
+        }
+        let ext = clean(ext, 3);
+        let n = taken.entry((clean(stem, 6), ext.clone())).or_insert(0);
+        *n += 1;
+        let tail = format!("~{n}");
+        let short = format!("{}{tail}", clean(stem, 8 - tail.len()));
+        out[i] = if ext.is_empty() {
+            short
+        } else {
+            format!("{short}.{ext}")
+        };
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1159,5 +1200,30 @@ $BA $D8 $03 $EE"
         );
         let back: Recipe = serde_json::from_str(r#"{"type":"episode"}"#).unwrap();
         assert_eq!(back, Recipe::Episode);
+    }
+
+    #[test]
+    fn long_names_get_dos_aliases() {
+        let names = [
+            "dunepatch.EXE",
+            "keen2.exe",
+            "Dunepatch2.exe",
+            "~Halloween.BAT",
+            "my game.ck2",
+            "README.html",
+            "x.tar.gz",
+        ];
+        assert_eq!(
+            short_names(&names),
+            [
+                "DUNEPA~1.EXE",
+                "KEEN2.EXE",
+                "DUNEPA~2.EXE",
+                "~HALLO~1.BAT",
+                "MYGAME~1.CK2",
+                "README~1.HTM",
+                "XTAR~1.GZ",
+            ]
+        );
     }
 }

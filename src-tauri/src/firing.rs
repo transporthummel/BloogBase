@@ -197,21 +197,29 @@ enum Target {
 }
 
 /// Files as DOS sees them in a stack of directories: the first one that
-/// has a name wins, case-insensitively.
+/// has a name wins, case-insensitively, long names also by their 8.3 alias.
 struct Files<'a>(&'a [&'a Path]);
 
 impl Files<'_> {
     fn find(&self, name: &str) -> Option<PathBuf> {
         let name = name.trim_start_matches(".\\").trim_start_matches("C:\\");
         self.0.iter().find_map(|dir| {
-            fs::read_dir(dir)
+            let files: Vec<(String, PathBuf)> = fs::read_dir(dir)
                 .ok()?
                 .filter_map(|e| e.ok())
-                .find_map(|e| {
-                    let is_file = e.file_type().is_ok_and(|t| t.is_file());
-                    (is_file && e.file_name().to_string_lossy().eq_ignore_ascii_case(name))
-                        .then(|| e.path())
+                .filter(|e| e.file_type().is_ok_and(|t| t.is_file()))
+                .map(|e| (e.file_name().to_string_lossy().into_owned(), e.path()))
+                .collect();
+            let names: Vec<&str> = files.iter().map(|(n, _)| n.as_str()).collect();
+            files
+                .iter()
+                .position(|(n, _)| n.eq_ignore_ascii_case(name))
+                .or_else(|| {
+                    recipe::short_names(&names)
+                        .iter()
+                        .position(|s| s.eq_ignore_ascii_case(name))
                 })
+                .map(|i| files[i].1.clone())
         })
     }
 
@@ -669,6 +677,9 @@ pub mod tests {
                 ("NORPER.EXE", b"MZ\0\0\0\0\0\0\x02\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Usage: CK1PATCH {patchfile}"),
                 ("EASY.NY1", built_in.as_bytes()),
                 ("renamed.bat", b"norper easy.ny1\r\n"),
+                // A long name called by its DOS alias, as Merry Keenmas does.
+                ("dunepatch.EXE", b"MZ\0\0\0\0\0\0\x02\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0Usage: CK1PATCH {patchfile}"),
+                ("short.bat", b"dunepa~1 easy.ny1\r\n"),
             ],
         );
         let dirs = [modf.as_path(), base.as_path()];
@@ -687,6 +698,10 @@ pub mod tests {
         );
         assert_eq!(
             status(keen1(), &batch("renamed.bat"), &dirs),
+            Some(Firing::BuiltIn)
+        );
+        assert_eq!(
+            status(keen1(), &batch("short.bat"), &dirs),
             Some(Firing::BuiltIn)
         );
         assert_eq!(
