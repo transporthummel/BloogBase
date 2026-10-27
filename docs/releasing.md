@@ -68,8 +68,8 @@ protects updates.
   Open). Auto-updates afterwards install without that step.
 - **Linux:** nothing to sign.
 
-The release notes template in `release.yml` explains these steps, and so
-does the README.
+The download hints in `.github/release-downloads.md`, added to every
+release's description, explain these steps, and so does the README.
 
 ## Updates
 

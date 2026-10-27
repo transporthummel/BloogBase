@@ -43,9 +43,10 @@ pnpm install
 pnpm tauri dev
 ```
 
-Checks: `pnpm lint`, `pnpm typecheck`, `pnpm test`, and in `src-tauri/`
-`cargo clippy --all-targets` and `cargo test`. See
-[docs/testing.md](docs/testing.md) for the end-to-end tests and
+Checks: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and
+in `src-tauri/` `cargo fmt --check`, `cargo clippy --all-targets` and
+`cargo test`. `pnpm test:all` runs all of them plus the tests with real games
+and mods. See [docs/testing.md](docs/testing.md) for those and
 [docs/releasing.md](docs/releasing.md) for releases. The mod list lives in
 [index/](index/README.md).
 
