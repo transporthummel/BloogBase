@@ -45,7 +45,16 @@ pub struct Entry {
 /// case-insensitively like DOS does; markers themselves are never listed.
 pub fn list(lower: &Path, upper: &Path) -> Result<Vec<Entry>> {
     let mut out = Vec::new();
-    merge(Some(lower), Some(upper), "", &mut out)?;
+    merge(Some(lower), Some(upper), "", true, &mut out)?;
+    out.sort_by(|a, b| a.path.cmp(&b.path));
+    Ok(out)
+}
+
+/// The files in the drive root only, like `list` but without descending into
+/// directories (a mod's whole tree is a lot to walk for a few save files).
+pub fn list_root(lower: &Path, upper: &Path) -> Result<Vec<Entry>> {
+    let mut out = Vec::new();
+    merge(Some(lower), Some(upper), "", false, &mut out)?;
     out.sort_by(|a, b| a.path.cmp(&b.path));
     Ok(out)
 }
@@ -106,6 +115,7 @@ fn merge(
     lower: Option<&Path>,
     upper: Option<&Path>,
     rel: &str,
+    deep: bool,
     out: &mut Vec<Entry>,
 ) -> Result<()> {
     let join = |name: &str| {
@@ -152,10 +162,17 @@ fn merge(
 
     for (upper, lower) in names.into_values() {
         match (upper, lower) {
+            (Some(u), _) if u.is_dir && !deep => {}
             (Some(u), lower) if u.is_dir => {
                 // A lower file can't show through an upper directory of the same name.
                 let lower_dir = lower.filter(|l| l.is_dir).map(|l| l.path);
-                merge(lower_dir.as_deref(), Some(&u.path), &join(&u.name), out)?;
+                merge(
+                    lower_dir.as_deref(),
+                    Some(&u.path),
+                    &join(&u.name),
+                    deep,
+                    out,
+                )?;
             }
             // An upper file shadows whatever the lower layer has under that name.
             (Some(u), _) => out.push(Entry {
@@ -163,7 +180,11 @@ fn merge(
                 layer: Layer::Upper,
                 size: u.size,
             }),
-            (None, Some(l)) if l.is_dir => merge(Some(&l.path), None, &join(&l.name), out)?,
+            (None, Some(l)) if l.is_dir => {
+                if deep {
+                    merge(Some(&l.path), None, &join(&l.name), deep, out)?;
+                }
+            }
             (None, Some(l)) => out.push(Entry {
                 path: join(&l.name),
                 layer: Layer::Lower,
@@ -297,6 +318,24 @@ mod tests {
             &[("DBOVERLAY_DEL_TEST.TXT", b"empty"), ("TEST.TXT", b"y")],
         );
         assert_eq!(view(&f), v(&[("TEST.TXT", Upper)]));
+    }
+
+    #[test]
+    fn root_listing_skips_directories() {
+        let f = fixture(
+            &[("KEEN4E.EXE", b"x"), ("SUB/A.TXT", b"x"), ("OLD.TXT", b"x")],
+            &[
+                ("SAVEGAM0.CK4", b"s"),
+                ("DATA/B.TXT", b"x"),
+                ("DBOVERLAY_DEL_OLD.TXT", b""),
+            ],
+        );
+        let root: Vec<_> = list_root(&f.lower, &f.upper)
+            .unwrap()
+            .into_iter()
+            .map(|e| (e.path, e.layer))
+            .collect();
+        assert_eq!(root, v(&[("KEEN4E.EXE", Lower), ("SAVEGAM0.CK4", Upper)]));
     }
 
     #[test]

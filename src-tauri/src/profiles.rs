@@ -213,9 +213,9 @@ pub fn get(db: &Db, id: &str) -> Result<(Profile, Layers)> {
 
 /// Saves as DOS sees them: through the overlay, in the drive root.
 fn count_saves(game: &Game, layers: &Layers) -> Result<u32> {
-    Ok(overlay_view::list(layers.view_lower(), &layers.upper)?
+    Ok(overlay_view::list_root(layers.view_lower(), &layers.upper)?
         .iter()
-        .filter(|e| !e.path.contains('/') && game.saves.iter().any(|p| glob_match(p, &e.path)))
+        .filter(|e| game.saves.iter().any(|p| glob_match(p, &e.path)))
         .count() as u32)
 }
 

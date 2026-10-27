@@ -96,11 +96,13 @@ pub async fn import_games(app: AppHandle, path: String) -> CommandResult<Vec<Ins
 
 #[tauri::command]
 #[specta::specta]
-pub fn list_profiles(
-    db: State<'_, Db>,
-    running: State<'_, Running>,
-) -> CommandResult<Vec<Profile>> {
-    Ok(profiles::list(&db, |id| running.contains(id))?)
+pub async fn list_profiles(app: AppHandle) -> CommandResult<Vec<Profile>> {
+    // Counting saves reads every profile's folders: not on the main thread.
+    blocking(move || {
+        let running = app.state::<Running>();
+        profiles::list(&app.state::<Db>(), |id| running.contains(id))
+    })
+    .await
 }
 
 /// Disk space per area of the data folder; walks it, so it takes a moment.
