@@ -50,7 +50,8 @@ and mods. See [docs/testing.md](docs/testing.md) for those and
 [docs/releasing.md](docs/releasing.md) for releases. How BloogBase works out
 how a mod starts is in [docs/recipes.md](docs/recipes.md), how it draws
 covers in [docs/covers.md](docs/covers.md), how it installs mods from KeenWiki
-in [docs/keenwiki.md](docs/keenwiki.md). The mod list lives in
+in [docs/keenwiki.md](docs/keenwiki.md), how it finds and shows their
+documents in [docs/readmes.md](docs/readmes.md). The mod list lives in
 [index/](index/README.md).
 
 ## License
