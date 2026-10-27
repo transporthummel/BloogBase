@@ -10,6 +10,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.local/tmp" />
       <excludeFolder url="file://$MODULE_DIR$/.local/updater-signing" />
       <excludeFolder url="file://$MODULE_DIR$/src-tauri/gen/schemas" />
+      <excludeFolder url="file://$MODULE_DIR$/.local/target-cdp" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
