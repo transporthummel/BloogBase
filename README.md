@@ -63,6 +63,8 @@ How BloogBase works inside:
 - [docs/readmes.md](docs/readmes.md): finding and showing mod documents
 - [docs/covers.md](docs/covers.md): drawing covers from the title screens
 - [docs/dosbox.md](docs/dosbox.md): setting up and running DOSBox Staging
+- [docs/captures.md](docs/captures.md): reading and playing DOSBox's screenshots
+  and videos
 
 ## License
 
