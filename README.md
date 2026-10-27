@@ -53,6 +53,7 @@ and mods. See [docs/testing.md](docs/testing.md) for those and
 How BloogBase works inside:
 
 - [docs/games.md](docs/games.md): finding, recognizing and importing games
+- [docs/saves.md](docs/saves.md): reading saves, backups and restoring them
 - [docs/recipes.md](docs/recipes.md): how a mod starts
 - [docs/keenwiki.md](docs/keenwiki.md): installing mods from KeenWiki
 - [docs/readmes.md](docs/readmes.md): finding and showing mod documents
