@@ -24,7 +24,13 @@ export function Cover({
   if (src) {
     // 320x200 pixels shown at 4:3, as on a CRT.
     return (
-      <img src={src} alt="" className={`object-fill [image-rendering:pixelated] ${className}`} />
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className={`object-fill [image-rendering:pixelated] ${className}`}
+      />
     );
   }
   const episode = gameId.replace(/^keen/, "").replace(/^kdreams$/, "D");

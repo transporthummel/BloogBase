@@ -44,7 +44,7 @@ export function StatusBar({ profiles, updatedAt }: { profiles: Profile[]; update
 
   return (
     <PageFooter>
-      <footer className="border-t border-border bg-surface/95 text-xs text-muted backdrop-blur">
+      <footer className="border-t border-border bg-surface/95 text-xs text-muted">
         {/* Lined up with the page content above. */}
         <ul className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-1 px-6 py-2 xl:px-8">
           {items.map((item) => (

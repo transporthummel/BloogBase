@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { Compass, Plus } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type Install, type Profile } from "../bindings";
 import { useGames } from "../catalog";
@@ -216,6 +216,8 @@ export function Library() {
                   <li
                     key={profile.id}
                     data-profile-id={profile.id}
+                    // Cards out of view skip layout and paint; big libraries have hundreds.
+                    className="[contain-intrinsic-size:auto_20rem] [content-visibility:auto]"
                     onClickCapture={(e) => {
                       if ((e.target as Element).closest("a")) leaveLibrary(profile.id);
                     }}
@@ -225,7 +227,7 @@ export function Library() {
                       game={gameById.get(profile.gameId)}
                       heading={grouped ? "h3" : "h2"}
                       canPlay={!!runtime.data?.active && !launch.isPending}
-                      onPlay={() => launch.mutate(profile.id)}
+                      onPlay={launch.mutate}
                     />
                   </li>
                 ))}
@@ -241,7 +243,8 @@ export function Library() {
   );
 }
 
-function ProfileCard({
+// Memoized so a refetch only redraws the cards whose profile changed.
+const ProfileCard = memo(function ProfileCard({
   profile,
   game,
   heading: Heading,
@@ -253,7 +256,7 @@ function ProfileCard({
   /** h3 under a group heading. */
   heading: "h2" | "h3";
   canPlay: boolean;
-  onPlay: () => void;
+  onPlay: (profileId: string) => void;
 }) {
   const { t } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
@@ -337,7 +340,7 @@ function ProfileCard({
         <div className="mt-auto flex gap-2 pt-1.5">
           <PlayButton
             className="flex-1"
-            onClick={onPlay}
+            onClick={() => onPlay(profile.id)}
             disabled={!canPlay || profile.running || profile.missingGame !== null}
             aria-label={t("library.playGame", { game: profile.label })}
           >
@@ -351,4 +354,4 @@ function ProfileCard({
       </div>
     </Card>
   );
-}
+});
