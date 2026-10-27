@@ -47,13 +47,17 @@ Checks: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and
 in `src-tauri/` `cargo fmt --check`, `cargo clippy --all-targets` and
 `cargo test`. `pnpm test:all` runs all of them plus the tests with real games
 and mods. See [docs/testing.md](docs/testing.md) for those and
-[docs/releasing.md](docs/releasing.md) for releases. How BloogBase works out
-how a mod starts is in [docs/recipes.md](docs/recipes.md), how it draws
-covers in [docs/covers.md](docs/covers.md), how it installs mods from KeenWiki
-in [docs/keenwiki.md](docs/keenwiki.md), how it finds and shows their
-documents in [docs/readmes.md](docs/readmes.md), and how it sets up and runs
-DOSBox Staging in [docs/dosbox.md](docs/dosbox.md). The mod list lives in
+[docs/releasing.md](docs/releasing.md) for releases. The mod list lives in
 [index/](index/README.md).
+
+How BloogBase works inside:
+
+- [docs/games.md](docs/games.md): finding, recognizing and importing games
+- [docs/recipes.md](docs/recipes.md): how a mod starts
+- [docs/keenwiki.md](docs/keenwiki.md): installing mods from KeenWiki
+- [docs/readmes.md](docs/readmes.md): finding and showing mod documents
+- [docs/covers.md](docs/covers.md): drawing covers from the title screens
+- [docs/dosbox.md](docs/dosbox.md): setting up and running DOSBox Staging
 
 ## License
 
