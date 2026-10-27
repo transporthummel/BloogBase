@@ -72,25 +72,20 @@ fn keen6() {
 }
 
 #[test]
-fn keen5_synthetic() {
-    let mut data = vec![0u8; 0x80];
-    data[..4].copy_from_slice(b"CK5\0");
-    data[8..13].copy_from_slice(b"Fuse!");
-    data[0x2e] = 1; // one level done
-    data[0x60..0x64].copy_from_slice(&1234i32.to_le_bytes());
-    data[0x68] = 7; // ammo
-    // mapon at 0x7a (two words more than Keen 4), then lives, difficulty.
-    data[0x7c] = 5;
-    data[0x7e] = 1;
-    let info = parse(Episode::Keen5, &data).unwrap();
-    assert_eq!(info.name.as_deref(), Some("Fuse!"));
+fn keen5() {
+    let info = parse(Episode::Keen5, &fixture("SAVEGAM0.CK5")).unwrap();
     assert_eq!(
-        (info.score, info.ammo, info.lives, info.levels_done),
-        (Some(1234), Some(7), Some(5), Some(1))
-    );
-    assert_eq!(
-        (info.on_world_map, info.difficulty),
-        (Some(true), Some(Difficulty::Easy))
+        info,
+        SaveInfo {
+            name: Some("cheesecake".into()),
+            score: Some(2_200),
+            lives: Some(2),
+            ammo: Some(9),
+            levels_done: Some(0),
+            difficulty: Some(Difficulty::Hard),
+            on_world_map: Some(false),
+            ship_parts: None,
+        }
     );
 }
 

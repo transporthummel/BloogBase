@@ -32,9 +32,8 @@ expectations.
 The saved game parser is its own crate (`src-tauri/keen-saves`, part of the
 workspace, so plain `cargo test` runs it). Its fixtures in
 `keen-saves/tests/fixtures/` are real saves made by playing: Keen 1-3 whole
-(92 bytes), Keen 4, Keen 6 and Keen Dreams cut right after the game state, so
-no level data from the games is in the repository. Keen 5 is tested with a
-synthetic save until someone contributes a real one.
+(92 bytes), Keen 4-6 and Keen Dreams cut right after the game state, so no
+level data from the games is in the repository.
 
 The title screen extractor is its own crate too (`src-tauri/keen-graphics`).
 Its tests build the formats from hand-made data; real game files only come in

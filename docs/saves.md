@@ -58,8 +58,8 @@ error, never a panic, and the save is listed without details.
   world map, which the game marks as done on entering a level, so it isn't
   counted) and flower power seeds as ammo. Normal difficulty is stored as 0.
 
-The offsets were checked against real saves of Keen 4 v1.4, Keen 6 v1.0 and
-Keen Dreams 1.13; Keen 5 shares Keen 4's code. Names are shown as ASCII,
+The offsets were checked against real saves of Keen 4 v1.4, Keen 5, Keen 6
+v1.0 and Keen Dreams 1.13. Names are shown as ASCII,
 other bytes as replacement characters.
 
 ## Backups
