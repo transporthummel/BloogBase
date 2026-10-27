@@ -1,11 +1,26 @@
 name: Release
 
-# Builds installers for every OS (not code-signed, see docs/releasing.md) and drafts a GitHub release with
-# them and the updater manifest (latest.json). Push a tag like v1.0.0;
-# see docs/releasing.md for the secrets this needs.
+# Started by hand on main (Actions → Release → Run workflow, see
+# docs/releasing.md): writes the version into the project, moves the
+# changelogs' unreleased entries under it, commits that to main as "Prepare
+# version …" with a tag, then builds installers for every OS (not code-signed)
+# and drafts a GitHub release with them, the updater manifest (latest.json) and
+# the version's CHANGELOG.md section and the download hints
+# (.github/release-downloads.md) as its description.
 on:
-  push:
-    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, like 1.2.0
+        required: true
+        type: string
+      commit:
+        description: Commit main must be at (optional; stops if main has moved on)
+        required: false
+        type: string
+
+concurrency:
+  group: release
 
 permissions:
   contents: write
@@ -14,8 +29,73 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  prepare:
+    name: Prepare version ${{ inputs.version }}
+    runs-on: ubuntu-latest
+    outputs:
+      notes: ${{ steps.prepare.outputs.notes }}
+    env:
+      VERSION: ${{ inputs.version }}
+      COMMIT: ${{ inputs.commit }}
+    steps:
+      - name: Check the workflow runs from main
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Start the release from main, not ${GITHUB_REF_NAME}."
+          exit 1
+
+      # All history, for the tags of earlier releases.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check main is at the given commit
+        if: inputs.commit != ''
+        run: |
+          if ! wanted=$(git rev-parse --verify --quiet "${COMMIT}^{commit}"); then
+            echo "::error::${COMMIT} isn't a commit on GitHub."
+            exit 1
+          fi
+          if [ "$wanted" != "$(git rev-parse HEAD)" ]; then
+            echo "::error::main is at $(git rev-parse --short HEAD), not ${COMMIT}."
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Write the version and move the changelogs
+        id: prepare
+        run: |
+          last=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          node scripts/release.mjs "$VERSION" "$(date -u +%F)" "$RUNNER_TEMP/notes.md" "${last#v}"
+          pnpm exec prettier --write CHANGELOG.md package.json src/updates/changelog.json
+          # The release's description: its changes, then which file to download.
+          {
+            echo "notes<<END_OF_NOTES"
+            cat "$RUNNER_TEMP/notes.md"
+            printf '\n---\n\n'
+            cat .github/release-downloads.md
+            echo "END_OF_NOTES"
+          } >> "$GITHUB_OUTPUT"
+
+      # Atomic, so neither lands if main has moved on meanwhile.
+      - name: Commit and tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --all --message "Prepare version ${VERSION}"
+          git tag "v${VERSION}"
+          git push --atomic origin HEAD:main "v${VERSION}"
+
   build:
     name: Build (${{ matrix.name }})
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
@@ -35,7 +115,10 @@ jobs:
             args: --target x86_64-apple-darwin
     runs-on: ${{ matrix.os }}
     steps:
+      # The tag, so re-running a failed build builds the same commit.
       - uses: actions/checkout@v4
+        with:
+          ref: v${{ inputs.version }}
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
@@ -68,16 +151,9 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
+          tagName: v${{ inputs.version }}
           releaseName: BloogBase __VERSION__
-          releaseBody: |
-            Download the file for your system below:
-
-            - **Windows:** `BloogBase_…_x64-setup.exe`. Windows may say it protected your PC because the installer isn't signed: click *More info* → *Run anyway*.
-            - **macOS:** `BloogBase_…_aarch64.dmg` (Apple Silicon) or `…_x64.dmg` (Intel). Drag BloogBase into Applications. The first start is blocked because the app isn't notarized: open *System Settings → Privacy & Security* and click *Open Anyway*.
-            - **Linux:** the `.AppImage` (make it executable and start it) or the `.deb` for Debian/Ubuntu.
-
-            BloogBase updates itself after that.
+          releaseBody: ${{ needs.prepare.outputs.notes }}
           releaseDraft: true
           prerelease: false
           includeUpdaterJson: true

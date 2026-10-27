@@ -1,21 +1,43 @@
 # Releasing BloogBase
 
-Releases are built by `.github/workflows/release.yml` when a tag `v*` is
-pushed. It builds installers for Windows (NSIS), Linux (AppImage, deb) and
-macOS (Apple Silicon and Intel, `.app` + DMG), signs the updater artifacts and
-drafts a GitHub release with everything plus `latest.json` for the in-app
-updater. Publish the draft by hand after a smoke test.
+Releases are made by `.github/workflows/release.yml`, started by hand. It
+prepares the version on `main` (commit "Prepare version …" and tag `v…`),
+builds installers for Windows (NSIS), Linux (AppImage, deb) and macOS (Apple
+Silicon and Intel, `.app` + DMG), signs the updater artifacts and drafts a
+GitHub release with everything plus `latest.json` for the in-app updater.
+Publish the draft by hand after a smoke test.
+
+## Changelogs
+
+Two files collect changes as they're made, each with the commit that makes
+them:
+
+- `CHANGELOG.md` (English): every relevant change, under "Unreleased" in
+  Features, Improvements, Bug Fixes or Misc. A release's section becomes its
+  description on GitHub, followed by the download hints from
+  `.github/release-downloads.md` (keep those in step with the README).
+- `src/updates/changelog.json`: what players should hear about, in English and
+  German (`unreleased.en`, `unreleased.de`). The app shows it once after
+  updating ("What's new"); the update card before updating shows no notes.
 
 ## Checklist
 
-1. Bump the version in `package.json`, `src-tauri/Cargo.toml` and
-   `src-tauri/tauri.conf.json` (all three must match).
-2. Add the release's changes, in English and German, at the top of
-   `src/updates/changelog.ts`. The app shows them once after updating.
-3. `git tag v1.0.0 && git push origin v1.0.0`.
-4. Wait for the workflow, download the draft's installers, try them.
-5. Add release notes to the draft if you like (only GitHub shows them; the
-   app's update card doesn't) and publish it.
+1. Push `main` and check that both changelogs' unreleased entries are complete.
+2. On GitHub: Actions → Release → Run workflow (from `main`). Enter the
+   version (like `1.2.0`) and, to be safe, the commit you checked; the
+   workflow stops if `main` is somewhere else by then.
+3. The workflow stops before changing anything if the version isn't newer
+   than the last release or than the project's, or if an unreleased section is
+   empty. Otherwise it writes the version into `package.json`,
+   `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and
+   `src-tauri/tauri.conf.json`, moves the unreleased entries under it (dated,
+   in `CHANGELOG.md`), commits that to `main` with the tag and builds.
+4. `git pull`, so your `main` has the "Prepare version" commit.
+5. Download the draft's installers, try them, publish the draft.
+
+If a build fails, "Re-run failed jobs" builds the same tag again. To drop a
+release that went wrong, delete the draft and the tag and revert the "Prepare
+version" commit, which puts the unreleased entries back.
 
 ## Secrets
 
