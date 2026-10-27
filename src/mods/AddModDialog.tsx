@@ -236,6 +236,9 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
     return v !== undefined && (v.original ?? v.id) === assumedVersion?.id;
   };
   const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  // Known on both sides and different: another mod, whatever it's called.
+  const differ = (a: string | null | undefined, b: string | null | undefined) =>
+    !!a && !!b && a !== b;
   // Another version of a mod the player has: same KeenWiki page, or same game and name.
   const others =
     mods.data?.filter(
@@ -243,8 +246,9 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
         m.gameId === info.gameId &&
         (m.id === replacing ||
           (origin && m.keenwikiUrl === origin.pageUrl) ||
-          same(m.name, name) ||
-          same(m.name, info.name)),
+          ((same(m.name, name) || same(m.name, info.name)) &&
+            !differ(m.keenwikiUrl, origin?.pageUrl) &&
+            !differ(m.indexId, info.indexId))),
     ) ?? [];
   // Picked to replace it, but for another game.
   const wrongGame = mods.data?.find((m) => m.id === replacing && m.gameId !== info.gameId);

@@ -784,6 +784,40 @@ test("warns when the page and the files disagree about the game", async () => {
   ).toBeInTheDocument();
 });
 
+test("doesn't take a mod from another KeenWiki page for this one because of its name", async () => {
+  const namesake: Mod = {
+    id: "my-aurora",
+    gameId: "keen4",
+    name: "Aurora Bliss",
+    authors: [],
+    authorLinks: {},
+    version: null,
+    description: null,
+    released: null,
+    recipe: patch.recipe,
+    source: "keenwiki",
+    indexId: null,
+    extends: null,
+    keenwikiUrl: "https://keenwiki.shikadi.net/wiki/Something_Else",
+    homepage: null,
+    pckf: null,
+    keenmodding: null,
+    addedAt: 0,
+    profileId: "my-aurora",
+  };
+  vi.mocked(commands.listMods).mockReturnValue(ok([namesake]));
+  vi.mocked(commands.lookupKeenwiki).mockReturnValue(
+    ok({ pageUrl: page.pageUrl, indexId: null, page }),
+  );
+  vi.mocked(commands.downloadKeenwikiMod).mockReturnValue(ok({ path: "/c/a.zip", info }));
+  renderDialog();
+  const user = await lookUp();
+  await user.click(await screen.findByRole("button", { name: "Download and check" }));
+
+  expect(await screen.findByRole("button", { name: "Install" })).toBeInTheDocument();
+  expect(screen.queryByText("You already have this mod")).not.toBeInTheDocument();
+});
+
 const auroraInIndex: IndexMod = {
   entry: {
     id: "aurora-bliss",
