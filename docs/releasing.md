@@ -14,8 +14,8 @@ updater. Publish the draft by hand after a smoke test.
    `src/updates/changelog.ts`. The app shows them once after updating.
 3. `git tag v1.0.0 && git push origin v1.0.0`.
 4. Wait for the workflow, download the draft's installers, try them.
-5. Write release notes into the draft (they appear in the app's update card)
-   and publish it.
+5. Add release notes to the draft if you like (only GitHub shows them; the
+   app's update card doesn't) and publish it.
 
 ## Secrets
 

@@ -13,7 +13,11 @@ import { Notice } from "../ui/Notice";
 import { Progress } from "../ui/Progress";
 import { useInstallUpdate } from "./queries";
 
-/** Offers a new release: what's new, and install-and-restart. */
+/**
+ * Offers a new release to install and restart into. The release notes aren't
+ * shown: they'd only be in one language, and the changes appear in the news
+ * dialog after updating (`WhatsNew`).
+ */
 export function UpdateCard({ update, onLater }: { update: Update; onLater?: () => void }) {
   const { t } = useTranslation();
   const install = useInstallUpdate();
@@ -28,11 +32,6 @@ export function UpdateCard({ update, onLater }: { update: Update; onLater?: () =
   return (
     <Card className="grid gap-3 p-4">
       <h2 className="font-semibold">{t("updates.available", { version: update.version })}</h2>
-      {update.body && (
-        <p className="max-h-40 overflow-y-auto text-sm whitespace-pre-line text-muted select-text">
-          {update.body}
-        </p>
-      )}
       {playing && <Notice>{t("updates.whilePlaying")}</Notice>}
       {install.isPending && (
         <Progress

@@ -43,7 +43,8 @@ test("installs the update and restarts", async () => {
   const u = update();
   renderCard(u);
   expect(screen.getByText("BloogBase 1.1.0 is available")).toBeInTheDocument();
-  expect(screen.getByText("Screenshots everywhere.")).toBeInTheDocument();
+  // The changes are shown after updating, in the app's language.
+  expect(screen.queryByText("Screenshots everywhere.")).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Install and restart" }));
   expect(u.downloadAndInstall).toHaveBeenCalled();
   await vi.waitFor(() => expect(commands.restartApp).toHaveBeenCalled());
