@@ -55,6 +55,8 @@ How BloogBase works inside:
 - [docs/games.md](docs/games.md): finding, recognizing and importing games
 - [docs/saves.md](docs/saves.md): reading saves, backups and restoring them
 - [docs/recipes.md](docs/recipes.md): how a mod starts
+- [docs/patching.md](docs/patching.md): composing and patching a mod's files
+  before it starts
 - [docs/keenwiki.md](docs/keenwiki.md): installing mods from KeenWiki
 - [docs/readmes.md](docs/readmes.md): finding and showing mod documents
 - [docs/covers.md](docs/covers.md): drawing covers from the title screens
