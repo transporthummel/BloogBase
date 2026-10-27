@@ -1,5 +1,36 @@
 import { type TFunction } from "i18next";
 
+// Building an Intl formatter is slow, using one is fast; a library of
+// hundreds of cards would build thousands.
+const formatters = new Map<string, unknown>();
+
+function cached<T>(kind: string, language: string, options: object, make: () => T): T {
+  const key = `${kind} ${language} ${JSON.stringify(options)}`;
+  let f = formatters.get(key) as T | undefined;
+  if (f === undefined) {
+    f = make();
+    formatters.set(key, f);
+  }
+  return f;
+}
+
+function dateTimeFormat(language: string, options: Intl.DateTimeFormatOptions) {
+  return cached("date", language, options, () => new Intl.DateTimeFormat(language, options));
+}
+
+function relativeTimeFormat(language: string, options: Intl.RelativeTimeFormatOptions = {}) {
+  return cached(
+    "relative",
+    language,
+    options,
+    () => new Intl.RelativeTimeFormat(language, options),
+  );
+}
+
+function numberFormat(language: string, options: Intl.NumberFormatOptions = {}) {
+  return cached("number", language, options, () => new Intl.NumberFormat(language, options));
+}
+
 /** "2 h 5 min", "12 min" or "< 1 min". */
 export function formatPlayTime(t: TFunction, seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -10,13 +41,11 @@ export function formatPlayTime(t: TFunction, seconds: number): string {
 }
 
 export function formatDate(language: string, epochSeconds: number): string {
-  return new Intl.DateTimeFormat(language, { dateStyle: "medium" }).format(
-    new Date(epochSeconds * 1000),
-  );
+  return dateTimeFormat(language, { dateStyle: "medium" }).format(new Date(epochSeconds * 1000));
 }
 
 export function formatDateTime(language: string, epochSeconds: number): string {
-  return new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }).format(
+  return dateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }).format(
     new Date(epochSeconds * 1000),
   );
 }
@@ -58,7 +87,7 @@ export function formatLooseDate(language: string, raw: string): string {
   if (mon !== undefined && (mon < 1 || mon > 12)) return raw;
   const date = new Date(Date.UTC(year, (mon ?? 1) - 1, day ?? 1));
   if (day !== undefined && date.getUTCDate() !== day) return raw;
-  return new Intl.DateTimeFormat(language, {
+  return dateTimeFormat(language, {
     timeZone: "UTC",
     year: "numeric",
     ...(mon !== undefined && { month: day !== undefined ? "short" : "long" }),
@@ -81,14 +110,13 @@ export function formatRelative(
   const minutes = Math.floor((now - then.getTime()) / 60_000);
   if (minutes < 1) return t("time.justNow");
   // "auto" only for days: "last week" would count calendar weeks, which we don't.
-  const rtf = new Intl.RelativeTimeFormat(language);
+  const rtf = relativeTimeFormat(language);
   if (minutes < 60) return rtf.format(-minutes, "minute");
   const midnight = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const days = Math.round((midnight(today) - midnight(then)) / 86_400_000);
   // Shortly after midnight, "2 hours ago" says more than "yesterday".
   if (days === 0 || minutes < 6 * 60) return rtf.format(-Math.floor(minutes / 60), "hour");
-  if (days < 7)
-    return new Intl.RelativeTimeFormat(language, { numeric: "auto" }).format(-days, "day");
+  if (days < 7) return relativeTimeFormat(language, { numeric: "auto" }).format(-days, "day");
   if (days < 30) return rtf.format(-Math.floor(days / 7), "week");
   const months =
     (today.getFullYear() - then.getFullYear()) * 12 +
@@ -100,7 +128,7 @@ export function formatRelative(
 }
 
 export function formatNumber(language: string, n: number): string {
-  return new Intl.NumberFormat(language).format(n);
+  return numberFormat(language).format(n);
 }
 
 export function formatMegabytes(bytes: number): string {
@@ -116,7 +144,7 @@ export function formatBytes(language: string, bytes: number): string {
     value /= 1000;
     unit++;
   }
-  return new Intl.NumberFormat(language, {
+  return numberFormat(language, {
     style: "unit",
     unit: units[unit],
     unitDisplay: "short",
