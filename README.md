@@ -58,6 +58,8 @@ How BloogBase works inside:
 - [docs/patching.md](docs/patching.md): composing and patching a mod's files
   before it starts
 - [docs/keenwiki.md](docs/keenwiki.md): installing mods from KeenWiki
+- [docs/mod-matching.md](docs/mod-matching.md): index entries, mods played over
+  others, new versions
 - [docs/readmes.md](docs/readmes.md): finding and showing mod documents
 - [docs/covers.md](docs/covers.md): drawing covers from the title screens
 - [docs/dosbox.md](docs/dosbox.md): setting up and running DOSBox Staging
