@@ -51,7 +51,8 @@ and mods. See [docs/testing.md](docs/testing.md) for those and
 how a mod starts is in [docs/recipes.md](docs/recipes.md), how it draws
 covers in [docs/covers.md](docs/covers.md), how it installs mods from KeenWiki
 in [docs/keenwiki.md](docs/keenwiki.md), how it finds and shows their
-documents in [docs/readmes.md](docs/readmes.md). The mod list lives in
+documents in [docs/readmes.md](docs/readmes.md), and how it sets up and runs
+DOSBox Staging in [docs/dosbox.md](docs/dosbox.md). The mod list lives in
 [index/](index/README.md).
 
 ## License
