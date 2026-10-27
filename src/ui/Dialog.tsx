@@ -7,7 +7,7 @@ const FOCUSABLE =
  * Modal dialog over a dimmed page, or over the dialog rendering it. Escape
  * and the backdrop close it; Tab stays inside, and focus goes back where it
  * was on close. Opening focuses the element marked `data-autofocus`, else
- * the panel.
+ * the panel, and leaves the dialog scrolled to the top.
  */
 export function Dialog({
   title,
@@ -34,7 +34,11 @@ export function Dialog({
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    (panel.current?.querySelector<HTMLElement>("[data-autofocus]") ?? panel.current)?.focus();
+    // Without scrolling: a long dialog opens at its title, even when the
+    // focused element is further down.
+    (panel.current?.querySelector<HTMLElement>("[data-autofocus]") ?? panel.current)?.focus({
+      preventScroll: true,
+    });
     const onKey = (e: KeyboardEvent) => {
       // A dialog opened over this one takes the keys.
       if (panel.current?.querySelector('[role="dialog"]')) return;

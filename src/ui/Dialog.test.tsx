@@ -42,14 +42,19 @@ test("keeps focus inside, survives re-renders and closes with Escape", async () 
   expect(onClose).toHaveBeenCalledOnce();
 });
 
-test("focuses the element marked data-autofocus", () => {
+test("focuses the element marked data-autofocus without scrolling to it", () => {
+  const focus = vi.spyOn(HTMLElement.prototype, "focus");
   render(
     <Dialog title="Hello" onClose={() => {}}>
       <button type="button">First</button>
       <input aria-label="Link" data-autofocus />
     </Dialog>,
   );
-  expect(screen.getByRole("textbox", { name: "Link" })).toHaveFocus();
+  const link = screen.getByRole("textbox", { name: "Link" });
+  expect(link).toHaveFocus();
+  expect(focus.mock.contexts[0]).toBe(link);
+  expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+  focus.mockRestore();
 });
 
 test("Escape closes only the topmost of two dialogs", async () => {
