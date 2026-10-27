@@ -285,15 +285,17 @@ pub fn spawn(
     tracing::info!("launching {profile_id}: {} {:?}", runtime.path, spec.args);
     let mut child = tokio::process::Command::from(cmd).spawn()?;
     if let Some(stderr) = child.stderr.take() {
-        tokio::spawn(watch(stderr, log, shown));
+        let pid = child.id().unwrap_or_default();
+        tokio::spawn(watch(stderr, log, pid, shown));
     }
     let session = start_session(db, profile_id, now())?;
     Ok((child, session))
 }
 
-/// Copies DOSBox's log output to `log` and calls `shown` at the first video
-/// mode it presents. Reads to the end, so DOSBox never blocks on a full pipe.
-async fn watch(stderr: ChildStderr, mut log: File, shown: impl FnOnce()) {
+/// Copies DOSBox's log output to `log` and, at the first video mode it
+/// presents, gives its window our icon and calls `shown`. Reads to the end,
+/// so DOSBox never blocks on a full pipe.
+async fn watch(stderr: ChildStderr, mut log: File, pid: u32, shown: impl FnOnce()) {
     let mut reader = BufReader::new(stderr);
     let mut shown = Some(shown);
     let mut line = Vec::new();
@@ -307,10 +309,67 @@ async fn watch(stderr: ChildStderr, mut log: File, shown: impl FnOnce()) {
         if shows_window(&line)
             && let Some(shown) = shown.take()
         {
+            set_icon(pid);
             shown();
         }
     }
 }
+
+/// Puts the BloogBase icon (the one Tauri embeds in our exe) on the windows
+/// of process `pid` in place of DOSBox's own. Windows keeps the icon across
+/// processes as long as BloogBase runs, which it does while games do.
+#[cfg(windows)]
+fn set_icon(pid: u32) {
+    use windows_sys::Win32::Foundation::{HWND, LPARAM, TRUE};
+    use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        EnumWindows, GetSystemMetrics, GetWindowThreadProcessId, ICON_BIG, ICON_SMALL, IMAGE_ICON,
+        LR_SHARED, LoadImageW, SM_CXICON, SM_CXSMICON, SendMessageW, WM_SETICON,
+    };
+
+    struct Icons {
+        pid: u32,
+        small: isize,
+        big: isize,
+    }
+    unsafe extern "system" fn each(window: HWND, icons: LPARAM) -> i32 {
+        // SAFETY: `icons` is the `Icons` passed to `EnumWindows` below.
+        let icons = unsafe { &*(icons as *const Icons) };
+        let mut pid = 0;
+        unsafe { GetWindowThreadProcessId(window, &mut pid) };
+        if pid == icons.pid {
+            unsafe {
+                SendMessageW(window, WM_SETICON, ICON_SMALL as usize, icons.small);
+                SendMessageW(window, WM_SETICON, ICON_BIG as usize, icons.big);
+            }
+        }
+        TRUE
+    }
+
+    // SAFETY: plain Win32 calls; the resource name is an integer id
+    // (MAKEINTRESOURCE) and `icons` outlives `EnumWindows`.
+    unsafe {
+        let module = GetModuleHandleW(std::ptr::null());
+        let id = tauri::utils::platform::WINDOWS_APP_ICON_RESOURCE_ID as usize as *const u16;
+        let load = |metric| {
+            let size = GetSystemMetrics(metric);
+            LoadImageW(module, id, IMAGE_ICON, size, size, LR_SHARED) as isize
+        };
+        let icons = Icons {
+            pid,
+            small: load(SM_CXSMICON),
+            big: load(SM_CXICON),
+        };
+        if icons.small == 0 || icons.big == 0 {
+            tracing::warn!("no app icon for the DOSBox window");
+            return;
+        }
+        EnumWindows(Some(each), &icons as *const Icons as LPARAM);
+    }
+}
+
+#[cfg(not(windows))]
+fn set_icon(_pid: u32) {}
 
 /// E.g. `DISPLAY: VGA 720x400 16-colour text mode 03h at 70.087 Hz, scaled
 /// to 1067x800 pixels …`, logged once the window shows that mode; earlier
