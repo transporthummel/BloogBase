@@ -315,17 +315,72 @@ async fn watch(stderr: ChildStderr, mut log: File, pid: u32, shown: impl FnOnce(
     }
 }
 
-/// Puts the BloogBase icon (the one Tauri embeds in our exe) on the windows
-/// of process `pid` in place of DOSBox's own. Windows keeps the icon across
-/// processes as long as BloogBase runs, which it does while games do.
+/// The icon of game windows: a terminal rather than the app's own, so the
+/// taskbar tells the two apart.
+#[cfg_attr(not(windows), allow(dead_code))]
+const GAME_ICON: &[u8] = include_bytes!("../icons/dosbox.ico");
+
+/// The image in the .ico file `ico` best suited for `size` pixels: the
+/// smallest one at least that big, else the biggest. PNG or DIB data, as
+/// `CreateIconFromResourceEx` takes it.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn icon_image(ico: &[u8], size: u32) -> Option<&[u8]> {
+    let count = u16::from_le_bytes(ico.get(4..6)?.try_into().ok()?);
+    let mut images = Vec::new();
+    for i in 0..usize::from(count) {
+        let entry = ico.get(6 + i * 16..6 + (i + 1) * 16)?;
+        // 0 means 256.
+        let width = if entry[0] == 0 {
+            256
+        } else {
+            u32::from(entry[0])
+        };
+        let len = u32::from_le_bytes(entry[8..12].try_into().ok()?) as usize;
+        let offset = u32::from_le_bytes(entry[12..16].try_into().ok()?) as usize;
+        images.push((width, ico.get(offset..offset.checked_add(len)?)?));
+    }
+    images.sort_by_key(|(width, _)| *width);
+    let fits = images.iter().find(|(width, _)| *width >= size);
+    fits.or(images.last()).map(|(_, data)| *data)
+}
+
+/// [`GAME_ICON`] at `size` pixels as an `HICON`, 0 if Windows can't read it.
+#[cfg(windows)]
+fn game_icon(size: i32) -> isize {
+    use windows_sys::Win32::Foundation::TRUE;
+    use windows_sys::Win32::UI::WindowsAndMessaging::{CreateIconFromResourceEx, LR_DEFAULTCOLOR};
+
+    let Some(image) = icon_image(GAME_ICON, size as u32) else {
+        return 0;
+    };
+    // SAFETY: `image` stays valid during the call.
+    unsafe {
+        CreateIconFromResourceEx(
+            image.as_ptr(),
+            image.len() as u32,
+            TRUE,
+            0x0003_0000,
+            size,
+            size,
+            LR_DEFAULTCOLOR,
+        ) as isize
+    }
+}
+
+/// Puts [`GAME_ICON`] on the windows of process `pid` in place of DOSBox's
+/// own. Windows keeps the icon across processes as long as BloogBase runs,
+/// which it does while games do.
 #[cfg(windows)]
 fn set_icon(pid: u32) {
+    use std::sync::OnceLock;
     use windows_sys::Win32::Foundation::{HWND, LPARAM, TRUE};
-    use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        EnumWindows, GetSystemMetrics, GetWindowThreadProcessId, ICON_BIG, ICON_SMALL, IMAGE_ICON,
-        LR_SHARED, LoadImageW, SM_CXICON, SM_CXSMICON, SendMessageW, WM_SETICON,
+        EnumWindows, GetSystemMetrics, GetWindowThreadProcessId, ICON_BIG, ICON_SMALL, SM_CXICON,
+        SM_CXSMICON, SendMessageW, WM_SETICON,
     };
+
+    /// Made once and kept for the app's lifetime, shared by all game windows.
+    static ICONS: OnceLock<(isize, isize)> = OnceLock::new();
 
     struct Icons {
         pid: u32,
@@ -346,26 +401,16 @@ fn set_icon(pid: u32) {
         TRUE
     }
 
-    // SAFETY: plain Win32 calls; the resource name is an integer id
-    // (MAKEINTRESOURCE) and `icons` outlives `EnumWindows`.
-    unsafe {
-        let module = GetModuleHandleW(std::ptr::null());
-        let id = tauri::utils::platform::WINDOWS_APP_ICON_RESOURCE_ID as usize as *const u16;
-        let load = |metric| {
-            let size = GetSystemMetrics(metric);
-            LoadImageW(module, id, IMAGE_ICON, size, size, LR_SHARED) as isize
-        };
-        let icons = Icons {
-            pid,
-            small: load(SM_CXSMICON),
-            big: load(SM_CXICON),
-        };
-        if icons.small == 0 || icons.big == 0 {
-            tracing::warn!("no app icon for the DOSBox window");
-            return;
-        }
-        EnumWindows(Some(each), &icons as *const Icons as LPARAM);
+    // SAFETY: plain Win32 call.
+    let load = |metric| game_icon(unsafe { GetSystemMetrics(metric) });
+    let &(small, big) = ICONS.get_or_init(|| (load(SM_CXSMICON), load(SM_CXICON)));
+    if small == 0 || big == 0 {
+        tracing::warn!("no icon for the DOSBox window");
+        return;
     }
+    let icons = Icons { pid, small, big };
+    // SAFETY: `icons` outlives `EnumWindows`.
+    unsafe { EnumWindows(Some(each), &icons as *const Icons as LPARAM) };
 }
 
 #[cfg(not(windows))]
@@ -667,6 +712,33 @@ machine = svga_paradise
         assert!(!shows(
             "16:54:42.962 | DISPLAY: Presenting at DOS rate without vsync\n"
         ));
+    }
+
+    #[test]
+    fn game_icon_has_an_image_for_every_size() {
+        // PNG images; the 256 one is stored with width 0.
+        for size in [16, 20, 24, 32, 40, 48, 64, 96, 256, 512] {
+            let image = icon_image(GAME_ICON, size).unwrap();
+            assert_eq!(&image[1..4], b"PNG");
+            let width = u32::from_be_bytes(image[16..20].try_into().unwrap());
+            assert_eq!(
+                width,
+                if size == 96 || size == 512 {
+                    256
+                } else {
+                    size.min(256)
+                }
+            );
+        }
+        assert_eq!(icon_image(b"", 32), None);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_reads_the_game_icon() {
+        for size in [16, 24, 32, 48, 64] {
+            assert_ne!(game_icon(size), 0, "{size}");
+        }
     }
 
     #[test]
