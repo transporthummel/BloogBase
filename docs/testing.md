@@ -1,7 +1,10 @@
 # Testing
 
-Commander Keen games and mods are copyrighted, so none of them are in the
-repository. Tests come in three layers.
+Commander Keen games and mods are copyrighted, so none of them are in this
+repository. The games for the tests live in a private repository of their own,
+`transporthummel/bloogbase-games`, checked out to `.local/games`; mods are
+downloaded from the KeenWiki file server (section 2). Tests come in four
+layers.
 
 `pnpm test:all` (`scripts/test-all.mjs`) runs everything CI runs plus all
 ignored Rust tests below, keeps going after a failure and lists the failed
@@ -25,9 +28,9 @@ checked on Linux; starting the workflow by hand checks Windows and macOS too.
 
 The KeenWiki parser (`src-tauri/src/keenwiki.rs`) is tested against saved
 pages in `src-tauri/tests/keenwiki/` (several mod pages, a game page and a
-missing page; `README.md` there lists their sources). When the wiki markup changes, save the page
-again with an honest `User-Agent` (one request per page) and update the
-expectations.
+missing page; `README.md` there lists their sources). When the wiki markup
+changes, save the page again with an honest `User-Agent` (one request per
+page) and update the expectations.
 
 The saved game parser is its own crate (`src-tauri/keen-saves`, part of the
 workspace, so plain `cargo test` runs it). Its fixtures in
@@ -64,26 +67,45 @@ cargo test --lib corpus -- --ignored --nocapture
   manifest changes, with the archives cached so the community's file server
   isn't hit on every run.
 
-## 3. Local tests with real games (before a release)
+## 3. Real games (CI weekly, or locally)
 
-These are ignored tests that need the games, which can't be in CI. The title
-screen tests expect game folders named `keen1` … `keen5`, plus `keen6`
-(`keen-graphics`) or `keen6-14` (covers) and `kdreams113`.
-
-### Title screens
+Ignored tests that read the games in `$KEEN_GAMES` (default `.local/games`
+for the version test; the others need it set, as an absolute path):
 
 ```sh
 cd src-tauri
-KEEN_GAMES=<absolute path to .local/games>   cargo test -p keen-graphics corpus -- --ignored
-KEEN_MODS=<unpacked mods, one folder each> KEEN_GAMES=… KEEN_OUT=<folder>   cargo test covers::tests::mods -- --ignored
+cargo test --lib detect::tests::real_versions -- --ignored
+KEEN_GAMES=… cargo test -p keen-graphics corpus -- --ignored
+KEEN_MODS=<unpacked mods, one folder each> KEEN_GAMES=… KEEN_OUT=<folder> \
+  cargo test --lib covers::tests::mods -- --ignored
 ```
 
-The first checks that every game's title is a full, colorful 320x200 picture.
-The second extracts the title of every mod on top of its game into `KEEN_OUT`
-as PNG; look at them. `pnpm test:all` unpacks the mod cache for it into
-`src-tauri/target/covers-mods` and writes to `target/covers-out`. To render a
-single title: `cargo run -p keen-graphics --example title -- <out.png> <mod
-folder> <game folder>`.
+- **Versions:** every folder in `versions/` (one per catalog version, named
+  after it) must be recognized as that version, and every catalog version
+  needs a folder. Add one when the catalog gets a new version.
+- **Title screens:** every game's title is a full, colorful 320x200 picture
+  (folders `keen1` … `keen6`, `kdreams113`).
+- **Mod covers:** the title of every mod is extracted on top of its game
+  (`keen6-14` for Keen 6) into `KEEN_OUT` as PNG; look at them after changes
+  to the covers. `pnpm test:all` unpacks the mod cache for it into
+  `src-tauri/target/covers-mods` and writes to `target/covers-out`.
+
+To render a single title: `cargo run -p keen-graphics --example title --
+<out.png> <mod folder> <game folder>`.
+
+CI (`.github/workflows/games.yml`) runs all three weekly, by hand and when the
+catalog, detection or covers change, on Linux. It checks out the games repo
+with a read-only deploy key (secret `GAMES_DEPLOY_KEY`) and takes the mods
+from the corpus workflow's cache, so it fails until that has run once. The
+games must not leak: the workflow never runs for pull requests, uploads no
+artifacts and pins its actions to commits.
+
+To get the games locally:
+`git clone git@github.com:transporthummel/bloogbase-games.git .local/games`.
+The repo stores files byte for byte (`* -text`); line ending conversion would
+change their hashes.
+
+## 4. Local tests with DOSBox and downloads (before a release)
 
 ### Shareware mirrors
 
@@ -98,7 +120,8 @@ expected version. Run it after changing the manifest.
 
 ```sh
 cd src-tauri
-BLOOGBASE_E2E_GAME=<folder with a Keen game>   cargo test download_import_and_launch -- --ignored --nocapture
+BLOOGBASE_E2E_GAME=<folder with a Keen game> \
+  cargo test download_import_and_launch -- --ignored --nocapture
 ```
 
 Downloads the managed DOSBox Staging, imports the game into a data folder
@@ -111,13 +134,9 @@ Launches every mod in DOSBox on every game version it fits, keeps it running
 for a few seconds and saves a screenshot of the DOSBox window. Windows only
 for now.
 
-Folder layout (both ignored by git):
-
-```
-.local/games/<any name>/   one folder per game copy (folders with several
-                           episodes in subfolders work too)
-.local/mods/*.zip          the mod archives (the corpus cache)
-```
+It imports every folder in `.local/games` (folders with several episodes in
+subfolders work too) and takes the mod archives from `.local/mods`, the corpus
+cache.
 
 ```sh
 cd src-tauri

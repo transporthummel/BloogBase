@@ -1,0 +1,85 @@
+name: Games
+
+# Tests against the real games, kept in the private repo
+# transporthummel/bloogbase-games (read with the deploy key in
+# GAMES_DEPLOY_KEY): version recognition, title screens and mod covers.
+#
+# The games must not leak: this workflow never runs for pull requests, uploads
+# no artifacts and prints no game data. Actions are pinned to commits because
+# they run with the key.
+
+on:
+  schedule:
+    - cron: "29 4 * * 3"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - src-tauri/catalog/**
+      - src-tauri/src/detect.rs
+      - src-tauri/src/covers.rs
+      - src-tauri/keen-graphics/**
+      - .github/workflows/games.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  KEEN_GAMES: ${{ github.workspace }}/.local/games
+
+jobs:
+  games:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: transporthummel/bloogbase-games
+          ssh-key: ${{ secrets.GAMES_DEPLOY_KEY }}
+          persist-credentials: false
+          path: .local/games
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          workspaces: src-tauri
+
+      # The mod archives the corpus workflow caches; the cover test needs them.
+      - uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: mod-cache
+          key: mod-corpus-${{ hashFiles('src-tauri/tests/mod-corpus.json') }}
+          restore-keys: mod-corpus-
+          fail-on-cache-miss: true
+
+      - name: Versions
+        working-directory: src-tauri
+        run: cargo test --lib detect::tests::real_versions -- --ignored
+
+      - name: Title screens
+        working-directory: src-tauri
+        run: cargo test -p keen-graphics corpus -- --ignored
+
+      - name: Mod covers
+        working-directory: src-tauri
+        env:
+          KEEN_MODS: ${{ runner.temp }}/mods
+          KEEN_OUT: ${{ runner.temp }}/covers
+        run: |
+          mkdir -p "$KEEN_OUT"
+          for zip in "$GITHUB_WORKSPACE"/mod-cache/*.zip; do
+            unzip -q "$zip" -d "$KEEN_MODS/$(basename "$zip" .zip)"
+          done
+          cargo test --lib covers::tests::mods -- --ignored

@@ -268,4 +268,96 @@ mod tests {
             "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
         );
     }
+
+    /// Detects every folder in `$KEEN_GAMES/versions` (default
+    /// `.local/games`, a checkout of the private games repo) and checks it is
+    /// recognized as the catalog version its name says.
+    ///
+    /// `cargo test --lib detect::tests::real_versions -- --ignored`
+    #[test]
+    #[ignore = "needs the real games"]
+    fn real_versions() {
+        let expected = [
+            ("Commander Keen 1 November Beta", "keen1-beta-nov"),
+            ("Commander Keen 1 December Beta", "keen1-beta-dec"),
+            ("Commander Keen 1 v1.1", "keen1-1.1"),
+            ("Commander Keen 1 v1.3", "keen1-1.3"),
+            ("Commander Keen 1 v1.31", "keen1-1.31"),
+            ("Commander Keen 1 v1.32", "keen1-1.32"),
+            ("Commander Keen 1 v1.34", "keen1-1.34"),
+            ("Commander Keen 2 v1.0", "keen2-1.0"),
+            ("Commander Keen 2 v.1.31", "keen2-1.31"),
+            ("Commander Keen 3 v1.0", "keen3-1.0"),
+            ("Commander Keen 3 v1.31", "keen3-1.31"),
+            ("Commander Keen 4 Special Demo Version", "keen4-demo"),
+            ("Commander Keen 4 v1.0", "keen4-1.0-ega"),
+            ("Commander Keen 4 v1.0 CGA", "keen4-1.0-cga"),
+            ("Commander Keen 4 v1.1", "keen4-1.1-ega"),
+            ("Commander Keen 4 v1.1 CGA", "keen4-1.1-cga"),
+            ("Commander Keen 4 v1.2", "keen4-1.2-ega"),
+            ("Commander Keen 4 v1.4", "keen4-1.4-ega"),
+            ("Commander Keen 4 v1.4 CGA", "keen4-1.4-cga"),
+            (
+                "Commander Keen 4 v1.4 FormGen Corporation EGA",
+                "keen4-1.4-ega-formgen",
+            ),
+            (
+                "Commander Keen 4 v1.4 FormGen Corporation CGA",
+                "keen4-1.4-cga-formgen",
+            ),
+            (
+                "Commander Keen 4 v1.4 GT Interactive Software",
+                "keen4-1.4-ega-gt",
+            ),
+            ("Commander Keen 5 v1.0", "keen5-1.0-ega"),
+            ("Commander Keen 5 v1.4", "keen5-1.4-ega"),
+            ("Commander Keen 5 v1.4 CGA", "keen5-1.4-cga"),
+            (
+                "Commander Keen 5 v1.4 GT Interactive Software",
+                "keen5-1.4-ega-gt",
+            ),
+            ("Commander Keen 6 Special Demo Version", "keen6-demo"),
+            (
+                "Commander Keen 6 Promotional Release Version",
+                "keen6-promo",
+            ),
+            ("Commander Keen 6 v1.0", "keen6-1.0"),
+            ("Commander Keen 6 v1.0 (hacked)", "keen6-1.0-nocp"),
+            ("Commander Keen 6 v1.0 CGA", "keen6-1.0-cga"),
+            ("Commander Keen 6 v1.4", "keen6-1.4-ega"),
+            ("Commander Keen 6 v1.4 CGA", "keen6-1.4-cga"),
+            ("Commander Keen 6 v1.5", "keen6-1.5-ega"),
+            ("Commander Keen 6 v1.5 (hacked)", "keen6-1.5-ega-nocp"),
+            ("Commander Keen 6 v1.5 CGA", "keen6-1.5-cga"),
+            ("Keen Dreams v1.0", "kdreams-1.0"),
+            ("Keen Dreams v1.01 Shareware", "kdreams-1.01"),
+            ("Keen Dreams v1.13 Shareware", "kdreams-1.13"),
+            ("Keen Dreams v1.92 REV 0", "kdreams-1.92"),
+            ("Keen Dreams v1.93 REV 1", "kdreams-1.93"),
+            ("Keen Dreams id Anthology Version", "kdreams-1.93-anthology"),
+        ];
+        let root = std::env::var_os("KEEN_GAMES")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| {
+                std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../.local/games")
+            })
+            .join("versions");
+
+        let mut wrong = Vec::new();
+        for (folder, version) in expected {
+            let found: Vec<_> = detect(&Source::open(&root.join(folder)).unwrap())
+                .unwrap()
+                .into_iter()
+                .map(|d| (d.dir, d.version_id))
+                .collect();
+            if found != [(String::new(), Some(version.to_string()))] {
+                wrong.push(format!("{folder}: {found:?}, expected {version}"));
+            }
+        }
+        // Every catalog version is covered, and no folder is left out.
+        let versions: usize = catalog::games().iter().map(|g| g.versions.len()).sum();
+        let folders = std::fs::read_dir(&root).unwrap().count();
+        assert!(wrong.is_empty(), "{wrong:#?}");
+        assert_eq!((expected.len(), folders), (versions, versions));
+    }
 }
