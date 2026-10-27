@@ -109,7 +109,7 @@ pub struct Guess {
 
 /// Programs that come with mods but don't start them.
 const TOOLS: &[&str] = &[
-    "UNLZEXE", "LZEXE", "TSRMUSIC", "LIST", "BROWSE", "PKUNZIP", "SETUP", "INSTALL",
+    "UNLZEXE", "LZEXE", "TSRMUSIC", "LIST", "BROWSE", "PKUNZIP", "SETUP", "INSTALL", "MODKEEN",
 ];
 
 /// Whether a batch file's command runs one of the `TOOLS`.
@@ -789,6 +789,22 @@ mod tests {
         assert!(g.confident);
         let recipes: Vec<_> = g.candidates.iter().map(|c| c.recipe.clone()).collect();
         assert_eq!(recipes, [Recipe::Episode]);
+    }
+
+    #[test]
+    fn batches_that_run_modkeen_start_nothing() {
+        // As The Best Mod Ever Made: "export.bat" is left over from drawing
+        // the graphics and comes before "TBMEM.bat" by name.
+        let g = run(&[
+            ("export.bat", r"modkeen -episode=2 -export -bmpdir=.\bmps"),
+            ("TBMEM.bat", "CK2Patch.exe TBMEM.pat"),
+            ("modkeen.exe", ""),
+            ("CK2PATCH.EXE", ""),
+            ("TBMEM.pat", "%ext ck2\r\n%end\r\n"),
+        ]);
+        assert!(g.confident);
+        assert_eq!(g.candidates[0].origin, "TBMEM.bat");
+        assert_eq!(g.candidates.len(), 1);
     }
 
     #[test]
