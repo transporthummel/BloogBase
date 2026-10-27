@@ -47,8 +47,9 @@ Checks: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and
 in `src-tauri/` `cargo fmt --check`, `cargo clippy --all-targets` and
 `cargo test`. `pnpm test:all` runs all of them plus the tests with real games
 and mods. See [docs/testing.md](docs/testing.md) for those and
-[docs/releasing.md](docs/releasing.md) for releases. The mod list lives in
-[index/](index/README.md).
+[docs/releasing.md](docs/releasing.md) for releases. How BloogBase works out
+how a mod starts is in [docs/recipes.md](docs/recipes.md). The mod list lives
+in [index/](index/README.md).
 
 ## License
 
