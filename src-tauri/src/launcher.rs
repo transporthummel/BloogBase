@@ -189,6 +189,7 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
         dosconf::mod_defaults(&layers),
         &dosconf::options(db)?,
         profile_id,
+        dosconf::window_title(&profile, game),
     )?;
 
     // DOSBox Staging 0.83 crashes on mount paths with non-ASCII characters
@@ -432,6 +433,7 @@ mod tests {
         let launch = fs::read_to_string(&dirs.launch_conf).unwrap();
         assert!(launch.contains(&format!("capture_dir = {}", p(&["..", "capture"]))));
         assert!(!launch.contains("[autoexec]"));
+        assert!(launch.contains("program=\"Commander Keen 4: Secret of the Oracle – BloogBase\""));
         assert!(dirs.capture.is_dir());
     }
 
@@ -548,6 +550,8 @@ mod tests {
         assert!(!names.contains(&"GAMEMAPS.CK4".to_string()));
         // Engine defaults only: the mod needs nothing more.
         assert!(spec.args.iter().any(|a| a.ends_with("galaxy.conf")));
+        let launch = fs::read_to_string(paths.profile(&m.profile_id).launch_conf).unwrap();
+        assert!(launch.contains("program=\"My Mod – BloogBase\""));
 
         // A patch that switches on composite colors gets a CGA machine.
         fs::write(

@@ -12,6 +12,8 @@ new version (docs/releasing.md). Empty categories are left out of a release.
 
 ### Improvements
 
+- The DOSBox window title reads "<game or mod> – BloogBase", without cycles and mouse hints.
+
 ### Bug Fixes
 
 ### Misc
