@@ -194,6 +194,7 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
         Some(c) => c,
         None => profiles::find_executable(game, profile.version_id.as_deref(), &lower)?,
     };
+    let command = keep_apostrophes(command, &dirs.exit_screen)?;
 
     let confs = dosconf::ensure(
         paths,
@@ -236,6 +237,37 @@ pub fn relative(root: &Path, path: &Path) -> String {
     rel.display().to_string()
 }
 
+/// DOSBox turns every `'` in a `-c` command into `"` (Billy Can't's
+/// `CK5PATCH.EXE Can't.pat` became `Can"t.pat`) but leaves batch files
+/// alone, so such a command runs from a batch file on drive X.
+fn keep_apostrophes(command: String, exit_screen: &Path) -> Result<String> {
+    if !command.contains('\'') {
+        return Ok(command);
+    }
+    dosconf::write_if_changed(
+        &exit_screen.join(START),
+        format!("{}\r\n", run_line(&command)),
+    )?;
+    Ok(format!("{}:\\{START}", exit_screen::DRIVE))
+}
+
+/// The batch file [`keep_apostrophes`] writes.
+const START: &str = "START.BAT";
+
+/// `command` without its echo. A batch file started without CALL never
+/// returns, so `exit` would not run.
+fn run_line(command: &str) -> String {
+    let is_batch = command
+        .split_whitespace()
+        .next()
+        .is_some_and(|f| f.to_ascii_uppercase().ends_with(".BAT"));
+    if is_batch {
+        format!("@call {command}")
+    } else {
+        format!("@{command}")
+    }
+}
+
 fn dosbox_args(
     confs: &[String],
     lower: &str,
@@ -249,11 +281,6 @@ fn dosbox_args(
         args.push(conf.clone());
     }
     args.push("--noautoexec".into());
-    // A batch file started without CALL never returns, so `exit` would not run.
-    let is_batch = command
-        .split_whitespace()
-        .next()
-        .is_some_and(|f| f.to_ascii_uppercase().ends_with(".BAT"));
     // `@` and `> NUL` keep our commands and their messages off the screen,
     // so the game's output comes first. Batch files still echo, as in DOS.
     // The screen saver stays visible: it marks the end of the game's output.
@@ -262,11 +289,7 @@ fn dosbox_args(
         format!("@mount C \"{upper}\" -t overlay > NUL"),
         format!("@mount {} \"{exit_screen}\" > NUL", exit_screen::DRIVE),
         "@C:".into(),
-        if is_batch {
-            format!("@call {command}")
-        } else {
-            format!("@{command}")
-        },
+        run_line(command),
         exit_screen::command(),
         "exit".into(),
     ] {
@@ -487,6 +510,27 @@ mod tests {
         assert_eq!(cmd("cool1.bat"), "@call cool1.bat");
         assert_eq!(cmd("PLAY.BAT -x"), "@call PLAY.BAT -x");
         assert_eq!(cmd("KEEN1.EXE"), "@KEEN1.EXE");
+    }
+
+    #[test]
+    fn commands_with_apostrophes_run_from_a_batch_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let x = tmp.path();
+        assert_eq!(
+            keep_apostrophes("KEEN1.EXE".into(), x).unwrap(),
+            "KEEN1.EXE"
+        );
+        assert!(!x.join(START).exists());
+        let cmd = keep_apostrophes("CK5PATCH.EXE Can't.pat".into(), x).unwrap();
+        assert_eq!(cmd, r"X:\START.BAT");
+        assert_eq!(
+            fs::read_to_string(x.join(START)).unwrap(),
+            "@CK5PATCH.EXE Can't.pat\r\n"
+        );
+        assert_eq!(
+            dosbox_args(&[], "l", "u", "x", &cmd)[12],
+            r"@call X:\START.BAT"
+        );
     }
 
     #[test]

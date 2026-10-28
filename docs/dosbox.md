@@ -135,6 +135,10 @@ dosbox --noprimaryconf --nolocalconf
   and send their commands with `-c`, so no `[autoexec]` ever runs.
 - `@` and `> NUL` keep BloogBase's own commands off the screen. A batch file
   is started with `call`, or `exit` would never run.
+- DOSBox Staging 0.83 turns every `'` in a `-c` command into `"`, but not
+  in batch files. A start with an apostrophe (Billy Can't's
+  `CK5PATCH.EXE Can't.pat`) is written to `X:\START.BAT` in the exit folder
+  and started with `@call X:\START.BAT`.
 - The start is the mod's recipe ([recipes.md](recipes.md)), or the version's
   start program or the episode's executable, in catalog order.
 - DOSBox Staging 0.83 crashes on mount paths with non-ASCII characters (an
