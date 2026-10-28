@@ -1,0 +1,24 @@
+id: a-new-dope
+name: A New Dope
+game: keen3
+requires: [keen3-1.31]
+authors: [KeenRush]
+authorLinks:
+  KeenRush: https://keenwiki.shikadi.net/wiki/User:KeenRush
+released: 2007-03-14
+added: 2026-10-28
+type: episode
+description: "Aliens drain Keen's brain with the Brain-o-Juicer and leave him stranded; he has to collect IQ points over 16 new levels to get his genius back. Released on Keen Day 2007."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/A_New_Dope
+  keenmodding: https://keenmodding.org/viewtopic.php?t=925
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.keenrush.a_new_dope.k3.2007-03-14.zip
+    sha256: 25a26257e8eedbc6b280a0cbe926ec48b06c5255e8b0f494b5b93dae2c2402a9
+    size: 102129
+# play.bat runs `ck3patch stuff.pat`. The patch names no version; in DOSBox
+# it shows its own intro on v1.31 and stays black on v1.0.
+recipe:
+  type: patch
+  patcher: CK3PATCH.EXE
+  patch: stuff.pat
