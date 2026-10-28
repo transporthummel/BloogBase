@@ -21,7 +21,7 @@ use crate::profiles;
 use crate::recipe::{self, Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v16";
+const VERSION: &str = "covers v17";
 
 /// A profile's cover.
 #[derive(Debug, PartialEq, Eq)]
@@ -166,6 +166,7 @@ impl Files {
 struct Patched {
     egahead: Option<String>,
     egadict: Option<String>,
+    egagraph: Option<String>,
     /// File names patched into the executable as text, e.g. a graphics
     /// file renamed to `KDREAMS2.CMP`.
     renamed: Vec<String>,
@@ -212,6 +213,7 @@ fn patched(text: &str, ext: &str) -> Patched {
         match first.as_str() {
             "%egahead" => names.egahead = argument(),
             "%egadict" => names.egadict = argument(),
+            "%egagraph" => names.egagraph = argument(),
             "%patchfile" => names
                 .patched_in
                 .extend(words.nth(1).map(|w| w.trim_matches('"').to_string())),
@@ -510,7 +512,12 @@ fn title(
                     .as_deref()
                     .unwrap_or(&format!("EGADICT.{ext}")),
             );
-            for graph_name in candidates(ext, format!("EGAGRAPH.{ext}")) {
+            let graph_names = patch
+                .egagraph
+                .iter()
+                .cloned()
+                .chain(candidates(ext, format!("EGAGRAPH.{ext}")));
+            for graph_name in graph_names {
                 let Some(graph) = files.read(&graph_name) else {
                     last = format!("{graph_name} missing");
                     continue;
@@ -607,6 +614,7 @@ mod tests {
     fn reads_graphics_names_from_patch_files() {
         let names = patched(
             "%ext ck4\n%version 1.4\n%egahead EGAHEAD.CK4\n%EGADICT \"dict.ck4\"\n\
+             %egagraph xmm_grph.ck4\n\
              %patch $23DFD \"KDREAMS2.CMP\"\n%patch $2F1A5 \"meminfo.txt\" 0\n\
              %patch $1000 \"Press a key\" $00\n%patchfile $1EE40 \"STORY.CK4\"\n\
              %end\n%patch $1 \"AFTER.END\"\n",
@@ -617,6 +625,7 @@ mod tests {
             Patched {
                 egahead: Some("EGAHEAD.CK4".into()),
                 egadict: Some("dict.ck4".into()),
+                egagraph: Some("xmm_grph.ck4".into()),
                 renamed: vec!["KDREAMS2.CMP".into(), "meminfo.txt".into()],
                 palette: None,
                 patched_in: vec!["STORY.CK4".into()],
