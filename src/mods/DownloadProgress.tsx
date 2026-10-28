@@ -20,13 +20,15 @@ export function DownloadProgress({ url }: { url: string }) {
   const { received, total } = bytes;
   const known = total > 0;
   const checking = known && received >= total;
+  // The check takes as long as it takes.
+  const counting = known && !checking;
   return (
     <div className="grid w-full gap-1.5">
       <p className="text-sm">{t("keenwiki.downloading")}</p>
       <Progress
         label={t("keenwiki.downloading")}
-        value={known ? received : undefined}
-        max={known ? total : undefined}
+        value={counting ? received : undefined}
+        max={counting ? total : undefined}
       />
       <p role="status" className="text-xs text-muted">
         {checking

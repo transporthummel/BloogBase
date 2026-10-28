@@ -814,6 +814,7 @@ test("shows how far a KeenWiki download has got", async () => {
   expect(screen.getByText("1.0 of 2.0 MB")).toBeInTheDocument();
   act(() => report({ payload: { url, received: 2097152, total: 2097152 } }));
   expect(screen.getByText("Checking the files…")).toBeInTheDocument();
+  expect(bar).not.toHaveAttribute("aria-valuenow");
 });
 
 test("Enter goes from the link to downloading to installing", async () => {
