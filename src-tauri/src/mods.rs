@@ -419,7 +419,13 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
                 .as_deref()
                 .is_some_and(|b| b.eq_ignore_ascii_case(name))
     };
-    let guess = recipe::guess(&with_bundled, read, &game.executables, is_patcher);
+    let guess = recipe::guess(
+        &with_bundled,
+        read,
+        &game.executables,
+        is_patcher,
+        &meta.name,
+    );
     let mut recipes: Vec<RecipeOption> = guess
         .candidates
         .into_iter()

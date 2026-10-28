@@ -49,7 +49,8 @@ empty decides; the rest follow as alternatives, duplicates dropped.
 ### Tier 1: batch files
 
 Most mods start with a batch file that runs the patcher, so batch files are
-the strongest hint. They're tried `PLAY`, `START`, `RUN`, `GO` first, then by
+the strongest hint. They're tried `PLAY`, `START`, `RUN`, `GO` first, then one
+named after the mod (XkyKeen4's `XkyKeen4.bat` before its `go4.bat`), then by
 name. For each, `batch_commands` keeps the lines that start something: it
 stops at Ctrl-Z, treats NUL as a space, and drops empty lines, `::` comments
 and screen commands (`ECHO`, `REM`, `PAUSE`, `CLS`, `TYPE`, …).

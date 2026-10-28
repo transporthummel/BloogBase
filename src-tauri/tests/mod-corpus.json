@@ -620,6 +620,22 @@
       },
       "versionIds": [],
       "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen4/m.xky_rauh.xkykeen4.k4.2008-09-20.zip",
+      "sha256": "64a477a8d0b374442af101fc1298484733bf847caf6dfa0c513f38c50ad66358",
+      "gameId": "keen4",
+      "name": "Xkykeen4",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK4PATCH.EXE",
+        "patch": "XKYKEEN4.PAT",
+        "args": []
+      },
+      "versionIds": [
+        "keen4-1.4-ega"
+      ],
+      "confident": false
     }
   ]
 }

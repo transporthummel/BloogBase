@@ -118,18 +118,21 @@ fn is_tool(command: &str) -> bool {
     TOOLS.contains(&stem(name).to_ascii_uppercase().as_str())
 }
 
-/// Batch files with these names are tried first.
+/// Batch files with these names are tried first, then one named after the
+/// mod.
 const PREFERRED_BATCH: &[&str] = &["PLAY", "START", "RUN", "GO"];
 
 /// Guesses the recipe from the files in the mod root. `names` are the bare
 /// file names there; `read` returns a file's text; `episode_exes` are the
 /// catalog executables of the target game; `is_patcher` says which names are
-/// patchers, renamed ones included.
+/// patchers, renamed ones included; `mod_name` is what the mod is called,
+/// e.g. after its archive.
 pub fn guess(
     names: &[String],
     read: impl Fn(&str) -> Option<String>,
     episode_exes: &[String],
     is_patcher: impl Fn(&str) -> bool,
+    mod_name: &str,
 ) -> Guess {
     let by_upper: HashMap<String, &str> = names
         .iter()
@@ -158,6 +161,16 @@ pub fn guess(
             .any(|e| e.eq_ignore_ascii_case(name) || stem(e).eq_ignore_ascii_case(name))
     };
 
+    // Mods shipped as their author's work folder have batch files for the
+    // tools too; XkyKeen4's "go4.bat" patches in test levels only, its
+    // "XkyKeen4.bat" starts the mod.
+    let alnum = |s: &str| -> String {
+        s.chars()
+            .filter(char::is_ascii_alphanumeric)
+            .map(|c| c.to_ascii_uppercase())
+            .collect()
+    };
+    let mod_name = alnum(mod_name);
     let mut batches: Vec<&String> = names.iter().filter(|n| has_ext(n, "BAT")).collect();
     batches.sort_by_key(|n| {
         let stem = stem(n).to_ascii_uppercase();
@@ -166,6 +179,7 @@ pub fn guess(
                 .iter()
                 .position(|p| *p == stem)
                 .unwrap_or(PREFERRED_BATCH.len()),
+            mod_name.is_empty() || alnum(&stem) != mod_name,
             stem,
         )
     });
@@ -744,6 +758,10 @@ mod tests {
     use super::*;
 
     fn run(files: &[(&str, &str)]) -> Guess {
+        run_named(files, "")
+    }
+
+    fn run_named(files: &[(&str, &str)], mod_name: &str) -> Guess {
         let names: Vec<String> = files.iter().map(|(n, _)| n.to_string()).collect();
         let read = |n: &str| {
             files
@@ -756,6 +774,7 @@ mod tests {
             read,
             &["KEEN4E.EXE".into(), "KEEN4C.EXE".into()],
             is_patcher,
+            mod_name,
         )
     }
 
@@ -786,6 +805,24 @@ mod tests {
             patch("CK4PATCH.EXE", "abiathar.pat", &[])
         );
         assert_eq!(g.candidates[0].origin, "play.bat");
+    }
+
+    #[test]
+    fn batch_named_after_the_mod_goes_first() {
+        // As XkyKeen4, its author's work folder.
+        let files = [
+            (
+                "go4.bat",
+                "@echo off\r\ncopy gamemaps.ck4 custmaps.ck4\r\nck4patch patch4.pat -nowait\r\n",
+            ),
+            ("XkyKeen4.bat", "ck4patch xkykeen4.pat\r\npause"),
+            ("CK4PATCH.EXE", ""),
+            ("patch4.pat", "%ext ck4\n"),
+            ("XKYKEEN4.PAT", "%ext ck4\n%version 1.4\n"),
+        ];
+        let first = |g: Guess| g.candidates[0].origin.clone();
+        assert_eq!(first(run_named(&files, "Xkykeen4")), "XkyKeen4.bat");
+        assert_eq!(first(run(&files)), "go4.bat");
     }
 
     #[test]
