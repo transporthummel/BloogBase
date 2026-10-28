@@ -1000,8 +1000,12 @@ mod tests {
             let root = entry.unwrap().path();
             let info = crate::mods::inspect(&root, None).unwrap();
             let game = catalog::game(&info.game_id).unwrap();
-            let recipe = &info.recipes[0].recipe;
+            let (recipe, versions) = (&info.recipes[0].recipe, &info.recipes[0].version_ids);
+            // CGA mods only go on the CGA release, as Keen4c16.
+            let cga = !versions.is_empty() && versions.iter().all(|v| v.ends_with("-cga"));
             let base = games.join(match game.id.as_str() {
+                "keen4" if cga => "versions/Commander Keen 4 v1.4 CGA",
+                "keen5" if cga => "versions/Commander Keen 5 v1.4 CGA",
                 "keen4" => "versions/Commander Keen 4 v1.4",
                 "keen6" => "keen6-14",
                 "kdreams" => "kdreams113",
