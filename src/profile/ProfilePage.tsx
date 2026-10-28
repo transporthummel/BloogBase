@@ -290,7 +290,11 @@ function Hero({
       {/* As tall as the text, at 4:3. Where the width limits get in the way,
           pictures keep 4:3 on black; only the placeholder fills the box. */}
       <div className="flex shrink-0 items-center bg-black" style={{ width: pictureWidth }}>
-        {cover.data || cover.isPending || !latest ? (
+        {cover.isPending ? (
+          // The title screen is read from the files on first use; black until
+          // then, so the placeholder doesn't flash up before it.
+          <div className="aspect-[4/3] w-full" />
+        ) : cover.data || !latest ? (
           <Cover
             gameId={profile.gameId}
             game={game}

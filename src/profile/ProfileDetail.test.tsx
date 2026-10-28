@@ -658,6 +658,20 @@ test("the title screen is the picture, else the latest screenshot", async () => 
   expect(await screen.findByText(/graphics files don't fit together/)).toBeInTheDocument();
 });
 
+test("no placeholder flashes up while the title screen is read", async () => {
+  let resolve!: (v: ReturnType<typeof ok<{ path: string; scrambled: boolean }>>) => void;
+  vi.mocked(commands.profileCover).mockReturnValue(new Promise((r) => (resolve = r)));
+  const { container } = renderDetail();
+  await screen.findByRole("heading", { name: keen4.title });
+  // The placeholder shows the episode number.
+  expect(container.querySelector(".font-pixel.text-7xl")).toBeNull();
+  resolve(ok({ path: "/data/cache/covers/keen4-1.png", scrambled: false }));
+  await vi.waitFor(() =>
+    expect(container.querySelector("img")?.getAttribute("src")).toMatch(/keen4-1\.png/),
+  );
+  expect(container.querySelector(".font-pixel.text-7xl")).toBeNull();
+});
+
 test("tabs follow the arrow keys", async () => {
   vi.mocked(commands.listScreenshots).mockResolvedValue(ok([]));
   renderDetail();
