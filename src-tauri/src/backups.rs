@@ -658,6 +658,7 @@ pub fn restore(
         }
     };
 
+    let restored_other = chosen.iter().any(|(n, _)| !saves::is_save(game, n));
     create(
         paths,
         db,
@@ -677,6 +678,14 @@ pub fn restore(
             fs::create_dir_all(dir)?;
         }
         fs::write(dest, data)?;
+    }
+    // Copies a mod's launcher left may be back: the next launch counts the
+    // composed folder as changed and clears them (`launcher_copies`).
+    if restored_other {
+        db.conn().execute(
+            "UPDATE profiles SET composed_hash = NULL WHERE id = ?1",
+            [&backup.profile_id],
+        )?;
     }
     tracing::info!("restored backup {id} into {}", backup.profile_id);
     Ok(())

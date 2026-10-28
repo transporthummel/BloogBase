@@ -41,8 +41,10 @@ after the first run the profile holds copies, and deletion markers for the
 old names, that hide the composed folder from then on. A mod update or
 one-button firing would never reach the game.
 
-So when the composed folder changes (its hash differs from the stored one),
-`launcher_copies.rs` clears what the launcher left, for profiles whose
+So when the composed folder changes (its hash differs from the stored one,
+or none is stored: a new profile, maybe with an earlier backup restored
+into it, or one where a restore put back more than saves, which clears the
+stored hash), `launcher_copies.rs` clears what the launcher left, for profiles whose
 recipe runs a program: the files in the root of `state/` that the program
 names as a whole file name, the deletion markers for those names, and the
 `.OLZ` copy UNLZEXE keeps of an executable it names. Saves and the game's

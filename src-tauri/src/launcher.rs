@@ -639,21 +639,22 @@ mod tests {
             },
         )
         .unwrap();
-        prepare(&paths, &db, &m.profile_id).unwrap();
 
-        // What a run left: the renamed patch, the marker hiding the old
+        // What a run leaves: the renamed patch, the marker hiding the old
         // name, and the game's own files.
         let (_, layers) = profiles::get(&db, &m.profile_id).unwrap();
         let state = &layers.upper;
-        fs::create_dir_all(state).unwrap();
-        for (name, data) in [
-            ("B.PAT", &b"%ext ck4\n%end\n"[..]),
-            ("DBOVERLAY_DEL_A.PAT", b"empty"),
-            ("SAVEGAM0.CK4", b"save"),
-            ("CONFIG.CK4", b"config"),
-        ] {
-            fs::write(state.join(name), data).unwrap();
-        }
+        let run = |save: &[u8]| {
+            fs::create_dir_all(state).unwrap();
+            for (name, data) in [
+                ("B.PAT", &b"%ext ck4\n%end\n"[..]),
+                ("DBOVERLAY_DEL_A.PAT", b"empty"),
+                ("SAVEGAM0.CK4", save),
+                ("CONFIG.CK4", b"config"),
+            ] {
+                fs::write(state.join(name), data).unwrap();
+            }
+        };
         let files = |dir: &Path| -> Vec<String> {
             let mut n: Vec<String> = fs::read_dir(dir)
                 .unwrap()
@@ -663,7 +664,14 @@ mod tests {
             n
         };
 
+        // Brought along by an earlier backup restored into the new profile:
+        // cleared on its first launch.
+        run(b"save");
+        prepare(&paths, &db, &m.profile_id).unwrap();
+        assert_eq!(files(state), ["CONFIG.CK4", "SAVEGAM0.CK4"]);
+
         // Unchanged: everything stays.
+        run(b"save 2");
         prepare(&paths, &db, &m.profile_id).unwrap();
         assert_eq!(files(state).len(), 4);
 
@@ -681,12 +689,30 @@ mod tests {
         assert_eq!(files(state), ["CONFIG.CK4", "SAVEGAM0.CK4"]);
         assert!(!crate::backups::after_session(&db, &m.profile_id, before).unwrap());
         let backups = crate::backups::list(&db, &m.profile_id).unwrap();
-        assert_eq!(backups.len(), 1);
+        assert_eq!(backups.len(), 2);
         assert_eq!(
             backups[0].reason,
             Some(crate::backups::Reason::LauncherReset)
         );
         assert_eq!(backups[0].files.len(), 4);
+
+        // Restoring everything brings the copies back; the next launch
+        // clears them again. Restoring saves only rebuilds nothing.
+        crate::backups::restore(&paths, &db, backups[0].id, None, None, true).unwrap();
+        assert_eq!(files(state).len(), 4);
+        prepare(&paths, &db, &m.profile_id).unwrap();
+        assert_eq!(files(state), ["CONFIG.CK4", "SAVEGAM0.CK4"]);
+        crate::backups::restore(&paths, &db, backups[0].id, None, None, false).unwrap();
+        let hash = || -> Option<String> {
+            db.conn()
+                .query_row(
+                    "SELECT composed_hash FROM profiles WHERE id = ?1",
+                    [&m.profile_id],
+                    |r| r.get(0),
+                )
+                .unwrap()
+        };
+        assert!(hash().is_some());
     }
 
     #[test]

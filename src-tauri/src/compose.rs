@@ -50,7 +50,8 @@ struct Input {
 /// A profile's composed lower layer.
 pub struct Composed {
     pub dir: PathBuf,
-    /// Whether it differs from the one the profile was last played with.
+    /// Whether it differs from the one the profile was last played with,
+    /// or there was none (a new profile, or `state/` restored since).
     pub changed: bool,
 }
 
@@ -138,7 +139,7 @@ pub fn ensure(
         "UPDATE profiles SET composed_hash = ?2 WHERE id = ?1",
         params![profile_id, hash],
     )?;
-    let changed = stored.is_some_and(|s| s != hash);
+    let changed = stored.as_deref() != Some(hash.as_str());
     Ok(Composed { dir, changed })
 }
 
