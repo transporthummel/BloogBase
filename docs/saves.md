@@ -98,6 +98,10 @@ on the settings page); older ones are removed. Manual backups are never
 pruned. A backup that fails before a launch is logged and never keeps
 anyone from playing.
 
+An automatic backup is skipped when the profile's newest backup holds the
+same files. A backup before a launch counts for that only against another
+one of its kind, since it goes again after a session that lost no save.
+
 ### Before and after a session
 
 Most sessions change nothing worth keeping, so the backup before a launch

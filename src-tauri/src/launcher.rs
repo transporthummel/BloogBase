@@ -673,9 +673,15 @@ mod tests {
             b"%ext ck4\n%patch $1 $2\n%end\n",
         )
         .unwrap();
+        // As a launch does it: the backup before playing comes first and
+        // goes after a session that lost no save; the one before clearing
+        // the copies has the same content but stays.
+        let before = crate::backups::before_launch(&paths, &db, &m.profile_id).unwrap();
         prepare(&paths, &db, &m.profile_id).unwrap();
         assert_eq!(files(state), ["CONFIG.CK4", "SAVEGAM0.CK4"]);
+        assert!(!crate::backups::after_session(&db, &m.profile_id, before).unwrap());
         let backups = crate::backups::list(&db, &m.profile_id).unwrap();
+        assert_eq!(backups.len(), 1);
         assert_eq!(
             backups[0].reason,
             Some(crate::backups::Reason::LauncherReset)

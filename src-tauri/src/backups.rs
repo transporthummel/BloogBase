@@ -282,12 +282,17 @@ pub fn create<'a>(
     };
     let hash = content_hash(&files);
     if auto {
+        // A backup before a launch goes again after the session unless a
+        // save was lost, so it stands in only for another one of its kind.
+        let before_launch = format!("{REASON_PREFIX}{}", Reason::BeforeLaunch.key());
+        let skip_before_launch = label.as_deref() != Some(before_launch.as_str());
         let last: Option<Option<String>> = db
             .conn()
             .query_row(
                 "SELECT content_hash FROM save_backups WHERE profile_id = ?1
+                 AND NOT (?2 AND label IS ?3)
                  ORDER BY created_at DESC, id DESC LIMIT 1",
-                [profile_id],
+                params![profile_id, skip_before_launch, before_launch],
                 |r| r.get(0),
             )
             .optional()?;
