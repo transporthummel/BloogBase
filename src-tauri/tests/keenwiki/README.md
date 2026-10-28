@@ -10,6 +10,7 @@ contributors; it is kept here with the KeenWiki admin's permission
 | ------------------------- | -------------------------------------------------------------- |
 | `Buried_in_Oblivion.html` | https://keenwiki.shikadi.net/wiki/Buried_in_Oblivion           |
 | `Candy_Dreams.html`       | https://keenwiki.shikadi.net/wiki/Candy_Dreams                 |
+| `Keen_3_Part_2.html`      | https://keenwiki.shikadi.net/wiki/Keen_3_Part_2                |
 | `Keen_4.html`             | https://keenwiki.shikadi.net/wiki/Keen_4 (redirects to Keen_4:_Secret_of_the_Oracle) |
 | `Keenball.html`           | https://keenwiki.shikadi.net/wiki/Keenball                     |
 | `Missing_Page.html`       | a KeenWiki "page doesn't exist" response                       |

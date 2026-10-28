@@ -368,18 +368,28 @@ fn author_links(
 }
 
 /// Links in the "Download" cell, one per line: `<a>label</a> note<br>`.
+/// A whole line may be in brackets: `(<a>label</a> note)`.
 fn parse_downloads(td: ElementRef, base: Option<&Url>) -> Vec<WikiDownload> {
     let mut out: Vec<WikiDownload> = Vec::new();
+    // Text before the line's first link, the one before the latest link,
+    // and the text after it.
+    let mut lead = String::new();
+    let mut last_lead = String::new();
     let mut note = String::new();
-    let finish = |out: &mut Vec<WikiDownload>, note: &mut String| {
+    let mut on_line = false;
+    let finish = |out: &mut Vec<WikiDownload>, lead: &str, note: &mut String| {
         if let Some(d) = out.last_mut()
             && d.note.is_none()
         {
-            let n = note.split_whitespace().collect::<Vec<_>>().join(" ");
-            let n = n
-                .strip_prefix('(')
-                .and_then(|n| n.strip_suffix(')'))
-                .unwrap_or(&n);
+            let squash = |s: &str| s.split_whitespace().collect::<Vec<_>>().join(" ");
+            let (lead, n) = (squash(lead), squash(note));
+            let n = match (lead.strip_prefix('('), n.strip_suffix(')')) {
+                (Some(""), Some(n)) => n.trim(),
+                _ => n
+                    .strip_prefix('(')
+                    .and_then(|n| n.strip_suffix(')'))
+                    .unwrap_or(&n),
+            };
             d.note = non_empty(n.to_string());
             d.version = version_in(&d.label).or_else(|| d.note.as_deref().and_then(version_in));
         }
@@ -388,7 +398,7 @@ fn parse_downloads(td: ElementRef, base: Option<&Url>) -> Vec<WikiDownload> {
     for node in td.children() {
         match node.value() {
             Node::Element(e) if e.name() == "a" => {
-                finish(&mut out, &mut note);
+                finish(&mut out, &last_lead, &mut note);
                 let href = e.attr("href").unwrap_or("");
                 let url = match base {
                     Some(b) => b.join(href).ok(),
@@ -403,14 +413,21 @@ fn parse_downloads(td: ElementRef, base: Option<&Url>) -> Vec<WikiDownload> {
                         note: None,
                         version: None,
                     });
+                    last_lead = std::mem::take(&mut lead);
                 }
+                on_line = true;
             }
-            Node::Element(e) if e.name() == "br" => finish(&mut out, &mut note),
-            Node::Text(t) => note.push_str(t),
+            Node::Element(e) if e.name() == "br" => {
+                finish(&mut out, &last_lead, &mut note);
+                lead.clear();
+                on_line = false;
+            }
+            Node::Text(t) if on_line => note.push_str(t),
+            Node::Text(t) => lead.push_str(t),
             _ => {}
         }
     }
-    finish(&mut out, &mut note);
+    finish(&mut out, &last_lead, &mut note);
     out
 }
 
@@ -770,6 +787,17 @@ mod tests {
         );
         // Only on Keen: Modding.
         assert_eq!(m.pckf, None);
+    }
+
+    #[test]
+    fn brackets_around_a_download_line_are_not_notes() {
+        let m = fixture("Keen_3_Part_2");
+        let shown: Vec<_> = m
+            .downloads
+            .iter()
+            .map(|d| (d.label.as_str(), d.note.as_deref()))
+            .collect();
+        assert_eq!(shown, [("newest", None), ("easy", None)]);
     }
 
     #[test]

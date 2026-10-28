@@ -47,8 +47,11 @@ section. Markup can change, so it's tested against saved pages
   Yuku and Shikadi archive addresses) and Keen: Modding under
   "Discussion(s)". The description is the first paragraph.
 - **Downloads.** The links in the "Download" cell, one per line, newest
-  first, each with the text after it as a note (`v.2.0`, `less buggy`). The
-  version comes from the label or the note (`v.1.2`, `v1.2`, `version 1.2`).
+  first, each with the text after it as a note (`v.2.0`, `less buggy`).
+  Brackets around the note are dropped (`(less buggy)`). Where a whole line
+  is in brackets, link included (`(<a>easy</a>)`), the closing bracket isn't
+  a note. The version comes from the label or the note
+  (`v.1.2`, `v1.2`, `version 1.2`).
   Without such links, the page's `downloadUrl` is taken.
 
 The player sees these details and picks a download if there are several.
@@ -59,6 +62,10 @@ The chosen file is downloaded (up to 256 MB) into the cache folder
 (`downloads/keenwiki/`) and must be a ZIP archive, old PKZIP's spanning
 marker included. RAR, 7z, EXE files and web pages (a download page instead
 of the file) are refused, and the player can open the link in the browser.
+A link to nothing (404 or 410) is called a dead link, and so is a 403 from
+the community's file server, `files.shikadi.net`: it answers 403 for files
+it doesn't have (Ally's Mod III links `.k2` for a `.k3` file). Elsewhere,
+a 403 stays an HTTP error.
 The file keeps its name, as KeenWiki archive names carry metadata
 (`m.<author>.<name>_v<version>.<episode>.<date>`), and gets `.zip` if it
 lacks it.
