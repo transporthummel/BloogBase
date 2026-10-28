@@ -165,6 +165,14 @@ pub async fn fetch(cache_dir: &Path, page_url: &str) -> Result<String> {
     Ok(html)
 }
 
+/// Forgets every page [`fetch`] kept, so the next read gets it fresh.
+pub fn clear_cache(cache_dir: &Path) -> Result<()> {
+    match fs::remove_dir_all(cache_dir) {
+        Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e.into()),
+        _ => Ok(()),
+    }
+}
+
 fn selector(s: &str) -> Selector {
     Selector::parse(s).expect("valid selector")
 }
@@ -1031,6 +1039,13 @@ mod tests {
         assert_eq!(first, second);
         assert_eq!(hits.load(Ordering::SeqCst), 1);
         assert_eq!(parse(&first, &url).unwrap().name, "Keenball");
+        // Cleared, it's read again; clearing nothing is fine too.
+        let cache = tmp.path().join("keenwiki");
+        fetch(&cache, &url).await.unwrap();
+        clear_cache(&cache).unwrap();
+        clear_cache(&cache).unwrap();
+        fetch(&cache, &url).await.unwrap();
+        assert_eq!(hits.load(Ordering::SeqCst), 3);
         assert!(matches!(
             fetch(tmp.path(), &format!("{base}/wiki/Nope")).await,
             Err(Error::NotAModPage)

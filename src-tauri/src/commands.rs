@@ -925,6 +925,13 @@ pub async fn lookup_keenwiki(app: AppHandle, url: String) -> CommandResult<Keenw
     })
 }
 
+/// Empties the cache of KeenWiki pages, e.g. after a page was fixed.
+#[tauri::command]
+#[specta::specta]
+pub fn clear_keenwiki_cache(paths: State<'_, AppPaths>) -> CommandResult<()> {
+    Ok(keenwiki::clear_cache(&paths.cache.join("keenwiki"))?)
+}
+
 /// What a mod's KeenWiki page offers compared to the installed version.
 #[derive(Debug, Serialize, Type)]
 #[serde(rename_all = "camelCase")]

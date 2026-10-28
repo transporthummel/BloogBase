@@ -195,6 +195,8 @@ export const commands = {
 	 *  read today.
 	 */
 	checkModUpdate: (modId: string) => typedError<ModUpdate, CommandError>(__TAURI_INVOKE("check_mod_update", { modId })),
+	/**  Empties the cache of KeenWiki pages, e.g. after a page was fixed. */
+	clearKeenwikiCache: () => typedError<null, CommandError>(__TAURI_INVOKE("clear_keenwiki_cache")),
 	/**
 	 *  Downloads one of a KeenWiki page's links and inspects it. `game_id` is
 	 *  the page's episode, used when the files don't tell.

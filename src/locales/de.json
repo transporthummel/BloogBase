@@ -105,6 +105,10 @@
     "autoBackupHint": "Vor jedem Spielstart sichert BloogBase deine Spielstände. Die Sicherung bleibt nur, wenn du dabei einen Spielstand überschreibst; die alte Version findest du dann beim Spielstand.",
     "keepBackups": "Automatische Sicherungen pro Spiel behalten",
     "backupsHint": "Selbst angelegte Sicherungen werden nie automatisch gelöscht. BloogBase sichert außerdem vor dem Wiederherstellen oder Löschen eines Spielstands.",
+    "keenwikiCache": "KeenWiki-Seiten",
+    "keenwikiCacheHint": "BloogBase merkt sich gelesene KeenWiki-Seiten einen Tag lang. Hat sich eine Seite seitdem geändert, zum Beispiel ein korrigierter Download-Link, lösche sie, damit sie neu gelesen wird.",
+    "clearKeenwikiCache": "Gespeicherte Seiten löschen",
+    "keenwikiCacheCleared": "Gelöscht.",
     "aboutMore": "Lizenzen und Danksagungen",
     "display": "Bild",
     "displayOption": {

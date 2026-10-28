@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { FileCog, RefreshCw, Wand } from "lucide-react";
+import { Eraser, FileCog, RefreshCw, Wand } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type BackupSettings, type DisplayOptions } from "../bindings";
@@ -90,6 +90,7 @@ export function Settings() {
         <DisplaySection />
         <ControlsSection />
         <BackupSection />
+        <KeenwikiCacheSection />
         <GlobalConfigSection />
         <Section title={t("settings.setup")}>
           <p className="text-sm text-muted">{t("settings.rerunHint")}</p>
@@ -352,6 +353,29 @@ function BackupSection() {
       {(settings.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, settings.error ?? update.error)}</Notice>
       )}
+    </Section>
+  );
+}
+
+export function KeenwikiCacheSection() {
+  const { t } = useTranslation();
+  const clear = useMutation({ mutationFn: () => unwrap(commands.clearKeenwikiCache()) });
+
+  return (
+    <Section title={t("settings.keenwikiCache")}>
+      <p className="text-sm text-muted">{t("settings.keenwikiCacheHint")}</p>
+      <div className="flex items-center gap-3">
+        <Button variant="secondary" disabled={clear.isPending} onClick={() => clear.mutate()}>
+          <Eraser className="size-4" aria-hidden />
+          {t("settings.clearKeenwikiCache")}
+        </Button>
+        {clear.isSuccess && (
+          <span role="status" className="text-sm text-muted">
+            {t("settings.keenwikiCacheCleared")}
+          </span>
+        )}
+      </div>
+      {clear.error && <Notice tone="error">{errorMessage(t, clear.error)}</Notice>}
     </Section>
   );
 }
