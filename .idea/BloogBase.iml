@@ -11,6 +11,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.local/updater-signing" />
       <excludeFolder url="file://$MODULE_DIR$/src-tauri/gen/schemas" />
       <excludeFolder url="file://$MODULE_DIR$/.local/target-cdp" />
+      <excludeFolder url="file://$MODULE_DIR$/.local/webview-cdp" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
