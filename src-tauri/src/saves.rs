@@ -142,12 +142,7 @@ pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Ga
     }
     let texts = covers::patch_texts(game, &m.recipe, &files);
     let renamed = covers::renamer(game, &files, &texts);
-    let rename = |patterns: &[String]| -> Vec<String> {
-        patterns
-            .iter()
-            .map(|p| rename_pattern(p, &renamed))
-            .collect()
-    };
+    let rename = |patterns: &[String]| rename_patterns(patterns, &renamed);
     let (saves, state_files) = (rename(&game.saves), rename(&game.state_files));
     let played = if saves == game.saves && state_files == game.state_files {
         game
@@ -165,6 +160,19 @@ pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Ga
         .unwrap_or_else(|e| e.into_inner())
         .insert(key, played);
     Ok(played)
+}
+
+/// Each pattern under its new name, once: Version 1.21 Revision 2 names
+/// `KDREAMS.CFG` like the `CONFIG.KDR` of later releases.
+fn rename_patterns(patterns: &[String], renamed: impl Fn(&str) -> String) -> Vec<String> {
+    let mut out: Vec<String> = Vec::with_capacity(patterns.len());
+    for p in patterns {
+        let new = rename_pattern(p, &renamed);
+        if !out.contains(&new) {
+            out.push(new);
+        }
+    }
+    out
 }
 
 /// `SAVED?.CK2` under the names `renamed` gives its parts: the whole name
@@ -426,6 +434,10 @@ pub(crate) mod tests {
         // The whole name, as Another Helping of Veggies.
         let veggies = names(&[("KDREAMS.CFG", "CONFIG.KD2")]);
         assert_eq!(rename_pattern("KDREAMS.CFG", veggies), "CONFIG.KD2");
+        // A new name another pattern already has counts once.
+        let revision_2 = names(&[("KDREAMS.CFG", "CONFIG.KDR")]);
+        let state = ["CONFIG.KDR".to_string(), "KDREAMS.CFG".to_string()];
+        assert_eq!(rename_patterns(&state, revision_2), ["CONFIG.KDR"]);
         // Text that can't be a name leaves it.
         let text = names(&[("SAVED", "Saved games"), ("CK2", "CKQ ")]);
         assert_eq!(rename_pattern("SAVED?.CK2", text), "SAVED?.CKQ");
