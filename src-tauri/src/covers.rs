@@ -2,9 +2,11 @@
 //! files (PLAN.md §15) and cached as PNG. Nothing is shipped; a profile
 //! whose title can't be read keeps the placeholder.
 
+use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::UNIX_EPOCH;
 
 use keen_graphics::Image;
@@ -103,13 +105,13 @@ fn cache_files(paths: &AppPaths, profile_id: &str) -> (PathBuf, PathBuf) {
 }
 
 /// The files DOS sees in the drive root: the mod's over the base game's.
-struct Files {
+pub(crate) struct Files {
     /// Bare name, path, size and modification time; earlier folders win.
     entries: Vec<(String, PathBuf, u64, u128)>,
 }
 
 impl Files {
-    fn new(dirs: &[&Path]) -> Result<Self> {
+    pub(crate) fn new(dirs: &[&Path]) -> Result<Self> {
         let mut entries: Vec<(String, PathBuf, u64, u128)> = Vec::new();
         for dir in dirs {
             for entry in fs::read_dir(dir)? {
@@ -133,7 +135,7 @@ impl Files {
 
     /// Like the composed layer, files aren't changed in place, so names,
     /// sizes and times identify them.
-    fn fingerprint(&self, recipe: Option<&Recipe>) -> String {
+    pub(crate) fn fingerprint(&self, recipe: Option<&Recipe>) -> String {
         let mut h = Sha256::new();
         h.update(VERSION);
         h.update(serde_json::to_string(&recipe).expect("recipes serialize"));
@@ -348,29 +350,7 @@ fn vorticons_names<'a>(
     texts: &'a [(usize, String)],
     ext: &str,
 ) -> impl Fn(&str) -> String + 'a {
-    let image = if texts.is_empty() {
-        None
-    } else {
-        game.executables
-            .iter()
-            .find_map(|e| files.read(e))
-            .and_then(|exe| keen_graphics::load_image(&exe).ok())
-    };
-    let patched = move |original: &str| -> String {
-        let renamed = image.as_ref().and_then(|image| {
-            let at: Vec<usize> = image
-                .windows(original.len())
-                .enumerate()
-                .filter(|(_, w)| *w == original.as_bytes())
-                .map(|(i, _)| i)
-                .collect();
-            texts
-                .iter()
-                .find(|(address, _)| at.contains(address))
-                .map(|(_, text)| text.trim_end_matches('\0').to_string())
-        });
-        renamed.unwrap_or_else(|| original.to_string())
-    };
+    let patched = renamer(game, files, texts);
     let (old_ext, ext) = (ext.to_string(), patched(ext));
     move |stem: &str| {
         let digits = stem.trim_start_matches(|c: char| !c.is_ascii_digit());
@@ -383,6 +363,62 @@ fn vorticons_names<'a>(
             name
         }
     }
+}
+
+/// What a text in the game's executable became: the text a `%patch` in
+/// `texts` writes right where it starts in the unpacked image, else the
+/// text itself. Mods rename files this way (Keen Q's `CK2` → `CKQ`).
+pub(crate) fn renamer<'a>(
+    game: &Game,
+    files: &Files,
+    texts: &'a [(usize, String)],
+) -> impl Fn(&str) -> String + 'a {
+    let image = if texts.is_empty() {
+        None
+    } else {
+        game.executables.iter().find_map(|e| unpacked(files, e))
+    };
+    move |original: &str| -> String {
+        let renamed = image.as_ref().and_then(|image| {
+            texts
+                .iter()
+                .find(|(address, _)| {
+                    image.get(*address..address + original.len()) == Some(original.as_bytes())
+                })
+                .map(|(_, text)| text.trim_end_matches('\0').to_string())
+        });
+        renamed.unwrap_or_else(|| original.to_string())
+    }
+}
+
+/// The load image of the executable `name` among `files`, unpacked. Many
+/// profiles share one game's executable, so images are kept by file.
+fn unpacked(files: &Files, name: &str) -> Option<Arc<Vec<u8>>> {
+    type Images = HashMap<(PathBuf, u64, u128), Arc<Vec<u8>>>;
+    static IMAGES: OnceLock<Mutex<Images>> = OnceLock::new();
+    let (_, path, size, modified) = files
+        .entries
+        .iter()
+        .find(|e| e.0.eq_ignore_ascii_case(name))?;
+    let key = (path.clone(), *size, *modified);
+    let images = IMAGES.get_or_init(Default::default);
+    if let Some(image) = images.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
+        return Some(image.clone());
+    }
+    let image = Arc::new(keen_graphics::load_image(&fs::read(path).ok()?).ok()?);
+    images
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(key, image.clone());
+    Some(image)
+}
+
+/// The `%patch <address> "text"` lines of the patch file `recipe` applies.
+pub(crate) fn patch_texts(game: &Game, recipe: &Recipe, files: &Files) -> Vec<(usize, String)> {
+    patch_file(recipe, files)
+        .and_then(|p| files.read(&p))
+        .map(|t| patched(&String::from_utf8_lossy(&t), &extension(game)).texts)
+        .unwrap_or_default()
 }
 
 fn title(

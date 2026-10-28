@@ -510,7 +510,8 @@ fn tally(game: &Game, mut b: Backup) -> Backup {
 }
 
 fn game_of_profile(db: &Db, profile_id: &str) -> Result<&'static Game> {
-    saves::game_of(&profiles::get(db, profile_id)?.0.game_id)
+    let (profile, layers) = profiles::get(db, profile_id)?;
+    saves::profile_game(&profile.game_id, &layers)
 }
 
 fn get_with_archive(db: &Db, id: u32) -> Result<(Backup, String)> {
@@ -545,7 +546,7 @@ fn offered_key(profile_id: &str) -> String {
 /// unless the player already answered for this profile. A profile added
 /// again later is asked again.
 pub fn earlier(db: &Db, profile_id: &str) -> Result<Option<EarlierBackup>> {
-    let (profile, _) = profiles::get(db, profile_id)?;
+    let (profile, layers) = profiles::get(db, profile_id)?;
     if profile.session_count > 0 {
         return Ok(None);
     }
@@ -565,7 +566,7 @@ pub fn earlier(db: &Db, profile_id: &str) -> Result<Option<EarlierBackup>> {
             .collect::<rusqlite::Result<_>>()?
     };
     let answered = settings::get(db, &offered_key(profile_id))?;
-    let game = saves::game_of(&profile.game_id)?;
+    let game = saves::profile_game(&profile.game_id, &layers)?;
     for (backup, archive) in candidates {
         // A mod is the same mod by its id; a copy there before isn't added again.
         if backup.reason != Some(reason)
@@ -672,8 +673,8 @@ fn read_zip(path: &Path) -> Result<(Files, Option<Manifest>)> {
 /// The saves in a backup, described like the profile's current ones.
 pub fn saves_in(db: &Db, id: u32) -> Result<Vec<SaveFile>> {
     let (backup, archive) = get_with_archive(db, id)?;
-    let (profile, _) = profiles::get(db, &backup.profile_id)?;
-    let game = saves::game_of(&profile.game_id)?;
+    let (profile, layers) = profiles::get(db, &backup.profile_id)?;
+    let game = saves::profile_game(&profile.game_id, &layers)?;
     let (files, manifest) = read_zip(Path::new(&archive))?;
     let at = manifest.map_or(backup.created_at, |m| m.created_at);
     Ok(files
@@ -697,7 +698,7 @@ pub fn restore(
 ) -> Result<()> {
     let (backup, archive) = get_with_archive(db, id)?;
     let (profile, layers) = profiles::get(db, &backup.profile_id)?;
-    let game = saves::game_of(&profile.game_id)?;
+    let game = saves::profile_game(&profile.game_id, &layers)?;
     let (files, _) = read_zip(Path::new(&archive))?;
     let chosen: Vec<(String, &[u8])> = match file {
         None => files
@@ -774,8 +775,8 @@ pub fn export(db: &Db, id: u32, dest: &Path) -> Result<()> {
 /// BloogBase exports keep everything; other archives contribute the files
 /// that look like this game's saves, config or scores, wherever they are.
 pub fn import(paths: &AppPaths, db: &Db, profile_id: &str, src: &Path) -> Result<Backup> {
-    let (profile, _) = profiles::get(db, profile_id)?;
-    let game = saves::game_of(&profile.game_id)?;
+    let (profile, layers) = profiles::get(db, profile_id)?;
+    let game = saves::profile_game(&profile.game_id, &layers)?;
     let (files, manifest) = read_zip(src).map_err(|e| match e {
         Error::Archive(_) => Error::UnsupportedSource(src.to_path_buf()),
         e => e,
@@ -873,7 +874,7 @@ fn current_saves(game: &Game, layers: &Layers) -> Result<Vec<(String, String)>> 
 /// for that. Returns whether it was kept.
 pub fn after_session(db: &Db, profile_id: &str, backup_id: u32) -> Result<bool> {
     let (profile, layers) = profiles::get(db, profile_id)?;
-    let game = saves::game_of(&profile.game_id)?;
+    let game = saves::profile_game(&profile.game_id, &layers)?;
     let now = current_saves(game, &layers)?;
     let before: Vec<(String, String)> = {
         let conn = db.conn();
@@ -956,7 +957,7 @@ pub fn version_count(db: &Db, profile_id: &str, file: &str, data: &[u8]) -> Resu
 /// The earlier versions of a save that backups hold, newest first.
 pub fn save_versions(db: &Db, profile_id: &str, file: &str) -> Result<Vec<SaveVersion>> {
     let (profile, layers) = profiles::get(db, profile_id)?;
-    let game = saves::game_of(&profile.game_id)?;
+    let game = saves::profile_game(&profile.game_id, &layers)?;
     let upper = file.to_ascii_uppercase();
     let current = current_saves(game, &layers)?
         .into_iter()

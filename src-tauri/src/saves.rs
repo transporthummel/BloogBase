@@ -1,14 +1,17 @@
 //! The save manager (PLAN.md §11): a profile's saved games as DOS sees them,
 //! with what each save says about itself.
 
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use std::sync::{Mutex, OnceLock};
 
 use serde::Serialize;
 use specta::Type;
 
 use crate::backups::{self, Contents, Reason};
 use crate::catalog::{self, Engine, Game, glob_match};
+use crate::covers;
 use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::overlay_view::{self, Layer, OVERLAY_DELETED_FILE_PREFIX};
@@ -116,6 +119,84 @@ pub(crate) fn game_of(game_id: &str) -> Result<&'static Game> {
     catalog::game(game_id).ok_or_else(|| Error::NotFound(format!("game {game_id}")))
 }
 
+/// The game as a profile plays it. A mod's patch may write other names over
+/// the ones the executable opens its saves and state files under: Keen Q
+/// saves as `SAVED1.CKQ`, Norp the Yorp 2 keeps its settings in
+/// `SETTINGS.NY2`. The catalog's patterns then follow.
+pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Game> {
+    let game = game_of(game_id)?;
+    let Some(m) = &layers.mod_layer else {
+        return Ok(game);
+    };
+    // A mod waiting for its game has no executable to read.
+    let Ok(files) = covers::Files::new(&layers.sources()) else {
+        return Ok(game);
+    };
+    // Reading the executable takes unpacking it, so the answer is kept for
+    // as long as the files stay the same.
+    static KNOWN: OnceLock<Mutex<HashMap<String, &'static Game>>> = OnceLock::new();
+    let known = KNOWN.get_or_init(Default::default);
+    let key = files.fingerprint(Some(&m.recipe));
+    if let Some(g) = known.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
+        return Ok(g);
+    }
+    let texts = covers::patch_texts(game, &m.recipe, &files);
+    let renamed = covers::renamer(game, &files, &texts);
+    let rename = |patterns: &[String]| -> Vec<String> {
+        patterns
+            .iter()
+            .map(|p| rename_pattern(p, &renamed))
+            .collect()
+    };
+    let (saves, state_files) = (rename(&game.saves), rename(&game.state_files));
+    let played = if saves == game.saves && state_files == game.state_files {
+        game
+    } else {
+        tracing::info!("{game_id} mod saves as {saves:?}, state {state_files:?}");
+        // One per mod and change of its files while BloogBase runs.
+        Box::leak(Box::new(Game {
+            saves,
+            state_files,
+            ..game.clone()
+        }))
+    };
+    known
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(key, played);
+    Ok(played)
+}
+
+/// `SAVED?.CK2` under the names `renamed` gives its parts: the whole name
+/// (Keen Dreams' `CONFIG.KDR`), else the stem before the `?` and the
+/// extension, each written over the executable on its own. Only what can be
+/// a DOS name counts; a patch may start a sentence where a name was.
+fn rename_pattern(pattern: &str, renamed: impl Fn(&str) -> String) -> String {
+    let dos = |s: &str, max: usize| {
+        !s.is_empty() && s.len() <= max && s.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
+    };
+    let part = |s: &str, max: usize| {
+        let new = renamed(s).trim_end().to_ascii_uppercase();
+        if dos(&new, max) { new } else { s.to_string() }
+    };
+    let Some((name, ext)) = pattern.rsplit_once('.') else {
+        return pattern.to_string();
+    };
+    let whole = renamed(pattern);
+    if whole != pattern
+        && let Some((n, e)) = whole.trim_end().rsplit_once('.')
+        && dos(n, 8)
+        && dos(e, 3)
+    {
+        return whole.trim_end().to_ascii_uppercase();
+    }
+    let (stem, rest) = name.split_at(name.find('?').unwrap_or(name.len()));
+    if stem.is_empty() {
+        return pattern.to_string();
+    }
+    format!("{}{rest}.{}", part(stem, 8 - rest.len()), part(ext, 3))
+}
+
 /// Where a file seen through the overlay actually lives.
 pub(crate) fn host_path(layers: &Layers, entry: &overlay_view::Entry) -> std::path::PathBuf {
     match entry.layer {
@@ -127,7 +208,7 @@ pub(crate) fn host_path(layers: &Layers, entry: &overlay_view::Entry) -> std::pa
 /// A profile's saves, by slot.
 pub fn list(db: &Db, profile_id: &str) -> Result<Vec<SaveFile>> {
     let (profile, layers) = profiles::get(db, profile_id)?;
-    let game = game_of(&profile.game_id)?;
+    let game = profile_game(&profile.game_id, &layers)?;
     let mut out = Vec::new();
     for entry in overlay_view::list(layers.view_lower(), &layers.upper)? {
         if !is_save(game, &entry.path) {
@@ -154,7 +235,7 @@ pub(crate) fn modified(path: &Path) -> Option<u32> {
 /// that holds it, to undo the deletion from.
 pub fn delete(paths: &AppPaths, db: &Db, profile_id: &str, file: &str) -> Result<u32> {
     let (profile, layers) = profiles::get(db, profile_id)?;
-    let game = game_of(&profile.game_id)?;
+    let game = profile_game(&profile.game_id, &layers)?;
     let entries = overlay_view::list(layers.view_lower(), &layers.upper)?;
     let Some(entry) = entries
         .iter()
@@ -326,5 +407,65 @@ pub(crate) mod tests {
             delete(&paths, &db, "keen4-1", "../x"),
             Err(Error::NotFound(_))
         ));
+    }
+
+    #[test]
+    fn patterns_follow_names_written_over_the_executable() {
+        let names = |pairs: &'static [(&'static str, &'static str)]| {
+            move |s: &str| {
+                pairs
+                    .iter()
+                    .find(|(from, _)| *from == s)
+                    .map_or(s.to_string(), |(_, to)| to.to_string())
+            }
+        };
+        // Stem and extension each on their own, as Norp the Yorp 2.
+        let norp = names(&[("SAVED", "NSAVE"), ("CK2", "NY2"), ("CTLPANEL", "SETTINGS")]);
+        assert_eq!(rename_pattern("SAVED?.CK2", norp), "NSAVE?.NY2");
+        assert_eq!(rename_pattern("CTLPANEL.CK2", norp), "SETTINGS.NY2");
+        // The whole name, as Another Helping of Veggies.
+        let veggies = names(&[("KDREAMS.CFG", "CONFIG.KD2")]);
+        assert_eq!(rename_pattern("KDREAMS.CFG", veggies), "CONFIG.KD2");
+        // Text that can't be a name leaves it.
+        let text = names(&[("SAVED", "Saved games"), ("CK2", "CKQ ")]);
+        assert_eq!(rename_pattern("SAVED?.CK2", text), "SAVED?.CKQ");
+    }
+
+    #[test]
+    fn a_mods_patch_renames_its_saves() {
+        use crate::recipe::Recipe;
+        let tmp = tempfile::tempdir().unwrap();
+        let (base, files) = (tmp.path().join("base"), tmp.path().join("mod"));
+        // A header of two paragraphs; the load image starts after it.
+        let image = b"SAVED\0CTLPANEL\0CK2\0";
+        let exe = [b"MZ".as_slice(), &[0; 6], &[2, 0], &[0; 0x16], image].concat();
+        write_folder(&base, &[("KEEN2.EXE", &exe)]);
+        write_folder(
+            &files,
+            &[(
+                "Q.PAT",
+                b"%ext ck2\n%patch $F \"CKQ\"\n%patch $0 \"NSAVE\"\n%end\n",
+            )],
+        );
+        let layers = |patch: &str| Layers {
+            lower: Some(base.clone()),
+            upper: tmp.path().join("state"),
+            mod_layer: Some(profiles::ModLayer {
+                files: files.clone(),
+                base: None,
+                recipe: Recipe::Patch {
+                    patcher: "CK2PATCH.EXE".into(),
+                    patch: patch.into(),
+                    args: Vec::new(),
+                },
+            }),
+        };
+        let game = profile_game("keen2", &layers("Q.PAT")).unwrap();
+        assert_eq!(game.saves, ["NSAVE?.CKQ"]);
+        assert_eq!(game.state_files, ["CTLPANEL.CKQ", "SCORES.CKQ"]);
+        assert!(is_save(game, "nsave1.ckq") && !is_save(game, "SAVED1.CK2"));
+        // Without the patch, the catalog's.
+        let plain = profile_game("keen2", &layers("NONE.PAT")).unwrap();
+        assert_eq!(plain.saves, ["SAVED?.CK2"]);
     }
 }

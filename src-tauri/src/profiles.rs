@@ -191,7 +191,7 @@ pub fn list(db: &Db, is_running: impl Fn(&str) -> bool) -> Result<Vec<Profile>> 
         .map(|row| {
             let mut p = row.profile;
             p.running = is_running(&p.id);
-            if let Some(game) = catalog::game(&p.game_id) {
+            if let Ok(game) = crate::saves::profile_game(&p.game_id, &row.layers) {
                 p.save_count = count_saves(game, &row.layers).unwrap_or_else(|e| {
                     tracing::warn!("could not scan saves of {}: {e}", p.id);
                     0

@@ -38,6 +38,18 @@ Save files are found by the game's patterns in the catalog (`SAVED?.CK1`,
 `SAVEGAM?.CK4`, `SAVEGM?.KDR`, …), in the drive root only. The `?` digit is the slot: Keen
 1–3 show it as it is, the others number slots from 1 for file 0.
 
+A mod may give these files other names. Its patch writes them over the
+ones in the executable, as it does for its data files
+([covers.md](covers.md)): Keen Q saves as `SAVED1.CKQ`, Norp the Yorp 2 as
+`NSAVE1.NY2` with its settings in `SETTINGS.NY2`, Another Helping of
+Veggies keeps them in `CONFIG.KD2`. So for a mod profile the patterns
+follow (`saves::profile_game`): a whole name written where the catalog's
+starts, else the stem before the `?` and the extension each on their own.
+Only text that can be a DOS name counts. Everything that looks at saves or
+state files (save list, backups, restores, the launcher clean-up) uses
+these. The answer is kept while the files stay the same; unpacked
+executables are kept by file, as many profiles share one.
+
 `keen-saves` reads what a save says about itself. Saves come from any game
 version or mod, so every read is bounds-checked; an unexpected file is an
 error, never a panic, and the save is listed without details.

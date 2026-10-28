@@ -181,7 +181,7 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
                     paths,
                     db,
                     profile_id,
-                    game,
+                    crate::saves::profile_game(&profile.game_id, &layers)?,
                     &m.recipe,
                     &composed.dir,
                     &layers.upper,
