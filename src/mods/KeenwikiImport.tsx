@@ -59,9 +59,19 @@ export function KeenwikiImport({
           if (url.trim()) lookup.mutate(url.trim());
         }}
       >
-        <label htmlFor="keenwiki-url" className="font-medium">
-          {t("keenwiki.label")}
-        </label>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+          <label htmlFor="keenwiki-url" className="font-medium">
+            {t("keenwiki.label")}
+          </label>
+          <button
+            type="button"
+            className="inline-flex cursor-pointer items-center gap-1 text-xs text-ink underline underline-offset-2"
+            onClick={() => openUrl("https://keenwiki.shikadi.net/wiki/Category:Mods")}
+          >
+            {t("keenwiki.browse")}
+            <ExternalLink className="size-3" aria-hidden />
+          </button>
+        </div>
         <div className="flex gap-2">
           <input
             id="keenwiki-url"
@@ -83,6 +93,7 @@ export function KeenwikiImport({
       </form>
       {lookup.isPending && <Notice>{t("keenwiki.looking")}</Notice>}
       {lookup.error && <Notice tone="error">{errorMessage(t, lookup.error)}</Notice>}
+      <hr className="my-1 border-border" />
       {children}
     </div>
   );

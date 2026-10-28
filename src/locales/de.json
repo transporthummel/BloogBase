@@ -439,6 +439,7 @@
   },
   "keenwiki": {
     "label": "Mod von KeenWiki hinzufügen",
+    "browse": "Mods auf KeenWiki",
     "lookUp": "Nachsehen",
     "looking": "Die KeenWiki-Seite wird gelesen …",
     "inIndex": "Diese Mod steht in der BloogBase-Modliste, ist getestet und bereit zur Installation:",

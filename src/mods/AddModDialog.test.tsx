@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
@@ -1037,4 +1038,10 @@ test("shows only the found mod until the player goes back", async () => {
     page.pageUrl,
   );
   expect(screen.getByRole("button", { name: "Choose ZIP file…" })).toBeInTheDocument();
+});
+
+test("links KeenWiki's mods for finding a page", async () => {
+  renderDialog();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Mods on KeenWiki" }));
+  expect(openUrl).toHaveBeenCalledWith("https://keenwiki.shikadi.net/wiki/Category:Mods");
 });
