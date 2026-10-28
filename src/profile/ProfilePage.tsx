@@ -59,9 +59,9 @@ import { useReadmes } from "./readme";
 import { SavesPanel } from "./SavesPanel";
 import { ScreenshotsPanel } from "./ScreenshotsPanel";
 import { VideosPanel } from "./VideosPanel";
-import { screenshotSrc, screenshotsKey, useScreenshots, videosKey } from "./captures";
+import { screenshotSrc, screenshotsKey, useScreenshots, useVideos, videosKey } from "./captures";
 import { usePictureWidth } from "./heroPicture";
-import { backupsKey, savesKey } from "./saves";
+import { backupsKey, savesKey, useSaves } from "./saves";
 
 type Tab = "readme" | "saves" | "screenshots" | "videos" | "config";
 
@@ -115,6 +115,9 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   const profile = profiles.data?.find((p) => p.id === profileId);
   const game = games.data?.find((g) => g.id === profile?.gameId);
   const readmes = useReadmes(profile?.modId ?? null);
+  const saves = useSaves(profileId);
+  const shots = useScreenshots(profileId);
+  const videos = useVideos(profileId);
 
   // A mod just installed opens before the list has been fetched again.
   if (profiles.data && !profile && !profiles.isFetching) {
@@ -126,11 +129,14 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
     );
   }
 
-  const tabs: { id: Tab; label: string }[] = [
+  const tabs: { id: Tab; label: ReactNode }[] = [
     ...(readmes.data?.length ? [{ id: "readme" as const, label: t("profile.tabReadme") }] : []),
-    { id: "saves", label: t("profile.tabSaves") },
-    { id: "screenshots", label: t("profile.tabScreenshots") },
-    { id: "videos", label: t("profile.tabVideos") },
+    { id: "saves", label: <Counted label={t("profile.tabSaves")} items={saves.data} /> },
+    {
+      id: "screenshots",
+      label: <Counted label={t("profile.tabScreenshots")} items={shots.data} />,
+    },
+    { id: "videos", label: <Counted label={t("profile.tabVideos")} items={videos.data} /> },
     { id: "config", label: t("profile.tabConfig") },
   ];
   const tab = tabs.find((x) => x.id === picked)?.id ?? tabs[0].id;
@@ -170,6 +176,21 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
             {tab === "config" && <ConfigPanel profileId={profile.id} />}
           </div>
         </Tabs>
+      )}
+    </>
+  );
+}
+
+/** A tab's name with how many there are, if any. */
+function Counted({ label, items }: { label: string; items?: unknown[] }) {
+  return (
+    <>
+      {label}
+      {!!items?.length && (
+        <>
+          {" "}
+          <Badge>{items.length}</Badge>
+        </>
       )}
     </>
   );

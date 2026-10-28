@@ -572,7 +572,7 @@ test("without a README there is no README tab", async () => {
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
   vi.mocked(commands.modReadmes).mockResolvedValue(ok([]));
   renderDetail();
-  expect(await screen.findByRole("tab", { name: "Saves" })).toHaveAttribute(
+  expect(await screen.findByRole("tab", { name: /^Saves/ })).toHaveAttribute(
     "aria-selected",
     "true",
   );
@@ -581,7 +581,7 @@ test("without a README there is no README tab", async () => {
 
 test("games don't look for a README", async () => {
   renderDetail();
-  expect(await screen.findByRole("tab", { name: "Saves" })).toHaveAttribute(
+  expect(await screen.findByRole("tab", { name: /^Saves/ })).toHaveAttribute(
     "aria-selected",
     "true",
   );
@@ -675,10 +675,10 @@ test("no placeholder flashes up while the title screen is read", async () => {
 test("tabs follow the arrow keys", async () => {
   vi.mocked(commands.listScreenshots).mockResolvedValue(ok([]));
   renderDetail();
-  const saves = await screen.findByRole("tab", { name: "Saves" });
+  const saves = await screen.findByRole("tab", { name: /^Saves/ });
   saves.focus();
   await userEvent.keyboard("{ArrowRight}");
-  const shots = screen.getByRole("tab", { name: "Screenshots" });
+  const shots = screen.getByRole("tab", { name: /^Screenshots/ });
   expect(shots).toHaveFocus();
   expect(shots).toHaveAttribute("aria-selected", "true");
   expect(await screen.findByText("No screenshots yet")).toBeInTheDocument();
@@ -694,7 +694,7 @@ test("screenshots open in a viewer and delete after a second click", async () =>
   );
   vi.mocked(commands.deleteScreenshot).mockResolvedValue(ok(null));
   renderDetail();
-  await userEvent.click(await screen.findByRole("tab", { name: "Screenshots" }));
+  await userEvent.click(await screen.findByRole("tab", { name: /^Screenshots/ }));
   const thumbs = await screen.findAllByRole("button", { name: /^Screenshot from/ });
   expect(thumbs).toHaveLength(2);
   await userEvent.click(thumbs[1]);
@@ -734,7 +734,7 @@ test("videos show their first frame and length, and open in a player", async () 
   );
   vi.mocked(commands.deleteVideo).mockResolvedValue(ok(null));
   renderDetail();
-  await userEvent.click(await screen.findByRole("tab", { name: "Videos" }));
+  await userEvent.click(await screen.findByRole("tab", { name: /^Videos/ }));
   const tiles = await screen.findAllByRole("button", { name: /^Video from/ });
   expect(tiles).toHaveLength(2);
   expect(tiles[1]).toHaveTextContent("1:15");
@@ -906,4 +906,14 @@ test("slot files follow the episode's numbering", () => {
   ]);
   expect(slotFiles("vorticons", "saved1.ck1")[8]).toEqual({ file: "saved9.ck1", slot: 9 });
   expect(slotFiles("dreams", "SAVEGM0.KDR")).toHaveLength(6);
+});
+
+test("the tabs count saves, screenshots and videos, leaving out none", async () => {
+  vi.mocked(commands.listScreenshots).mockResolvedValue(
+    ok([shot("image0001.png", 1_700_000_000), shot("image0002.png", 1_700_000_100)]),
+  );
+  renderDetail();
+  expect(await screen.findByRole("tab", { name: "Saves 2" })).toBeInTheDocument();
+  expect(await screen.findByRole("tab", { name: "Screenshots 2" })).toBeInTheDocument();
+  expect(screen.getByRole("tab", { name: "Videos" })).toBeInTheDocument();
 });

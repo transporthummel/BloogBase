@@ -15,16 +15,21 @@ import { Notice } from "../ui/Notice";
 import { RelativeTime } from "../ui/RelativeTime";
 import { RestoreDialog } from "./RestoreDialog";
 import { VersionsDialog } from "./VersionsDialog";
-import { backupContents, backupTitle, backupsKey, saveSummary, saveTitle, savesKey } from "./saves";
+import {
+  backupContents,
+  backupTitle,
+  backupsKey,
+  saveSummary,
+  saveTitle,
+  savesKey,
+  useSaves,
+} from "./saves";
 
 /** The save manager of one profile: its saves and their backups (§11). */
 export function SavesPanel({ profile, game }: { profile: Profile; game?: Game }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
-  const saves = useQuery({
-    queryKey: savesKey(profile.id),
-    queryFn: () => unwrap(commands.listSaves(profile.id)),
-  });
+  const saves = useSaves(profile.id);
   const backups = useQuery({
     queryKey: backupsKey(profile.id),
     queryFn: () => unwrap(commands.listBackups(profile.id)),

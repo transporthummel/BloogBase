@@ -1,9 +1,18 @@
+import { useQuery } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
-import type { Backup, Engine, SaveFile } from "../bindings";
+import { commands, type Backup, type Engine, type SaveFile } from "../bindings";
 import { formatNumber } from "../format";
+import { unwrap } from "../ipc";
 
 export const savesKey = (profileId: string) => ["saves", profileId] as const;
 export const backupsKey = (profileId: string) => ["backups", profileId] as const;
+
+export function useSaves(profileId: string) {
+  return useQuery({
+    queryKey: savesKey(profileId),
+    queryFn: () => unwrap(commands.listSaves(profileId)),
+  });
+}
 
 /** "Score 48,100 · 13 lives · 45 shots · Hard". */
 export function saveSummary(t: TFunction, language: string, save: SaveFile): string {
