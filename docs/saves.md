@@ -135,6 +135,16 @@ of a profile, to restore from there:
   config or high scores, wherever they are inside, one per name. Its file
   name becomes the label.
 
+### Removed
+
+When a game or mod is removed, so are its profile's automatic backups. With
+"keep saves", the player's own backups stay, and so do the backups made for
+this and earlier removals (one that was declined when the profile came back
+has nothing newer). This removal's backup is made even when the newest one
+holds the same files. Without "keep saves", all of the profile's backups go.
+Automatic backups of profiles removed before this rule existed are removed
+on start.
+
 ### Added again
 
 When a game or mod is removed with "keep saves", the backup made then is

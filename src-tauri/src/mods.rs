@@ -2048,6 +2048,7 @@ pub fn delete(paths: &AppPaths, db: &Db, mod_id: &str, keep_saves: bool) -> Resu
     } else {
         None
     };
+    backups::forget(db, &profile_id, keep_saves)?;
     {
         let mut conn = db.conn();
         let tx = conn.transaction()?;
@@ -2172,14 +2173,43 @@ mod tests {
         assert_eq!(second.id, "aurora-2");
 
         fs::write(paths.profiles.join("aurora/state/SAVEGAM0.CK4"), b"save").unwrap();
+        // An automatic backup goes with the profile, one the player made
+        // stays with the saves; the one made for the removal is made even
+        // though the automatic one holds the same.
+        backups::before_launch(&paths, &db, "aurora").unwrap();
+        let mine = backups::create(
+            &paths,
+            &db,
+            "aurora",
+            Contents::State,
+            backups::Origin::User(Some("mine")),
+        )
+        .unwrap()
+        .unwrap();
         delete(&paths, &db, "aurora", true).unwrap();
         assert!(!paths.mods.join("aurora").exists());
         assert!(!paths.profiles.join("aurora").exists());
+        let labels: Vec<Option<String>> = db
+            .conn()
+            .prepare("SELECT label FROM save_backups WHERE profile_id = 'aurora' ORDER BY id")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        assert_eq!(
+            labels,
+            [
+                Some("mine".to_string()),
+                Some("bloogbase:mod-removed".to_string())
+            ]
+        );
         let (archive, files): (String, String) = db
             .conn()
             .query_row(
-                "SELECT archive_path, files_json FROM save_backups WHERE profile_id = 'aurora'",
-                [],
+                "SELECT archive_path, files_json FROM save_backups
+                 WHERE profile_id = 'aurora' AND id != ?1",
+                [mine.id],
                 |r| Ok((r.get(0)?, r.get(1)?)),
             )
             .unwrap();
@@ -2188,8 +2218,28 @@ mod tests {
         assert_eq!(backup.by_index(0).unwrap().name().unwrap(), "SAVEGAM0.CK4");
         assert_eq!(list(&db).unwrap().len(), 1);
 
+        // Without keeping saves, the player's backups go too.
+        fs::write(paths.profiles.join("aurora-2/state/SAVEGAM1.CK4"), b"save").unwrap();
+        backups::create(
+            &paths,
+            &db,
+            "aurora-2",
+            Contents::State,
+            backups::Origin::User(None),
+        )
+        .unwrap()
+        .unwrap();
         delete(&paths, &db, "aurora-2", false).unwrap();
         assert!(list(&db).unwrap().is_empty());
+        let left: u32 = db
+            .conn()
+            .query_row(
+                "SELECT COUNT(*) FROM save_backups WHERE profile_id = 'aurora-2'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(left, 0);
         assert!(matches!(
             delete(&paths, &db, "aurora-2", false),
             Err(Error::NotFound(_))

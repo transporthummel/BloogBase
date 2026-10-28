@@ -317,10 +317,11 @@ pub fn remove(
         }
     }
     let game_profiles = on_it(false)?;
-    if keep_saves {
-        for profile_id in &game_profiles {
+    for profile_id in &game_profiles {
+        if keep_saves {
             backups::create(paths, db, profile_id, Contents::State, Reason::GameRemoved)?;
         }
+        backups::forget(db, profile_id, keep_saves)?;
     }
     {
         let mut conn = db.conn();

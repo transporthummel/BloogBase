@@ -218,6 +218,9 @@ pub fn run() {
             if let Err(e) = backups::record_older(&db) {
                 tracing::warn!("could not note the files of older backups: {e}");
             }
+            if let Err(e) = backups::forget_orphans(&db) {
+                tracing::warn!("could not remove backups of removed profiles: {e}");
+            }
             if let Err(e) = library::identify_unknown(&paths, &db) {
                 tracing::warn!("could not check unknown game versions: {e}");
             }

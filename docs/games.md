@@ -133,5 +133,6 @@ run it after changing the manifest.
 
 Removing a game deletes its library folder, its profile and the profile's
 caches (composed folder, cover). With "keep saves", the saves are archived
-as a backup first ([saves.md](saves.md)). Mods played on it are either
+as a backup first; the profile's automatic backups go either way, the
+player's own only without it ([saves.md](saves.md)). Mods played on it are either
 removed too or move to another copy they fit; without one, they wait.

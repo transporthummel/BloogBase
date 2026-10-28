@@ -270,18 +270,25 @@ pub fn create<'a>(
     if files.is_empty() {
         return Ok(None);
     }
-    let (label, auto) = match origin.into() {
+    let (label, reason) = match origin.into() {
         Origin::User(label) => (
             label
                 .map(str::trim)
                 .filter(|l| !l.is_empty())
                 .map(String::from),
-            false,
+            None,
         ),
-        Origin::Auto(reason) => (Some(format!("{REASON_PREFIX}{}", reason.key())), true),
+        Origin::Auto(reason) => (
+            Some(format!("{REASON_PREFIX}{}", reason.key())),
+            Some(reason),
+        ),
     };
+    let auto = reason.is_some();
     let hash = content_hash(&files);
-    if auto {
+    // The backup made when a profile is removed is the one that outlives it
+    // (`forget`) and is offered when it comes back, so it's always made.
+    let removal = matches!(reason, Some(Reason::ModRemoved | Reason::GameRemoved));
+    if auto && !removal {
         // A backup before a launch goes again after the session unless a
         // save was lost, so it stands in only for another one of its kind.
         let before_launch = format!("{REASON_PREFIX}{}", Reason::BeforeLaunch.key());
@@ -392,6 +399,59 @@ fn prune(db: &Db, profile_id: &str, keep: u32) -> Result<()> {
         remove(db, id, &archive)?;
     }
     Ok(())
+}
+
+/// For a profile being removed: without `keep_saves` all its backups go.
+/// With it, the automatic ones go, but not the player's own or those made
+/// for this or an earlier removal (one declined when the profile came back
+/// has nothing newer); they come back with the offer of [`earlier`].
+pub fn forget(db: &Db, profile_id: &str, keep_saves: bool) -> Result<()> {
+    let [mod_removed, game_removed] = removal_labels();
+    let gone = remove_where(
+        db,
+        "profile_id = ?1 AND NOT (?2 AND (auto = 0 OR label IN (?3, ?4, 'Mod removed')))",
+        params![profile_id, keep_saves, mod_removed, game_removed],
+    )?;
+    if gone > 0 {
+        tracing::info!("removed {gone} backups of {profile_id}");
+    }
+    Ok(())
+}
+
+/// The automatic backups of profiles removed before [`forget`] existed, as
+/// it would have handled them with "keep saves".
+pub fn forget_orphans(db: &Db) -> Result<()> {
+    let [mod_removed, game_removed] = removal_labels();
+    let gone = remove_where(
+        db,
+        "auto = 1 AND label NOT IN (?1, ?2, 'Mod removed')
+         AND NOT EXISTS (SELECT 1 FROM profiles p WHERE p.id = b.profile_id)",
+        params![mod_removed, game_removed],
+    )?;
+    if gone > 0 {
+        tracing::info!("removed {gone} backups of removed profiles");
+    }
+    Ok(())
+}
+
+fn removal_labels() -> [String; 2] {
+    [Reason::ModRemoved, Reason::GameRemoved].map(|r| format!("{REASON_PREFIX}{}", r.key()))
+}
+
+/// Removes the backups matching `condition`. Returns how many.
+fn remove_where(db: &Db, condition: &str, params: impl rusqlite::Params) -> Result<usize> {
+    let gone: Vec<(u32, String)> = {
+        let conn = db.conn();
+        let mut stmt = conn.prepare(&format!(
+            "SELECT id, archive_path FROM save_backups b WHERE {condition}"
+        ))?;
+        stmt.query_map(params, |r| Ok((r.get(0)?, r.get(1)?)))?
+            .collect::<rusqlite::Result<_>>()?
+    };
+    for (id, archive) in &gone {
+        remove(db, *id, archive)?;
+    }
+    Ok(gone.len())
 }
 
 fn remove(db: &Db, id: u32, archive: &str) -> Result<()> {
@@ -1377,16 +1437,24 @@ mod tests {
         assert!(earlier(&db, "keen4-1").unwrap().is_none());
         assert!(!paths.profiles.join("keen4-1/state/SAVEGAM1.CK4").exists());
 
-        // Added again later, without keeping the saves this time.
-        library::remove(&paths, &db, "keen4-1", false, false).unwrap();
+        // Removed again, keeping saves: the newer backup is offered when
+        // the game is back, and the declined one stays.
+        library::remove(&paths, &db, "keen4-1", true, false).unwrap();
         library::import(&paths, &db, &tmp.path().join("k4")).unwrap();
         db.conn()
             .execute("UPDATE profiles SET created_at = created_at + 1", [])
             .unwrap();
-        assert_eq!(
-            earlier(&db, "keen4-1").unwrap().map(|o| o.backup.id),
-            Some(offer.backup.id)
-        );
+        let again = earlier(&db, "keen4-1").unwrap().unwrap();
+        assert_ne!(again.backup.id, offer.backup.id);
+        assert!(get(&db, offer.backup.id).is_ok());
+
+        // Removed without keeping the saves: nothing is left to offer.
+        library::remove(&paths, &db, "keen4-1", false, false).unwrap();
+        library::import(&paths, &db, &tmp.path().join("k4")).unwrap();
+        db.conn()
+            .execute("UPDATE profiles SET created_at = created_at + 2", [])
+            .unwrap();
+        assert!(earlier(&db, "keen4-1").unwrap().is_none());
     }
 
     #[test]
@@ -1408,5 +1476,36 @@ mod tests {
             .execute("UPDATE profiles SET created_at = created_at - 10", [])
             .unwrap();
         assert!(earlier(&db, "keen4-1").unwrap().is_none());
+    }
+
+    #[test]
+    fn automatic_backups_of_removed_profiles_go_at_start() {
+        let (_tmp, paths, db) = setup();
+        fs::write(state(&paths).join("SAVEGAM1.CK4"), keen4_save("a")).unwrap();
+        before_launch(&paths, &db, "keen4-1").unwrap();
+        create(&paths, &db, "keen4-1", Contents::State, Origin::User(None)).unwrap();
+        create(&paths, &db, "keen4-1", Contents::State, Reason::GameRemoved).unwrap();
+        // Still there: nothing goes.
+        forget_orphans(&db).unwrap();
+        assert_eq!(list(&db, "keen4-1").unwrap().len(), 3);
+
+        // Removed before `forget` existed.
+        db.conn()
+            .execute("DELETE FROM profiles WHERE id = 'keen4-1'", [])
+            .unwrap();
+        forget_orphans(&db).unwrap();
+        let left: Vec<Option<String>> = db
+            .conn()
+            .prepare("SELECT label FROM save_backups ORDER BY id")
+            .unwrap()
+            .query_map([], |r| r.get(0))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        assert_eq!(left, [None, Some("bloogbase:game-removed".to_string())]);
+        assert_eq!(
+            fs::read_dir(paths.backups.join("keen4-1")).unwrap().count(),
+            2
+        );
     }
 }
