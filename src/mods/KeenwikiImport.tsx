@@ -15,6 +15,7 @@ import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
 import { useEnterAction } from "../ui/useEnterAction";
 import { DownloadError } from "./DownloadError";
+import { DownloadProgress } from "./DownloadProgress";
 import { downloaded, type Downloaded } from "./wikiDownload";
 
 /**
@@ -287,7 +288,7 @@ function WikiCard({
           </>
         )}
       </section>
-      {download.isPending && <Notice>{t("keenwiki.downloading")}</Notice>}
+      {download.isPending && <DownloadProgress url={chosen.url} />}
       {download.error && <DownloadError error={download.error} url={chosen.url} />}
       <Footer {...actions} busy={download.isPending}>
         {chosen && (

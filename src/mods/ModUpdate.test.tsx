@@ -31,6 +31,7 @@ vi.mock("../bindings", () => ({
     installIndexMod: vi.fn(),
     listJobs: vi.fn(),
   },
+  events: { keenwikiProgress: { listen: vi.fn(() => Promise.resolve(() => {})) } },
 }));
 
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });

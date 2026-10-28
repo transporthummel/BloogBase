@@ -249,6 +249,7 @@ export const events = {
 	gameLaunch: makeEvent<GameLaunch>("game-launch"),
 	indexUpdated: makeEvent<IndexUpdated>("index-updated"),
 	jobUpdated: makeEvent<JobUpdated>("job-updated"),
+	keenwikiProgress: makeEvent<KeenwikiProgress>("keenwiki-progress"),
 	playSessionEnded: makeEvent<PlaySessionEnded>("play-session-ended"),
 	quitRequested: makeEvent<QuitRequested>("quit-requested"),
 };
@@ -654,6 +655,16 @@ export type KeenwikiOrigin = {
 	pckf?: string | null,
 	/**  The discussion thread on the Keen: Modding forum. */
 	keenmodding?: string | null,
+};
+
+/**
+ *  How far the download of a KeenWiki link has got, in bytes; `total` is 0
+ *  while unknown.
+ */
+export type KeenwikiProgress = {
+	url: string,
+	received: number,
+	total: number,
 };
 
 export type LaunchPhase = "starting" | 

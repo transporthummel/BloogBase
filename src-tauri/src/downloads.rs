@@ -50,7 +50,13 @@ pub struct Unverified {
 
 /// Streams `url` to `dest` without a known hash, refusing anything bigger
 /// than `max_size`. Dead links are reported as [`Error::DeadLink`].
-pub async fn fetch_unverified(url: &str, max_size: u64, dest: &Path) -> Result<Unverified> {
+/// `progress` as for [`fetch`]; the total is 0 when the server doesn't say.
+pub async fn fetch_unverified(
+    url: &str,
+    max_size: u64,
+    dest: &Path,
+    progress: &impl Fn(u64, u64),
+) -> Result<Unverified> {
     let client = reqwest::Client::builder().user_agent(USER_AGENT).build()?;
     let resp = client.get(url).send().await?;
     let status = resp.status().as_u16();
@@ -69,7 +75,7 @@ pub async fn fetch_unverified(url: &str, max_size: u64, dest: &Path) -> Result<U
         .get(reqwest::header::CONTENT_DISPOSITION)
         .and_then(|v| v.to_str().ok())
         .and_then(disposition_file_name);
-    let (sha256, size) = stream(resp, 0, max_size, dest, &|_, _| {}, |_| Ok(())).await?;
+    let (sha256, size) = stream(resp, 0, max_size, dest, progress, |_| Ok(())).await?;
     Ok(Unverified {
         final_url,
         file_name,

@@ -12,6 +12,7 @@ import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
 import { AddModDialog } from "./AddModDialog";
 import { DownloadError } from "./DownloadError";
+import { DownloadProgress } from "./DownloadProgress";
 import type { ModUpdateCheck } from "./modUpdateCheck";
 import { downloaded, type Downloaded } from "./wikiDownload";
 
@@ -90,6 +91,7 @@ export function ModUpdate({
               {t("modUpdate.dismiss")}
             </Button>
           </div>
+          {download.isPending && <DownloadProgress url={newest.url} />}
         </>
       )}
       {download.error && download.variables && (

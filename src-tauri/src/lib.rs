@@ -132,6 +132,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         ])
         .events(collect_events![
             jobs::JobUpdated,
+            keenwiki::KeenwikiProgress,
             launcher::GameLaunch,
             launcher::PlaySessionEnded,
             launcher::QuitRequested,

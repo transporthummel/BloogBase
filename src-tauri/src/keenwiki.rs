@@ -533,10 +533,20 @@ fn credits(doc: &Html) -> Vec<String> {
         .collect()
 }
 
+/// How far the download of a KeenWiki link has got, in bytes; `total` is 0
+/// while unknown.
+#[derive(Debug, Clone, Serialize, Deserialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct KeenwikiProgress {
+    pub url: String,
+    pub received: u32,
+    pub total: u32,
+}
+
 /// Downloads a mod archive into the empty folder `dir`. The file keeps its
 /// name (KeenWiki archive names carry metadata) and gets a `.zip` extension
-/// if it is one.
-pub async fn download(dir: &Path, url: &str) -> Result<PathBuf> {
+/// if it is one. `progress` gets (received, total) bytes.
+pub async fn download(dir: &Path, url: &str, progress: &impl Fn(u64, u64)) -> Result<PathBuf> {
     let parsed = Url::parse(url).map_err(|_| Error::UnsupportedDownload(url.into()))?;
     if !matches!(parsed.scheme(), "http" | "https") {
         return Err(Error::UnsupportedDownload(url.into()));
@@ -544,7 +554,7 @@ pub async fn download(dir: &Path, url: &str) -> Result<PathBuf> {
     let _ = fs::remove_dir_all(dir);
     fs::create_dir_all(dir)?;
     let raw = dir.join("download");
-    let fetched = downloads::fetch_unverified(url, MAX_DOWNLOAD, &raw).await?;
+    let fetched = downloads::fetch_unverified(url, MAX_DOWNLOAD, &raw, progress).await?;
 
     let mut head = [0u8; 512];
     let n = {
@@ -1022,33 +1032,48 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let dir = tmp.path().join("dl");
 
-        let path = download(&dir, &format!("{base}/m.a.mod.k4.2020-01-01.zip"))
-            .await
-            .unwrap();
+        let none = |_, _| {};
+
+        let reports = std::sync::Mutex::new(Vec::new());
+        let path = download(
+            &dir,
+            &format!("{base}/m.a.mod.k4.2020-01-01.zip"),
+            &|received, total| reports.lock().unwrap().push((received, total)),
+        )
+        .await
+        .unwrap();
         assert_eq!(path, dir.join("m.a.mod.k4.2020-01-01.zip"));
         assert_eq!(fs::read(&path).unwrap(), zip);
+        let size = zip.len() as u64;
+        assert_eq!(reports.lock().unwrap().last(), Some(&(size, size)));
         // Each download starts from an empty folder.
-        let path = download(&dir, &format!("{base}/dl")).await.unwrap();
+        let path = download(&dir, &format!("{base}/dl"), &none).await.unwrap();
         assert_eq!(path, dir.join("My_Mod.ZIP"));
         assert_eq!(fs::read_dir(&dir).unwrap().count(), 1);
-        let path = download(&dir, &format!("{base}/r")).await.unwrap();
+        let path = download(&dir, &format!("{base}/r"), &none).await.unwrap();
         assert_eq!(path, dir.join("thing.zip"));
 
         let err = |e: Error| format!("{e:?}");
         assert_eq!(
-            err(download(&dir, &format!("{base}/page")).await.unwrap_err()),
+            err(download(&dir, &format!("{base}/page"), &none)
+                .await
+                .unwrap_err()),
             "WebPage"
         );
         assert_eq!(
-            err(download(&dir, &format!("{base}/rar")).await.unwrap_err()),
+            err(download(&dir, &format!("{base}/rar"), &none)
+                .await
+                .unwrap_err()),
             "UnsupportedDownload(\"RAR archive\")"
         );
         assert_eq!(
-            err(download(&dir, &format!("{base}/gone")).await.unwrap_err()),
+            err(download(&dir, &format!("{base}/gone"), &none)
+                .await
+                .unwrap_err()),
             "DeadLink(404)"
         );
         assert!(matches!(
-            download(&dir, "file:///etc/passwd").await,
+            download(&dir, "file:///etc/passwd", &none).await,
             Err(Error::UnsupportedDownload(_))
         ));
         assert_eq!(fs::read_dir(&dir).unwrap().count(), 0);

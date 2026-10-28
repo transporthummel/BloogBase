@@ -5,10 +5,12 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import {
   commands,
+  events,
   type Game,
   type IndexMod,
   type Install,
   type Job,
+  type KeenwikiProgress,
   type Mod,
   type ModInfo,
   type Profile,
@@ -37,6 +39,7 @@ vi.mock("../bindings", () => ({
     readmesAt: vi.fn(),
     openReadmeAt: vi.fn(),
   },
+  events: { keenwikiProgress: { listen: vi.fn(() => Promise.resolve(() => {})) } },
 }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 vi.mock("@tanstack/react-router", () => ({
@@ -785,6 +788,32 @@ test("installs a mod from a KeenWiki page with the page's details", async () => 
     replace: null,
   });
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
+});
+
+test("shows how far a KeenWiki download has got", async () => {
+  let report: (p: { payload: KeenwikiProgress }) => void = () => {};
+  vi.mocked(events.keenwikiProgress.listen).mockImplementation((handler) => {
+    report = handler as typeof report;
+    return Promise.resolve(() => {});
+  });
+  vi.mocked(commands.lookupKeenwiki).mockReturnValue(
+    ok({ pageUrl: page.pageUrl, indexId: null, page }),
+  );
+  vi.mocked(commands.downloadKeenwikiMod).mockReturnValue(new Promise(() => {}));
+  renderDialog();
+  const user = await lookUp();
+  await screen.findByRole("region", { name: "Aurora Bliss" });
+  await user.click(screen.getByRole("button", { name: "Download and check" }));
+
+  const bar = await screen.findByRole("progressbar", { name: "Downloading and checking the mod…" });
+  const url = "https://files.example/aurora_v1.2.zip";
+  act(() => report({ payload: { url: "https://other.example/x.zip", received: 1, total: 9 } }));
+  expect(bar).not.toHaveAttribute("aria-valuenow");
+  act(() => report({ payload: { url, received: 1048576, total: 2097152 } }));
+  expect(bar).toHaveAttribute("aria-valuenow", "1048576");
+  expect(screen.getByText("1.0 of 2.0 MB")).toBeInTheDocument();
+  act(() => report({ payload: { url, received: 2097152, total: 2097152 } }));
+  expect(screen.getByText("Checking the files…")).toBeInTheDocument();
 });
 
 test("Enter goes from the link to downloading to installing", async () => {

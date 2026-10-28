@@ -450,6 +450,8 @@
     "download": "Download",
     "noDownload": "This page has no download link. Download the mod in your browser and add it as a ZIP file or folder.",
     "downloading": "Downloading and checking the mod…",
+    "received": "{{received}} MB",
+    "checking": "Checking the files…",
     "fetch": "Download and check",
     "otherGame": "The KeenWiki page says this mod is for {{page}}, but its files look like {{files}}.",
     "suggest": "Suggest it for the mod list"

@@ -979,7 +979,16 @@ pub async fn download_keenwiki_mod(
     game_id: Option<String>,
 ) -> CommandResult<KeenwikiDownload> {
     let dir = keenwiki_downloads(&app.state::<AppPaths>());
-    let path = keenwiki::download(&dir, &url).await?;
+    let path = keenwiki::download(&dir, &url, &|received, total| {
+        let _ = keenwiki::KeenwikiProgress {
+            url: url.clone(),
+            // Downloads stop at 256 MB.
+            received: received as u32,
+            total: total.min(u64::from(u32::MAX)) as u32,
+        }
+        .emit(&app);
+    })
+    .await?;
     let p = path.clone();
     let a = app.clone();
     let info = blocking(move || {
