@@ -1002,6 +1002,7 @@ mod tests {
             let game = catalog::game(&info.game_id).unwrap();
             let recipe = &info.recipes[0].recipe;
             let base = games.join(match game.id.as_str() {
+                "keen4" => "versions/Commander Keen 4 v1.4",
                 "keen6" => "keen6-14",
                 "kdreams" => "kdreams113",
                 id => id,

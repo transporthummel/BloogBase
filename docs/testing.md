@@ -86,8 +86,9 @@ KEEN_MODS=<unpacked mods, one folder each> KEEN_GAMES=… KEEN_OUT=<folder> \
 - **Title screens:** every game's title is a full, colorful 320x200 picture
   (folders `keen1` … `keen6`, `kdreams113`).
 - **Mod covers:** the title of every mod is extracted on top of its game
-  (`keen6-14` for Keen 6) into `KEEN_OUT` as PNG; look at them after changes
-  to the covers. `pnpm test:all` unpacks the mod cache for it into
+  (`versions/Commander Keen 4 v1.4` for Keen 4, `keen6-14` for Keen 6)
+  into `KEEN_OUT` as PNG; look at them after changes to the covers.
+  `pnpm test:all` unpacks the mod cache for it into
   `src-tauri/target/covers-mods` and writes to `target/covers-out`.
 
 To render a single title: `cargo run -p keen-graphics --example title --
