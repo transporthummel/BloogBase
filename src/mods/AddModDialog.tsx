@@ -338,6 +338,13 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
     if (ready && !install.isPending) install.mutate();
   };
   useEnterAction(form, careful ? null : submit);
+  // Warned that it may not run as installed.
+  const warned =
+    missingGame ||
+    !!likelyWrongVersion ||
+    modifiedGame ||
+    (incomplete && !overBase) ||
+    !!unknownBase;
 
   const authors = origin?.authors.length ? origin.authors : info.authors;
   const version = origin?.version ?? info.version;
@@ -547,9 +554,9 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
             ? t(replaced ? "mods.replacing" : "mods.installing")
             : replaced
               ? t("mods.replace")
-              : target
-                ? t("mods.install")
-                : t("mods.installAnyway")}
+              : warned
+                ? t("mods.installAnyway")
+                : t("mods.install")}
         </Button>
       </div>
     </form>

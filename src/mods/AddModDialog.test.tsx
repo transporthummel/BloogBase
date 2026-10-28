@@ -328,8 +328,10 @@ test("installs one made to be copied over an installed mod alone when unticked",
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
 
-  await user.click(await screen.findByRole("checkbox", { name: "Play it over Lego Keen" }));
-  await user.click(screen.getByRole("button", { name: "Install" }));
+  // Ticked, it plays.
+  expect(await screen.findByRole("button", { name: "Install" })).toBeInTheDocument();
+  await user.click(screen.getByRole("checkbox", { name: "Play it over Lego Keen" }));
+  await user.click(screen.getByRole("button", { name: "Install anyway" }));
   expect(commands.installMod).toHaveBeenCalledWith(expect.objectContaining({ extends: null }));
 });
 
@@ -396,6 +398,7 @@ test("says when levels alone are for a mod it doesn't know", async () => {
     ),
   ).toBeInTheDocument();
   expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Install anyway" })).toBeEnabled();
   await user.keyboard("{Enter}");
   expect(commands.installMod).not.toHaveBeenCalled();
 });
@@ -610,6 +613,7 @@ test("links the readme when it can't tell which mod one lacks files of", async (
   await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
 
   const hint = await screen.findByText(/^This mod lacks lego\.tli/);
+  expect(screen.getByRole("button", { name: "Install anyway" })).toBeEnabled();
   await user.click(within(hint).getByRole("button", { name: "readme" }));
   expect(screen.getByRole("dialog", { name: "Readme" })).toHaveTextContent(
     "First install Lego Keen.",
@@ -656,7 +660,7 @@ test("warns that patch mods may not fit a modified game", async () => {
   await userEvent.setup().click(screen.getByRole("button", { name: "Choose ZIP file…" }));
 
   expect(await screen.findByText(/This copy of the game was changed/)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Install" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Install anyway" })).toBeEnabled();
 });
 
 test("warns when a patch without version info meets a different version than most mods use", async () => {
@@ -674,7 +678,7 @@ test("warns when a patch without version info meets a different version than mos
   expect(
     await screen.findByText(/Most mods for this episode are made for v1.4 EGA, but yours is v1.0/),
   ).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Install" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Install anyway" })).toBeEnabled();
 });
 
 const page: WikiMod = {
