@@ -114,19 +114,19 @@ export function Settings() {
               </Button>
             </div>
           </Group>
-          <Group title={t("settings.about")}>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-              <dt className="text-muted">{t("settings.version")}</dt>
-              <dd className="font-pixel text-xs leading-5">{info.data?.version}</dd>
-              <dt className="text-muted">{t("settings.dataDir")}</dt>
-              <dd className="break-all select-text">{info.data?.dataDir}</dd>
-            </dl>
-            <p className="text-sm">
-              <Link to="/about" className="underline underline-offset-2">
-                {t("settings.aboutMore")}
-              </Link>
-            </p>
-          </Group>
+        </Section>
+        <Section title={t("settings.about")}>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+            <dt className="text-muted">{t("settings.version")}</dt>
+            <dd className="font-pixel text-xs leading-5">{info.data?.version}</dd>
+            <dt className="text-muted">{t("settings.dataDir")}</dt>
+            <dd className="break-all select-text">{info.data?.dataDir}</dd>
+          </dl>
+          <p className="text-sm">
+            <Link to="/about" className="underline underline-offset-2">
+              {t("settings.aboutMore")}
+            </Link>
+          </p>
         </Section>
       </div>
     </>
