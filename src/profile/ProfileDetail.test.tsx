@@ -356,6 +356,26 @@ test("without saves, removing asks only about backups that would go", async () =
   expect(commands.deleteMod).toHaveBeenCalledWith("aurora-bliss", false);
 });
 
+test("a mod just installed isn't called missing while the list is fetched again", async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // The library's list from before the install.
+  client.setQueryData(["profiles"], []);
+  let resolve!: (v: ReturnType<typeof ok<Profile[]>>) => void;
+  vi.mocked(commands.listProfiles).mockReturnValue(new Promise((r) => (resolve = r)));
+  void client.invalidateQueries({ queryKey: ["profiles"] });
+  renderDetail(client);
+  expect(screen.queryByText("This game isn’t in the library any more.")).toBeNull();
+  resolve(ok([profile]));
+  expect(await screen.findByRole("heading", { name: keen4.title })).toBeInTheDocument();
+  expect(screen.queryByText("This game isn’t in the library any more.")).toBeNull();
+});
+
+test("a profile that is gone says so", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([]));
+  renderDetail();
+  expect(await screen.findByText("This game isn’t in the library any more.")).toBeInTheDocument();
+});
+
 test("opens at the top, wherever the library was scrolled to", async () => {
   // Pages scroll inside the shell's <main>.
   const main = document.body.appendChild(document.createElement("main"));

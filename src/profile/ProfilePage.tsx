@@ -116,7 +116,8 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   const game = games.data?.find((g) => g.id === profile?.gameId);
   const readmes = useReadmes(profile?.modId ?? null);
 
-  if (profiles.data && !profile) {
+  // A mod just installed opens before the list has been fetched again.
+  if (profiles.data && !profile && !profiles.isFetching) {
     return (
       <>
         <BackLink />
