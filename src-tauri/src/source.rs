@@ -7,10 +7,12 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::path::{Component, Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use walkdir::WalkDir;
+use zip::extra_fields::ExtraField;
 use zip::{CompressionMethod, ZipArchive, ZipReadOptions};
 
 use crate::error::{Error, Result};
@@ -107,13 +109,41 @@ impl Source {
         Ok(buf)
     }
 
-    /// Copies an entry to `dest`, creating parent directories.
+    /// Copies an entry to `dest`, creating parent directories. The copy keeps
+    /// the entry's modification time, so a save that comes with a mod isn't
+    /// shown as saved just now.
     pub fn copy_to(&self, rel: &str, dest: &Path) -> Result<()> {
         if let Some(parent) = dest.parent() {
             std::fs::create_dir_all(parent)?;
         }
         let mut out = File::create(dest)?;
-        self.reader(rel, |r| io::copy(r, &mut out).map(drop))
+        self.reader(rel, |r| io::copy(r, &mut out).map(drop))?;
+        if let Some(time) = self.modified(rel) {
+            out.set_modified(time)?;
+        }
+        Ok(())
+    }
+
+    /// When an entry was last changed, if the source says.
+    fn modified(&self, rel: &str) -> Option<SystemTime> {
+        match self {
+            Source::Folder(root) => std::fs::metadata(root.join(rel)).ok()?.modified().ok(),
+            Source::Zip(path, open) => {
+                let mut guard = open.get(path).ok()?;
+                let (zip, names) = guard.as_mut().expect("opened");
+                let entry = zip.by_index_raw(*names.get(rel)?).ok()?;
+                // Info-ZIP's extended timestamp is UTC; the DOS time every
+                // entry has is local time of an unknown zone, taken as UTC.
+                let unix = entry
+                    .extra_data_fields()
+                    .find_map(|f| match f {
+                        ExtraField::ExtendedTimestamp(t) => t.mod_time().map(i64::from),
+                        _ => None,
+                    })
+                    .or_else(|| entry.last_modified().map(|t| dos_to_unix(&t)))?;
+                Some(UNIX_EPOCH + Duration::from_secs(u64::try_from(unix).ok()?))
+            }
+        }
     }
 
     fn reader(&self, rel: &str, f: impl FnOnce(&mut dyn Read) -> io::Result<()>) -> Result<()> {
@@ -207,6 +237,19 @@ fn inflate_with_zero_window(compressed: &[u8], size: u64) -> Option<Vec<u8>> {
     }
 }
 
+/// Seconds since 1970 of a DOS date and time read as UTC.
+fn dos_to_unix(t: &zip::DateTime) -> i64 {
+    // Days from the civil date (Howard Hinnant's algorithm).
+    let (m, d) = (i64::from(t.month()), i64::from(t.day()));
+    let y = i64::from(t.year()) - i64::from(m <= 2);
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let doy = (153 * (m + if m > 2 { -3 } else { 9 }) + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    days * 86_400 + i64::from(t.hour()) * 3600 + i64::from(t.minute()) * 60 + i64::from(t.second())
+}
+
 fn open_zip(path: &Path) -> Result<ZipArchive<File>> {
     Ok(ZipArchive::new(File::open(path)?)?)
 }
@@ -296,6 +339,43 @@ mod tests {
         let zip = tmp.path().join("game.ZIP");
         write_zip(&zip, FILES);
         check(&Source::open(&zip).unwrap(), tmp.path());
+    }
+
+    #[test]
+    fn copies_keep_the_modification_time() {
+        let tmp = tempfile::tempdir().unwrap();
+        let zip = tmp.path().join("mod.zip");
+        {
+            let mut w = zip::ZipWriter::new(File::create(&zip).unwrap());
+            // A save from 2007, as XkyKeen4 ships.
+            let time = zip::DateTime::from_date_and_time(2007, 7, 14, 12, 30, 10).unwrap();
+            let options = zip::write::SimpleFileOptions::default().last_modified_time(time);
+            w.start_file("SAVEGAM0.CK4", options).unwrap();
+            std::io::Write::write_all(&mut w, b"save").unwrap();
+            w.finish().unwrap();
+        }
+        let modified = |p: &Path| {
+            std::fs::metadata(p)
+                .unwrap()
+                .modified()
+                .unwrap()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+        };
+        let from_zip = tmp.path().join("a/SAVEGAM0.CK4");
+        Source::open(&zip)
+            .unwrap()
+            .copy_to("SAVEGAM0.CK4", &from_zip)
+            .unwrap();
+        assert_eq!(modified(&from_zip), 1_184_416_210);
+
+        let from_folder = tmp.path().join("b/SAVEGAM0.CK4");
+        Source::open(&tmp.path().join("a"))
+            .unwrap()
+            .copy_to("SAVEGAM0.CK4", &from_folder)
+            .unwrap();
+        assert_eq!(modified(&from_folder), 1_184_416_210);
     }
 
     #[test]

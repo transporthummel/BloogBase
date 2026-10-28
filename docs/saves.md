@@ -13,6 +13,14 @@ Whatever the game writes lands in `state/`. Imported games bring the saves
 found next to them there; mods may ship saves of their own, which stay in
 the mod's files below until the game overwrites them.
 
+The save list shows when each save was made from the file's modification
+time, so copies keep it: files from a ZIP or folder (`Source::copy_to`)
+get the entry's time, and the composed folder keeps its inputs' times
+(Windows does that when copying anyway, Linux doesn't). From a ZIP, the
+extended timestamp is used when the archive has one (UTC); otherwise the
+DOS time every entry has, which is local time of an unknown zone and is
+read as UTC, so it can be a few hours off.
+
 ### What DOS sees
 
 `overlay_view.rs` merges the two layers as DOSBox Staging does, and every

@@ -113,7 +113,14 @@ pub fn ensure(
         if let Some(parent) = dest.parent() {
             fs::create_dir_all(parent)?;
         }
-        fs::copy(&input.path, dest)?;
+        fs::copy(&input.path, &dest)?;
+        // Windows keeps the time when copying, Linux doesn't; saves show it.
+        if let Ok(time) = fs::metadata(&input.path).and_then(|m| m.modified()) {
+            File::options()
+                .write(true)
+                .open(&dest)?
+                .set_modified(time)?;
+        }
     }
     fs::create_dir_all(&tmp)?;
     if patcher_needs_unpacked(recipe, &inputs) {
