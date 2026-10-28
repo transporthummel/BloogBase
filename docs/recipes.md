@@ -71,6 +71,14 @@ reduced to it:
   will do, like `EASTERBB.CK1`; further words become `args`);
 - another program the mod ships → `program`.
 
+Before that, `-tedlevel <n>` is dropped from the arguments (any case, `-` or
+`/`). TED5 passes it to start the game right in a level, and a batch file
+left with it makes Keen 4 hang on a black screen after Quit, patched or not
+(checked in DOSBox Staging 0.83). NY00123's Tests Level has it in a
+`play.bat` added to the archive later; its author's `GO4.BAT`, which the
+patch makes start in the test level anyway, gives the same recipe without it.
+A batch file run as it is keeps the switch.
+
 Anything else (several commands, a program that can't be resolved) runs the
 batch file as it is: `batch`. Names are matched as DOS does: without
 extension, cut to 8.3, or by their `~1` alias (`dunepa~1.EXE`).

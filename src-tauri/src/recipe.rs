@@ -315,7 +315,7 @@ fn single_command(
     is_patcher: &impl Fn(&str) -> bool,
     is_episode_exe: &impl Fn(&str) -> bool,
 ) -> Option<Recipe> {
-    let args = &cmd[1..];
+    let args = &without_tedlevel(&cmd[1..]);
     // The episode executable comes from the install, so it needn't be in the mod.
     if is_episode_exe(&cmd[0]) && args.is_empty() {
         return Some(Recipe::Episode);
@@ -334,6 +334,25 @@ fn single_command(
         program,
         args: args.to_vec(),
     })
+}
+
+/// The arguments without `-tedlevel <n>`, which TED5 passes to start the
+/// game right in a level. Left in a batch file, it makes the game hang when
+/// quit (Keen 4 v1.4, checked in DOSBox Staging 0.83, patched or not):
+/// NY00123's Tests Level's `play.bat` has it, its own `GO4.BAT` doesn't.
+fn without_tedlevel(args: &[String]) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut rest = args.iter();
+    while let Some(a) = rest.next() {
+        if a.trim_start_matches(['-', '/'])
+            .eq_ignore_ascii_case("TEDLEVEL")
+        {
+            rest.next();
+        } else {
+            out.push(a.clone());
+        }
+    }
+    out
 }
 
 fn dedup(list: Vec<Candidate>) -> Vec<Candidate> {
@@ -823,6 +842,25 @@ mod tests {
         let first = |g: Guess| g.candidates[0].origin.clone();
         assert_eq!(first(run_named(&files, "Xkykeen4")), "XkyKeen4.bat");
         assert_eq!(first(run(&files)), "go4.bat");
+    }
+
+    #[test]
+    fn tedlevel_is_left_out() {
+        // As NY00123's Tests Level: play.bat added to the archive later.
+        let g = run(&[
+            ("play.bat", "CK4PATCH patch4.pat -tedlevel 1 -nowait\r\n"),
+            ("GO4.BAT", "@ck4patch patch4.pat -nowait\r\n"),
+            ("CK4PATCH.EXE", ""),
+            ("PATCH4.PAT", "%ext ck4\n%version 1.4\n"),
+        ]);
+        assert!(g.confident);
+        assert_eq!(g.candidates.len(), 1);
+        assert_eq!(
+            g.candidates[0].recipe,
+            patch("CK4PATCH.EXE", "PATCH4.PAT", &["-nowait"])
+        );
+        let g = run(&[("PLAY.BAT", "KEEN4E /TEDLEVEL 3\r\n"), ("KEEN4E.EXE", "")]);
+        assert_eq!(g.candidates[0].recipe, Recipe::Episode);
     }
 
     #[test]
