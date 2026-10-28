@@ -194,7 +194,7 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
         Some(c) => c,
         None => profiles::find_executable(game, profile.version_id.as_deref(), &lower)?,
     };
-    let command = keep_apostrophes(command, &dirs.exit_screen)?;
+    let command = runnable(command, &lower, &dirs.exit_screen)?;
 
     let confs = dosconf::ensure(
         paths,
@@ -237,31 +237,38 @@ pub fn relative(root: &Path, path: &Path) -> String {
     rel.display().to_string()
 }
 
-/// DOSBox turns every `'` in a `-c` command into `"` (Billy Can't's
-/// `CK5PATCH.EXE Can't.pat` became `Can"t.pat`) but leaves batch files
-/// alone, so such a command runs from a batch file on drive X.
-fn keep_apostrophes(command: String, exit_screen: &Path) -> Result<String> {
-    if !command.contains('\'') {
+/// `command` as DOSBox can run it from `-c`, with `lower` the C: drive.
+/// DOSBox Staging 0.83 can't start a batch file with a space in its name,
+/// quoted or not (DasBrot's First Mod's `DasBrots First Mod.bat`); its
+/// short name (`DASBRO~1.BAT`) depends on the other files. And it turns
+/// every `'` in a `-c` command into `"` (Billy Can't's
+/// `CK5PATCH.EXE Can't.pat` became `Can"t.pat`), but not in batch files.
+/// So such a batch file is copied to drive X, and such a command runs from
+/// a batch file there.
+fn runnable(command: String, lower: &Path, exit_screen: &Path) -> Result<String> {
+    let start = exit_screen.join(START);
+    let batch = lower.join(&command);
+    if command.contains(' ') && is_batch(&command) && batch.is_file() {
+        dosconf::write_if_changed(&start, fs::read(batch)?)?;
+    } else if command.contains('\'') {
+        dosconf::write_if_changed(&start, format!("{}\r\n", run_line(&command)))?;
+    } else {
         return Ok(command);
     }
-    dosconf::write_if_changed(
-        &exit_screen.join(START),
-        format!("{}\r\n", run_line(&command)),
-    )?;
     Ok(format!("{}:\\{START}", exit_screen::DRIVE))
 }
 
-/// The batch file [`keep_apostrophes`] writes.
+/// The batch file [`runnable`] writes.
 const START: &str = "START.BAT";
+
+fn is_batch(file: &str) -> bool {
+    file.to_ascii_uppercase().ends_with(".BAT")
+}
 
 /// `command` without its echo. A batch file started without CALL never
 /// returns, so `exit` would not run.
 fn run_line(command: &str) -> String {
-    let is_batch = command
-        .split_whitespace()
-        .next()
-        .is_some_and(|f| f.to_ascii_uppercase().ends_with(".BAT"));
-    if is_batch {
+    if command.split_whitespace().next().is_some_and(is_batch) {
         format!("@call {command}")
     } else {
         format!("@{command}")
@@ -516,12 +523,9 @@ mod tests {
     fn commands_with_apostrophes_run_from_a_batch_file() {
         let tmp = tempfile::tempdir().unwrap();
         let x = tmp.path();
-        assert_eq!(
-            keep_apostrophes("KEEN1.EXE".into(), x).unwrap(),
-            "KEEN1.EXE"
-        );
+        assert_eq!(runnable("KEEN1.EXE".into(), x, x).unwrap(), "KEEN1.EXE");
         assert!(!x.join(START).exists());
-        let cmd = keep_apostrophes("CK5PATCH.EXE Can't.pat".into(), x).unwrap();
+        let cmd = runnable("CK5PATCH.EXE Can't.pat".into(), x, x).unwrap();
         assert_eq!(cmd, r"X:\START.BAT");
         assert_eq!(
             fs::read_to_string(x.join(START)).unwrap(),
@@ -531,6 +535,20 @@ mod tests {
             dosbox_args(&[], "l", "u", "x", &cmd)[12],
             r"@call X:\START.BAT"
         );
+    }
+
+    #[test]
+    fn batch_files_with_spaces_run_from_a_copy() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (c, x) = (tmp.path().join("c"), tmp.path().join("x"));
+        fs::create_dir_all(&c).unwrap();
+        fs::create_dir_all(&x).unwrap();
+        let batch = "@echo off\r\nck4patch patch4.pat -nowait\r\n";
+        fs::write(c.join("DasBrots First Mod.bat"), batch).unwrap();
+        let cmd = runnable("DasBrots First Mod.bat".into(), &c, &x).unwrap();
+        assert_eq!(cmd, r"X:\START.BAT");
+        assert_eq!(fs::read_to_string(x.join(START)).unwrap(), batch);
+        assert_eq!(runnable("PLAY.BAT".into(), &c, &x).unwrap(), "PLAY.BAT");
     }
 
     #[test]

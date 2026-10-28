@@ -139,6 +139,10 @@ dosbox --noprimaryconf --nolocalconf
   in batch files. A start with an apostrophe (Billy Can't's
   `CK5PATCH.EXE Can't.pat`) is written to `X:\START.BAT` in the exit folder
   and started with `@call X:\START.BAT`.
+- It also can't start a batch file with a space in its name, quoted or not,
+  and its short name (`DASBRO~1.BAT`) depends on the other files. Such a
+  batch file (DasBrot's First Mod's `DasBrots First Mod.bat`) is copied to
+  `X:\START.BAT` and started from there; it runs on drive C as before.
 - The start is the mod's recipe ([recipes.md](recipes.md)), or the version's
   start program or the episode's executable, in catalog order.
 - DOSBox Staging 0.83 crashes on mount paths with non-ASCII characters (an
