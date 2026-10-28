@@ -7,6 +7,7 @@ mod compose;
 mod covers;
 mod db;
 mod detect;
+mod diagnostics;
 mod dosconf;
 mod downloads;
 mod error;
@@ -52,6 +53,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
     tauri_specta::Builder::<tauri::Wry>::new()
         .commands(collect_commands![
             commands::app_info,
+            commands::diagnostics,
             commands::list_games,
             commands::list_installs,
             commands::import_games,

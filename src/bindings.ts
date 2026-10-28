@@ -8,6 +8,8 @@ import * as __TAURI_EVENT from "@tauri-apps/api/event";
 /** Commands */
 export const commands = {
 	appInfo: () => typedError<AppInfo, CommandError>(__TAURI_INVOKE("app_info")),
+	/**  The diagnostics for a bug report, as Markdown. */
+	diagnostics: () => typedError<string, CommandError>(__TAURI_INVOKE("diagnostics")),
 	listGames: () => __TAURI_INVOKE<Game[]>("list_games"),
 	listInstalls: () => typedError<Install[], CommandError>(__TAURI_INVOKE("list_installs")),
 	/**  Imports all games found in a folder or ZIP file. */

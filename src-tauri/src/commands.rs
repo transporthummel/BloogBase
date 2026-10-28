@@ -14,6 +14,7 @@ use crate::catalog::{self, Game};
 use crate::covers;
 use crate::db::Db;
 use crate::detect;
+use crate::diagnostics;
 use crate::dosconf::{self, ConfigView, ConfigWarning, Machine};
 use crate::downloads;
 use crate::error::{CommandResult, Error, Result};
@@ -66,6 +67,23 @@ pub fn app_info(
         default_data_dir: location.default_root.display().to_string(),
         schema_version: db.schema_version()?,
     })
+}
+
+/// The diagnostics for a bug report, as Markdown.
+#[tauri::command]
+#[specta::specta]
+pub fn diagnostics(
+    app: AppHandle,
+    paths: State<'_, AppPaths>,
+    location: State<'_, DataLocation>,
+    db: State<'_, Db>,
+) -> CommandResult<String> {
+    let info = diagnostics::App {
+        version: app.package_info().version.to_string(),
+        webview: tauri::webview_version().ok(),
+        moved: paths.root != location.default_root,
+    };
+    Ok(diagnostics::report(&paths, &db, &info)?)
 }
 
 #[tauri::command]

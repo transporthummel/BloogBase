@@ -142,7 +142,8 @@ dosbox --noprimaryconf --nolocalconf
   only paths relative to it.
 
 DOSBox's console window is hidden on Windows. Its output goes to
-`logs/dosbox-<profile>.log`.
+`logs/dosbox-<profile>.log`. The diagnostics on the About page include the
+end of the last played profile's log, next to the end of `logs/bloogbase.log`.
 
 ## While it runs
 
