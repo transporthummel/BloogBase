@@ -69,7 +69,7 @@ export function About() {
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
               <LinkButton url={REPO_URL}>{t("about.sourceCode")}</LinkButton>
-              <LinkButton url={`${REPO_URL}/issues`}>{t("about.reportProblem")}</LinkButton>
+              <LinkButton url={`${REPO_URL}/issues`}>{t("about.feedback")}</LinkButton>
             </div>
           </div>
           <Bloog className="bb-hop size-10 shrink-0" />
