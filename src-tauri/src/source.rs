@@ -27,7 +27,10 @@ pub enum Source {
 /// (XkyKeen4) took minutes to check when every read opened the archive
 /// again and searched it. Clones share it; the file closes with the last.
 #[derive(Clone, Default)]
-pub struct OpenZip(Arc<Mutex<Option<(ZipArchive<File>, HashMap<String, usize>)>>>);
+pub struct OpenZip(Arc<Mutex<Option<Indexed>>>);
+
+/// The archive and the index of each entry by path.
+type Indexed = (ZipArchive<File>, HashMap<String, usize>);
 
 impl fmt::Debug for OpenZip {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -35,7 +38,7 @@ impl fmt::Debug for OpenZip {
     }
 }
 
-type Opened<'a> = MutexGuard<'a, Option<(ZipArchive<File>, HashMap<String, usize>)>>;
+type Opened<'a> = MutexGuard<'a, Option<Indexed>>;
 
 impl OpenZip {
     fn get(&self, path: &Path) -> Result<Opened<'_>> {
