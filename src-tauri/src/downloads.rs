@@ -54,7 +54,7 @@ pub async fn fetch_unverified(url: &str, max_size: u64, dest: &Path) -> Result<U
     let client = reqwest::Client::builder().user_agent(USER_AGENT).build()?;
     let resp = client.get(url).send().await?;
     let status = resp.status().as_u16();
-    if matches!(status, 404 | 410) {
+    if is_dead(url, status) {
         return Err(Error::DeadLink(status));
     }
     if !resp.status().is_success() {
@@ -152,9 +152,27 @@ fn disposition_file_name(value: &str) -> Option<String> {
     })
 }
 
+/// Whether `status` says nothing is at `url`. The community's file server
+/// answers 403 for files it doesn't have (a KeenWiki link to
+/// `…/Keen3/m.ally_fleexy.allys_mod_iii.k2.…`, which is `.k3`).
+fn is_dead(url: &str, status: u16) -> bool {
+    matches!(status, 404 | 410)
+        || (status == 403
+            && reqwest::Url::parse(url).is_ok_and(|u| u.host_str() == Some("files.shikadi.net")))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn missing_files_on_the_file_server_are_dead_links() {
+        let shikadi = "https://files.shikadi.net/keenwiki/mods/Keen3/m.x.k2.2009-08-12.zip";
+        assert!(is_dead(shikadi, 403));
+        assert!(is_dead("https://example.com/m.zip", 404));
+        assert!(!is_dead("https://example.com/m.zip", 403));
+        assert!(!is_dead(shikadi, 500));
+    }
 
     #[test]
     fn checksum_is_enforced() {
