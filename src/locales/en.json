@@ -93,7 +93,7 @@
     "themeLight": "Light",
     "themeSystem": "Like the system",
     "showTrivia": "Show a fun fact in the library",
-    "showTriviaHint": "A made-up Commander Keen fact, just for fun. A different one on each start.",
+    "showTriviaHint": "A different Commander Keen fun fact on each start. They may or may not be true.",
     "about": "About",
     "version": "Version",
     "dataDir": "Data folder",
