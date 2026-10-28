@@ -383,6 +383,243 @@
       },
       "versionIds": [],
       "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen4/m.xky_rauh.save_the_quillsheep.k4.2007-07-14.zip",
+      "sha256": "7cec2bf0552f0b8c95e8435298db5e7f757cefec55cb5033bbbda2a581743fb5",
+      "gameId": "keen4",
+      "name": "Save the Quillsheep",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK4PATCH.EXE",
+        "patch": "xky4mm.PAT",
+        "args": []
+      },
+      "versionIds": [
+        "keen4-1.4-ega"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen2/m.joriz_.keen_q.k2.2007-11-09.zip",
+      "sha256": "9b833c9ce64b66bde2db0ae6165afa762a40699c9476020f81867fe8af431d95",
+      "gameId": "keen2",
+      "name": "Keen Q",
+      "recipe": {
+        "type": "program",
+        "program": "KEENQ.COM",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen3/m.xtraverse.norp_the_yorp_3.k3.2003-02-03.zip",
+      "sha256": "020d5751a2f9a4a81e65f44b5896d09d4d1f90020c01c534de484f06c32eea6c",
+      "gameId": "keen3",
+      "name": "Norp the Yorp 3",
+      "recipe": {
+        "type": "patch",
+        "patcher": "NORPER.EXE",
+        "patch": "PLASMA.NY3",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": false
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.szemigi.printed_to_pluto.k1.2014-06-09.zip",
+      "sha256": "092c6563f4cdab7395db72e6205df6039b0d48b4a955f3cc5169955995eb5956",
+      "gameId": "keen1",
+      "name": "Printed to Pluto",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK1PATCH.EXE",
+        "patch": "Keen0.pat",
+        "args": []
+      },
+      "versionIds": [
+        "keen1-1.31"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.crazykeen.keen_static.k1.1999-04-15.zip",
+      "sha256": "dfd2525d9801e69c3efbe4571f83618599edda823a5b6211271ae8c66295ecc8",
+      "gameId": "keen1",
+      "name": "Keen Static",
+      "recipe": {
+        "type": "episode"
+      },
+      "versionIds": [],
+      "confident": false
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.keenrush_proyorp.sunset.k1.2020-12-14.zip",
+      "sha256": "60c2073173bdc33f26e9758d8f069a493a0f9f80e72bd872d809d191c5e0957d",
+      "gameId": "keen1",
+      "name": "Sunset",
+      "recipe": {
+        "type": "patch",
+        "patcher": "ck1patch.exe",
+        "patch": "stuff.pat",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen4/m.dave216.revival_of_bliss_v.1.1.k4.2024-06-08.zip",
+      "sha256": "374bbf6f22c5c1443b9f628d552555d0988a291ba52738e32a3485d1bd709c8c",
+      "gameId": "keen4",
+      "name": "Revival of Bliss",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK4PATCH.EXE",
+        "patch": "abiathar.pat",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen4/m.viler.keen4c16.k4.2016-05-22.zip",
+      "sha256": "a35f6cfa9b1f32b20b4b8d23a85cb93f7e2f2235915c1c7142b6db6f5ca04de6",
+      "gameId": "keen4",
+      "name": "Keen4c16",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK4PATCH.EXE",
+        "patch": "KEEN4C16.PAT",
+        "args": []
+      },
+      "versionIds": [
+        "keen4-1.4-cga"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.lemm.keen_1_640x480_redux.k1.2010-08-17.zip",
+      "sha256": "72c7c79f49dc87b2c17767511f49132080b78ddcf956962f6485da96828f4911",
+      "gameId": "keen1",
+      "name": "Keen 1 640x480 Redux",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK1PATCH.EXE",
+        "patch": "v2-12H.pat",
+        "args": []
+      },
+      "versionIds": [
+        "keen1-1.31"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.ilsoap.lego_keen_v1.1.k1.2003-12-18.zip",
+      "sha256": "cf3b4eae13a0503781cc9f9b9dacede4e9e1692e311a063700723b1344b841b0",
+      "gameId": "keen1",
+      "name": "Lego Keen",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK1PATCH.EXE",
+        "patch": "lego.pat",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/Packs/ModPacks/l.keen_community.lego_keen.2012-02-10.zip",
+      "sha256": "4f5cfe050c1a4e88199b741a7950b431c9744c4e91c870575b3f924856655635",
+      "gameId": "keen1",
+      "name": "Lego Keen Level Pack",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK1PATCH.EXE",
+        "patch": "lego.pat",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/Packs/ModPacks/l.ck_guy.a_new_dope.2007-06-14.zip",
+      "sha256": "0a0de2c339f15ed46299a50d04666f29c06130d58501dfae8ce0f2bf4ce80daa",
+      "gameId": "keen3",
+      "name": "A New Dope Level Pack",
+      "recipe": {
+        "type": "episode"
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.levellord.rories_birthday_mod.k1.2004-10-20.zip",
+      "sha256": "a6d02b165ac9a99ab0723ca053f2bb6b28d336292d0b264c8cedda563f425f20",
+      "gameId": "keen1",
+      "name": "Rories Birthday Mod",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK1PATCH.EXE",
+        "patch": "bush.PAT",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": false
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/Packs/Keen1/l.eazyjay.k1.2003-11-09.zip",
+      "sha256": "671c5e7a0a0ba395ba620353c9416279fe965579036792c7e280987cfe02643a",
+      "gameId": "keen1",
+      "name": "Eazyjay Level Pack",
+      "recipe": {
+        "type": "episode"
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/Packs/Keen2/l.ckeen.k2.2010-12-14.zip",
+      "sha256": "e513ae5656cf6376e8c81342554b854b752cc1db33e3e8642b0beae34dc3c16c",
+      "gameId": "keen2",
+      "name": "Ckeen Level Pack",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK2PATCH.EXE",
+        "patch": "TBMEM.pat",
+        "args": []
+      },
+      "versionIds": [
+        "keen2-1.31"
+      ],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.multimania.robot_rebellion.k1.2004-03-14.zip",
+      "sha256": "056bc42c7c0c2fbf6fee79f1e2d98edafa16952f8f3347d732694e1778676bfb",
+      "gameId": "keen1",
+      "name": "Robot Rebellion",
+      "recipe": {
+        "type": "program",
+        "program": "ROBOKEEN.EXE",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
+    },
+    {
+      "url": "https://files.shikadi.net/keenwiki/mods/Keen2/m.keen_community.patchwork_mod_ii.k2.2005-06-29.zip",
+      "sha256": "ad80bf92bee0d9d5ce332703a0d662fde98341a9354bc80cd1f5fe50619a4be3",
+      "gameId": "keen2",
+      "name": "Patchwork Mod II",
+      "recipe": {
+        "type": "patch",
+        "patcher": "CK2PATCH.EXE",
+        "patch": "patch2.pat",
+        "args": []
+      },
+      "versionIds": [],
+      "confident": true
     }
   ]
 }
