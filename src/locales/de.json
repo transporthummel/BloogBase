@@ -109,6 +109,9 @@
     "keenwikiCacheHint": "BloogBase merkt sich gelesene KeenWiki-Seiten einen Tag lang. Hat sich eine Seite seitdem geändert, zum Beispiel ein korrigierter Download-Link, lösche sie, damit sie neu gelesen wird.",
     "clearKeenwikiCache": "Gespeicherte Seiten löschen",
     "keenwikiCacheCleared": "Gelöscht.",
+    "games": "Spiele",
+    "app": "BloogBase",
+    "dosbox": "DOSBox Staging",
     "aboutMore": "Lizenzen und Danksagungen",
     "display": "Bild",
     "displayOption": {

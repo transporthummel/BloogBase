@@ -109,6 +109,9 @@
     "keenwikiCacheHint": "BloogBase keeps the KeenWiki pages it reads for a day. If a page has changed since, for example a fixed download link, delete them so it reads it again.",
     "clearKeenwikiCache": "Delete saved pages",
     "keenwikiCacheCleared": "Deleted.",
+    "games": "Games",
+    "app": "BloogBase",
+    "dosbox": "DOSBox Staging",
     "aboutMore": "Licenses and credits",
     "display": "Display",
     "displayOption": {

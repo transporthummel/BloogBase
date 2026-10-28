@@ -86,41 +86,47 @@ export function Settings() {
             <p className="ml-6 text-xs text-muted">{t("settings.showTriviaHint")}</p>
           </div>
         </Section>
-        <RuntimeSection />
-        <DisplaySection />
-        <ControlsSection />
-        <BackupSection />
-        <KeenwikiCacheSection />
-        <GlobalConfigSection />
-        <Section title={t("settings.setup")}>
-          <p className="text-sm text-muted">{t("settings.rerunHint")}</p>
-          <div>
-            <Button
-              variant="secondary"
-              onClick={async () => {
-                await commands.setSetupStep("welcome");
-                await queryClient.invalidateQueries({ queryKey: setupStatusKey });
-                navigate({ to: "/setup" });
-              }}
-            >
-              <Wand className="size-4" aria-hidden />
-              {t("settings.rerunSetup")}
-            </Button>
-          </div>
+        <Section title={t("settings.games")}>
+          <DisplaySection />
+          <ControlsSection />
+          <BackupSection />
         </Section>
-        <UpdateSection />
-        <Section title={t("settings.about")}>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-            <dt className="text-muted">{t("settings.version")}</dt>
-            <dd className="font-pixel text-xs leading-5">{info.data?.version}</dd>
-            <dt className="text-muted">{t("settings.dataDir")}</dt>
-            <dd className="break-all select-text">{info.data?.dataDir}</dd>
-          </dl>
-          <p className="text-sm">
-            <Link to="/about" className="underline underline-offset-2">
-              {t("settings.aboutMore")}
-            </Link>
-          </p>
+        <Section title={t("runtime.title")}>
+          <RuntimeSection />
+          <GlobalConfigSection />
+        </Section>
+        <Section title={t("settings.app")}>
+          <UpdateSection />
+          <KeenwikiCacheSection />
+          <Group title={t("settings.setup")}>
+            <p className="text-sm text-muted">{t("settings.rerunHint")}</p>
+            <div>
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  await commands.setSetupStep("welcome");
+                  await queryClient.invalidateQueries({ queryKey: setupStatusKey });
+                  navigate({ to: "/setup" });
+                }}
+              >
+                <Wand className="size-4" aria-hidden />
+                {t("settings.rerunSetup")}
+              </Button>
+            </div>
+          </Group>
+          <Group title={t("settings.about")}>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+              <dt className="text-muted">{t("settings.version")}</dt>
+              <dd className="font-pixel text-xs leading-5">{info.data?.version}</dd>
+              <dt className="text-muted">{t("settings.dataDir")}</dt>
+              <dd className="break-all select-text">{info.data?.dataDir}</dd>
+            </dl>
+            <p className="text-sm">
+              <Link to="/about" className="underline underline-offset-2">
+                {t("settings.aboutMore")}
+              </Link>
+            </p>
+          </Group>
         </Section>
       </div>
     </>
@@ -132,7 +138,7 @@ function UpdateSection() {
   const update = useAppUpdate({ enabled: false });
   const checkNow = useCheckForUpdate();
   return (
-    <Section title={t("updates.title")}>
+    <Group title={t("updates.title")}>
       {update.data ? (
         <UpdateCard update={update.data} />
       ) : (
@@ -155,7 +161,7 @@ function UpdateSection() {
           </div>
         </>
       )}
-    </Section>
+    </Group>
   );
 }
 
@@ -175,7 +181,7 @@ function RuntimeSection() {
   }
 
   return (
-    <Section title={t("runtime.title")}>
+    <Group title={t("settings.dosbox")}>
       <p className="text-sm">
         {!st
           ? null
@@ -215,7 +221,7 @@ function RuntimeSection() {
       </div>
       <p className="text-xs text-muted">{t("runtime.customHint")}</p>
       {setCustom.error && <Notice tone="error">{errorMessage(t, setCustom.error)}</Notice>}
-    </Section>
+    </Group>
   );
 }
 
@@ -239,7 +245,7 @@ export function DisplaySection() {
   const options: (keyof DisplayOptions)[] = ["fullscreen", "crt", "vsync"];
 
   return (
-    <Section title={t("settings.display")}>
+    <Group title={t("settings.display")}>
       {v &&
         options.map((name) => {
           const overridden = v.overridden.includes(name);
@@ -264,7 +270,7 @@ export function DisplaySection() {
       {(view.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
       )}
-    </Section>
+    </Group>
   );
 }
 
@@ -281,7 +287,7 @@ function ControlsSection() {
   });
 
   return (
-    <Section title={t("settings.controls")}>
+    <Group title={t("settings.controls")}>
       {firing.data !== undefined && (
         <div className="grid gap-1">
           <label className="flex items-center gap-2 text-sm">
@@ -299,7 +305,7 @@ function ControlsSection() {
       {(firing.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, firing.error ?? update.error)}</Notice>
       )}
-    </Section>
+    </Group>
   );
 }
 
@@ -319,7 +325,7 @@ function BackupSection() {
   const s = settings.data;
 
   return (
-    <Section title={t("settings.backups")}>
+    <Group title={t("settings.backups")}>
       {s && (
         <>
           <label className="flex items-start gap-2 text-sm">
@@ -353,7 +359,7 @@ function BackupSection() {
       {(settings.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, settings.error ?? update.error)}</Notice>
       )}
-    </Section>
+    </Group>
   );
 }
 
@@ -362,7 +368,7 @@ export function KeenwikiCacheSection() {
   const clear = useMutation({ mutationFn: () => unwrap(commands.clearKeenwikiCache()) });
 
   return (
-    <Section title={t("settings.keenwikiCache")}>
+    <Group title={t("settings.keenwikiCache")}>
       <p className="text-sm text-muted">{t("settings.keenwikiCacheHint")}</p>
       <div className="flex items-center gap-3">
         <Button variant="secondary" disabled={clear.isPending} onClick={() => clear.mutate()}>
@@ -376,7 +382,7 @@ export function KeenwikiCacheSection() {
         )}
       </div>
       {clear.error && <Notice tone="error">{errorMessage(t, clear.error)}</Notice>}
-    </Section>
+    </Group>
   );
 }
 
@@ -387,7 +393,7 @@ function GlobalConfigSection() {
     queryFn: () => unwrap(commands.configView(null)),
   });
   return (
-    <Section title={t("config.globalTitle")}>
+    <Group title={t("config.globalTitle")}>
       <p className="text-sm text-muted">{t("config.globalHint")}</p>
       {view.data && (
         <ConfigEditor
@@ -398,18 +404,29 @@ function GlobalConfigSection() {
         />
       )}
       {view.error && <Notice tone="error">{errorMessage(t, view.error)}</Notice>}
-    </Section>
+    </Group>
   );
 }
 
 const selectClass = "rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-ink";
 
+/** A card of related settings, split into groups. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <Card className="p-5">
       <h2 className="mb-4 font-semibold">{title}</h2>
-      <div className="grid gap-4">{children}</div>
+      <div className="grid gap-5">{children}</div>
     </Card>
+  );
+}
+
+/** Settings of one kind within a card, set apart from the group above. */
+function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="grid gap-4 border-t border-border pt-5 first:border-t-0 first:pt-0">
+      <h3 className="text-sm font-semibold text-muted">{title}</h3>
+      {children}
+    </section>
   );
 }
 
