@@ -730,6 +730,7 @@ fn find_base_mods(app: &AppHandle, info: &mut ModInfo) {
         )
         .collect();
     for option in &mut info.recipes {
+        option.made_for = named.clone().filter(|_| levels_for(option));
         option.base_mod = match &named {
             Some(name) if levels_for(option) => mods::named_mod(name, &candidates),
             _ => mods::needed_mod(&option.missing_files, &candidates),

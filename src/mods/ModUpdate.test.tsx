@@ -190,6 +190,7 @@ test("downloads a newer version and replaces the installed one", async () => {
             versionIds: [],
             missingFiles: [],
             baseMod: null,
+            madeFor: null,
           },
         ],
         confident: true,

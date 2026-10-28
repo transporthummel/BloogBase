@@ -858,6 +858,11 @@ export type RecipeOption = {
 	 *  BloogBase knows one that fits.
 	 */
 	baseMod: BaseMod | null,
+	/**
+	 *  For levels alone, the mod their archive name says they're for, known
+	 *  to BloogBase or not ([`ModInfo::made_for`]).
+	 */
+	madeFor: string | null,
 };
 
 export type Runtime = {

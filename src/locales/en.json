@@ -305,6 +305,7 @@
     "missingFiles": "This mod lacks {{files}}, which it needs to start. It may be made to be copied over another mod; its <readme>readme</readme> usually says.",
     "missingFiles_mod": "This mod is made to be copied over {{mod}} and won’t work without it: it lacks {{files}}.",
     "levelsFor": "Its levels are made for {{mod}} and play with its graphics and patches.",
+    "levelsForUnknown": "Its levels are made for {{mod}}, which BloogBase doesn’t know yet. Add {{mod}} first; then BloogBase plays them over it.",
     "playOver": "Play it over {{mod}}",
     "playOver_install": "Play it over {{mod}}, which is installed with it",
     "removeExtensions": "{{names}} is played over it and is removed too.",

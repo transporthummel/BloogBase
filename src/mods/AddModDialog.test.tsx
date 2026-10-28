@@ -74,6 +74,7 @@ const patch: RecipeOption = {
   versionIds: ["keen4-1.4-ega"],
   missingFiles: [],
   baseMod: null,
+  madeFor: null,
 };
 
 const info: ModInfo = {
@@ -206,6 +207,7 @@ test("plays one made to be copied over a mod from the index over it", async () =
           ...patch,
           missingFiles: ["lego.tli"],
           baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen" },
+          madeFor: null,
         },
       ],
     }),
@@ -283,6 +285,7 @@ test("doesn't install one made to be copied over a mod whose download failed", a
           ...patch,
           missingFiles: ["lego.tli"],
           baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen" },
+          madeFor: null,
         },
       ],
     }),
@@ -315,6 +318,7 @@ test("installs one made to be copied over an installed mod alone when unticked",
           ...patch,
           missingFiles: ["lego.tli"],
           baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null },
+          madeFor: null,
         },
       ],
     }),
@@ -342,6 +346,7 @@ test("plays levels alone over the mod their archive names", async () => {
           versionIds: [],
           missingFiles: [],
           baseMod: { name: "Episode Smile", modId: "episode-smile", indexId: null },
+          madeFor: "Episode Smile",
         },
       ],
     }),
@@ -361,6 +366,38 @@ test("plays levels alone over the mod their archive names", async () => {
   expect(commands.installMod).toHaveBeenCalledWith(
     expect.objectContaining({ extends: "episode-smile" }),
   );
+});
+
+test("says when levels alone are for a mod it doesn't know", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(
+    ok({
+      ...info,
+      name: "A New Dope Level Pack",
+      recipes: [
+        {
+          recipe: { type: "episode" },
+          origin: "",
+          gameVersions: [],
+          versionIds: [],
+          missingFiles: [],
+          baseMod: null,
+          madeFor: "A New Dope",
+        },
+      ],
+    }),
+  );
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  expect(
+    await screen.findByText(
+      "Its levels are made for A New Dope, which BloogBase doesn’t know yet. Add A New Dope first; then BloogBase plays them over it.",
+    ),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  await user.keyboard("{Enter}");
+  expect(commands.installMod).not.toHaveBeenCalled();
 });
 
 test("asks whether another version replaces the installed one", async () => {
@@ -477,6 +514,7 @@ test("asks which recipe to use when unsure", async () => {
           versionIds: [],
           missingFiles: [],
           baseMod: null,
+          madeFor: null,
         },
         {
           recipe: {
@@ -490,6 +528,7 @@ test("asks which recipe to use when unsure", async () => {
           versionIds: [],
           missingFiles: [],
           baseMod: null,
+          madeFor: null,
         },
       ],
     }),

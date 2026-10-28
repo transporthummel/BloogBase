@@ -117,6 +117,9 @@ pub struct RecipeOption {
     /// The mod it's made to be copied over, when files are missing and
     /// BloogBase knows one that fits.
     pub base_mod: Option<BaseMod>,
+    /// For levels alone, the mod their archive name says they're for, known
+    /// to BloogBase or not ([`ModInfo::made_for`]).
+    pub made_for: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Type)]
@@ -439,6 +442,7 @@ fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Anal
                     is_patcher,
                 ),
                 base_mod: None,
+                made_for: None,
                 recipe: c.recipe,
                 origin: c.origin,
             }
@@ -1667,6 +1671,7 @@ impl Base {
             version_ids: Vec::new(),
             missing_files: Vec::new(),
             base_mod: None,
+            made_for: None,
         }
     }
 }
@@ -2143,6 +2148,7 @@ mod tests {
                 version_ids: vec!["keen4-1.4-ega".into()],
                 missing_files: vec![],
                 base_mod: None,
+                made_for: None,
             }
         );
     }
@@ -2506,6 +2512,7 @@ mod tests {
             version_ids: vec!["keen4-1.4-ega".into()],
             missing_files: vec![],
             base_mod: None,
+            made_for: None,
         };
         let mut i = library::list(&db).unwrap().remove(0);
         check_install("keen4", &option, &i).unwrap();
@@ -3266,6 +3273,7 @@ mod tests {
                 version_ids: vec![],
                 missing_files: vec![],
                 base_mod: None,
+                made_for: None,
             }],
             ..(*patched).clone()
         };

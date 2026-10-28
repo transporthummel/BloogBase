@@ -76,6 +76,7 @@ const info: ModInfo = {
       versionIds: [],
       missingFiles: [],
       baseMod: null,
+      madeFor: null,
     },
   ],
   confident: true,

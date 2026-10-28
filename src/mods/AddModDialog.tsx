@@ -319,6 +319,8 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
   const incomplete = option.missingFiles.length > 0;
   // Levels alone, for the mod their archive names.
   const levelsFor = !!base && !incomplete;
+  // Levels alone, for a mod BloogBase doesn't know.
+  const unknownBase = !base && !incomplete ? option.madeFor : null;
   const readme = useReadmeLink(path);
   const choose = (info.recipes.length > 1 && !info.confident) || (others.length > 0 && !replacing);
   const careful =
@@ -329,7 +331,8 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
     versionUnchecked ||
     choose ||
     incomplete ||
-    levelsFor;
+    levelsFor ||
+    !!unknownBase;
   const form = useRef<HTMLFormElement>(null);
   const submit = () => {
     if (ready && !install.isPending) install.mutate();
@@ -490,7 +493,7 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
         </Notice>
       )}
       {modifiedGame && <Notice>{t("mods.modifiedGame")}</Notice>}
-      {(incomplete || levelsFor) && (
+      {(incomplete || levelsFor || !!unknownBase) && (
         // Set apart: the mod won't run on its own.
         <div className="grid gap-2 text-sm">
           <p role="status" className="flex items-start gap-2">
@@ -498,6 +501,8 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
             <span>
               {levelsFor ? (
                 t("mods.levelsFor", { mod: base.name })
+              ) : unknownBase ? (
+                t("mods.levelsForUnknown", { mod: unknownBase })
               ) : (
                 <Trans
                   i18nKey="mods.missingFiles"
