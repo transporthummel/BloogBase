@@ -21,7 +21,7 @@ firing is on. It lives in `cache/composed/<profile>/`.
    left out too: they're for the levels this mod replaces.
 3. **Up to date?** A hash of every input's path, size, modification time
    and source, the recipe, whether firing is on, and a version string
-   (`composed v5`) is stored with the profile. Files are never changed in
+   (`composed v6`) is stored with the profile. Files are never changed in
    place, so that identifies them without reading them. If the hash matches
    and the folder exists, it's used as it is.
 4. **Building.** The files are copied into a temporary folder, the steps
@@ -30,6 +30,31 @@ firing is on. It lives in `cache/composed/<profile>/`.
 
 The saves stay in the profile's `state/` folder above, mounted as an overlay
 ([dosbox.md](dosbox.md)), so rebuilding never touches them.
+
+### Files a launcher left in `state/`
+
+Some mods start through a launcher of their own that renames files on
+every run: Keen Q's `KEENQ.COM` swaps `GEEL.PAT` and `GEEL3.PAT`, and
+`LEVEL80.CKQ` and `LEVELX.CKQ`, and renames `KEEN2.EXE` and the patcher
+while it runs. DOS writes each rename into `state/` like anything else, so
+after the first run the profile holds copies, and deletion markers for the
+old names, that hide the composed folder from then on. A mod update or
+one-button firing would never reach the game.
+
+So when the composed folder changes (its hash differs from the stored one),
+`launcher_copies.rs` clears what the launcher left, for profiles whose
+recipe runs a program: the files in the root of `state/` that the program
+names as a whole file name, the deletion markers for those names, and the
+`.OLZ` copy UNLZEXE keeps of an executable it names. Saves and the game's
+other state files always stay, under any extension (Keen Q's
+`CTLPANEL.CKQ` matches `CTLPANEL.CK2`). The launcher then starts as after a
+fresh install. All of `state/` is backed up first ("Before refreshing the
+mod's files", [saves.md](saves.md)).
+
+What goes is decided by where a file comes from, never by its content: a
+setting the player reset to the mod's default is byte for byte the mod's
+file too. A launcher whose names can't be read (packed or computed) keeps
+its copies, which is the old behaviour, not a loss.
 
 Bump the version string when a change to these steps should rebuild every
 composed folder.

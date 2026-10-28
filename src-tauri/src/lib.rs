@@ -17,6 +17,7 @@ mod jobs;
 mod keenwiki;
 mod keymap;
 mod launcher;
+mod launcher_copies;
 mod library;
 mod mod_index;
 mod mods;

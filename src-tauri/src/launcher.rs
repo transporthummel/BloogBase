@@ -31,6 +31,7 @@ use crate::dosconf;
 use crate::error::{Error, Result};
 use crate::exit_screen;
 use crate::firing;
+use crate::launcher_copies;
 use crate::library::now;
 use crate::paths::AppPaths;
 use crate::profiles;
@@ -173,10 +174,21 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
     let firing = firing::supports(&game.id) && firing::enabled(db)?;
     let (lower, command) = match &layers.mod_layer {
         None if !firing => (base.clone(), None),
-        m => (
-            compose::ensure(paths, db, profile_id, base, m.as_ref(), game, firing)?,
-            m.as_ref().and_then(|m| m.recipe.command()),
-        ),
+        m => {
+            let composed = compose::ensure(paths, db, profile_id, base, m.as_ref(), game, firing)?;
+            if let (true, Some(m)) = (composed.changed, m) {
+                launcher_copies::drop(
+                    paths,
+                    db,
+                    profile_id,
+                    game,
+                    &m.recipe,
+                    &composed.dir,
+                    &layers.upper,
+                )?;
+            }
+            (composed.dir, m.as_ref().and_then(|m| m.recipe.command()))
+        }
     };
     let command = match command {
         Some(c) => c,
@@ -597,6 +609,78 @@ mod tests {
 
         firing::set_enabled(&db, false).unwrap();
         assert!(mount("keen1-1").contains(&relative(&paths.root, &paths.library)));
+    }
+
+    #[test]
+    fn launcher_copies_go_when_the_mod_changes() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("mod");
+        write_folder(
+            &src,
+            &[
+                ("GO.COM", b"\0/C RENAME A.PAT B.PAT\0CK4PATCH B.PAT\0"),
+                ("A.PAT", b"%ext ck4\n%end\n"),
+            ],
+        );
+        let m = crate::mods::install(
+            &paths,
+            &db,
+            &crate::mods::InstallModRequest {
+                path: src.display().to_string(),
+                name: "Swapper".into(),
+                recipe: crate::recipe::Recipe::Program {
+                    program: "GO.COM".into(),
+                    args: Vec::new(),
+                },
+                install_id: Some("keen4-1".into()),
+                keenwiki: None,
+                extends: None,
+                replace: None,
+            },
+        )
+        .unwrap();
+        prepare(&paths, &db, &m.profile_id).unwrap();
+
+        // What a run left: the renamed patch, the marker hiding the old
+        // name, and the game's own files.
+        let (_, layers) = profiles::get(&db, &m.profile_id).unwrap();
+        let state = &layers.upper;
+        fs::create_dir_all(state).unwrap();
+        for (name, data) in [
+            ("B.PAT", &b"%ext ck4\n%end\n"[..]),
+            ("DBOVERLAY_DEL_A.PAT", b"empty"),
+            ("SAVEGAM0.CK4", b"save"),
+            ("CONFIG.CK4", b"config"),
+        ] {
+            fs::write(state.join(name), data).unwrap();
+        }
+        let files = |dir: &Path| -> Vec<String> {
+            let mut n: Vec<String> = fs::read_dir(dir)
+                .unwrap()
+                .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+                .collect();
+            n.sort();
+            n
+        };
+
+        // Unchanged: everything stays.
+        prepare(&paths, &db, &m.profile_id).unwrap();
+        assert_eq!(files(state).len(), 4);
+
+        // A mod update: the copies go, after a backup of all of state/.
+        fs::write(
+            paths.mods.join("swapper/files/A.PAT"),
+            b"%ext ck4\n%patch $1 $2\n%end\n",
+        )
+        .unwrap();
+        prepare(&paths, &db, &m.profile_id).unwrap();
+        assert_eq!(files(state), ["CONFIG.CK4", "SAVEGAM0.CK4"]);
+        let backups = crate::backups::list(&db, &m.profile_id).unwrap();
+        assert_eq!(
+            backups[0].reason,
+            Some(crate::backups::Reason::LauncherReset)
+        );
+        assert_eq!(backups[0].files.len(), 4);
     }
 
     #[test]

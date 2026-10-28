@@ -556,16 +556,36 @@ pub fn patches_named_in<'a>(
     let mut named: Vec<(usize, &str)> = names
         .into_iter()
         .filter(|n| has_ext(n, "PAT"))
-        .filter_map(|n| {
-            let name = n.to_ascii_uppercase();
-            let at = program
-                .windows(name.len())
-                .position(|w| w == name.as_bytes())?;
-            Some((at, n))
-        })
+        .filter_map(|n| Some((named_at(&program, n)?, n)))
         .collect();
     named.sort();
     named.into_iter().map(|(_, n)| n).collect()
+}
+
+/// Whether a program names the file `name`, e.g. in `RENAME KEEN2.EXE
+/// KEEN2.CKQ`.
+pub fn names_file(program: &[u8], name: &str) -> bool {
+    named_at(&program.to_ascii_uppercase(), name).is_some()
+}
+
+/// Where upper-cased `program` first names `name` as a whole file name, not
+/// as part of a longer one (`GEEL.PAT` isn't in `XGEEL.PAT`).
+fn named_at(program: &[u8], name: &str) -> Option<usize> {
+    let name = name.to_ascii_uppercase();
+    if name.is_empty() {
+        return None;
+    }
+    let in_name =
+        |b: Option<&u8>| b.is_some_and(|b| b.is_ascii_alphanumeric() || b"_-~$".contains(b));
+    program
+        .windows(name.len())
+        .enumerate()
+        .filter(|(_, w)| *w == name.as_bytes())
+        .map(|(at, _)| at)
+        .find(|&at| {
+            !in_name(at.checked_sub(1).and_then(|i| program.get(i)))
+                && !in_name(program.get(at + name.len()))
+        })
 }
 
 /// The `%ext` of a patch file, upper case, e.g. `CK4`.

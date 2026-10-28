@@ -20,6 +20,12 @@ pub fn is_marker(name: &str) -> bool {
     starts_with_ci(name, "DBOVERLAY_")
 }
 
+/// The file a deletion marker hides, e.g. `KEEN2.EXE` for
+/// `DBOVERLAY_DEL_KEEN2.EXE`.
+pub fn deleted_name(name: &str) -> Option<&str> {
+    strip_prefix_ci(name, OVERLAY_DELETED_FILE_PREFIX)
+}
+
 // Byte-wise so non-ASCII host names can't hit a char boundary panic.
 fn starts_with_ci(name: &str, prefix: &str) -> bool {
     name.as_bytes()

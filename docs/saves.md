@@ -90,6 +90,7 @@ the profile's newest backup isn't made again.
 | Before a restore                                | As an automatic backup                                  |
 | Before deleting a save                          | As an automatic backup, offered to undo the deletion    |
 | When a game or mod is removed with "keep saves" | Offered when it's added again                           |
+| Before a launcher's copies are cleared          | As an automatic backup                                  |
 
 Automatic backups are named by their reason, manual ones by the player's
 label. Of the automatic ones, the newest 10 per profile are kept (1 to 100,

@@ -577,7 +577,8 @@
       "beforeRestore": "Vor dem Wiederherstellen",
       "beforeDelete": "Vor dem Löschen eines Spielstands",
       "modRemoved": "Mod entfernt",
-      "gameRemoved": "Spiel deinstalliert"
+      "gameRemoved": "Spiel deinstalliert",
+      "launcherReset": "Vor dem Auffrischen der Mod-Dateien"
     }
   },
   "config": {

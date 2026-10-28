@@ -820,7 +820,9 @@ export type Reason =
  *  Kept after the session only if that overwrote a save (§11.1): then
  *  it becomes [`Reason::BeforeOverwrite`].
  */
-"beforeLaunch" | "beforeOverwrite" | "beforeRestore" | "beforeDelete" | "modRemoved" | "gameRemoved";
+"beforeLaunch" | "beforeOverwrite" | "beforeRestore" | "beforeDelete" | "modRemoved" | "gameRemoved" | 
+/**  Before dropping the copies a mod's launcher left (`launcher_copies`). */
+"launcherReset";
 
 export type Recipe = 
 /**  Run the episode's patcher with a patch file. */

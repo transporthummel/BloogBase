@@ -577,7 +577,8 @@
       "beforeRestore": "Before restoring",
       "beforeDelete": "Before deleting a save",
       "modRemoved": "Mod removed",
-      "gameRemoved": "Game uninstalled"
+      "gameRemoved": "Game uninstalled",
+      "launcherReset": "Before refreshing the mod's files"
     }
   },
   "config": {

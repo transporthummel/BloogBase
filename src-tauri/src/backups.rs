@@ -47,6 +47,8 @@ pub enum Reason {
     BeforeDelete,
     ModRemoved,
     GameRemoved,
+    /// Before dropping the copies a mod's launcher left (`launcher_copies`).
+    LauncherReset,
 }
 
 const REASON_PREFIX: &str = "bloogbase:";
@@ -60,6 +62,7 @@ impl Reason {
             Reason::BeforeDelete => "before-delete",
             Reason::ModRemoved => "mod-removed",
             Reason::GameRemoved => "game-removed",
+            Reason::LauncherReset => "launcher-reset",
         }
     }
 
@@ -76,6 +79,7 @@ impl Reason {
             Reason::BeforeDelete,
             Reason::ModRemoved,
             Reason::GameRemoved,
+            Reason::LauncherReset,
         ]
         .into_iter()
         .find(|r| r.key() == key)
