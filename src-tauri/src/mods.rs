@@ -1408,7 +1408,7 @@ fn stage(
     for (rel, inner) in &analysis.copies {
         source.copy_to(rel, &staging.join("files").join(inner))?;
     }
-    if let Source::Zip(zip) = source {
+    if let Source::Zip(zip, _) = source {
         fs::create_dir_all(staging.join("source"))?;
         let name = archive_name
             .map(std::ffi::OsStr::new)
@@ -1420,7 +1420,7 @@ fn stage(
 
 fn archive_sha256(source: &Source) -> Result<Option<String>> {
     Ok(match source {
-        Source::Zip(zip) => Some(sha256_hex(&fs::read(zip)?)),
+        Source::Zip(zip, _) => Some(sha256_hex(&fs::read(zip)?)),
         Source::Folder(_) => None,
     })
 }

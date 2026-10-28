@@ -93,7 +93,7 @@ fn page(source: &Source, file: &str, dest: &Path) -> Result<PathBuf> {
     }
     match source {
         Source::Folder(root) => Ok(root.join(file)),
-        Source::Zip(_) => {
+        Source::Zip(..) => {
             // An update of the mod may have changed the page; a missing
             // folder or a file still open elsewhere doesn't matter.
             let _ = fs::remove_dir_all(dest);
@@ -121,7 +121,7 @@ fn mod_source(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Option<Source>>
         .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))?;
     let dir = paths.mods.join(mod_id);
     Ok(match archive(&dir.join("source")) {
-        Some(zip) => Some(Source::Zip(zip)),
+        Some(zip) => Some(Source::Zip(zip, Default::default())),
         None if dir.join("files").is_dir() => Some(Source::Folder(dir.join("files"))),
         None => None,
     })
@@ -1111,7 +1111,7 @@ mod tests {
                 ("__MACOSX/Aurora/._READ ME.txt", b"junk"),
             ],
         );
-        let found = find(&Source::Zip(zip)).unwrap();
+        let found = find(&Source::Zip(zip, Default::default())).unwrap();
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].file, "Aurora/READ ME.txt");
         assert_eq!(found[0].text, "hi there");

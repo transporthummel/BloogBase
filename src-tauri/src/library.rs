@@ -71,7 +71,7 @@ pub struct Install {
 pub fn import(paths: &AppPaths, db: &Db, path: &Path) -> Result<Vec<Install>> {
     let kind = match Source::open(path)? {
         Source::Folder(_) => InstallSource::Folder,
-        Source::Zip(_) => InstallSource::Zip,
+        Source::Zip(..) => InstallSource::Zip,
     };
     import_from(paths, db, path, kind, &path.display().to_string(), None)
 }

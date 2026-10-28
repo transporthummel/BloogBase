@@ -1,9 +1,12 @@
 //! Read-only access to an import source: a folder or a ZIP archive.
 //! Entries are addressed by relative, `/`-separated paths.
 
+use std::collections::HashMap;
+use std::fmt;
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::{Component, Path, PathBuf};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -15,7 +18,39 @@ use crate::error::{Error, Result};
 #[derive(Debug, Clone)]
 pub enum Source {
     Folder(PathBuf),
-    Zip(PathBuf),
+    Zip(PathBuf, OpenZip),
+}
+
+/// A ZIP opened once with its entries by name: mods with a thousand files
+/// (XkyKeen4) took minutes to check when every read opened the archive
+/// again and searched it. Clones share it; the file closes with the last.
+#[derive(Clone, Default)]
+pub struct OpenZip(Arc<Mutex<Option<(ZipArchive<File>, HashMap<String, usize>)>>>);
+
+impl fmt::Debug for OpenZip {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("OpenZip")
+    }
+}
+
+type Opened<'a> = MutexGuard<'a, Option<(ZipArchive<File>, HashMap<String, usize>)>>;
+
+impl OpenZip {
+    fn get(&self, path: &Path) -> Result<Opened<'_>> {
+        let mut guard = self.0.lock().unwrap_or_else(|e| e.into_inner());
+        if guard.is_none() {
+            let mut zip = open_zip(path)?;
+            let mut names = HashMap::new();
+            for i in 0..zip.len() {
+                // `enclosed_name` rejects absolute paths and `..` (zip slip).
+                if let Some(name) = zip.by_index_raw(i)?.enclosed_name() {
+                    names.entry(to_rel_string(&name)).or_insert(i);
+                }
+            }
+            *guard = Some((zip, names));
+        }
+        Ok(guard)
+    }
 }
 
 impl Source {
@@ -27,7 +62,7 @@ impl Source {
                 .extension()
                 .is_some_and(|e| e.eq_ignore_ascii_case("zip"))
         {
-            Ok(Source::Zip(path.to_path_buf()))
+            Ok(Source::Zip(path.to_path_buf(), OpenZip::default()))
         } else {
             Err(Error::UnsupportedSource(path.to_path_buf()))
         }
@@ -49,8 +84,9 @@ impl Source {
                     }
                 }
             }
-            Source::Zip(path) => {
-                let mut zip = open_zip(path)?;
+            Source::Zip(path, open) => {
+                let mut guard = open.get(path)?;
+                let (zip, _) = guard.as_mut().expect("opened");
                 for i in 0..zip.len() {
                     let file = zip.by_index(i)?;
                     // `enclosed_name` rejects absolute paths and `..` (zip slip).
@@ -83,17 +119,13 @@ impl Source {
     fn reader(&self, rel: &str, f: impl FnOnce(&mut dyn Read) -> io::Result<()>) -> Result<()> {
         match self {
             Source::Folder(root) => f(&mut File::open(root.join(rel))?)?,
-            Source::Zip(path) => {
-                let mut zip = open_zip(path)?;
-                let index = (0..zip.len())
-                    .find(|&i| {
-                        zip.by_index_raw(i)
-                            .ok()
-                            .and_then(|e| e.enclosed_name())
-                            .is_some_and(|n| to_rel_string(&n) == rel)
-                    })
+            Source::Zip(path, open) => {
+                let mut guard = open.get(path)?;
+                let (zip, names) = guard.as_mut().expect("opened");
+                let index = *names
+                    .get(rel)
                     .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, rel.to_string()))?;
-                f(&mut read_entry(&mut zip, index)?.as_slice())?
+                f(&mut read_entry(zip, index)?.as_slice())?
             }
         }
         Ok(())
@@ -103,10 +135,11 @@ impl Source {
     /// read at all. Reading skips the check, as 7-Zip does: in old archives
     /// a file with a bad checksum often still works.
     pub fn damaged(&self) -> Result<Vec<String>> {
-        let Source::Zip(path) = self else {
+        let Source::Zip(path, open) = self else {
             return Ok(Vec::new());
         };
-        let mut zip = open_zip(path)?;
+        let mut guard = open.get(path)?;
+        let (zip, _) = guard.as_mut().expect("opened");
         let mut out = Vec::new();
         for i in 0..zip.len() {
             let file = zip.by_index_raw(i)?;
@@ -115,7 +148,7 @@ impl Source {
             };
             let expected = file.crc32();
             drop(file);
-            let intact = read_entry(&mut zip, i).is_ok_and(|data| {
+            let intact = read_entry(zip, i).is_ok_and(|data| {
                 let mut crc = flate2::Crc::new();
                 crc.update(&data);
                 crc.sum() == expected
