@@ -7,6 +7,7 @@ import { unwrap } from "../ipc";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
+import { KeepSaves } from "./KeepSaves";
 
 /** Asks before uninstalling a game, and whether its mods go too. */
 export function RemoveGameDialog({
@@ -34,16 +35,7 @@ export function RemoveGameDialog({
   return (
     <Dialog title={t("profile.removeGameTitle", { name: profile.label })} onClose={onClose}>
       <p className="text-sm text-muted">{t("profile.removeGameHint")}</p>
-      {profile.saveCount > 0 && (
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={keepSaves}
-            onChange={(e) => setKeepSaves(e.target.checked)}
-          />
-          {t("mods.keepSaves", { count: profile.saveCount })}
-        </label>
-      )}
+      <KeepSaves profile={profile} checked={keepSaves} onChange={setKeepSaves} />
       {modCount > 0 && (
         <div className="grid gap-1">
           <label className="flex items-center gap-2 text-sm">

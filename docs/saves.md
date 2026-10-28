@@ -141,7 +141,9 @@ When a game or mod is removed, so are its profile's automatic backups. With
 "keep saves", the player's own backups stay, and so do the backups made for
 this and earlier removals (one that was declined when the profile came back
 has nothing newer). This removal's backup is made even when the newest one
-holds the same files. Without "keep saves", all of the profile's backups go.
+holds the same files. Without "keep saves", all of the profile's backups go. The remove dialog shows the
+"keep saves" checkbox when the profile has saves, or backups it decides
+about (the player's own and removal backups), and names what it keeps.
 Automatic backups of profiles removed before this rule existed are removed
 on start.
 

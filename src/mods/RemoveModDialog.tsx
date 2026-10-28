@@ -9,8 +9,9 @@ import { modsKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
+import { KeepSaves } from "../profile/KeepSaves";
 
-/** Asks before removing a mod; saves are kept as a backup unless unticked. */
+/** Asks before removing a mod; saves and backups are kept unless unticked. */
 export function RemoveModDialog({
   profile,
   onClose,
@@ -46,16 +47,7 @@ export function RemoveModDialog({
           </span>
         </p>
       )}
-      {profile.saveCount > 0 && (
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={keepSaves}
-            onChange={(e) => setKeepSaves(e.target.checked)}
-          />
-          {t("mods.keepSaves", { count: profile.saveCount })}
-        </label>
-      )}
+      <KeepSaves profile={profile} checked={keepSaves} onChange={setKeepSaves} />
       {remove.error && <Notice tone="error">{errorMessage(t, remove.error)}</Notice>}
       <div className="flex justify-end gap-3">
         <Button variant="ghost" onClick={onClose}>

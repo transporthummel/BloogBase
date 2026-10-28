@@ -334,6 +334,28 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   expect(client.getQueryData(["cover", "keen5-1", null])).toBeDefined();
 });
 
+test("without saves, removing asks only about backups that would go", async () => {
+  const mine = { ...profile, modId: "aurora-bliss", label: "Aurora Bliss", saveCount: 0 };
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([mine]));
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  vi.mocked(commands.deleteMod).mockResolvedValue(ok(null));
+  // An automatic backup goes either way: nothing to ask.
+  renderDetail();
+  await pick("Remove");
+  await vi.waitFor(() => expect(commands.listBackups).toHaveBeenCalled());
+  expect(within(screen.getByRole("dialog")).queryByRole("checkbox")).toBeNull();
+
+  cleanup();
+  const manual = { ...backup, id: 8, label: "mine", reason: null, auto: false };
+  vi.mocked(commands.listBackups).mockResolvedValue(ok([backup, manual]));
+  renderDetail();
+  await pick("Remove");
+  const dialog = screen.getByRole("dialog");
+  await userEvent.click(await within(dialog).findByRole("checkbox", { name: "Keep the backup" }));
+  await userEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
+  expect(commands.deleteMod).toHaveBeenCalledWith("aurora-bliss", false);
+});
+
 test("opens at the top, wherever the library was scrolled to", async () => {
   // Pages scroll inside the shell's <main>.
   const main = document.body.appendChild(document.createElement("main"));
