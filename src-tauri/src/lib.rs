@@ -164,6 +164,9 @@ fn log_plugin(paths: &AppPaths) -> tauri::plugin::TauriPlugin<tauri::Wry> {
             }),
         ])
         .level(level)
+        // The HTML parser for KeenWiki pages logs thousands of lines per page.
+        .level_for("html5ever", LevelFilter::Warn)
+        .level_for("selectors", LevelFilter::Warn)
         .max_file_size(5 * 1024 * 1024)
         .rotation_strategy(RotationStrategy::KeepSome(5))
         .build()
