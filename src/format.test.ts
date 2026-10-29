@@ -1,6 +1,6 @@
 import { type TFunction } from "i18next";
 import { expect, test } from "vitest";
-import { formatLooseDate, formatRelative } from "./format";
+import { formatLooseDate, formatPlayTime, formatRelative } from "./format";
 
 const t = ((key: string) => key) as unknown as TFunction;
 const now = new Date(2026, 9, 21, 14, 0).getTime();
@@ -36,4 +36,12 @@ test("KeenWiki dates are shown as precisely as written, in the user's language",
   expect(formatLooseDate("de", "2009")).toBe("2009");
   expect(formatLooseDate("de", "2017-02-30")).toBe("2017-02-30");
   expect(formatLooseDate("de", "Late 2005")).toBe("Late 2005");
+});
+
+test("play time says 0 min when nothing was played, not less than a minute", () => {
+  const counted = ((key: string, o?: { count?: number }) =>
+    o?.count === undefined ? key : `${key}:${o.count}`) as unknown as TFunction;
+  expect(formatPlayTime(counted, 0)).toBe("time.minutes:0");
+  expect(formatPlayTime(counted, 30)).toBe("time.lessThanMinute");
+  expect(formatPlayTime(counted, 720)).toBe("time.minutes:12");
 });
