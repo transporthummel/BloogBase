@@ -350,7 +350,7 @@ test("offers shareware episodes and demos on their own tabs", async () => {
   expect(screen.queryByRole("button", { name: "Check for new mods" })).not.toBeInTheDocument();
   const [ega, cga] = screen.getAllByRole("article");
   expect(await within(ega).findByText("Details & Play")).toHaveAttribute("href", "/profiles/p-ega");
-  await user.click(within(cga).getByRole("button", { name: "Download (0.4 MB)" }));
+  await user.click(within(cga).getByRole("button", { name: "Install (0.4 MB)" }));
   expect(commands.installFreeGame).toHaveBeenCalledWith("keen4-1.4-cga");
 
   await user.click(screen.getByRole("tab", { name: "Demos & Betas" }));

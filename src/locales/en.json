@@ -436,7 +436,7 @@
         "demo": "Demo",
         "beta": "Beta"
       },
-      "download": "Download ({{size}} MB)",
+      "download": "Install ({{size}} MB)",
       "about": {
         "keen1-1.31": "The complete first episode of Invasion of the Vorticons.",
         "keen4-1.4-ega": "The complete first episode of Goodbye, Galaxy!, in 16 colors.",
