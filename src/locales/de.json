@@ -75,6 +75,7 @@
     "activeCustom": "Verwendet dein eigenes DOSBox Staging {{version}}.",
     "chooseCustom": "Eigenes DOSBox Staging verwenden…",
     "useManaged": "Wieder das DOSBox von BloogBase verwenden",
+    "useManagedFirst": "Stattdessen das DOSBox von BloogBase verwenden",
     "customHint": "Für Fortgeschrittene. Es muss DOSBox Staging sein; andere DOSBox-Versionen können Spielstände nicht getrennt von den Spieldateien speichern.",
     "chooseInSettings": "Wähle in den Einstellungen ein vorhandenes DOSBox Staging aus."
   },

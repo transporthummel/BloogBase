@@ -75,6 +75,7 @@
     "activeCustom": "Using your own DOSBox Staging {{version}}.",
     "chooseCustom": "Use my own DOSBox Staging…",
     "useManaged": "Use BloogBase's DOSBox again",
+    "useManagedFirst": "Use BloogBase's DOSBox instead",
     "customHint": "For advanced users. It has to be DOSBox Staging; other DOSBox versions can't keep your saves separate from the game files.",
     "chooseInSettings": "Choose an existing DOSBox Staging in the settings."
   },

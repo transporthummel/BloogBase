@@ -193,10 +193,10 @@ function RuntimeSection() {
       </p>
       {active && <p className="text-xs break-all text-muted select-text">{active.path}</p>}
 
-      {st?.downloadAvailable && (!st.managed || managedOutdated) && (
+      {/* With the player's own DOSBox in use, ours is downloaded after
+          switching back to it, not next to it. */}
+      {st?.downloadAvailable && (!st.managed || managedOutdated) && (!active || active.managed) && (
         <InstallRuntimeButton
-          // The player's own DOSBox works: downloading ours is an option, not the next step.
-          variant={active && !active.managed ? "secondary" : "primary"}
           label={
             st.managed
               ? t("runtime.update", { version: st.pinnedVersion })
@@ -217,7 +217,7 @@ function RuntimeSection() {
             onClick={() => setCustom.mutate(null)}
             disabled={setCustom.isPending}
           >
-            {t("runtime.useManaged")}
+            {t(st?.managed ? "runtime.useManaged" : "runtime.useManagedFirst")}
           </Button>
         )}
       </div>
