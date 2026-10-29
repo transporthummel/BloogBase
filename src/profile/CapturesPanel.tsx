@@ -66,13 +66,16 @@ export function CapturesPanel<T extends Capture>({
 
   return (
     <div className="grid gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <p className="mr-auto text-sm text-muted">{t(`${kind}.hint`, { key: hotkey })}</p>
-        <Button variant="secondary" onClick={() => openFolder.mutate()}>
-          <FolderOpen className="size-4" aria-hidden />
-          {t("screenshots.openFolder")}
-        </Button>
-      </div>
+      {/* Without any, the empty state says the same and the folder is empty. */}
+      {list.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="mr-auto text-sm text-muted">{t(`${kind}.hint`, { key: hotkey })}</p>
+          <Button variant="secondary" onClick={() => openFolder.mutate()}>
+            <FolderOpen className="size-4" aria-hidden />
+            {t("screenshots.openFolder")}
+          </Button>
+        </div>
+      )}
       {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
       {captures.isPending && <Loading />}
       {captures.data?.length === 0 && (
