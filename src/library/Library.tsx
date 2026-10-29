@@ -312,7 +312,8 @@ const ProfileCard = memo(function ProfileCard({
           <dt className="sr-only">{t("library.playTime")}</dt>
           <dd>
             {profile.sessionCount === 0
-              ? t("library.neverPlayed")
+              ? // Saves that came with the game were made elsewhere.
+                t("library.neverPlayed", { context: profile.saveCount > 0 ? "saves" : undefined })
               : t("library.played", { time: formatPlayTime(t, profile.playSeconds) })}
           </dd>
           {profile.lastPlayedAt !== null && (

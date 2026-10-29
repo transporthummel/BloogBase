@@ -257,7 +257,8 @@ function Hero({
     [
       t("profile.playTime"),
       profile.sessionCount === 0
-        ? t("library.neverPlayed")
+        ? // Saves that came with the game were made elsewhere.
+          t("library.neverPlayed", { context: profile.saveCount > 0 ? "saves" : undefined })
         : formatPlayTime(t, profile.playSeconds),
     ],
     [t("profile.sessions"), String(profile.sessionCount)],

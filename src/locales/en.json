@@ -24,6 +24,7 @@
     "running": "Running…",
     "playTime": "Play time",
     "neverPlayed": "Not played yet",
+    "neverPlayed_saves": "Not played in BloogBase yet",
     "played": "Played {{time}}",
     "lastPlayed": "Last played",
     "lastPlayedOn": "Last played {{date}}",

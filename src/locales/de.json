@@ -24,6 +24,7 @@
     "running": "Läuft…",
     "playTime": "Spielzeit",
     "neverPlayed": "Noch nicht gespielt",
+    "neverPlayed_saves": "Noch nicht in BloogBase gespielt",
     "played": "{{time}} gespielt",
     "lastPlayed": "Zuletzt gespielt",
     "lastPlayedOn": "Zuletzt gespielt {{date}}",
