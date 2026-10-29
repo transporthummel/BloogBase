@@ -27,11 +27,15 @@ export function KeenwikiImport({
   onDownloaded,
   onCancel,
   children,
+  footer,
 }: {
   disabled: boolean;
   onDownloaded: (d: Downloaded) => void;
   onCancel: () => void;
+  /** The other ways to add a mod, shown above the link. */
   children: ReactNode;
+  /** Below the link, e.g. Cancel. */
+  footer: ReactNode;
 }) {
   const { t } = useTranslation();
   const [url, setUrl] = useState("");
@@ -52,6 +56,8 @@ export function KeenwikiImport({
   }
   return (
     <div className="grid gap-3">
+      {children}
+      <hr className="my-1 border-border" />
       <form
         className="grid gap-1 text-sm"
         onSubmit={(e) => {
@@ -75,7 +81,6 @@ export function KeenwikiImport({
         <div className="flex gap-2">
           <input
             id="keenwiki-url"
-            data-autofocus
             type="text"
             inputMode="url"
             autoComplete="off"
@@ -85,7 +90,11 @@ export function KeenwikiImport({
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
-          <Button type="submit" disabled={disabled || lookup.isPending || !url.trim()}>
+          <Button
+            type="submit"
+            variant="secondary"
+            disabled={disabled || lookup.isPending || !url.trim()}
+          >
             <Search className="size-4" aria-hidden />
             {t("keenwiki.lookUp")}
           </Button>
@@ -93,8 +102,7 @@ export function KeenwikiImport({
       </form>
       {lookup.isPending && <Notice>{t("keenwiki.looking")}</Notice>}
       {lookup.error && <Notice tone="error">{errorMessage(t, lookup.error)}</Notice>}
-      <hr className="my-1 border-border" />
-      {children}
+      {footer}
     </div>
   );
 }

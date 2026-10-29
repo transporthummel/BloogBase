@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FileArchive, FolderOpen, LibraryBig, Puzzle } from "lucide-react";
+import { Compass, FileArchive, FolderOpen, LibraryBig, Puzzle } from "lucide-react";
 import { type ReactElement, type ReactNode, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -24,6 +24,7 @@ import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { ReadmePanel } from "../profile/ReadmePanel";
 import { readmeKey, useReadmesAt } from "../profile/readme";
 import { Button } from "../ui/Button";
+import { buttonClass } from "../ui/buttonClass";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
 import { useEnterAction } from "../ui/useEnterAction";
@@ -121,12 +122,40 @@ export function AddModDialog({
           disabled={inspect.isPending}
           onDownloaded={setFromWiki}
           onCancel={onClose}
+          footer={
+            <div className="flex justify-end">
+              <Button variant="ghost" onClick={onClose}>
+                {t("common.cancel")}
+              </Button>
+            </div>
+          }
         >
+          {/* The curated list first: the easy way for anyone new to mods. */}
+          {!replacing && (
+            <>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                <div className="grid min-w-0 flex-1 basis-60 gap-1">
+                  <p className="font-medium">{t("mods.fromList")}</p>
+                  <p className="text-sm text-muted">{t("mods.fromListHint")}</p>
+                </div>
+                <Link
+                  to="/discover"
+                  className={buttonClass("primary")}
+                  onClick={onClose}
+                  data-autofocus
+                >
+                  <Compass className="size-4" aria-hidden />
+                  {t("mods.browseList")}
+                </Link>
+              </div>
+              <hr className="my-1 border-border" />
+            </>
+          )}
           <p className="text-sm text-muted">
             {t(replacing ? "mods.replaceIntro" : "mods.addHint")}
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => pick("zip")} disabled={inspect.isPending}>
+            <Button variant="secondary" onClick={() => pick("zip")} disabled={inspect.isPending}>
               <FileArchive className="size-4" aria-hidden />
               {t("mods.chooseZip")}
             </Button>
@@ -138,19 +167,7 @@ export function AddModDialog({
           {inspect.isPending && <Notice>{t("mods.inspecting")}</Notice>}
           {inspect.data?.kind === "nothing" && <Notice tone="error">{t("drop.nothing")}</Notice>}
           {inspect.error && <Notice tone="error">{errorMessage(t, inspect.error)}</Notice>}
-          {!replacing && (
-            <p className="text-sm text-muted">
-              {t("mods.addMore")}{" "}
-              <Link to="/discover" className="underline">
-                {t("mods.toDiscover")}
-              </Link>
-            </p>
-          )}
-          <div className="flex justify-end">
-            <Button variant="ghost" onClick={onClose}>
-              {t("common.cancel")}
-            </Button>
-          </div>
+          {!replacing && <p className="text-sm text-muted">{t("mods.addMore")}</p>}
         </AddFrom>
       )}
     </Dialog>
@@ -161,6 +178,7 @@ export function AddModDialog({
 function AddFrom({
   wiki,
   children,
+  footer,
   ...props
 }: {
   wiki: boolean;
@@ -168,8 +186,18 @@ function AddFrom({
   onDownloaded: (d: Downloaded) => void;
   onCancel: () => void;
   children: ReactNode;
+  footer: ReactNode;
 }) {
-  return wiki ? <KeenwikiImport {...props}>{children}</KeenwikiImport> : <>{children}</>;
+  return wiki ? (
+    <KeenwikiImport footer={footer} {...props}>
+      {children}
+    </KeenwikiImport>
+  ) : (
+    <div className="grid gap-3">
+      {children}
+      {footer}
+    </div>
+  );
 }
 
 type ConfirmProps = {
