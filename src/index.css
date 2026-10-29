@@ -110,6 +110,17 @@ body {
   opacity: 1;
 }
 
+/* Headings wrap into even lines, paragraphs without a lone last word. */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
 /* Images and links can't be dragged out of the window. */
 img,
 a {
