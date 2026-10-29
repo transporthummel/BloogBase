@@ -8,8 +8,8 @@ const FEET = "M2 7h1v1h-1zM5 7h1v1h-1z";
 export function Bloog({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 8 8" className={className} shapeRendering="crispEdges" aria-hidden>
-      <path d={BODY} fill="var(--bb-ega-bright-green)" />
-      <path d={FEET} fill="var(--bb-ega-bright-green)" />
+      <path d={BODY} fill="var(--bb-bloog)" />
+      <path d={FEET} fill="var(--bb-bloog)" />
       <path d={EYE} fill="#ffffff" />
       <path d={PUPIL} fill="#000000" />
     </svg>

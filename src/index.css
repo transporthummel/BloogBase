@@ -31,6 +31,7 @@
   --bb-vorticons: var(--bb-ega-magenta);
   --bb-galaxy: var(--bb-ega-bright-blue);
   --bb-dreams: var(--bb-ega-brown);
+  --bb-bloog: var(--bb-ega-bright-green);
 
   color-scheme: dark;
 }
@@ -49,6 +50,8 @@
   --bb-warning: var(--bb-ega-brown);
   --bb-focus: var(--bb-ega-blue);
   --bb-shadow: 0 4px 16px rgb(23 21 46 / 0.08);
+  /* EGA green, the darker shade of the Bloog's own: bright green fades on white. */
+  --bb-bloog: #00aa00;
 
   color-scheme: light;
 }
