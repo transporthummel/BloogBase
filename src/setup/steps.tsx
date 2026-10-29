@@ -14,6 +14,7 @@ import { JobList, JobRow } from "../jobs/JobList";
 import { useJobLabel } from "../jobs/label";
 import { isFinished, useJobs, useStartJob } from "../jobs/queries";
 import { compare, fitting, type Owned } from "../discover/fit";
+import { IndexError } from "../discover/IndexError";
 import { useFreeGames, useIndexMods, useIndexStatus } from "../discover/queries";
 import { installsKey, profilesKey } from "../library/queries";
 import { setLanguage, type Language } from "../preferences";
@@ -526,7 +527,13 @@ export function ModsStep({ next, back }: StepProps) {
         <p>{t("setup.mods.intro")}</p>
       </StepHeader>
       {loading && <Notice>{t("setup.mods.loading")}</Notice>}
-      {!loading && suggestions.length === 0 && <p className="text-sm">{t("setup.mods.none")}</p>}
+      {!loading &&
+        suggestions.length === 0 &&
+        (status?.error ? (
+          <IndexError error={status.error} cached={status.modCount > 0} wizard />
+        ) : (
+          <p className="text-sm">{t("setup.mods.none")}</p>
+        ))}
       <ul className="grid gap-3">
         {suggestions.map(({ entry }) => (
           <li key={entry.id} className="rounded-lg border border-border p-3">
@@ -555,9 +562,6 @@ export function ModsStep({ next, back }: StepProps) {
         ))}
       </ul>
       {suggestions.length > 0 && <p className="text-xs text-muted">{t("setup.mods.later")}</p>}
-      {status?.error && !loading && suggestions.length === 0 && (
-        <Notice tone="error">{errorMessage(t, status.error)}</Notice>
-      )}
       {start.error && <Notice tone="error">{errorMessage(t, start.error)}</Notice>}
       <Footer back={back} skip={toStart.length > 0 ? next : undefined}>
         {toStart.length > 0 ? (

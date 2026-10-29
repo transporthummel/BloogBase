@@ -38,6 +38,7 @@ vi.mock("../bindings", () => {
       listInstalls: vi.fn(),
       indexStatus: vi.fn(),
       indexMods: vi.fn(),
+      refreshIndex: vi.fn(),
       installIndexMod: vi.fn(),
     },
     events: { jobUpdated: event, indexUpdated: event },
@@ -345,4 +346,24 @@ test("suggests featured mods for games on their way and queues the picked ones",
   await user.click(screen.getByRole("button", { name: "Install 1 mod" }));
   expect(commands.installIndexMod).toHaveBeenCalledWith("for-keen1", null, false, null);
   expect(await screen.findByRole("heading", { name: "All set!" })).toBeInTheDocument();
+});
+
+test("says the mod list is missing instead of a bare download error", async () => {
+  resumeAt("mods");
+  vi.mocked(commands.freeGames).mockResolvedValue({ status: "ok", data: [] });
+  vi.mocked(commands.indexStatus).mockResolvedValue({
+    url: "x",
+    checkedAt: null,
+    generatedAt: null,
+    modCount: 0,
+    hiddenCount: 0,
+    error: { kind: "network", message: "offline" },
+  });
+  renderSetup();
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "BloogBase couldn't download the mod list, so there are no suggestions right now.",
+  );
+  expect(screen.queryByText(/no suggestions for your games/)).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
 });

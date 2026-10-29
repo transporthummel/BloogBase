@@ -234,6 +234,7 @@
       "loading": "Mod-Liste wird geladen…",
       "none": "Für deine Spiele gibt es gerade keine Vorschläge. Sobald du ein Spiel hast, findest du Mods unter „Entdecken“.",
       "later": "Viele weitere findest du unter „Entdecken“.",
+      "unavailable": "BloogBase konnte die Mod-Liste nicht herunterladen, darum gibt es gerade keine Vorschläge. Du kannst auch ohne weitermachen und Mods später unter „Entdecken“ finden.",
       "install_one": "{{count}} Mod installieren",
       "install_other": "{{count}} Mods installieren"
     }
@@ -374,7 +375,9 @@
     "neverChecked": "Die Mod-Liste wurde noch nicht geladen.",
     "hidden_one": "Aktualisiere BloogBase, um {{count}} weitere Mod zu sehen.",
     "hidden_other": "Aktualisiere BloogBase, um {{count}} weitere Mods zu sehen.",
-    "offline": "Du siehst die Mod-Liste von deinem letzten Besuch. {{message}}",
+    "offline": "BloogBase konnte nicht nach neuen Mods suchen, darum siehst du die Mod-Liste von deinem letzten Besuch. Bitte prüfe deine Internetverbindung.",
+    "stale": "Du siehst die Mod-Liste von deinem letzten Besuch. {{message}}",
+    "listFailed": "BloogBase konnte die Mod-Liste nicht herunterladen. Bitte prüfe deine Internetverbindung.",
     "search": "Mods durchsuchen",
     "game": "Spiel",
     "allGames": "Alle Spiele",

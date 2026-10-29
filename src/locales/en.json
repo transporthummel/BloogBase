@@ -234,6 +234,7 @@
       "loading": "Loading the mod list…",
       "none": "There are no suggestions for your games right now. Once you have a game, you'll find mods under Discover.",
       "later": "You'll find many more under Discover.",
+      "unavailable": "BloogBase couldn't download the mod list, so there are no suggestions right now. You can go on without them and find mods under Discover later.",
       "install_one": "Install {{count}} mod",
       "install_other": "Install {{count}} mods"
     }
@@ -374,7 +375,9 @@
     "neverChecked": "The mod list hasn't been loaded yet.",
     "hidden_one": "Update BloogBase to see {{count}} more mod.",
     "hidden_other": "Update BloogBase to see {{count}} more mods.",
-    "offline": "Showing the mod list from your last visit. {{message}}",
+    "offline": "BloogBase couldn't check for new mods, so this is the mod list from your last visit. Please check your internet connection.",
+    "stale": "This is the mod list from your last visit. {{message}}",
+    "listFailed": "BloogBase couldn't download the mod list. Please check your internet connection.",
     "search": "Search mods",
     "game": "Game",
     "allGames": "All games",

@@ -16,6 +16,7 @@ import { RelativeTime } from "../ui/RelativeTime";
 import { Tabs } from "../ui/Tabs";
 import { compare, fitting, SORTS, type Sort } from "./fit";
 import { FreeGames } from "./FreeGames";
+import { IndexError } from "./IndexError";
 import { ModCard } from "./ModCard";
 import { TABS, type DiscoverTab } from "./tabs";
 import { useIndexMods, useIndexStatus, useRefreshIndex } from "./queries";
@@ -111,7 +112,6 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
     .sort((a, b) => compare(sort)(a.entry, b.entry));
 
   const st = status.data;
-  const error = st?.error ?? mods.error;
   return (
     <>
       <div className="mb-4 grid gap-2">
@@ -129,12 +129,10 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
         {st && st.hiddenCount > 0 && (
           <Notice>{t("discover.hidden", { count: st.hiddenCount })}</Notice>
         )}
-        {error && (
-          <Notice tone="error">
-            {st && st.modCount > 0
-              ? t("discover.offline", { message: errorMessage(t, error) })
-              : errorMessage(t, error)}
-          </Notice>
+        {st?.error ? (
+          <IndexError error={st.error} cached={st.modCount > 0} />
+        ) : (
+          mods.error && <Notice tone="error">{errorMessage(t, mods.error)}</Notice>
         )}
       </div>
 

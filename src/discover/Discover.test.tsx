@@ -249,9 +249,29 @@ test("keeps showing the cached list when a check fails", async () => {
     error: { kind: "network", message: "offline" },
   });
   renderDiscover();
-  expect(await screen.findByText(/from your last visit/)).toBeInTheDocument();
+  expect(await screen.findByText(/couldn't check for new mods/)).toBeInTheDocument();
   expect(screen.getByText("Update BloogBase to see 2 more mods.")).toBeInTheDocument();
   expect(await screen.findByRole("heading", { name: "Aurora" })).toBeInTheDocument();
+
+  vi.mocked(commands.refreshIndex).mockResolvedValue(status);
+  await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+  expect(commands.refreshIndex).toHaveBeenCalledWith(true);
+  await vi.waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+});
+
+test("says which download failed when there's no list yet", async () => {
+  vi.mocked(commands.indexStatus).mockResolvedValue({
+    ...status,
+    checkedAt: null,
+    modCount: 0,
+    error: { kind: "network", message: "offline" },
+  });
+  vi.mocked(commands.indexMods).mockResolvedValue({ status: "ok", data: [] });
+  renderDiscover();
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "BloogBase couldn't download the mod list.",
+  );
+  expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
 });
 
 test("fit rules match the backend", () => {
