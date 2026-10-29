@@ -210,7 +210,7 @@ export function AddModDialog({
           {!replacing && <p className="text-sm text-muted">{t("mods.addMore")}</p>}
           {/* Bought later: the store search instead of finding the folder by hand. */}
           {!replacing && onFindOwned && (
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-border pt-3 text-sm text-muted">
               {t("mods.ownedHint")}
               <Button variant="secondary" onClick={onFindOwned}>
                 <Search className="size-4" aria-hidden />
