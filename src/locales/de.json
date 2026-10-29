@@ -236,7 +236,16 @@
       "title": "Fertig!",
       "running": "Die Downloads laufen im Hintergrund weiter. Deine Spiele erscheinen in der Bibliothek, sobald sie bereit sind.",
       "ready": "Alles ist bereit. Viel Spaß!",
-      "open": "Zur Bibliothek"
+      "almost": "Fast fertig. DOSBox bekommst du jederzeit in den Einstellungen.",
+      "open": "Zur Bibliothek",
+      "games_one": "{{n}} Spiel in deiner Bibliothek",
+      "games_other": "{{n}} Spiele in deiner Bibliothek",
+      "noGames": "Noch keine Spiele. Du kannst sie jederzeit in der Bibliothek hinzufügen.",
+      "mods_one": "{{n}} Mod zum Ausprobieren",
+      "mods_other": "{{n}} Mods zum Ausprobieren",
+      "engine": "DOSBox Staging {{version}} ist bereit",
+      "ownEngine": "Dein eigenes DOSBox ist bereit",
+      "noEngine": "DOSBox fehlt noch"
     },
     "mods": {
       "title": "Probier eine Mod aus",

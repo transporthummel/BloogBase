@@ -236,7 +236,16 @@
       "title": "All set!",
       "running": "Downloads keep running in the background. Your games show up in the library as soon as they're ready.",
       "ready": "Everything is ready. Have fun!",
-      "open": "Open my library"
+      "almost": "Almost ready. You can get DOSBox in the settings any time.",
+      "open": "Open my library",
+      "games_one": "{{n}} game in your library",
+      "games_other": "{{n}} games in your library",
+      "noGames": "No games yet. You can add them in the library any time.",
+      "mods_one": "{{n}} mod to try",
+      "mods_other": "{{n}} mods to try",
+      "engine": "DOSBox Staging {{version}} is ready",
+      "ownEngine": "Your own DOSBox is ready",
+      "noEngine": "DOSBox is still missing"
     },
     "mods": {
       "title": "Try a mod",

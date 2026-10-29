@@ -1,13 +1,13 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
-import { CircleCheck, FileArchive, FileCog, FolderOpen } from "lucide-react";
+import { CircleCheck, CircleDashed, FileArchive, FileCog, FolderOpen } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import logo from "../assets/logo.jpg";
-import { commands, type FreeGame, type Install } from "../bindings";
+import { commands, type FreeGame, type Install, type Job } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
-import { formatMegabytes } from "../format";
+import { formatMegabytes, formatNumber } from "../format";
 import { unwrap } from "../ipc";
 import { JobList, JobRow } from "../jobs/JobList";
 import { useJobLabel } from "../jobs/label";
@@ -15,7 +15,7 @@ import { isFinished, useJobs, useStartJob } from "../jobs/queries";
 import { compare, fitting, type Owned } from "../discover/fit";
 import { IndexError } from "../discover/IndexError";
 import { useFreeGames, useIndexMods, useIndexStatus } from "../discover/queries";
-import { installsKey } from "../library/queries";
+import { installsKey, profilesKey } from "../library/queries";
 import { getTheme, setLanguage, setTheme, type Language, type Theme } from "../preferences";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { useRuntimeMutation, useRuntimeStatus } from "../runtime/queries";
@@ -588,25 +588,84 @@ export function ThemeStep({ next, back }: StepProps) {
 /** The Bloog cheers the end of the setup with two hops and an extra life, once. */
 function Arrival() {
   return (
-    <div className="relative h-14 w-12" aria-hidden>
-      <span className="bb-oneup absolute top-0 left-1/2 font-pixel text-[0.6rem] leading-none text-warning">
+    <div className="relative flex h-24 justify-center" aria-hidden>
+      <span className="bb-oneup absolute top-0 left-1/2 font-pixel text-xs leading-none text-warning">
         1UP
       </span>
-      <Bloog className="bb-cheer absolute bottom-0 left-1 size-10" />
+      <Bloog className="bb-cheer mt-auto size-20" />
     </div>
+  );
+}
+
+/** What the player has now: games, mods and the engine. Whatever is still on
+    its way is in the job list below. */
+function Recap({ jobs }: { jobs: Job[] }) {
+  const { t, i18n } = useTranslation();
+  const profiles = useQuery({
+    queryKey: profilesKey,
+    queryFn: () => unwrap(commands.listProfiles()),
+  });
+  const runtime = useRuntimeStatus();
+  if (!profiles.data || !runtime.data) return null;
+
+  const pending = (kind: Job["kind"]) => jobs.some((j) => j.kind === kind && !isFinished(j));
+  const n = (count: number) => ({ count, n: formatNumber(i18n.language, count) });
+  const games = profiles.data.filter((p) => p.modId === null).length;
+  const mods = profiles.data.length - games;
+  const active = runtime.data.active;
+
+  const items: { done: boolean; text: string }[] = [];
+  if (games > 0) items.push({ done: true, text: t("setup.done.games", n(games)) });
+  else if (!pending("freeGame")) items.push({ done: false, text: t("setup.done.noGames") });
+  if (mods > 0) items.push({ done: true, text: t("setup.done.mods", n(mods)) });
+  if (active) {
+    items.push({
+      done: true,
+      text: active.managed
+        ? t("setup.done.engine", { version: active.version })
+        : t("setup.done.ownEngine"),
+    });
+  } else if (!pending("runtime")) {
+    items.push({ done: false, text: t("setup.done.noEngine") });
+  }
+
+  return (
+    <ul className="mx-auto grid w-fit gap-2 text-sm">
+      {items.map(({ done, text }) => (
+        <li key={text} className={`flex items-center gap-2.5 ${done ? "" : "text-muted"}`}>
+          {done ? (
+            <CircleCheck className="size-4 shrink-0 text-accent" aria-hidden />
+          ) : (
+            <CircleDashed className="size-4 shrink-0" aria-hidden />
+          )}
+          {text}
+        </li>
+      ))}
+    </ul>
   );
 }
 
 export function DoneStep({ back, finish, finishing }: StepProps) {
   const { t } = useTranslation();
   const jobs = useJobs().data ?? [];
+  const runtime = useRuntimeStatus();
   const running = jobs.some((j) => !isFinished(j));
+  const noEngine = runtime.data?.active === null;
   return (
     <>
       <StepHeader title={t("setup.done.title")}>
-        <p>{running ? t("setup.done.running") : t("setup.done.ready")}</p>
+        <p>
+          {running
+            ? t("setup.done.running")
+            : noEngine
+              ? t("setup.done.almost")
+              : t("setup.done.ready")}
+        </p>
       </StepHeader>
-      <Arrival />
+      <div className="grid gap-6">
+        <Arrival />
+        <Recap jobs={jobs} />
+      </div>
       {jobs.length > 0 && <JobList jobs={jobs} />}
       <Footer back={back}>
         <Button onClick={finish} disabled={finishing}>

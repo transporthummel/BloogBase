@@ -8,6 +8,7 @@ import {
   type IndexEntry,
   type IndexMod,
   type Job,
+  type Profile,
   type RuntimeStatus,
 } from "../bindings";
 import { unwrap } from "../ipc";
@@ -36,6 +37,7 @@ vi.mock("../bindings", () => {
       importStoreGames: vi.fn(),
       importGames: vi.fn(),
       listInstalls: vi.fn(),
+      listProfiles: vi.fn(),
       indexStatus: vi.fn(),
       indexMods: vi.fn(),
       refreshIndex: vi.fn(),
@@ -103,6 +105,7 @@ beforeEach(() => {
   });
   vi.mocked(commands.completeSetup).mockResolvedValue({ status: "ok", data: null });
   vi.mocked(commands.listInstalls).mockResolvedValue({ status: "ok", data: [] });
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [] });
   vi.mocked(commands.indexStatus).mockResolvedValue({
     url: "x",
     checkedAt: 1,
@@ -383,4 +386,39 @@ test("says the mod list is missing instead of a bare download error", async () =
   );
   expect(screen.queryByText(/no suggestions for your games/)).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+});
+
+test("sums up what the player has at the end", async () => {
+  resumeAt("done");
+  vi.mocked(commands.listProfiles).mockResolvedValue({
+    status: "ok",
+    data: [
+      { id: "keen1-1", modId: null } as Profile,
+      { id: "keen4-1", modId: null } as Profile,
+      { id: "keen-q", modId: "keen-q" } as Profile,
+    ],
+  });
+  vi.mocked(commands.runtimeStatus).mockResolvedValue({
+    status: "ok",
+    data: {
+      ...missing,
+      active: { id: "staging", version: "0.83.0", path: "dosbox.exe", managed: true },
+    },
+  });
+  renderSetup();
+
+  expect(await screen.findByText("2 games in your library")).toBeInTheDocument();
+  expect(screen.getByText("1 mod to try")).toBeInTheDocument();
+  expect(screen.getByText("DOSBox Staging 0.83.0 is ready")).toBeInTheDocument();
+  expect(screen.getByText("Everything is ready. Have fun!")).toBeInTheDocument();
+});
+
+test("says what is still missing at the end", async () => {
+  resumeAt("done");
+  renderSetup();
+
+  expect(await screen.findByText("DOSBox is still missing")).toBeInTheDocument();
+  expect(screen.getByText(/No games yet/)).toBeInTheDocument();
+  expect(screen.getByText(/Almost ready/)).toBeInTheDocument();
+  expect(screen.queryByText(/mod to try|mods to try/)).not.toBeInTheDocument();
 });
