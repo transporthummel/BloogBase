@@ -13,7 +13,7 @@ import {
   type ModInfo,
 } from "../bindings";
 import { bestFit, gameTitle, isModified, shortGameTitle, useGames } from "../catalog";
-import { useIndexInstalled } from "../discover/queries";
+import { useIndexInstalled, useIndexMods } from "../discover/queries";
 import { errorMessage } from "../errors";
 import { formatLooseDate } from "../format";
 import { unwrap } from "../ipc";
@@ -65,6 +65,11 @@ export function AddModDialog({
   const queryClient = useQueryClient();
   const [path, setPath] = useState<string | null>(null);
   const [fromWiki, setFromWiki] = useState<Downloaded | null>(downloaded ?? null);
+  // Everything from the mod list is installed and current: KeenWiki is where
+  // new mods come from, so the list steps back and the link field leads.
+  const index = useIndexMods();
+  const haveAll =
+    !!index.data?.length && index.data.every((m) => m.modId !== null && !m.updateAvailable);
 
   // A pick may also hold games, which are imported right away; only a replacement must be a mod.
   const inspect = useMutation({
@@ -141,19 +146,22 @@ export function AddModDialog({
           disabled={inspect.isPending}
           onDownloaded={setFromWiki}
           onCancel={onClose}
+          focus={haveAll}
           before={
             // The curated list first: the easy way for anyone new to mods;
             // then KeenWiki, where new mods come from.
             <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
               <div className="grid min-w-0 flex-1 basis-60 gap-1">
                 <p className="font-medium">{t("mods.fromList")}</p>
-                <p className="text-sm text-muted">{t("mods.fromListHint")}</p>
+                <p className="text-sm text-muted">
+                  {t(haveAll ? "mods.fromListAll" : "mods.fromListHint")}
+                </p>
               </div>
               <Link
                 to="/discover"
-                className={buttonClass("primary")}
+                className={buttonClass(haveAll ? "secondary" : "primary")}
                 onClick={onClose}
-                data-autofocus
+                data-autofocus={!haveAll || undefined}
               >
                 <Compass className="size-4" aria-hidden />
                 {t("mods.browseList")}
@@ -198,6 +206,7 @@ export function AddModDialog({
 function AddFrom({
   wiki,
   before,
+  focus,
   children,
   footer,
   ...props
@@ -207,11 +216,12 @@ function AddFrom({
   onDownloaded: (d: Downloaded) => void;
   onCancel: () => void;
   before: ReactNode;
+  focus: boolean;
   children: ReactNode;
   footer: ReactNode;
 }) {
   return wiki ? (
-    <KeenwikiImport before={before} footer={footer} {...props}>
+    <KeenwikiImport before={before} focus={focus} footer={footer} {...props}>
       {children}
     </KeenwikiImport>
   ) : (

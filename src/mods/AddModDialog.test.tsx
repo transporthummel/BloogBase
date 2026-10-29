@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { act, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import {
@@ -18,6 +18,7 @@ import {
   type RecipeOption,
   type WikiMod,
 } from "../bindings";
+import { indexModsKey } from "../discover/queries";
 import { jobsKey } from "../jobs/queries";
 import { AddModDialog } from "./AddModDialog";
 
@@ -1044,4 +1045,23 @@ test("links KeenWiki's mods for finding a page", async () => {
   renderDialog();
   await userEvent.setup().click(screen.getByRole("button", { name: "Mods on KeenWiki" }));
   expect(openUrl).toHaveBeenCalledWith("https://keenwiki.shikadi.net/wiki/Category:Mods");
+});
+
+test("leads with the mod list, or with the KeenWiki link once it's all installed", async () => {
+  // The list is loaded at start, before the dialog opens.
+  const client = new QueryClient();
+  client.setQueryData(indexModsKey, [auroraInIndex]);
+  renderDialog(client);
+  const list = screen.getByRole("link", { name: "Browse mods" });
+  expect(list).toHaveFocus();
+  expect(screen.getByText(/tested and installed with one click/)).toBeInTheDocument();
+  cleanup();
+
+  const all = new QueryClient();
+  all.setQueryData(indexModsKey, [{ ...auroraInIndex, modId: "aurora" }]);
+  renderDialog(all);
+  expect(screen.getByRole("textbox", { name: "Add a mod from KeenWiki" })).toHaveFocus();
+  expect(
+    screen.getByText("You have every mod from the list. New ones are added by themselves."),
+  ).toBeInTheDocument();
 });

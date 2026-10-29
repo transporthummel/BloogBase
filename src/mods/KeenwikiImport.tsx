@@ -27,6 +27,7 @@ export function KeenwikiImport({
   onDownloaded,
   onCancel,
   before,
+  focus = false,
   children,
   footer,
 }: {
@@ -35,6 +36,8 @@ export function KeenwikiImport({
   onCancel: () => void;
   /** Ways to add a mod shown above the link. */
   before?: ReactNode;
+  /** The link field takes the focus when the dialog opens. */
+  focus?: boolean;
   /** Ways to add a mod shown below the link. */
   children: ReactNode;
   /** At the end, e.g. Cancel. */
@@ -88,6 +91,7 @@ export function KeenwikiImport({
         <div className="flex gap-2">
           <input
             id="keenwiki-url"
+            data-autofocus={focus || undefined}
             type="text"
             inputMode="url"
             autoComplete="off"

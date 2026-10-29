@@ -272,6 +272,7 @@
     "addHint": "Or choose a game or mod you have yourself: a ZIP file or an unpacked folder. BloogBase finds out what it is and how to start it.",
     "fromList": "Pick from the mod list",
     "fromListHint": "Mods the community recommends, tested and installed with one click.",
+    "fromListAll": "You have every mod from the list. New ones are added by themselves.",
     "browseList": "Browse mods",
     "addMore": "You can pick several at once, or drop folders and ZIP files onto the window.",
     "chooseZip": "Choose ZIP file…",
