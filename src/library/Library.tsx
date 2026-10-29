@@ -330,9 +330,10 @@ const ProfileCard = memo(function ProfileCard({
               // A block, so the focus ring is one box around a wrapped title.
               className="block hover:underline"
               title={t("library.details")}
-              aria-label={sharedLabel ? name : undefined}
+              // Also keeps the no-break spaces of the wrapped title out of its name.
+              aria-label={name}
             >
-              {profile.label}
+              {keepSeriesTogether(profile.label)}
             </Link>
           </Heading>
           {profile.missingGame !== null ? (
@@ -402,3 +403,11 @@ const ProfileCard = memo(function ProfileCard({
     </Card>
   );
 });
+
+/**
+ * "Commander Keen 5:" stays on one line, so a narrow card wraps after the
+ * episode rather than between "Commander" and "Keen".
+ */
+function keepSeriesTogether(label: string) {
+  return label.replace(/^Commander Keen (\d)/, "Commander\u00a0Keen\u00a0$1");
+}
