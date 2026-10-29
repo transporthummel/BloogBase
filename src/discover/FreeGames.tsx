@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Download, ExternalLink } from "lucide-react";
+import { Download, ExternalLink, Search } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type FreeGame, type Game } from "../bindings";
 import { gameTitle } from "../catalog";
@@ -11,6 +12,7 @@ import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { GameTile } from "./GameTile";
 import { DetailsLink } from "./DetailsLink";
+import { FindOwnedDialog } from "../library/FindOwnedDialog";
 import { profilesKey } from "../library/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -26,6 +28,8 @@ export type FreeCategory = "games" | "demos";
 export function FreeGames({ category, games }: { category: FreeCategory; games: Game[] }) {
   const { t } = useTranslation();
   const free = useFreeGames();
+  const [finding, setFinding] = useState(false);
+  const [imported, setImported] = useState<number | null>(null);
   const shown = (free.data ?? [])
     .map((f) => {
       const game = games.find((g) => g.id === f.gameId);
@@ -50,7 +54,11 @@ export function FreeGames({ category, games }: { category: FreeCategory; games: 
       {category === "games" && (
         <div className="grid max-w-2xl gap-1 text-sm">
           <p className="text-muted">{t("discover.free.buy")}</p>
-          <p className="flex flex-wrap gap-4">
+          <p className="flex flex-wrap items-center gap-4">
+            <Button variant="secondary" onClick={() => setFinding(true)}>
+              <Search className="size-4" aria-hidden />
+              {t("library.findOwned")}
+            </Button>
             {(["gog", "steam"] as const).map((store) => (
               <button
                 key={store}
@@ -63,7 +71,17 @@ export function FreeGames({ category, games }: { category: FreeCategory; games: 
               </button>
             ))}
           </p>
+          {imported !== null && <Notice>{t("library.imported", { count: imported })}</Notice>}
         </div>
+      )}
+      {finding && (
+        <FindOwnedDialog
+          onClose={() => setFinding(false)}
+          onImported={(count) => {
+            setFinding(false);
+            setImported(count);
+          }}
+        />
       )}
       <p className="max-w-2xl text-xs text-muted">{t(`discover.free.terms.${category}`)}</p>
     </div>

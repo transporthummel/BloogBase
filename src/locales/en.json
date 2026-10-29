@@ -423,7 +423,7 @@
     "withoutGameTitle": "Install {{name}} without its game?",
     "withoutGameHint": "{{game}} isn’t in your library. The mod is installed now and can be played once you add the game.",
     "free": {
-      "buy": "The other episodes are sold on GOG and Steam, except Keen 6, which can't be bought anywhere at the moment. Once installed, \"Run setup again\" in Settings finds them.",
+      "buy": "The other episodes are sold on GOG and Steam, except Keen 6, which can't be bought anywhere at the moment. Once installed from there, BloogBase finds them.",
       "intro": {
         "games": "These episodes were released as shareware: complete games you may play and pass on for free. Mods made for them work right away.",
         "demos": "Early test builds and promotional demos, interesting for a look at how the games came about. They are not complete games."
