@@ -373,9 +373,12 @@ const ProfileCard = memo(function ProfileCard({
           )}
           <dt className="sr-only">{t("library.saveCountLabel")}</dt>
           <dd>
+            {/* Leads where the title does: for the mouse only, so keyboards
+                stop once per card before Play. */}
             <Link
               to="/profiles/$profileId"
               params={{ profileId: profile.id }}
+              tabIndex={-1}
               className="underline-offset-2 hover:underline"
             >
               {t("library.saveCount", { count: profile.saveCount })}

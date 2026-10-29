@@ -61,9 +61,11 @@ export function Shell() {
         aria-label={t("nav.label")}
         className="flex w-16 shrink-0 flex-col gap-1 border-r border-border bg-surface p-2 xl:w-60 xl:p-3"
       >
+        {/* The same page as About below: one stop for keyboards. */}
         <Link
           to="/about"
           title={t("nav.about")}
+          tabIndex={-1}
           className="mb-4 flex h-12 items-center justify-center gap-3 rounded-lg xl:justify-start xl:px-1"
         >
           <img src={icon} alt="" className="size-10 shrink-0" />
