@@ -25,6 +25,7 @@ import { Notice } from "../ui/Notice";
 import { useSetupStatus } from "./queries";
 import { StoreLinks, StoreScanList } from "./StoreScanList";
 import { useStoreScan } from "./storeScan";
+import { usePageTitle } from "../ui/usePageTitle";
 
 export type StepProps = {
   next: () => void;
@@ -34,6 +35,7 @@ export type StepProps = {
 };
 
 function StepHeader({ title, children }: { title: string; children?: ReactNode }) {
+  usePageTitle(title);
   return (
     <div className="grid gap-2">
       <h1 className="font-pixel text-base leading-relaxed">{title}</h1>

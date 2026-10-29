@@ -63,6 +63,7 @@ import { VideosPanel } from "./VideosPanel";
 import { screenshotSrc, screenshotsKey, useScreenshots, useVideos, videosKey } from "./captures";
 import { usePictureWidth } from "./heroPicture";
 import { backupsKey, savesKey, useSaves } from "./saves";
+import { usePageTitle } from "../ui/usePageTitle";
 
 type Tab = "readme" | "saves" | "screenshots" | "videos" | "config";
 
@@ -222,6 +223,7 @@ function Hero({
   modCount: number;
 }) {
   const { t, i18n } = useTranslation();
+  usePageTitle(profile.label);
   const mods = useQuery({
     queryKey: modsKey,
     queryFn: () => unwrap(commands.listMods()),
