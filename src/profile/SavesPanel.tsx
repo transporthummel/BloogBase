@@ -275,7 +275,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
             placeholder={t("backups.labelPlaceholder")}
             aria-label={t("backups.label")}
           />
-          <Button type="submit" disabled={locked || backup.isPending}>
+          <Button type="submit" variant="secondary" disabled={locked || backup.isPending}>
             <Archive className="size-4" aria-hidden />
             {t("backups.backupAll")}
           </Button>

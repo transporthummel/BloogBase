@@ -108,7 +108,11 @@ function FreeGameAction({ free, label }: { free: FreeGame; label: string }) {
   return (
     <>
       {job?.phase === "failed" && <JobRow job={job} label={label} />}
-      <Button onClick={() => start.mutate(free.versionId)} disabled={start.isPending}>
+      <Button
+        variant="card"
+        onClick={() => start.mutate(free.versionId)}
+        disabled={start.isPending}
+      >
         <Download className="size-4" aria-hidden />
         {t("discover.free.download", { size: formatMegabytes(free.size) })}
       </Button>

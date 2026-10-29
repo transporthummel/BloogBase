@@ -180,7 +180,7 @@ function InstallAction({
     return (
       <>
         {failed}
-        <Button onClick={() => start.mutate(null)} disabled={start.isPending}>
+        <Button variant="card" onClick={() => start.mutate(null)} disabled={start.isPending}>
           <RefreshCw className="size-4" aria-hidden />
           {entry.version
             ? t("discover.updateTo", { version: entry.version })
@@ -251,7 +251,7 @@ function InstallAction({
           </select>
         </label>
       )}
-      <Button onClick={() => start.mutate(target.id)} disabled={start.isPending}>
+      <Button variant="card" onClick={() => start.mutate(target.id)} disabled={start.isPending}>
         <Download className="size-4" aria-hidden />
         {installLabel}
       </Button>

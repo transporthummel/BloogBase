@@ -339,6 +339,7 @@ const ProfileCard = memo(function ProfileCard({
         </dl>
         <div className="mt-auto flex gap-2 pt-1.5">
           <PlayButton
+            variant="card"
             className="flex-1"
             onClick={() => onPlay(profile.id)}
             disabled={!canPlay || profile.running || profile.missingGame !== null}
