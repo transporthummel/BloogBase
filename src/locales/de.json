@@ -131,7 +131,7 @@
     "displayOverridden": "Wird von deinen DOSBox-Einstellungen für alle Spiele (unten) festgelegt.",
     "controls": "Steuerung",
     "oneButtonFiring": "Schießen mit einer Taste in Keen 1–3",
-    "oneButtonFiringHint": "Space schießt statt Strg und Alt zusammen, Enter öffnet das Statusfenster. Mods, die das schon so machen, bleiben unverändert; Mods, die die Steuerung anders ändern, werden nicht angetastet. Schießen mit dem Joystick funktioniert dann eventuell nicht mehr. Gilt ab dem nächsten Start."
+    "oneButtonFiringHint": "Die Leertaste schießt statt Strg und Alt zusammen, Enter öffnet das Statusfenster. Schießen mit dem Joystick funktioniert dann eventuell nicht mehr. Mods, die das schon so machen, bleiben unverändert; Mods, die die Steuerung anders ändern, werden nicht angetastet. Gilt ab dem nächsten Start."
   },
   "errors": {
     "noGamesFound": "Dort wurden keine Commander-Keen-Spiele gefunden.",
@@ -519,8 +519,8 @@
     "openModFolder": "Mod-Ordner öffnen",
     "replaceMod": "Durch lokale Kopie ersetzen…",
     "firing": {
-      "on": "Space schießt, Enter öffnet das Statusfenster.",
-      "builtIn": "Diese Mod schießt schon mit Space.",
+      "on": "Die Leertaste schießt, Enter öffnet das Statusfenster.",
+      "builtIn": "Diese Mod schießt schon mit der Leertaste.",
       "unavailable": "Schießen mit einer Taste ist hier nicht verfügbar: Dieses Spiel oder diese Mod ändert die Steuerung anders.",
       "otherVersion": "Schießen mit einer Taste gibt es nur für Version 1.31 des Spiels, und diese Spielkopie ist eine andere."
     },

@@ -131,7 +131,7 @@
     "displayOverridden": "Set by your DOSBox settings for all games (below).",
     "controls": "Controls",
     "oneButtonFiring": "One-button firing in Keen 1–3",
-    "oneButtonFiringHint": "Space shoots instead of Ctrl and Alt together, and Enter opens the status window. Mods that already work this way stay as they are; mods that change the controls differently are left alone. Shooting with a joystick may stop working. Applies from the next start."
+    "oneButtonFiringHint": "Space shoots instead of Ctrl and Alt together, and Enter opens the status window. Shooting with a joystick may stop working. Mods that already work this way stay as they are; mods that change the controls differently are left alone. Applies from the next start."
   },
   "errors": {
     "noGamesFound": "No Commander Keen games were found there.",
