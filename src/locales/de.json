@@ -504,11 +504,11 @@
       "compositeCga": "Diese Mod ist für einen CGA-Composite-Monitor gemacht: DOSBox läuft dafür als CGA-Karte mit Composite-Farben.",
       "paradiseSvga": "Diese Mod braucht mehr Grafikspeicher, als die übliche Grafikkarte ihr gibt: DOSBox läuft dafür als Paradise-SVGA-Karte."
     },
-    "removeGame": "Deinstallieren",
-    "removeGameTitle": "{{name}} deinstallieren?",
+    "removeGame": "Entfernen",
+    "removeGameTitle": "{{name}} entfernen?",
     "removeGameHint": "BloogBase löscht seine Kopie des Spiels. Der Ordner oder das Archiv, aus dem du es hinzugefügt hast, bleibt unberührt.",
-    "removeGameMods_one": "Auch die Mod für dieses Spiel deinstallieren",
-    "removeGameMods_other": "Auch die {{count}} Mods für dieses Spiel deinstallieren",
+    "removeGameMods_one": "Auch die Mod für dieses Spiel entfernen",
+    "removeGameMods_other": "Auch die {{count}} Mods für dieses Spiel entfernen",
     "removeGameModsKept": "Sonst wechseln sie auf eine andere Kopie des Spiels oder warten, bis es wieder da ist."
   },
   "saves": {
@@ -599,7 +599,7 @@
       "beforeRestore": "Vor dem Wiederherstellen",
       "beforeDelete": "Vor dem Löschen eines Spielstands",
       "modRemoved": "Mod entfernt",
-      "gameRemoved": "Spiel deinstalliert",
+      "gameRemoved": "Spiel entfernt",
       "launcherReset": "Vor dem Auffrischen der Mod-Dateien"
     }
   },

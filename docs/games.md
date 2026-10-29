@@ -76,8 +76,8 @@ An import takes every game detected in the source:
    the new copy if it fits ([keenwiki.md](keenwiki.md), "Which copy does it
    go on?").
 
-The original files are never touched or removed, also not when the game is
-uninstalled.
+The original files are never touched or deleted, also not when the game is
+removed from the library.
 
 ### Damaged archives
 
@@ -129,7 +129,7 @@ match its hash moves on to the next one. The archive is imported only if
 `cargo test free_games -- --ignored` downloads every mirror and checks it;
 run it after changing the manifest.
 
-## Uninstalling
+## Removing a game
 
 Removing a game deletes its library folder, its profile and the profile's
 caches (composed folder, cover). With "keep saves", the saves are archived

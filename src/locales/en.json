@@ -504,11 +504,11 @@
       "compositeCga": "This mod is made for a CGA composite monitor: DOSBox runs as a CGA card with composite colors for it.",
       "paradiseSvga": "This mod needs more video memory than the usual graphics card gives it: DOSBox runs as a Paradise SVGA card for it."
     },
-    "removeGame": "Uninstall",
-    "removeGameTitle": "Uninstall {{name}}?",
+    "removeGame": "Remove",
+    "removeGameTitle": "Remove {{name}}?",
     "removeGameHint": "BloogBase deletes its copy of the game. The folder or archive you added it from stays untouched.",
-    "removeGameMods_one": "Also uninstall the mod played on it",
-    "removeGameMods_other": "Also uninstall the {{count}} mods played on it",
+    "removeGameMods_one": "Also remove the mod played on it",
+    "removeGameMods_other": "Also remove the {{count}} mods played on it",
     "removeGameModsKept": "Otherwise they move to another copy of the game, or wait until it’s back."
   },
   "saves": {
@@ -599,7 +599,7 @@
       "beforeRestore": "Before restoring",
       "beforeDelete": "Before deleting a save",
       "modRemoved": "Mod removed",
-      "gameRemoved": "Game uninstalled",
+      "gameRemoved": "Game removed",
       "launcherReset": "Before refreshing the mod's files"
     }
   },

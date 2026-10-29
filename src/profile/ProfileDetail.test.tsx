@@ -405,7 +405,7 @@ test("a mod can be replaced with a local copy, unless it runs", async () => {
   expect(screen.getByRole("menuitem", { name: "Replace with a local copy…" })).toBeDisabled();
 });
 
-test("a game is uninstalled from its page, with its mods if asked", async () => {
+test("a game is removed from its page, with its mods if asked", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue(
     ok([
       profile,
@@ -426,16 +426,17 @@ test("a game is uninstalled from its page, with its mods if asked", async () => 
   renderDetail(client);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "More" }));
-  expect(screen.queryByRole("menuitem", { name: "Remove" })).toBeNull();
-  await user.click(screen.getByRole("menuitem", { name: "Uninstall" }));
+  // The game's own entry, not also the one for a mod.
+  expect(screen.getAllByRole("menuitem", { name: "Remove" })).toHaveLength(1);
+  await user.click(screen.getByRole("menuitem", { name: "Remove" }));
   const dialog = screen.getByRole("dialog");
   // Only the mod on this copy of the game counts.
   const withMods = within(dialog).getByRole("checkbox", {
-    name: "Also uninstall the mod played on it",
+    name: "Also remove the mod played on it",
   });
   expect(dialog).toHaveTextContent("Otherwise they move to another copy");
   await user.click(withMods);
-  await user.click(within(dialog).getByRole("button", { name: "Uninstall" }));
+  await user.click(within(dialog).getByRole("button", { name: "Remove" }));
   expect(commands.removeGame).toHaveBeenCalledWith("keen4-1", true, true);
   expect(navigate).toHaveBeenCalledWith({ to: "/" });
   // The game and its mod are gone; the other copy's mod keeps its cover.
@@ -467,7 +468,8 @@ test("a mod waiting for its game says which one and can't be played", async () =
   expect(screen.getByRole("button", { name: "Game missing" })).toBeDisabled();
   expect(screen.queryByText(/^Runs on/)).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "More" }));
-  expect(screen.queryByRole("menuitem", { name: "Uninstall" })).toBeNull();
+  // The mod's own entry, not also the one for a game.
+  expect(screen.getAllByRole("menuitem", { name: "Remove" })).toHaveLength(1);
 
   // Removing it doesn't mention a game that stays.
   await userEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
