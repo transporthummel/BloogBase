@@ -194,3 +194,18 @@ test("imports what the add dialog picked several of, like a drop", async () => {
   expect(commands.importGames).toHaveBeenCalledWith("/keen/one");
   expect(commands.importGames).toHaveBeenCalledWith("/keen/two");
 });
+
+test("several mods count up in the title and can be skipped", async () => {
+  vi.mocked(commands.inspectDropped).mockReturnValue(ok({ kind: "mod" as const, info }));
+  vi.mocked(commands.installMod).mockReturnValue(ok(aurora));
+  renderDrop();
+  act(() => emit({ type: "drop", paths: ["/a.zip", "/b.zip"] }));
+
+  await screen.findByRole("dialog", { name: "Add a game or mod (1/2)" });
+  await userEvent.click(screen.getByRole("button", { name: "Skip" }));
+  await screen.findByRole("dialog", { name: "Add a game or mod (2/2)" });
+  await userEvent.click(screen.getByRole("button", { name: "Install" }));
+  await screen.findByRole("dialog", { name: "Added to your library" });
+  expect(commands.installMod).toHaveBeenCalledTimes(1);
+  expect(commands.installMod).toHaveBeenCalledWith(expect.objectContaining({ path: "/b.zip" }));
+});

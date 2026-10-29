@@ -255,6 +255,9 @@
     "ok": "OK"
   },
   "drop": {
+    "progress": "{{title}} ({{at}}/{{of}})",
+    "skip": "Überspringen",
+    "continue": "Fortsetzen",
     "hint": "Lass Ordner oder ZIP-Dateien mit Spielen oder Mods hier fallen, um sie hinzuzufügen.",
     "working": "Schaue mir an, was du fallen gelassen hast…",
     "title": "Zur Bibliothek hinzugefügt",

@@ -41,6 +41,7 @@ import { fits } from "./recipes";
  */
 export function AddModDialog({
   dropped,
+  queue,
   downloaded,
   replacing,
   onClose,
@@ -49,6 +50,8 @@ export function AddModDialog({
 }: {
   /** A folder or ZIP dropped on the window and inspected already. */
   dropped?: { path: string; info: ModInfo };
+  /** Where `dropped` is among several added at once, counting from 1. */
+  queue?: { at: number; of: number };
   /** A KeenWiki download fetched already, e.g. an update. */
   downloaded?: Downloaded;
   /** The installed mod it updates or replaces. */
@@ -98,9 +101,12 @@ export function AddModDialog({
     inspect.mutate(paths[0]);
   }
 
+  const title = t(
+    downloaded ? "mods.updateTitle" : replacing ? "mods.replaceTitle" : "mods.addTitle",
+  );
   return (
     <Dialog
-      title={t(downloaded ? "mods.updateTitle" : replacing ? "mods.replaceTitle" : "mods.addTitle")}
+      title={queue ? t("drop.progress", { title, at: queue.at, of: queue.of }) : title}
       onClose={onClose}
     >
       {dropped ? (
@@ -108,6 +114,7 @@ export function AddModDialog({
           path={dropped.path}
           info={dropped.info}
           replacing={replacing}
+          queued={!!queue}
           onCancel={onClose}
           onInstalled={onInstalled}
         />
@@ -219,6 +226,8 @@ type ConfirmProps = {
   origin?: KeenwikiOrigin | null;
   /** The installed mod to preselect for replacing. */
   replacing?: string;
+  /** One of several added at once: leaving it skips to the next. */
+  queued?: boolean;
   onCancel: () => void;
   onInstalled: (mod: Mod) => void;
 };
@@ -227,7 +236,7 @@ type ConfirmProps = {
 function Confirm(props: ConfirmProps) {
   const { t } = useTranslation();
   const [myself, setMyself] = useState(false);
-  const { info, path, replacing, onCancel } = props;
+  const { info, path, replacing, queued, onCancel } = props;
   const installed = useIndexInstalled(info.indexId);
   if (!info.indexId || replacing || myself) return <SetUp {...props} />;
   return (
@@ -237,13 +246,27 @@ function Confirm(props: ConfirmProps) {
         <Button variant="ghost" onClick={() => setMyself(true)}>
           {t("mods.setUpMyself")}
         </Button>
-        <OkButton installed={installed} onClick={onCancel} label={t("common.close")} />
+        {queued ? (
+          <Button variant={installed ? "primary" : "ghost"} onClick={onCancel}>
+            {t("drop.continue")}
+          </Button>
+        ) : (
+          <OkButton installed={installed} onClick={onCancel} label={t("common.close")} />
+        )}
       </div>
     </div>
   );
 }
 
-function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: ConfirmProps) {
+function SetUp({
+  path,
+  info,
+  origin = null,
+  replacing,
+  queued,
+  onCancel,
+  onInstalled,
+}: ConfirmProps) {
   const { t, i18n } = useTranslation();
   const games = useGames();
   const installs = useQuery({
@@ -587,7 +610,7 @@ function SetUp({ path, info, origin = null, replacing, onCancel, onInstalled }: 
       {install.error && <Notice tone="error">{errorMessage(t, install.error)}</Notice>}
       <div className="flex justify-end gap-3">
         <Button variant="ghost" onClick={onCancel}>
-          {t("common.cancel")}
+          {t(queued ? "drop.skip" : "common.cancel")}
         </Button>
         <Button type="submit" disabled={!ready || install.isPending}>
           {install.isPending

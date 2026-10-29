@@ -35,6 +35,8 @@ export function DropImport() {
   const [hovering, setHovering] = useState(false);
   const [busy, setBusy] = useState(false);
   const [mods, setMods] = useState<{ path: string; info: ModInfo }[]>([]);
+  // How many mods were found, for "(2/5)" while confirming them.
+  const [queued, setQueued] = useState(0);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
 
   useEffect(() => {
@@ -62,6 +64,7 @@ export function DropImport() {
       }
       setBusy(false);
       setMods(found);
+      setQueued(found.length);
       setOutcome(result);
     }
 
@@ -122,6 +125,7 @@ export function DropImport() {
         <AddModDialog
           key={mods[0].path}
           dropped={mods[0]}
+          queue={queued > 1 ? { at: queued - mods.length + 1, of: queued } : undefined}
           onClose={() => nextMod()}
           onInstalled={nextMod}
         />
