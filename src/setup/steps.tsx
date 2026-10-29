@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
 import { CircleCheck, FileArchive, FileCog, FolderOpen } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import logo from "../assets/logo.jpg";
 import { commands, type FreeGame, type Install } from "../bindings";
@@ -16,7 +16,7 @@ import { compare, fitting, type Owned } from "../discover/fit";
 import { IndexError } from "../discover/IndexError";
 import { useFreeGames, useIndexMods, useIndexStatus } from "../discover/queries";
 import { installsKey } from "../library/queries";
-import { setLanguage, type Language } from "../preferences";
+import { getTheme, setLanguage, setTheme, type Language, type Theme } from "../preferences";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { useRuntimeMutation, useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
@@ -502,7 +502,88 @@ export function ModsStep({ next, back }: StepProps) {
   );
 }
 
-// 7. Done -----------------------------------------------------------------
+// 7. Theme ----------------------------------------------------------------
+
+/** A tiny window in a theme's colours: sidebar, a card with text and a green button. */
+function Swatch({ theme }: { theme: "dark" | "light" }) {
+  return (
+    <span className={`bb-swatch-${theme} flex h-full bg-[var(--sw-bg)]`} aria-hidden>
+      <span className="w-1/4 border-r border-[var(--sw-border)] bg-[var(--sw-sidebar)]" />
+      <span className="m-2 flex flex-1 flex-col gap-1.5 rounded border border-[var(--sw-border)] bg-[var(--sw-surface)] p-2">
+        <span className="h-1.5 w-3/4 rounded-full bg-[var(--sw-ink)]" />
+        <span className="h-1.5 w-1/2 rounded-full bg-[var(--sw-muted)]" />
+        <span className="mt-auto h-3 w-1/3 self-end rounded-sm bg-[var(--sw-accent)]" />
+      </span>
+    </span>
+  );
+}
+
+const themes: Theme[] = ["dark", "light", "system"];
+const themeKeys = { dark: "Dark", light: "Light", system: "System" } as const;
+
+export function ThemeStep({ next, back }: StepProps) {
+  const { t } = useTranslation();
+  const [theme, setThemeState] = useState(getTheme);
+  const id = useId();
+  return (
+    <>
+      <StepHeader title={t("setup.theme.title")}>
+        <p>{t("setup.theme.intro")}</p>
+      </StepHeader>
+      <fieldset className="grid gap-3 sm:grid-cols-3">
+        <legend className="sr-only">{t("settings.theme")}</legend>
+        {themes.map((th) => (
+          <label
+            key={th}
+            className={`grid cursor-pointer content-start gap-2 rounded-lg border p-3 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-focus ${
+              theme === th ? "border-accent bg-surface-raised" : "border-border"
+            }`}
+          >
+            <span className="relative block aspect-[4/3] overflow-hidden rounded-md border border-border">
+              {th === "system" ? (
+                <>
+                  <span className="absolute inset-0">
+                    <Swatch theme="dark" />
+                  </span>
+                  <span className="absolute inset-0 [clip-path:polygon(100%_0,100%_100%,0_100%)]">
+                    <Swatch theme="light" />
+                  </span>
+                </>
+              ) : (
+                <Swatch theme={th} />
+              )}
+            </span>
+            <span className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="theme"
+                aria-labelledby={`${id}-${th}-name`}
+                aria-describedby={`${id}-${th}`}
+                className="size-4 accent-[var(--bb-accent)]"
+                checked={theme === th}
+                onChange={() => {
+                  setTheme(th);
+                  setThemeState(th);
+                }}
+              />
+              <span id={`${id}-${th}-name`} className="font-semibold">
+                {t(`settings.theme${themeKeys[th]}`)}
+              </span>
+            </span>
+            <span id={`${id}-${th}`} className="text-xs text-muted">
+              {t(`setup.theme.${th}`)}
+            </span>
+          </label>
+        ))}
+      </fieldset>
+      <Footer back={back}>
+        <Button onClick={next}>{t("setup.next")}</Button>
+      </Footer>
+    </>
+  );
+}
+
+// 8. Done -----------------------------------------------------------------
 
 /** The Bloog cheers the end of the setup with two hops and an extra life, once. */
 function Arrival() {

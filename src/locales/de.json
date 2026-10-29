@@ -225,6 +225,13 @@
       "import_one": "{{count}} Spiel hinzufügen",
       "import_other": "{{count}} Spiele hinzufügen"
     },
+    "theme": {
+      "title": "Wähle dein Aussehen",
+      "intro": "Du kannst es jederzeit in den Einstellungen ändern.",
+      "dark": "Dunkel wie ein Sternenhimmel bei Nacht.",
+      "light": "Hell, im Beige eines Computers aus den 80ern.",
+      "system": "Wechselt mit dem dunklen Modus deines Systems zwischen beiden."
+    },
     "done": {
       "title": "Fertig!",
       "running": "Die Downloads laufen im Hintergrund weiter. Deine Spiele erscheinen in der Bibliothek, sobald sie bereit sind.",

@@ -225,6 +225,13 @@
       "import_one": "Add {{count}} game",
       "import_other": "Add {{count}} games"
     },
+    "theme": {
+      "title": "Pick your look",
+      "intro": "You can change it any time in the settings.",
+      "dark": "Dark, like a night sky full of stars.",
+      "light": "Light, in the beige of an 80s desktop PC.",
+      "system": "Switches between the two with your system's dark mode."
+    },
     "done": {
       "title": "All set!",
       "running": "Downloads keep running in the background. Your games show up in the library as soon as they're ready.",

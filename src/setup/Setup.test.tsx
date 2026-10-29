@@ -149,6 +149,8 @@ test("walks through all steps, skipping each, and finishes", async () => {
   await user.click(screen.getByRole("button", { name: "Next" }));
   await screen.findByRole("heading", { name: "Try a mod" });
   await user.click(screen.getByRole("button", { name: "Next" }));
+  await screen.findByRole("heading", { name: "Pick your look" });
+  await user.click(screen.getByRole("button", { name: "Next" }));
   await user.click(await screen.findByRole("button", { name: "Open my library" }));
 
   expect(commands.completeSetup).toHaveBeenCalled();
@@ -345,7 +347,22 @@ test("suggests featured mods for games on their way and queues the picked ones",
   expect(screen.queryByText("not-featured")).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Install 1 mod" }));
   expect(commands.installIndexMod).toHaveBeenCalledWith("for-keen1", null, false, null);
+  expect(await screen.findByRole("heading", { name: "Pick your look" })).toBeInTheDocument();
+});
+
+test("applies the picked theme right away", async () => {
+  resumeAt("theme");
+  localStorage.clear();
+  renderSetup();
+  const user = userEvent.setup();
+
+  expect(await screen.findByRole("radio", { name: "Midnight Galaxy" })).toBeChecked();
+  await user.click(screen.getByRole("radio", { name: "Vintage Beige" }));
+  expect(document.documentElement.dataset.theme).toBe("light");
+  expect(localStorage.getItem("bloogbase.theme")).toBe("light");
+  await user.click(screen.getByRole("button", { name: "Next" }));
   expect(await screen.findByRole("heading", { name: "All set!" })).toBeInTheDocument();
+  localStorage.clear();
 });
 
 test("says the mod list is missing instead of a bare download error", async () => {

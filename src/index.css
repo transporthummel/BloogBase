@@ -81,6 +81,28 @@
   color-scheme: light;
 }
 
+/* The wizard's theme previews show each theme while the other one is on.
+   Keep in step with the tokens above. */
+.bb-swatch-dark {
+  --sw-bg: #0d0c1d;
+  --sw-sidebar: #181631;
+  --sw-surface: #221f42;
+  --sw-border: #34305e;
+  --sw-ink: #f2f0ff;
+  --sw-muted: #a19dc4;
+  --sw-accent: #55ff55;
+}
+
+.bb-swatch-light {
+  --sw-bg: #d9d1bc;
+  --sw-sidebar: #cfc6ad;
+  --sw-surface: #efe9da;
+  --sw-border: #b2a68a;
+  --sw-ink: #221e1a;
+  --sw-muted: #544c3f;
+  --sw-accent: #115e18;
+}
+
 @theme inline {
   --color-bg: var(--bb-bg);
   --color-surface: var(--bb-surface);

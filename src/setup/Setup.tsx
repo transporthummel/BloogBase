@@ -16,12 +16,22 @@ import {
   ModsStep,
   OwnedStep,
   StorageStep,
+  ThemeStep,
   WelcomeStep,
   type StepProps,
 } from "./steps";
 
 /** The wizard steps of PLAN.md §7. */
-const STEPS = ["welcome", "storage", "engine", "owned", "episodes", "mods", "done"] as const;
+const STEPS = [
+  "welcome",
+  "storage",
+  "engine",
+  "owned",
+  "episodes",
+  "mods",
+  "theme",
+  "done",
+] as const;
 type Step = (typeof STEPS)[number];
 
 const components: Record<Step, (props: StepProps) => ReactNode> = {
@@ -31,6 +41,7 @@ const components: Record<Step, (props: StepProps) => ReactNode> = {
   episodes: EpisodesStep,
   owned: OwnedStep,
   mods: ModsStep,
+  theme: ThemeStep,
   done: DoneStep,
 };
 
