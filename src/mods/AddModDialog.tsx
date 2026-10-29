@@ -141,6 +141,25 @@ export function AddModDialog({
           disabled={inspect.isPending}
           onDownloaded={setFromWiki}
           onCancel={onClose}
+          before={
+            // The curated list first: the easy way for anyone new to mods;
+            // then KeenWiki, where new mods come from.
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+              <div className="grid min-w-0 flex-1 basis-60 gap-1">
+                <p className="font-medium">{t("mods.fromList")}</p>
+                <p className="text-sm text-muted">{t("mods.fromListHint")}</p>
+              </div>
+              <Link
+                to="/discover"
+                className={buttonClass("primary")}
+                onClick={onClose}
+                data-autofocus
+              >
+                <Compass className="size-4" aria-hidden />
+                {t("mods.browseList")}
+              </Link>
+            </div>
+          }
           footer={
             <div className="flex justify-end">
               <Button variant="ghost" onClick={onClose}>
@@ -149,27 +168,6 @@ export function AddModDialog({
             </div>
           }
         >
-          {/* The curated list first: the easy way for anyone new to mods. */}
-          {!replacing && (
-            <>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-                <div className="grid min-w-0 flex-1 basis-60 gap-1">
-                  <p className="font-medium">{t("mods.fromList")}</p>
-                  <p className="text-sm text-muted">{t("mods.fromListHint")}</p>
-                </div>
-                <Link
-                  to="/discover"
-                  className={buttonClass("primary")}
-                  onClick={onClose}
-                  data-autofocus
-                >
-                  <Compass className="size-4" aria-hidden />
-                  {t("mods.browseList")}
-                </Link>
-              </div>
-              <hr className="my-1 border-border" />
-            </>
-          )}
           <p className="text-sm text-muted">
             {t(replacing ? "mods.replaceIntro" : "mods.addHint")}
           </p>
@@ -193,9 +191,13 @@ export function AddModDialog({
   );
 }
 
-/** The ways to add a mod; a KeenWiki find replaces the others. */
+/**
+ * The ways to add a mod; a KeenWiki find replaces the others. Without
+ * KeenWiki (replacing a mod), `before` is left out too.
+ */
 function AddFrom({
   wiki,
+  before,
   children,
   footer,
   ...props
@@ -204,11 +206,12 @@ function AddFrom({
   disabled: boolean;
   onDownloaded: (d: Downloaded) => void;
   onCancel: () => void;
+  before: ReactNode;
   children: ReactNode;
   footer: ReactNode;
 }) {
   return wiki ? (
-    <KeenwikiImport footer={footer} {...props}>
+    <KeenwikiImport before={before} footer={footer} {...props}>
       {children}
     </KeenwikiImport>
   ) : (

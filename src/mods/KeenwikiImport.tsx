@@ -20,21 +20,24 @@ import { downloaded, type Downloaded } from "./wikiDownload";
 
 /**
  * Paste a KeenWiki link: shows the index entry for it, or the page's details.
- * Once a mod is found, only that is shown; `children` (other ways to add one) until then.
+ * Once a mod is found, only that is shown; the other ways to add one until then.
  */
 export function KeenwikiImport({
   disabled,
   onDownloaded,
   onCancel,
+  before,
   children,
   footer,
 }: {
   disabled: boolean;
   onDownloaded: (d: Downloaded) => void;
   onCancel: () => void;
-  /** The other ways to add a mod, shown above the link. */
+  /** Ways to add a mod shown above the link. */
+  before?: ReactNode;
+  /** Ways to add a mod shown below the link. */
   children: ReactNode;
-  /** Below the link, e.g. Cancel. */
+  /** At the end, e.g. Cancel. */
   footer: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -56,8 +59,12 @@ export function KeenwikiImport({
   }
   return (
     <div className="grid gap-3">
-      {children}
-      <hr className="my-1 border-border" />
+      {before && (
+        <>
+          {before}
+          <hr className="my-1 border-border" />
+        </>
+      )}
       <form
         className="grid gap-1 text-sm"
         onSubmit={(e) => {
@@ -102,6 +109,8 @@ export function KeenwikiImport({
       </form>
       {lookup.isPending && <Notice>{t("keenwiki.looking")}</Notice>}
       {lookup.error && <Notice tone="error">{errorMessage(t, lookup.error)}</Notice>}
+      <hr className="my-1 border-border" />
+      {children}
       {footer}
     </div>
   );
