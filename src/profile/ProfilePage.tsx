@@ -361,7 +361,10 @@ function Hero({
               {profile.modId === null && version?.shareware && (
                 <Badge>{t("profile.shareware")}</Badge>
               )}
-              {mod?.version && <Badge>{t("mods.version", { version: mod.version })}</Badge>}
+              {mod?.version && (
+                // "v2.0" like the game versions; versions with words stay as written.
+                <Badge>{/^\d/.test(mod.version) ? `v${mod.version}` : mod.version}</Badge>
+              )}
             </div>
             {mod && mod.authors.length > 0 && (
               <p className="text-sm">
