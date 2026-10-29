@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
-import { CircleCheck, FileArchive, FileCog, FolderOpen, PartyPopper } from "lucide-react";
+import { CircleCheck, FileArchive, FileCog, FolderOpen } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import logo from "../assets/logo.jpg";
@@ -20,6 +20,7 @@ import { setLanguage, type Language } from "../preferences";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { useRuntimeMutation, useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
+import { Bloog } from "../ui/Bloog";
 import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
 import { useSetupStatus } from "./queries";
@@ -503,6 +504,18 @@ export function ModsStep({ next, back }: StepProps) {
 
 // 7. Done -----------------------------------------------------------------
 
+/** The Bloog cheers the end of the setup with two hops and an extra life, once. */
+function Arrival() {
+  return (
+    <div className="relative h-14 w-12" aria-hidden>
+      <span className="bb-oneup absolute top-0 left-1/2 font-pixel text-[0.6rem] leading-none text-warning">
+        1UP
+      </span>
+      <Bloog className="bb-cheer absolute bottom-0 left-1 size-10" />
+    </div>
+  );
+}
+
 export function DoneStep({ back, finish, finishing }: StepProps) {
   const { t } = useTranslation();
   const jobs = useJobs().data ?? [];
@@ -512,11 +525,8 @@ export function DoneStep({ back, finish, finishing }: StepProps) {
       <StepHeader title={t("setup.done.title")}>
         <p>{running ? t("setup.done.running") : t("setup.done.ready")}</p>
       </StepHeader>
-      {jobs.length > 0 ? (
-        <JobList jobs={jobs} />
-      ) : (
-        <PartyPopper className="size-10 text-accent" aria-hidden />
-      )}
+      <Arrival />
+      {jobs.length > 0 && <JobList jobs={jobs} />}
       <Footer back={back}>
         <Button onClick={finish} disabled={finishing}>
           {t("setup.done.open")}

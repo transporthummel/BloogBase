@@ -229,6 +229,46 @@ select {
   animation: bb-hop 0.7s steps(4) infinite;
 }
 
+/* The end of the setup: the Bloog hops twice, and an extra life rises over
+   it as in the games. Both run once and leave the Bloog standing. */
+@keyframes bb-cheer {
+  0%,
+  30%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  15% {
+    transform: translateY(-40%);
+  }
+  45% {
+    transform: translateY(-25%);
+  }
+}
+
+@keyframes bb-oneup {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  20%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+}
+
+.bb-cheer {
+  animation: bb-cheer 0.9s steps(6) 0.3s;
+}
+
+.bb-oneup {
+  animation: bb-oneup 1.4s ease-out 0.4s both;
+}
+
 /* The launch overlay fades in after a moment, so quick starts don't flash
    it; its card rises a little. */
 @keyframes bb-fade {
