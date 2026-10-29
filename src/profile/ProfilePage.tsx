@@ -431,9 +431,7 @@ function Hero({
             // Nothing to count yet: one line instead of columns of "0" and "–".
             <p className="text-sm text-muted">
               {[
-                t("library.neverPlayed", {
-                  context: profile.saveCount > 0 ? "saves" : undefined,
-                }),
+                t("library.neverPlayed"),
                 t("library.saveCount", { count: profile.saveCount }),
                 added !== undefined && `${t("profile.added")} ${formatDate(i18n.language, added)}`,
               ]
