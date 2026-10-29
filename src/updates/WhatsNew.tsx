@@ -140,7 +140,7 @@ export function WhatsNew() {
       {news.releases.map((r) => (
         <section key={r.version} className="grid gap-2">
           <h3 className="font-semibold">{t("news.release", { version: r.version })}</h3>
-          <ul className="list-disc pl-6 text-sm">
+          <ul className="list-disc pl-6 text-sm select-text">
             {(i18n.language === "de" ? r.de : r.en).map((line) => (
               <li key={line}>{line}</li>
             ))}
