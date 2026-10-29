@@ -32,6 +32,9 @@ import { PageHeader } from "../ui/PageHeader";
 import { RelativeTime } from "../ui/RelativeTime";
 import { PlayButton } from "../ui/PlayButton";
 
+/** The games sold on Steam and GOG. */
+const SOLD_GAMES = ["keen1", "keen2", "keen3", "keen4", "keen5", "kdreams"];
+
 export function Library() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -99,6 +102,17 @@ export function Library() {
     return <Navigate to="/setup" />;
 
   const gameById = new Map(games.data?.map((g) => [g.id, g]));
+  // Everything Steam and GOG sell is here already (Keen 6 isn't sold):
+  // nothing for the store search to find. Demos and betas don't count.
+  const owned = new Set(
+    (profiles.data ?? [])
+      .filter((p) => {
+        const kind = gameById.get(p.gameId)?.versions.find((v) => v.id === p.versionId)?.kind;
+        return p.modId === null && (kind ?? "release") === "release";
+      })
+      .map((p) => p.gameId),
+  );
+  const ownsAllSold = SOLD_GAMES.every((id) => owned.has(id));
   const error = launch.error ?? profiles.error;
   const empty = profiles.data?.length === 0;
   const needsRuntime = !empty && runtime.data && !runtime.data.active;
@@ -131,10 +145,14 @@ export function Library() {
             setAdding(false);
             showImported(installs);
           }}
-          onFindOwned={() => {
-            setAdding(false);
-            setFinding(true);
-          }}
+          onFindOwned={
+            ownsAllSold
+              ? undefined
+              : () => {
+                  setAdding(false);
+                  setFinding(true);
+                }
+          }
         />
       )}
       {finding && (

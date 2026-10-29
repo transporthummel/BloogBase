@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import {
@@ -27,8 +27,10 @@ vi.mock("../mods/AddModDialog", () => ({
   AddModDialog: (props: {
     onInstalled: (mod: Mod) => void;
     onGamesImported: (installs: Install[]) => void;
+    onFindOwned?: () => void;
   }) => (
     <>
+      {props.onFindOwned && <p>offers the store search</p>}
       <button onClick={() => props.onInstalled({ profileId: "aurora" } as Mod)}>mod</button>
       <button onClick={() => props.onGamesImported([{ id: "keen5-1" } as Install])}>
         one game
@@ -317,4 +319,25 @@ test("adding several games stays in the library and counts them", async () => {
   await user.click(screen.getByRole("button", { name: "two games" }));
   expect(await screen.findByText("Imported 2 games.")).toBeInTheDocument();
   expect(navigate).not.toHaveBeenCalled();
+});
+
+test("the add dialog stops offering the store search once everything sold is here", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
+  renderLibrary();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Add game or mod" }));
+  expect(screen.getByText("offers the store search")).toBeInTheDocument();
+  cleanup();
+
+  const all = ["keen1", "keen2", "keen3", "keen4", "keen5", "kdreams"].map((gameId) => ({
+    ...profile,
+    id: gameId,
+    installId: gameId,
+    gameId,
+    versionId: null,
+  }));
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: all });
+  renderLibrary();
+  await user.click(await screen.findByRole("button", { name: "Add game or mod" }));
+  expect(screen.queryByText("offers the store search")).toBeNull();
 });
