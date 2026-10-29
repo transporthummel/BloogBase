@@ -67,7 +67,9 @@ type Tab = "readme" | "saves" | "screenshots" | "videos" | "config";
 
 export function ProfileRoute() {
   const { profileId } = useParams({ from: "/profiles/$profileId" });
-  return <ProfileDetail profileId={profileId} />;
+  // Keyed, so going from one profile straight to another (a mod played over
+  // another links to it) starts on its first tab again.
+  return <ProfileDetail key={profileId} profileId={profileId} />;
 }
 
 /** One game or mod: play it, read about it, manage saves, screenshots, videos and settings (§8.3). */
