@@ -7,8 +7,8 @@ import { bestFit, gameTitle, shortGameTitle } from "../catalog";
 import { formatLooseDate, formatMegabytes } from "../format";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
-import { Cover } from "../library/Cover";
 import { DetailsLink } from "./DetailsLink";
+import { GameTile } from "./GameTile";
 import { Authors } from "../mods/Authors";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -59,25 +59,28 @@ export function ModCard({
 
   return (
     <Card className="flex h-full flex-col">
-      <Cover gameId={entry.game} game={game} className="h-20 text-3xl" />
       <div className="flex flex-1 flex-col gap-3 p-4">
-        <div className="grid gap-1">
-          <h2 className="leading-tight font-semibold">{entry.name}</h2>
-          <p className="text-xs text-muted">{gameTitle(games, entry.game)}</p>
-          {base && (
-            <p className="text-xs text-muted">
-              {t(baseMissing ? "discover.extendsInstall" : "discover.extends", {
-                name: base.entry.name,
-              })}
-            </p>
-          )}
+        <div className="flex gap-3">
+          <GameTile gameId={entry.game} game={game} />
+          <div className="grid min-w-0 content-start gap-1">
+            <h2 className="leading-tight font-semibold">{entry.name}</h2>
+            <p className="text-xs text-muted">{gameTitle(games, entry.game)}</p>
+            {base && (
+              <p className="text-xs text-muted">
+                {t(baseMissing ? "discover.extendsInstall" : "discover.extends", {
+                  name: base.entry.name,
+                })}
+              </p>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap gap-1">
+          {/* The player's own state first. */}
+          {mod.modId && <Badge tone="status">{t("discover.installed")}</Badge>}
+          {mod.updateAvailable && <Badge tone="status">{t("discover.updateBadge")}</Badge>}
           <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
           {isNew(entry) && <Badge>{t("mods.new")}</Badge>}
           {entry.featured && <Badge>{t("discover.featured")}</Badge>}
-          {mod.modId && <Badge>{t("discover.installed")}</Badge>}
-          {mod.updateAvailable && <Badge>{t("discover.updateBadge")}</Badge>}
         </div>
         {entry.description && <p className="text-sm">{entry.description}</p>}
         {details.length > 0 && (

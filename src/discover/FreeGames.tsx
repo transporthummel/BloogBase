@@ -8,7 +8,7 @@ import { formatMegabytes } from "../format";
 import { unwrap } from "../ipc";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
-import { Cover } from "../library/Cover";
+import { GameTile } from "./GameTile";
 import { DetailsLink } from "./DetailsLink";
 import { profilesKey } from "../library/queries";
 import { Badge } from "../ui/Badge";
@@ -64,16 +64,18 @@ function FreeGameCard({
 
   return (
     <Card className="flex h-full flex-col">
-      <Cover gameId={free.gameId} game={game} className="h-20 text-3xl" />
       <div className="flex flex-1 flex-col gap-3 p-4">
-        <div className="grid gap-1">
-          <h2 className="leading-tight font-semibold">{gameTitle(games, free.gameId)}</h2>
-          <p className="text-xs text-muted">{version?.label ?? free.versionId}</p>
+        <div className="flex gap-3">
+          <GameTile gameId={free.gameId} game={game} />
+          <div className="grid min-w-0 content-start gap-1">
+            <h2 className="leading-tight font-semibold">{gameTitle(games, free.gameId)}</h2>
+            <p className="text-xs text-muted">{version?.label ?? free.versionId}</p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-1">
+          {free.installed && <Badge tone="status">{t("discover.installed")}</Badge>}
           {version?.shareware && <Badge>{t("profile.shareware")}</Badge>}
           {kind !== "release" && <Badge>{t(`discover.free.kind.${kind}`)}</Badge>}
-          {free.installed && <Badge>{t("discover.installed")}</Badge>}
         </div>
         <p className="text-sm">
           {t(`discover.free.about.${free.versionId}`, { defaultValue: "" })}
