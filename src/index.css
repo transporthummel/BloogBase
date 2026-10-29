@@ -42,7 +42,7 @@
 }
 
 :root[data-theme="light"] {
-  /* "Beige box": the plastic of an 80s/90s desktop case. The page is the
+  /* "Vintage Beige": the plastic of an 80s/90s desktop case. The page is the
      case, cards are lighter moulded panels, the sidebar is the front bezel. */
   --bb-bg: #d9d1bc;
   --bb-surface: #efe9da;
