@@ -1,7 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { open } from "@tauri-apps/plugin-dialog";
-import { Compass, FileArchive, FolderOpen, LibraryBig, Puzzle } from "lucide-react";
+import {
+  Compass,
+  FileArchive,
+  FolderOpen,
+  LibraryBig,
+  PackagePlus,
+  Puzzle,
+  RefreshCw,
+  Replace,
+} from "lucide-react";
 import { type ReactElement, type ReactNode, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -106,12 +115,14 @@ export function AddModDialog({
     inspect.mutate(paths[0]);
   }
 
+  const TitleIcon = downloaded ? RefreshCw : replacing ? Replace : PackagePlus;
   const title = t(
     downloaded ? "mods.updateTitle" : replacing ? "mods.replaceTitle" : "mods.addTitle",
   );
   return (
     <Dialog
       title={queue ? t("drop.progress", { title, at: queue.at, of: queue.of }) : title}
+      icon={<TitleIcon className="size-6 shrink-0 text-accent" aria-hidden />}
       onClose={onClose}
     >
       {dropped ? (
