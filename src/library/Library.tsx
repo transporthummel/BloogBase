@@ -132,7 +132,8 @@ export function Library() {
         />
       )}
 
-      <div className="mb-4 grid gap-3">
+      {/* Notices; without any, no gap above the sort row. */}
+      <div className="mb-4 grid gap-3 empty:hidden">
         {needsRuntime && (
           <Card className="grid gap-3 p-5">
             <h2 className="font-semibold">{t("runtime.neededTitle")}</h2>
