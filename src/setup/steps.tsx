@@ -94,10 +94,11 @@ export function WelcomeStep({ next }: StepProps) {
   ];
   return (
     <>
+      {/* In short windows a wider strip, cut to keep the lettering, so Let's go stays in view at 800×600. */}
       <img
         src={logo}
         alt=""
-        className="aspect-[16/9] w-full rounded-xl border border-border object-cover shadow-card"
+        className="aspect-[16/9] w-full rounded-xl border border-border object-cover shadow-card [@media(max-height:720px)]:aspect-[3/1] [@media(max-height:720px)]:object-bottom"
       />
       <StepHeader title={t("setup.welcome.title")}>
         <p>{t("setup.welcome.intro")}</p>
