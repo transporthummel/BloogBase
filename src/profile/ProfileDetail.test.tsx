@@ -489,6 +489,7 @@ test("a mod's README is the first tab, shown as text with links opening outside"
         file: "Aurora/READ ME.txt",
         text: '<img src=x onerror="alert(1)"><script>alert(2)</script>\nSee https://pckf.com/aurora.',
         html: false,
+        pdf: false,
         word: false,
       },
     ]),
@@ -513,8 +514,14 @@ test("other documents of a mod can be picked in the README tab", async () => {
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
   vi.mocked(commands.modReadmes).mockResolvedValue(
     ok([
-      { file: "changes.txt", text: "v1.1: fixed a crash", html: false, word: false },
-      { file: "Hints Sheet.txt", text: "The key is behind the wall", html: false, word: false },
+      { file: "changes.txt", text: "v1.1: fixed a crash", html: false, pdf: false, word: false },
+      {
+        file: "Hints Sheet.txt",
+        text: "The key is behind the wall",
+        html: false,
+        pdf: false,
+        word: false,
+      },
     ]),
   );
   renderDetail();
@@ -533,7 +540,7 @@ test("a web page of a mod opens in the browser instead of the app", async () => 
   );
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
   vi.mocked(commands.modReadmes).mockResolvedValue(
-    ok([{ file: "Files/README.HTM", text: "", html: true, word: false }]),
+    ok([{ file: "Files/README.HTM", text: "", html: true, pdf: false, word: false }]),
   );
   vi.mocked(commands.openModReadme).mockResolvedValue(ok(null));
   renderDetail();
@@ -544,6 +551,23 @@ test("a web page of a mod opens in the browser instead of the app", async () => 
   expect(commands.openModReadme).toHaveBeenCalledWith("aurora-bliss", "Files/README.HTM");
 });
 
+test("a PDF document of a mod opens in its app", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
+  );
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  vi.mocked(commands.modReadmes).mockResolvedValue(
+    ok([{ file: "Manual.pdf", text: "", html: false, pdf: true, word: false }]),
+  );
+  vi.mocked(commands.openModReadme).mockResolvedValue(ok(null));
+  renderDetail();
+  const panel = await screen.findByRole("tabpanel");
+  expect(panel).toHaveTextContent("PDF document");
+  expect(panel.querySelector("pre")).toBeNull();
+  await userEvent.click(within(panel).getByRole("button", { name: "Open in default app" }));
+  expect(commands.openModReadme).toHaveBeenCalledWith("aurora-bliss", "Manual.pdf");
+});
+
 test("a Word document of a mod shows its text and opens in its app", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue(
     ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
@@ -551,8 +575,8 @@ test("a Word document of a mod shows its text and opens in its app", async () =>
   vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
   vi.mocked(commands.modReadmes).mockResolvedValue(
     ok([
-      { file: "keenstatic.doc", text: "World of Static", html: false, word: true },
-      { file: "hints.doc", text: "", html: false, word: true },
+      { file: "keenstatic.doc", text: "World of Static", html: false, pdf: false, word: true },
+      { file: "hints.doc", text: "", html: false, pdf: false, word: true },
     ]),
   );
   vi.mocked(commands.openModReadme).mockResolvedValue(ok(null));

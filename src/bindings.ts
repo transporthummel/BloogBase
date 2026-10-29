@@ -820,10 +820,12 @@ export type QuitRequested = {
 export type Readme = {
 	/**  Path of the file inside the mod or its archive. */
 	file: string,
-	/**  Empty for a web page. */
+	/**  Empty for a web page or PDF document. */
 	text: string,
 	/**  A web page, which opens in the browser instead. */
 	html: boolean,
+	/**  A PDF document, which opens in its app instead. */
+	pdf: boolean,
 	/**
 	 *  A Word document; `text` is only its text (empty if unreadable), so it
 	 *  opens in its app too.

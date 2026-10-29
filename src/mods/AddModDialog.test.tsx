@@ -583,8 +583,14 @@ test("shows the readme of a mod that isn't installed yet", async () => {
   );
   vi.mocked(commands.readmesAt).mockReturnValue(
     ok([
-      { file: "README.TXT", text: "Start it with the patch.", html: false, word: false },
-      { file: "story.htm", text: "", html: true, word: false },
+      {
+        file: "README.TXT",
+        text: "Start it with the patch.",
+        html: false,
+        pdf: false,
+        word: false,
+      },
+      { file: "story.htm", text: "", html: true, pdf: false, word: false },
     ]),
   );
   vi.mocked(commands.openReadmeAt).mockReturnValue(ok(null));
@@ -611,7 +617,15 @@ test("links the readme when it can't tell which mod one lacks files of", async (
     ok({ ...info, recipes: [{ ...patch, missingFiles: ["lego.tli"] }] }),
   );
   vi.mocked(commands.readmesAt).mockReturnValue(
-    ok([{ file: "readme.txt", text: "First install Lego Keen.", html: false, word: false }]),
+    ok([
+      {
+        file: "readme.txt",
+        text: "First install Lego Keen.",
+        html: false,
+        pdf: false,
+        word: false,
+      },
+    ]),
   );
   renderDialog();
   const user = userEvent.setup();

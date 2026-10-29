@@ -8,7 +8,8 @@
 //! as plain text only: DOS code page 437 or Windows-1252 is decoded, RTF is
 //! reduced to its text, control characters are dropped, Word documents are
 //! reduced to their text and also open in their app. HTML is never shown in
-//! the app: web pages are listed without text and open in the browser.
+//! the app: web pages are listed without text and open in the browser, PDF
+//! documents likewise in their app.
 
 use std::fs;
 use std::io::{Cursor, Read};
@@ -29,10 +30,12 @@ use crate::source::{Source, split_dir};
 pub struct Readme {
     /// Path of the file inside the mod or its archive.
     pub file: String,
-    /// Empty for a web page.
+    /// Empty for a web page or PDF document.
     pub text: String,
     /// A web page, which opens in the browser instead.
     pub html: bool,
+    /// A PDF document, which opens in its app instead.
+    pub pdf: bool,
     /// A Word document; `text` is only its text (empty if unreadable), so it
     /// opens in its app too.
     pub word: bool,
@@ -46,7 +49,7 @@ const MAX_DEPTH: usize = 2;
 const MAX_FILES: usize = 20;
 /// Of documents; files without an extension count too.
 const EXTENSIONS: &[&str] = &[
-    "txt", "md", "markdown", "nfo", "doc", "docx", "rtf", "asc", "htm", "html",
+    "txt", "md", "markdown", "nfo", "doc", "docx", "rtf", "asc", "htm", "html", "pdf",
 ];
 
 /// The documents of an installed mod, the README first; empty when it has
@@ -64,8 +67,8 @@ pub fn at(path: &Path) -> Result<Vec<Readme>> {
     find(&Source::open(path)?)
 }
 
-/// The web page or Word document `file` of a mod on disk, for the browser
-/// or its app. From an archive, it is copied to the cache, a web page with
+/// The web page, Word or PDF document `file` of a mod on disk, for the
+/// browser or its app. From an archive, it is copied to the cache, a web page with
 /// the files in its folder (pictures, style sheets).
 pub fn file_path(paths: &AppPaths, db: &Db, mod_id: &str, file: &str) -> Result<PathBuf> {
     let not_found = || Error::NotFound(format!("{file} of mod {mod_id}"));
@@ -73,8 +76,8 @@ pub fn file_path(paths: &AppPaths, db: &Db, mod_id: &str, file: &str) -> Result<
     page(&source, file, &paths.cache.join("readmes").join(mod_id))
 }
 
-/// The web page or Word document `file` in a folder or ZIP not installed
-/// yet, as in [`file_path`].
+/// The web page, Word or PDF document `file` in a folder or ZIP not
+/// installed yet, as in [`file_path`].
 pub fn file_path_at(paths: &AppPaths, path: &Path, file: &str) -> Result<PathBuf> {
     page(
         &Source::open(path)?,
@@ -83,12 +86,12 @@ pub fn file_path_at(paths: &AppPaths, path: &Path, file: &str) -> Result<PathBuf
     )
 }
 
-/// The web page or Word document `file` of `source` on disk, copied to
-/// `dest` from an archive.
+/// The web page, Word or PDF document `file` of `source` on disk, copied
+/// to `dest` from an archive.
 fn page(source: &Source, file: &str, dest: &Path) -> Result<PathBuf> {
     let files = source.files()?;
-    let html = candidate(file).is_some_and(|(_, html, _)| html);
-    if !((html || is_word_name(file)) && files.iter().any(|f| f == file)) {
+    let html = candidate(file).is_some_and(|(_, outside, _)| outside) && !is_pdf_name(file);
+    if !((html || is_word_name(file) || is_pdf_name(file)) && files.iter().any(|f| f == file)) {
         return Err(Error::NotFound(file.to_string()));
     }
     match source {
@@ -134,8 +137,9 @@ fn archive(dir: &Path) -> Option<std::path::PathBuf> {
         .find(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("zip")))
 }
 
-/// The readable candidates in `source`, best-named first; web pages after
-/// text documents of the same rank, as only text shows in the app.
+/// The readable candidates in `source`, best-named first; web pages and PDF
+/// documents after text documents of the same rank, as only text shows in
+/// the app.
 pub fn find(source: &Source) -> Result<Vec<Readme>> {
     let mut candidates: Vec<((u8, bool, usize), String)> = source
         .files()?
@@ -144,15 +148,17 @@ pub fn find(source: &Source) -> Result<Vec<Readme>> {
         .collect();
     candidates.sort();
     let mut found = Vec::new();
-    for ((_, html, _), file) in candidates {
+    for ((_, outside, _), file) in candidates {
         if found.len() == MAX_FILES {
             break;
         }
-        if html {
+        if outside {
+            let pdf = is_pdf_name(&file);
             found.push(Readme {
                 file,
                 text: String::new(),
-                html,
+                html: !pdf,
+                pdf,
                 word: false,
             });
             continue;
@@ -178,7 +184,8 @@ pub fn find(source: &Source) -> Result<Vec<Readme>> {
             found.push(Readme {
                 file,
                 text,
-                html,
+                html: false,
+                pdf: false,
                 word: true,
             });
             continue;
@@ -191,7 +198,8 @@ pub fn find(source: &Source) -> Result<Vec<Readme>> {
             found.push(Readme {
                 file,
                 text,
-                html,
+                html: false,
+                pdf: false,
                 word: false,
             });
         }
@@ -199,15 +207,16 @@ pub fn find(source: &Source) -> Result<Vec<Readme>> {
     Ok(found)
 }
 
-/// Rank, whether it is a web page, and depth of a document; `None` for
-/// other files.
+/// Rank, whether it opens outside the app (a web page or PDF document), and
+/// depth of a document; `None` for other files.
 fn candidate(rel: &str) -> Option<(u8, bool, usize)> {
     let depth = rel.matches('/').count();
     let name = split_dir(rel).1;
-    let html = name
+    let outside = name
         .rsplit_once('.')
-        .is_some_and(|(_, e)| e.eq_ignore_ascii_case("htm") || e.eq_ignore_ascii_case("html"));
-    (depth <= MAX_DEPTH).then_some((rank(name)?, html, depth))
+        .is_some_and(|(_, e)| e.eq_ignore_ascii_case("htm") || e.eq_ignore_ascii_case("html"))
+        || is_pdf_name(rel);
+    (depth <= MAX_DEPTH).then_some((rank(name)?, outside, depth))
 }
 
 /// Lower is better; `None` for files that are no README.
@@ -260,7 +269,13 @@ fn rank(name: &str) -> Option<u8> {
         Some(0)
     } else if key.contains("readme") || key.contains("readthis") || key.contains("liesmich") {
         Some(1)
-    } else if !ext.is_empty() && (OTHER.contains(&key.as_str()) || ext == "nfo") {
+    } else if !ext.is_empty()
+        && (OTHER.contains(&key.as_str())
+            || ext == "nfo"
+            // `Bananasauros Instruction Manual.pdf`
+            || key.contains("manual")
+            || key.contains("instruction"))
+    {
         Some(2)
     } else if ext.is_empty() {
         None
@@ -554,6 +569,13 @@ const OLE_MAGIC: &[u8] = b"\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1";
 /// Word 2007 and later: XML in a ZIP.
 const ZIP_MAGIC: &[u8] = b"PK\x03\x04";
 
+fn is_pdf_name(rel: &str) -> bool {
+    split_dir(rel)
+        .1
+        .rsplit_once('.')
+        .is_some_and(|(_, e)| e.eq_ignore_ascii_case("pdf"))
+}
+
 fn is_word_name(rel: &str) -> bool {
     split_dir(rel)
         .1
@@ -789,14 +811,9 @@ mod tests {
         assert_eq!(rank("HINTS..txt"), Some(5));
         assert_eq!(rank("README.HTM"), Some(0));
         assert_eq!(rank("story.html"), Some(3));
-        for name in [
-            "README.EXE",
-            "readme.pdf",
-            "HELP",
-            "INFO.CK4",
-            "KEEN4.PAT",
-            "CKPATCH.TXT",
-        ] {
+        assert_eq!(rank("readme.pdf"), Some(0));
+        assert_eq!(rank("Bananasauros Instruction Manual.pdf"), Some(2));
+        for name in ["README.EXE", "HELP", "INFO.CK4", "KEEN4.PAT", "CKPATCH.TXT"] {
             assert_eq!(rank(name), None, "{name}");
         }
     }
@@ -826,6 +843,7 @@ mod tests {
                 file: "readme.txt".into(),
                 text: "top".into(),
                 html: false,
+                pdf: false,
                 word: false
             }
         );
@@ -864,8 +882,42 @@ mod tests {
                 file: "README.HTM".into(),
                 text: String::new(),
                 html: true,
+                pdf: false,
                 word: false
             }]
+        );
+    }
+
+    #[test]
+    fn lists_pdf_documents_without_their_text() {
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(
+            tmp.path(),
+            &[
+                ("Bananasauros Instruction Manual.pdf", b"%PDF-1.4"),
+                ("tsrmusic.txt", b"music"),
+                ("readme.pdf", b"%PDF-1.4"),
+                ("readme.txt", b"readme"),
+            ],
+        );
+        assert_eq!(
+            names(&Source::Folder(tmp.path().into())),
+            [
+                "readme.txt",
+                "readme.pdf",
+                "Bananasauros Instruction Manual.pdf",
+                "tsrmusic.txt"
+            ]
+        );
+        assert_eq!(
+            find(&Source::Folder(tmp.path().into())).unwrap()[2],
+            Readme {
+                file: "Bananasauros Instruction Manual.pdf".into(),
+                text: String::new(),
+                html: false,
+                pdf: true,
+                word: false
+            }
         );
     }
 
@@ -1028,6 +1080,7 @@ mod tests {
                 ("Files/README_files/a.gif", b"GIF"),
                 ("Files/README.TXT", b"text"),
                 ("Files/Story.DOC", OLE_MAGIC),
+                ("Files/Manual.pdf", b"%PDF-1.4"),
                 ("Menu.exe", b"MZ"),
             ],
         );
@@ -1040,8 +1093,11 @@ mod tests {
         let story = file_path(&paths, &db, "shadow", "Files/Story.DOC").unwrap();
         assert_eq!(story, copy.join("Story.DOC"));
         assert!(!copy.join("README_files").exists());
+        let manual = file_path(&paths, &db, "shadow", "Files/Manual.pdf").unwrap();
+        assert_eq!(manual, copy.join("Manual.pdf"));
+        assert_eq!(fs::read(&manual).unwrap(), b"%PDF-1.4");
 
-        // Only the mod's web pages and Word documents open.
+        // Only the mod's web pages, Word and PDF documents open.
         for file in ["Files/README.TXT", "Menu.exe", "README.HTM", "../x.htm"] {
             assert!(matches!(
                 file_path(&paths, &db, "shadow", file),

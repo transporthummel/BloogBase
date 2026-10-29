@@ -16,13 +16,14 @@ the panel in `src/profile/ReadmePanel.tsx`.
 - **Before installing:** the folder or ZIP the player picked or downloaded.
 
 Files at most two folders deep count; deeper ones belong to tools or sources
-shipped along. Files over 1 MB are hardly a README and are skipped. At most
+shipped along. Files over 1 MB are hardly a README and are skipped (web
+pages and PDF documents aren't read, so their size doesn't matter). At most
 20 documents are listed.
 
 ## Which files count
 
 A file counts by its extension: `txt`, `md`, `markdown`, `nfo`, `doc`,
-`docx`, `rtf`, `asc`, `htm`, `html`, also `.ME` and `.1ST` (`READ.ME`,
+`docx`, `rtf`, `asc`, `htm`, `html`, `pdf`, also `.ME` and `.1ST` (`READ.ME`,
 `README.1ST`). Files without an extension count only if their name says
 README. The name is compared lowercase, with everything but letters and
 digits taken out (`Read_Me` → `readme`).
@@ -31,14 +32,14 @@ digits taken out (`Read_Me` → `readme`).
 | ---- | ----------------------------------------------------------------------------------------------------------------- |
 | 0    | Exactly `readme`, `readmefirst`, `readme1st`, `readthis`, `readfirst`, `liesmich`, `lisezmoi`, `leame`, `leesmij` |
 | 1    | Containing `readme`, `readthis` or `liesmich` (`CHEEKY README.rtf`)                                               |
-| 2    | `info`, `about`, `help`, `manual`, `instructions`, `docs`, `documentation`, `anleitung`, any `.nfo`               |
+| 2    | `info`, `about`, `help`, `docs`, `documentation`, `anleitung`, containing `manual` or `instruction`, any `.nfo`   |
 | 3    | Any other document (`story.txt`)                                                                                  |
 | 4    | Change logs: containing `change`, `history`, `whatsnew`, `news`, `version`                                        |
 | 5    | Spoilers last: containing `hint`, `solution`, `walkthrough`, `cheat`, `secret`, `spoiler`                         |
 
 CKPatch's own manual (`ckpatch*`) comes along with the patcher in many mods
-and never counts. Within a rank, text documents go before web pages (only
-text shows in the app), then shallower files before deeper ones, then by
+and never counts. Within a rank, text documents go before web pages and PDF
+documents (only text shows in the app), then shallower files before deeper ones, then by
 path. The first one is the README and opens first; the others are in a
 picker.
 
@@ -97,6 +98,15 @@ in the browser. From an archive it's copied to the cache first
 in its folder, so pictures and style sheets load too. A Word document from an
 archive is copied there the same way. The copy is made fresh each time, as an
 update of the mod may have changed it.
+
+## PDF documents
+
+PDF is never shown in the app either: WebView2's viewer would bring its
+own print and save toolbar, WebKitGTK has none, and text taken out of a PDF
+loses its pictures and often its order. A PDF document is listed without
+text and opens in the player's PDF viewer, copied to the cache from an
+archive like a Word document (Bananasauros' `Bananasauros Instruction
+Manual.pdf`).
 
 ## In the panel
 

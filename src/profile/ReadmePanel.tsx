@@ -14,8 +14,9 @@ import { linkify } from "./readme";
 /**
  * A mod's README, with a picker for its other documents. Shown as plain text
  * only (React escapes it); links open in the browser, never in the app's
- * window. Web pages are never shown here, only opened in the browser; Word
- * documents show their text and open in their app for everything else.
+ * window. Web pages are never shown here, only opened in the browser, and
+ * PDF documents only in their app; Word documents show their text and open
+ * in their app for everything else.
  * The mod is installed (`modId`) or still a folder or ZIP (`path`).
  */
 export function ReadmePanel({
@@ -63,7 +64,7 @@ export function ReadmePanel({
           </p>
         )}
       </div>
-      {(readme.html || readme.word) && (
+      {(readme.html || readme.pdf || readme.word) && (
         <div
           className={`grid justify-items-start gap-3 p-4 ${readme.text ? "border-b border-border" : ""}`}
         >
@@ -71,9 +72,11 @@ export function ReadmePanel({
             {t(
               readme.html
                 ? "readme.webPage"
-                : readme.text
-                  ? "readme.wordDocument"
-                  : "readme.wordUnreadable",
+                : readme.pdf
+                  ? "readme.pdfDocument"
+                  : readme.text
+                    ? "readme.wordDocument"
+                    : "readme.wordUnreadable",
             )}
           </p>
           <Button variant="secondary" onClick={() => open.mutate(readme.file)}>
