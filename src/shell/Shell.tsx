@@ -98,7 +98,7 @@ export function Shell() {
       <main
         ref={main}
         tabIndex={-1}
-        className="relative flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-none outline-none"
+        className="relative flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-none outline-none [scrollbar-gutter:stable]"
       >
         <div className="mx-auto w-full max-w-7xl flex-1 p-6 xl:p-8">
           {update.data && !updateLater && (
