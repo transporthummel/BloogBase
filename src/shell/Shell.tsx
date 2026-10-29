@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Compass, Info, LibraryBig, Settings, type LucideIcon } from "lucide-react";
 import icon from "../assets/icon.png";
 import { useTranslation } from "react-i18next";
@@ -19,6 +19,7 @@ import { ArchiveWarning } from "./ArchiveWarning";
 import { QuitGuard } from "./QuitGuard";
 import { scroller } from "../library/scroll";
 import { Snow } from "./Snow";
+import { buttonClass } from "../ui/buttonClass";
 
 /**
  * App frame (PLAN.md §8.2): full sidebar from 1200px, icon rail below. The
@@ -33,6 +34,7 @@ export function Shell() {
   const update = useAppUpdate({ enabled: import.meta.env.PROD });
   const [updateLater, setUpdateLater] = useState(false);
   const [footer, setFooter] = useState<HTMLElement | null>(null);
+  const main = useRef<HTMLElement>(null);
   useEffect(hideSplash, []);
 
   if (inSetup) {
@@ -57,6 +59,17 @@ export function Shell() {
       <LaunchOverlay />
       <ExitMessage />
       <WhatsNew />
+      {/* First stop for keyboards: past the navigation to the page. */}
+      <button
+        type="button"
+        className={buttonClass(
+          "secondary",
+          "sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50",
+        )}
+        onClick={() => main.current?.focus()}
+      >
+        {t("nav.skip")}
+      </button>
       <nav
         aria-label={t("nav.label")}
         className="flex w-16 shrink-0 flex-col gap-1 border-r border-border bg-surface p-2 xl:w-60 xl:p-3"
@@ -79,7 +92,11 @@ export function Shell() {
           <NavItem to="/about" icon={Info} label={t("nav.about")} />
         </div>
       </nav>
-      <main className="relative flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-none">
+      <main
+        ref={main}
+        tabIndex={-1}
+        className="relative flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-none outline-none"
+      >
         <div className="mx-auto w-full max-w-7xl flex-1 p-6 xl:p-8">
           {update.data && !updateLater && (
             <div className="mb-6">
