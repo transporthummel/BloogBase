@@ -5,9 +5,16 @@ import { JobRow } from "../jobs/JobList";
 import { useJobLabel } from "../jobs/label";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { Button } from "../ui/Button";
+import type { Variant } from "../ui/buttonClass";
 
 /** Button that downloads the pinned DOSBox Staging build, with progress. */
-export function InstallRuntimeButton({ label }: { label: string }) {
+export function InstallRuntimeButton({
+  label,
+  variant = "primary",
+}: {
+  label: string;
+  variant?: Variant;
+}) {
   const { t } = useTranslation();
   const jobLabel = useJobLabel();
   const job = useJob("runtime");
@@ -17,7 +24,7 @@ export function InstallRuntimeButton({ label }: { label: string }) {
   return (
     <div className="grid gap-3">
       <div>
-        <Button onClick={() => start.mutate(undefined)} disabled={busy}>
+        <Button variant={variant} onClick={() => start.mutate(undefined)} disabled={busy}>
           <Download className="size-4" aria-hidden />
           {job?.phase === "failed" ? t("jobs.retry") : label}
         </Button>

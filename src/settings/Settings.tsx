@@ -195,6 +195,8 @@ function RuntimeSection() {
 
       {st?.downloadAvailable && (!st.managed || managedOutdated) && (
         <InstallRuntimeButton
+          // The player's own DOSBox works: downloading ours is an option, not the next step.
+          variant={active && !active.managed ? "secondary" : "primary"}
           label={
             st.managed
               ? t("runtime.update", { version: st.pinnedVersion })
