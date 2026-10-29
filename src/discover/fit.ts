@@ -29,19 +29,6 @@ export function requiredLabels(entry: IndexEntry, games: Game[] = []): string[] 
   return entry.requires.map((id) => game?.versions.find((v) => v.id === id)?.label ?? id);
 }
 
-const MONTH = 30 * 24 * 60 * 60 * 1000;
-const day = (date: string) => Date.parse(`${date}T00:00:00Z`);
-
-/**
- * Added to the index in the last month, but not in the index's own first
- * month: the list was filled then, and every entry would say so.
- */
-export function isNew(entry: IndexEntry, all: IndexEntry[], now = Date.now()): boolean {
-  const added = day(entry.added);
-  const first = Math.min(...all.map((e) => day(e.added)).filter((d) => !Number.isNaN(d)));
-  return !Number.isNaN(added) && now - added < MONTH && added - first >= MONTH;
-}
-
 export const SORTS = ["featured", "newest", "name"] as const;
 export type Sort = (typeof SORTS)[number];
 export const isSort = (v: unknown): v is Sort => SORTS.includes(v as Sort);

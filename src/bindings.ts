@@ -527,6 +527,11 @@ export type IndexMod = {
 	modId: string | null,
 	/**  Installed, but the index has a different download now. */
 	updateAvailable: boolean,
+	/**
+	 *  An update of the index brought it in the last [`NEW_FOR`] seconds.
+	 *  The first download of the index brings nothing new: everything is.
+	 */
+	new: boolean,
 };
 
 /**

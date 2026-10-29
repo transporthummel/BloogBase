@@ -147,7 +147,13 @@ pub struct IndexMod {
     pub mod_id: Option<String>,
     /// Installed, but the index has a different download now.
     pub update_available: bool,
+    /// An update of the index brought it in the last [`NEW_FOR`] seconds.
+    /// The first download of the index brings nothing new: everything is.
+    pub new: bool,
 }
+
+/// How long an entry an update brought counts as new.
+const NEW_FOR: i64 = 30 * 24 * 60 * 60;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -175,6 +181,9 @@ struct CacheMeta {
     url: String,
     etag: Option<String>,
     checked_at: Option<i64>,
+    /// Entry id → when an update brought it, while it counts as new.
+    #[serde(default)]
+    appeared: BTreeMap<String, i64>,
 }
 
 #[derive(Default)]
@@ -366,7 +375,27 @@ impl ModIndex {
         std::fs::create_dir_all(&self.dir)?;
         write_atomic(&self.dir.join("index.json"), &data)?;
         write_atomic(&self.dir.join("index.json.minisig"), sig.as_bytes())?;
-        self.lock().index = Some(parsed);
+        {
+            let mut st = self.lock();
+            let t = now();
+            // Not on the first download: with nothing before, all would be new.
+            let before: Option<Vec<String>> = st
+                .index
+                .as_ref()
+                .filter(|i| !i.entries.is_empty())
+                .map(|i| i.entries.iter().map(|e| e.id.clone()).collect());
+            if let Some(before) = before {
+                for e in &parsed.entries {
+                    if !before.contains(&e.id) {
+                        st.meta.appeared.entry(e.id.clone()).or_insert(t);
+                    }
+                }
+            }
+            st.meta
+                .appeared
+                .retain(|id, at| t - *at < NEW_FOR && parsed.entries.iter().any(|e| &e.id == id));
+            st.index = Some(parsed);
+        }
         self.store_meta(etag, true)?;
         Ok(changed)
     }
@@ -534,6 +563,8 @@ pub fn link_installed(index: &ModIndex, db: &Db) -> Result<()> {
 /// The index entries with their install state.
 pub fn list(index: &ModIndex, db: &Db) -> Result<Vec<IndexMod>> {
     let entries = index.entries();
+    let appeared = index.lock().meta.appeared.clone();
+    let t = now();
     let ids: Vec<&str> = entries.iter().map(|e| e.id.as_str()).collect();
     let installed: Vec<(String, String, Option<String>)> = {
         let conn = db.conn();
@@ -552,6 +583,7 @@ pub fn list(index: &ModIndex, db: &Db) -> Result<Vec<IndexMod>> {
         .map(|entry| {
             let found = installed.iter().find(|(id, ..)| *id == entry.id);
             IndexMod {
+                new: appeared.get(&entry.id).is_some_and(|at| t - at < NEW_FOR),
                 mod_id: found.map(|(_, m, _)| m.clone()),
                 update_available: found.is_some_and(|(.., sha)| {
                     sha.as_deref()
@@ -780,6 +812,43 @@ mod tests {
         assert!(st.error.is_none(), "{:?}", st.error);
         assert_eq!(full.load(Ordering::SeqCst), 1);
         assert_eq!(st.mod_count, 1);
+    }
+
+    #[tokio::test]
+    async fn marks_entries_an_update_brought_as_new() {
+        let (tmp, paths) = setup();
+        let k = keys();
+        let url = publish(tmp.path(), &k, SAMPLE);
+        let index = ModIndex::with_keys(&paths, url.clone(), &[&k.pk]);
+        let db = Db::open_in_memory().unwrap();
+        // The first download: nothing is new.
+        index.refresh(true).await;
+        assert!(!list(&index, &db).unwrap()[0].new);
+
+        // An update with another entry: only that one is.
+        let more = SAMPLE
+            .replace(
+                r#""generatedAt": 1760000000"#,
+                r#""generatedAt": 1760000001"#,
+            )
+            .replace(r#""minAppVersion": "9.0.0""#, r#""minAppVersion": "0.0.1""#);
+        publish(tmp.path(), &k, &more);
+        let st = index.refresh(true).await;
+        assert!(st.error.is_none(), "{:?}", st.error);
+        let is_new = |index: &ModIndex, id: &str| {
+            list(index, &db)
+                .unwrap()
+                .into_iter()
+                .find(|m| m.entry.id == id)
+                .unwrap()
+                .new
+        };
+        assert!(is_new(&index, "sample-levels"));
+        assert!(!is_new(&index, "sample-patch"));
+
+        // Remembered across starts.
+        let again = ModIndex::with_keys(&paths, url, &[&k.pk]);
+        assert!(is_new(&again, "sample-levels"));
     }
 
     #[test]

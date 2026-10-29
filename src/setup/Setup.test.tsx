@@ -128,7 +128,7 @@ const indexMod = (id: string, gameId: string, requires: string[]): IndexMod => {
     recipe: { type: "episode" },
     featured: true,
   };
-  return { entry, modId: null, updateAvailable: false };
+  return { entry, modId: null, updateAvailable: false, new: false };
 };
 
 test("walks through all steps, skipping each, and finishes", async () => {

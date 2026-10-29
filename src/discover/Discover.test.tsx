@@ -11,7 +11,7 @@ import {
   type Install,
 } from "../bindings";
 import { Discover } from "./Discover";
-import { compare, fitsEntry, isNew } from "./fit";
+import { compare, fitsEntry } from "./fit";
 
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 // What the page was opened with.
@@ -117,6 +117,7 @@ const mod = (e: IndexEntry, more: Partial<IndexMod> = {}): IndexMod => ({
   entry: e,
   modId: null,
   updateAvailable: false,
+  new: false,
   ...more,
 });
 
@@ -286,14 +287,7 @@ test("fit rules match the backend", () => {
   ).toBe(true);
 });
 
-test("new badges and sorting", () => {
-  const now = Date.parse("2026-10-17T12:00:00Z");
-  const first = entry("first", { added: "2026-07-01" });
-  const recent = entry("a", { added: "2026-10-01" });
-  expect(isNew(recent, [first, recent], now)).toBe(true);
-  expect(isNew(entry("a", { added: "2026-08-01" }), [first], now)).toBe(false);
-  // While the index is in its first month, nothing in it is new.
-  expect(isNew(recent, [entry("b", { added: "2026-09-20" }), recent], now)).toBe(false);
+test("sorting", () => {
   const list = [
     entry("b", { added: "2026-01-01" }),
     entry("a", { added: "2025-01-01", featured: true }),

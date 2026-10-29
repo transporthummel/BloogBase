@@ -915,6 +915,7 @@ const auroraInIndex: IndexMod = {
   },
   modId: null,
   updateAvailable: false,
+  new: false,
 };
 
 test("offers the index entry when the link is in the index", async () => {
