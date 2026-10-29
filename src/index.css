@@ -42,7 +42,8 @@
   --bb-border: #d6d3ea;
   --bb-ink: #17152e;
   --bb-muted: #5e5a80;
-  --bb-accent: #1e9e1e;
+  /* Dark enough for white button text and for text on every surface (4.5:1). */
+  --bb-accent: #167a16;
   --bb-accent-ink: #ffffff;
   --bb-danger: #c62828;
   --bb-warning: var(--bb-ega-brown);
@@ -82,6 +83,12 @@
    `select-text`. */
 body {
   @apply bg-bg font-sans text-ink antialiased select-none;
+}
+
+/* The browser's grey placeholder is too faint on raised fields. */
+::placeholder {
+  color: var(--bb-muted);
+  opacity: 1;
 }
 
 /* Images and links can't be dragged out of the window. */
