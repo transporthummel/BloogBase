@@ -38,8 +38,11 @@ export function Shell() {
   useEffect(hideSplash, []);
 
   if (inSetup) {
+    // The page itself scrolls here. A scroll container that grows with its
+    // content never scrolls, and with `overscroll-none` it wouldn't hand a
+    // touchpad's scroll on to the page either.
     return (
-      <main className="bb-starfield relative min-h-screen overflow-y-auto overscroll-none">
+      <main className="bb-starfield relative min-h-screen">
         <QuitGuard />
         <Snow />
         <EarlierBackupPrompt />
