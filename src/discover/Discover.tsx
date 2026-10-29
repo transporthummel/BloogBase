@@ -205,7 +205,8 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
         </div>
       )}
 
-      {mods.isSuccess && all.length === 0 && (
+      {/* After a failed check the error above says it already. */}
+      {mods.isSuccess && all.length === 0 && !st?.error && (
         <EmptyState title={t("discover.emptyTitle")}>
           <p className="max-w-md text-sm text-muted">{t("discover.empty")}</p>
         </EmptyState>

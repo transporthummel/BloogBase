@@ -398,7 +398,7 @@
     },
     "playable": "Passt zu meinen Spielen",
     "emptyTitle": "Noch keine Mods",
-    "empty": "Die Mod-Liste konnte nicht geladen werden. Prüfe deine Internetverbindung und versuche es noch einmal.",
+    "empty": "Die Mod-Liste ist noch nicht da. BloogBase holt sie bei jedem Start; bleibt sie leer, prüfe deine Internetverbindung.",
     "noMatch": "Keine Mods passen zu diesen Filtern.",
     "kind": {
       "episode": "Abenteuer",
