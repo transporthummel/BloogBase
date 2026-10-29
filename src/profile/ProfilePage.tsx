@@ -264,13 +264,7 @@ function Hero({
   const added = mod ? mod.addedAt : undefined;
 
   const stats: [string, ReactNode][] = [
-    [
-      t("profile.playTime"),
-      profile.sessionCount === 0
-        ? // Saves that came with the game were made elsewhere.
-          t("library.neverPlayed", { context: profile.saveCount > 0 ? "saves" : undefined })
-        : formatPlayTime(t, profile.playSeconds),
-    ],
+    [t("profile.playTime"), formatPlayTime(t, profile.playSeconds)],
     [t("profile.sessions"), String(profile.sessionCount)],
     [
       t("library.lastPlayed"),
@@ -430,15 +424,30 @@ function Hero({
               {t("profile.scrambled")}
             </p>
           )}
-          {/* Columns, so the second row lines up with the first. */}
-          <dl className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-x-4 gap-y-2">
-            {stats.map(([label, value]) => (
-              <div key={label} className="grid gap-1">
-                <dt className="text-xs text-muted">{label}</dt>
-                <dd className="text-sm font-semibold">{value}</dd>
-              </div>
-            ))}
-          </dl>
+          {profile.sessionCount === 0 ? (
+            // Nothing to count yet: one line instead of columns of "0" and "–".
+            <p className="text-sm text-muted">
+              {[
+                t("library.neverPlayed", {
+                  context: profile.saveCount > 0 ? "saves" : undefined,
+                }),
+                t("library.saveCount", { count: profile.saveCount }),
+                added !== undefined && `${t("profile.added")} ${formatDate(i18n.language, added)}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          ) : (
+            // Columns, so the second row lines up with the first.
+            <dl className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-x-4 gap-y-2">
+              {stats.map(([label, value]) => (
+                <div key={label} className="grid gap-1">
+                  <dt className="text-xs text-muted">{label}</dt>
+                  <dd className="text-sm font-semibold">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
         <div className="grid gap-3">
           <div className="flex items-stretch gap-2">
