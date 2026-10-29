@@ -1,5 +1,5 @@
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Download, ExternalLink, RefreshCw } from "lucide-react";
+import { Download, ExternalLink, RefreshCw, TriangleAlert } from "lucide-react";
 import { Fragment, type RefObject, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Game, type IndexMod, type Install } from "../bindings";
@@ -14,7 +14,6 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Dialog } from "../ui/Dialog";
-import { Notice } from "../ui/Notice";
 import { useEnterAction } from "../ui/useEnterAction";
 import { fitting, requiredLabels } from "./fit";
 import { useIndexMods } from "./queries";
@@ -200,13 +199,14 @@ function InstallAction({
     return (
       <>
         {failed}
-        <Notice>
+        <p role="status" className="flex items-start gap-2 text-sm text-muted">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
           {t("discover.needs", {
             game: gameTitle(games, entry.game),
             versions: versions.join(", "),
             context: versions.length > 0 ? "version" : undefined,
           })}
-        </Notice>
+        </p>
         <Button variant="secondary" onClick={() => setConfirming(true)} disabled={start.isPending}>
           <Download className="size-4" aria-hidden />
           {t("discover.installAnyway")}
