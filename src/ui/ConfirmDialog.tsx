@@ -3,7 +3,10 @@ import { useTranslation } from "react-i18next";
 import { Button } from "./Button";
 import { Dialog } from "./Dialog";
 
-/** Asks before doing something; `confirm` is the button that does it. */
+/**
+ * Asks before deleting or resetting something; `confirm` is the button that
+ * does it. Cancel has the focus, so Enter keeps everything as it is.
+ */
 export function ConfirmDialog({
   title,
   confirm,
@@ -24,10 +27,10 @@ export function ConfirmDialog({
     <Dialog title={title} onClose={onClose}>
       {children}
       <div className="flex justify-end gap-3">
-        <Button variant="ghost" onClick={onClose}>
+        <Button variant="ghost" onClick={onClose} data-autofocus>
           {t("common.cancel")}
         </Button>
-        <Button onClick={onConfirm} disabled={busy}>
+        <Button variant="danger" onClick={onConfirm} disabled={busy}>
           {confirm}
         </Button>
       </div>

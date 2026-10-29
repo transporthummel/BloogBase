@@ -1,4 +1,4 @@
-export type Variant = "primary" | "secondary" | "ghost" | "card";
+export type Variant = "primary" | "secondary" | "ghost" | "card" | "danger";
 
 const variants: Record<Variant, string> = {
   // Disabled, it loses its green: a faded green still reads as the next step.
@@ -9,6 +9,9 @@ const variants: Record<Variant, string> = {
   // Actions repeated on every card: a green outline, so the grid isn't a wall
   // of green; they fill green on hover and focus, and lose it when disabled.
   card: "border border-accent/60 bg-surface-raised text-ink hover:border-accent hover:bg-accent hover:text-accent-ink focus-visible:border-accent focus-visible:bg-accent focus-visible:text-accent-ink disabled:border-border",
+  // Confirms something destructive: a red tint, so it never reads as the
+  // green next step.
+  danger: "border border-danger/40 bg-danger/10 text-danger hover:border-danger hover:bg-danger/20",
 };
 
 /** Button styling, also for links that act as buttons. */

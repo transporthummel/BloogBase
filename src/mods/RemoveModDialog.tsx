@@ -50,10 +50,10 @@ export function RemoveModDialog({
       <KeepSaves profile={profile} checked={keepSaves} onChange={setKeepSaves} />
       {remove.error && <Notice tone="error">{errorMessage(t, remove.error)}</Notice>}
       <div className="flex justify-end gap-3">
-        <Button variant="ghost" onClick={onClose}>
+        <Button variant="ghost" onClick={onClose} data-autofocus>
           {t("common.cancel")}
         </Button>
-        <Button onClick={() => remove.mutate()} disabled={remove.isPending}>
+        <Button variant="danger" onClick={() => remove.mutate()} disabled={remove.isPending}>
           {t("mods.remove")}
         </Button>
       </div>
