@@ -97,10 +97,6 @@ export function Library() {
     return <Navigate to="/setup" />;
 
   const gameById = new Map(games.data?.map((g) => [g.id, g]));
-  // Games the player has more than one copy of; their cards say which copy.
-  const copies = new Map<string, number>();
-  for (const p of profiles.data ?? [])
-    if (p.modId === null) copies.set(p.gameId, (copies.get(p.gameId) ?? 0) + 1);
   const error = launch.error ?? profiles.error;
   const empty = profiles.data?.length === 0;
   const needsRuntime = !empty && runtime.data && !runtime.data.active;
@@ -229,7 +225,6 @@ export function Library() {
                     <ProfileCard
                       profile={profile}
                       game={gameById.get(profile.gameId)}
-                      copy={profile.modId === null && (copies.get(profile.gameId) ?? 0) > 1}
                       heading={grouped ? "h3" : "h2"}
                       canPlay={!!runtime.data?.active && !launch.isPending}
                       onPlay={launch.mutate}
@@ -253,14 +248,11 @@ const ProfileCard = memo(function ProfileCard({
   profile,
   game,
   heading: Heading,
-  copy,
   canPlay,
   onPlay,
 }: {
   profile: Profile;
   game?: Game;
-  /** One of several copies of the game the player has. */
-  copy: boolean;
   /** h3 under a group heading. */
   heading: "h2" | "h3";
   canPlay: boolean;
@@ -295,9 +287,6 @@ const ProfileCard = memo(function ProfileCard({
               {profile.label}
             </Link>
           </Heading>
-          {copy && (
-            <p className="text-xs text-muted">{version?.label ?? t("library.unknownVersion")}</p>
-          )}
           {profile.missingGame !== null ? (
             <p className="text-xs text-muted">
               {t("mods.waitsFor", { game: profile.missingGame })}
@@ -317,9 +306,7 @@ const ProfileCard = memo(function ProfileCard({
         </div>
         <div className="flex flex-wrap gap-1">
           {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
-          {profile.modId === null && !copy && (
-            <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>
-          )}
+          {profile.modId === null && <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>}
         </div>
         <dl className="grid gap-0.5 text-xs text-muted">
           <dt className="sr-only">{t("library.playTime")}</dt>
