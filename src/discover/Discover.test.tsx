@@ -355,7 +355,8 @@ test("offers shareware episodes and demos on their own tabs", async () => {
 
   await user.click(screen.getByRole("tab", { name: "Demos & Betas" }));
   expect(versions()).toEqual(["Special demo"]);
-  expect(screen.getByText("Demo")).toBeInTheDocument();
+  // The version says it's a demo; no second badge for that.
+  expect(screen.queryByText("Demo")).toBeNull();
 });
 
 test("a mod played over another says so and counts its download too", async () => {

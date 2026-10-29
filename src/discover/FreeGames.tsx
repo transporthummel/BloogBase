@@ -61,21 +61,27 @@ function FreeGameCard({
   const { t } = useTranslation();
   const version = game?.versions.find((v) => v.id === free.versionId);
   const kind = version?.kind ?? "release";
+  const label = version?.label ?? free.versionId;
 
   return (
     <Card className="flex h-full flex-col">
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex gap-3">
           <GameTile gameId={free.gameId} game={game} />
-          <div className="grid min-w-0 content-start gap-1">
-            <h2 className="leading-tight font-semibold">{gameTitle(games, free.gameId)}</h2>
-            <p className="text-xs text-muted">{version?.label ?? free.versionId}</p>
-          </div>
+          <h2 className="min-w-0 self-center leading-tight font-semibold">
+            {gameTitle(games, free.gameId)}
+          </h2>
         </div>
         <div className="flex flex-wrap gap-1">
           {free.installed && <Badge tone="status">{t("discover.installed")}</Badge>}
+          {/* The version as a badge, as on library cards. */}
+          <Badge>{label}</Badge>
           {version?.shareware && <Badge>{t("profile.shareware")}</Badge>}
-          {kind !== "release" && <Badge>{t(`discover.free.kind.${kind}`)}</Badge>}
+          {/* Not twice, as in "November beta" and "Beta". */}
+          {kind !== "release" &&
+            !label.toLowerCase().includes(t(`discover.free.kind.${kind}`).toLowerCase()) && (
+              <Badge>{t(`discover.free.kind.${kind}`)}</Badge>
+            )}
         </div>
         <p className="text-sm">
           {t(`discover.free.about.${free.versionId}`, { defaultValue: "" })}
