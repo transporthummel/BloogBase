@@ -44,7 +44,7 @@ export function Settings() {
         <Section title={t("settings.appearance")}>
           <Field label={t("settings.language")}>
             <select
-              className={selectClass}
+              className={`${selectClass} w-44`}
               value={i18n.language}
               onChange={(e) => {
                 const lng = e.target.value as Language;
@@ -58,7 +58,7 @@ export function Settings() {
           </Field>
           <Field label={t("settings.theme")}>
             <select
-              className={selectClass}
+              className={`${selectClass} w-44`}
               value={theme}
               onChange={(e) => {
                 const value = e.target.value as Theme;
@@ -408,6 +408,8 @@ function GlobalConfigSection() {
   );
 }
 
+// Selects get a fixed width (w-44) where they sit under each other: on their
+// own they're as wide as their longest option and don't line up.
 const selectClass = "rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-ink";
 
 /** A card of related settings, split into groups. */
