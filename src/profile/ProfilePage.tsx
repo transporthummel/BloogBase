@@ -310,10 +310,12 @@ function Hero({
   return (
     <Card ref={cardRef} className="mb-6 flex flex-col md:flex-row">
       {/* As tall as the text, at 4:3. Where the width limits get in the way,
-          pictures keep 4:3 on black; only the placeholder fills the box. */}
-      <div className="flex shrink-0 items-center bg-black" style={{ width: pictureWidth }}>
+          pictures keep 4:3 in the card's top corner, on the card's own colour
+          rather than on black bars like a misfit video; only the placeholder
+          fills the box. */}
+      <div className="flex shrink-0 items-start" style={{ width: pictureWidth }}>
         {cover.isPending ? (
-          // The title screen is read from the files on first use; black until
+          // The title screen is read from the files on first use; empty until
           // then, so the placeholder doesn't flash up before it.
           <div className="aspect-[4/3] w-full" />
         ) : cover.data || !latest ? (
