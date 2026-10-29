@@ -431,6 +431,7 @@ function Hero({
           )}
           {profile.sessionCount === 0 ? (
             // Nothing to count yet: one line instead of columns of "0" and "–".
+            // It wraps only between the parts, never inside a date.
             <p className="text-sm text-muted">
               {[
                 t("library.neverPlayed"),
@@ -438,7 +439,12 @@ function Hero({
                 added !== undefined && `${t("profile.added")} ${formatDate(i18n.language, added)}`,
               ]
                 .filter(Boolean)
-                .join(" · ")}
+                .map((part, i) => (
+                  <Fragment key={i}>
+                    {i > 0 && " · "}
+                    <span className="whitespace-nowrap">{part}</span>
+                  </Fragment>
+                ))}
             </p>
           ) : (
             // Columns, so the second row lines up with the first.
