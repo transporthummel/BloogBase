@@ -422,7 +422,8 @@ function Hero({
               {t("profile.scrambled")}
             </p>
           )}
-          <dl className="flex flex-wrap gap-x-6 gap-y-2">
+          {/* Columns, so the second row lines up with the first. */}
+          <dl className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-x-4 gap-y-2">
             {stats.map(([label, value]) => (
               <div key={label} className="grid gap-1">
                 <dt className="text-xs text-muted">{label}</dt>
