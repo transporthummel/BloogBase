@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Compass, Info, LibraryBig, Settings, type LucideIcon } from "lucide-react";
 import icon from "../assets/icon.png";
 import { useTranslation } from "react-i18next";
@@ -17,6 +17,7 @@ import { WhatsNew } from "../updates/WhatsNew";
 import { PageFooterContext } from "./pageFooterContext";
 import { ArchiveWarning } from "./ArchiveWarning";
 import { QuitGuard } from "./QuitGuard";
+import { scroller } from "../library/scroll";
 import { Snow } from "./Snow";
 
 /**
@@ -84,6 +85,7 @@ export function Shell() {
             </div>
           )}
           <PageFooterContext.Provider value={footer}>
+            <ScrollToTop />
             <Outlet />
           </PageFooterContext.Provider>
         </div>
@@ -115,4 +117,18 @@ function NavItem({
       <span className="sr-only xl:not-sr-only xl:text-sm xl:font-medium">{label}</span>
     </Link>
   );
+}
+
+/**
+ * A new page starts at the top. Pages scroll inside `<main>`, which stays,
+ * so it kept the last page's position. Rendered before the page, so its
+ * effect runs first and the library can still put back where it was left.
+ */
+function ScrollToTop() {
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  useLayoutEffect(() => {
+    const main = scroller();
+    if (main) main.scrollTop = 0;
+  }, [path]);
+  return null;
 }
