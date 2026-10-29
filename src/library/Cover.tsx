@@ -36,8 +36,8 @@ export function Cover({
   const episode = gameId.replace(/^keen/, "").replace(/^kdreams$/, "D");
   return (
     <div
-      className={`flex items-center justify-center font-pixel text-white/90 ${
-        game ? engineColor[game.engine] : "bg-surface-raised"
+      className={`flex items-center justify-center font-pixel ${
+        game ? `${engineColor[game.engine]} text-white` : "bg-surface-raised text-muted"
       } ${className}`}
       aria-hidden
     >
