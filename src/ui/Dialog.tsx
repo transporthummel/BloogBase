@@ -66,7 +66,7 @@ export function Dialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="bb-scrim-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
@@ -75,7 +75,7 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`grid max-h-full w-full gap-4 overflow-y-auto overscroll-none rounded-xl border border-border bg-surface p-5 shadow-card outline-none ${wide ? "max-w-4xl" : "max-w-lg"}`}
+        className={`bb-dialog-in grid max-h-full w-full gap-4 overflow-y-auto overscroll-none rounded-xl border border-border bg-surface p-5 shadow-card outline-none ${wide ? "max-w-4xl" : "max-w-lg"}`}
       >
         <h2 id={titleId} className="flex items-center gap-2 text-lg font-semibold">
           {icon}

@@ -25,6 +25,7 @@ import { useSetupStatus } from "../setup/queries";
 import { Badge } from "../ui/Badge";
 import { Bloog } from "../ui/Bloog";
 import { Button } from "../ui/Button";
+import { buttonClass } from "../ui/buttonClass";
 import { Card } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
 import { Notice } from "../ui/Notice";
@@ -200,11 +201,7 @@ export function Library() {
               <Search className="size-4" aria-hidden />
               {t("library.findOwned")}
             </Button>
-            <Link
-              to="/discover"
-              search={{ tab: "games" }}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-raised px-4 py-2 text-sm font-semibold text-ink transition hover:border-muted"
-            >
+            <Link to="/discover" search={{ tab: "games" }} className={buttonClass("secondary")}>
               <Compass className="size-4" aria-hidden />
               {t("library.freeGames")}
             </Link>

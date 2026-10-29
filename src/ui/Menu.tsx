@@ -114,7 +114,7 @@ export function Menu({
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => (open ? close() : setOpen(true))}
-        className={`inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-ink transition hover:border-muted ${className}`}
+        className={`inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-ink shadow-key transition hover:border-muted active:translate-y-px active:shadow-key-down active:duration-0 ${className}`}
       >
         {trigger}
       </button>
@@ -126,7 +126,7 @@ export function Menu({
           aria-label={label}
           onKeyDown={onKeyDown}
           style={{ ...place, visibility: place ? undefined : "hidden" }}
-          className="fixed z-40 grid min-w-56 rounded-lg border border-border bg-surface py-1 shadow-card"
+          className="bb-menu-in fixed z-40 grid min-w-56 rounded-lg border border-border bg-surface py-1 shadow-card"
         >
           {items.map((item) => (
             <div key={item.label} className="grid">

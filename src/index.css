@@ -29,6 +29,9 @@
   --bb-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
   --bb-sidebar: var(--bb-surface);
   --bb-key: 0 0 #0000;
+  /* Pressed: the button sits 1px lower, so its shadow is shorter. */
+  --bb-shadow-down: 0 2px 8px rgb(0 0 0 / 0.35);
+  --bb-key-down: 0 0 #0000;
 
   --bb-vorticons: var(--bb-ega-magenta);
   --bb-galaxy: var(--bb-ega-bright-blue);
@@ -63,6 +66,11 @@
     0 6px 14px rgb(70 55 25 / 0.14);
   /* Keycaps: a darker lower lip on buttons and badges. */
   --bb-key: inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 -2px 0 rgb(70 55 25 / 0.2);
+  /* Pressed, the keycap goes down: the lit edge dims, the lip shrinks. */
+  --bb-shadow-down:
+    inset 0 1px 0 rgb(255 255 255 / 0.35), 0 1px 0 rgb(90 75 45 / 0.18),
+    0 3px 8px rgb(70 55 25 / 0.12);
+  --bb-key-down: inset 0 1px 0 rgb(255 255 255 / 0.25), inset 0 -1px 0 rgb(70 55 25 / 0.2);
   /* EGA green darkened until the Bloog stays visible on beige (3:1). */
   --bb-bloog: #007a00;
   /* Light specks on the plastic: dark dots read as dust. */
@@ -91,6 +99,8 @@
   --color-sidebar: var(--bb-sidebar);
   --shadow-card: var(--bb-shadow);
   --shadow-key: var(--bb-key);
+  --shadow-card-down: var(--bb-shadow-down);
+  --shadow-key-down: var(--bb-key-down);
 }
 
 @theme {
@@ -240,6 +250,27 @@ select {
 
 .bb-rise {
   animation: bb-rise 0.3s ease-out 0.15s backwards;
+}
+
+/* Dialogs and menus arrive quickly instead of popping in; they leave at
+   once. */
+@keyframes bb-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.bb-scrim-in {
+  animation: bb-fade 150ms ease-out;
+}
+
+.bb-dialog-in {
+  animation: bb-rise 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bb-menu-in {
+  animation: bb-drop 140ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* A short bar sweeping across, for waits of unknown length. */
