@@ -10,7 +10,7 @@ export function Badge({ children, tone }: { children: ReactNode; tone?: "status"
       className={`inline-block rounded border px-1.5 py-1 font-pixel text-[0.55rem] leading-none uppercase ${
         tone === "status"
           ? "border-accent/50 bg-accent/10 text-accent"
-          : "border-border bg-surface-raised text-muted"
+          : "border-border bg-surface-raised text-muted shadow-key"
       }`}
     >
       {children}

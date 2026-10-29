@@ -72,7 +72,7 @@ export function Shell() {
       </button>
       <nav
         aria-label={t("nav.label")}
-        className="flex w-16 shrink-0 flex-col gap-1 border-r border-border bg-surface p-2 xl:w-60 xl:p-3"
+        className="flex w-16 shrink-0 flex-col gap-1 border-r border-border bg-sidebar p-2 xl:w-60 xl:p-3"
       >
         {/* The same page as About below: one stop for keyboards. */}
         <Link
