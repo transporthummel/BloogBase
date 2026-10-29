@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { Compass, PackagePlus } from "lucide-react";
+import { Compass, PackagePlus, Search } from "lucide-react";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type Install, type Profile } from "../bindings";
@@ -9,6 +9,7 @@ import { errorMessage } from "../errors";
 import { formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
+import { FindOwnedDialog } from "./FindOwnedDialog";
 import { AddModDialog } from "../mods/AddModDialog";
 import { RunsOn } from "../mods/RunsOn";
 import { Cover } from "./Cover";
@@ -41,6 +42,7 @@ export function Library() {
   const profiles = useQuery(profilesQuery);
   const runtime = useRuntimeStatus();
   const [adding, setAdding] = useState(false);
+  const [finding, setFinding] = useState(false);
   const [imported, setImported] = useState<number | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
   // Only picked (and remembered as seen) when it's shown.
@@ -129,6 +131,19 @@ export function Library() {
             setAdding(false);
             showImported(installs);
           }}
+          onFindOwned={() => {
+            setAdding(false);
+            setFinding(true);
+          }}
+        />
+      )}
+      {finding && (
+        <FindOwnedDialog
+          onClose={() => setFinding(false)}
+          onImported={(count) => {
+            setFinding(false);
+            setImported(count);
+          }}
         />
       )}
 
@@ -160,6 +175,10 @@ export function Library() {
           <p className="max-w-md text-sm text-muted">{t("library.empty")}</p>
           <div className="flex flex-wrap justify-center gap-3">
             {addButton}
+            <Button variant="secondary" onClick={() => setFinding(true)}>
+              <Search className="size-4" aria-hidden />
+              {t("library.findOwned")}
+            </Button>
             <Link
               to="/discover"
               search={{ tab: "games" }}

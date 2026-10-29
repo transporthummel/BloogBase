@@ -1,12 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { CircleCheck, FileArchive, FileCog, FolderOpen, PartyPopper } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { STORE_LINKS } from "../storeLinks";
 import logo from "../assets/logo.jpg";
-import { commands, type FreeGame, type Install, type StoreInstall } from "../bindings";
+import { commands, type FreeGame, type Install } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatMegabytes } from "../format";
@@ -17,14 +15,16 @@ import { isFinished, useJobs, useStartJob } from "../jobs/queries";
 import { compare, fitting, type Owned } from "../discover/fit";
 import { IndexError } from "../discover/IndexError";
 import { useFreeGames, useIndexMods, useIndexStatus } from "../discover/queries";
-import { installsKey, profilesKey } from "../library/queries";
+import { installsKey } from "../library/queries";
 import { setLanguage, type Language } from "../preferences";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { useRuntimeMutation, useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
-import { setupStatusKey, useSetupStatus } from "./queries";
+import { useSetupStatus } from "./queries";
+import { StoreLinks, StoreScanList } from "./StoreScanList";
+import { useStoreScan } from "./storeScan";
 
 export type StepProps = {
   next: () => void;
@@ -241,45 +241,10 @@ export function EngineStep({ next, back }: StepProps) {
 
 // 4. Already own Keen? ----------------------------------------------------
 
-const scanKey = ["storeScan"] as const;
-
 export function OwnedStep({ next, back }: StepProps) {
   const { t } = useTranslation();
-  const client = useQueryClient();
-  const games = useGames();
-  const scan = useQuery({ queryKey: scanKey, queryFn: () => unwrap(commands.scanStores()) });
-  const [picked, setPicked] = useState<Set<string> | null>(null);
-
-  const key = (install: StoreInstall, gameId: string) => `${install.path}\n${gameId}`;
-  const importable = (scan.data ?? []).flatMap((i) =>
-    i.games.filter((g) => !g.imported).map((g) => key(i, g.gameId)),
-  );
-  const selected = picked ?? new Set(importable);
-  const count = importable.filter((k) => selected.has(k)).length;
-
-  const refresh = () =>
-    Promise.all([
-      client.invalidateQueries({ queryKey: profilesKey }),
-      client.invalidateQueries({ queryKey: installsKey }),
-      client.invalidateQueries({ queryKey: setupStatusKey }),
-      client.invalidateQueries({ queryKey: scanKey }),
-    ]);
-
-  const importStores = useMutation({
-    mutationFn: async () => {
-      for (const install of scan.data ?? []) {
-        const ids = install.games
-          .filter((g) => !g.imported && selected.has(key(install, g.gameId)))
-          .map((g) => g.gameId);
-        if (ids.length > 0)
-          await unwrap(commands.importStoreGames(install.store, install.path, ids));
-      }
-    },
-    onSuccess: async () => {
-      await refresh();
-      next();
-    },
-  });
+  const store = useStoreScan(() => next());
+  const { count, importStores, refresh } = store;
 
   const importOther = useMutation({
     mutationFn: (path: string) => unwrap(commands.importGames(path)),
@@ -293,47 +258,14 @@ export function OwnedStep({ next, back }: StepProps) {
     if (path) importOther.mutate(path);
   }
 
-  function toggle(k: string) {
-    const set = new Set(selected);
-    if (set.has(k)) set.delete(k);
-    else set.add(k);
-    setPicked(set);
-  }
-
-  const error = scan.error ?? importStores.error ?? importOther.error;
+  const error = store.scan.error ?? importStores.error ?? importOther.error;
   return (
     <>
       <StepHeader title={t("setup.owned.title")}>
         <p>{t("setup.owned.intro")}</p>
       </StepHeader>
 
-      {scan.isPending && <Notice>{t("setup.owned.scanning")}</Notice>}
-      {scan.data?.length === 0 && <p className="text-sm">{t("setup.owned.noneFound")}</p>}
-      <ul className="grid gap-3">
-        {scan.data?.map((install) => (
-          <li key={install.path} className="grid gap-2 rounded-lg border border-border p-3">
-            <p className="flex flex-wrap items-center gap-2 text-sm">
-              <Badge>{t(`setup.owned.store.${install.store}`)}</Badge>
-              <span className="text-xs break-all text-muted select-text">{install.path}</span>
-            </p>
-            {install.games.map((g) => (
-              <label key={g.gameId} className="flex items-center gap-3 text-sm">
-                <input
-                  type="checkbox"
-                  className="size-4 accent-[var(--bb-accent)]"
-                  checked={g.imported || selected.has(key(install, g.gameId))}
-                  disabled={g.imported}
-                  onChange={() => toggle(key(install, g.gameId))}
-                />
-                <span>{gameTitle(games.data, g.gameId)}</span>
-                {g.imported && (
-                  <span className="ml-auto text-xs text-muted">{t("setup.owned.imported")}</span>
-                )}
-              </label>
-            ))}
-          </li>
-        ))}
-      </ul>
+      <StoreScanList store={store} />
 
       <div className="grid gap-3">
         <p className="text-sm text-muted">{t("setup.owned.other")}</p>
@@ -357,21 +289,7 @@ export function OwnedStep({ next, back }: StepProps) {
         )}
       </div>
 
-      <div className="grid gap-1 text-sm">
-        <p className="text-muted">{t("setup.owned.buy")}</p>
-        <p className="flex flex-wrap gap-4">
-          {(["gog", "steam"] as const).map((store) => (
-            <button
-              key={store}
-              type="button"
-              className="cursor-pointer text-ink underline underline-offset-2"
-              onClick={() => openUrl(STORE_LINKS[store])}
-            >
-              {t(`setup.owned.store.${store}`)}
-            </button>
-          ))}
-        </p>
-      </div>
+      <StoreLinks />
 
       {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
       <Footer back={back} skip={count > 0 ? next : undefined}>

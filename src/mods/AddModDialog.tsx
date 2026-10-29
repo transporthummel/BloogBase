@@ -10,6 +10,7 @@ import {
   Puzzle,
   RefreshCw,
   Replace,
+  Search,
 } from "lucide-react";
 import { type ReactElement, type ReactNode, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -56,6 +57,7 @@ export function AddModDialog({
   onClose,
   onInstalled,
   onGamesImported,
+  onFindOwned,
 }: {
   /** A folder or ZIP dropped on the window and inspected already. */
   dropped?: { path: string; info: ModInfo };
@@ -69,6 +71,8 @@ export function AddModDialog({
   onInstalled: (mod: Mod) => void;
   /** Games were picked instead of a mod and imported. */
   onGamesImported?: (installs: Install[]) => void;
+  /** Offers to look for games from Steam and GOG instead. */
+  onFindOwned?: () => void;
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -204,6 +208,16 @@ export function AddModDialog({
           {inspect.data?.kind === "nothing" && <Notice tone="error">{t("drop.nothing")}</Notice>}
           {inspect.error && <Notice tone="error">{errorMessage(t, inspect.error)}</Notice>}
           {!replacing && <p className="text-sm text-muted">{t("mods.addMore")}</p>}
+          {/* Bought later: the store search instead of finding the folder by hand. */}
+          {!replacing && onFindOwned && (
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
+              {t("mods.ownedHint")}
+              <Button variant="secondary" onClick={onFindOwned}>
+                <Search className="size-4" aria-hidden />
+                {t("library.findOwned")}
+              </Button>
+            </p>
+          )}
         </AddFrom>
       )}
     </Dialog>
