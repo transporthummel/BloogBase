@@ -405,9 +405,15 @@ test("sums up what the player has at the end", async () => {
       active: { id: "staging", version: "0.83.0", path: "dosbox.exe", managed: true },
     },
   });
+  vi.mocked(commands.listJobs).mockResolvedValue([
+    { ...job("keen1-1.31"), phase: "done" },
+    { ...job("keen4-1.4-ega"), id: 2, phase: "failed" },
+  ]);
   renderSetup();
 
   expect(await screen.findByText("2 games in your library")).toBeInTheDocument();
+  expect(screen.queryByText(/keen1-1.31/)).not.toBeInTheDocument();
+  expect(screen.getByText(/keen4-1.4-ega.*didn't work/)).toBeInTheDocument();
   expect(screen.getByText("1 mod to try")).toBeInTheDocument();
   expect(screen.getByText("DOSBox Staging 0.83.0 is ready")).toBeInTheDocument();
   expect(screen.getByText("Everything is ready. Have fun!")).toBeInTheDocument();

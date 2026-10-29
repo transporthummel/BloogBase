@@ -650,6 +650,7 @@ export function DoneStep({ back, finish, finishing }: StepProps) {
   const jobs = useJobs().data ?? [];
   const runtime = useRuntimeStatus();
   const running = jobs.some((j) => !isFinished(j));
+  const open = jobs.filter((j) => j.phase !== "done");
   const noEngine = runtime.data?.active === null;
   return (
     <>
@@ -666,7 +667,8 @@ export function DoneStep({ back, finish, finishing }: StepProps) {
         <Arrival />
         <Recap jobs={jobs} />
       </div>
-      {jobs.length > 0 && <JobList jobs={jobs} />}
+      {/* Finished jobs are in the recap; failed ones stay here to retry. */}
+      {open.length > 0 && <JobList jobs={open} />}
       <Footer back={back}>
         <Button onClick={finish} disabled={finishing}>
           {t("setup.done.open")}
