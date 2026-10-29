@@ -8,6 +8,7 @@ import {
   ExternalLink,
   FileArchive,
   FolderOpen,
+  Info,
   Keyboard,
   MonitorCog,
   RefreshCw,
@@ -170,7 +171,14 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
         <Tabs tabs={tabs} selected={tab} onSelect={setTab} label={t("profile.tabs")}>
           <div className={tab === "screenshots" || tab === "videos" ? "" : "max-w-3xl"}>
             {profile.modId && readmes.data && tab === "readme" && (
-              <ReadmePanel key={profile.id} modId={profile.modId} readmes={readmes.data} />
+              <>
+                {/* Readmes tell players of their time to run batch files and set up DOSBox. */}
+                <p className="mb-3 flex items-start gap-2 text-sm text-muted">
+                  <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  {t("readme.handled")}
+                </p>
+                <ReadmePanel key={profile.id} modId={profile.modId} readmes={readmes.data} />
+              </>
             )}
             {tab === "saves" && <SavesPanel profile={profile} game={game} />}
             {tab === "screenshots" && <ScreenshotsPanel profile={profile} />}
