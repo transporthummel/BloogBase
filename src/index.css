@@ -95,6 +95,15 @@ body {
   @apply bg-bg font-sans text-ink antialiased select-none;
 }
 
+/* A desktop app's views don't bounce past their ends on a touchpad. Only on
+   the scrolling areas themselves (here and `overscroll-none` on the views):
+   `overflow-hidden` makes an element a scroll container too, and with this on
+   it, a card would swallow the scroll instead of handing it to the page. */
+html,
+body {
+  overscroll-behavior: none;
+}
+
 /* The browser's grey placeholder is too faint on raised fields. */
 ::placeholder {
   color: var(--bb-muted);

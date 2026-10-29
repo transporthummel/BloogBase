@@ -36,7 +36,7 @@ export function Shell() {
 
   if (inSetup) {
     return (
-      <main className="bb-starfield relative min-h-screen overflow-y-auto">
+      <main className="bb-starfield relative min-h-screen overflow-y-auto overscroll-none">
         <QuitGuard />
         <Snow />
         <EarlierBackupPrompt />
@@ -76,7 +76,7 @@ export function Shell() {
           <NavItem to="/about" icon={Info} label={t("nav.about")} />
         </div>
       </nav>
-      <main className="relative flex min-w-0 flex-1 flex-col overflow-y-auto">
+      <main className="relative flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-none">
         <div className="mx-auto w-full max-w-7xl flex-1 p-6 xl:p-8">
           {update.data && !updateLater && (
             <div className="mb-6">
