@@ -421,6 +421,7 @@
     "withoutGameTitle": "{{name}} ohne Spiel installieren?",
     "withoutGameHint": "{{game}} ist nicht in deiner Bibliothek. Die Mod wird jetzt installiert und lässt sich spielen, sobald du das Spiel hinzufügst.",
     "free": {
+      "buy": "Die übrigen Episoden gibt es bei GOG und Steam zu kaufen, außer Keen 6: Das wird zurzeit nirgends verkauft. Sind sie installiert, findet „Einrichtung erneut starten“ in den Einstellungen sie.",
       "intro": {
         "games": "Diese Episoden erschienen als Shareware: vollständige Spiele, die du kostenlos spielen und weitergeben darfst. Mods dafür funktionieren sofort.",
         "demos": "Frühe Testfassungen und Werbe-Demos, spannend für einen Blick darauf, wie die Spiele entstanden sind. Vollständige Spiele sind das nicht."

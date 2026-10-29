@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { Download } from "lucide-react";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { Download, ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { commands, type FreeGame, type Game } from "../bindings";
 import { gameTitle } from "../catalog";
@@ -15,6 +16,7 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Notice } from "../ui/Notice";
+import { STORE_LINKS } from "../storeLinks";
 import { useFreeGames } from "./queries";
 
 /** Full shareware episodes, or the demos and betas. */
@@ -44,6 +46,25 @@ export function FreeGames({ category, games }: { category: FreeCategory; games: 
           </li>
         ))}
       </ul>
+      {/* The shareware is only part of it; where the rest comes from. */}
+      {category === "games" && (
+        <div className="grid max-w-2xl gap-1 text-sm">
+          <p className="text-muted">{t("discover.free.buy")}</p>
+          <p className="flex flex-wrap gap-4">
+            {(["gog", "steam"] as const).map((store) => (
+              <button
+                key={store}
+                type="button"
+                className="inline-flex cursor-pointer items-center gap-1 text-ink underline underline-offset-2"
+                onClick={() => openUrl(STORE_LINKS[store])}
+              >
+                {t(`setup.owned.store.${store}`)}
+                <ExternalLink className="size-3.5" aria-hidden />
+              </button>
+            ))}
+          </p>
+        </div>
+      )}
       <p className="max-w-2xl text-xs text-muted">{t(`discover.free.terms.${category}`)}</p>
     </div>
   );

@@ -4,6 +4,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { CircleCheck, FileArchive, FileCog, FolderOpen, PartyPopper } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { STORE_LINKS } from "../storeLinks";
 import logo from "../assets/logo.jpg";
 import { commands, type FreeGame, type Install, type StoreInstall } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
@@ -30,11 +31,6 @@ export type StepProps = {
   back?: () => void;
   finish: () => void;
   finishing: boolean;
-};
-
-const STORE_LINKS = {
-  gog: "https://www.gog.com/game/commander_keen_complete_pack",
-  steam: "https://store.steampowered.com/app/9180/",
 };
 
 function StepHeader({ title, children }: { title: string; children?: ReactNode }) {
