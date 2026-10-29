@@ -11,6 +11,7 @@ import {
   type Profile,
 } from "../bindings";
 import { DropImport } from "./DropImport";
+import { importPaths } from "./importPaths";
 
 type Payload = { type: "enter" | "drop"; paths: string[] } | { type: "over" } | { type: "leave" };
 let emit: (payload: Payload) => void = () => {};
@@ -182,4 +183,14 @@ test("one game dropped offers its own page, not a mod's", async () => {
       params: { profileId: "keen4-1" },
     }),
   );
+});
+
+test("imports what the add dialog picked several of, like a drop", async () => {
+  vi.mocked(commands.inspectDropped).mockReturnValue(ok({ kind: "games" as const }));
+  vi.mocked(commands.importGames).mockReturnValue(ok([install]));
+  renderDrop();
+  act(() => importPaths(["/keen/one", "/keen/two"]));
+  await screen.findByRole("dialog", { name: "Added to your library" });
+  expect(commands.importGames).toHaveBeenCalledWith("/keen/one");
+  expect(commands.importGames).toHaveBeenCalledWith("/keen/two");
 });

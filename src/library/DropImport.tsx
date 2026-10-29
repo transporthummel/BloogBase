@@ -11,6 +11,7 @@ import { AddModDialog } from "../mods/AddModDialog";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
+import { onImportPaths } from "./importPaths";
 import { installsKey, profilesKey } from "./queries";
 
 type Outcome = {
@@ -23,8 +24,9 @@ type Outcome = {
 const fileName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
 /**
- * Folders and ZIP files dropped on the window: games are imported, mods go
- * through the usual confirmation, one after the other.
+ * Folders and ZIP files dropped on the window, or picked several at once in
+ * the add dialog: games are imported, mods go through the usual
+ * confirmation, one after the other.
  */
 export function DropImport() {
   const { t } = useTranslation();
@@ -68,8 +70,10 @@ export function DropImport() {
       else setHovering(false);
       if (payload.type === "drop" && payload.paths.length > 0) handle(payload.paths);
     });
+    const unsubscribe = onImportPaths(handle);
     return () => {
       unlisten.then((f) => f());
+      unsubscribe();
     };
   }, [t, queryClient]);
 

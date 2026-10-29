@@ -18,6 +18,7 @@ import { errorMessage } from "../errors";
 import { formatLooseDate } from "../format";
 import { unwrap } from "../ipc";
 import { coverKey } from "../library/covers";
+import { importPaths } from "../library/importPaths";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob, waitForJob } from "../jobs/queries";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
@@ -78,12 +79,23 @@ export function AddModDialog({
   });
 
   async function pick(kind: "folder" | "zip") {
-    const picked = await open(
-      kind === "folder" ? { directory: true } : { filters: [{ name: "ZIP", extensions: ["zip"] }] },
-    );
-    if (!picked) return;
-    setPath(picked);
-    inspect.mutate(picked);
+    // Several at once, unless it replaces one mod.
+    const picked = await open({
+      multiple: !replacing,
+      ...(kind === "folder"
+        ? { directory: true }
+        : { filters: [{ name: "ZIP", extensions: ["zip"] }] }),
+    });
+    const paths = picked === null ? [] : Array.isArray(picked) ? picked : [picked];
+    if (paths.length > 1) {
+      // Imported like a drop on the window, one after the other.
+      onClose();
+      importPaths(paths);
+      return;
+    }
+    if (!paths[0]) return;
+    setPath(paths[0]);
+    inspect.mutate(paths[0]);
   }
 
   return (
