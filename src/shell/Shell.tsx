@@ -77,7 +77,7 @@ export function Shell() {
           <NavItem to="/about" icon={Info} label={t("nav.about")} />
         </div>
       </nav>
-      <main className="relative flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-none">
+      <main className="bb-day-sky relative flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-none">
         <div className="mx-auto w-full max-w-7xl flex-1 p-6 xl:p-8">
           {update.data && !updateLater && (
             <div className="mb-6">
