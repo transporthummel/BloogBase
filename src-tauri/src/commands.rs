@@ -1257,7 +1257,7 @@ pub fn install_free_game(app: AppHandle, version_id: String) -> Job {
 #[tauri::command]
 #[specta::specta]
 pub async fn scan_stores(app: AppHandle) -> CommandResult<Vec<StoreInstall>> {
-    blocking(move || stores::scan(&app.state::<Db>())).await
+    blocking(move || stores::scan(&app.state::<AppPaths>(), &app.state::<Db>())).await
 }
 
 /// Imports the chosen episodes from a folder found by `scan_stores`.

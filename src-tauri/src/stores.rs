@@ -12,6 +12,7 @@ use crate::db::Db;
 use crate::detect::detect;
 use crate::error::Result;
 use crate::library::{self, InstallSource};
+use crate::paths::AppPaths;
 use crate::source::Source;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
@@ -49,7 +50,7 @@ pub struct FoundGame {
 }
 
 /// Scans the usual Steam and GOG locations of this computer.
-pub fn scan(db: &Db) -> Result<Vec<StoreInstall>> {
+pub fn scan(paths: &AppPaths, db: &Db) -> Result<Vec<StoreInstall>> {
     let home = std::env::home_dir();
     let mut candidates = Vec::new();
     for lib in steam_libraries(home.as_deref()) {
@@ -67,10 +68,16 @@ pub fn scan(db: &Db) -> Result<Vec<StoreInstall>> {
             .into_iter()
             .map(|p| (Store::Gog, p)),
     );
-    inspect(db, candidates)
+    inspect(paths, db, candidates)
 }
 
-fn inspect(db: &Db, candidates: Vec<(Store, PathBuf)>) -> Result<Vec<StoreInstall>> {
+fn inspect(
+    paths: &AppPaths,
+    db: &Db,
+    candidates: Vec<(Store, PathBuf)>,
+) -> Result<Vec<StoreInstall>> {
+    // Imported from another folder counts too: importing it again is skipped.
+    let have = library::library_releases(paths, db)?;
     let mut seen = BTreeSet::new();
     let mut found = Vec::new();
     for (store, dir) in candidates {
@@ -78,7 +85,14 @@ fn inspect(db: &Db, candidates: Vec<(Store, PathBuf)>) -> Result<Vec<StoreInstal
         if !dir.is_dir() || !seen.insert(key) {
             continue;
         }
-        let detections = match Source::open(&dir).and_then(|s| detect(&s)) {
+        let source = match Source::open(&dir) {
+            Ok(s) => s,
+            Err(err) => {
+                tracing::warn!("could not scan {}: {err}", dir.display());
+                continue;
+            }
+        };
+        let detections = match detect(&source) {
             Ok(d) => d,
             Err(err) => {
                 tracing::warn!("could not scan {}: {err}", dir.display());
@@ -96,7 +110,8 @@ fn inspect(db: &Db, candidates: Vec<(Store, PathBuf)>) -> Result<Vec<StoreInstal
                 continue;
             }
             games.push(FoundGame {
-                imported: library::has_origin(db, &d.game_id, &path)?,
+                imported: library::has_origin(db, &d.game_id, &path)?
+                    || library::has_release(&source, &d, &have)?,
                 game_id: d.game_id,
                 version_id: d.version_id,
             });
@@ -296,27 +311,23 @@ mod tests {
         assert_eq!(dirs.len(), 1);
 
         let db = Db::open_in_memory().unwrap();
+        let paths = crate::paths::AppPaths::new(tmp.path().join("data"));
+        paths.ensure().unwrap();
         // The same folder listed twice shows up once.
         let mut candidates = dirs.clone();
         candidates.extend(dirs);
-        let found = inspect(&db, candidates.clone()).unwrap();
+        let found = inspect(&paths, &db, candidates.clone()).unwrap();
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].store, Store::Steam);
         assert_eq!(found[0].games.len(), 1);
         assert_eq!(found[0].games[0].game_id, "keen4");
         assert!(!found[0].games[0].imported);
 
-        let paths = crate::paths::AppPaths::new(tmp.path().join("data"));
-        paths.ensure().unwrap();
-        library::import_from(
-            &paths,
-            &db,
-            &keen,
-            InstallSource::Steam,
-            &found[0].path,
-            Some(&["keen4".to_string()]),
-        )
-        .unwrap();
-        assert!(inspect(&db, candidates).unwrap()[0].games[0].imported);
+        // The same release imported from another folder counts: importing
+        // it again would be skipped as a second copy.
+        let copy = tmp.path().join("elsewhere/keen4");
+        write_folder(&copy, KEEN4);
+        library::import_from(&paths, &db, &copy, InstallSource::Folder, "elsewhere", None).unwrap();
+        assert!(inspect(&paths, &db, candidates).unwrap()[0].games[0].imported);
     }
 }

@@ -150,6 +150,26 @@ fn release_key(
     Ok(None)
 }
 
+/// Whether the library already has this release, from wherever it was
+/// imported: importing it would be skipped as a second copy of the same
+/// files. `have` comes from [`library_releases`].
+pub fn has_release(source: &Source, d: &Detection, have: &HashSet<String>) -> Result<bool> {
+    let game = catalog::game(&d.game_id).expect("detections come from the catalog");
+    let key = release_key(game, d.version_id.as_deref(), |name| {
+        d.base_files
+            .iter()
+            .find(|rel| split_dir(rel).1.eq_ignore_ascii_case(name))
+            .map(|rel| source.read(rel))
+            .transpose()
+    })?;
+    Ok(key.is_some_and(|k| have.contains(&k)))
+}
+
+/// The releases in the library, for [`has_release`].
+pub fn library_releases(paths: &AppPaths, db: &Db) -> Result<HashSet<String>> {
+    release_keys(paths, db)
+}
+
 /// The release keys of everything in the library.
 fn release_keys(paths: &AppPaths, db: &Db) -> Result<HashSet<String>> {
     let mut keys = HashSet::new();
