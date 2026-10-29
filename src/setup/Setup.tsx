@@ -69,7 +69,7 @@ function Wizard({ resume }: { resume: string | null }) {
 
   const StepComponent = components[step];
   return (
-    <div className="mx-auto grid max-w-2xl gap-6 px-4 py-8 sm:py-12">
+    <div className="mx-auto grid max-w-2xl gap-6 px-4 py-8">
       <header className="flex min-h-10 items-center gap-3">
         <span className="font-pixel text-sm text-accent">BloogBase</span>
         {step !== "done" && (

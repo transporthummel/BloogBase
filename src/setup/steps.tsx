@@ -49,10 +49,13 @@ function StepHeader({ title, children }: { title: string; children?: ReactNode }
 function Footer({
   back,
   skip,
+  start,
   children,
 }: {
   back?: () => void;
   skip?: () => void;
+  /** Shown at the left instead of "Back". */
+  start?: ReactNode;
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -63,6 +66,7 @@ function Footer({
           {t("setup.back")}
         </Button>
       )}
+      {start}
       <div className="ml-auto flex flex-wrap gap-3">
         {skip && (
           <Button variant="secondary" onClick={skip}>
@@ -99,22 +103,26 @@ export function WelcomeStep({ next }: StepProps) {
         <p>{t("setup.welcome.intro")}</p>
         <p>{t("setup.welcome.steps")}</p>
       </StepHeader>
-      <div role="group" aria-label={t("settings.language")} className="flex flex-wrap gap-3">
-        {languages.map(([lng, name]) => (
-          <Button
-            key={lng}
-            variant={i18n.language === lng ? "primary" : "secondary"}
-            aria-pressed={i18n.language === lng}
-            onClick={() => {
-              setLanguage(lng);
-              i18n.changeLanguage(lng);
-            }}
-          >
-            {name}
-          </Button>
-        ))}
-      </div>
-      <Footer>
+      {/* In the footer, so the first page fits the default window. */}
+      <Footer
+        start={
+          <div role="group" aria-label={t("settings.language")} className="flex flex-wrap gap-3">
+            {languages.map(([lng, name]) => (
+              <Button
+                key={lng}
+                variant={i18n.language === lng ? "primary" : "secondary"}
+                aria-pressed={i18n.language === lng}
+                onClick={() => {
+                  setLanguage(lng);
+                  i18n.changeLanguage(lng);
+                }}
+              >
+                {name}
+              </Button>
+            ))}
+          </div>
+        }
+      >
         <Button onClick={next}>{t("setup.welcome.start")}</Button>
       </Footer>
     </>
