@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
-import { Compass, Plus } from "lucide-react";
+import { Compass, PackagePlus } from "lucide-react";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type Game, type Install, type Profile } from "../bindings";
@@ -87,7 +87,7 @@ export function Library() {
         setAdding(true);
       }}
     >
-      <Plus className="size-4" aria-hidden />
+      <PackagePlus className="size-4" aria-hidden />
       {t("library.add")}
     </Button>
   );
