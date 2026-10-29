@@ -106,11 +106,11 @@ export function WelcomeStep({ next }: StepProps) {
       {/* In the footer, so the first page fits the default window. */}
       <Footer
         start={
-          <div role="group" aria-label={t("settings.language")} className="flex flex-wrap gap-3">
+          <div role="group" aria-label={t("settings.language")} className="flex flex-wrap gap-1">
             {languages.map(([lng, name]) => (
               <Button
                 key={lng}
-                variant={i18n.language === lng ? "primary" : "secondary"}
+                variant={i18n.language === lng ? "secondary" : "ghost"}
                 aria-pressed={i18n.language === lng}
                 onClick={() => {
                   setLanguage(lng);
