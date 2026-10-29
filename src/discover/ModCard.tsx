@@ -79,7 +79,7 @@ export function ModCard({
           {mod.modId && <Badge tone="status">{t("discover.installed")}</Badge>}
           {mod.updateAvailable && <Badge tone="status">{t("discover.updateBadge")}</Badge>}
           <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
-          {isNew(entry) && <Badge>{t("mods.new")}</Badge>}
+          {isNew(entry, index.data?.map((m) => m.entry) ?? []) && <Badge>{t("mods.new")}</Badge>}
           {entry.featured && <Badge>{t("discover.featured")}</Badge>}
         </div>
         {entry.description && <p className="text-sm">{entry.description}</p>}

@@ -16,27 +16,27 @@ authors and link back to KeenWiki and PCKF.
    it.
 2. Fill it in:
 
-   | Field            | Meaning                                                                                     |
-   | ---------------- | ------------------------------------------------------------------------------------------- |
-   | `name`           | As the authors call it                                                                      |
-   | `game`           | `keen1` … `keen6`, `kdreams`                                                                |
-   | `requires`       | Game versions it works with (ids from `src-tauri/catalog/games.json`); leave out for any    |
-   | `authors`        | Names as on KeenWiki                                                                        |
-   | `authorLinks`    | Name: page for authors whose name KeenWiki links (their `User:` page); leave out red links  |
-   | `version`        | The mod's version, in quotes                                                                |
-   | `released`       | First release, `YYYY-MM-DD`; `updated` for the latest one                                   |
-   | `added`          | Today: when the entry joined the index (drives the "New" badge)                             |
-   | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (something else entirely)          |
-   | `description`    | One or two sentences in your own words                                                      |
-   | `links`          | `keenwiki`, `pckf`, `keenmodding` (Keen: Modding forum), `homepage`                         |
-   | `downloads`      | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`             |
-   | `recipe`         | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode` |
-   | `versionRecipes` | Version id: recipe, for game versions the mod starts differently on (one patch per version) |
-   | `copyToRoot`     | Folders in the mod's root whose files the readme says to copy into the root                 |
-   | `extends`        | Id of the entry this mod is copied over, e.g. a level pack for a mod; installed with it     |
-   | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)           |
-   | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
-   | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
+   | Field            | Meaning                                                                                         |
+   | ---------------- | ----------------------------------------------------------------------------------------------- |
+   | `name`           | As the authors call it                                                                          |
+   | `game`           | `keen1` … `keen6`, `kdreams`                                                                    |
+   | `requires`       | Game versions it works with (ids from `src-tauri/catalog/games.json`); leave out for any        |
+   | `authors`        | Names as on KeenWiki                                                                            |
+   | `authorLinks`    | Name: page for authors whose name KeenWiki links (their `User:` page); leave out red links      |
+   | `version`        | The mod's version, in quotes                                                                    |
+   | `released`       | First release, `YYYY-MM-DD`; `updated` for the latest one                                       |
+   | `added`          | Today: when the entry joined the index (drives the "New" badge, not in the index's first month) |
+   | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (something else entirely)              |
+   | `description`    | One or two sentences in your own words                                                          |
+   | `links`          | `keenwiki`, `pckf`, `keenmodding` (Keen: Modding forum), `homepage`                             |
+   | `downloads`      | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`                 |
+   | `recipe`         | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode`     |
+   | `versionRecipes` | Version id: recipe, for game versions the mod starts differently on (one patch per version)     |
+   | `copyToRoot`     | Folders in the mod's root whose files the readme says to copy into the root                     |
+   | `extends`        | Id of the entry this mod is copied over, e.g. a level pack for a mod; installed with it         |
+   | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)               |
+   | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                        |
+   | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                                 |
 
    `sha256` and `size`: `certutil -hashfile <file> SHA256` (Windows) or
    `sha256sum <file>`; the size is in the file's properties. The recipe files

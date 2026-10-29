@@ -288,8 +288,12 @@ test("fit rules match the backend", () => {
 
 test("new badges and sorting", () => {
   const now = Date.parse("2026-10-17T12:00:00Z");
-  expect(isNew(entry("a", { added: "2026-10-01" }), now)).toBe(true);
-  expect(isNew(entry("a", { added: "2026-08-01" }), now)).toBe(false);
+  const first = entry("first", { added: "2026-07-01" });
+  const recent = entry("a", { added: "2026-10-01" });
+  expect(isNew(recent, [first, recent], now)).toBe(true);
+  expect(isNew(entry("a", { added: "2026-08-01" }), [first], now)).toBe(false);
+  // While the index is in its first month, nothing in it is new.
+  expect(isNew(recent, [entry("b", { added: "2026-09-20" }), recent], now)).toBe(false);
   const list = [
     entry("b", { added: "2026-01-01" }),
     entry("a", { added: "2025-01-01", featured: true }),
