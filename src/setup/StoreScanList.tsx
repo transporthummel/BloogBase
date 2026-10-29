@@ -26,14 +26,17 @@ export function StoreScanList({ store }: { store: ReturnType<typeof useStoreScan
               <label key={g.gameId} className="flex items-center gap-3 text-sm">
                 <input
                   type="checkbox"
-                  className="size-4 accent-[var(--bb-accent)]"
+                  className="size-4 shrink-0 accent-[var(--bb-accent)]"
                   checked={g.imported || selected.has(key(install, g.gameId))}
                   disabled={g.imported}
                   onChange={() => toggle(key(install, g.gameId))}
                 />
-                <span>{gameTitle(games.data, g.gameId)}</span>
+                <span className="min-w-0">{gameTitle(games.data, g.gameId)}</span>
+                {/* The title wraps for long names, the status stays on one line. */}
                 {g.imported && (
-                  <span className="ml-auto text-xs text-muted">{t("setup.owned.imported")}</span>
+                  <span className="ml-auto shrink-0 text-xs whitespace-nowrap text-muted">
+                    {t("setup.owned.imported")}
+                  </span>
                 )}
               </label>
             ))}
