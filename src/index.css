@@ -32,6 +32,9 @@
   --bb-galaxy: var(--bb-ega-bright-blue);
   --bb-dreams: var(--bb-ega-brown);
   --bb-bloog: var(--bb-ega-bright-green);
+  --bb-star: var(--bb-ink);
+  --bb-star-dim: var(--bb-muted);
+  --bb-star-bright: var(--bb-ega-yellow);
 
   color-scheme: dark;
 }
@@ -52,6 +55,10 @@
   --bb-shadow: 0 4px 16px rgb(23 21 46 / 0.08);
   /* EGA green, the darker shade of the Bloog's own: bright green fades on white. */
   --bb-bloog: #00aa00;
+  /* Dark dots on a light sky read as dust: pale violet sparkles instead. */
+  --bb-star: #c4bfe6;
+  --bb-star-dim: #dcd9f0;
+  --bb-star-bright: #a7a1dd;
 
   color-scheme: light;
 }
@@ -134,10 +141,10 @@ select {
 /* Starfield for empty states: two layers of tiny dots. */
 .bb-starfield {
   background-image:
-    radial-gradient(1px 1px at 20% 30%, var(--bb-ink) 50%, transparent 51%),
-    radial-gradient(1px 1px at 70% 60%, var(--bb-muted) 50%, transparent 51%),
-    radial-gradient(2px 2px at 40% 80%, var(--bb-ega-yellow) 50%, transparent 51%),
-    radial-gradient(1px 1px at 85% 15%, var(--bb-ink) 50%, transparent 51%);
+    radial-gradient(1px 1px at 20% 30%, var(--bb-star) 50%, transparent 51%),
+    radial-gradient(1px 1px at 70% 60%, var(--bb-star-dim) 50%, transparent 51%),
+    radial-gradient(2px 2px at 40% 80%, var(--bb-star-bright) 50%, transparent 51%),
+    radial-gradient(1px 1px at 85% 15%, var(--bb-star) 50%, transparent 51%);
   background-size:
     120px 120px,
     90px 90px,
