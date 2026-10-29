@@ -40,6 +40,8 @@
   --bb-star: var(--bb-ink);
   --bb-star-dim: var(--bb-muted);
   --bb-star-bright: var(--bb-ega-yellow);
+  /* 3:1 against the page; the border colour vanished in the dark. */
+  --bb-scrollbar: #625d99;
 
   color-scheme: dark;
 }
@@ -77,6 +79,7 @@
   --bb-star: #f4efe2;
   --bb-star-dim: #e8e1cf;
   --bb-star-bright: #fffbf0;
+  --bb-scrollbar: var(--bb-border);
 
   color-scheme: light;
 }
@@ -190,6 +193,32 @@ select {
 
 :root[data-theme="light"] select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23544c3f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+}
+
+/* Scrollbars in the theme's colours: a rounded thumb that turns muted under
+   the pointer, on no track of its own. */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 6px;
+  background: var(--bb-scrollbar) padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--bb-muted);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--bb-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
