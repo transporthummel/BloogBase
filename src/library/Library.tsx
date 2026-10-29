@@ -330,7 +330,8 @@ const ProfileCard = memo(function ProfileCard({
             <Link
               to="/profiles/$profileId"
               params={{ profileId: profile.id }}
-              className="hover:underline"
+              // A block, so the focus ring is one box around a wrapped title.
+              className="block hover:underline"
               title={t("library.details")}
               aria-label={sharedLabel ? name : undefined}
             >
