@@ -13,6 +13,7 @@ import { Card } from "../ui/Card";
 import { Dialog } from "../ui/Dialog";
 import { Loading } from "../ui/Loading";
 import { Notice } from "../ui/Notice";
+import { PageHeader } from "../ui/PageHeader";
 
 export const REPO_URL = "https://github.com/transporthummel/BloogBase";
 const DOSBOX_URL = "https://www.dosbox-staging.org/";
@@ -37,113 +38,116 @@ export function About() {
   const dosboxVersion = runtime.data?.managed?.version ?? runtime.data?.pinnedVersion;
 
   return (
-    <div className="grid max-w-3xl gap-6">
-      <Card>
-        <img
-          src={logo}
-          alt="BloogBase"
-          className="aspect-[16/9] w-full object-cover [image-rendering:pixelated]"
-        />
-        <div className="flex items-start gap-4 p-5">
-          <div className="grid flex-1 gap-2">
-            <h1 className="sr-only">{t("about.title")}</h1>
-            <p>{t("about.tagline")}</p>
-            <p className="text-sm">
-              <Trans
-                i18nKey="about.author"
-                values={{ name: "transporthummel" }}
-                components={{
-                  profile: (
-                    <button
-                      type="button"
-                      className="cursor-pointer font-semibold text-accent underline-offset-2 hover:underline"
-                      title={t("about.authorProfile")}
-                      onClick={() => openUrl(AUTHOR_URL)}
-                    />
-                  ),
-                }}
-              />
-            </p>
-            <p className="text-sm text-muted">
-              {t("settings.version")}{" "}
-              <span className="font-pixel text-xs text-ink">{info.data?.version}</span>
-            </p>
-            <div className="flex flex-wrap gap-2 pt-1">
-              <LinkButton url={REPO_URL}>{t("about.sourceCode")}</LinkButton>
-              <LinkButton url={`${REPO_URL}/issues`}>{t("about.feedback")}</LinkButton>
-              <Button
-                variant="secondary"
-                className="px-3 py-1.5"
-                onClick={() => setShowDiagnostics(true)}
-              >
-                <Bug className="size-4" aria-hidden />
-                {t("about.diagnostics")}
-              </Button>
-            </div>
-          </div>
-          <Bloog className="bb-hop size-10 shrink-0" />
-        </div>
-      </Card>
-
-      <Section title={t("about.fanProject")}>
-        <p>{t("about.trademark")}</p>
-        <p>{t("about.noGameData")}</p>
-      </Section>
-
-      <Section title={t("about.thanks")}>
-        <p>{t("about.thanksText")}</p>
-        <div className="flex flex-wrap gap-2">
-          <LinkButton url="https://keenwiki.shikadi.net/">KeenWiki</LinkButton>
-          <LinkButton url="https://pckf.com/">PCKF</LinkButton>
-          <LinkButton url="https://moddingwiki.shikadi.net/">ModdingWiki</LinkButton>
-        </div>
-      </Section>
-
-      <Section title={t("about.licenses")}>
-        <p>{t("about.license")}</p>
-        <p>
-          <Trans
-            i18nKey="about.dosbox"
-            values={{ version: dosboxVersion ?? "" }}
-            components={{ strong: <strong /> }}
+    <>
+      <PageHeader title={t("about.title")} />
+      <div className="grid max-w-3xl gap-6">
+        <Card>
+          <img
+            src={logo}
+            alt="BloogBase"
+            className="aspect-[16/9] w-full object-cover [image-rendering:pixelated]"
           />
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <LinkButton url={DOSBOX_URL}>DOSBox Staging</LinkButton>
-          <LinkButton
-            url={dosboxVersion ? `${DOSBOX_SOURCE}/tree/v${dosboxVersion}` : DOSBOX_SOURCE}
-          >
-            {t("about.dosboxSource", { version: dosboxVersion ?? "" })}
-          </LinkButton>
-          <LinkButton url={GPL_URL}>GPL 2.0</LinkButton>
-        </div>
-        <p>{t("about.cwsdpmi")}</p>
-        <div className="flex flex-wrap gap-2">
-          <LinkButton url={CWSDPMI_SOURCE}>{t("about.cwsdpmiSource")}</LinkButton>
-        </div>
-        <p>{t("about.ckpatch")}</p>
-        <div className="flex flex-wrap gap-2">
-          <LinkButton url={CKPATCH_SOURCE}>{t("about.ckpatchSource")}</LinkButton>
-          <LinkButton url={KDRPATCH_SOURCE}>{t("about.kdrpatchSource")}</LinkButton>
-        </div>
-        <p>{t("about.fonts")}</p>
-        <div>
-          <Button variant="secondary" onClick={() => setShowLicenses(true)}>
-            <FileText className="size-4" aria-hidden />
-            {t("about.thirdParty")}
-          </Button>
-        </div>
-      </Section>
+          <div className="flex items-start gap-4 p-5">
+            <div className="grid flex-1 gap-2">
+              <p>{t("about.tagline")}</p>
+              <p className="text-sm">
+                <Trans
+                  i18nKey="about.author"
+                  values={{ name: "transporthummel" }}
+                  components={{
+                    profile: (
+                      <button
+                        type="button"
+                        className="cursor-pointer font-semibold text-accent underline-offset-2 hover:underline"
+                        title={t("about.authorProfile")}
+                        onClick={() => openUrl(AUTHOR_URL)}
+                      />
+                    ),
+                  }}
+                />
+              </p>
+              <p className="text-sm text-muted">
+                {t("settings.version")}{" "}
+                <span className="font-pixel text-xs text-ink">{info.data?.version}</span>
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <LinkButton url={REPO_URL}>{t("about.sourceCode")}</LinkButton>
+                <LinkButton url={`${REPO_URL}/issues`}>{t("about.feedback")}</LinkButton>
+                <Button
+                  variant="secondary"
+                  className="px-3 py-1.5"
+                  onClick={() => setShowDiagnostics(true)}
+                >
+                  <Bug className="size-4" aria-hidden />
+                  {t("about.diagnostics")}
+                </Button>
+              </div>
+            </div>
+            <Bloog className="bb-hop size-10 shrink-0" />
+          </div>
+        </Card>
 
-      {showLicenses && <LicensesDialog onClose={() => setShowLicenses(false)} />}
-      {showDiagnostics && <DiagnosticsDialog onClose={() => setShowDiagnostics(false)} />}
-    </div>
+        <Section title={t("about.fanProject")}>
+          <p>{t("about.trademark")}</p>
+          <p>{t("about.noGameData")}</p>
+        </Section>
+
+        <Section title={t("about.thanks")}>
+          <p>{t("about.thanksText")}</p>
+          <div className="flex flex-wrap gap-2">
+            <LinkButton url="https://keenwiki.shikadi.net/">KeenWiki</LinkButton>
+            <LinkButton url="https://pckf.com/">PCKF</LinkButton>
+            <LinkButton url="https://moddingwiki.shikadi.net/">ModdingWiki</LinkButton>
+          </div>
+        </Section>
+
+        <Section title={t("about.licenses")}>
+          <p>{t("about.license")}</p>
+          <p>
+            <Trans
+              i18nKey="about.dosbox"
+              values={{ version: dosboxVersion ?? "" }}
+              components={{ strong: <strong /> }}
+            />
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <LinkButton url={DOSBOX_URL}>DOSBox Staging</LinkButton>
+            <LinkButton
+              url={dosboxVersion ? `${DOSBOX_SOURCE}/tree/v${dosboxVersion}` : DOSBOX_SOURCE}
+            >
+              {t("about.dosboxSource", { version: dosboxVersion ?? "" })}
+            </LinkButton>
+            <LinkButton url={GPL_URL}>GPL 2.0</LinkButton>
+          </div>
+          <p>{t("about.cwsdpmi")}</p>
+          <div className="flex flex-wrap gap-2">
+            <LinkButton url={CWSDPMI_SOURCE}>{t("about.cwsdpmiSource")}</LinkButton>
+          </div>
+          <p>{t("about.ckpatch")}</p>
+          <div className="flex flex-wrap gap-2">
+            <LinkButton url={CKPATCH_SOURCE}>{t("about.ckpatchSource")}</LinkButton>
+            <LinkButton url={KDRPATCH_SOURCE}>{t("about.kdrpatchSource")}</LinkButton>
+          </div>
+          <p>{t("about.fonts")}</p>
+          <div>
+            <Button variant="secondary" onClick={() => setShowLicenses(true)}>
+              <FileText className="size-4" aria-hidden />
+              {t("about.thirdParty")}
+            </Button>
+          </div>
+        </Section>
+
+        {showLicenses && <LicensesDialog onClose={() => setShowLicenses(false)} />}
+        {showDiagnostics && <DiagnosticsDialog onClose={() => setShowDiagnostics(false)} />}
+      </div>
+    </>
   );
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Card className="grid gap-3 p-5 text-sm leading-relaxed">
+    // Paragraphs at a reading width; the card stays as wide as the others.
+    <Card className="grid gap-3 p-5 text-sm leading-relaxed [&>p]:max-w-prose">
       <h2 className="font-pixel text-xs leading-relaxed">{title}</h2>
       {children}
     </Card>
