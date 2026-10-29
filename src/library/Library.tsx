@@ -3,14 +3,7 @@ import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { Compass, Plus } from "lucide-react";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  commands,
-  events,
-  type Game,
-  type Install,
-  type InstallSource,
-  type Profile,
-} from "../bindings";
+import { commands, events, type Game, type Install, type Profile } from "../bindings";
 import { useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatPlayTime } from "../format";
@@ -20,7 +13,7 @@ import { AddModDialog } from "../mods/AddModDialog";
 import { RunsOn } from "../mods/RunsOn";
 import { Cover } from "./Cover";
 import { useCover } from "./covers";
-import { installsKey, profilesKey } from "./queries";
+import { profilesKey } from "./queries";
 import { getLibrarySort, getShowTrivia, setLibrarySort } from "../preferences";
 import { arrange, librarySorts, type LibrarySort } from "./sort";
 import { StatusBar } from "./StatusBar";
@@ -46,10 +39,6 @@ export function Library() {
   const setup = useSetupStatus();
   const profilesQuery = { queryKey: profilesKey, queryFn: () => unwrap(commands.listProfiles()) };
   const profiles = useQuery(profilesQuery);
-  const installs = useQuery({
-    queryKey: installsKey,
-    queryFn: () => unwrap(commands.listInstalls()),
-  });
   const runtime = useRuntimeStatus();
   const [adding, setAdding] = useState(false);
   const [imported, setImported] = useState<number | null>(null);
@@ -108,7 +97,6 @@ export function Library() {
     return <Navigate to="/setup" />;
 
   const gameById = new Map(games.data?.map((g) => [g.id, g]));
-  const sourceOf = new Map(installs.data?.map((i) => [i.id, i.source]));
   // Games the player has more than one copy of; their cards say which copy.
   const copies = new Map<string, number>();
   for (const p of profiles.data ?? [])
@@ -241,11 +229,7 @@ export function Library() {
                     <ProfileCard
                       profile={profile}
                       game={gameById.get(profile.gameId)}
-                      copy={
-                        profile.modId === null && (copies.get(profile.gameId) ?? 0) > 1
-                          ? (sourceOf.get(profile.installId ?? "") ?? "folder")
-                          : null
-                      }
+                      copy={profile.modId === null && (copies.get(profile.gameId) ?? 0) > 1}
                       heading={grouped ? "h3" : "h2"}
                       canPlay={!!runtime.data?.active && !launch.isPending}
                       onPlay={launch.mutate}
@@ -275,8 +259,8 @@ const ProfileCard = memo(function ProfileCard({
 }: {
   profile: Profile;
   game?: Game;
-  /** Where this copy came from, when the player has more than one of the game. */
-  copy: InstallSource | null;
+  /** One of several copies of the game the player has. */
+  copy: boolean;
   /** h3 under a group heading. */
   heading: "h2" | "h3";
   canPlay: boolean;
@@ -311,14 +295,8 @@ const ProfileCard = memo(function ProfileCard({
               {profile.label}
             </Link>
           </Heading>
-          {copy !== null && (
-            <p className="text-xs text-muted">
-              {t("library.copy", {
-                version: version?.label ?? t("library.unknownVersion"),
-                store: copy === "steam" ? "Steam" : "GOG",
-                context: copy === "steam" || copy === "gog" ? "store" : undefined,
-              })}
-            </p>
+          {copy && (
+            <p className="text-xs text-muted">{version?.label ?? t("library.unknownVersion")}</p>
           )}
           {profile.missingGame !== null ? (
             <p className="text-xs text-muted">
@@ -339,7 +317,7 @@ const ProfileCard = memo(function ProfileCard({
         </div>
         <div className="flex flex-wrap gap-1">
           {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
-          {profile.modId === null && copy === null && (
+          {profile.modId === null && !copy && (
             <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>
           )}
         </div>

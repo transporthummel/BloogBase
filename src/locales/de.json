@@ -23,8 +23,6 @@
     "playGame": "{{game}} spielen",
     "running": "Läuft…",
     "playTime": "Spielzeit",
-    "copy": "{{version}}",
-    "copy_store": "{{version}} · von {{store}}",
     "neverPlayed": "Noch nicht gespielt",
     "played": "{{time}} gespielt",
     "lastPlayed": "Zuletzt gespielt",
