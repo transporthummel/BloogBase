@@ -209,6 +209,21 @@ test("play launches the profile", async () => {
   expect(commands.launchProfile).toHaveBeenCalledWith("keen5-1");
 });
 
+test("copies with the same name are told apart by their version", async () => {
+  const shareware = { ...keen5.versions[0], id: "keen5-1.0", label: "v1.0" };
+  vi.mocked(commands.listGames).mockResolvedValue([
+    { ...keen5, versions: [...keen5.versions, shareware] },
+  ]);
+  const copy = { ...profile, id: "keen5-2", versionId: "keen5-1.0" };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile, copy] });
+  renderLibrary();
+  expect(
+    await screen.findByRole("button", { name: `Play ${keen5.title} (v1.4 EGA)` }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: `Play ${keen5.title} (v1.0)` })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: `${keen5.title} (v1.0)` })).toBeInTheDocument();
+});
+
 test("a mod waiting for its game can't be played", async () => {
   const waiting: Profile = {
     ...profile,

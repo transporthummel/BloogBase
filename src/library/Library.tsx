@@ -117,6 +117,9 @@ export function Library() {
   const empty = profiles.data?.length === 0;
   const needsRuntime = !empty && runtime.data && !runtime.data.active;
   const groups = arrange(profiles.data ?? [], sort, games.data ?? [], i18n.language);
+  // Names on more than one card, e.g. two copies of the same game.
+  const labels = (profiles.data ?? []).map((p) => p.label);
+  const shared = new Set(labels.filter((label, i) => labels.indexOf(label) !== i));
 
   return (
     <>
@@ -264,6 +267,7 @@ export function Library() {
                       profile={profile}
                       game={gameById.get(profile.gameId)}
                       heading={grouped ? "h3" : "h2"}
+                      sharedLabel={shared.has(profile.label)}
                       canPlay={!!runtime.data?.active && !launch.isPending}
                       onPlay={launch.mutate}
                     />
@@ -286,6 +290,7 @@ const ProfileCard = memo(function ProfileCard({
   profile,
   game,
   heading: Heading,
+  sharedLabel,
   canPlay,
   onPlay,
 }: {
@@ -293,11 +298,17 @@ const ProfileCard = memo(function ProfileCard({
   game?: Game;
   /** h3 under a group heading. */
   heading: "h2" | "h3";
+  /** Another card has the same name. */
+  sharedLabel: boolean;
   canPlay: boolean;
   onPlay: (profileId: string) => void;
 }) {
   const { t } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
+  const versionLabel = version?.label ?? t("library.unknownVersion");
+  // The badge tells copies apart on screen; screen readers hear the version
+  // with the name.
+  const name = sharedLabel ? `${profile.label} (${versionLabel})` : profile.label;
   const cover = useCover(profile.id, profile.installId);
   return (
     // Only the border colour changes, so nothing inside the card moves.
@@ -321,6 +332,7 @@ const ProfileCard = memo(function ProfileCard({
               params={{ profileId: profile.id }}
               className="hover:underline"
               title={t("library.details")}
+              aria-label={sharedLabel ? name : undefined}
             >
               {profile.label}
             </Link>
@@ -333,18 +345,14 @@ const ProfileCard = memo(function ProfileCard({
             profile.modId !== null &&
             game && (
               <p className="text-xs text-muted">
-                <RunsOn
-                  profile={profile}
-                  game={game.shortTitle}
-                  version={version?.label ?? t("library.unknownVersion")}
-                />
+                <RunsOn profile={profile} game={game.shortTitle} version={versionLabel} />
               </p>
             )
           )}
         </div>
         <div className="flex flex-wrap gap-1">
           {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
-          {profile.modId === null && <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>}
+          {profile.modId === null && <Badge>{versionLabel}</Badge>}
         </div>
         <dl className="grid gap-0.5 text-xs text-muted">
           <dt className="sr-only">{t("library.playTime")}</dt>
@@ -380,7 +388,7 @@ const ProfileCard = memo(function ProfileCard({
             className="flex-1"
             onClick={() => onPlay(profile.id)}
             disabled={!canPlay || profile.running || profile.missingGame !== null}
-            aria-label={t("library.playGame", { game: profile.label })}
+            aria-label={t("library.playGame", { game: name })}
           >
             {profile.missingGame !== null
               ? t("mods.gameMissing")
