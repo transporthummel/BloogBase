@@ -58,6 +58,8 @@ pub fn root_in(chosen: &Path) -> Result<PathBuf> {
     Ok(root)
 }
 
+/// The Windows uninstaller removes these from a data folder outside the
+/// default one (`windows/hooks.nsh`); keep it in step.
 #[derive(Debug, Clone)]
 pub struct AppPaths {
     pub root: PathBuf,
