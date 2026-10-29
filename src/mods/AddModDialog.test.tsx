@@ -1061,6 +1061,9 @@ test("leads with the mod list, or with the KeenWiki link once it's all installed
   all.setQueryData(indexModsKey, [{ ...auroraInIndex, modId: "aurora" }]);
   renderDialog(all);
   expect(screen.getByRole("textbox", { name: "Add a mod from KeenWiki" })).toHaveFocus();
+  // Green, unlike the list's button now.
+  expect(screen.getByRole("button", { name: "Look up" })).toHaveClass("bg-accent");
+  expect(screen.getByRole("link", { name: "Browse mods" })).not.toHaveClass("bg-accent");
   expect(
     screen.getByText("You have every mod from the list. New ones are added by themselves."),
   ).toBeInTheDocument();

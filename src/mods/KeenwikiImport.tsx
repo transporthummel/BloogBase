@@ -36,7 +36,7 @@ export function KeenwikiImport({
   onCancel: () => void;
   /** Ways to add a mod shown above the link. */
   before?: ReactNode;
-  /** The link field takes the focus when the dialog opens. */
+  /** The link leads: its field takes the focus and Look up is the green button. */
   focus?: boolean;
   /** Ways to add a mod shown below the link. */
   children: ReactNode;
@@ -103,7 +103,7 @@ export function KeenwikiImport({
           />
           <Button
             type="submit"
-            variant="secondary"
+            variant={focus ? "primary" : "secondary"}
             disabled={disabled || lookup.isPending || !url.trim()}
           >
             <Search className="size-4" aria-hidden />
