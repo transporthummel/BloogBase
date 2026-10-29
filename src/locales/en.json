@@ -23,6 +23,8 @@
     "playGame": "Play {{game}}",
     "running": "Running…",
     "playTime": "Play time",
+    "copy": "{{version}}",
+    "copy_store": "{{version}} · from {{store}}",
     "neverPlayed": "Not played yet",
     "played": "Played {{time}}",
     "lastPlayed": "Last played",
