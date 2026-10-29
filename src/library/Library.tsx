@@ -306,7 +306,6 @@ const ProfileCard = memo(function ProfileCard({
         </div>
         <div className="flex flex-wrap gap-1">
           {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
-          {profile.modId !== null && profile.sessionCount === 0 && <Badge>{t("mods.new")}</Badge>}
           {profile.modId === null && <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>}
         </div>
         <dl className="grid gap-0.5 text-xs text-muted">
