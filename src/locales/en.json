@@ -401,6 +401,7 @@
     "playable": "Works with my games",
     "emptyTitle": "No mods yet",
     "empty": "The mod list hasn't arrived yet. BloogBase fetches it on every start; if it stays empty, check your internet connection.",
+    "clearFilters": "Clear filters",
     "noMatch": "No mods match these filters.",
     "kind": {
       "episode": "Adventure",

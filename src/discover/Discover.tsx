@@ -211,7 +211,22 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
           <p className="max-w-md text-sm text-muted">{t("discover.empty")}</p>
         </EmptyState>
       )}
-      {all.length > 0 && shown.length === 0 && <Notice>{t("discover.noMatch")}</Notice>}
+      {all.length > 0 && shown.length === 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <Notice>{t("discover.noMatch")}</Notice>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setQuery("");
+              setGame("");
+              setKind("");
+              setPlayable(false);
+            }}
+          >
+            {t("discover.clearFilters")}
+          </Button>
+        </div>
+      )}
 
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
         {shown.map((mod) => (
