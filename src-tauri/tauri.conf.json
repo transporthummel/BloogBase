@@ -55,6 +55,9 @@
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico",
+        "sidebarImage": "icons/installer/sidebar.bmp",
+        "headerImage": "icons/installer/header.bmp",
+        "languages": ["English", "German"],
         "installerHooks": "windows/hooks.nsh"
       }
     },
