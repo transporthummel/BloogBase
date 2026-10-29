@@ -202,18 +202,34 @@ select {
   }
 }
 
-/* Starfield for empty states: two layers of tiny dots. */
+/* Starfield for the setup and empty states. The four layers tile at sizes
+   with no common factor and hold several stars each, so no row or column of
+   stars lines up across the window. */
 .bb-starfield {
   background-image:
-    radial-gradient(1px 1px at 20% 30%, var(--bb-star) 50%, transparent 51%),
-    radial-gradient(1px 1px at 70% 60%, var(--bb-star-dim) 50%, transparent 51%),
-    radial-gradient(2px 2px at 40% 80%, var(--bb-star-bright) 50%, transparent 51%),
-    radial-gradient(1px 1px at 85% 15%, var(--bb-star) 50%, transparent 51%);
+    radial-gradient(1px 1px at 12% 18%, var(--bb-star) 50%, transparent 51%),
+    radial-gradient(1px 1px at 47% 63%, var(--bb-star) 50%, transparent 51%),
+    radial-gradient(1px 1px at 81% 34%, var(--bb-star) 50%, transparent 51%),
+    radial-gradient(1px 1px at 8% 77%, var(--bb-star-dim) 50%, transparent 51%),
+    radial-gradient(1px 1px at 36% 29%, var(--bb-star-dim) 50%, transparent 51%),
+    radial-gradient(1px 1px at 69% 88%, var(--bb-star-dim) 50%, transparent 51%),
+    radial-gradient(1px 1px at 93% 52%, var(--bb-star-dim) 50%, transparent 51%),
+    radial-gradient(2px 2px at 23% 41%, var(--bb-star-bright) 50%, transparent 51%),
+    radial-gradient(2px 2px at 74% 12%, var(--bb-star-bright) 50%, transparent 51%),
+    radial-gradient(1px 1px at 58% 47%, var(--bb-star) 50%, transparent 51%),
+    radial-gradient(1px 1px at 17% 93%, var(--bb-star) 50%, transparent 51%);
   background-size:
-    120px 120px,
-    90px 90px,
-    210px 210px,
-    150px 150px;
+    263px 263px,
+    263px 263px,
+    263px 263px,
+    331px 331px,
+    331px 331px,
+    331px 331px,
+    331px 331px,
+    547px 547px,
+    547px 547px,
+    419px 419px,
+    419px 419px;
 }
 
 /* Pogo bounce of the Play icon on hover and focus. */
