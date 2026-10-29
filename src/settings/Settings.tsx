@@ -83,7 +83,7 @@ export function Settings() {
               />
               {t("settings.showTrivia")}
             </label>
-            <p className="ml-6 text-xs text-muted">{t("settings.showTriviaHint")}</p>
+            <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.showTriviaHint")}</p>
           </div>
         </Section>
         <Section title={t("settings.games")}>
@@ -221,7 +221,7 @@ function RuntimeSection() {
           </Button>
         )}
       </div>
-      <p className="text-xs text-muted">{t("runtime.customHint")}</p>
+      <p className="max-w-prose text-xs text-muted">{t("runtime.customHint")}</p>
       {setCustom.error && <Notice tone="error">{errorMessage(t, setCustom.error)}</Notice>}
     </Group>
   );
@@ -262,13 +262,13 @@ export function DisplaySection() {
                 />
                 {t(`settings.displayOption.${name}`)}
               </label>
-              <p className="ml-6 text-xs text-muted">
+              <p className="ml-6 max-w-prose text-xs text-muted">
                 {overridden ? t("settings.displayOverridden") : t(`settings.displayHint.${name}`)}
               </p>
             </div>
           );
         })}
-      {v && <p className="text-xs text-muted">{t("settings.displayHint.all")}</p>}
+      {v && <p className="max-w-prose text-xs text-muted">{t("settings.displayHint.all")}</p>}
       {(view.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
       )}
@@ -301,7 +301,7 @@ function ControlsSection() {
             />
             {t("settings.oneButtonFiring")}
           </label>
-          <p className="ml-6 text-xs text-muted">{t("settings.oneButtonFiringHint")}</p>
+          <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.oneButtonFiringHint")}</p>
         </div>
       )}
       {(firing.error ?? update.error) && (
@@ -339,7 +339,9 @@ function BackupSection() {
             />
             <span>
               {t("settings.autoBackup")}
-              <span className="block text-xs text-muted">{t("settings.autoBackupHint")}</span>
+              <span className="block max-w-prose text-xs text-muted">
+                {t("settings.autoBackupHint")}
+              </span>
             </span>
           </label>
           <Field label={t("settings.keepBackups")}>
@@ -355,7 +357,7 @@ function BackupSection() {
               }}
             />
           </Field>
-          <p className="text-xs text-muted">{t("settings.backupsHint")}</p>
+          <p className="max-w-prose text-xs text-muted">{t("settings.backupsHint")}</p>
         </>
       )}
       {(settings.error ?? update.error) && (
