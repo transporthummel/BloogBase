@@ -150,6 +150,10 @@ jobs:
           # Signs the updater artifacts (required).
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # The DMG's window layout and background need Finder, which Tauri
+          # skips on CI. GitHub's macOS runners have a desktop session
+          # (tauri-apps/tauri#1731).
+          TAURI_BUNDLER_DMG_IGNORE_CI: true
         with:
           tagName: v${{ inputs.version }}
           releaseName: BloogBase __VERSION__
