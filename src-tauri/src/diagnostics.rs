@@ -366,7 +366,7 @@ mod tests {
     #[test]
     fn user_names_go() {
         assert_eq!(
-            user_names(r#"at D:\Users\Florian\Games and "C:/users/fb/x" and C:\Users\Public"#),
+            user_names(r#"at D:\Users\Billy\Games and "C:/users/bb/x" and C:\Users\Public"#),
             r#"at D:\Users\<user>\Games and "C:/users/<user>/x" and C:\Users\Public"#
         );
     }
