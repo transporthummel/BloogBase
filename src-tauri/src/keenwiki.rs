@@ -186,6 +186,22 @@ fn text(el: ElementRef) -> String {
         .join(" ")
 }
 
+/// A paragraph's text without footnote markers such as `[1]`.
+fn prose(el: ElementRef) -> String {
+    let reference = selector("sup.reference");
+    el.descendants()
+        .filter(|n| {
+            !n.ancestors()
+                .filter_map(ElementRef::wrap)
+                .any(|a| reference.matches(&a))
+        })
+        .filter_map(|n| n.value().as_text().map(|t| &**t))
+        .collect::<String>()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 fn non_empty(s: String) -> Option<String> {
     (!s.is_empty()).then_some(s)
 }
@@ -306,7 +322,7 @@ pub fn parse(html: &str, page_url: &str) -> Result<WikiMod> {
         homepage: first_link("Homepage"),
         description: doc
             .select(&selector(".mw-parser-output > p"))
-            .map(text)
+            .map(prose)
             .find(|t| !t.is_empty()),
         credits: credits(&doc),
         downloads,
@@ -654,6 +670,15 @@ mod tests {
             .join(format!("{name}.html"));
         let html = fs::read_to_string(path).unwrap();
         parse(&html, &format!("https://{HOST}/wiki/{name}")).unwrap()
+    }
+
+    #[test]
+    fn descriptions_leave_out_footnote_markers() {
+        let html = Html::parse_fragment(
+            r##"<p>Galaxy Defender is a mod.<sup id="cite_ref-1" class="reference"><a href="#cite_note-1">&#91;1&#93;</a></sup> It scrolls.</p>"##,
+        );
+        let p = html.select(&selector("p")).next().unwrap();
+        assert_eq!(prose(p), "Galaxy Defender is a mod. It scrolls.");
     }
 
     #[test]
