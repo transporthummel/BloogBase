@@ -26,7 +26,7 @@ authors and link back to KeenWiki and PCKF.
    | `version`        | The mod's version, in quotes                                                                |
    | `released`       | First release, `YYYY-MM-DD`; `updated` for the latest one                                   |
    | `added`          | Today: when the entry joined the index (sorts "Newest" first)                               |
-   | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (something else entirely)          |
+   | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (plays unlike Keen, "Offbeat")     |
    | `description`    | One or two sentences in your own words, in English                                          |
    | `translations`   | Language: texts in it; for now `de` with `description` (see below)                          |
    | `links`          | `keenwiki`, `pckf`, `keenmodding` (Keen: Modding forum), `homepage`                         |
