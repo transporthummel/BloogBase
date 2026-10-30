@@ -9,6 +9,9 @@ reach every app without an app update.
 BloogBase never hosts mods: entries link to the original download, credit the
 authors and link back to KeenWiki and PCKF.
 
+The entries are licensed under [CC BY-SA 4.0](LICENSE); by adding or changing
+one you agree to that. The mods they link to belong to their authors.
+
 ## Adding a mod
 
 1. Copy an existing file in `mods/`, name it `<id>.yaml`. The id is lower case

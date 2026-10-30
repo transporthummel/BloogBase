@@ -70,7 +70,8 @@ How BloogBase works inside:
 
 BloogBase is released under the [MIT license](LICENSE). Games run in
 [DOSBox Staging](https://www.dosbox-staging.org/) (GPL-2.0-or-later), which
-BloogBase downloads from its official releases.
+BloogBase downloads from its official releases. The mod list in `index/` is
+licensed under [CC BY-SA 4.0](index/LICENSE).
 
 Commander Keen is a trademark of id Software. BloogBase is an unofficial fan
 project and is not affiliated with or endorsed by id Software, ZeniMax Media,
