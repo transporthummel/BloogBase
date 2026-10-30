@@ -1,0 +1,147 @@
+{
+  "window": {
+    "width": 1440,
+    "height": 900,
+    "scale": 1
+  },
+  "localStorage": {
+    "bloogbase.librarySort": "lastPlayed"
+  },
+  "seed": {
+    "games": [
+      "GOG/KEEN1",
+      "GOG/KEEN2",
+      "GOG/KEEN3",
+      "GOG/KEEN4",
+      "GOG/KEEN5",
+      "keen6-14",
+      "kdreams113"
+    ],
+    "mods": [
+      "the-keys-of-krodacia",
+      "ye-olde-pirate-modde",
+      "the-alphamatic",
+      "another-helping-of-veggies",
+      "the-prisoner-s-dilemma",
+      "shadowkeen1",
+      "aurora-bliss",
+      "commander-keen-and-the-electromagnet",
+      "keen-rescue"
+    ],
+    "sessions": [
+      {
+        "profile": "the-keys-of-krodacia",
+        "minutes": 74,
+        "hoursAgo": 1
+      },
+      {
+        "profile": "the-keys-of-krodacia",
+        "minutes": 52,
+        "hoursAgo": 26
+      },
+      {
+        "profile": "ye-olde-pirate-modde",
+        "minutes": 38,
+        "hoursAgo": 50
+      },
+      {
+        "profile": "the-alphamatic",
+        "minutes": 121,
+        "hoursAgo": 100
+      },
+      {
+        "profile": "another-helping-of-veggies",
+        "minutes": 25,
+        "hoursAgo": 170
+      },
+      {
+        "profile": "keen6",
+        "minutes": 95,
+        "hoursAgo": 3
+      }
+    ],
+    "backups": [
+      {
+        "profile": "keen6",
+        "label": "Before the Bloogdome"
+      }
+    ],
+    "saves": [
+      {
+        "profile": "keen6",
+        "from": "versions/Commander Keen 6 v1.0 (hacked)",
+        "files": ["SAVEGAM0.CK6", "SAVEGAM1.CK6", "SAVEGAM2.CK6"]
+      }
+    ]
+  },
+  "shots": [
+    {
+      "name": "library",
+      "description": "README hero: the library in Midnight Galaxy, sorted by last played, with title-screen covers of games and mods, play time and the fun fact.",
+      "route": "/"
+    },
+    {
+      "name": "discover",
+      "description": "Mods with one click: Discover's mod list, recommended first, with badges for installed mods.",
+      "route": "/discover"
+    },
+    {
+      "name": "keenwiki",
+      "description": "Any mod from KeenWiki: the add dialog after looking up a KeenWiki page that isn't in the mod list, showing what the page says.",
+      "route": "/",
+      "steps": [
+        {
+          "clickText": "Add game or mod"
+        },
+        {
+          "fill": "#keenwiki-url",
+          "value": "https://keenwiki.shikadi.net/wiki/Buried_in_Oblivion"
+        },
+        {
+          "clickText": "Look up"
+        },
+        {
+          "waitText": "Download and check",
+          "timeout": 30000
+        }
+      ],
+      "clip": "[role=dialog]",
+      "clipPadding": 24
+    },
+    {
+      "name": "setup",
+      "description": "Ready on the first start: the setup wizard's mod step, suggesting recommended mods for the games found.",
+      "route": "/setup",
+      "invoke": [
+        {
+          "cmd": "set_setup_step",
+          "args": {
+            "step": "mods"
+          }
+        }
+      ]
+    },
+    {
+      "name": "saves",
+      "description": "Your saves are safe: Keen 6's saves tab with save details and a backup.",
+      "route": "/profiles/{profile:keen6}",
+      "steps": [
+        {
+          "clickText": "Saves",
+          "selector": "[role=tab]"
+        }
+      ]
+    },
+    {
+      "name": "mod-page",
+      "description": "A fan museum: a mod's page with its title screen, credits, links and readme.",
+      "route": "/profiles/{profile:the-alphamatic}"
+    },
+    {
+      "name": "library-light",
+      "description": "Two themes: the library in Vintage Beige.",
+      "route": "/",
+      "theme": "light"
+    }
+  ]
+}
