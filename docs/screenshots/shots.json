@@ -78,12 +78,14 @@
     {
       "name": "library",
       "description": "README hero: the library in Midnight Galaxy, sorted by last played, with title-screen covers of games and mods, play time and the fun fact.",
-      "route": "/"
+      "route": "/",
+      "languages": ["en", "de"]
     },
     {
       "name": "discover",
       "description": "Mods with one click: Discover's mod list, recommended first, with badges for installed mods.",
-      "route": "/discover"
+      "route": "/discover",
+      "languages": ["en", "de"]
     },
     {
       "name": "keenwiki",
@@ -91,22 +93,32 @@
       "route": "/",
       "steps": [
         {
-          "clickText": "Add game or mod"
+          "clickText": {
+            "en": "Add game or mod",
+            "de": "Spiel oder Mod hinzufügen"
+          }
         },
         {
           "fill": "#keenwiki-url",
           "value": "https://keenwiki.shikadi.net/wiki/Buried_in_Oblivion"
         },
         {
-          "clickText": "Look up"
+          "clickText": {
+            "en": "Look up",
+            "de": "Nachsehen"
+          }
         },
         {
-          "waitText": "Download and check",
+          "waitText": {
+            "en": "Download and check",
+            "de": "Herunterladen und prüfen"
+          },
           "timeout": 30000
         }
       ],
       "clip": "[role=dialog]",
-      "clipPadding": 24
+      "clipPadding": 24,
+      "languages": ["en", "de"]
     },
     {
       "name": "setup",
@@ -119,7 +131,8 @@
             "step": "mods"
           }
         }
-      ]
+      ],
+      "languages": ["en", "de"]
     },
     {
       "name": "saves",
@@ -127,28 +140,35 @@
       "route": "/profiles/{profile:keen6}",
       "steps": [
         {
-          "clickText": "Saves",
+          "clickText": {
+            "en": "Saves",
+            "de": "Spielstände"
+          },
           "selector": "[role=tab]"
         }
-      ]
+      ],
+      "languages": ["en", "de"]
     },
     {
       "name": "mod-page",
       "description": "A fan museum: a mod's page with its title screen, credits, links and readme.",
       "route": "/profiles/{profile:the-alphamatic}",
-      "height": 1000
+      "height": 1000,
+      "languages": ["en", "de"]
     },
     {
       "name": "library-light",
       "description": "Two themes: the library in Vintage Beige.",
       "route": "/",
-      "theme": "light"
+      "theme": "light",
+      "languages": ["en", "de"]
     },
     {
       "name": "discover-light",
       "description": "Two themes: Discover's mod list in Vintage Beige.",
       "route": "/discover",
-      "theme": "light"
+      "theme": "light",
+      "languages": ["en", "de"]
     }
   ]
 }

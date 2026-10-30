@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="{{@lang}}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{meta.title}}</title>
+    <meta name="description" content="{{meta.description}}" />
+    <meta name="theme-color" content="#0d0c1d" />
+    <link rel="canonical" href="{{@url}}" />
+    <link rel="alternate" hreflang="en" href="{{@urlEn}}" />
+    <link rel="alternate" hreflang="de" href="{{@urlDe}}" />
+    <link rel="alternate" hreflang="x-default" href="{{@urlEn}}" />
+    <link rel="icon" type="image/png" href="{{@root}}img/icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{{meta.title}}" />
+    <meta property="og:description" content="{{meta.description}}" />
+    <meta property="og:url" content="{{@url}}" />
+    <meta property="og:image" content="{{@urlEn}}img/library.png" />
+    <meta property="og:image:alt" content="{{meta.ogAlt}}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="preload"
+      href="{{@root}}fonts/press-start-2p-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="{{@root}}fonts/inter-latin-wght-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="{{@root}}style.css" />
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+    <script src="{{@root}}main.js" defer></script>
+  </head>
+  <body>
+    <div class="sky" aria-hidden="true">
+      <div class="sky-layer sky-far"></div>
+      <div class="sky-layer sky-mid"></div>
+      <div class="sky-layer sky-near"></div>
+      <div class="shooting-star"></div>
+    </div>
+
+    <a class="skip" href="#main">{{nav.skip}}</a>
+
+    <header class="topbar">
+      <a class="wordmark" href="#top">
+        <img src="{{@root}}img/icon.png" alt="" width="32" height="32" />
+        <span>BloogBase</span>
+      </a>
+      <nav aria-label="{{nav.label}}">
+        <a href="#tour">{{nav.tour}}</a>
+        <a href="#details">{{nav.details}}</a>
+        <a href="#games">{{nav.games}}</a>
+        <a href="#download">{{nav.download}}</a>
+        <a
+          class="lang"
+          href="{{@otherUrl}}"
+          hreflang="{{@otherLang}}"
+          lang="{{@otherLang}}"
+          aria-label="{{nav.languageLabel}}"
+          >{{nav.language}}</a
+        >
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="hero-text">
+          <img
+            class="hero-logo"
+            src="{{@root}}img/logo.jpg"
+            alt="BloogBase"
+            width="960"
+            height="540"
+          />
+          <h1>{{hero.title}}</h1>
+          <p class="lead">{{hero.lead}}</p>
+          <div class="hero-actions">
+            <a
+              class="button primary download-button"
+              href="https://github.com/transporthummel/BloogBase/releases/latest"
+              data-label="{{hero.download}}"
+            >
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 15V3M7 10l5 5 5-5M5 21h14" />
+              </svg>
+              <span>{{hero.downloadAny}}</span>
+            </a>
+            <a class="button secondary" href="#download">{{hero.otherSystems}}</a>
+          </div>
+          <p class="facts">{{hero.facts}}</p>
+        </div>
+        <figure class="hero-shot screen">
+          <img
+            src="{{shot:library}}"
+            {{size:library}}
+            alt="{{hero.shotAlt}}"
+            fetchpriority="high"
+          />
+        </figure>
+        <a class="follow" href="#tour">
+          <svg
+            class="bloog bloog-small"
+            viewBox="0 0 8 8"
+            shape-rendering="crispEdges"
+            aria-hidden="true"
+          >
+            <path class="body" d="M2 1h4v1h1v4h-1v1h-4v-1h-1v-4h1zM2 7h1v1h-1zM5 7h1v1h-1z" />
+            <path class="eye" d="M3 2h2v2h-2z" />
+            <path class="pupil" d="M4 3h1v1h-1z" />
+          </svg>
+          <span>{{hero.start}}</span>
+        </a>
+      </section>
+
+      <div class="journey" id="tour">
+        <svg class="trail" aria-hidden="true">
+          <defs>
+            <clipPath id="trail-done">
+              <rect class="trail-clip" x="0" y="0" width="100%" height="0" />
+            </clipPath>
+          </defs>
+          <path class="trail-ahead" />
+          <path class="trail-done" clip-path="url(#trail-done)" />
+        </svg>
+        <div class="walker" aria-hidden="true">
+          <svg class="bloog" viewBox="0 0 8 8" shape-rendering="crispEdges">
+            <path class="body" d="M2 1h4v1h1v4h-1v1h-4v-1h-1v-4h1zM2 7h1v1h-1zM5 7h1v1h-1z" />
+            <path class="eye" d="M3 2h2v2h-2z" />
+            <path class="pupil" d="M4 3h1v1h-1z" />
+          </svg>
+        </div>
+
+        <section class="who stop" aria-labelledby="who-title">
+          <h2 id="who-title"><span class="marker" aria-hidden="true"></span>{{who.title}}</h2>
+          <div class="who-grid">
+            <p><strong>{{who.nostalgic.title}}</strong> {{who.nostalgic.text}}</p>
+            <p><strong>{{who.parents.title}}</strong> {{who.parents.text}}</p>
+            <p><strong>{{who.fans.title}}</strong> {{who.fans.text}}</p>
+          </div>
+        </section>
+
+        <section class="station stop" aria-labelledby="s1-title">
+          <div class="station-text">
+            <h2 id="s1-title"><span class="marker" aria-hidden="true"></span>{{s1.title}}</h2>
+            <p class="lead">{{s1.text}}</p>
+            <ul class="stars">
+              <li>{{s1.li1}}</li>
+              <li>{{s1.li2}}</li>
+              <li>{{s1.li3}}</li>
+              <li>{{s1.li4}}</li>
+            </ul>
+            <p class="note">{{s1.note}}</p>
+          </div>
+          <figure class="screen">
+            <img src="{{shot:setup}}" {{size:setup}} alt="{{s1.alt}}" loading="lazy" />
+          </figure>
+        </section>
+
+        <section class="station flip stop" aria-labelledby="s2-title">
+          <div class="station-text">
+            <h2 id="s2-title"><span class="marker" aria-hidden="true"></span>{{s2.title}}</h2>
+            <p class="lead">{{s2.text}}</p>
+            <ul class="stars">
+              <li>{{s2.li1}}</li>
+              <li>{{s2.li2}}</li>
+              <li>{{s2.li3}}</li>
+              <li>{{s2.li4}}</li>
+            </ul>
+          </div>
+          <figure class="screen">
+            <img src="{{shot:discover}}" {{size:discover}} alt="{{s2.alt}}" loading="lazy" />
+          </figure>
+        </section>
+
+        <section class="station stop" aria-labelledby="s3-title">
+          <div class="station-text">
+            <h2 id="s3-title"><span class="marker" aria-hidden="true"></span>{{s3.title}}</h2>
+            <p class="lead">{{s3.text}}</p>
+            <ul class="stars">
+              <li>{{s3.li1}}</li>
+              <li>{{s3.li2}}</li>
+              <li>{{s3.li3}}</li>
+              <li>{{s3.li4}}</li>
+            </ul>
+          </div>
+          <figure class="screen dialog-shot">
+            <img src="{{shot:keenwiki}}" {{size:keenwiki}} alt="{{s3.alt}}" loading="lazy" />
+          </figure>
+        </section>
+
+        <section class="station flip stop" aria-labelledby="s4-title">
+          <div class="station-text">
+            <h2 id="s4-title"><span class="marker" aria-hidden="true"></span>{{s4.title}}</h2>
+            <p class="lead">{{s4.text}}</p>
+            <ul class="stars">
+              <li>{{s4.li1}}</li>
+              <li>{{s4.li2}}</li>
+              <li>{{s4.li3}}</li>
+              <li>{{s4.li4}}</li>
+            </ul>
+          </div>
+          <figure class="screen">
+            <img src="{{shot:saves}}" {{size:saves}} alt="{{s4.alt}}" loading="lazy" />
+          </figure>
+        </section>
+
+        <section class="station stop" aria-labelledby="s5-title">
+          <div class="station-text">
+            <h2 id="s5-title"><span class="marker" aria-hidden="true"></span>{{s5.title}}</h2>
+            <p class="lead">{{s5.text}}</p>
+            <ul class="stars">
+              <li>{{s5.li1}}</li>
+              <li>{{s5.li2}}</li>
+              <li>{{s5.li3}}</li>
+              <li>{{s5.li4}}</li>
+            </ul>
+          </div>
+          <figure class="screen tall">
+            <img src="{{shot:mod-page}}" {{size:mod-page}} alt="{{s5.alt}}" loading="lazy" />
+          </figure>
+        </section>
+
+        <section class="themes stop" aria-labelledby="s6-title">
+          <h2 id="s6-title"><span class="marker" aria-hidden="true"></span>{{s6.title}}</h2>
+          <p class="lead">{{s6.text}}</p>
+          <div class="compare" style="--split: 50%">
+            <img src="{{shot:library}}" {{size:library}} alt="{{s6.darkAlt}}" loading="lazy" />
+            <img
+              class="compare-light"
+              src="{{shot:library-light}}"
+              {{size:library-light}}
+              alt="{{s6.lightAlt}}"
+              loading="lazy"
+            />
+            <span class="compare-label compare-label-dark" aria-hidden="true">{{s6.dark}}</span>
+            <span class="compare-label compare-label-light" aria-hidden="true">{{s6.light}}</span>
+            <span class="compare-handle" aria-hidden="true"></span>
+            <input type="range" min="0" max="100" value="50" aria-label="{{s6.handle}}" />
+          </div>
+          <p class="note compare-hint">{{s6.hint}}</p>
+        </section>
+      </div>
+
+      <section class="details" id="details" aria-labelledby="details-title">
+        <h2 id="details-title">{{details.title}}</h2>
+        <p class="lead">{{details.text}}</p>
+        <div class="details-columns">
+          <div class="detail-group">
+            <h3>{{details.play.title}}</h3>
+            <ul class="stars">
+              <li>{{details.play.li1}}</li>
+              <li>{{details.play.li2}}</li>
+              <li>{{details.play.li3}}</li>
+              <li>{{details.play.li4}}</li>
+              <li>{{details.play.li5}}</li>
+            </ul>
+          </div>
+          <div class="detail-group">
+            <h3>{{details.mods.title}}</h3>
+            <ul class="stars">
+              <li>{{details.mods.li1}}</li>
+              <li>{{details.mods.li2}}</li>
+              <li>{{details.mods.li3}}</li>
+              <li>{{details.mods.li4}}</li>
+              <li>{{details.mods.li5}}</li>
+            </ul>
+          </div>
+          <div class="detail-group">
+            <h3>{{details.games.title}}</h3>
+            <ul class="stars">
+              <li>{{details.games.li1}}</li>
+              <li>{{details.games.li2}}</li>
+              <li>{{details.games.li3}}</li>
+              <li>{{details.games.li4}}</li>
+            </ul>
+          </div>
+          <div class="detail-group">
+            <h3>{{details.dosbox.title}}</h3>
+            <ul class="stars">
+              <li>{{details.dosbox.li1}}</li>
+              <li>{{details.dosbox.li2}}</li>
+              <li>{{details.dosbox.li3}}</li>
+            </ul>
+          </div>
+          <div class="detail-group">
+            <h3>{{details.care.title}}</h3>
+            <ul class="stars">
+              <li>{{details.care.li1}}</li>
+              <li>{{details.care.li2}}</li>
+              <li>{{details.care.li3}}</li>
+              <li>{{details.care.li4}}</li>
+              <li>{{details.care.li5}}</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="games" id="games" aria-labelledby="games-title">
+        <h2 id="games-title">{{games.title}}</h2>
+        <p class="lead">{{games.text}}</p>
+        <ul class="game-list">
+          <li class="free">
+            <span class="tile vorticons" aria-hidden="true">1</span
+            ><span class="game-name">Commander Keen 1: Marooned on Mars</span
+            ><span class="how">{{games.free}}</span>
+          </li>
+          <li>
+            <span class="tile vorticons" aria-hidden="true">2</span
+            ><span class="game-name">Commander Keen 2: The Earth Explodes</span
+            ><span class="how">{{games.owned}}</span>
+          </li>
+          <li>
+            <span class="tile vorticons" aria-hidden="true">3</span
+            ><span class="game-name">Commander Keen 3: Keen Must Die!</span
+            ><span class="how">{{games.owned}}</span>
+          </li>
+          <li class="free">
+            <span class="tile galaxy" aria-hidden="true">4</span
+            ><span class="game-name">Commander Keen 4: Secret of the Oracle</span
+            ><span class="how">{{games.free}}</span>
+          </li>
+          <li>
+            <span class="tile galaxy" aria-hidden="true">5</span
+            ><span class="game-name">Commander Keen 5: The Armageddon Machine</span
+            ><span class="how">{{games.owned}}</span>
+          </li>
+          <li>
+            <span class="tile galaxy" aria-hidden="true">6</span
+            ><span class="game-name">Commander Keen 6: Aliens Ate My Babysitter!</span
+            ><span class="how">{{games.k6}}</span>
+          </li>
+          <li class="free">
+            <span class="tile dreams" aria-hidden="true">D</span
+            ><span class="game-name">Commander Keen in Keen Dreams</span
+            ><span class="how">{{games.free}}</span>
+          </li>
+        </ul>
+        <p class="note">{{games.note}}</p>
+      </section>
+
+      <section class="download" id="download" aria-labelledby="download-title">
+        <h2 id="download-title">{{dl.title}}</h2>
+        <p class="lead">{{dl.text}}</p>
+        <div class="systems">
+          <div class="system" data-os="windows">
+            <h3>{{dl.windows}} <span class="yours">{{dl.yours}}</span></h3>
+            <p>{{dl.windowsFile}}</p>
+            <p class="note">{{dl.windowsHint}}</p>
+          </div>
+          <div class="system" data-os="mac">
+            <h3>{{dl.mac}} <span class="yours">{{dl.yours}}</span></h3>
+            <p>{{dl.macFile}}</p>
+            <p class="note">{{dl.macHint}}</p>
+          </div>
+          <div class="system" data-os="linux">
+            <h3>{{dl.linux}} <span class="yours">{{dl.yours}}</span></h3>
+            <p>{{dl.linuxFile}}</p>
+            <p class="note">{{dl.linuxHint}}</p>
+          </div>
+        </div>
+        <div class="download-actions">
+          <a
+            class="button primary download-button"
+            href="https://github.com/transporthummel/BloogBase/releases/latest"
+            data-label="{{dl.button}}"
+          >
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 15V3M7 10l5 5 5-5M5 21h14" />
+            </svg>
+            <span>{{hero.downloadAny}}</span>
+          </a>
+          <a
+            class="button ghost"
+            href="https://github.com/transporthummel/BloogBase/releases/latest"
+            >{{dl.all}}</a
+          >
+        </div>
+      </section>
+
+      <section class="community" aria-labelledby="community-title">
+        <h2 id="community-title">{{community.title}}</h2>
+        <div class="community-grid">
+          <div>
+            <h3>{{community.suggest.title}}</h3>
+            <p>{{community.suggest.text}}</p>
+          </div>
+          <div>
+            <h3>{{community.bug.title}}</h3>
+            <p>{{community.bug.text}}</p>
+          </div>
+          <div>
+            <h3>{{community.authors.title}}</h3>
+            <p>{{community.authors.text}}</p>
+          </div>
+        </div>
+        <p class="thanks">{{community.thanks}}</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-top">
+        <a class="wordmark" href="#top" aria-label="{{footer.top}}">
+          <svg
+            class="bloog bloog-small"
+            viewBox="0 0 8 8"
+            shape-rendering="crispEdges"
+            aria-hidden="true"
+          >
+            <path class="body" d="M2 1h4v1h1v4h-1v1h-4v-1h-1v-4h1zM2 7h1v1h-1zM5 7h1v1h-1z" />
+            <path class="eye" d="M3 2h2v2h-2z" />
+            <path class="pupil" d="M4 3h1v1h-1z" />
+          </svg>
+          <span>BloogBase</span>
+        </a>
+        <a href="https://github.com/transporthummel/BloogBase">{{footer.source}}</a>
+        <a href="{{@otherUrl}}" hreflang="{{@otherLang}}" lang="{{@otherLang}}">{{nav.language}}</a>
+      </div>
+      <p>{{footer.license}}</p>
+      <p>{{footer.trademark}}</p>
+    </footer>
+  </body>
+</html>

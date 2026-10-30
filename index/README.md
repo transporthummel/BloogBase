@@ -117,11 +117,12 @@ once these are done:
 3. Settings → Secrets and variables → Actions:
    - Secret `INDEX_MINISIGN_KEY`: the full contents of the secret key file.
    - Variable `INDEX_PUBLISH`: `true`.
-4. Run the "Mod index" workflow (or push a change to `index/`).
+4. Run the "Mod index and website" workflow (or push a change to `index/`).
 
 The index is then at
 `https://transporthummel.github.io/BloogBase/index/index.json`, the address
-built into the app.
+built into the app. The same job publishes the project website
+([docs/website.md](../docs/website.md)) at the root of that Pages site.
 
 ## The tool
 

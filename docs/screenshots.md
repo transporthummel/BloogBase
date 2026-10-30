@@ -35,8 +35,11 @@ Everything the script does is in [`screenshots/shots.json`](screenshots/shots.js
 - `shots`: one entry per picture, written to `screenshots/<name>.png`:
   - `name`, `description` (what it shows and why, for whoever redoes it),
   - `route`, where `{profile:<ref>}` becomes the id of that profile,
-  - `theme` (`dark` or `light`), `language` (`en` or `de`), `width`,
-    `height`, `scale`, `localStorage`,
+  - `theme` (`dark` or `light`), `width`, `height`, `scale`, `localStorage`,
+  - `languages`: the app languages to take it in (default `["en"]`); English
+    goes to `<name>.png`, others to `<name>.<lang>.png`, used by the German
+    website ([website.md](website.md)). Step texts that differ per language
+    are given as `{ "en": "Saves", "de": "Spielstände" }`,
   - `invoke`: app commands (`cmd`, `args`) called before the page loads, e.g.
     `set_setup_step` to open the setup wizard at a step,
   - `steps`, run in order once the page has settled: `click` (CSS selector),

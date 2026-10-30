@@ -211,6 +211,7 @@ src-tauri/
   assets/         CKPatch, KDrPatch and CWSDPMI, unmodified
   migrations/     SQLite schema
 index/            the mod list (one YAML file per mod) and its build tool
+site/             the project website
 docs/             how BloogBase works inside
 scripts/          releases, licences, tests, screenshots
 ```
@@ -228,7 +229,8 @@ in `src-tauri/` `cargo fmt --check`, `cargo clippy --all-targets` and
 `cargo test`. `pnpm test:all` runs all of them plus the tests with real games
 and mods. See [docs/testing.md](docs/testing.md) for those,
 [docs/releasing.md](docs/releasing.md) for releases and
-[docs/screenshots.md](docs/screenshots.md) for the screenshots above.
+[docs/screenshots.md](docs/screenshots.md) for the screenshots above and
+[docs/website.md](docs/website.md) for the website.
 
 How BloogBase works inside:
 

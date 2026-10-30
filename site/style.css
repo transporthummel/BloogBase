@@ -1,0 +1,1117 @@
+/*
+ * The BloogBase website: the app's Midnight Galaxy theme (.local/DESIGN.md),
+ * stretched into one long night sky that a Bloog hops through.
+ */
+
+@font-face {
+  font-family: "Inter";
+  src: url("fonts/inter-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Press Start 2P";
+  src: url("fonts/press-start-2p-latin-400-normal.woff2") format("woff2");
+  font-display: swap;
+}
+
+:root {
+  --night: #0d0c1d;
+  --surface: #181631;
+  --raised: #221f42;
+  --border: #34305e;
+  --ink: #f2f0ff;
+  --muted: #a19dc4;
+  --green: #55ff55;
+  --green-ink: #082b08;
+  --yellow: #ffff55;
+  --magenta: #aa00aa;
+  --blue: #5555ff;
+  --brown: #aa5500;
+  --scrollbar: #625d99;
+  --shadow: 0 4px 16px rgb(0 0 0 / 0.35);
+  --shadow-down: 0 2px 8px rgb(0 0 0 / 0.35);
+  --pixel: "Press Start 2P", ui-monospace, monospace;
+  --sans: "Inter", system-ui, sans-serif;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --page: 72rem;
+  --gutter: clamp(1.25rem, 4vw, 2.5rem);
+
+  color-scheme: dark;
+  scrollbar-color: var(--scrollbar) transparent;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  margin: 0;
+  background: var(--night);
+  color: var(--ink);
+  font: 400 1rem/1.6 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--green);
+  color: var(--green-ink);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: var(--ink);
+  text-decoration-color: color-mix(in srgb, var(--green) 60%, transparent);
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: 1px;
+}
+
+a:hover {
+  text-decoration-color: var(--green);
+}
+
+:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+strong {
+  font-weight: 600;
+}
+
+code {
+  font:
+    500 0.85em/1 ui-monospace,
+    "Cascadia Mono",
+    Consolas,
+    monospace;
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
+  overflow-wrap: anywhere;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+  margin: 0;
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+/* The night sky: three star layers drifting at different speeds as the page
+   scrolls (main.js sets --scroll). Layer sizes share no common factor, so no
+   star lines up with another, as in the app. */
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(120% 80% at 50% 0%, #17143a 0%, var(--night) 60%);
+}
+
+.sky-layer {
+  position: absolute;
+  inset: -50% 0;
+  will-change: transform;
+}
+
+.sky-far {
+  transform: translateY(calc(var(--scroll, 0) * -0.04px));
+  opacity: 0.6;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, var(--muted) 50%, transparent 51%),
+    radial-gradient(1px 1px at 47% 63%, var(--muted) 50%, transparent 51%),
+    radial-gradient(1px 1px at 81% 34%, var(--ink) 50%, transparent 51%),
+    radial-gradient(1px 1px at 33% 85%, var(--muted) 50%, transparent 51%);
+  background-size:
+    263px 263px,
+    263px 263px,
+    263px 263px,
+    263px 263px;
+}
+
+.sky-mid {
+  transform: translateY(calc(var(--scroll, 0) * -0.1px));
+  background-image:
+    radial-gradient(1px 1px at 8% 77%, var(--ink) 50%, transparent 51%),
+    radial-gradient(1px 1px at 36% 29%, var(--muted) 50%, transparent 51%),
+    radial-gradient(1px 1px at 69% 88%, var(--ink) 50%, transparent 51%),
+    radial-gradient(1px 1px at 93% 52%, var(--muted) 50%, transparent 51%);
+  background-size:
+    331px 331px,
+    331px 331px,
+    419px 419px,
+    419px 419px;
+}
+
+.sky-near {
+  transform: translateY(calc(var(--scroll, 0) * -0.22px));
+  background-image:
+    radial-gradient(2px 2px at 23% 41%, var(--yellow) 50%, transparent 51%),
+    radial-gradient(2px 2px at 74% 12%, var(--ink) 50%, transparent 51%),
+    radial-gradient(2px 2px at 58% 67%, var(--yellow) 50%, transparent 51%);
+  background-size:
+    547px 547px,
+    547px 547px,
+    683px 683px;
+  animation: twinkle 5s steps(2) infinite;
+}
+
+@keyframes twinkle {
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Now and then a shooting star crosses the top of the sky. */
+.shooting-star {
+  position: absolute;
+  top: 12%;
+  left: 70%;
+  width: 7rem;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--ink));
+  transform: rotate(-24deg);
+  opacity: 0;
+  animation: shoot 11s 2.5s var(--ease-out) infinite;
+}
+
+@keyframes shoot {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  1% {
+    opacity: 1;
+  }
+  7% {
+    opacity: 0;
+    translate: -28rem 12.5rem;
+  }
+  100% {
+    opacity: 0;
+    translate: -28rem 12.5rem;
+  }
+}
+
+/* Skip link and top bar */
+.skip {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 20;
+  padding: 0.5rem 1rem;
+  background: var(--raised);
+  border-radius: 8px;
+}
+
+.skip:focus {
+  top: 1rem;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem var(--gutter);
+  background: color-mix(in srgb, var(--night) 96%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--green);
+  font: 0.8rem/1.625 var(--pixel);
+  text-decoration: none;
+}
+
+.wordmark img {
+  width: 2rem;
+  height: 2rem;
+}
+
+.topbar nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.topbar nav a {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition:
+    background 150ms,
+    color 150ms;
+}
+
+.topbar nav a:hover {
+  background: var(--raised);
+  color: var(--ink);
+}
+
+.topbar nav .lang {
+  border: 1px solid var(--border);
+  margin-left: 0.5rem;
+}
+
+/* Buttons, as in the app: 8px corners, Keen Green for the one main action,
+   pressed one pixel down. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font: 600 1rem/1.2 var(--sans);
+  text-decoration: none;
+  transition:
+    filter 150ms,
+    border-color 150ms,
+    background 150ms,
+    translate 150ms,
+    box-shadow 150ms;
+}
+
+.button:active {
+  translate: 0 1px;
+  transition-duration: 0ms;
+}
+
+.button .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.button.primary {
+  background: var(--green);
+  color: var(--green-ink);
+  box-shadow: var(--shadow);
+}
+
+.button.primary:hover {
+  filter: brightness(1.1);
+}
+
+.button.primary:active {
+  box-shadow: var(--shadow-down);
+}
+
+/* The download arrow hops like the Play icon's pogo in the app. */
+.button.primary:hover .icon,
+.button.primary:focus-visible .icon {
+  animation: pogo 0.55s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+@keyframes pogo {
+  0%,
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+  25% {
+    transform: translateY(1px) scaleY(0.85);
+  }
+  55% {
+    transform: translateY(-4px) scaleY(1.08);
+  }
+}
+
+.button.secondary {
+  background: var(--raised);
+  border-color: var(--border);
+  color: var(--ink);
+}
+
+.button.secondary:hover {
+  border-color: var(--muted);
+}
+
+.button.ghost {
+  color: var(--muted);
+}
+
+.button.ghost:hover {
+  background: var(--raised);
+  color: var(--ink);
+}
+
+/* Shared section rhythm */
+main > section,
+.journey > section {
+  width: min(var(--page), 100% - 2 * var(--gutter));
+  margin-inline: auto;
+}
+
+h2 {
+  font: 1.15rem/1.625 var(--pixel);
+  color: var(--ink);
+}
+
+h3 {
+  font: 600 1.1rem/1.4 var(--sans);
+}
+
+.lead {
+  color: var(--muted);
+  font-size: 1.125rem;
+  max-width: 38rem;
+  margin: 1rem 0 0;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* Hero: the logo melts into the sky, the library rises below it. */
+.hero {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding-top: clamp(1rem, 4vh, 3rem);
+}
+
+.hero-text {
+  display: grid;
+  justify-items: center;
+}
+
+.hero-logo {
+  width: min(40rem, 100%);
+  mask-image: radial-gradient(closest-side, #000 70%, transparent 100%);
+  margin-bottom: 0.5rem;
+}
+
+.hero h1 {
+  font: 800 clamp(2.1rem, 5vw, 3.5rem)/1.1 var(--sans);
+  letter-spacing: -0.025em;
+  max-width: 18ch;
+}
+
+.hero .lead {
+  margin-inline: auto;
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.facts {
+  margin: 1.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.hero-shot {
+  margin: clamp(2.5rem, 6vh, 4rem) 0 0;
+  width: 100%;
+}
+
+.follow {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 3rem 0 0;
+  color: var(--muted);
+  font: 0.7rem/1.625 var(--pixel);
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.follow .bloog {
+  width: 2.5rem;
+  animation: hop 0.7s steps(4) infinite;
+}
+
+/* With the script, the walking Bloog stands here instead. */
+.js .follow .bloog {
+  visibility: hidden;
+}
+
+@media (max-width: 860px) {
+  .js .follow .bloog {
+    visibility: visible;
+  }
+
+  .trail {
+    display: none;
+  }
+}
+
+.follow:hover {
+  color: var(--ink);
+}
+
+/* The Bloog: EGA green body, white eye, black pupil, as in the app. */
+.bloog .body {
+  fill: var(--green);
+}
+
+.bloog .eye {
+  fill: #fff;
+}
+
+.bloog .pupil {
+  fill: #000;
+}
+
+@keyframes hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-25%);
+  }
+}
+
+/* Screenshots sit in the app's card frame. When one scrolls into view it
+   switches on like an old monitor: a bright line opens into the picture. */
+.screen {
+  margin: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow:
+    var(--shadow),
+    0 24px 64px -24px rgb(0 0 0 / 0.7);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+}
+
+.screen img {
+  width: 100%;
+}
+
+.js .screen {
+  clip-path: inset(49.5% 0 49.5% 0 round 12px);
+  filter: brightness(2.2) saturate(0.4);
+  opacity: 0;
+}
+
+.js .screen.on {
+  animation: power-on 900ms var(--ease-out) forwards;
+}
+
+@keyframes power-on {
+  0% {
+    opacity: 1;
+    clip-path: inset(49.5% 0 49.5% 0 round 12px);
+    filter: brightness(2.2) saturate(0.4);
+  }
+  35% {
+    clip-path: inset(49.5% 0 49.5% 0 round 12px);
+  }
+  100% {
+    opacity: 1;
+    clip-path: inset(0 0 0 0 round 12px);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+/* The journey: a dotted trail winds from stop to stop, the Bloog hops along
+   it as the page scrolls, and each stop's star lights up when it arrives. */
+.journey {
+  position: relative;
+  padding-top: clamp(5rem, 12vh, 8rem);
+}
+
+.trail {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.trail path {
+  fill: none;
+  stroke-width: 3;
+  stroke-dasharray: 3 9;
+  stroke-linecap: square;
+}
+
+.trail-ahead {
+  stroke: var(--border);
+}
+
+.trail-done {
+  stroke: var(--green);
+}
+
+.walker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  translate: -50% -100%;
+  pointer-events: none;
+  z-index: 2;
+  will-change: transform;
+}
+
+.walker .bloog {
+  width: 100%;
+  height: 100%;
+  transform: scaleX(var(--facing, 1));
+}
+
+.walker.hopping .bloog {
+  animation: hop 0.35s steps(4) infinite;
+}
+
+html:not(.js) .walker,
+.walker[hidden] {
+  display: none;
+}
+
+.marker {
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-right: 0.85rem;
+  vertical-align: -0.1rem;
+  background: var(--border);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  transition:
+    background 300ms,
+    scale 300ms var(--ease-out);
+}
+
+.stop.lit .marker {
+  background: var(--yellow);
+  scale: 1.35;
+}
+
+.stop {
+  position: relative;
+  z-index: 1;
+}
+
+.journey > .stop + .stop {
+  margin-top: clamp(7rem, 16vh, 11rem);
+}
+
+/* The three players */
+.who-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  margin-top: 2rem;
+}
+
+.who-grid p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.who-grid strong {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--ink);
+  font-size: 1.15rem;
+}
+
+/* Stations: text and screenshot, alternating sides */
+.station {
+  display: grid;
+  grid-template-columns: minmax(0, 23rem) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+}
+
+.station.flip {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 23rem);
+}
+
+.station.flip .station-text {
+  order: 2;
+}
+
+/* The app's screenshots are larger than their column: they run past the
+   page edge like a window looking in, so the app stays readable. */
+.station .screen {
+  width: min(64rem, 100vw - 4rem);
+  justify-self: start;
+}
+
+.station.flip .screen {
+  justify-self: end;
+}
+
+.station .screen.dialog-shot {
+  width: auto;
+  max-width: 35rem;
+  justify-self: center;
+}
+
+.station .screen.tall {
+  max-height: 46rem;
+}
+
+.stars {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.stars li {
+  position: relative;
+  padding-left: 1.6rem;
+}
+
+.stars li::before {
+  content: "";
+  position: absolute;
+  left: 0.15rem;
+  top: 0.5rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  background: var(--green);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+}
+
+.station .note {
+  margin-top: 1.25rem;
+}
+
+/* Day and night: drag the line to see both themes. */
+.themes {
+  text-align: center;
+}
+
+.themes .lead {
+  margin-inline: auto;
+}
+
+.compare {
+  position: relative;
+  margin-top: 2.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    var(--shadow),
+    0 24px 64px -24px rgb(0 0 0 / 0.7);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+  user-select: none;
+}
+
+.compare img {
+  width: 100%;
+}
+
+.compare-light {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  object-fit: cover;
+  clip-path: inset(0 0 0 var(--split));
+}
+
+.compare-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--split);
+  width: 2px;
+  translate: -1px 0;
+  background: var(--yellow);
+  pointer-events: none;
+}
+
+.compare-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2.75rem;
+  height: 2.75rem;
+  translate: -50% -50%;
+  border-radius: 9999px;
+  background: var(--night);
+  border: 2px solid var(--yellow);
+  box-shadow: var(--shadow);
+  /* Two pixel arrows, left and right. */
+  background-image:
+    linear-gradient(var(--yellow), var(--yellow)), linear-gradient(var(--yellow), var(--yellow)),
+    linear-gradient(var(--yellow), var(--yellow)), linear-gradient(var(--yellow), var(--yellow));
+  background-size:
+    4px 4px,
+    4px 12px,
+    4px 4px,
+    4px 12px;
+  background-position:
+    calc(50% - 10px) 50%,
+    calc(50% - 6px) 50%,
+    calc(50% + 10px) 50%,
+    calc(50% + 6px) 50%;
+  background-repeat: no-repeat;
+}
+
+.compare input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+}
+
+.compare:has(input:focus-visible) {
+  outline: 3px solid var(--yellow);
+  outline-offset: 2px;
+}
+
+.compare-label {
+  position: absolute;
+  bottom: 1rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+  font: 0.55rem/1 var(--pixel);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.compare-label-dark {
+  left: 1rem;
+  background: var(--raised);
+  color: var(--ink);
+  border: 1px solid var(--border);
+}
+
+.compare-label-light {
+  right: 1rem;
+  background: #efe9da;
+  color: #221e1a;
+  border: 1px solid #b2a68a;
+}
+
+.compare-hint {
+  margin-top: 1rem;
+}
+
+/* Details: five groups in flowing columns, the densest passage of the page. */
+.details {
+  margin-top: clamp(8rem, 18vh, 12rem);
+}
+
+.details-columns {
+  columns: 3 18rem;
+  column-gap: clamp(2rem, 4vw, 3.5rem);
+  margin-top: 2.5rem;
+}
+
+.detail-group {
+  break-inside: avoid;
+  padding: 1.5rem 0 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.detail-group h3 {
+  font: 0.75rem/1.625 var(--pixel);
+  color: var(--green);
+}
+
+.detail-group .stars {
+  margin-top: 1rem;
+  gap: 0.7rem;
+  font-size: 0.95rem;
+}
+
+/* Games: one row each, with the engine tiles of Discover */
+.games {
+  margin-top: clamp(6rem, 14vh, 9rem);
+}
+
+.game-list {
+  list-style: none;
+  padding: 0;
+  margin: 2rem 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.game-list li {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tile {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 6px;
+  font: 0.9rem/1 var(--pixel);
+  color: #fff;
+}
+
+.tile.vorticons {
+  background: var(--magenta);
+}
+
+.tile.galaxy {
+  background: var(--blue);
+}
+
+.tile.dreams {
+  background: var(--brown);
+}
+
+.game-name {
+  font-weight: 600;
+}
+
+.how {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.free .how {
+  color: var(--green);
+}
+
+.games .note {
+  margin-top: 1.25rem;
+}
+
+/* Download: three systems, the visitor's own one marked. */
+.download {
+  margin-top: clamp(7rem, 16vh, 10rem);
+  padding: clamp(2rem, 5vw, 3.5rem);
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+}
+
+.systems {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  margin-top: 2.5rem;
+}
+
+.system {
+  padding-top: 1.25rem;
+  border-top: 2px solid var(--border);
+  transition: border-color 300ms;
+}
+
+.system p {
+  margin: 0.75rem 0 0;
+}
+
+.system.mine {
+  border-top-color: var(--green);
+}
+
+.yours {
+  display: none;
+  margin-left: 0.5rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 4px;
+  font: 0.5rem/1 var(--pixel);
+  text-transform: uppercase;
+  vertical-align: 0.2rem;
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--green) 50%, transparent);
+}
+
+.system.mine .yours {
+  display: inline-block;
+}
+
+.download-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2.5rem;
+}
+
+/* Community */
+.community {
+  margin-top: clamp(6rem, 14vh, 9rem);
+}
+
+.community-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  margin-top: 2rem;
+}
+
+.community-grid p {
+  color: var(--muted);
+  margin: 0.6rem 0 0;
+}
+
+.thanks {
+  margin: 3rem 0 0;
+  color: var(--muted);
+  max-width: 48rem;
+}
+
+/* Footer */
+.footer {
+  width: min(var(--page), 100% - 2 * var(--gutter));
+  margin: clamp(6rem, 14vh, 9rem) auto 0;
+  padding: 2rem 0 3rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.footer-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.footer-top a:not(.wordmark) {
+  color: var(--muted);
+}
+
+.footer .wordmark .bloog {
+  width: 1.5rem;
+}
+
+.footer p {
+  max-width: 52rem;
+  margin: 0.6rem 0 0;
+}
+
+/* Narrow windows: one column, the trail runs down the left edge. */
+@media (max-width: 860px) {
+  .station,
+  .station.flip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .station .screen {
+    width: 100%;
+  }
+
+  .station.flip .station-text {
+    order: 0;
+  }
+
+  .who-grid,
+  .community-grid,
+  .systems {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .game-list li {
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+  }
+
+  .how {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .topbar nav a:not(.lang) {
+    display: none;
+  }
+
+  .themes {
+    text-align: left;
+  }
+
+  .compare-label {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .sky-layer {
+    transform: none;
+  }
+
+  .sky-near,
+  .shooting-star,
+  .follow .bloog,
+  .walker.hopping .bloog,
+  .button.primary:hover .icon {
+    animation: none;
+  }
+
+  .js .screen {
+    clip-path: none;
+    filter: none;
+    opacity: 1;
+  }
+
+  .js .screen.on {
+    animation: none;
+  }
+}

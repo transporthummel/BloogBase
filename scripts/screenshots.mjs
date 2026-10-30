@@ -287,7 +287,14 @@ const textMatch = (
 ) =>
   `[...document.querySelectorAll(${JSON.stringify(selector)})].find((el) => el.offsetParent !== null && el.textContent.trim().startsWith(${JSON.stringify(text)}))`;
 
-async function runStep(step) {
+async function runStep(raw, language) {
+  // Texts can differ per language: { "en": "Saves", "de": "Spielstände" }.
+  const step = Object.fromEntries(
+    Object.entries(raw).map(([k, v]) => [
+      k,
+      v && typeof v === "object" && !Array.isArray(v) ? v[language] : v,
+    ]),
+  );
   if (step.click) {
     await waitUntil(`!!document.querySelector(${JSON.stringify(step.click)})`, step.click);
     await evaluate(`document.querySelector(${JSON.stringify(step.click)}).click()`);
@@ -346,7 +353,11 @@ const settle = () =>
     .catch(() => console.warn("  (page didn't settle; taking the shot anyway)"))
     .then(() => sleep(manifest.settle ?? 800));
 
-async function take(shot) {
+/** The file a shot writes in this language: `<name>.png` in English, `<name>.<lang>.png` otherwise. */
+const fileName = (shot, language) =>
+  language === "en" ? `${shot.name}.png` : `${shot.name}.${language}.png`;
+
+async function take(shot, language) {
   const width = shot.width ?? manifest.window.width;
   const height = shot.height ?? manifest.window.height;
   const scale = shot.scale ?? manifest.window.scale ?? 1;
@@ -364,7 +375,7 @@ async function take(shot) {
   // shot from the same state.
   const prefs = {
     "bloogbase.theme": shot.theme ?? "dark",
-    "bloogbase.language": shot.language ?? "en",
+    "bloogbase.language": language,
     ...manifest.localStorage,
     ...shot.localStorage,
   };
@@ -383,7 +394,7 @@ async function take(shot) {
   await sleep(300);
   await appReady();
   await settle();
-  for (const step of shot.steps ?? []) await runStep(step);
+  for (const step of shot.steps ?? []) await runStep(step, language);
   await settle();
 
   const params = { format: "png" };
@@ -401,8 +412,8 @@ async function take(shot) {
     };
   }
   const { data } = await send("Page.captureScreenshot", params);
-  fs.writeFileSync(path.join(shotsDir, `${shot.name}.png`), Buffer.from(data, "base64"));
-  console.log(`  ${shot.name}.png`);
+  fs.writeFileSync(path.join(shotsDir, fileName(shot, language)), Buffer.from(data, "base64"));
+  console.log(`  ${fileName(shot, language)}`);
 }
 
 // --- Main ---------------------------------------------------------------------
@@ -425,7 +436,7 @@ try {
   console.log("Taking screenshots…");
   for (const shot of manifest.shots) {
     if (only && !only.includes(shot.name)) continue;
-    await take(shot);
+    for (const language of shot.languages ?? ["en"]) await take(shot, language);
   }
   await send("Emulation.clearDeviceMetricsOverride");
 } finally {

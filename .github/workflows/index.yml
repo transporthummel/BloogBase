@@ -1,8 +1,10 @@
-name: Mod index
+name: Mod index and website
 
 # Checks the mod index (index/mods/*.yaml) on every change, and weekly for
 # dead links. Publishing to GitHub Pages is off until the repository
-# variable INDEX_PUBLISH is "true" (see index/README.md).
+# variable INDEX_PUBLISH is "true" (see index/README.md). The website
+# (site/, docs/website.md) goes out in the same Pages artifact: a repository
+# has one Pages site, and the index lives at its index/ path.
 
 on:
   push:
@@ -10,11 +12,19 @@ on:
     paths:
       - index/**
       - src-tauri/catalog/games.json
+      - site/**
+      - docs/screenshots/**
+      - src/assets/logo.jpg
+      - src/assets/icon.png
       - .github/workflows/index.yml
   pull_request:
     paths:
       - index/**
       - src-tauri/catalog/games.json
+      - site/**
+      - docs/screenshots/**
+      - src/assets/logo.jpg
+      - src/assets/icon.png
       - .github/workflows/index.yml
   schedule:
     - cron: "41 4 * * 2"
@@ -62,6 +72,12 @@ jobs:
           cargo run --release -- check --download --cache "$GITHUB_WORKSPACE/index-cache"
           ${{ github.event_name == 'schedule' && '--links' || '' }}
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Website
+        run: node site/build.mjs --out "$RUNNER_TEMP/site"
+
   publish:
     needs: check
     if: >-
@@ -73,13 +89,20 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}index/index.json
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: index/tool
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # The website first: its build empties the folder.
+      - name: Website
+        run: node site/build.mjs --out "$GITHUB_WORKSPACE/site-out"
 
       - name: Build and sign
         working-directory: index/tool
@@ -87,11 +110,11 @@ jobs:
           INDEX_MINISIGN_KEY: ${{ secrets.INDEX_MINISIGN_KEY }}
         # The commit time keeps rebuilds of the same commit identical.
         run: |
-          cargo run --release -- build --out "$GITHUB_WORKSPACE/site/index" \
+          cargo run --release -- build --out "$GITHUB_WORKSPACE/site-out/index" \
             --generated-at "$(git log -1 --format=%ct)"
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: site-out
       - id: deploy
         uses: actions/deploy-pages@v4
