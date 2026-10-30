@@ -143,6 +143,12 @@
       "description": "Two themes: the library in Vintage Beige.",
       "route": "/",
       "theme": "light"
+    },
+    {
+      "name": "discover-light",
+      "description": "Two themes: Discover's mod list in Vintage Beige.",
+      "route": "/discover",
+      "theme": "light"
     }
   ]
 }

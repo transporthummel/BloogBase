@@ -109,6 +109,8 @@ back), and greets you with a made-up Commander Keen fact.
 
 <img src="docs/screenshots/library-light.png" alt="The library in the Vintage Beige theme" width="900">
 
+<img src="docs/screenshots/discover-light.png" alt="Discover in the Vintage Beige theme" width="900">
+
 **Midnight Galaxy** for the night sky over Vorticon VI, **Vintage Beige** for
 the case of the PC you first played Keen on. In English and German.
 
