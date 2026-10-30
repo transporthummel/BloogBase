@@ -353,6 +353,8 @@
     "waitsFor": "Braucht {{game}}",
     "gameMissing": "Spiel fehlt",
     "waitingHint": "Füge {{game}} deiner Bibliothek hinzu, um diese Mod zu spielen.",
+    "addGame": "Spiel hinzufügen",
+    "getFreeGame": "Kostenlos herunterladen",
     "changeGameHint": "Spielstände bleiben bei der Mod, lassen sich in einer anderen Spielversion aber eventuell nicht laden.",
     "alreadyHave": "Du hast diese Mod schon",
     "replaceOld": "{{name}} ersetzen",

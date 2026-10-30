@@ -77,6 +77,7 @@ vi.mock("../bindings", () => {
     "setModInstall",
     "removeGame",
     "indexMods",
+    "freeGames",
     "listScreenshots",
     "profileCover",
     "deleteScreenshot",
@@ -186,6 +187,7 @@ beforeEach(() => {
   vi.mocked(commands.listMods).mockResolvedValue(ok([]));
   vi.mocked(commands.modReadmes).mockResolvedValue(ok([]));
   vi.mocked(commands.indexMods).mockResolvedValue(ok([]));
+  vi.mocked(commands.freeGames).mockResolvedValue(ok([]));
   vi.mocked(commands.listScreenshots).mockResolvedValue(ok([]));
   vi.mocked(commands.listVideos).mockResolvedValue(ok([]));
   vi.mocked(commands.profileCover).mockResolvedValue(ok(null));
@@ -476,6 +478,35 @@ test("a mod waiting for its game says which one and can't be played", async () =
   const dialog = screen.getByRole("dialog");
   expect(dialog).toHaveTextContent("The mod’s files are deleted.");
   expect(dialog).not.toHaveTextContent("The game itself stays");
+});
+
+const waiting: Profile = {
+  ...profile,
+  installId: null,
+  versionId: null,
+  modId: "aurora-bliss",
+  label: "Aurora Bliss",
+  missingGame: "Commander Keen 4 (v1.4 EGA)",
+};
+
+test("a mod waiting for a shareware episode leads to the free download", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([waiting]));
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  vi.mocked(commands.freeGames).mockResolvedValue(
+    ok([{ gameId: "keen4", versionId: "keen4-v14e-sw", setup: true, size: 1, installed: false }]),
+  );
+  renderDetail();
+  expect(await screen.findByText("Download for free")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Add game" })).toBeNull();
+});
+
+test("a mod waiting for any other game opens the add dialog", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([waiting]));
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "Add game" }));
+  expect(screen.getByRole("dialog", { name: "Add a game or mod" })).toBeInTheDocument();
+  expect(screen.queryByText("Download for free")).toBeNull();
 });
 
 test("a mod's README is the first tab, shown as text with links opening outside", async () => {

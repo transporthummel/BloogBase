@@ -5,12 +5,14 @@ import {
   ArrowLeft,
   ArrowLeftRight,
   ChevronDown,
+  Download,
   ExternalLink,
   FileArchive,
   FolderOpen,
   Info,
   Keyboard,
   MonitorCog,
+  PackagePlus,
   RefreshCw,
   Trash2,
   TriangleAlert,
@@ -27,11 +29,12 @@ import {
   type Profile,
 } from "../bindings";
 import { useGames } from "../catalog";
-import { useIndexMods } from "../discover/queries";
+import { useFreeGames, useIndexMods } from "../discover/queries";
 import { errorMessage } from "../errors";
 import { formatDate, formatLooseDate, formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { Cover } from "../library/Cover";
+import { FindOwnedDialog } from "../library/FindOwnedDialog";
 import { forgetRemovedCovers, useCover } from "../library/covers";
 import { scroller } from "../library/scroll";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
@@ -45,6 +48,7 @@ import { RunsOn } from "../mods/RunsOn";
 import { useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
+import { buttonClass } from "../ui/buttonClass";
 import { Card } from "../ui/Card";
 import { Dialog } from "../ui/Dialog";
 import { Menu, type MenuItem } from "../ui/Menu";
@@ -486,7 +490,7 @@ function Hero({
             />
           </div>
           {profile.missingGame !== null && (
-            <Notice>{t("mods.waitingHint", { game: profile.missingGame })}</Notice>
+            <MissingGame profile={profile} missingGame={profile.missingGame} game={game} />
           )}
           {checkable && <ModUpdate mod={mod} check={check} disabled={profile.running} />}
           {mod?.source === "keenwiki" && !mod.indexId && (
@@ -546,6 +550,65 @@ function Hero({
         />
       )}
     </Card>
+  );
+}
+
+/** What a mod waits for, and where to get it: free shareware from Discover, else the add dialog. */
+function MissingGame({
+  profile,
+  missingGame,
+  game,
+}: {
+  profile: Profile;
+  missingGame: string;
+  game?: Game;
+}) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const free = useFreeGames();
+  const [adding, setAdding] = useState(false);
+  const [finding, setFinding] = useState(false);
+  // A full shareware episode, not a demo or beta.
+  const shareware = (free.data ?? []).some(
+    (f) =>
+      f.gameId === profile.gameId &&
+      (game?.versions.find((v) => v.id === f.versionId)?.kind ?? "release") === "release",
+  );
+  return (
+    <div className="grid justify-items-start gap-2">
+      <Notice>{t("mods.waitingHint", { game: missingGame })}</Notice>
+      {shareware ? (
+        <Link to="/discover" search={{ tab: "games" }} className={buttonClass("secondary")}>
+          <Download className="size-4" aria-hidden />
+          {t("mods.getFreeGame")}
+        </Link>
+      ) : (
+        <Button variant="secondary" onClick={() => setAdding(true)}>
+          <PackagePlus className="size-4" aria-hidden />
+          {t("mods.addGame")}
+        </Button>
+      )}
+      {adding && (
+        <AddModDialog
+          onClose={() => setAdding(false)}
+          onInstalled={(mod) => {
+            setAdding(false);
+            queryClient.invalidateQueries({ queryKey: profilesKey });
+            navigate({ to: "/profiles/$profileId", params: { profileId: mod.profileId } });
+          }}
+          // The mod's profile takes the game as soon as the list is fetched again.
+          onGamesImported={() => setAdding(false)}
+          onFindOwned={() => {
+            setAdding(false);
+            setFinding(true);
+          }}
+        />
+      )}
+      {finding && (
+        <FindOwnedDialog onClose={() => setFinding(false)} onImported={() => setFinding(false)} />
+      )}
+    </div>
   );
 }
 

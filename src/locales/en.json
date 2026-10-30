@@ -353,6 +353,8 @@
     "waitsFor": "Needs {{game}}",
     "gameMissing": "Game missing",
     "waitingHint": "Add {{game}} to your library to play this mod.",
+    "addGame": "Add game",
+    "getFreeGame": "Download for free",
     "changeGameHint": "Saved games stay with the mod, but may not load in another version of the game.",
     "alreadyHave": "You already have this mod",
     "replaceOld": "Replace {{name}}",
