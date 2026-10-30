@@ -1,0 +1,25 @@
+id: keen-dreams-modette
+name: "Keen Dreams Modette"
+game: kdreams
+authors: ["Levellass"]
+authorLinks:
+  "Levellass": https://keenwiki.shikadi.net/wiki/User:Levellass
+released: 2012-07-25
+added: 2026-10-30
+type: episode
+description: "A short Keen Dreams adventure: on the eve of International I Hate Broccoli Day, Billy dreams his way back to Tuberia."
+translations:
+  de:
+    description: "Ein kurzes Keen-Dreams-Abenteuer: Am Vorabend des Internationalen Ich-hasse-Brokkoli-Tags träumt sich Billy zurück nach Tuberia."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_Dreams_Modette
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/keend/m.levellass.keen_dreams_modette.kd.2012-07-25.zip
+    sha256: 5b836062e579a2282a765c2dcf383f381855daef5b06ed2e9e64953f57d7438e
+    size: 274145
+recipe:
+  type: patch
+  patcher: KDRPATCH.EXE
+  patch: dreams.PAT
+  args: ["/detour", "/comp"]
+featured: true

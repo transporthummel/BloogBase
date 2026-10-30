@@ -1,0 +1,21 @@
+id: commander-keen-confronts-the-commandeered-planet
+name: "Commander Keen Confronts the Commandeered Planet"
+game: keen1
+authors: ["8bit-herpetology"]
+released: 2018-06-23
+added: 2026-10-30
+type: episode
+description: "A crossover with Starquake: a rogue planet with an unstable core heads for Earth, and Keen has to stop it. The first Keen 1 mod with hazards that come and go."
+translations:
+  de:
+    description: "Ein Crossover mit Starquake: Ein Wanderplanet mit instabilem Kern rast auf die Erde zu, und Keen muss ihn aufhalten. Die erste Keen-1-Mod mit Gefahren, die kommen und gehen."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Commander_Keen_Confronts_the_Commandeered_Planet
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.8bit-herpetology.the_commandeered_planet.k1.2018-06-23.zip
+    sha256: b5c7dfda402095cbb1a8a1a90a37c587d9f7d3bd0e2ac7048e3d538c5ffff745
+    size: 160892
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: pat.pat

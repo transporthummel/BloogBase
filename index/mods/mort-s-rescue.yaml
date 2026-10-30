@@ -1,0 +1,24 @@
+id: mort-s-rescue
+name: "Mort's Rescue"
+game: keen1
+requires: [keen1-1.31]
+authors: ["Quinton"]
+authorLinks:
+  "Quinton": https://keenwiki.shikadi.net/wiki/User:Quillax
+released: 2014-03-14
+added: 2026-10-30
+type: episode
+description: "The Sqeeks have kidnapped Mortimer, and Keen follows them to the planet Molecir X to free him. The first part of the Revenge of Mortimer trilogy."
+translations:
+  de:
+    description: "Die Sqeeks haben Mortimer entführt, und Keen folgt ihnen zum Planeten Molecir X, um ihn zu befreien. Der erste Teil der Revenge-of-Mortimer-Trilogie."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Mort%27s_Rescue
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.quinton.morts_rescue.k1.2014-03-14.zip
+    sha256: a2b6a91f69d7c202b04c966bc35b1646f33e357d46748386c7d34a04f06a0690
+    size: 126882
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: patches.pat

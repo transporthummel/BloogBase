@@ -1,0 +1,26 @@
+id: bounty-hunting-brouhaha
+name: "Bounty Hunting Brouhaha"
+game: keen4
+requires: [keen4-1.4-ega]
+authors: ["Kohntarkosz_"]
+version: "1.2"
+released: 2019-11-26
+updated: 2024-08-15
+added: 2026-10-30
+type: episode
+description: "Keen tries his hand as an intergalactic bounty hunter. The first part of a trilogy continued by The Prisoner's Dilemma; version 1.2 is K1n9_Duk3's unofficial bugfix release."
+translations:
+  de:
+    description: "Keen versucht sich als intergalaktischer Kopfgeldjäger. Der erste Teil einer Trilogie, die The Prisoner's Dilemma fortsetzt; Version 1.2 ist die inoffizielle Fehlerkorrektur von K1n9_Duk3."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Bounty_Hunting_Brouhaha
+downloads:
+  - version: "1.2"
+    url: https://files.shikadi.net/keenwiki/mods/Keen4/m.kohntarkosz_.bounty_hunting_brouhaha_v1.2_unofficial.k4.2024-08-15.zip
+    sha256: 40bd0549135abb9072ab3d296b99d146b6eeaeb75aab5f127f263ea5bfbd1c36
+    size: 522153
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: KEEN4a.PAT
+  args: ["-nowait"]

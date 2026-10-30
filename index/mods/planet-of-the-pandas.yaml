@@ -1,0 +1,24 @@
+id: planet-of-the-pandas
+name: "Planet of the Pandas"
+game: keen1
+requires: [keen1-1.31]
+authors: ["proYorp"]
+authorLinks:
+  "proYorp": https://keenwiki.shikadi.net/wiki/User:ProYorp
+released: 2019-03-14
+added: 2026-10-30
+type: episode
+description: "Keen needs the Mystic Pandas' scepter to grow a cure for a galactic plague, and searches a fortress on a rocky planet for it. 10 levels."
+translations:
+  de:
+    description: "Keen braucht das Zepter der Mystischen Pandas, um ein Heilmittel gegen eine galaktische Seuche wachsen zu lassen, und sucht es in einer Festung auf einem Felsplaneten. 10 Level."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Planet_of_the_Pandas
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.proyorp.planet_of_the_pandas.k1.2019-03-14.zip
+    sha256: 88b348ef402a9f183569e38d12d5d736feeda1afc40f5aa37b82999983e4dea2
+    size: 151311
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: pat.pat

@@ -1,0 +1,28 @@
+id: operation-ocflore
+name: "Operation Ocflore"
+game: keen4
+requires: [keen4-1.4-ega]
+authors: ["Bubbatom"]
+authorLinks:
+  "Bubbatom": https://keenwiki.shikadi.net/wiki/User:Bubbatom
+version: "1.3"
+released: 2020-01-14
+updated: 2020-02-18
+added: 2026-10-30
+type: episode
+description: "Keen is sent to the ocean planet Ocflore V to wipe out its inhabitants, and turns against the Ormch instead. Known for its unusual colour palette."
+translations:
+  de:
+    description: "Keen soll die Bewohner des Ozeanplaneten Ocflore V auslöschen und wendet sich stattdessen gegen die Ormch. Bekannt für ihre ungewöhnliche Farbpalette."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Operation_Ocflore
+  pckf: https://pckf.com/viewtopic.php?f=4&t=6379
+downloads:
+  - version: "1.3"
+    url: https://files.shikadi.net/keenwiki/mods/Keen4/m.bubbatom.operation_ocflore_v1.3.k4.2020-02-18.zip
+    sha256: ae5d7d2c3823524dd2777c3866d6e50581fe95caa8bf93b169ed21c0f8cbcced
+    size: 914993
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: Ocflore.PAT

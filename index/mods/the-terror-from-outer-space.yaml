@@ -1,0 +1,29 @@
+id: the-terror-from-outer-space
+name: "The Terror from Outer Space"
+game: keen4
+requires: [keen4-1.4-ega]
+authors: ["Dr. Colossus"]
+authorLinks:
+  "Dr. Colossus": https://keenwiki.shikadi.net/wiki/User:DrColossus
+version: "1.0"
+released: 2013-09-16
+updated: 2013-09-29
+added: 2026-10-30
+type: episode
+description: "Keen explores the planet Phaelox, from reactor core to Trogg village, to the music of German rock bands. 19 levels."
+translations:
+  de:
+    description: "Keen erkundet den Planeten Phaelox, vom Reaktorkern bis zum Trogg-Dorf, zur Musik deutscher Rockbands. 19 Level."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Terror_from_Outer_Space
+  pckf: https://pckf.com/viewtopic.php?t=2864
+downloads:
+  - version: "1.0"
+    url: https://files.shikadi.net/keenwiki/mods/Keen4/m.dr_colossus.the_terror_from_outer_space_v1.0.k4.2013-09-29.zip
+    sha256: 5744316fcbf803a110f033a54f11d135280f81c921ab7427d2ce59fbfd507b86
+    size: 977272
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: mymod.PAT
+  args: ["-nowait"]

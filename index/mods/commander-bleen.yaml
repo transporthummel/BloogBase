@@ -1,0 +1,24 @@
+id: commander-bleen
+name: "Commander Bleen"
+game: keen2
+requires: [keen2-1.31]
+authors: ["Tulip"]
+authorLinks:
+  "Tulip": https://keenwiki.shikadi.net/wiki/User:Tulip
+released: 2010-08-29
+added: 2026-10-30
+type: episode
+description: "It's 1971, and Coolmander Bleen has to stop Bumpy in Marslem. A short blaxploitation parody with coarse language."
+translations:
+  de:
+    description: "Es ist 1971, und Coolmander Bleen muss Bumpy in Marslem aufhalten. Eine kurze Blaxploitation-Parodie mit derber Sprache."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Commander_Bleen
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.tulip.commander_bleen.k2.2010-08-29.zip
+    sha256: 82be7edf22a59f82a7b9ad5791ba056d4e817120ec648edbf058585d49a6f6fb
+    size: 129470
+recipe:
+  type: patch
+  patcher: CK2PATCH.EXE
+  patch: bleen.pat

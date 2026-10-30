@@ -1,0 +1,26 @@
+id: flames-on-earth
+name: "Flames On Earth"
+game: keen2
+requires: [keen2-1.31]
+authors: ["Quinton"]
+authorLinks:
+  "Quinton": https://keenwiki.shikadi.net/wiki/User:Quillax
+released: 2014-03-14
+added: 2026-10-30
+type: episode
+description: "A dragon mothership above Earth is about to set it on fire, and Keen gets inside. The second part of the Revenge of Mortimer trilogy."
+translations:
+  de:
+    description: "Ein Drachen-Mutterschiff über der Erde will sie in Brand setzen, und Keen gelangt hinein. Der zweite Teil der Revenge-of-Mortimer-Trilogie."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Flames_On_Earth
+  pckf: https://pckf.com/viewtopic.php?t=3024
+  keenmodding: https://www.keenmodding.org/viewtopic.php?t=1820
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.quinton.flames_on_earth.k2.2014-03-14.zip
+    sha256: b9c9c5de454b1245f1c9606ab09c2babe29ed159271a0420fa9fb456c4f5085f
+    size: 328070
+recipe:
+  type: patch
+  patcher: CK2PATCH.EXE
+  patch: patches.pat

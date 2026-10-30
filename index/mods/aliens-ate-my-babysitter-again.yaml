@@ -1,0 +1,25 @@
+id: aliens-ate-my-babysitter-again
+name: "Aliens Ate My Babysitter ...Again"
+game: keen6
+requires: [keen6-1.4-ega]
+authors: ["NY00123"]
+version: "1.5"
+released: 2009-09-26
+updated: 2024-12-30
+added: 2026-10-30
+type: episode
+description: "Keen's babysitter has been kidnapped again, and the Megarocket breaks down on the Blog Planet. A Keen 6 mini mod with recoloured graphics and a few patches."
+translations:
+  de:
+    description: "Keens Babysitterin wurde schon wieder entführt, und auf dem Blog-Planeten streikt die Megarocket. Eine kleine Keen-6-Mod mit umgefärbten Grafiken und ein paar Patches."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Aliens_Ate_My_Babysitter_...Again
+downloads:
+  - version: "1.5"
+    url: https://files.shikadi.net/keenwiki/mods/Keen6/m.ny00123.aliens_ate_my_babysitter_again_v1.5.k6.2024-12-30.zip
+    sha256: 4372cc03bed6612d0e73338cbabb25374c7ae9094c775e24f94af59fc96f0437
+    size: 859795
+recipe:
+  type: patch
+  patcher: CK6PATCH.EXE
+  patch: AAMBA.PAT

@@ -1,0 +1,25 @@
+id: episode-59-underworld-ultimate
+name: "Episode 59 - Underworld Ultimate!"
+game: keen4
+requires: [keen4-1.4-ega]
+authors: ["Bernie"]
+version: "1.3"
+released: 2014-05-06
+updated: 2024-12-24
+added: 2026-10-30
+type: episode
+description: "The sequel to The Ruin of Roib: Keen crashes on Earth and drills down into an underworld to find the Kreegs' secret base. 24 levels; this is K1n9_Duk3's unofficial bugfix release."
+translations:
+  de:
+    description: "Die Fortsetzung von The Ruin of Roib: Keen stürzt auf der Erde ab und bohrt sich in eine Unterwelt, um die geheime Basis der Kreegs zu finden. 24 Level; dies ist die inoffizielle Fehlerkorrektur von K1n9_Duk3."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Episode_59_-_Underworld_Ultimate!
+downloads:
+  - version: "1.3"
+    url: https://files.shikadi.net/keenwiki/mods/Keen4/m.bernie.underworld_ultimate_v1.3_unofficial.k4.2024-12-24.zip
+    sha256: 3c93228f8e38c222b8b9b3d54d72143e64d6e33da0e372b7a62fb8cbde6ebece
+    size: 915468
+recipe:
+  type: patch
+  patcher: CK4PATCH.exe
+  patch: UNDER.PAT

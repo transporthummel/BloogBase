@@ -1,0 +1,27 @@
+id: the-grand-intellect-doomship-dilemma
+name: "The Grand Intellect: Doomship Dilemma"
+game: keen1
+requires: [keen1-1.31]
+authors: ["Dr. Villain", "Levellass", "Szemigi"]
+authorLinks:
+  "Levellass": https://keenwiki.shikadi.net/wiki/User:Levellass
+  "Szemigi": https://keenwiki.shikadi.net/wiki/User:Szemigi
+released: 2003-09-20
+updated: 2014-06-26
+added: 2026-10-30
+type: episode
+description: "Mortimer as the Grand Intellect has united the smartest races of the galaxy against Keen. The first part of the Grand Intellect duology."
+translations:
+  de:
+    description: "Mortimer hat als Grand Intellect die klügsten Völker der Galaxie gegen Keen vereint. Der erste Teil der Grand-Intellect-Reihe."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Grand_Intellect%EA%9E%89_Doomship_Dilemma
+  homepage: https://www.moddb.com/mods/mort-1-doomship-dilemma
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.dr_villain_szemigi.doomship_dilemma.k1.2014-06-26.zip
+    sha256: a9a7e6d278246882ab4a3dbab7b29bd2741b392f2be7537429e2771ac79c0e2f
+    size: 120831
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: Mort1.pat

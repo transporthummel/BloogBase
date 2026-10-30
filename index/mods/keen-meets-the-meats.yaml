@@ -1,0 +1,30 @@
+id: keen-meets-the-meats
+name: "Keen Meets the Meats"
+game: kdreams
+requires: [kdreams-1.13]
+authors: ["DoomJedi", "Szemigi", "Levellass", "troublesomekeen", "VikingBoyBilly"]
+authorLinks:
+  "DoomJedi": https://keenwiki.shikadi.net/wiki/User:DoomJedi
+  "Levellass": https://keenwiki.shikadi.net/wiki/User:Levellass
+  "Szemigi": https://keenwiki.shikadi.net/wiki/User:Szemigi
+  "VikingBoyBilly": https://keenwiki.shikadi.net/wiki/User:VikingBoyBilly
+  "troublesomekeen": https://keenwiki.shikadi.net/wiki/User:Troublesomekeen
+released: 2015-03-16
+updated: 2020-10-03
+added: 2026-10-30
+type: episode
+description: "Keen wakes up on the planet Grund-Bief, held by a fast-food chain whose food has come alive. Named after the planned Keen Dreams sequel that was never made."
+translations:
+  de:
+    description: "Keen erwacht auf dem Planeten Grund-Bief, gefangen von einer Fast-Food-Kette, deren Essen lebendig geworden ist. Benannt nach der geplanten Keen-Dreams-Fortsetzung, die nie erschien."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_Meets_the_Meats
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/keend/m.doomjedi_szemigi_levellass_et_al_.keen_meets_the_meats_unofficial.kd.2020-10-03.zip
+    sha256: 80d22784f8046efb1c1e1dde2a03cfab902ac7311d027c83257263609ac1dd06
+    size: 432797
+recipe:
+  type: patch
+  patcher: KDRPATCH.EXE
+  patch: newpat.txt
+featured: true

@@ -1,0 +1,27 @@
+id: shmaynoria
+name: "Shmaynoria"
+game: keen1
+authors: ["Paramultart"]
+authorLinks:
+  "Paramultart": https://keenwiki.shikadi.net/wiki/User:Paramultart
+version: "3.0"
+released: 2010-08-30
+updated: 2015-09-15
+added: 2026-10-30
+type: episode
+description: "Slimed by a native beast during a stopover, Keen is tricked by a talking frog into collecting the ingredients for an antidote."
+translations:
+  de:
+    description: "Bei einem Zwischenstopp von einem Ungeheuer mit Schleim bespritzt, lässt sich Keen von einem sprechenden Frosch einreden, er müsse die Zutaten für ein Gegenmittel sammeln."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Shmaynoria
+  pckf: https://pckf.com/viewtopic.php?t=1601&start=0
+downloads:
+  - version: "3.0"
+    url: https://files.shikadi.net/keenwiki/mods/Keen1/m.paramultart.shmaynoria_v3.0.k1.2015-09-15.zip.zip
+    sha256: 62f3593d92fafaf02310e3b98db272481963acb8fceb6f29b2717ae9f6ddf36c
+    size: 192988
+recipe:
+  type: batch
+  file: shmay.bat
+featured: true

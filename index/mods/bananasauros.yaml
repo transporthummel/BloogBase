@@ -1,0 +1,23 @@
+id: bananasauros
+name: "Bananasauros"
+game: keen1
+authors: ["VikingBoyBilly"]
+authorLinks:
+  "VikingBoyBilly": https://keenwiki.shikadi.net/wiki/User:VikingBoyBilly
+released: 2010-12-15
+updated: 2016-08-19
+added: 2026-10-30
+type: episode
+description: "A prehistoric adventure over 16 levels: past Tomatodons, Pepper Raptors and club-wielding cavemen, across the backs of plesiosaurs, to find Bananasauros's family."
+translations:
+  de:
+    description: "Ein urzeitliches Abenteuer in 16 Leveln: vorbei an Tomatodons, Pfeffer-Raptoren und keulenschwingenden Urmenschen, über die Rücken von Plesiosauriern, auf der Suche nach Bananasauros' Familie."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Bananasauros
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.vikingboybilly.bananasauros.k1.2016-08-19.zip
+    sha256: fafd16cf70e1dcf1576a53d63c8bcac5e5caf94ee4e724ee9f536bf1e5a6ae11
+    size: 1688180
+recipe:
+  type: batch
+  file: BANANA.bat

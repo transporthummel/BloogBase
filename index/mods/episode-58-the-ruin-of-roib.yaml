@@ -1,0 +1,26 @@
+id: episode-58-the-ruin-of-roib
+name: "Episode 58 - The Ruin of Roib"
+game: keen4
+requires: [keen4-1.4-ega]
+authors: ["Bernie"]
+version: "3.4"
+released: 2013-05-25
+updated: 2025-03-04
+added: 2026-10-30
+type: episode
+description: "A grown-up, down-and-out William Blaze digs his old ship out of the dump for one last adventure, only to find the planet Roib already destroyed. 24 levels; this is K1n9_Duk3's unofficial bugfix release."
+translations:
+  de:
+    description: "Ein erwachsener, abgestürzter William Blaze holt sein altes Raumschiff vom Schrottplatz für ein letztes Abenteuer und findet den Planeten Roib schon zerstört. 24 Level; dies ist die inoffizielle Fehlerkorrektur von K1n9_Duk3."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Episode_58_-_The_Ruin_of_Roib
+downloads:
+  - version: "3.4"
+    url: https://files.shikadi.net/keenwiki/mods/Keen4/m.bernie.the_ruin_of_roib_v3.4_unofficial.k4.2025-03-04.zip
+    sha256: 411a4a4442a695edd10bd3516b0395a37b25157772e2877d80174641ce7966aa
+    size: 856326
+recipe:
+  type: patch
+  patcher: CK4PATCH.exe
+  patch: newpat.txt
+featured: true

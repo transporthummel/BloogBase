@@ -1,0 +1,27 @@
+id: the-mortrix
+name: "The Mortrix"
+game: keen2
+requires: [keen2-1.31]
+authors: ["Quillax"]
+authorLinks:
+  "Quillax": https://keenwiki.shikadi.net/wiki/User:Quillax
+released: 2019-01-07
+added: 2026-10-30
+type: episode
+description: "Mortimer sends Keen a disc with a virus that pulls him into his computer. Inspired by Wario vs. Windows and The Morticore, it tests what the Keen 2 engine can do."
+translations:
+  de:
+    description: "Mortimer schickt Keen eine Diskette mit einem Virus, der ihn in seinen Computer zieht. Inspiriert von Wario vs. Windows und The Morticore, lotet sie aus, was die Keen-2-Engine kann."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Mortrix
+  pckf: https://pckf.com/viewtopic.php?f=2&t=4601
+  keenmodding: https://www.keenmodding.org/viewtopic.php?f=13&t=3161
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.quillax.mortrix.k2.2019-01-07.zip
+    sha256: fd6ffebae39a6b9db5bc5fa3a0ea2079d946c25b9a3e8cd7886ee4e64890fd06
+    size: 117325
+recipe:
+  type: patch
+  patcher: CK2PATCH.EXE
+  patch: Mortrix.pat
+featured: true

@@ -1,0 +1,26 @@
+id: zoltan-s-revenge
+name: "Zoltan's Revenge"
+game: keen4
+requires: [keen4-1.4-ega]
+authors: ["Levellass"]
+authorLinks:
+  "Levellass": https://keenwiki.shikadi.net/wiki/User:Levellass
+released: 2012-10-20
+added: 2026-10-30
+type: episode
+description: "Also called Shadow Keen 4: Keen explores the planet Lira, all the way to Zoltan's volcano base. Its demo won Andrew Durdin's Keen 4 Mini Mod contest."
+translations:
+  de:
+    description: "Auch Shadow Keen 4 genannt: Keen erkundet den Planeten Lira bis hin zu Zoltans Vulkanbasis. Ihre Demo gewann Andrew Durdins Keen-4-Mini-Mod-Wettbewerb."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Zoltan%27s_Revenge
+  pckf: https://pckf.com/viewtopic.php?t=2527
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.levellass.zoltans_revenge.k4.2012-10-20.zip
+    sha256: 68d6e13d10604c751c5f17c240efd3ec8255e125bf22eaee8e51c0b74665e8ce
+    size: 531582
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: PAT.PAT
+  args: ["-nowait"]

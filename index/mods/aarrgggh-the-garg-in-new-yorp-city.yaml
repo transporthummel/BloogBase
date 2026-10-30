@@ -1,0 +1,23 @@
+id: aarrgggh-the-garg-in-new-yorp-city
+name: "Aarrgggh the Garg in New Yorp City"
+game: keen1
+authors: ["Benvolio"]
+authorLinks:
+  "Benvolio": https://keenwiki.shikadi.net/wiki/User:Benvolio
+released: 2021-01-21
+added: 2026-10-30
+type: episode
+description: "Keen stays at home for once: Aarrgggh the Garg sets out over 16 levels to collect the toys scattered across Mars."
+translations:
+  de:
+    description: "Keen bleibt diesmal zu Hause: Aarrgggh der Garg zieht durch 16 Level los, um die über den Mars verstreuten Spielsachen einzusammeln."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Aarrgggh_the_Garg_in:_New_Yorp_City
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.benvolio.aarrgggh_the_garg_in_new_yorp_city.k1.2021-01-21.zip
+    sha256: e30a316b27c076d13f578b27b9d50075d3b7d509d2bc4471da21cf52023c890b
+    size: 136489
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: garg.pat

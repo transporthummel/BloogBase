@@ -1,0 +1,25 @@
+id: episode-null
+name: "Episode Null"
+game: keen2
+requires: [keen2-1.31]
+authors: ["Xky Rauh"]
+authorLinks:
+  "Xky Rauh": https://keenwiki.shikadi.net/wiki/User:XkyRauh
+released: 2004-03-11
+added: 2026-10-30
+type: episode
+description: "The Narln ask Keen to free their world from the Grand Intellect's Vorticons. Follows Episode X and Episode Y."
+translations:
+  de:
+    description: "Die Narln bitten Keen, ihre Welt von den Vorticons des Grand Intellect zu befreien. Schließt an Episode X und Episode Y an."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Episode_Null
+  keenmodding: https://keenmodding.org/viewtopic.php?t=255
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.xky_rauh.episode_null.k2.2004-03-11.zip
+    sha256: 683fad9988332c6b29b55dfd93a5e99d37ef2927a65ae8c112ed39a0242a3fca
+    size: 110191
+recipe:
+  type: patch
+  patcher: CK2PATCH.EXE
+  patch: XkyKeen2.pat

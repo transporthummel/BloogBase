@@ -1,0 +1,26 @@
+id: the-sunnylands
+name: "The Sunnylands"
+game: keen4
+requires: [keen4-1.4-ega]
+authors: ["Quillax"]
+authorLinks:
+  "Quillax": https://keenwiki.shikadi.net/wiki/User:Quillax
+released: 2018-03-14
+added: 2026-10-30
+type: levelpack
+description: "A Keen 4 level pack: the Council Members have gone missing again, this time in the Sunnylands on the far side of Gnosticus IV."
+translations:
+  de:
+    description: "Ein Level-Paket für Keen 4: Die Ratsmitglieder sind wieder verschwunden, diesmal in den Sunnylands auf der anderen Seite von Gnosticus IV."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Sunnylands
+  pckf: https://pckf.com/viewtopic.php?f=4&t=4271
+  keenmodding: https://www.keenmodding.org/viewtopic.php?f=13&t=3077
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.quillax.sunnylands.k4.2018-03-14.zip
+    sha256: 2fa8dc5521d4c20d8af95c6a9d16665af61a71c22f8b7b31b68de593e1161405
+    size: 596047
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: patches.pat

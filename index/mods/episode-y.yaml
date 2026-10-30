@@ -1,0 +1,22 @@
+id: episode-y
+name: "Episode Y"
+game: keen1
+authors: ["Grelphy"]
+released: 2003-05-12
+updated: 2003-06-19
+added: 2026-10-30
+type: episode
+description: "The sequel to Episode X: Keen sneaks onto Mortimer's space station, loses pogo stick and raygun and has to take weapons from the robots chasing him. 20 levels."
+translations:
+  de:
+    description: "Die Fortsetzung von Episode X: Keen schleicht sich auf Mortimers Raumstation, verliert Pogo-Stick und Strahlenpistole und muss sich Waffen von den Robotern holen, die ihn jagen. 20 Level."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Episode_Y
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.grelphy.episode_y.k1.2003-06-19.zip
+    sha256: eef8a06525ecc1795f78801e40aebc1dc21e6dd65dbc59ffffa05c51efb43df6
+    size: 126825
+recipe:
+  type: patch
+  patcher: Ck1patch.exe
+  patch: Keenypat.pat

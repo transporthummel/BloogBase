@@ -1,0 +1,26 @@
+id: galaxy-defender
+name: "Galaxy Defender"
+game: keen4
+requires: [keen4-1.4-ega]
+authors: ["Dr. Colossus"]
+authorLinks:
+  "Dr. Colossus": https://keenwiki.shikadi.net/wiki/User:DrColossus
+released: 2017-03-14
+added: 2026-10-30
+type: conversion
+description: "Keen 4 turned into an auto-scrolling space shooter in the style of Major Stryker: Keen flies the Megarocket through space, all the way to Monolith Burger."
+translations:
+  de:
+    description: "Keen 4 als automatisch scrollendes Weltraum-Shoot-'em-up im Stil von Major Stryker: Keen fliegt die Megarocket durchs All bis zum Monolith Burger."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Galaxy_Defender
+  pckf: https://pckf.com/viewtopic.php?f=4&t=4029
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.dr_colossus.galaxy_defender.k4.2017-03-14.zip
+    sha256: eb55cb00fc41faff44de97ba065e6b563c4a78e90036ebf3c3f28be008091f2f
+    size: 660573
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: pat.pat
+  args: ["-nowait", "-demo"]

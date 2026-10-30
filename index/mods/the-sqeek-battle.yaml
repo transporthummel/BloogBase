@@ -1,0 +1,24 @@
+id: the-sqeek-battle
+name: "The Sqeek Battle"
+game: keen3
+requires: [keen3-1.31]
+authors: ["Quinton"]
+authorLinks:
+  "Quinton": https://keenwiki.shikadi.net/wiki/User:Quillax
+released: 2014-03-14
+added: 2026-10-30
+type: episode
+description: "Keen follows the Sqeeks to Cheesicon V, through Sqeekville and past the Great Green Wall, to find Mortimer. The last part of the Revenge of Mortimer trilogy."
+translations:
+  de:
+    description: "Keen folgt den Sqeeks nach Cheesicon V, durch Sqeekville und über die Große Grüne Mauer, um Mortimer zu finden. Der letzte Teil der Revenge-of-Mortimer-Trilogie."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Sqeek_Battle
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.quinton.the_sqeek_battle.k3.2014-03-14.zip
+    sha256: 2822e6b760b7bd7a55ae94ca9d8c469876fc0875a6ee678a429cb1908da922f0
+    size: 326568
+recipe:
+  type: patch
+  patcher: CK3PATCH.EXE
+  patch: patches.pat

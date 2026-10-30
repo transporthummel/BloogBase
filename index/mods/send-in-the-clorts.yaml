@@ -1,0 +1,25 @@
+id: send-in-the-clorts
+name: "Send in the Clorts"
+game: keen5
+requires: [keen5-1.4-ega]
+authors: ["Kohntarkosz_"]
+version: "1.1"
+released: 2021-07-16
+updated: 2024-08-15
+added: 2026-10-30
+type: episode
+description: "The sequel to The Prisoner's Dilemma, released as a beta. Version 1.1 is K1n9_Duk3's unofficial bugfix release."
+translations:
+  de:
+    description: "Die Fortsetzung von The Prisoner's Dilemma, erschienen als Beta. Version 1.1 ist die inoffizielle Fehlerkorrektur von K1n9_Duk3."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Send_in_the_Clorts
+downloads:
+  - version: "1.1"
+    url: https://files.shikadi.net/keenwiki/mods/Keen5/m.kohntarkosz_.send_in_the_clorts_v1.1_unofficial.k5.2024-08-15.zip
+    sha256: 0e3287861710656b226d62d320aec63e264941782ff8ddc8667e6f2a2d359a58
+    size: 520327
+recipe:
+  type: patch
+  patcher: CK5PATCH.exe
+  patch: KEEN5a.PAT

@@ -20,4 +20,3 @@ recipe:
   type: patch
   patcher: CK1PATCH.exe
   patch: fire.pat
-featured: true

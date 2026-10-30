@@ -1,0 +1,25 @@
+id: simulator-keen
+name: "Simulator Keen"
+game: keen3
+authors: ["shikadi"]
+authorLinks:
+  "shikadi": https://keenwiki.shikadi.net/wiki/User:Shikadi
+version: "1.1"
+released: 2023-03-21
+updated: 2023-03-25
+added: 2026-10-30
+type: episode
+description: "Keen wanders a hazy Blue Mars whose levels are generated anew at every start; if one can't be finished, restart for a new set."
+translations:
+  de:
+    description: "Keen irrt über einen dunstigen blauen Mars, dessen Level bei jedem Start neu entstehen; ist eines nicht zu schaffen, hilft ein Neustart."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Simulator_Keen
+downloads:
+  - version: "1.1"
+    url: https://files.shikadi.net/keenwiki/mods/Keen3/m.shikadi.simulator_keen.v.1.1.k3.2023-03-25.zip
+    sha256: 05a4b4d2a7671cc13e03f673bb4404a108d79432a617d5ec8682532791b5b7ed
+    size: 576379
+recipe:
+  type: batch
+  file: play.bat

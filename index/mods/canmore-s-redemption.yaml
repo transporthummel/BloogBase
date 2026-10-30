@@ -1,0 +1,29 @@
+id: canmore-s-redemption
+name: "Canmore's Redemption"
+game: keen5
+requires: [keen5-1.4-ega]
+authors: ["Dave216"]
+authorLinks:
+  "Dave216": https://keenwiki.shikadi.net/wiki/User:Dave216
+version: "1.0.2"
+released: 2023-06-20
+updated: 2023-07-30
+added: 2026-10-30
+type: episode
+description: "The sequel to Aurora Bliss, played as Keen's neighbour Craig Canmore, who is forced to kidnap Keen and Mortimer to get his sister back."
+translations:
+  de:
+    description: "Die Fortsetzung von Aurora Bliss, gespielt als Keens Nachbar Craig Canmore, der Keen und Mortimer entführen soll, um seine Schwester zurückzubekommen."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Canmore%27s_Redemption
+  pckf: https://pckf.com/viewtopic.php?t=15719
+downloads:
+  - version: "1.0.2"
+    url: https://files.shikadi.net/keenwiki/mods/Keen5/m.dave216.canmores_redemption_v.1.0.2.k5.2023-07-30.zip
+    sha256: f94593557fffd1828681fdac5b65bd51522d48e2f5ce18067d70d58682dca6e3
+    size: 46455531
+recipe:
+  type: patch
+  patcher: CK5PATCH.EXE
+  patch: abiathar.pat
+featured: true

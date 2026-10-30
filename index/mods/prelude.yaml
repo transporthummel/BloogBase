@@ -1,0 +1,24 @@
+id: prelude
+name: "Prelude"
+game: keen1
+requires: [keen1-1.31]
+authors: ["Levellass"]
+authorLinks:
+  "Levellass": https://keenwiki.shikadi.net/wiki/User:Levellass
+released: 2023-10-31
+added: 2026-10-30
+type: episode
+description: "A short, abstract black-and-white mod made in 24 hours: no pogo, no weapon, but crawling, with the story told in text messages."
+translations:
+  de:
+    description: "Eine kurze, abstrakte Schwarz-Weiß-Mod, in 24 Stunden entstanden: kein Pogo, keine Waffe, dafür Kriechen, und die Geschichte wird in Textnachrichten erzählt."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Prelude
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.levellass.prelude.k1.2023-10-31.zip
+    sha256: cf2a58538ceceefa7388803a8c2576dce7cd935203eba2694f106e1b9c3360fb
+    size: 145791
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: PRELUDE.PAT

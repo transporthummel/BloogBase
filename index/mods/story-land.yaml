@@ -1,0 +1,24 @@
+id: story-land
+name: "Story Land"
+game: keen1
+requires: [keen1-1.1, keen1-1.31]
+authors: ["Ceilick"]
+authorLinks:
+  "Ceilick": https://keenwiki.shikadi.net/wiki/User:Ceilick
+released: 2005-09-03
+added: 2026-10-30
+type: episode
+description: "A fantasy adventure inside a fairy-tale book, with an all-new tileset and its own boss."
+translations:
+  de:
+    description: "Ein Fantasy-Abenteuer in einem Märchenbuch, mit ganz neuem Tileset und eigenem Endgegner."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Story_Land
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.ceilick.story_land.k1.2005-09-03.zip
+    sha256: 3dc544f19f4461902d1408df7ce559ac07ffc0b6bc409fa78af495dc93d4ae19
+    size: 147518
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: 1lm.pat

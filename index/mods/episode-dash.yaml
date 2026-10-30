@@ -1,0 +1,25 @@
+id: episode-dash
+name: "Episode Dash"
+game: keen3
+requires: [keen3-1.31]
+authors: ["Xky Rauh"]
+authorLinks:
+  "Xky Rauh": https://keenwiki.shikadi.net/wiki/User:XkyRauh
+released: 2004-10-22
+added: 2026-10-30
+type: episode
+description: "Keen enters an intergalactic game show where every level runs against a deadly timer; stopwatches buy him more time."
+translations:
+  de:
+    description: "Keen nimmt an einer intergalaktischen Spielshow teil, in der jedes Level gegen eine tödliche Uhr läuft; Stoppuhren verschaffen ihm mehr Zeit."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Episode_Dash
+  keenmodding: https://keenmodding.org/viewtopic.php?t=272
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.xky_rauh.episode_dash.k3.2004-10-22.zip
+    sha256: 4143287bc119148bc7be16515f9ff0919c483848f90b006e73f91f89ff589cc8
+    size: 156581
+recipe:
+  type: patch
+  patcher: CK3PATCH.EXE
+  patch: Xky3easy.pat

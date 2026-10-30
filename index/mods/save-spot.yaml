@@ -1,0 +1,26 @@
+id: save-spot
+name: "Save Spot!"
+game: keen1
+requires: [keen1-1.1, keen1-1.31]
+authors: ["Grandy02"]
+authorLinks:
+  "Grandy02": https://keenwiki.shikadi.net/wiki/User:Grandy02
+released: 2014-05-11
+added: 2026-10-30
+type: episode
+description: "Mortimer has sealed Keen's pet Yorp Spot in a shrine on Cocolores IV, and Keen needs four items to break the seal. Classic Keen 1 with a few inventive patches."
+translations:
+  de:
+    description: "Mortimer hat Keens Haustier-Yorp Spot in einem Schrein auf Cocolores IV eingeschlossen, und Keen braucht vier Gegenstände, um das Siegel zu brechen. Klassisches Keen 1 mit ein paar einfallsreichen Patches."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Save_Spot!
+  pckf: https://pckf.com/viewtopic.php?p=71362
+  keenmodding: https://keenmodding.org/viewtopic.php?t=1819
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.grandy02.save_spot.k1.2014-05-11.zip
+    sha256: a774cc6dc0c0a65720b3edb334458f74431fbd12a3dcde98ed73984cd20c9c19
+    size: 203277
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: savespot.pat

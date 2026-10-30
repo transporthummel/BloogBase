@@ -1,0 +1,27 @@
+id: marooned-on-mars-galaxy-mod
+name: "Marooned on Mars - Galaxy mod"
+game: keen5
+requires: [keen5-1.4-ega]
+authors: ["Dr. Colossus"]
+authorLinks:
+  "Dr. Colossus": https://keenwiki.shikadi.net/wiki/User:DrColossus
+released: 2016-03-14
+updated: 2018-10-10
+added: 2026-10-30
+type: episode
+description: "Keen 1 remade in the Keen 5 engine: the hunt for the stolen ship parts on Mars, now with Galaxy graphics and gameplay."
+translations:
+  de:
+    description: "Keen 1 neu gebaut in der Keen-5-Engine: die Suche nach den gestohlenen Schiffsteilen auf dem Mars, jetzt mit Galaxy-Grafik und -Spielweise."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Marooned_on_Mars_-_Galaxy_mod
+  pckf: https://pckf.com/viewtopic.php?t=3598
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen5/m.dr_colossus.marooned_on_mars_-_galaxy_mod_v.1.7b.k5.2018-10-10.zip
+    sha256: 2d19c1f76c304e2ca101e181a2d1217cd3bca5bcf780e60680daa8b3c91560fc
+    size: 720962
+recipe:
+  type: patch
+  patcher: CK5PATCH.EXE
+  patch: pat.pat
+  args: ["-nowait"]

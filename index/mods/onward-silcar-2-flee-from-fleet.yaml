@@ -1,0 +1,24 @@
+id: onward-silcar-2-flee-from-fleet
+name: "Onward: Silcar 2: Flee from Fleet"
+game: keen2
+requires: [keen2-1.0, keen2-1.31]
+authors: ["Tulip"]
+authorLinks:
+  "Tulip": https://keenwiki.shikadi.net/wiki/User:Tulip
+released: 2008-08-03
+added: 2026-10-30
+type: episode
+description: "On his way home from Strgwz, Keen finds a fleet steered by the hypnotic Evil Eyes, with Mortimer behind it. The second part of the Silcar series."
+translations:
+  de:
+    description: "Auf dem Heimweg von Strgwz entdeckt Keen eine Flotte, die von den hypnotischen Evil Eyes gesteuert wird, und dahinter Mortimer. Der zweite Teil der Silcar-Reihe."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Onward:_Silcar_2:_Flee_from_Fleet
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.tulip.silcar_2.k2.2008-08-03.zip
+    sha256: 2447f4554f20b6dc23d5584e7f1304b656565fb24bc8a4e43db36a74637b0c79
+    size: 93638
+recipe:
+  type: patch
+  patcher: CK2PATCH.EXE
+  patch: Silcar2.pat

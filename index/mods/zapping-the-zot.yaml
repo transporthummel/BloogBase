@@ -1,0 +1,22 @@
+id: zapping-the-zot
+name: "Zapping the Zot"
+game: keen2
+authors: ["Ceilick"]
+authorLinks:
+  "Ceilick": https://keenwiki.shikadi.net/wiki/User:Ceilick
+released: 2004-11-26
+added: 2026-10-30
+type: episode
+description: "Keen boards the Shikadi science ship Zot to destroy the fuses that power it. The second part of the Decree of the Skree trilogy."
+translations:
+  de:
+    description: "Keen betritt das Shikadi-Forschungsschiff Zot, um die Sicherungen zu zerstören, die es antreiben. Der zweite Teil der Decree-of-the-Skree-Trilogie."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Zapping_the_Zot
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.ceilick.zapping_the_zot.k2.2004-1-26.zip
+    sha256: 538be4ea7d15e4cbbd140b4edfeb008ad6470bbbe8ce8e43d9acd217f2baf3a2
+    size: 104639
+recipe:
+  type: batch
+  file: skree.bat

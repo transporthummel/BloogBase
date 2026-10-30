@@ -23,3 +23,4 @@ downloads:
 recipe:
   type: program
   program: DILEMMA.EXE
+featured: true

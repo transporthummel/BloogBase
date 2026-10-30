@@ -1,0 +1,28 @@
+id: suburb-shenanigans
+name: "Suburb Shenanigans"
+game: keen5
+requires: [keen5-1.4-ega]
+authors: ["Bubbatom"]
+authorLinks:
+  "Bubbatom": https://keenwiki.shikadi.net/wiki/User:Bubbatom
+version: "1.2"
+released: 2018-12-24
+updated: 2020-11-25
+added: 2026-10-30
+type: episode
+description: "Billy has lost his bag and missed the bus on the day of the school IQ test: an adventure through his own suburb over 23 levels. This is K1n9_Duk3's unofficial bugfix release."
+translations:
+  de:
+    description: "Billy hat am Tag des IQ-Tests seine Tasche verloren und den Bus verpasst: ein Abenteuer durch die eigene Vorstadt in 23 Leveln. Dies ist die inoffizielle Fehlerkorrektur von K1n9_Duk3."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Suburb_Shenanigans
+  pckf: https://pckf.com/viewtopic.php?t=2306
+downloads:
+  - version: "1.2"
+    url: https://files.shikadi.net/keenwiki/mods/Keen5/m.bubbatom.suburb_shenanigans_v1.2_unofficial.k5.2020-11-25.zip
+    sha256: 9b6a8553d8ecfc3752044af5a82e06bc36a7da5ddf2fb7b608cfa84f6b8451ee
+    size: 483176
+recipe:
+  type: patch
+  patcher: CK5PATCH.EXE
+  patch: PAT.PAT

@@ -1,0 +1,33 @@
+id: battle-of-the-brains
+name: "Battle of the Brains"
+game: keen5
+requires: [keen5-1.4-ega]
+authors: ["Ceilick", "Mink", "Tulip"]
+authorLinks:
+  "Ceilick": https://keenwiki.shikadi.net/wiki/User:Ceilick
+  "Mink": https://keenwiki.shikadi.net/wiki/User:Mink
+  "Tulip": https://keenwiki.shikadi.net/wiki/User:Tulip
+version: "2.5"
+released: 2011-02-02
+updated: 2011-11-23
+added: 2026-10-30
+type: episode
+description: "Keen has to stop Mortimer from blowing up a giant star and taking the universe with it. The finale of the trilogy begun by The Keys of Krodacia and Dead in the Desert."
+translations:
+  de:
+    description: "Keen muss Mortimer davon abhalten, einen Riesenstern zu sprengen und mit ihm das Universum. Das Finale der Trilogie aus The Keys of Krodacia und Dead in the Desert."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Battle_of_the_Brains
+  pckf: https://pckf.com/viewtopic.php?t=1808
+  keenmodding: https://keenmodding.org/viewtopic.php?t=1473
+  homepage: https://www.moddb.com/mods/commander-keen-9-battle-of-the-brains
+downloads:
+  - version: "2.5"
+    url: https://files.shikadi.net/keenwiki/mods/Keen5/m.ceilick_mink_tulip.battle_of_the_brains_v.2.5.k5.2011-11-23.zip
+    sha256: bef2d78618bd43cebcbac96f30e767e342c656ee44ca8f7eec736012b383010d
+    size: 993963
+recipe:
+  type: patch
+  patcher: CK5PATCH.EXE
+  patch: BotB.PAT
+featured: true

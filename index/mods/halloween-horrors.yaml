@@ -1,0 +1,25 @@
+id: halloween-horrors
+name: "Halloween Horrors"
+game: keen1
+authors: ["Levellord", "Benvolio"]
+authorLinks:
+  "Benvolio": https://keenwiki.shikadi.net/wiki/User:Benvolio
+  "Levellord": https://keenwiki.shikadi.net/wiki/Levellord
+released: 2005-11-26
+updated: 2006-11-26
+added: 2026-10-30
+type: episode
+description: "On Halloween night Keen, in a Vorticon costume, has to free the Easter Bunny, the Tooth Fairy and Santa Claus from evil Halloween creatures."
+translations:
+  de:
+    description: "In der Halloween-Nacht muss Keen im Vorticon-Kostüm den Osterhasen, die Zahnfee und den Weihnachtsmann aus den Fängen böser Halloween-Gestalten befreien."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Halloween_Horrors
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.levellord_benvolio.halloween_horrors.k1.2006-11-26.zip
+    sha256: ee63f3dce33f7a63eda2135cb09fc65404edf80d37274c79cd3f0643dc3058aa
+    size: 187429
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: haloween.PAT

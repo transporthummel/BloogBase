@@ -1,0 +1,25 @@
+id: skater-squirrel
+name: "Skater Squirrel"
+game: keen4
+requires: [keen4-1.4-ega]
+authors: ["Ziblink", "Levellass"]
+authorLinks:
+  "Levellass": https://keenwiki.shikadi.net/wiki/User:Levellass
+  "Ziblink": https://keenwiki.shikadi.net/wiki/Levellord
+released: 2017-10-19
+added: 2026-10-30
+type: episode
+description: "Skater Squirrel's Cherry Cake Caper: a heavily patched Keen 4 with a squirrel hero, new physics and a start that changes with the difficulty."
+translations:
+  de:
+    description: "Skater Squirrel's Cherry Cake Caper: ein stark gepatchtes Keen 4 mit einem Eichhörnchen als Held, neuer Physik und einem Start, der vom Schwierigkeitsgrad abhängt."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Skater_Squirrel
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.levellass.skater_squirrel.k4.2017-10-19.zip
+    sha256: c309a1f0279996f07d31736d5d6dca4caa3b66c09c7530f6eecc5286ad96b038
+    size: 735851
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: PAT.PAT

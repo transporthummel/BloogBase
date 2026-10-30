@@ -1,0 +1,25 @@
+id: trapped-keen
+name: "Trapped Keen"
+game: keen3
+requires: [keen3-1.31]
+authors: ["shikadi"]
+authorLinks:
+  "shikadi": https://keenwiki.shikadi.net/wiki/User:Shikadi
+released: 2010-08-25
+added: 2026-10-30
+type: episode
+description: "Keen gets sucked into a Mario game on his Gameboy: mostly left-to-right levels with numbered castles every few levels. 21 levels."
+translations:
+  de:
+    description: "Keen wird in ein Mario-Spiel auf seinem Gameboy gesogen: meist Level von links nach rechts, mit nummerierten Burgen alle paar Level. 21 Level."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Trapped_Keen
+  pckf: https://pckf.com/viewtopic.php?t=1407
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.shikadi.trapped_keen.k3.2010-08-25.zip
+    sha256: 3b9e2216084dd097e0262009a4d533ac331d0619befa9e06c85909b7ce81014d
+    size: 89643
+recipe:
+  type: patch
+  patcher: CK3PATCH.EXE
+  patch: keenztt.pat

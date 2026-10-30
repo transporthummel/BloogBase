@@ -1,0 +1,23 @@
+id: the-last-moon
+name: "The Last Moon"
+game: keen1
+authors: ["Allstories"]
+authorLinks:
+  "Allstories": https://keenwiki.shikadi.net/wiki/User:Allstories
+released: 2004-07-25
+added: 2026-10-30
+type: episode
+description: "The planet Ghyrock is pulling its four moons down, and Keen has to restore the crystal shards that hold them in place. 12 levels."
+translations:
+  de:
+    description: "Der Planet Ghyrock zieht seine vier Monde zu sich herab, und Keen muss die Kristallsplitter zurückbringen, die sie halten. 12 Level."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Last_Moon
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.allstories.the_last_moon.k1.2004-07-25.zip
+    sha256: b3f7d5d9892aed29dedffd6dd314dae1f2d1bc87626b25245f45a820de0df3ed
+    size: 179648
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: lastmoon.pat

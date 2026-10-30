@@ -1,0 +1,22 @@
+id: kidnapped-keen
+name: "Kidnapped Keen"
+game: keen1
+authors: ["Ceilick"]
+authorLinks:
+  "Ceilick": https://keenwiki.shikadi.net/wiki/User:Ceilick
+released: 2004-08-25
+added: 2026-10-30
+type: episode
+description: "Keen and his pet Yorp Spot wake up kidnapped and play as one, moving together. The first part of the Decree of the Skree trilogy."
+translations:
+  de:
+    description: "Keen und sein Haustier-Yorp Spot wachen entführt auf und werden gemeinsam gesteuert. Der erste Teil der Decree-of-the-Skree-Trilogie."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Kidnapped_Keen
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.ceilick.kidnapped_keen.k1.2004-08-25.zip
+    sha256: 6fb132a040f646dc3b615ec7fc44fdd499260702ec6215e393ae51c13fb9d6e8
+    size: 139247
+recipe:
+  type: batch
+  file: Garg.bat

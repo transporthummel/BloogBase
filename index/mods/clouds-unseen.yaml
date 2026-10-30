@@ -1,0 +1,24 @@
+id: clouds-unseen
+name: "Clouds Unseen"
+game: keen1
+requires: [keen1-1.1, keen1-1.31]
+authors: ["StupidBunny"]
+authorLinks:
+  "StupidBunny": https://keenwiki.shikadi.net/wiki/User:StupidBunny
+released: 2010-05-20
+added: 2026-10-30
+type: episode
+description: 'A funny black-and-white mod without a trace of Keen: "Character" hunts for four souvenirs of his crazy journey over 11 levels, one of them a secret level in colour.'
+translations:
+  de:
+    description: 'Eine witzige Schwarz-Weiß-Mod ganz ohne Keen: "Character" sucht in 11 Leveln vier Andenken an seine verrückte Reise, darunter ein geheimes Level in Farbe.'
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Clouds_Unseen
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.stupidbunny.clouds_unseen.k1.2010-05-20.zip
+    sha256: 8b2611c6913c7ac3d1ba278cb9a338be73b1b40b75756018911739512a2dfdbc
+    size: 333850
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: unseen.pat

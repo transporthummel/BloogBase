@@ -1,0 +1,27 @@
+id: venture-to-vorti-peaks
+name: "Venture to Vorti Peaks"
+game: keen1
+requires: [keen1-1.31]
+authors: ["Excuses"]
+authorLinks:
+  "Excuses": https://keenwiki.shikadi.net/wiki/User:Excuses
+version: "1.0.1"
+released: 2021-03-18
+updated: 2022-01-01
+added: 2026-10-30
+type: episode
+description: "Billy goes on a school ski trip, with Mortimer on the bus. 16 snowy levels on the slopes of Vorti Peaks."
+translations:
+  de:
+    description: "Billy fährt mit der Klasse zum Skifahren, und Mortimer sitzt mit im Bus. 16 verschneite Level an den Hängen von Vorti Peaks."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Venture_to_Vorti_Peaks
+downloads:
+  - version: "1.0.1"
+    url: https://files.shikadi.net/keenwiki/mods/Keen1/m.excuses.venture-to-vorti-peaks.v1.0.1.k1.2022-01-01.zip
+    sha256: 58d49e9e3d2f8202091fcdbf5eddcc7039899785df932b995b0c3929b18803ac
+    size: 144938
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: patch

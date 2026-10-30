@@ -1,0 +1,22 @@
+id: the-search-for-the-sentinel
+name: "The Search for the Sentinel"
+game: keen1
+requires: [keen1-1.1, keen1-1.31]
+authors: ["Kohntarkosz"]
+released: 2004-08-08
+added: 2026-10-30
+type: episode
+description: "Keen accidentally kills the only Synchronian who could start the Sentinel, which shields the planet from meteorites, and now has to do it himself. 12 levels."
+translations:
+  de:
+    description: "Keen tötet versehentlich den einzigen Synchronier, der den Sentinel starten konnte, der den Planeten vor Meteoriten schützt, und muss es nun selbst tun. 12 Level."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Search_for_the_Sentinel
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.kohntarkosz.the_search_for_the_sentinel.k1.2004-08-08.zip
+    sha256: 3a36a82f821867309f82b6a4c97bcc7dd0526dd3a599c12490846c9df6d1b654
+    size: 173630
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: sentinel.pat

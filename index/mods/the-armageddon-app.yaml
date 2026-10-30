@@ -1,0 +1,26 @@
+id: the-armageddon-app
+name: "The Armageddon App"
+game: keen5
+requires: [keen5-1.4-ega]
+authors: ["55Aavenue"]
+version: "1.2"
+released: 2020-05-04
+updated: 2020-05-26
+added: 2026-10-30
+type: episode
+description: "Goodbye Galaxy retold in the age of smartphones: the Shikadi want to set off their Armageddon machine from an app, and Keen races to the Korath system to stop them. The sequel to Short Circuit Oracle, over 22 levels."
+translations:
+  de:
+    description: "Goodbye Galaxy, neu erzählt im Zeitalter der Smartphones: Die Shikadi wollen ihre Armageddon-Maschine per App zünden, und Keen eilt ins Korath-System, um sie aufzuhalten. Die Fortsetzung von Short Circuit Oracle, in 22 Leveln."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Armageddon_App
+  pckf: https://pckf.com/viewtopic.php?f=4&t=6851
+downloads:
+  - version: "1.2"
+    url: https://files.shikadi.net/keenwiki/mods/Keen5/m.55aavenue.the_armageddon_app_v.1.2.k5.2020-05-26.zip
+    sha256: c0074fe62d1b4de5d9c05f532ad19b228ae3258a5c3c431ee0c846fc3729530a
+    size: 715077
+recipe:
+  type: patch
+  patcher: CK5PATCH.EXE
+  patch: abiathar.pat

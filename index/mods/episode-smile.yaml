@@ -26,3 +26,4 @@ recipe:
   type: patch
   patcher: CK2PATCH.EXE
   patch: stuff.pat
+featured: true

@@ -1,0 +1,25 @@
+id: shadowkeen3
+name: "ShadowKeen3"
+game: keen3
+authors: ["Levellord"]
+authorLinks:
+  "Levellord": https://keenwiki.shikadi.net/wiki/Levellord
+released: 2004-10-07
+added: 2026-10-30
+type: episode
+description: "The Planet of Terror, with more original graphics than its predecessors. The last part of the Shadow Keen trilogy."
+translations:
+  de:
+    description: "Der Planet des Schreckens, mit mehr eigenen Grafiken als die Vorgänger. Der letzte Teil der Shadow-Keen-Trilogie."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/ShadowKeen3
+  keenmodding: https://keenmodding.org/viewtopic.php?t=336
+  homepage: https://web.archive.org/web/20050527181106/http://www.freewebs.com/levellord_keen/keenstuff.htm
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.levellord.shadow_keen_3.k3.2004-10-07.zip
+    sha256: 7d79074d1653559d82494c0757c61b2e840626e098a4581644dee3459a6aa648
+    size: 182181
+recipe:
+  type: patch
+  patcher: Ck3patch.exe
+  patch: bin.PAT

@@ -23,4 +23,3 @@ recipe:
   type: patch
   patcher: CK1PATCH.EXE
   patch: Start.pat
-featured: true

@@ -1,0 +1,23 @@
+id: the-perilous-pursuit
+name: "The Perilous Pursuit"
+game: keen1
+authors: ["Ceilick", "Commander Spleen"]
+authorLinks:
+  "Ceilick": https://keenwiki.shikadi.net/wiki/User:Ceilick
+  "Commander Spleen": https://keenwiki.shikadi.net/wiki/User:Commander_Spleen
+released: 2005-01-24
+added: 2026-10-30
+type: episode
+description: "Keen chases Mortimer, the real mind behind the Omegamatic, through a Keen 4 look made with the Keen 1 engine, with new sounds and 16 levels."
+translations:
+  de:
+    description: "Keen jagt Mortimer, den wahren Kopf hinter dem Omegamatic, durch eine Keen-4-Optik in der Keen-1-Engine, mit neuen Sounds und 16 Leveln."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Perilous_Pursuit
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.ceilick_commander_spleen.the_perilous_pursuit.k1.2005-01-24.zip
+    sha256: b56a1987bce400f846785224f8b028e56b28a5001476656784afce172930a3c7
+    size: 177413
+recipe:
+  type: batch
+  file: pursuit.bat

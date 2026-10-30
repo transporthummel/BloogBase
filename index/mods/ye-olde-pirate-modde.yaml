@@ -1,0 +1,25 @@
+id: ye-olde-pirate-modde
+name: "Ye Olde Pirate Modde"
+game: keen3
+authors: ["Levellass", "Ceilick"]
+authorLinks:
+  "Ceilick": https://keenwiki.shikadi.net/wiki/User:Ceilick
+  "Levellass": https://keenwiki.shikadi.net/wiki/User:Levellass
+released: 2012-12-25
+updated: 2013-07-15
+added: 2026-10-30
+type: episode
+description: "Keen owes the Oracle a quest and turns pirate, with vertical shooting, a palette that looks like VGA and background music. 32 levels."
+translations:
+  de:
+    description: "Keen schuldet dem Orakel eine Queste und wird zum Piraten, mit Schüssen nach oben und unten, einer Palette wie VGA und Hintergrundmusik. 32 Level."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Ye_Olde_Pirate_Modde
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.levellass.ye_olde_pirate_modde.k3.2013-07-15.zip
+    sha256: 38b82fdd898acdda61709c01b76e8b4c7eaf2848134f2e7599093cb5d96fe079
+    size: 333419
+recipe:
+  type: batch
+  file: Pirates.bat
+featured: true

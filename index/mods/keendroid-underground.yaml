@@ -1,0 +1,25 @@
+id: keendroid-underground
+name: "Keendroid Underground"
+game: keen1
+requires: [keen1-1.31]
+authors: ["Commander Spleen"]
+authorLinks:
+  "Commander Spleen": https://keenwiki.shikadi.net/wiki/User:Commander_Spleen
+released: 2017-03-14
+added: 2026-10-30
+type: episode
+description: "A short Keen Day 2017 mod and the sequel to Keendroid: Billy's robot double is meant to help the Yorps of Mars, but keeps getting distracted."
+translations:
+  de:
+    description: "Eine kurze Mod zum Keen Day 2017 und die Fortsetzung von Keendroid: Billys Roboter-Doppelgänger soll den Yorps auf dem Mars helfen, lässt sich aber ständig ablenken."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keendroid_Underground
+  homepage: https://www.jimage.org/index.php?cc=technology&c=keenmods&i=keendroidunderground
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.commander_spleen.keendroid_underground.k1.2017-03-14.zip
+    sha256: 9ffab5e4d517e6b6f98e73796aa30986e35174191d2c1368285d8a56e142a4ef
+    size: 131240
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: patpat.pat

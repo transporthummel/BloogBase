@@ -1,0 +1,23 @@
+id: fall-up
+name: "Fall Up"
+game: keen1
+authors: ["KeenRush"]
+authorLinks:
+  "KeenRush": https://keenwiki.shikadi.net/wiki/User:KeenRush
+released: 2010-11-23
+added: 2026-10-30
+type: episode
+description: "Keen wakes up in an unexpected place where the game's physics have changed; a mod all about movement."
+translations:
+  de:
+    description: "Keen wacht an einem unerwarteten Ort auf, an dem die Physik des Spiels eine andere ist; eine Mod ganz um Bewegung."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Fall_Up
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.keenrush.fall_up.k1.2010-11-23.zip
+    sha256: a87eea8ce22727babe56b29ae8c6398ab393b82d1040436fe2ff8812c38f98b0
+    size: 144108
+recipe:
+  type: patch
+  patcher: ck1patch.exe
+  patch: stuff.pat

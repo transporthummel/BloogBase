@@ -1,0 +1,22 @@
+id: the-banana-mod
+name: "The Banana Mod"
+game: keen1
+requires: [keen1-1.31]
+authors: ["Herry Jerry"]
+released: 2013-03-14
+added: 2026-10-30
+type: episode
+description: "Mortimer plots to make Keen slip on a banana skin, and Keen turns the sliding to his advantage to track him down. 10 levels."
+translations:
+  de:
+    description: "Mortimer will Keen auf einer Bananenschale ausrutschen lassen, und Keen nutzt das Rutschen, um ihn aufzuspüren. 10 Level."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Banana_Mod
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.herry_jerry.the_banana_mod.k1.2013-03-14.zip
+    sha256: 3f0827b4bf2d516f4929664865a6d5a313c91701cadd612ae76b8206d90a53bc
+    size: 149908
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: BANANA.PAT

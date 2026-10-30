@@ -1,0 +1,22 @@
+id: keen-q
+name: "Keen Q"
+game: keen2
+authors: ["Joriz::"]
+released: 2007-11-09
+added: 2026-10-30
+type: episode
+description: "One of the hardest Keen mods: packed with bridge switches, hidden Easter eggs and a cheat code you have to read from signs in the Standard Galactic Alphabet."
+translations:
+  de:
+    description: "Eine der schwersten Keen-Mods: voller Brückenschalter und versteckter Easter Eggs, mit einem Cheat-Code, den man von Schildern im Standard Galactic Alphabet ablesen muss."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_Q
+  pckf: https://pckf.com/viewtopic.php?t=61
+  keenmodding: https://keenmodding.org/viewtopic.php?t=1006
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.joriz_.keen_q.k2.2007-11-09.zip
+    sha256: 9b833c9ce64b66bde2db0ae6165afa762a40699c9476020f81867fe8af431d95
+    size: 140080
+recipe:
+  type: program
+  program: KEENQ.COM

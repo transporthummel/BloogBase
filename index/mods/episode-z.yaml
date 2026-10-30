@@ -1,0 +1,24 @@
+id: episode-z
+name: "Episode Z"
+game: keen1
+requires: [keen1-1.1, keen1-1.31]
+authors: ["Ceilick"]
+authorLinks:
+  "Ceilick": https://keenwiki.shikadi.net/wiki/User:Ceilick
+released: 2009-01-30
+added: 2026-10-30
+type: episode
+description: "The hard finale of the trilogy begun by Episode X and Episode Y: yet another of Mortimer's starships waits outside the wormhole."
+translations:
+  de:
+    description: "Das schwere Finale der Trilogie aus Episode X und Episode Y: Vor dem Wurmloch wartet schon wieder eines von Mortimers Raumschiffen."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Episode_Z
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.ceilick_keenrush.episode_z.k1.2009-01-30.zip
+    sha256: 36b0a9a029341a2cbf56083bb7456feede7d1a68db10942cf5281753f6e4bc99
+    size: 142694
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: KeenZ.pat

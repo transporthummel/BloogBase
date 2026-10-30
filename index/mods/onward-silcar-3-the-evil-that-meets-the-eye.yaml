@@ -1,0 +1,26 @@
+id: onward-silcar-3-the-evil-that-meets-the-eye
+name: "Onward: Silcar 3: The Evil that Meets the Eye"
+game: keen3
+requires: [keen3-1.0, keen3-1.31]
+authors: ["Tulip"]
+authorLinks:
+  "Tulip": https://keenwiki.shikadi.net/wiki/User:Tulip
+released: 2008-09-15
+added: 2026-10-30
+type: episode
+description: "The third part of Tulip's Silcar series, over 16 levels."
+translations:
+  de:
+    description: "Der dritte Teil von Tulips Silcar-Reihe, in 16 Leveln."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Onward:_Silcar_3:_The_Evil_that_Meets_the_Eye
+  pckf: https://pckf.com/viewtopic.php?t=362
+  keenmodding: https://keenmodding.org/viewtopic.php?t=1073
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.tulip.silcar_3.k3.2008-09-15.zip
+    sha256: 0b05f339709782a59d5a17d45c0d83078ee00aed8f0831995722fb0e80f68c3f
+    size: 100009
+recipe:
+  type: patch
+  patcher: CK3PATCH.EXE
+  patch: Silcar3.pat

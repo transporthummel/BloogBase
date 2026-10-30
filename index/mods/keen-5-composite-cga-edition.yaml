@@ -1,0 +1,22 @@
+id: keen-5-composite-cga-edition
+name: "Keen 5 Composite CGA Edition"
+game: keen5
+requires: [keen5-1.4-cga]
+authors: ["VileR"]
+released: 2016-07-16
+added: 2026-10-30
+type: conversion
+description: "The original Keen 5, redrawn for CGA on a composite monitor: dot patterns that blend into 16 colours, plus effects only the EGA version had."
+translations:
+  de:
+    description: "Das originale Keen 5, neu gezeichnet für CGA am Composite-Monitor: Punktmuster, die zu 16 Farben verschmelzen, dazu Effekte, die nur die EGA-Version hatte."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_5_Composite_CGA_Edition
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen5/m.viler.keen5c16.k5.2016-07-16.zip
+    sha256: 939be7db71f58279ec49ca1d48b2ff7a97e64f1a00795907c54006b050e90f90
+    size: 315451
+recipe:
+  type: patch
+  patcher: CK5PATCH.EXE
+  patch: KEEN5C16.PAT

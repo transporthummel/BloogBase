@@ -1,0 +1,25 @@
+id: the-armageddon-continues
+name: "The Armageddon Continues"
+game: keen5
+requires: [keen5-1.4-ega]
+authors: ["DarkAle"]
+authorLinks:
+  "DarkAle": https://keenwiki.shikadi.net/wiki/User:DarkAle
+released: 2020-05-25
+updated: 2020-06-07
+added: 2026-10-30
+type: episode
+description: "The sequel to The Ultra Omegamatic: the Megarocket is destroyed, and Keen falls into a disabled base."
+translations:
+  de:
+    description: "Die Fortsetzung von The Ultra Omegamatic: Die Megarocket ist zerstört, und Keen stürzt in eine stillgelegte Basis."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Armageddon_Continues
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen5/m.alessandro.the_armageddon_continues.k5.2020-06-07.zip
+    sha256: 5c1c4b52dcd94171cc10ca8bc4cc85ce7f6b47c4b4d829b61611ebddc911c4cc
+    size: 486328
+recipe:
+  type: patch
+  patcher: CK5PATCH.EXE
+  patch: PATCH5.PAT

@@ -1,0 +1,24 @@
+id: onward-silcar-1-nightmare-before-teatime
+name: "Onward: Silcar 1: Nightmare Before Teatime"
+game: keen1
+requires: [keen1-1.1, keen1-1.31]
+authors: ["Tulip"]
+authorLinks:
+  "Tulip": https://keenwiki.shikadi.net/wiki/User:Tulip
+released: 2008-06-22
+added: 2026-10-30
+type: episode
+description: "A purple stranger steals Grandma's precious tea set, and Keen follows him to the planet Strgwz to find the pieces. The first part of the Silcar series."
+translations:
+  de:
+    description: "Ein lila Fremder stiehlt Omas kostbares Teeservice, und Keen folgt ihm zum Planeten Strgwz, um die Teile zu finden. Der erste Teil der Silcar-Reihe."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Onward:_Silcar_1:_Nightmare_Before_Teatime
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.tulip.silcar_1.k1.2008-06-22.zip
+    sha256: ca4b344716cad71e02fa7394bb452dca84f95d80eb4b5c6fa33bc047eac5a678
+    size: 148230
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: Silcar1.pat

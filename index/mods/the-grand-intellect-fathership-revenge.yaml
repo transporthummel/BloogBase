@@ -1,0 +1,25 @@
+id: the-grand-intellect-fathership-revenge
+name: "The Grand Intellect: Fathership Revenge"
+game: keen2
+authors: ["Szemi"]
+authorLinks:
+  "Szemi": https://keenwiki.shikadi.net/wiki/User:Szemigi
+released: 2009-08-16
+added: 2026-10-30
+type: episode
+description: "This time you play Mortimer, who has to stop the Vorticon Fathership led by Commander Keen. The second part of the Grand Intellect duology."
+translations:
+  de:
+    description: "Diesmal spielt man Mortimer, der das Vorticon-Mutterschiff unter Commander Keens Führung aufhalten muss. Der zweite Teil der Grand-Intellect-Reihe."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/The_Grand_Intellect:_Fathership_Revenge
+  pckf: https://pckf.com/viewtopic.php?t=809
+  keenmodding: https://keenmodding.org/viewtopic.php?t=1215
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.szemigi.fathership_revenge.k2.2009-08-16.zip
+    sha256: f20c66c5394712a83579310941cbe8798014979e4fab7b7a915e2ebb395077d1
+    size: 276898
+recipe:
+  type: patch
+  patcher: CK2PATCH.EXE
+  patch: Mort2.pat

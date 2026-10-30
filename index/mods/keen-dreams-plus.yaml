@@ -1,0 +1,24 @@
+id: keen-dreams-plus
+name: "Keen Dreams Plus"
+game: kdreams
+authors: ["Ceilick"]
+authorLinks:
+  "Ceilick": https://keenwiki.shikadi.net/wiki/User:Ceilick
+released: 2011-02-15
+added: 2026-10-30
+type: levelpack
+description: "An expanded Keen Dreams with new and changed levels, new graphics and two new enemies."
+translations:
+  de:
+    description: "Ein erweitertes Keen Dreams mit neuen und veränderten Leveln, neuen Grafiken und zwei neuen Gegnern."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_Dreams_Plus
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/keend/m.ceilick.keen_dreams_plus.kd.2011-02-15.zip
+    sha256: 465301d026e345dba80eeb63f67f2c49a34fb4213810741e1040a7599fbc86fc
+    size: 355163
+recipe:
+  type: patch
+  patcher: KDRPATCH.EXE
+  patch: dreams.PAT
+  args: ["/detour", "/comp"]

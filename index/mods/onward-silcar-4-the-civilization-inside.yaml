@@ -1,0 +1,24 @@
+id: onward-silcar-4-the-civilization-inside
+name: "Onward: Silcar 4: The Civilization Inside"
+game: keen1
+requires: [keen1-1.31]
+authors: ["Tulip"]
+authorLinks:
+  "Tulip": https://keenwiki.shikadi.net/wiki/User:Tulip
+released: 2009-03-14
+added: 2026-10-30
+type: episode
+description: "The fourth part of Tulip's Silcar series, released on Keen Day 2009, with three difficulty levels to choose from."
+translations:
+  de:
+    description: "Der vierte Teil von Tulips Silcar-Reihe, erschienen zum Keen Day 2009, mit drei Schwierigkeitsgraden zur Wahl."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Onward:_Silcar_4:_The_Civilization_Inside
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.tulip.silcar_4.k1.2009-03-14.zip
+    sha256: d1091a1a864587423cedbad59aa683b5dfe2c777586103c03b4a31b69f1a3bbb
+    size: 156214
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: Silcar4n.pat

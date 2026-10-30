@@ -1,0 +1,26 @@
+id: commander-keen-and-the-electromagnet
+name: "Commander Keen and the Electromagnet"
+game: keen2
+requires: [keen2-1.31]
+authors: ["troublesomekeen"]
+authorLinks:
+  "troublesomekeen": https://keenwiki.shikadi.net/wiki/User:Troublesomekeen
+released: 2014-03-15
+updated: 2015-03-14
+added: 2026-10-30
+type: episode
+description: "A disruptor wave makes the appliances in the Blaze house go haywire. Keen explores his home in the dark, switching on the lights, with his ComputerWrist as the map."
+translations:
+  de:
+    description: "Eine Störwelle lässt die Geräte im Haus der Blazes verrücktspielen. Keen erkundet sein Zuhause im Dunkeln, knipst Lichter an und nutzt seinen ComputerWrist als Karte."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Commander_Keen_and_the_Electromagnet
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.troublesomekeen.the_electromagnet.k2.2015-03-14.zip
+    sha256: 8d1202d562b3d09ed36be7967500babc0b6faf05fde0d1387c923152e32ccd61
+    size: 1052012
+recipe:
+  type: patch
+  patcher: CK2PATCH.EXE
+  patch: pat.pat
+featured: true

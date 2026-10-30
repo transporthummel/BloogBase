@@ -1,0 +1,25 @@
+id: keen-10-mirror-menace
+name: "Keen 10: Mirror Menace"
+game: keen6
+requires: [keen6-1.4-ega]
+authors: ["Szemigi"]
+authorLinks:
+  "Szemigi": https://keenwiki.shikadi.net/wiki/User:Szemigi
+released: 2013-11-24
+updated: 2014-10-01
+added: 2026-10-30
+type: episode
+description: "After Battle of the Brains, a vortex pulls Keen and his friends into a mirror universe, where his evil double awaits."
+translations:
+  de:
+    description: "Nach Battle of the Brains zieht ein Wirbel Keen und seine Freunde in ein Spiegeluniversum, in dem sein böser Doppelgänger wartet."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_10:_Mirror_Menace
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen6/m.szemigi.mirror_menace.k6.2014-10-01.zip
+    sha256: 67f9ad6edce53c75cd943dd7ade29a0ee88db68e5296e39d4d9058700613deed
+    size: 517085
+recipe:
+  type: patch
+  patcher: CK6PATCH.EXE
+  patch: Keen10.pat

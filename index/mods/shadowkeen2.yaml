@@ -1,0 +1,22 @@
+id: shadowkeen2
+name: "ShadowKeen2"
+game: keen2
+authors: ["Levellord"]
+authorLinks:
+  "Levellord": https://keenwiki.shikadi.net/wiki/Levellord
+released: 2004-07-17
+added: 2026-10-30
+type: episode
+description: "The Patchotron: graphics from Apogee classics and portraits of Keen modding pioneers, with 16 levels and around 30 bonus levels. The second part of the Shadow Keen trilogy."
+translations:
+  de:
+    description: "Das Patchotron: Grafiken aus Apogee-Klassikern und Porträts von Pionieren des Keen-Moddings, mit 16 Leveln und rund 30 Bonus-Leveln. Der zweite Teil der Shadow-Keen-Trilogie."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/ShadowKeen2
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.levellord.shadow_keen_2.k2.2004-07-17.zip
+    sha256: 776affa234062ddc8bcfc30849efdfb6d1ef83625064a3ec8be7fd3db3331f71
+    size: 440313
+recipe:
+  type: batch
+  file: duk3.bat

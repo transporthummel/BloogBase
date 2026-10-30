@@ -25,3 +25,4 @@ recipe:
   type: patch
   patcher: CK3PATCH.EXE
   patch: stuff.pat
+featured: true

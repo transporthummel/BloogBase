@@ -1,0 +1,22 @@
+id: keen-4-composite-cga-edition
+name: "Keen 4 Composite CGA Edition"
+game: keen4
+requires: [keen4-1.4-cga]
+authors: ["VileR"]
+released: 2016-05-22
+added: 2026-10-30
+type: conversion
+description: "The original Keen 4, redrawn for CGA on a composite monitor: dot patterns that blend into 16 colours, plus the fades the CGA version lacked."
+translations:
+  de:
+    description: "Das originale Keen 4, neu gezeichnet für CGA am Composite-Monitor: Punktmuster, die zu 16 Farben verschmelzen, dazu die Überblendungen, die der CGA-Version fehlten."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_4_Composite_CGA_Edition
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.viler.keen4c16.k4.2016-05-22.zip
+    sha256: a35f6cfa9b1f32b20b4b8d23a85cb93f7e2f2235915c1c7142b6db6f5ca04de6
+    size: 322684
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: KEEN4C16.PAT

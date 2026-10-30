@@ -1,0 +1,27 @@
+id: another-helping-of-veggies
+name: "Another Helping of Veggies"
+game: kdreams
+authors: ["Szemigi"]
+authorLinks:
+  "Szemigi": https://keenwiki.shikadi.net/wiki/User:Szemigi
+version: "1.2"
+released: 2019-11-20
+updated: 2021-10-15
+added: 2026-10-30
+type: episode
+description: "Keen Dreams 2: a sequel with new vegetables, fruits and levels."
+translations:
+  de:
+    description: "Keen Dreams 2: eine Fortsetzung mit neuem Gemüse, neuen Früchten und neuen Leveln."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Another_Helping_of_Veggies
+downloads:
+  - version: "1.2"
+    url: https://files.shikadi.net/keenwiki/mods/keend/m.szemigi.another_helping_of_veggies_v1.2.kd.2021-10-15.zip
+    sha256: 0410ec862bfe8151926ebb25ac68d28df559a8a7f86393a9dd4e936b10f1fd0a
+    size: 316564
+recipe:
+  type: patch
+  patcher: KDRPATCH.EXE
+  patch: KDREAMS2.PAT
+featured: true

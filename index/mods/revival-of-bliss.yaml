@@ -1,0 +1,27 @@
+id: revival-of-bliss
+name: "Revival of Bliss"
+game: keen4
+requires: [keen4-1.4-ega]
+authors: ["Dave216"]
+authorLinks:
+  "Dave216": https://keenwiki.shikadi.net/wiki/User:Dave216
+version: "1.1"
+released: 2024-05-11
+updated: 2024-06-08
+added: 2026-10-30
+type: episode
+description: "Craig, Keen and Myah return to Aurora Bliss to stop the dictator Allain's perpetual motion machine. The final part of the Aurora Bliss series, with 38 levels."
+translations:
+  de:
+    description: "Craig, Keen und Myah kehren nach Aurora Bliss zurück, um das Perpetuum mobile des Diktators Allain aufzuhalten. Der letzte Teil der Aurora-Bliss-Reihe, mit 38 Leveln."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Revival_of_Bliss
+downloads:
+  - version: "1.1"
+    url: https://files.shikadi.net/keenwiki/mods/Keen4/m.dave216.revival_of_bliss_v.1.1.k4.2024-06-08.zip
+    sha256: 374bbf6f22c5c1443b9f628d552555d0988a291ba52738e32a3485d1bd709c8c
+    size: 3729328
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: abiathar.pat
