@@ -11,6 +11,9 @@ updated: 2021-03-14
 added: 2026-10-17
 type: episode
 description: A Keen 5 sequel to Atroxian Realm. Version 2.0 adds more secret levels.
+translations:
+  de:
+    description: "Eine Keen-5-Fortsetzung von Atroxian Realm. Version 2.0 bringt weitere geheime Level."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/The_Alphamatic
   pckf: https://pckf.com/viewtopic.php?f=4&t=4086

@@ -9,6 +9,9 @@ released: 2005-03-23
 added: 2026-10-23
 type: episode
 description: "Norp the Yorp returns in a one-level mod: a single large maze to find his way through."
+translations:
+  de:
+    description: "Norp the Yorp kehrt zurück, in einer Mod mit nur einem Level: einem einzigen großen Labyrinth, durch das er seinen Weg finden muss."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Norp_the_Yorp_3.5
   keenmodding: https://keenmodding.org/viewtopic.php?t=524

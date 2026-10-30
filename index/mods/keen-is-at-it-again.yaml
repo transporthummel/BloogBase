@@ -10,6 +10,9 @@ updated: 2024-02-18
 added: 2026-10-26
 type: levelpack
 description: A Keen 1 level pack with 24 new levels, a new world map, some new graphics and a new story, made for the author's kids. A pogo stick waits halfway through.
+translations:
+  de:
+    description: "Ein Level-Paket für Keen 1 mit 24 neuen Leveln, neuer Weltkarte, einigen neuen Grafiken und neuer Geschichte, gemacht für die Kinder des Autors. Auf halber Strecke wartet ein Pogo-Stick."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Keen_Is_At_It_Again!
   pckf: https://pckf.com/viewtopic.php?t=16821

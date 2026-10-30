@@ -27,7 +27,8 @@ authors and link back to KeenWiki and PCKF.
    | `released`       | First release, `YYYY-MM-DD`; `updated` for the latest one                                   |
    | `added`          | Today: when the entry joined the index (sorts "Newest" first)                               |
    | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (something else entirely)          |
-   | `description`    | One or two sentences in your own words                                                      |
+   | `description`    | One or two sentences in your own words, in English                                          |
+   | `translations`   | Language: texts in it; for now `de` with `description` (see below)                          |
    | `links`          | `keenwiki`, `pckf`, `keenmodding` (Keen: Modding forum), `homepage`                         |
    | `downloads`      | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`             |
    | `recipe`         | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode` |
@@ -37,6 +38,16 @@ authors and link back to KeenWiki and PCKF.
    | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)           |
    | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
    | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
+
+   The app shows the description in the player's language when the entry
+   has it, otherwise the English one:
+
+   ```yaml
+   description: "Keen 4 turned into a mix of pinball and snooker."
+   translations:
+     de:
+       description: "Keen 4 als Mischung aus Flipper und Snooker."
+   ```
 
    `sha256` and `size`: `certutil -hashfile <file> SHA256` (Windows) or
    `sha256sum <file>`; the size is in the file's properties. The recipe files

@@ -9,6 +9,9 @@ released: 2017-12-24
 added: 2026-10-17
 type: episode
 description: "A bug-fixed Keen 2 with a few gameplay tweaks, plus 16 new levels next to the corrected originals."
+translations:
+  de:
+    description: "Ein fehlerbereinigtes Keen 2 mit ein paar spielerischen Änderungen und 16 neuen Leveln neben den korrigierten Originalen."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Keen_2_Gold_Edition
   pckf: https://pckf.com/viewtopic.php?f=4&t=4208

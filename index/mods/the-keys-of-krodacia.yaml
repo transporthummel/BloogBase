@@ -11,6 +11,9 @@ updated: 2009-03-14
 added: 2026-10-17
 type: episode
 description: "One of the first full-length Keen 4 mods and the start of an unofficial trilogy, with music by KeenRush. Version 2.0 adds new music, extras and fixes."
+translations:
+  de:
+    description: "Eine der ersten abendfüllenden Keen-4-Mods und Auftakt einer inoffiziellen Trilogie, mit Musik von KeenRush. Version 2.0 bringt neue Musik, Extras und Fehlerkorrekturen."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/The_Keys_of_Krodacia
   pckf: https://pckf.com/viewtopic.php?t=566

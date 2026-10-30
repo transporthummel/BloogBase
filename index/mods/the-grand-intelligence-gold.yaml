@@ -9,6 +9,9 @@ updated: 2015-11-02
 added: 2026-10-17
 type: episode
 description: "Sixteen Keen Dreams levels that bring together the earlier Grand Intelligence mods, played one after another without a world map."
+translations:
+  de:
+    description: "Sechzehn Keen-Dreams-Level, die die früheren Grand-Intelligence-Mods vereinen und ohne Weltkarte nacheinander gespielt werden."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/The_Grand_Intelligence_Gold
   pckf: https://pckf.com/viewtopic.php?t=3472

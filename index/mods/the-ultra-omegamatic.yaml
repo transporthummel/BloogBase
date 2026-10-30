@@ -11,6 +11,9 @@ updated: 2020-09-08
 added: 2026-10-17
 type: levelpack
 description: Keen 5 levels inspired by the design and map of The Alphamatic. Version 2.0 adds new graphics and a Megarocket level.
+translations:
+  de:
+    description: "Keen-5-Level nach dem Vorbild von Design und Karte von The Alphamatic. Version 2.0 bringt neue Grafiken und ein Megarocket-Level."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/The_Ultra_Omegamatic
   pckf: https://pckf.com/viewtopic.php?f=4&t=6802

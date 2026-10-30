@@ -8,6 +8,9 @@ released: 2002-08-31
 added: 2026-10-23
 type: episode
 description: "Keen's pet Yorp finds Mars turned into Mortimer McMire's factory, gets shrunk into his computer and has to pull out the four chips that run it."
+translations:
+  de:
+    description: "Keens Haustier-Yorp findet den Mars als Fabrik von Mortimer McMire wieder, wird in dessen Computer geschrumpft und muss die vier Chips herausziehen, die ihn steuern."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Norp_the_Yorp_1
   pckf: https://archive.shikadi.net/pckf/unofficial/533.htm

@@ -6,6 +6,9 @@ released: 2018-11-18
 added: 2026-10-17
 type: episode
 description: A medieval Keen 1 adventure in the Elven Kingdom of Vestele.
+translations:
+  de:
+    description: "Ein mittelalterliches Keen-1-Abenteuer im Elfenkönigreich Vestele."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Fireblaze
   pckf: https://pckf.com/viewtopic.php?f=4&t=4760

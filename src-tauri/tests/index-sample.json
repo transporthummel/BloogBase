@@ -44,6 +44,11 @@
       "added": "2026-10-01",
       "type": "episode",
       "description": "A made-up mod for tests.",
+      "translations": {
+        "de": {
+          "description": "Eine ausgedachte Mod für Tests."
+        }
+      },
       "links": {
         "keenwiki": "https://keenwiki.shikadi.net/wiki/Sample",
         "pckf": "https://pckf.com/viewtopic.php?t=1",

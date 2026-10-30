@@ -14,6 +14,7 @@ import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
 import { RelativeTime } from "../ui/RelativeTime";
 import { Tabs } from "../ui/Tabs";
+import { entryDescription } from "./description";
 import { compare, fitting, SORTS, type Sort } from "./fit";
 import { FreeGames } from "./FreeGames";
 import { IndexError } from "./IndexError";
@@ -76,7 +77,7 @@ export function Discover() {
 }
 
 function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const status = useIndexStatus();
   const mods = useIndexMods();
   const installs = useQuery({
@@ -105,7 +106,8 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
       if (kind && e.type !== kind) return false;
       if (playable && fitting(e, owned, games).length === 0) return false;
       if (!needle) return true;
-      return [e.name, e.description ?? "", ...e.authors, ...(e.tags ?? [])].some((s) =>
+      const description = entryDescription(e, i18n.language) ?? "";
+      return [e.name, description, ...e.authors, ...(e.tags ?? [])].some((s) =>
         s.toLowerCase().includes(needle),
       );
     })

@@ -63,8 +63,12 @@ pub struct IndexEntry {
     pub added: String,
     #[serde(rename = "type")]
     pub kind: ModKind,
+    /// In English.
     #[serde(default)]
     pub description: Option<String>,
+    /// Language code → the texts in that language.
+    #[serde(default)]
+    pub translations: BTreeMap<String, Translation>,
     pub links: Links,
     /// Newest first.
     pub downloads: Vec<Download>,
@@ -87,6 +91,13 @@ pub struct IndexEntry {
     pub featured: bool,
     #[serde(default)]
     pub min_app_version: Option<String>,
+}
+
+/// An entry's texts in another language.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Type)]
+pub struct Translation {
+    #[serde(default)]
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
@@ -657,6 +668,10 @@ mod tests {
         assert_eq!(e.id, "sample-patch");
         assert_eq!(e.kind, ModKind::Episode);
         assert_eq!(e.requires, ["keen4-1.4-ega"]);
+        assert_eq!(
+            e.translations["de"].description.as_deref(),
+            Some("Eine ausgedachte Mod für Tests.")
+        );
         assert!(matches!(e.recipe, Recipe::Patch { .. }));
         assert_eq!(e.downloads[0].size, 1234);
 

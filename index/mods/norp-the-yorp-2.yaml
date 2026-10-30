@@ -9,6 +9,9 @@ released: 2002-12-23
 added: 2026-10-23
 type: episode
 description: "Keen's pet Yorp boards a solar bomb hovering near the sun and has to destroy the mushrooms powering it, past cavemen, junglemen and dragons."
+translations:
+  de:
+    description: "Keens Haustier-Yorp entert eine Sonnenbombe nahe der Sonne und muss die Pilze zerstören, die sie antreiben, vorbei an Höhlenmenschen, Dschungelmenschen und Drachen."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Norp_the_Yorp_2
   pckf: https://archive.shikadi.net/pckf/other/537.htm

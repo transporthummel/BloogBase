@@ -10,6 +10,9 @@ released: 2003-02-03
 added: 2026-10-23
 type: episode
 description: "Keen's pet Yorp gets swallowed by a giant Mortimer McMire and has to fight his way out through his body, past viruses and white blood cells."
+translations:
+  de:
+    description: "Keens Haustier-Yorp wird von einem riesigen Mortimer McMire verschluckt und muss sich durch dessen Körper nach draußen kämpfen, vorbei an Viren und weißen Blutkörperchen."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Norp_the_Yorp_3
   pckf: https://archive.shikadi.net/pckf/unofficial/692.htm

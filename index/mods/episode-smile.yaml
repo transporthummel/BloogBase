@@ -9,6 +9,9 @@ released: 2005-01-07
 added: 2026-10-26
 type: episode
 description: "KeenRush's second full mod: a summer-holiday adventure with an all-new tileset, monsters and PC speaker sounds over 16 levels, known for its extreme difficulty."
+translations:
+  de:
+    description: "KeenRushs zweite vollständige Mod: ein Sommerferien-Abenteuer mit ganz neuem Tileset, neuen Monstern und PC-Speaker-Sounds in 16 Leveln, bekannt für ihren extremen Schwierigkeitsgrad."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Episode_Smile
   keenmodding: https://keenmodding.org/viewtopic.php?t=431

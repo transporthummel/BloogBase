@@ -11,6 +11,9 @@ updated: 2020-10-10
 added: 2026-10-17
 type: levelpack
 description: A Keen 4 level pack that collects and polishes levels designed by many members of the PCKF community.
+translations:
+  de:
+    description: "Ein Level-Paket für Keen 4, das Level vieler Mitglieder der PCKF-Community sammelt und aufpoliert."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Buried_in_Oblivion
   pckf: https://pckf.com/viewtopic.php?f=4&t=3936

@@ -31,8 +31,12 @@ pub struct Entry {
     pub added: String,
     #[serde(rename = "type")]
     pub kind: Kind,
+    /// In English.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// Language code (one of [`LANGUAGES`]) → the texts in that language.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub translations: BTreeMap<String, Translation>,
     #[serde(default)]
     pub links: Links,
     /// Newest first; the app installs the first one.
@@ -64,6 +68,17 @@ pub struct Entry {
     /// For maintainers, e.g. why the entry links somewhere unusual.
     #[serde(default, skip_serializing)]
     pub license_note: Option<String>,
+}
+
+/// The languages of the app besides English, which entries are written in.
+pub const LANGUAGES: &[&str] = &["de"];
+
+/// An entry's texts in another language.
+#[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Translation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
@@ -203,6 +218,23 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
                     fail(format!("versionRecipes: `{v}` is not in requires"));
                 }
             }
+        }
+    }
+    for (lang, t) in &entry.translations {
+        if !LANGUAGES.contains(&lang.as_str()) {
+            fail(format!(
+                "translations: `{lang}` is not one of {}",
+                LANGUAGES.join(", ")
+            ));
+        }
+        match &t.description {
+            Some(d) if d.trim().is_empty() => {
+                fail(format!("translations.{lang}.description is empty"))
+            }
+            Some(_) if entry.description.is_none() => fail(format!(
+                "translations.{lang}.description translates a missing description"
+            )),
+            _ => {}
         }
     }
     if entry.authors.is_empty() || entry.authors.iter().any(|a| a.trim().is_empty()) {
@@ -451,6 +483,34 @@ recipe:
         let mut e = parse(AURORA).unwrap();
         e.requires = vec!["keen4-1.0".into()];
         assert_eq!(problems(&e, "aurora-bliss", &catalog()).len(), 1);
+    }
+
+    #[test]
+    fn translations_are_for_known_languages_and_texts() {
+        let yaml = format!(
+            "{AURORA}description: Blissful.\ntranslations:\n  de:\n    description: Glückselig.\n"
+        );
+        let e = parse(&yaml).unwrap();
+        assert_eq!(
+            e.translations["de"].description.as_deref(),
+            Some("Glückselig.")
+        );
+        assert_eq!(
+            problems(&e, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+        assert!(parse(&format!("{AURORA}translations:\n  de:\n    name: X\n")).is_err());
+
+        let mut bad = e.clone();
+        bad.description = None;
+        bad.translations.insert(
+            "fr".into(),
+            Translation {
+                description: Some(" ".into()),
+            },
+        );
+        let p = problems(&bad, "aurora-bliss", &catalog());
+        assert_eq!(p.len(), 3, "{p:#?}");
     }
 
     #[test]

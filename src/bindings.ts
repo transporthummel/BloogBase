@@ -502,7 +502,10 @@ export type IndexEntry = {
 	/**  When it joined the index, `YYYY-MM-DD`. */
 	added: string,
 	type: ModKind,
+	/**  In English. */
 	description?: string | null,
+	/**  Language code → the texts in that language. */
+	translations?: { [key in string]: Translation },
 	links: Links,
 	/**  Newest first. */
 	downloads: Download[],
@@ -985,6 +988,11 @@ export type StoreInstall = {
 	store: Store,
 	path: string,
 	games: FoundGame[],
+};
+
+/**  An entry's texts in another language. */
+export type Translation = {
+	description?: string | null,
 };
 
 /**  How an installed mod compares to what its page offers now. */

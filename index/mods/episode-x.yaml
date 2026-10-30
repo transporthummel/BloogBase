@@ -8,6 +8,9 @@ released: 2002-06-30
 added: 2026-10-25
 type: episode
 description: "One of the very first Keen mods: a lighthearted what-if Keen 1 adventure over 18 levels, winner of the 2002 Keen Awards."
+translations:
+  de:
+    description: "Eine der allerersten Keen-Mods: ein augenzwinkerndes Was-wäre-wenn-Abenteuer für Keen 1 in 18 Leveln, Gewinnerin der Keen Awards 2002."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Episode_X
   pckf: https://archive.shikadi.net/pckf/other/382.htm

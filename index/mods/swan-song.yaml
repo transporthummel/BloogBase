@@ -9,6 +9,9 @@ released: 2016-07-20
 added: 2026-10-17
 type: episode
 description: "A standalone Keen 1 mod, released in 2016."
+translations:
+  de:
+    description: "Eine eigenständige Keen-1-Mod, erschienen 2016."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Swan_Song
   pckf: https://pckf.com/viewtopic.php?f=4&t=3696

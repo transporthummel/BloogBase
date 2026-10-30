@@ -11,6 +11,9 @@ updated: 2023-08-23
 added: 2026-10-17
 type: episode
 description: A full Keen 4 adventure. Clues hidden throughout the game unlock a secret epilogue.
+translations:
+  de:
+    description: "Ein komplettes Keen-4-Abenteuer. Überall im Spiel versteckte Hinweise schalten einen geheimen Epilog frei."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Aurora_Bliss
   pckf: https://pckf.com/viewtopic.php?t=13985

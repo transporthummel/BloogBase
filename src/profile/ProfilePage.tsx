@@ -261,7 +261,9 @@ function Hero({
     : undefined;
   const version = game?.versions.find((v) => v.id === profile.versionId);
   const latest = shots.data?.[0];
-  const description = mod?.description ?? entry?.description;
+  // A translation from the index wins over the English text the mod stored.
+  const description =
+    entry?.translations?.[i18n.language]?.description ?? mod?.description ?? entry?.description;
   const links = modLinks(t, mod, entry);
   const added = mod ? mod.addedAt : undefined;
 

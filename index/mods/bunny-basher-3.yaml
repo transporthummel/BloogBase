@@ -8,6 +8,9 @@ released: 2022-04-15
 added: 2026-10-17
 type: episode
 description: "An Easter-themed Keen 1 mod: collect the special eggs to become the Easter Bunny."
+translations:
+  de:
+    description: "Eine Keen-1-Mod rund um Ostern: Wer die besonderen Eier sammelt, wird zum Osterhasen."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Bunny_Basher_3
   pckf: https://pckf.com/viewtopic.php?t=13255

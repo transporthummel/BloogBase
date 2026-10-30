@@ -12,6 +12,7 @@ import { unwrap } from "../ipc";
 import { JobList, JobRow } from "../jobs/JobList";
 import { useJobLabel } from "../jobs/label";
 import { isFinished, useJobs, useStartJob } from "../jobs/queries";
+import { entryDescription } from "../discover/description";
 import { compare, fitting, type Owned } from "../discover/fit";
 import { IndexError } from "../discover/IndexError";
 import { useFreeGames, useIndexMods, useIndexStatus } from "../discover/queries";
@@ -406,7 +407,7 @@ export function EpisodesStep({ next, back }: StepProps) {
 /** Featured index mods that work with what the user has, or will have once
  * the free episodes are downloaded. */
 export function ModsStep({ next, back }: StepProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const games = useGames().data ?? [];
   const status = useIndexStatus().data;
   const mods = useIndexMods();
@@ -461,31 +462,34 @@ export function ModsStep({ next, back }: StepProps) {
           <p className="text-sm">{t("setup.mods.none")}</p>
         ))}
       <ul className="grid gap-3">
-        {suggestions.map(({ entry }) => (
-          <li key={entry.id} className="rounded-lg border border-border p-3">
-            <label className="flex items-start gap-3 text-sm">
-              <input
-                type="checkbox"
-                className="mt-0.5 size-4 accent-[var(--bb-accent)]"
-                checked={queued(entry.id) || picked.has(entry.id)}
-                disabled={queued(entry.id)}
-                onChange={() => toggle(entry.id)}
-              />
-              <span className="grid gap-1">
-                <span className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold">{entry.name}</span>
-                  <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
+        {suggestions.map(({ entry }) => {
+          const description = entryDescription(entry, i18n.language);
+          return (
+            <li key={entry.id} className="rounded-lg border border-border p-3">
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 accent-[var(--bb-accent)]"
+                  checked={queued(entry.id) || picked.has(entry.id)}
+                  disabled={queued(entry.id)}
+                  onChange={() => toggle(entry.id)}
+                />
+                <span className="grid gap-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold">{entry.name}</span>
+                    <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
+                  </span>
+                  <span className="text-xs text-muted">
+                    {gameTitle(games, entry.game)}
+                    {entry.authors.length > 0 &&
+                      ` · ${t("mods.by", { authors: entry.authors.join(", ") })}`}
+                  </span>
+                  {description && <span className="text-muted">{description}</span>}
                 </span>
-                <span className="text-xs text-muted">
-                  {gameTitle(games, entry.game)}
-                  {entry.authors.length > 0 &&
-                    ` · ${t("mods.by", { authors: entry.authors.join(", ") })}`}
-                </span>
-                {entry.description && <span className="text-muted">{entry.description}</span>}
-              </span>
-            </label>
-          </li>
-        ))}
+              </label>
+            </li>
+          );
+        })}
       </ul>
       {suggestions.length > 0 && <p className="text-xs text-muted">{t("setup.mods.later")}</p>}
       {start.error && <Notice tone="error">{errorMessage(t, start.error)}</Notice>}

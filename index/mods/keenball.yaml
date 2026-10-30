@@ -9,6 +9,9 @@ released: 2019-03-14
 added: 2026-10-17
 type: conversion
 description: "Keen 4 turned into a mix of pinball and snooker, aimed with a new crosshair."
+translations:
+  de:
+    description: "Keen 4 als Mischung aus Flipper und Snooker, gezielt wird mit einem neuen Fadenkreuz."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Keenball
   keenmodding: https://keenmodding.org/viewtopic.php?f=13&t=3224

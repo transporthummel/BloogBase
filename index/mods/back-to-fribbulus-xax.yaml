@@ -10,6 +10,9 @@ released: 2024-10-03
 added: 2026-10-17
 type: levelpack
 description: A tough Keen 6 level pack set on Blooggus.
+translations:
+  de:
+    description: "Ein schweres Level-Paket für Keen 6, das auf Blooggus spielt."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Back_to_Fribbulus_Xax
   pckf: https://pckf.com/viewtopic.php?t=13913

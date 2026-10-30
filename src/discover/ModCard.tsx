@@ -8,6 +8,7 @@ import { formatLooseDate, formatMegabytes } from "../format";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { DetailsLink } from "./DetailsLink";
+import { entryDescription } from "./description";
 import { GameTile } from "./GameTile";
 import { Authors } from "../mods/Authors";
 import { Badge } from "../ui/Badge";
@@ -43,6 +44,7 @@ export function ModCard({
   const index = useIndexMods();
   const base = entry.extends ? index.data?.find((m) => m.entry.id === entry.extends) : undefined;
   const baseMissing = base !== undefined && base.modId === null;
+  const description = entryDescription(entry, i18n.language);
   const date = entry.updated ?? entry.released;
   const details = [
     entry.authors.length > 0 && <Authors authors={entry.authors} links={entry.authorLinks} />,
@@ -81,7 +83,7 @@ export function ModCard({
           {mod.new && <Badge>{t("mods.new")}</Badge>}
           {entry.featured && <Badge>{t("discover.featured")}</Badge>}
         </div>
-        {entry.description && <p className="text-sm">{entry.description}</p>}
+        {description && <p className="text-sm">{description}</p>}
         {details.length > 0 && (
           <p className="text-xs text-muted">
             {details.map((d, i) => (
