@@ -1,18 +1,18 @@
 id: shadowkeen1
-name: "ShadowKeen1"
+name: "Shadow Keen 1: A Shadow Over Dune"
 game: keen1
 requires: [keen1-1.1, keen1-1.31]
-authors: ["Levellord"]
+authors: ["Levellord", "Captainkeen"]
 authorLinks:
   "Levellord": https://keenwiki.shikadi.net/wiki/Levellord
 released: 2004-02-06
 updated: 2012-09-07
 added: 2026-10-30
 type: episode
-description: "Keen studies the magic planet Dune and runs into an old enemy. Two halves with their own graphics and levels, made from Apogee classics; the first part of the Shadow Keen trilogy."
+description: "Keen studies the magic planet Dune and runs into an old enemy. Two halves with their own graphics and levels, made from Apogee classics; the first part of the Shadow Keen trilogy. This is Captainkeen's remake from 2012."
 translations:
   de:
-    description: "Keen erforscht den magischen Planeten Dune und trifft auf einen alten Feind. Zwei Hälften mit eigenen Grafiken und Leveln, zusammengesetzt aus Apogee-Klassikern; der erste Teil der Shadow-Keen-Trilogie."
+    description: "Keen erforscht den magischen Planeten Dune und trifft auf einen alten Feind. Zwei Hälften mit eigenen Grafiken und Leveln, zusammengesetzt aus Apogee-Klassikern; der erste Teil der Shadow-Keen-Trilogie. Dies ist Captainkeens Remake von 2012,"
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/ShadowKeen1
   homepage: https://web.archive.org/web/20050527181106/http://www.freewebs.com/levellord_keen/keenstuff.htm

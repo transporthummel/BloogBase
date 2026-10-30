@@ -8,11 +8,11 @@ version: "1.1"
 released: 2023-10-02
 updated: 2024-02-18
 added: 2026-10-26
-type: levelpack
-description: A Keen 1 level pack with 24 new levels, a new world map, some new graphics and a new story, made for the author's kids. A pogo stick waits halfway through.
+type: episode
+description: "A wormhole strands Keen on an unknown purple planet. 24 new levels with a new world map, made for the author's kids: no raygun or pogo at first, with some cool and inventive puzzles."
 translations:
   de:
-    description: "Ein Level-Paket für Keen 1 mit 24 neuen Leveln, neuer Weltkarte, einigen neuen Grafiken und neuer Geschichte, gemacht für die Kinder des Autors. Auf halber Strecke wartet ein Pogo-Stick."
+    description: "Ein Wurmloch lässt Keen auf einem unbekannten lila Planeten stranden. 24 neue Level mit neuer Weltkarte, gemacht für die Kinder des Autors: anfangs ohne Strahlenpistole und Pogo, mit einigen coolen und einfallsreichen Puzzles."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Keen_Is_At_It_Again!
   pckf: https://pckf.com/viewtopic.php?t=16821

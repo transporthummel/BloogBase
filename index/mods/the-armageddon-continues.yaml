@@ -1,5 +1,5 @@
 id: the-armageddon-continues
-name: "The Armageddon Continues"
+name: "Commadner Keen 13.5: The Armageddon Continues"
 game: keen5
 requires: [keen5-1.4-ega]
 authors: ["DarkAle"]
@@ -9,10 +9,10 @@ released: 2020-05-25
 updated: 2020-06-07
 added: 2026-10-30
 type: episode
-description: "The sequel to The Ultra Omegamatic: the Megarocket is destroyed, and Keen falls into a disabled base."
+description: "On the way to Bird VIII a radioactive snowflake destroys the Megarocket, and Keen falls into a disabled base. The sequel to The Ultra Omegamatic."
 translations:
   de:
-    description: "Die Fortsetzung von The Ultra Omegamatic: Die Megarocket ist zerstört, und Keen stürzt in eine stillgelegte Basis."
+    description: "Auf dem Weg nach Bird VIII zerstört eine radioaktive Schneeflocke die Megarocket, und Keen stürzt in eine stillgelegte Basis. Die Fortsetzung von The Ultra Omegamatic."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/The_Armageddon_Continues
 downloads:

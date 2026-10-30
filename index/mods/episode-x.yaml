@@ -7,10 +7,10 @@ authorLinks:
 released: 2002-06-30
 added: 2026-10-25
 type: episode
-description: "One of the very first Keen mods: a lighthearted what-if Keen 1 adventure over 18 levels, winner of the 2002 Keen Awards."
+description: "Mortimer plans to destroy the whole universe, and Keen sneaks aboard his stealthy mothership to take it apart from the inside. One of the very first Keen mods, over 18 levels."
 translations:
   de:
-    description: "Eine der allerersten Keen-Mods: ein augenzwinkerndes Was-wäre-wenn-Abenteuer für Keen 1 in 18 Leveln, Gewinnerin der Keen Awards 2002."
+    description: "Mortimer will das ganze Universum zerstören, und Keen schleicht sich auf sein getarntes Mutterschiff, um es von innen auseinanderzunehmen. Eine der allerersten Keen-Mods, in 18 Leveln."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Episode_X
   pckf: https://archive.shikadi.net/pckf/other/382.htm
@@ -27,3 +27,4 @@ recipe:
   patch: XkyKeen.pat
 # Level packs like xky1rooms say to run XkyKeen1.bat.
 provides: [XkyKeen1.bat]
+featured: true

@@ -1,5 +1,5 @@
 id: keen-10-mirror-menace
-name: "Keen 10: Mirror Menace"
+name: "Commander Keen in Dimensional Chaos: Mirror Menace"
 game: keen6
 requires: [keen6-1.4-ega]
 authors: ["Szemigi"]
@@ -9,10 +9,10 @@ released: 2013-11-24
 updated: 2014-10-01
 added: 2026-10-30
 type: episode
-description: "After Battle of the Brains, a vortex pulls Keen and his friends into a mirror universe, where his evil double awaits."
+description: "After Battle of the Brains, a vortex pulls Keen and his friends into a mirror universe, where his evil double awaits. Also known as Keen 10."
 translations:
   de:
-    description: "Nach Battle of the Brains zieht ein Wirbel Keen und seine Freunde in ein Spiegeluniversum, in dem sein böser Doppelgänger wartet."
+    description: "Nach Battle of the Brains zieht ein Wirbel Keen und seine Freunde in ein Spiegeluniversum, in dem sein böser Doppelgänger wartet. Auch bekannt als Keen 10."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Keen_10:_Mirror_Menace
 downloads:

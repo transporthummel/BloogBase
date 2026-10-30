@@ -1,5 +1,5 @@
 id: shadowkeen3
-name: "ShadowKeen3"
+name: "Shadow Keen 3: The Planet of Terror"
 game: keen3
 authors: ["Levellord"]
 authorLinks:
@@ -7,10 +7,10 @@ authorLinks:
 released: 2004-10-07
 added: 2026-10-30
 type: episode
-description: "The Planet of Terror, with more original graphics than its predecessors. The last part of the Shadow Keen trilogy."
+description: "Mortimer flees to his last base on Kazier IV to launch universe-destroying missiles, and Keen has to find it among several installations. The last part of the Shadow Keen trilogy."
 translations:
   de:
-    description: "Der Planet des Schreckens, mit mehr eigenen Grafiken als die Vorgänger. Der letzte Teil der Shadow-Keen-Trilogie."
+    description: "Mortimer flieht zu seiner letzten Basis auf Kazier IV, um Raketen abzufeuern, die das Universum zerstören, und Keen muss sie unter mehreren Anlagen finden. Der letzte Teil der Shadow-Keen-Trilogie."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/ShadowKeen3
   keenmodding: https://keenmodding.org/viewtopic.php?t=336

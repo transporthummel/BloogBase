@@ -1,5 +1,5 @@
 id: marta-1
-name: "Marta 1"
+name: "Marta 1: Lunar Quest"
 game: keen1
 authors: ["VikingBoyBilly", "Paramultart"]
 authorLinks:
@@ -10,10 +10,10 @@ released: 2013-11-19
 updated: 2013-11-21
 added: 2026-10-30
 type: episode
-description: "Marta's Lunar Quest over 23 levels, grown out of the one-level mod Marta 0."
+description: "Giant moon rabbits have stolen Marta's Barbie dolls, and she treks across a moon made entirely of cheese to get them back. 23 levels."
 translations:
   de:
-    description: "Martas Lunar Quest in 23 Leveln, entstanden aus der Ein-Level-Mod Marta 0."
+    description: "Riesige Mondhasen haben Martas Barbiepuppen gestohlen, und sie zieht über einen Mond, der ganz aus Käse besteht, um sie zurückzuholen. 23 Level."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Marta_1
 downloads:

@@ -1,17 +1,18 @@
 id: yorphius-ii
-name: "Yorphius II"
+name: "Yorphius II Deluxe"
 game: keen1
-authors: ["KeenRush"]
+authors: ["KeenRush", "Tulip"]
 authorLinks:
   "KeenRush": https://keenwiki.shikadi.net/wiki/User:KeenRush
+  "Tulip": https://keenwiki.shikadi.net/wiki/User:Tulip
 released: 2002-04-24
 updated: 2014-03-14
 added: 2026-10-30
 type: episode
-description: "Keen rescues his pet Yorp from the planet Yorphius II. Possibly the first Keen mod ever made."
+description: "Keen rescues his pet Yorp from the planet Yorphius II. Possibly the first Keen mod ever made, beautifully remade by Tulip for Keen Day 2014."
 translations:
   de:
-    description: "Keen rettet seinen Haustier-Yorp vom Planeten Yorphius II. Womöglich die allererste Keen-Mod überhaupt."
+    description: "Keen rettet seinen Haustier-Yorp vom Planeten Yorphius II. Womöglich die allererste Keen-Mod überhaupt, von Tulip zum Keen Day 2014 liebevoll neu aufgelegt."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Yorphius_II
 downloads:
@@ -21,4 +22,3 @@ downloads:
 recipe:
   type: batch
   file: Yorphius.BAT
-featured: true

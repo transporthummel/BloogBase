@@ -1,5 +1,5 @@
 id: story-land
-name: "Story Land"
+name: "Commander Keen in Story Land"
 game: keen1
 requires: [keen1-1.1, keen1-1.31]
 authors: ["Ceilick"]

@@ -1,5 +1,5 @@
 id: skater-squirrel
-name: "Skater Squirrel"
+name: "Skater Squirrel's Cherry Cake Caper"
 game: keen4
 requires: [keen4-1.4-ega]
 authors: ["Ziblink", "Levellass"]
@@ -8,7 +8,7 @@ authorLinks:
   "Ziblink": https://keenwiki.shikadi.net/wiki/Levellord
 released: 2017-10-19
 added: 2026-10-30
-type: episode
+type: conversion
 description: "Skater Squirrel's Cherry Cake Caper: a heavily patched Keen 4 with a squirrel hero, new physics and a start that changes with the difficulty."
 translations:
   de:

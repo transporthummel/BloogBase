@@ -1,5 +1,5 @@
 id: marooned-on-mars-galaxy-mod
-name: "Marooned on Mars - Galaxy mod"
+name: "Marooned on Mars"
 game: keen5
 requires: [keen5-1.4-ega]
 authors: ["Dr. Colossus"]
@@ -20,6 +20,7 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen5/m.dr_colossus.marooned_on_mars_-_galaxy_mod_v.1.7b.k5.2018-10-10.zip
     sha256: 2d19c1f76c304e2ca101e181a2d1217cd3bca5bcf780e60680daa8b3c91560fc
     size: 720962
+    version: "Beta 1.7b"
 recipe:
   type: patch
   patcher: CK5PATCH.EXE
