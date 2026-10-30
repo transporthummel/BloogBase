@@ -1,7 +1,7 @@
 {
   "window": {
-    "width": 1024,
-    "height": 640,
+    "width": 1280,
+    "height": 800,
     "scale": 2
   },
   "localStorage": {
@@ -136,7 +136,7 @@
       "name": "mod-page",
       "description": "A fan museum: a mod's page with its title screen, credits, links and readme.",
       "route": "/profiles/{profile:the-alphamatic}",
-      "height": 900
+      "height": 1000
     },
     {
       "name": "library-light",
