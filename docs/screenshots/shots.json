@@ -1,8 +1,8 @@
 {
   "window": {
-    "width": 1440,
-    "height": 900,
-    "scale": 1
+    "width": 1024,
+    "height": 640,
+    "scale": 2
   },
   "localStorage": {
     "bloogbase.librarySort": "lastPlayed"
@@ -135,7 +135,8 @@
     {
       "name": "mod-page",
       "description": "A fan museum: a mod's page with its title screen, credits, links and readme.",
-      "route": "/profiles/{profile:the-alphamatic}"
+      "route": "/profiles/{profile:the-alphamatic}",
+      "height": 900
     },
     {
       "name": "library-light",

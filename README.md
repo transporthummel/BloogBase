@@ -67,7 +67,7 @@ updates itself, so new mods show up without an app update.
 
 ### Any mod from KeenWiki
 
-<img src="docs/screenshots/keenwiki.png" alt="Adding a mod by pasting its KeenWiki link" width="900">
+<img src="docs/screenshots/keenwiki.png" alt="Adding a mod by pasting its KeenWiki link" width="560">
 
 Found a mod on [KeenWiki](https://keenwiki.shikadi.net/) that isn't in the
 list? Paste the link to its page. BloogBase reads the page, downloads the mod
