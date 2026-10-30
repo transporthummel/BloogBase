@@ -29,8 +29,9 @@ you own on Steam and GOG, keeps every game's and mod's saves apart and safe,
 and never touches your original game files.
 
 It's made for people who remember Keen from their childhood and have never
-opened DOSBox, and just as much for the fans who know every mod on KeenWiki
-and want them all in one place.
+opened DOSBox, for parents who want to let their kids dive into the
+Keeniverse without a lot of setting up, and just as much for the fans who
+know every mod on KeenWiki and want them all in one place.
 
 ## Download
 
