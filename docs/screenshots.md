@@ -72,7 +72,9 @@ screenshots from a GitHub macOS runner: start _Actions → macOS screenshots →
 Run workflow_ ([`macos-screenshots.yml`](../.github/workflows/macos-screenshots.yml)).
 It builds the app, installs it as if downloaded and runs
 [`scripts/macos-screenshots.sh`](../scripts/macos-screenshots.sh), which
-turns on Gatekeeper, starts the app and takes the dialog, the settings pane
+turns on Gatekeeper, grants itself screen recording and accessibility in
+the system's permission database (macOS 15 otherwise waits forever on a
+prompt), starts the app and takes the dialog, the settings pane
 and what follows the click, in English and German. Its log lists the texts
 and button labels it found, for the README's wording.
 

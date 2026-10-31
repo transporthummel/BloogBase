@@ -71,23 +71,78 @@ list_windows() {
   done
 }
 
-# osascript, given up after 30 s: asking System Events can wait forever on a
-# permission prompt nobody answers (it did on the first run), and its output
-# is only for the log.
+# Prints a timestamped line, to see in the log where a step hangs.
+step() {
+  echo "[$(date +%H:%M:%S)] $*"
+}
+
+# Runs a command and kills it after $1 seconds. Asking System Events or
+# capturing the screen can wait forever on a permission prompt nobody
+# answers; both hung the first runs. Keeps the caller's standard input
+# (osascript reads its script from a heredoc).
+limit() {
+  local secs=$1 pid watchdog status
+  shift
+  "$@" <&0 &
+  pid=$!
+  (sleep "$secs" && kill -9 "$pid" 2>/dev/null) &
+  watchdog=$!
+  wait "$pid"
+  status=$?
+  kill "$watchdog" 2>/dev/null
+  wait "$watchdog" 2>/dev/null
+  [ "$status" -eq 137 ] && echo "gave up after $secs s: $1 (permission prompt?)" >&2
+  return "$status"
+}
+
+# osascript for the log only: never fails the run.
 osa() {
-  perl -e 'alarm shift; exec @ARGV' 30 osascript "$@"
-  local status=$?
-  [ "$status" -eq 142 ] && echo "osascript gave up after 30 s (permission prompt?)"
+  limit 30 osascript "$@"
   return 0
 }
 
 shot() {
   local name=$1 window=$2
-  screencapture -x "$out/screen-$name.png" || echo "::warning::Full-screen capture failed ($name)"
+  step "shot $name"
+  limit 20 screencapture -x "$out/screen-$name.png" || echo "::warning::Full-screen capture failed ($name)"
   if [ -n "$window" ]; then
-    screencapture -x -o -l "$window" "$out/$name.png" || echo "::warning::Window capture failed ($name)"
+    limit 20 screencapture -x -o -l "$window" "$out/$name.png" || echo "::warning::Window capture failed ($name)"
   fi
 }
+
+# Grants screen recording, accessibility and automation in the system TCC
+# database, as GitHub's images allow at runtime; without screen recording,
+# screencapture waits forever on macOS 15. Granted to the shell, the tools
+# and every process above this script, as macOS asks the "responsible" one.
+grant_permissions() {
+  local db="/Library/Application Support/com.apple.TCC/TCC.db" now clients pid exe client service
+  echo "macOS $(sw_vers -productVersion), $(csrutil status 2>&1)"
+  now=$(date +%s)
+  clients="/bin/bash /bin/sh /usr/sbin/screencapture /usr/bin/osascript"
+  pid=$$
+  while [ "$pid" -gt 1 ]; do
+    exe=$(ps -o comm= -p "$pid" 2>/dev/null)
+    case $exe in /*) clients="$clients $exe" ;; esac
+    pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+    [ -n "$pid" ] || break
+  done
+  for client in $clients; do
+    for service in kTCCServiceScreenCapture kTCCServiceAccessibility kTCCServicePostEvent; do
+      sudo sqlite3 "$db" "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, flags, last_modified) VALUES ('$service', '$client', 1, 2, 4, 1, 0, $now);" 2>&1 |
+        sed "s|^|  tcc $service $client: |"
+    done
+    sudo sqlite3 "$db" "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, indirect_object_identifier, flags, last_modified) VALUES ('kTCCServiceAppleEvents', '$client', 1, 2, 4, 1, 'com.apple.systemevents', 0, $now);" 2>&1 |
+      sed "s|^|  tcc AppleEvents $client: |"
+  done
+  echo "Granted to: $clients"
+  sudo sqlite3 "$db" "SELECT service, client, auth_value FROM access WHERE service = 'kTCCServiceScreenCapture';" 2>&1 |
+    sed 's/^/  screen capture: /'
+  sudo killall tccd 2>/dev/null
+  killall tccd 2>/dev/null
+  sleep 1
+}
+
+grant_permissions
 
 # Gatekeeper is off on GitHub's runners; the shots need it on.
 echo "Gatekeeper before: $(spctl --status 2>&1)"
@@ -114,6 +169,7 @@ for lang in "$@"; do
     /Applications/BloogBase.app
   spctl --assess --type execute -vv /Applications/BloogBase.app 2>&1 | sed 's/^/  spctl: /'
 
+  step "open the app"
   open /Applications/BloogBase.app
   if dialog=$(window_of CoreServicesUIAgent 30); then
     sleep 1
@@ -130,6 +186,7 @@ for lang in "$@"; do
   killall CoreServicesUIAgent 2>/dev/null
   sleep 1
 
+  step "open Privacy & Security"
   open "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension"
   if settings=$(window_of "System Settings" 30); then
     sleep 3
