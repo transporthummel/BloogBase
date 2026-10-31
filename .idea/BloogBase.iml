@@ -13,6 +13,8 @@
       <excludeFolder url="file://$MODULE_DIR$/.local/target-cdp" />
       <excludeFolder url="file://$MODULE_DIR$/.local/webview-cdp" />
       <excludeFolder url="file://$MODULE_DIR$/.local/target-installer" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea/shelf" />
+      <excludeFolder url="file://$MODULE_DIR$/site/dist" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
