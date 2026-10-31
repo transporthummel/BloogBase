@@ -87,10 +87,19 @@ shows the file. It is not committed.
 
 ## Local release build
 
+Bash:
 ```bash
 pnpm licenses:generate
 TAURI_SIGNING_PRIVATE_KEY="$(cat .local/updater-signing/bloogbase-updater.key)" \
 TAURI_SIGNING_PRIVATE_KEY_PASSWORD="" \
+pnpm tauri build --config src-tauri/tauri.release.conf.json
+```
+
+PowerShell:
+```powershell
+pnpm licenses:generate
+$env:TAURI_SIGNING_PRIVATE_KEY = Get-Content .local/updater-signing/bloogbase-updater.key -Raw
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""
 pnpm tauri build --config src-tauri/tauri.release.conf.json
 ```
 
