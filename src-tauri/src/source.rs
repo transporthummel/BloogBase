@@ -206,16 +206,31 @@ pub struct ArchiveDamaged {
     pub files: Vec<String>,
 }
 
+/// Larger entries are refused: Keen's files are small, and an archive that
+/// claims or unpacks to more is damaged or made to fill the memory.
+const MAX_ENTRY: u64 = 256 * 1024 * 1024;
+
 /// An entry's data, without checking its checksum.
 fn read_entry(zip: &mut ZipArchive<File>, index: usize) -> Result<Vec<u8>> {
+    let too_large = || {
+        Error::Extract(format!(
+            "a file in the archive is larger than {} MB",
+            MAX_ENTRY >> 20
+        ))
+    };
     let mut data = Vec::new();
     let options = ZipReadOptions::new().ignore_crc32(true);
-    let Err(err) = zip
-        .by_index_with_options(index, options)?
-        .read_to_end(&mut data)
-    else {
+    let mut entry = zip.by_index_with_options(index, options)?;
+    if entry.size() > MAX_ENTRY {
+        return Err(too_large());
+    }
+    let Err(err) = (&mut entry).take(MAX_ENTRY + 1).read_to_end(&mut data) else {
+        if data.len() as u64 > MAX_ENTRY {
+            return Err(too_large());
+        }
         return Ok(data);
     };
+    drop(entry);
     let mut raw = zip.by_index_raw(index)?;
     if raw.compression() != CompressionMethod::Deflated {
         return Err(err.into());
@@ -438,6 +453,27 @@ mod tests {
         let folder = tmp.path().join("folder");
         write_folder(&folder, FILES);
         assert!(Source::open(&folder).unwrap().damaged().unwrap().is_empty());
+    }
+
+    #[test]
+    fn zip_entry_claiming_too_much_is_refused() {
+        let tmp = tempfile::tempdir().unwrap();
+        let zip = tmp.path().join("bomb.zip");
+        write_zip(&zip, &[("GAMEMAPS.CK4", b"maps")]);
+        // Claims 4 GB in the local and the central header.
+        let mut bytes = std::fs::read(&zip).unwrap();
+        for (signature, at) in [(b"PK\x03\x04", 22), (b"PK\x01\x02", 24)] {
+            let header = bytes.windows(4).position(|w| w == signature).unwrap();
+            bytes[header + at..header + at + 4].copy_from_slice(&0xFFFF_FFF0u32.to_le_bytes());
+        }
+        std::fs::write(&zip, bytes).unwrap();
+
+        let source = Source::open(&zip).unwrap();
+        assert!(matches!(
+            source.read("GAMEMAPS.CK4"),
+            Err(Error::Extract(e)) if e.contains("larger than 256 MB")
+        ));
+        assert_eq!(source.damaged().unwrap(), ["GAMEMAPS.CK4"]);
     }
 
     #[test]
