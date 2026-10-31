@@ -86,7 +86,9 @@ the file still works. Reading skips the check, as 7-Zip does. Deflate data
 that refers to bytes before its start is inflated with zeros there, as
 Info-ZIP and 7-Zip do. After importing, the app checks every entry and warns
 which files may be damaged. Paths that would leave the target folder
-(absolute ones, `..`) are refused, and macOS archive junk is skipped.
+(absolute ones, `..`) are refused, and macOS archive junk is skipped. An
+entry claiming or unpacking to more than 256 MB is refused: Keen's files are
+far smaller, and such an archive is damaged or made to fill the memory.
 
 ### Game or mod?
 
@@ -123,7 +125,8 @@ Keen 1 betas. The Discover page offers all of them. Each has mirrors, mostly the
 each with its own archive SHA-256 and size.
 
 Installing tries the mirrors in order. A download that fails or doesn't
-match its hash moves on to the next one. The archive is imported only if
+match its hash moves on to the next one; one that grows past twice its
+listed size is stopped. The archive is imported only if
 `detect` finds exactly the expected game and version in it, nothing else.
 
 `cargo test free_games -- --ignored` downloads every mirror and checks it;

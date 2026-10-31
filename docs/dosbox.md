@@ -17,7 +17,8 @@ where the executable is inside. The setup wizard and the settings page offer
 to install it:
 
 1. The archive is downloaded into the cache and checked against size and
-   SHA-256.
+   SHA-256. Like every download with a known hash, it stops at twice the
+   expected size, so a server can't fill the disk.
 2. It's extracted into a scratch folder: ZIP on Windows, `.tar.xz` on Linux.
    On macOS the DMG is attached with `hdiutil` and the `.app` is copied with
    `ditto`, which keeps its signature, then the quarantine attribute is
@@ -122,6 +123,7 @@ dosbox --noprimaryconf --nolocalconf
        -c "@mount C \"<lower>\" > NUL"
        -c "@mount C \"<upper>\" -t overlay > NUL"
        -c "@mount X \"<exit folder>\" > NUL"
+       -c "@config -securemode > NUL"
        -c "@C:"
        -c "@<start>"                (or "@call <file>.BAT")
        -c "X:\SCREEN.COM X:\SCREEN.BIN"
@@ -133,6 +135,13 @@ dosbox --noprimaryconf --nolocalconf
 - Staging joins the `[autoexec]` sections of all config files. Instead of
   relying on `autoexec_section = overwrite`, launches pass `--noautoexec`
   and send their commands with `-c`, so no `[autoexec]` ever runs.
+- `config -securemode` comes right after BloogBase's own mounts. A mod runs
+  its own programs and batch files, and DOSBox is no sandbox: `MOUNT` would
+  reach any folder on the computer. In secure mode Staging refuses `MOUNT`,
+  `IMGMOUNT`, `config -writeconf` and `config -r` (a restart, which could
+  leave secure mode); batch files and the exit screen on X: work as before.
+  `config -set` still changes settings at runtime, e.g. a modem on the serial
+  port, but none of them reaches the computer's files.
 - `@` and `> NUL` keep BloogBase's own commands off the screen. A batch file
   is started with `call`, or `exit` would never run.
 - DOSBox Staging 0.83 turns every `'` in a `-c` command into `"`, but not
