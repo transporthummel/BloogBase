@@ -122,12 +122,11 @@ back), and greets you with a made-up Commander Keen fact.
 
 ### Two themes
 
-<img src="docs/screenshots/discover.png" alt="Discover in the Midnight Galaxy theme" width="900">
-
-<img src="docs/screenshots/discover-light.png" alt="Discover in the Vintage Beige theme" width="900">
+<img src="docs/screenshots/library-light.png" alt="The library in the Vintage Beige theme" width="900">
 
 **Midnight Galaxy** for the night sky over Vorticon VI, **Vintage Beige** for
-the case of the PC you first played Keen on. In English and German.
+the case of the PC you first played Keen on. The library at the top is
+Midnight Galaxy; above it is in Vintage Beige. In English and German.
 
 ### And much more
 
