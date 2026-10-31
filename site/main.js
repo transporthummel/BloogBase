@@ -229,5 +229,7 @@ detectSystem().then(async (system) => {
   }
   const suffix = system.os === "mac" ? system.arm && "_aarch64.dmg" : INSTALLERS[system.os];
   const file = suffix && (await asset(suffix));
-  if (file) buttons.forEach((button) => (button.href = file.browser_download_url));
+  // Only the download section's button: the hero's leads to its hints.
+  const direct = document.querySelectorAll(".download .download-button");
+  if (file) direct.forEach((button) => (button.href = file.browser_download_url));
 });

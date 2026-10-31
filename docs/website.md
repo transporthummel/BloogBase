@@ -20,7 +20,9 @@ The project website lives in `site/` and is published to GitHub Pages at
   (`.local/DESIGN.md`).
 - `main.js`: the drifting sky, screenshots switching on, the Bloog hopping
   along the trail, the theme comparison, the download button for the
-  visitor's system and the file names under each system, which link straight
+  visitor's system (the one in the download section; the hero's only names
+  the system and leads there, so visitors see the install hints) and the file
+  names under each system, which link straight
   to their files with the version filled in (from the latest release's assets
   via the GitHub API, else the release page; an `.asset` link's
   `data-asset` is the end of its file name). The page works without it;

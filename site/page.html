@@ -82,9 +82,11 @@
           <h1>{{hero.title}}</h1>
           <p class="lead">{{hero.lead}}</p>
           <div class="hero-actions">
+            <!-- To the download section, not the file: its hints explain the
+                 warnings of unsigned installers. -->
             <a
               class="button primary download-button"
-              href="https://github.com/transporthummel/BloogBase/releases/latest"
+              href="#download"
               data-label="{{hero.download}}"
             >
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -92,7 +94,6 @@
               </svg>
               <span>{{hero.downloadAny}}</span>
             </a>
-            <a class="button secondary" href="#download">{{hero.otherSystems}}</a>
           </div>
           <p class="facts">{{hero.facts}}</p>
         </div>

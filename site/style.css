@@ -357,16 +357,6 @@ li {
   }
 }
 
-.button.secondary {
-  background: var(--raised);
-  border-color: var(--border);
-  color: var(--ink);
-}
-
-.button.secondary:hover {
-  border-color: var(--muted);
-}
-
 .button.ghost {
   color: var(--muted);
 }
