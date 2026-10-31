@@ -45,6 +45,39 @@ for w in windows.sorted(by: { $0.1 * $0.2 > $1.1 * $1.2 }) {
 SWIFT
 swiftc -O -o "$work/windows" "$work/windows.swift" || exit 1
 
+# Scrolls the largest window of process $1 by $2 lines (negative: down) with
+# real scroll wheel events over its middle; System Settings ignores setting
+# its scroll bars through accessibility.
+cat > "$work/scroll.swift" <<'SWIFT'
+import CoreGraphics
+import Foundation
+
+let pid = Int(CommandLine.arguments[1]) ?? -1
+let lines = Int32(CommandLine.arguments[2]) ?? -10
+let info = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+var best: CGRect? = nil
+for w in info as? [[String: Any]] ?? [] {
+  guard (w[kCGWindowOwnerPID as String] as? Int) == pid,
+        let b = w[kCGWindowBounds as String] as? [String: Any],
+        let rect = CGRect(dictionaryRepresentation: b as CFDictionary) else { continue }
+  if best == nil || rect.width * rect.height > best!.width * best!.height { best = rect }
+}
+guard let r = best else { print("no window"); exit(1) }
+// Over the right-hand pane, away from the sidebar.
+let point = CGPoint(x: r.minX + r.width * 0.7, y: r.minY + r.height * 0.6)
+CGWarpMouseCursorPosition(point)
+usleep(200_000)
+for _ in 0..<abs(lines) {
+  let e = CGEvent(scrollWheelEvent2Source: nil, units: .line, wheelCount: 1,
+                  wheel1: lines < 0 ? -1 : 1, wheel2: 0, wheel3: 0)
+  e?.location = point
+  e?.post(tap: .cghidEventTap)
+  usleep(20_000)
+}
+print("scrolled \(lines) lines at \(Int(point.x)),\(Int(point.y))")
+SWIFT
+swiftc -O -o "$work/scroll" "$work/scroll.swift" || exit 1
+
 # The id of the largest window of the process named $1, waiting up to $2 s.
 window_of() {
   local name=$1 tries=${2:-30} pid id
@@ -194,15 +227,16 @@ for lang in "$@"; do
 on run argv
   tell application "System Events"
     tell (first process whose unix id is ((item 1 of argv) as integer))
-      repeat with e in (entire contents of window 1)
+      set frontmost to true
+      repeat with label in {"Done", "Fertig", "OK"}
         try
-          if (role of e) is "AXButton" and (name of e) is in {"Done", "Fertig", "OK"} then
-            click e
-            return "clicked " & (name of e)
-          end if
+          click button (label as text) of window 1
+          return "clicked " & label
         end try
       end repeat
-      return "no Done button found"
+      -- Escape answers it with Done; Return would be Move to Trash.
+      key code 53
+      return "no Done button found, pressed Escape"
     end tell
   end tell
 end run
@@ -220,7 +254,7 @@ APPLESCRIPT
     # its text and button. Needs accessibility access for osascript; without
     # it (see `osa`) the shot shows the top of the pane.
     pid=$(pgrep -x "System Settings" | head -n 1)
-    osa - "$pid" <<'APPLESCRIPT' 2>&1 | sed 's/^/  settings: /'
+    osa - "$pid" <<'APPLESCRIPT' 2>&1 | tee "$work/settings.log" | sed 's/^/  settings: /'
 on run argv
   tell application "System Events"
     tell (first process whose unix id is ((item 1 of argv) as integer))
@@ -249,21 +283,35 @@ on run argv
           end if
         end try
       end repeat
-      if not found then
-        log "no text with BloogBase found; scrolling to the end"
-        repeat with e in (entire contents of window 1)
-          try
-            if (role of e) is "AXScrollBar" and (orientation of e) is "AXVerticalOrientation" then
-              set value of e to 1.0
-              log "scrolled a scroll bar to the end"
-            end if
-          end try
-        end repeat
-      end if
+      if not found then log "no text with BloogBase found"
     end tell
   end tell
 end run
 APPLESCRIPT
+    # The block sits under Security at the end of the pane; scroll there
+    # unless the search above found it, then log its text and buttons.
+    if grep -q "no text with BloogBase" "$work/settings.log"; then
+      limit 20 "$work/scroll" "$pid" -60
+      sleep 2
+      osa - "$pid" <<'APPLESCRIPT' 2>&1 | sed 's/^/  after scrolling: /'
+on run argv
+  tell application "System Events"
+    tell (first process whose unix id is ((item 1 of argv) as integer))
+      repeat with e in (entire contents of window 1)
+        try
+          set v to (name of e) as text
+          if v is not "missing value" and v is not "" then log (role of e) & ": " & v
+        end try
+        try
+          set v to (value of e) as text
+          if v contains "BloogBase" then log "text: " & v
+        end try
+      end repeat
+    end tell
+  end tell
+end run
+APPLESCRIPT
+    fi
     sleep 1
     shot "settings.$lang" "$settings"
 
