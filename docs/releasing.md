@@ -84,7 +84,9 @@ protects updates.
 - **Linux:** nothing to sign.
 
 The download hints in `.github/release-downloads.md`, added to every
-release's description, explain these steps, and so does the README.
+release's description, explain these steps, and so does the README. The
+workflow joins their wrapped lines, as GitHub shows every line break of a
+release's text.
 
 ## Updates
 

@@ -77,11 +77,15 @@ jobs:
           node scripts/release.mjs "$VERSION" "$(date -u +%F)" "$RUNNER_TEMP/notes.md" "${last#v}"
           pnpm exec prettier --write CHANGELOG.md package.json src/updates/changelog.json
           # The release's description: its changes, then which file to download.
+          # Unwrapped, as GitHub shows every line break of a release's text.
           {
-            echo "notes<<END_OF_NOTES"
             cat "$RUNNER_TEMP/notes.md"
             printf '\n---\n\n'
             sed "s/@VERSION@/${VERSION}/g" .github/release-downloads.md
+          } | pnpm exec prettier --stdin-filepath notes.md --prose-wrap never > "$RUNNER_TEMP/body.md"
+          {
+            echo "notes<<END_OF_NOTES"
+            cat "$RUNNER_TEMP/body.md"
             echo "END_OF_NOTES"
           } >> "$GITHUB_OUTPUT"
 
