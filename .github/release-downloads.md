@@ -6,8 +6,9 @@ Download the file for your system (or find it under _Assets_ below).
 BloogBase is a free fan project, so its installers aren't signed with paid
 certificates; your system will ask once before the first start:
 
-- **Windows:** [`BloogBase_@VERSION@_x64-setup.exe`](https://github.com/transporthummel/BloogBase/releases/download/v@VERSION@/BloogBase_@VERSION@_x64-setup.exe). If "Windows protected your PC"
-  appears, click _More info_ → _Run anyway_.
+- **Windows:** [`BloogBase_@VERSION@_x64-setup.exe`](https://github.com/transporthummel/BloogBase/releases/download/v@VERSION@/BloogBase_@VERSION@_x64-setup.exe). If Edge says the file "isn't
+  commonly downloaded", click _…_ → _Keep_ → the arrow next to _Delete_ → _Keep anyway_. If
+  "Windows protected your PC" appears, click _More info_ → _Run anyway_.
 - **macOS:** [`BloogBase_@VERSION@_aarch64.dmg`](https://github.com/transporthummel/BloogBase/releases/download/v@VERSION@/BloogBase_@VERSION@_aarch64.dmg) (Apple Silicon) or
   [`BloogBase_@VERSION@_x64.dmg`](https://github.com/transporthummel/BloogBase/releases/download/v@VERSION@/BloogBase_@VERSION@_x64.dmg) (Intel).
   Move BloogBase to Applications and start it. When macOS blocks it, open

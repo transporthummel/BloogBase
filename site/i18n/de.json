@@ -124,7 +124,7 @@
   "dl.text": "Kostenlos, für jedes System. BloogBase ist ein Fanprojekt, deshalb sind die Installer nicht mit kostenpflichtigen Zertifikaten signiert. Dein System fragt einmal vor dem ersten Start; danach hält sich BloogBase selbst aktuell.",
   "dl.windows": "Windows",
   "dl.windowsFile": "<a class=\"asset\" data-asset=\"_x64-setup.exe\" href=\"https://github.com/transporthummel/BloogBase/releases/latest\"><code>BloogBase_…_x64-setup.exe</code></a>",
-  "dl.windowsHint": "Erscheint „Der Computer wurde durch Windows geschützt“, klicke auf <em>Weitere Informationen</em> → <em>Trotzdem ausführen</em>.",
+  "dl.windowsHint": "Meldet Edge, die Datei werde „häufig nicht heruntergeladen“, klicke auf <em>…</em> → <em>Beibehalten</em> → Pfeil neben <em>Löschen</em> → <em>Trotzdem beibehalten</em>. Erscheint „Der Computer wurde durch Windows geschützt“, klicke auf <em>Weitere Informationen</em> → <em>Trotzdem ausführen</em>.",
   "dl.mac": "macOS",
   "dl.macFile": "<a class=\"asset\" data-asset=\"_aarch64.dmg\" href=\"https://github.com/transporthummel/BloogBase/releases/latest\"><code>BloogBase_…_aarch64.dmg</code></a> (Apple Silicon) oder <a class=\"asset\" data-asset=\"_x64.dmg\" href=\"https://github.com/transporthummel/BloogBase/releases/latest\"><code>BloogBase_…_x64.dmg</code></a> (Intel)",
   "dl.macHint": "Ziehe BloogBase in den Programme-Ordner und starte es. Blockiert macOS den Start, öffne <em>Systemeinstellungen → Datenschutz &amp; Sicherheit</em> und klicke auf <em>Dennoch öffnen</em>.",
