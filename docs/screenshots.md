@@ -81,4 +81,7 @@ and button labels it found, for the README's wording.
 Download the `macos-screenshots` artifact, look at the pictures (the
 `screen-*` ones show the whole screen, for cropping by hand when a window
 capture is missing or cut off) and copy the good ones to `docs/screenshots/`.
-Redo them when a new macOS version changes the dialog.
+The README uses `blocked.en.png` as `macos-blocked.png` and
+`settings.en.png` as `macos-open-anyway.png` (taken on macOS 15.8). The
+German round gets German settings, but the dialog stays English on the
+runner. Redo them when a new macOS version changes the dialog.

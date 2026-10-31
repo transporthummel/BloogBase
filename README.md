@@ -49,6 +49,16 @@ certificates; your system will ask once before the first start:
 - **macOS:** `BloogBase_…_aarch64.dmg` (Apple Silicon) or `…_x64.dmg` (Intel).
   Move BloogBase to Applications and start it. When macOS blocks it, open
   _System Settings → Privacy & Security_ and click _Open Anyway_.
+
+  <details>
+  <summary>What this looks like (macOS 15)</summary>
+
+  <img src="docs/screenshots/macos-blocked.png" alt="macOS: “BloogBase” Not Opened, with Done and Move to Trash" width="260">
+  <img src="docs/screenshots/macos-open-anyway.png" alt="System Settings, Privacy &amp; Security: “BloogBase” was blocked to protect your Mac, with Open Anyway" width="480">
+
+  Click _Done_ (not _Move to Trash_), then _Open Anyway_.
+  </details>
+
 - **Linux:** `BloogBase_…_amd64.AppImage` (make it executable and start it) or
   the `.deb` for Debian/Ubuntu.
 
