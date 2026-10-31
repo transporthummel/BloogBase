@@ -22,6 +22,31 @@ them:
   German (`unreleased.en`, `unreleased.de`). The app shows it once after
   updating ("What's new"); the update card before updating shows no notes.
 
+## Version numbers
+
+BloogBase has no API others build on; what it promises is to the players:
+their saves, profiles and data folder, and the systems and games it runs on.
+The version follows that:
+
+- **Patch** (`1.0.1`): the unreleased changelog has only Improvements, Bug
+  Fixes or Misc. Fixes, translations, newly recognized game versions,
+  corrected start recipes, security fixes, updated dependencies.
+- **Minor** (`1.1.0`): as soon as there is an entry under Features. Also a
+  new managed DOSBox version, since it changes how games behave (and needs
+  the key mapper file redone). Database migrations that run by themselves
+  don't make a release major.
+- **Major** (`2.0.0`): only when players lose something or have to act
+  themselves: a system dropped or its minimum version raised, a data folder
+  change without automatic migration, a feature or a game dropped. A big
+  milestone (like Commander Genius as a second runtime) may get one too.
+
+New mods need no app release; they come with the index. A change to the
+index format (`SCHEMA_VERSION` in `src-tauri/src/mod_index.rs`) makes older
+apps refuse the new index and miss mod updates, so it goes in two steps: first
+an app release that reads the new `schemaVersion`, then the index switches
+once most players have updated (the update checks counted on `latest.json`
+show it).
+
 ## Checklist
 
 1. Before the first release, and when a new macOS version changes how it
