@@ -1,4 +1,4 @@
-<!-- Added below every release's changes by .github/workflows/release.yml, which fills in @VERSION@. Keep in step with "Installing" in README.md. -->
+<!-- Added below every release's changes by .github/workflows/release.yml, which fills in @VERSION@. Keep in step with "Download" in README.md. -->
 
 ## Download
 
