@@ -83,7 +83,7 @@
     },
     {
       "name": "discover",
-      "description": "Mods with one click: Discover's mod list, recommended first, with badges for installed mods.",
+      "description": "Mods with one click, and the dark half of Two themes: Discover's mod list, recommended first, with badges for installed mods.",
       "route": "/discover",
       "languages": ["en", "de"]
     },
@@ -158,14 +158,14 @@
     },
     {
       "name": "library-light",
-      "description": "Two themes: the library in Vintage Beige.",
+      "description": "The website's theme comparison: the library in Vintage Beige, next to library.png.",
       "route": "/",
       "theme": "light",
       "languages": ["en", "de"]
     },
     {
       "name": "discover-light",
-      "description": "Two themes: Discover's mod list in Vintage Beige.",
+      "description": "Two themes: Discover's mod list in Vintage Beige, next to discover.png.",
       "route": "/discover",
       "theme": "light",
       "languages": ["en", "de"]

@@ -122,7 +122,7 @@ back), and greets you with a made-up Commander Keen fact.
 
 ### Two themes
 
-<img src="docs/screenshots/library-light.png" alt="The library in the Vintage Beige theme" width="900">
+<img src="docs/screenshots/discover.png" alt="Discover in the Midnight Galaxy theme" width="900">
 
 <img src="docs/screenshots/discover-light.png" alt="Discover in the Vintage Beige theme" width="900">
 
