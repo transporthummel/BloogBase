@@ -4,7 +4,7 @@
 // Run before release builds: `pnpm licenses:generate`.
 import { execFileSync, execSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -150,6 +150,8 @@ if (withoutText.length > 0) {
     withoutText.map(label).sort().join("\n") +
     "\n";
 }
+// `public/` holds nothing else in the repository, so a fresh checkout lacks it.
+mkdirSync(join(root, "public"), { recursive: true });
 writeFileSync(join(root, "public", "third-party-licenses.txt"), out);
 console.log(
   `${components.length} components, ${sections.length} distinct license texts, ` +
