@@ -9,8 +9,9 @@ The project website lives in `site/` and is published to GitHub Pages at
 - `page.html`: the page, one template for both languages. `{{key}}` is a text
   from `i18n/<lang>.json`, `{{@root}}`, `{{@lang}}`, `{{@url}}` and
   `{{@otherUrl}}` are filled in per language, `{{@updated}}` (and
-  `{{@updatedIso}}`) is the build time in UTC, shown in the footer as
-  "Last updated", `{{shot:<name>}}` is a
+  `{{@updatedIso}}`) is the time of the last commit to the site, its
+  screenshots, logo or icon (the build time without git history), in UTC,
+  shown in the footer as "Last updated", `{{shot:<name>}}` is a
   screenshot from `docs/screenshots/` (`<name>.<lang>.png` where it exists)
   and `{{size:<name>}}` its `width`/`height`.
 - `i18n/en.json`, `i18n/de.json`: every text, the same keys in both; the
