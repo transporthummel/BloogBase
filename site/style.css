@@ -968,6 +968,37 @@ html:not(.js) .walker,
   margin: 0.75rem 0 0;
 }
 
+/* File names link straight to their files, marked with the download arrow. */
+.asset {
+  color: var(--green);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.asset::before {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.3em;
+  vertical-align: -0.15em;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 15V3M7 10l5 5 5-5M5 21h14'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.asset code {
+  color: inherit;
+  border-color: color-mix(in srgb, var(--green) 50%, var(--border));
+  transition: border-color 150ms;
+}
+
+.asset:hover code {
+  border-color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 .system.mine {
   border-top-color: var(--green);
 }

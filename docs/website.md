@@ -19,10 +19,12 @@ The project website lives in `site/` and is published to GitHub Pages at
 - `style.css`: the app's Midnight Galaxy colours, type and components
   (`.local/DESIGN.md`).
 - `main.js`: the drifting sky, screenshots switching on, the Bloog hopping
-  along the trail, the theme comparison and the download button for the
-  visitor's system (from the latest release's assets via the GitHub API,
-  else the release page). The page works without it; reduced motion turns
-  the movement off.
+  along the trail, the theme comparison, the download button for the
+  visitor's system and the file names under each system, which link straight
+  to their files with the version filled in (from the latest release's assets
+  via the GitHub API, else the release page; an `.asset` link's
+  `data-asset` is the end of its file name). The page works without it;
+  reduced motion turns the movement off.
 - `fonts/`: Inter and Press Start 2P (latin), with their OFL licences.
 - `build.mjs`: writes `site/dist/` (ignored): `index.html`, `de/index.html`,
   the screenshots, logo, icon, fonts, styles and script. Node only, no

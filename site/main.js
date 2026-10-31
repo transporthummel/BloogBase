@@ -189,24 +189,33 @@ async function detectSystem() {
   return os && { os, arm };
 }
 
-/** The installer for this system from the latest release, if it can be found. */
-async function installerUrl({ os, arm }) {
-  const pattern = {
-    windows: /_x64-setup\.exe$/,
-    mac: arm ? /_aarch64\.dmg$/ : null,
-    linux: /_amd64\.AppImage$/,
-  }[os];
-  if (!pattern) return null;
-  const response = await fetch(
-    "https://api.github.com/repos/transporthummel/BloogBase/releases/latest",
-    {
-      headers: { Accept: "application/vnd.github+json" },
-    },
-  );
-  if (!response.ok) return null;
-  const release = await response.json();
-  return release.assets?.find((asset) => pattern.test(asset.name))?.browser_download_url ?? null;
+// The latest release's files, fetched once for the button and the file links.
+const release = fetch("https://api.github.com/repos/transporthummel/BloogBase/releases/latest", {
+  headers: { Accept: "application/vnd.github+json" },
+})
+  .then((response) => (response.ok ? response.json() : null))
+  .then((data) => data?.assets ?? [])
+  .catch(() => []);
+
+/** The asset whose name ends in `suffix`, if the latest release has one. */
+async function asset(suffix) {
+  return (await release).find((file) => file.name.endsWith(suffix)) ?? null;
 }
+
+// The file names under each system link straight to their files, with the
+// version filled in; without the release they lead to its page.
+for (const link of document.querySelectorAll(".asset")) {
+  asset(link.dataset.asset).then((file) => {
+    if (!file) return;
+    link.href = file.browser_download_url;
+    const code = link.querySelector("code");
+    if (code.textContent.includes("…")) code.textContent = file.name;
+  });
+}
+
+// The installer the button offers on each system; for Macs only when the
+// browser says it's Apple Silicon.
+const INSTALLERS = { windows: "_x64-setup.exe", linux: "_amd64.AppImage" };
 
 detectSystem().then(async (system) => {
   if (!system) return;
@@ -218,6 +227,7 @@ detectSystem().then(async (system) => {
       OS_NAMES[system.os],
     );
   }
-  const url = await installerUrl(system).catch(() => null);
-  if (url) buttons.forEach((button) => (button.href = url));
+  const suffix = system.os === "mac" ? system.arm && "_aarch64.dmg" : INSTALLERS[system.os];
+  const file = suffix && (await asset(suffix));
+  if (file) buttons.forEach((button) => (button.href = file.browser_download_url));
 });
