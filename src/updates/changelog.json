@@ -1,7 +1,13 @@
 {
   "unreleased": {
-    "en": ["The first release of BloogBase."],
-    "de": ["Die erste Version von BloogBase."]
+    "en": [],
+    "de": []
   },
-  "releases": []
+  "releases": [
+    {
+      "version": "1.0.0",
+      "en": ["The first release of BloogBase."],
+      "de": ["Die erste Version von BloogBase."]
+    }
+  ]
 }
