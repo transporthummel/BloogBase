@@ -9,6 +9,9 @@
 //!   relying on `autoexec_section = overwrite`, launches pass `--noautoexec`
 //!   and send their DOS commands via `-c`, so no `[autoexec]` from any layer
 //!   ever runs.
+//! - After BloogBase's own mounts, `config -securemode` locks the drives: no
+//!   program or batch file of a mod can `mount` a host folder, and
+//!   `config -r` (a restart that could leave secure mode) is refused.
 
 use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
@@ -295,6 +298,7 @@ fn dosbox_args(
         format!("@mount C \"{lower}\" > NUL"),
         format!("@mount C \"{upper}\" -t overlay > NUL"),
         format!("@mount {} \"{exit_screen}\" > NUL", exit_screen::DRIVE),
+        "@config -securemode > NUL".into(),
         "@C:".into(),
         run_line(command),
         exit_screen::command(),
@@ -513,7 +517,7 @@ mod tests {
 
     #[test]
     fn batch_files_are_called_so_dosbox_exits() {
-        let cmd = |c: &str| dosbox_args(&[], "l", "u", "x", c)[12].clone();
+        let cmd = |c: &str| dosbox_args(&[], "l", "u", "x", c)[14].clone();
         assert_eq!(cmd("cool1.bat"), "@call cool1.bat");
         assert_eq!(cmd("PLAY.BAT -x"), "@call PLAY.BAT -x");
         assert_eq!(cmd("KEEN1.EXE"), "@KEEN1.EXE");
@@ -532,7 +536,7 @@ mod tests {
             "@CK5PATCH.EXE Can't.pat\r\n"
         );
         assert_eq!(
-            dosbox_args(&[], "l", "u", "x", &cmd)[12],
+            dosbox_args(&[], "l", "u", "x", &cmd)[14],
             r"@call X:\START.BAT"
         );
     }
@@ -585,6 +589,8 @@ mod tests {
                 "@mount X \"{}\" > NUL",
                 p(&["profiles", "keen4-1", "generated", "exit"])
             ),
+            "-c",
+            "@config -securemode > NUL",
             "-c",
             "@C:",
             "-c",
@@ -813,7 +819,7 @@ mod tests {
             .args
             .iter()
             .rev()
-            .take(14)
+            .take(16)
             .rev()
             .map(String::as_str)
             .collect();
@@ -822,7 +828,7 @@ mod tests {
             composed.strip_prefix(&paths.root).unwrap().display()
         );
         assert_eq!(tail[1], lower);
-        assert_eq!(tail[9], "@CK4PATCH.EXE MOD.PAT");
+        assert_eq!(tail[11], "@CK4PATCH.EXE MOD.PAT");
         assert_eq!(fs::read(composed.join("gamemaps.ck4")).unwrap(), b"new");
         assert!(composed.join("KEEN4E.EXE").is_file());
         let names: Vec<String> = fs::read_dir(&composed)
