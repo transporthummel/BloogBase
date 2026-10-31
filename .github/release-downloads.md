@@ -13,7 +13,7 @@ certificates; your system will ask once before the first start:
   [`BloogBase_@VERSION@_x64.dmg`](https://github.com/transporthummel/BloogBase/releases/download/v@VERSION@/BloogBase_@VERSION@_x64.dmg) (Intel).
   Move BloogBase to Applications and start it. When macOS blocks it, open
   _System Settings → Privacy & Security_ and click _Open Anyway_.
-- **Linux:** [`BloogBase_@VERSION@_amd64.AppImage`](https://github.com/transporthummel/BloogBase/releases/download/v@VERSION@/BloogBase_@VERSION@_amd64.AppImage) (make it executable and
+- **Linux** (Ubuntu 22.04, Debian 12 or newer): [`BloogBase_@VERSION@_amd64.AppImage`](https://github.com/transporthummel/BloogBase/releases/download/v@VERSION@/BloogBase_@VERSION@_amd64.AppImage) (make it executable and
   start it) or [`BloogBase_@VERSION@_amd64.deb`](https://github.com/transporthummel/BloogBase/releases/download/v@VERSION@/BloogBase_@VERSION@_amd64.deb) for Debian/Ubuntu.
 
 After that, BloogBase keeps itself up to date.

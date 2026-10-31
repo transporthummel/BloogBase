@@ -62,7 +62,7 @@ certificates; your system will ask once before the first start:
   Click _Done_ (not _Move to Trash_), then _Open Anyway_.
   </details>
 
-- **Linux:** `BloogBase_…_amd64.AppImage` (make it executable and start it) or
+- **Linux** (Ubuntu 22.04, Debian 12 or newer): `BloogBase_…_amd64.AppImage` (make it executable and start it) or
   the `.deb` for Debian/Ubuntu.
 
 After that, BloogBase keeps itself up to date.

@@ -130,7 +130,7 @@
   "dl.macHint": "Ziehe BloogBase in den Programme-Ordner und starte es. Blockiert macOS den Start, öffne <em>Systemeinstellungen → Datenschutz &amp; Sicherheit</em> und klicke auf <em>Dennoch öffnen</em>.",
   "dl.linux": "Linux",
   "dl.linuxFile": "<a class=\"asset\" data-asset=\"_amd64.AppImage\" href=\"https://github.com/transporthummel/BloogBase/releases/latest\"><code>BloogBase_…_amd64.AppImage</code></a> oder das <a class=\"asset\" data-asset=\"_amd64.deb\" href=\"https://github.com/transporthummel/BloogBase/releases/latest\"><code>.deb</code></a> für Debian/Ubuntu",
-  "dl.linuxHint": "Mach das AppImage ausführbar und starte es.",
+  "dl.linuxHint": "Ubuntu 22.04, Debian 12 oder neuer. Mach das AppImage ausführbar und starte es.",
   "dl.button": "Für {os} herunterladen",
   "dl.yours": "Dein System",
   "dl.all": "Alle Dateien der neuesten Version",
