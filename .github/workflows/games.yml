@@ -78,7 +78,7 @@ jobs:
           KEEN_MODS: ${{ runner.temp }}/mods
           KEEN_OUT: ${{ runner.temp }}/covers
         run: |
-          mkdir -p "$KEEN_OUT"
+          mkdir -p "$KEEN_OUT" "$KEEN_MODS"
           for zip in "$GITHUB_WORKSPACE"/mod-cache/*.zip; do
             unzip -q "$zip" -d "$KEEN_MODS/$(basename "$zip" .zip)"
           done
