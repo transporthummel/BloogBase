@@ -18,7 +18,9 @@ pub const USER_AGENT: &str = concat!(
 
 /// Streams `url` to `dest`, hashing on the fly. `dest` only appears once the
 /// SHA-256 matched. `progress` gets (received, total) bytes every ~100 ms;
-/// `size` is the expected total when the server doesn't send one.
+/// `size` is the expected total when the server doesn't send one (0 when
+/// unknown). Past twice that the download stops, so a server sending
+/// without end can't fill the disk before the hash fails.
 pub async fn fetch(
     url: &str,
     sha256: &str,
@@ -26,16 +28,32 @@ pub async fn fetch(
     dest: &Path,
     progress: &impl Fn(u64, u64),
 ) -> Result<()> {
+    let max_size = match size {
+        0 => u64::MAX,
+        n => n.saturating_mul(2),
+    };
+    let too_large = || {
+        Error::UnexpectedContent(format!(
+            "{url} sent more than twice the expected {size} bytes"
+        ))
+    };
     let client = reqwest::Client::builder().user_agent(USER_AGENT).build()?;
     let resp = client.get(url).send().await?;
     if !resp.status().is_success() {
         return Err(Error::HttpStatus(resp.status().as_u16()));
     }
-    stream(resp, size, u64::MAX, dest, progress, |actual| {
+    if resp.content_length().is_some_and(|n| n > max_size) {
+        return Err(too_large());
+    }
+    stream(resp, size, max_size, dest, progress, |actual| {
         verify(actual, sha256)
     })
     .await
     .map(drop)
+    .map_err(|e| match e {
+        Error::TooLarge(_) => too_large(),
+        e => e,
+    })
 }
 
 /// A download whose hash nobody knows yet, e.g. a link from a KeenWiki page.
@@ -178,6 +196,53 @@ mod tests {
         assert!(is_dead("https://example.com/m.zip", 404));
         assert!(!is_dead("https://example.com/m.zip", 403));
         assert!(!is_dead(shikadi, 500));
+    }
+
+    /// Serves each response once, closing the connection after it.
+    fn serve(responses: Vec<Vec<u8>>) -> String {
+        use std::io::{BufRead, BufReader, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
+        std::thread::spawn(move || {
+            for (stream, response) in listener.incoming().zip(responses) {
+                let mut stream = stream.unwrap();
+                let mut reader = BufReader::new(stream.try_clone().unwrap());
+                let mut line = String::new();
+                while reader.read_line(&mut line).unwrap() > 2 {
+                    line.clear();
+                }
+                // The client may hang up early, refusing the rest.
+                let _ = stream.write_all(&response);
+            }
+        });
+        url
+    }
+
+    #[tokio::test]
+    async fn downloads_stop_past_twice_the_expected_size() {
+        let body = vec![b'k'; 1000];
+        let sha = hex(&Sha256::digest(&body));
+        let head = |len: Option<usize>| {
+            let len = len.map_or(String::new(), |n| format!("Content-Length: {n}\r\n"));
+            format!("HTTP/1.1 200 OK\r\n{len}Connection: close\r\n\r\n").into_bytes()
+        };
+        let url = serve(vec![
+            [head(None), body.clone()].concat(),
+            [head(Some(body.len())), body.clone()].concat(),
+            [head(None), body.clone()].concat(),
+        ]);
+        let tmp = tempfile::tempdir().unwrap();
+        let dest = tmp.path().join("mod.zip");
+
+        // Sent without a length, and with one: both too much for 400 bytes.
+        for _ in 0..2 {
+            let err = fetch(&url, &sha, 400, &dest, &|_, _| {}).await.unwrap_err();
+            assert!(matches!(err, Error::UnexpectedContent(_)), "{err}");
+            assert!(!dest.exists() && !dest.with_extension("part").exists());
+        }
+        // Up to twice the size, the hash decides.
+        fetch(&url, &sha, 500, &dest, &|_, _| {}).await.unwrap();
+        assert_eq!(fs::read(&dest).unwrap(), body);
     }
 
     #[test]
