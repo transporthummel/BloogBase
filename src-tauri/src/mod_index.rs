@@ -779,6 +779,8 @@ mod tests {
     }
 
     /// Serves the index over HTTP with an ETag; counts full responses.
+    /// Answers one request per connection and says so: a client reusing a
+    /// connection the server had already closed failed now and then.
     fn serve(json: String, sig: String) -> (String, Arc<AtomicUsize>) {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let url = format!("http://{}/index.json", listener.local_addr().unwrap());
@@ -801,15 +803,16 @@ mod tests {
                 }
                 let response = if line.contains(".minisig") {
                     format!(
-                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{sig}",
+                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{sig}",
                         sig.len()
                     )
                 } else if cached {
-                    "HTTP/1.1 304 Not Modified\r\nETag: \"v1\"\r\n\r\n".to_string()
+                    "HTTP/1.1 304 Not Modified\r\nETag: \"v1\"\r\nConnection: close\r\n\r\n"
+                        .to_string()
                 } else {
                     count.fetch_add(1, Ordering::SeqCst);
                     format!(
-                        "HTTP/1.1 200 OK\r\nETag: \"v1\"\r\nContent-Length: {}\r\n\r\n{json}",
+                        "HTTP/1.1 200 OK\r\nETag: \"v1\"\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{json}",
                         json.len()
                     )
                 };

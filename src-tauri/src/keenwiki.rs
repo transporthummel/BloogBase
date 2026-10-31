@@ -1015,7 +1015,12 @@ mod tests {
                     .map(|(_, h, b)| (h.clone(), b.clone()))
                     .unwrap_or(("HTTP/1.1 404 Not Found".into(), Vec::new()));
                 let _ = stream.write_all(
-                    format!("{head}\r\nContent-Length: {}\r\n\r\n", body.len()).as_bytes(),
+                    // Closed after each answer, so the client mustn't reuse it.
+                    format!(
+                        "{head}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        body.len()
+                    )
+                    .as_bytes(),
                 );
                 let _ = stream.write_all(&body);
             }
