@@ -6,7 +6,8 @@ name: Release
 # version …" with a tag, then builds installers for every OS (not code-signed)
 # and drafts a GitHub release with them, the updater manifest (latest.json) and
 # the version's CHANGELOG.md section and the download hints
-# (.github/release-downloads.md) as its description.
+# (.github/release-downloads.md, with links to this version's files) as its
+# description.
 on:
   workflow_dispatch:
     inputs:
@@ -80,7 +81,7 @@ jobs:
             echo "notes<<END_OF_NOTES"
             cat "$RUNNER_TEMP/notes.md"
             printf '\n---\n\n'
-            cat .github/release-downloads.md
+            sed "s/@VERSION@/${VERSION}/g" .github/release-downloads.md
             echo "END_OF_NOTES"
           } >> "$GITHUB_OUTPUT"
 

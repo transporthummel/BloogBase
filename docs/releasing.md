@@ -15,7 +15,9 @@ them:
 - `CHANGELOG.md` (English): every relevant change, under "Unreleased" in
   Features, Improvements, Bug Fixes or Misc. A release's section becomes its
   description on GitHub, followed by the download hints from
-  `.github/release-downloads.md` (keep those in step with the README).
+  `.github/release-downloads.md`, whose `@VERSION@` becomes the version so
+  the file names link straight to the release's files (keep the hints in
+  step with the README).
 - `src/updates/changelog.json`: what players should hear about, in English and
   German (`unreleased.en`, `unreleased.de`). The app shows it once after
   updating ("What's new"); the update card before updating shows no notes.
