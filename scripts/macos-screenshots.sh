@@ -71,6 +71,16 @@ list_windows() {
   done
 }
 
+# osascript, given up after 30 s: asking System Events can wait forever on a
+# permission prompt nobody answers (it did on the first run), and its output
+# is only for the log.
+osa() {
+  perl -e 'alarm shift; exec @ARGV' 30 osascript "$@"
+  local status=$?
+  [ "$status" -eq 142 ] && echo "osascript gave up after 30 s (permission prompt?)"
+  return 0
+}
+
 shot() {
   local name=$1 window=$2
   screencapture -x "$out/screen-$name.png" || echo "::warning::Full-screen capture failed ($name)"
@@ -108,7 +118,7 @@ for lang in "$@"; do
   if dialog=$(window_of CoreServicesUIAgent 30); then
     sleep 1
     shot "blocked.$lang" "$dialog"
-    osascript -e "tell application \"System Events\" to get entire contents of window 1 of (first process whose unix id is $(pgrep -x CoreServicesUIAgent | head -n 1))" 2>&1 |
+    osa -e "tell application \"System Events\" to get entire contents of window 1 of (first process whose unix id is $(pgrep -x CoreServicesUIAgent | head -n 1))" 2>&1 |
       sed 's/^/  dialog: /'
   else
     echo "::error::macOS didn't block BloogBase ($lang). Windows on screen:"
@@ -124,10 +134,10 @@ for lang in "$@"; do
   if settings=$(window_of "System Settings" 30); then
     sleep 3
     # Scroll down to the block, which sits in the Security section, and log
-    # its text and button. Needs accessibility access for osascript, which
-    # GitHub's runners grant; without it the shot shows the top of the pane.
+    # its text and button. Needs accessibility access for osascript; without
+    # it (see `osa`) the shot shows the top of the pane.
     pid=$(pgrep -x "System Settings" | head -n 1)
-    osascript - "$pid" <<'APPLESCRIPT' 2>&1 | sed 's/^/  settings: /'
+    osa - "$pid" <<'APPLESCRIPT' 2>&1 | sed 's/^/  settings: /'
 on run argv
   tell application "System Events"
     tell (first process whose unix id is ((item 1 of argv) as integer))
@@ -158,7 +168,7 @@ APPLESCRIPT
 
     # Click the button next to the block (its label depends on the language)
     # and take whatever asks next.
-    osascript - "$pid" <<'APPLESCRIPT' 2>&1 | sed 's/^/  click: /'
+    osa - "$pid" <<'APPLESCRIPT' 2>&1 | sed 's/^/  click: /'
 on run argv
 tell application "System Events"
   tell (first process whose unix id is ((item 1 of argv) as integer))
