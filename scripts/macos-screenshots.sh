@@ -85,7 +85,9 @@ limit() {
   shift
   "$@" <&0 &
   pid=$!
-  (sleep "$secs" && kill -9 "$pid" 2>/dev/null) &
+  # Not on the caller's output: in $(...), its sleep would keep the pipe
+  # open and every call would last the full $secs.
+  (sleep "$secs" && kill -9 "$pid") >/dev/null 2>&1 &
   watchdog=$!
   wait "$pid"
   status=$?
@@ -185,7 +187,28 @@ for lang in "$@"; do
     shot "blocked.$lang" ""
     failed=1
   fi
-  # Closing the dialog doesn't undo the block; System Settings still lists it.
+  # Answer the dialog as a player would: System Settings only offers Open
+  # Anyway for an app whose block was acknowledged.
+  if pid=$(pgrep -x CoreServicesUIAgent | head -n 1); then
+    osa - "$pid" <<'APPLESCRIPT' 2>&1 | sed 's/^/  dialog: /'
+on run argv
+  tell application "System Events"
+    tell (first process whose unix id is ((item 1 of argv) as integer))
+      repeat with e in (entire contents of window 1)
+        try
+          if (role of e) is "AXButton" and (name of e) is in {"Done", "Fertig", "OK"} then
+            click e
+            return "clicked " & (name of e)
+          end if
+        end try
+      end repeat
+      return "no Done button found"
+    end tell
+  end tell
+end run
+APPLESCRIPT
+  fi
+  sleep 2
   killall CoreServicesUIAgent 2>/dev/null
   sleep 1
 
@@ -204,21 +227,39 @@ on run argv
       set frontmost to true
       set found to false
       repeat with e in (entire contents of window 1)
-        try
-          set v to (value of e) as text
-          if v contains "BloogBase" then
-            log "text: " & v
-            perform action "AXScrollToVisible" of e
-            set found to true
-          end if
-        end try
+        repeat with attr in {"value", "name", "description"}
+          try
+            if attr as text is "value" then
+              set v to (value of e) as text
+            else if attr as text is "name" then
+              set v to (name of e) as text
+            else
+              set v to (description of e) as text
+            end if
+            if v contains "BloogBase" and not found then
+              log "text (" & attr & "): " & v
+              perform action "AXScrollToVisible" of e
+              set found to true
+            end if
+          end try
+        end repeat
         try
           if (role of e) is "AXButton" and (name of e) is not missing value then
             log "button: " & (name of e)
           end if
         end try
       end repeat
-      if not found then log "no text with BloogBase found"
+      if not found then
+        log "no text with BloogBase found; scrolling to the end"
+        repeat with e in (entire contents of window 1)
+          try
+            if (role of e) is "AXScrollBar" and (orientation of e) is "AXVerticalOrientation" then
+              set value of e to 1.0
+              log "scrolled a scroll bar to the end"
+            end if
+          end try
+        end repeat
+      end if
     end tell
   end tell
 end run
