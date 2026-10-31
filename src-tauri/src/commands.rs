@@ -1129,23 +1129,7 @@ async fn install_entry(
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
     }
 
-    let curated = Curated {
-        index_id: entry.id.clone(),
-        game_id: entry.game.clone(),
-        name: entry.name.clone(),
-        authors: entry.authors.clone(),
-        author_links: entry.author_links.clone(),
-        version: entry.version.clone(),
-        description: entry.description.clone(),
-        released: entry.released.clone(),
-        recipe: entry.recipe.clone(),
-        version_recipes: entry.version_recipes.clone(),
-        copy_to_root: entry.copy_to_root.clone(),
-        extends: entry.extends.clone(),
-        requires: entry.requires.clone(),
-        keenwiki_url: entry.links.keenwiki.clone(),
-        url: download.url.clone(),
-    };
+    let curated = Curated::new(&entry, 0);
     let b = a.clone();
     let file = archive.clone();
     let result = tauri::async_runtime::spawn_blocking(move || {

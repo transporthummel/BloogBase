@@ -21,6 +21,7 @@ use crate::detect::{detect, sha256_hex};
 use crate::error::{Error, Result};
 use crate::keenwiki::WikiMod;
 use crate::library::{self, Install, now};
+use crate::mod_index::IndexEntry;
 use crate::paths::AppPaths;
 use crate::readme;
 use crate::recipe::{self, Recipe, VersionRecipes, has_ext, patcher_game};
@@ -900,6 +901,33 @@ struct Stored<'a> {
     archive_name: Option<&'a str>,
 }
 
+impl<'a> Stored<'a> {
+    /// A mod as the index describes it, played over `extends`.
+    fn curated(c: &'a Curated, extends: Option<String>) -> Self {
+        Stored {
+            name: c.name.clone(),
+            authors: c.authors.clone(),
+            author_links: c.author_links.clone(),
+            version: c.version.clone(),
+            description: c.description.clone(),
+            released: c.released.clone(),
+            recipe: c.recipe.clone(),
+            version_recipes: c.version_recipes.clone(),
+            requires: requires(&c.requires),
+            source: ModSource::Index,
+            index_id: Some(&c.index_id),
+            extends,
+            keenwiki_url: c.keenwiki_url.as_deref(),
+            // The index entry links it.
+            homepage: None,
+            pckf: None,
+            keenmodding: None,
+            source_url: &c.url,
+            archive_name: c.url.rsplit('/').next().filter(|n| !n.is_empty()),
+        }
+    }
+}
+
 /// Installs a mod and creates its play profile on `install_id`, or without
 /// a game.
 pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod> {
@@ -1069,6 +1097,86 @@ pub struct Curated {
     pub url: String,
 }
 
+impl Curated {
+    /// The entry with its `download`th download. Its version is the
+    /// download's; the entry's is the newest download's.
+    pub fn new(entry: &IndexEntry, download: usize) -> Self {
+        let d = &entry.downloads[download];
+        Curated {
+            index_id: entry.id.clone(),
+            game_id: entry.game.clone(),
+            name: entry.name.clone(),
+            authors: entry.authors.clone(),
+            author_links: entry.author_links.clone(),
+            version: d
+                .version
+                .clone()
+                .or_else(|| entry.version.clone().filter(|_| download == 0)),
+            description: entry.description.clone(),
+            released: entry.released.clone(),
+            recipe: entry.recipe.clone(),
+            version_recipes: entry.version_recipes.clone(),
+            copy_to_root: entry.copy_to_root.clone(),
+            extends: entry.extends.clone(),
+            requires: entry.requires.clone(),
+            keenwiki_url: entry.links.keenwiki.clone(),
+            url: d.url.clone(),
+        }
+    }
+}
+
+/// Ties an installed mod to the index entry whose download it was
+/// installed from, and takes the entry's details over what the mod brought
+/// along, as an install from the index would store them. How it's played
+/// stays as installed: the entry's recipe is made for its newest download.
+pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
+    // Every field gets a decision, so new ones aren't forgotten here.
+    let Stored {
+        name,
+        authors,
+        author_links,
+        version,
+        description,
+        released,
+        recipe: _,
+        version_recipes: _,
+        requires: _,
+        source,
+        index_id,
+        extends: _,
+        keenwiki_url,
+        homepage,
+        pckf,
+        keenmodding,
+        source_url: _,
+        archive_name: _,
+    } = Stored::curated(c, None);
+    db.conn().execute(
+        "UPDATE mods SET name = ?2, authors = ?3, author_links = ?4,
+                         version = COALESCE(?5, version), description = ?6, released = ?7,
+                         source = ?8, index_id = ?9, keenwiki_url = ?10, homepage = ?11,
+                         pckf = ?12, keenmodding = ?13
+         WHERE id = ?1",
+        params![
+            mod_id,
+            name,
+            serde_json::to_string(&authors).expect("strings serialize"),
+            serde_json::to_string(&author_links).expect("strings serialize"),
+            version,
+            description,
+            released,
+            source.as_str(),
+            index_id,
+            keenwiki_url,
+            homepage,
+            pckf,
+            keenmodding,
+        ],
+    )?;
+    tracing::info!("tied mod {mod_id} to index entry {}", c.index_id);
+    Ok(())
+}
+
 /// Installs a downloaded index mod, or updates it when it's installed
 /// already. Without `install_id` the best fitting game is used; when there
 /// is none, the mod waits for one if `without_game`, else it's an error.
@@ -1114,27 +1222,7 @@ pub fn install_curated(
     }
     analysis.copies = copies_to_root(&analysis, &c.copy_to_root)?;
 
-    let stored = Stored {
-        name: c.name.clone(),
-        authors: c.authors.clone(),
-        author_links: c.author_links.clone(),
-        version: c.version.clone(),
-        description: c.description.clone(),
-        released: c.released.clone(),
-        recipe: c.recipe.clone(),
-        version_recipes: c.version_recipes.clone(),
-        requires: requires(&c.requires),
-        source: ModSource::Index,
-        index_id: Some(&c.index_id),
-        extends: base_id,
-        keenwiki_url: c.keenwiki_url.as_deref(),
-        // The index entry links it.
-        homepage: None,
-        pckf: None,
-        keenmodding: None,
-        source_url: &c.url,
-        archive_name: c.url.rsplit('/').next().filter(|n| !n.is_empty()),
-    };
+    let stored = Stored::curated(c, base_id);
     let game =
         catalog::game(&c.game_id).ok_or_else(|| Error::NotFound(format!("game {}", c.game_id)))?;
     let requires = stored.requires.as_deref();

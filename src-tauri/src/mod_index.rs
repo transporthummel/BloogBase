@@ -20,6 +20,7 @@ use crate::detect::sha256_hex;
 use crate::downloads::USER_AGENT;
 use crate::error::{CommandError, Error, Result};
 use crate::library::now;
+use crate::mods::{self, Curated};
 use crate::paths::AppPaths;
 use crate::recipe::{Recipe, VersionRecipes};
 
@@ -557,34 +558,20 @@ fn version_at_least(version: &str, min: &str) -> bool {
 /// download they were installed from, byte for byte: added from KeenWiki
 /// or a file, maybe before the entry joined the index. An older download
 /// counts too, so the entry offers the update. The entry's details replace
-/// what the mod brought along, as an install from the index would store
-/// them; its version is the download's.
+/// what the mod brought along ([`mods::tie_to_index`]).
 pub fn link_installed(index: &ModIndex, db: &Db) -> Result<()> {
-    let conn = db.conn();
     for e in index.entries() {
         for (i, d) in e.downloads.iter().enumerate() {
-            let version = d.version.as_ref().or(e.version.as_ref().filter(|_| i == 0));
-            let tied = conn.execute(
-                "UPDATE mods SET index_id = ?1, source = 'index', name = ?4, authors = ?5,
-                                 author_links = ?6, description = ?7, released = ?8,
-                                 version = COALESCE(?9, version), keenwiki_url = ?10,
-                                 homepage = NULL, pckf = NULL, keenmodding = NULL
-                 WHERE index_id IS NULL AND game_id = ?2 AND lower(archive_sha256) = lower(?3)",
-                params![
-                    e.id,
-                    e.game,
-                    d.sha256,
-                    e.name,
-                    serde_json::to_string(&e.authors).expect("strings serialize"),
-                    serde_json::to_string(&e.author_links).expect("strings serialize"),
-                    e.description,
-                    e.released,
-                    version,
-                    e.links.keenwiki,
-                ],
-            )?;
-            if tied > 0 {
-                tracing::info!("tied {tied} installed mod(s) to index entry {}", e.id);
+            let found: Vec<String> = db
+                .conn()
+                .prepare(
+                    "SELECT id FROM mods WHERE index_id IS NULL AND game_id = ?1
+                     AND lower(archive_sha256) = lower(?2)",
+                )?
+                .query_map(params![e.game, d.sha256], |r| r.get(0))?
+                .collect::<rusqlite::Result<_>>()?;
+            for mod_id in found {
+                mods::tie_to_index(db, &mod_id, &Curated::new(&e, i))?;
             }
         }
     }
