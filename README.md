@@ -13,6 +13,8 @@
   ·
   <a href="#suggest-a-mod-or-give-feedback">Suggest a mod</a>
   ·
+  <a href="#security">Security</a>
+  ·
   <a href="#for-developers">For developers</a>
 </p>
 
@@ -195,6 +197,28 @@ version, a better description, a start that doesn't work), or if you'd rather
 not have it listed; it's taken out right away. BloogBase never hosts mods: it
 downloads them from where you published them and credits you on every page.
 
+## Security
+
+BloogBase runs mods made by the community, so it treats every download,
+archive and readme as untrusted:
+
+- App updates and the mod list are signed, and every download from the mod
+  list is checked against its SHA-256 before it's used.
+- Archives can't write outside their folder, and oversized downloads and
+  archive entries are refused.
+- Mods run in DOSBox's secure mode: they see their own game folder, not the
+  rest of your computer.
+- Readmes and descriptions are shown as plain text; links open in your
+  browser.
+- The signing keys never reach pull requests, the workflows using them run
+  only pinned actions, and the dependencies are checked for known
+  vulnerabilities every week.
+
+[docs/security.md](docs/security.md) explains all of it, including what it
+doesn't cover. **Found a security problem?** Please
+[report it privately](https://github.com/transporthummel/BloogBase/security/advisories/new)
+instead of opening an issue.
+
 ## For developers
 
 BloogBase is a [Tauri 2](https://tauri.app/) app: a Rust core does all the
@@ -247,6 +271,8 @@ How BloogBase works inside:
 - [docs/dosbox.md](docs/dosbox.md): setting up and running DOSBox Staging
 - [docs/captures.md](docs/captures.md): reading and playing DOSBox's screenshots
   and videos
+- [docs/security.md](docs/security.md): how BloogBase handles untrusted mods,
+  downloads and archives, and how to report a vulnerability
 
 ## Thanks
 
