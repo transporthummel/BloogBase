@@ -419,7 +419,12 @@ h3 {
 
 .hero-logo {
   width: min(40rem, 100%);
-  mask-image: radial-gradient(closest-side, #000 70%, transparent 100%);
+  /* The edges fade into the sky; two small ovals keep both ends of the name
+     (the logo's lower corners) whole. */
+  mask-image:
+    radial-gradient(closest-side, #000 70%, transparent 100%),
+    radial-gradient(10.4% 25.9% at 22.4% 69.4%, #000 80%, transparent 100%),
+    radial-gradient(10.4% 25.9% at 81.8% 69.4%, #000 80%, transparent 100%);
   margin-bottom: 0.5rem;
 }
 
