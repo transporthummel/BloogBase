@@ -63,3 +63,20 @@ Every shot starts from a fresh load of its route, with animations off
 When a shot needs something new in the data folder, add it to `seed` and run
 with `--fresh`. Copyrighted games may show in the pictures; the games
 themselves stay in `.local/games`.
+
+## macOS: "Open Anyway"
+
+The README's pictures of macOS blocking the first start and of _Open Anyway_
+in System Settings can't come from the script above. They are real
+screenshots from a GitHub macOS runner: start _Actions → macOS screenshots →
+Run workflow_ ([`macos-screenshots.yml`](../.github/workflows/macos-screenshots.yml)).
+It builds the app, installs it as if downloaded and runs
+[`scripts/macos-screenshots.sh`](../scripts/macos-screenshots.sh), which
+turns on Gatekeeper, starts the app and takes the dialog, the settings pane
+and what follows the click, in English and German. Its log lists the texts
+and button labels it found, for the README's wording.
+
+Download the `macos-screenshots` artifact, look at the pictures (the
+`screen-*` ones show the whole screen, for cropping by hand when a window
+capture is missing or cut off) and copy the good ones to `docs/screenshots/`.
+Redo them when a new macOS version changes the dialog.

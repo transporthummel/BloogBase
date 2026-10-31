@@ -1,0 +1,58 @@
+name: macOS screenshots
+
+# Started by hand (Actions → macOS screenshots → Run workflow). Builds the app
+# for Apple Silicon, ad-hoc signed like a release, and lets
+# scripts/macos-screenshots.sh take real screenshots of macOS blocking its first
+# start and of "Open Anyway" in System Settings, in English and German, for the
+# README (docs/screenshots.md). The pictures come back as the "macos-screenshots"
+# artifact; look at them and copy the good ones to docs/screenshots/ by hand.
+# macOS minutes count tenfold for private repositories, so it builds only once.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  screenshots:
+    name: Screenshots
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Collect third-party licenses
+        run: pnpm licenses:generate
+
+      # Only the .app: the shots install it to /Applications themselves, as a
+      # player would from the DMG.
+      - name: Build
+        run: pnpm tauri build --bundles app
+
+      - name: Take the screenshots
+        run: |
+          bash scripts/macos-screenshots.sh \
+            src-tauri/target/release/bundle/macos/BloogBase.app \
+            "$RUNNER_TEMP/shots" en de
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-screenshots
+          path: ${{ runner.temp }}/shots
+          if-no-files-found: warn
