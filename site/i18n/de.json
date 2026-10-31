@@ -13,7 +13,7 @@
   "nav.languageLabel": "This page in English",
 
   "hero.title": "Ein gemütliches Zuhause für Commander Keen.",
-  "hero.lead": "Spiele die Keen-Spiele und fast hundert Mods der Community mit einem Klick. Keine ZIPs, keine Patcher, keine DOSBox-Einstellungen: Mod aussuchen, Installieren, Spielen.",
+  "hero.lead": "Spiele die Keen-Spiele und fast hundert Mods der Community mit einem Klick: Mod aussuchen, Installieren, Spielen. Um ZIPs, Patcher und DOSBox-Einstellungen kümmert sich BloogBase.",
   "hero.download": "Für {os} herunterladen",
   "hero.downloadAny": "BloogBase herunterladen",
   "hero.otherSystems": "Andere Systeme",
@@ -42,7 +42,7 @@
   "s2.text": "Seit über dreißig Jahren bauen Fans neue Abenteuer für Keen. Entdecken zeigt die besten davon, für jedes Spiel.",
   "s2.li1": "Fast hundert Mods mit Beschreibung, Autoren und Links zu KeenWiki und den Foren. Suche, filtere nach Spiel und Art, oder fang mit den empfohlenen an.",
   "s2.li2": "Installieren lädt die Mod <strong>von der Originalquelle ihrer Autoren</strong>, prüft sie, legt sie auf die passende Kopie des Spiels und findet heraus, wie sie startet.",
-  "s2.li3": "Patcher, Batch-Dateien und fehlende Hilfsprogramme erledigt BloogBase im Hintergrund. Du drückst nur auf Spielen.",
+  "s2.li3": "Patcher, Batch-Dateien und fehlende Hilfsprogramme erledigt BloogBase im Hintergrund, du drückst nur auf Spielen.",
   "s2.li4": "Die Liste <strong>aktualisiert sich selbst</strong>: Neue Mods und Mod-Updates erscheinen ohne App-Update, und sie funktioniert auch offline.",
   "s2.alt": "Entdecken: die Mod-Liste mit Suche, Filtern und empfohlenen Mods",
 
@@ -107,7 +107,6 @@
   "details.care.li2": "Aktualisiert sich selbst, und nie, während ein Spiel läuft.",
   "details.care.li3": "Mit der Tastatur bedienbar, mit Beschriftungen für Screenreader; reduzierte Bewegung wird respektiert.",
   "details.care.li4": "<strong>Keine Telemetrie.</strong> Nichts wird gesendet, außer du sendest es.",
-  "details.care.li5": "Pixelschnee zu Weihnachten.",
 
   "games.title": "Sieben Spiele, ein Zuhause",
   "games.text": "Drei davon sind kostenlos. Für die anderen findet BloogBase deine Kopie von Steam oder GOG oder übernimmt sie aus einem Ordner oder einer ZIP-Datei.",

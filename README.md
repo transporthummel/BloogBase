@@ -62,8 +62,8 @@ After that, BloogBase keeps itself up to date.
 with descriptions, authors and links to their KeenWiki pages. Search and
 filter them, or start with the recommended ones. One click downloads a mod
 from its original source, checks it, puts it on the right copy of the game
-and works out how it starts: no ZIPs, no patchers, no batch files. The list
-updates itself, so new mods show up without an app update.
+and works out how it starts. The list updates itself, so new mods show up
+without an app update.
 
 ### Any mod from KeenWiki
 
@@ -155,7 +155,7 @@ the case of the PC you first played Keen on. In English and German.
 - Library sorted or grouped your way, with play time, saves and disk space at
   a glance.
 - Keyboard friendly, with screen reader labels, and respects reduced motion.
-- No telemetry. Diagnostics for bug reports are copied by you, with personal
+- No telemetry. You copy diagnostics for bug reports yourself, with personal
   paths taken out.
 
 ## Supported games
@@ -250,8 +250,8 @@ How BloogBase works inside:
 
 ## Thanks
 
-To the Keen community, whose mods, research and documentation make all of
-this possible: the mod authors credited on every mod's page,
+To the Keen community, whose mods, research and documentation BloogBase is
+built on: the mod authors credited on every mod's page,
 [KeenWiki](https://keenwiki.shikadi.net/) and its admins, the
 [Shikadi ModdingWiki](https://moddingwiki.shikadi.net/) for documenting the
 games' file formats, and the [PCKF](https://pckf.com/) and Keen: Modding

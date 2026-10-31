@@ -13,7 +13,7 @@
   "nav.languageLabel": "Diese Seite auf Deutsch",
 
   "hero.title": "A cozy home for Commander Keen.",
-  "hero.lead": "Play the Keen games and close to a hundred community mods with a single click. No ZIPs, no patchers, no DOSBox settings: pick a mod, click Install, click Play.",
+  "hero.lead": "Play the Keen games and close to a hundred community mods with a single click: pick a mod, click Install, click Play. BloogBase deals with ZIPs, patchers and DOSBox settings for you.",
   "hero.download": "Download for {os}",
   "hero.downloadAny": "Download BloogBase",
   "hero.otherSystems": "Other systems",
@@ -42,7 +42,7 @@
   "s2.text": "For more than thirty years, fans have built new adventures for Keen. Discover lists the best of them, for every game.",
   "s2.li1": "Close to a hundred mods with descriptions, authors and links to KeenWiki and the forums. Search, filter by game and type, or start with the recommended ones.",
   "s2.li2": "Install downloads the mod <strong>from its author's original source</strong>, checks it, puts it on the right copy of the game and works out how it starts.",
-  "s2.li3": "Patchers, batch files and missing helper programs are handled behind the scenes. You just press Play.",
+  "s2.li3": "BloogBase takes care of patchers, batch files and missing helper programs behind the scenes; you just press Play.",
   "s2.li4": "The list <strong>updates itself</strong>: new mods and mod updates show up without an app update, and it works offline.",
   "s2.alt": "Discover: the mod list with search, filters and recommended mods",
 
@@ -107,7 +107,6 @@
   "details.care.li2": "Updates itself, and never while a game is running.",
   "details.care.li3": "Keyboard friendly, with screen reader labels; it respects reduced motion.",
   "details.care.li4": "<strong>No telemetry.</strong> Nothing is sent anywhere unless you send it.",
-  "details.care.li5": "Pixel snow at Christmas.",
 
   "games.title": "Seven games, one home",
   "games.text": "Three of them are free. For the others, BloogBase finds your copy from Steam or GOG, or takes it from a folder or ZIP.",
