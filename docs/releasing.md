@@ -22,18 +22,22 @@ them:
 
 ## Checklist
 
-1. Push `main` and check that both changelogs' unreleased entries are complete.
-2. On GitHub: Actions → Release → Run workflow (from `main`). Enter the
+1. Before the first release, and when a new macOS version changes how it
+   blocks unsigned apps: Actions → macOS screenshots → Run workflow, then
+   copy the good pictures to `docs/screenshots/` and commit them
+   ([screenshots.md](screenshots.md#macos-open-anyway)).
+2. Push `main` and check that both changelogs' unreleased entries are complete.
+3. On GitHub: Actions → Release → Run workflow (from `main`). Enter the
    version (like `1.2.0`) and, to be safe, the commit you checked; the
    workflow stops if `main` is somewhere else by then.
-3. The workflow stops before changing anything if the version isn't newer
+4. The workflow stops before changing anything if the version isn't newer
    than the last release or than the project's, or if an unreleased section is
    empty. Otherwise it writes the version into `package.json`,
    `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and
    `src-tauri/tauri.conf.json`, moves the unreleased entries under it (dated,
    in `CHANGELOG.md`), commits that to `main` with the tag and builds.
-4. `git pull`, so your `main` has the "Prepare version" commit.
-5. Download the draft's installers, try them, publish the draft.
+5. `git pull`, so your `main` has the "Prepare version" commit.
+6. Download the draft's installers, try them, publish the draft.
 
 If a build fails, "Re-run failed jobs" builds the same tag again. To drop a
 release that went wrong, delete the draft and the tag and revert the "Prepare
@@ -88,6 +92,7 @@ shows the file. It is not committed.
 ## Local release build
 
 Bash:
+
 ```bash
 pnpm licenses:generate
 TAURI_SIGNING_PRIVATE_KEY="$(cat .local/updater-signing/bloogbase-updater.key)" \
@@ -96,6 +101,7 @@ pnpm tauri build --config src-tauri/tauri.release.conf.json
 ```
 
 PowerShell:
+
 ```powershell
 pnpm licenses:generate
 $env:TAURI_SIGNING_PRIVATE_KEY = Get-Content .local/updater-signing/bloogbase-updater.key -Raw
