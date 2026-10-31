@@ -608,6 +608,8 @@ mod tests {
         assert_eq!(capture.layer, ConfigLayer::Launch);
         let dirs = paths.profile("keen4-1");
         fs::create_dir_all(&dirs.capture).unwrap();
+        // Linux resolves `generated/..` only if `generated` exists.
+        fs::create_dir_all(dirs.launch_conf.parent().unwrap()).unwrap();
         let resolved = dirs.launch_conf.parent().unwrap().join(&capture.value);
         assert_eq!(
             fs::canonicalize(resolved).unwrap(),
