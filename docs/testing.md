@@ -163,3 +163,16 @@ CI (`.github/workflows/index.yml`) runs both on every change to `index/` and
 weekly, then also asking the servers whether each download still exists. The
 app side (signature, cache, ETag, install from the index) is covered by the
 unit tests in `src-tauri/src/mod_index.rs` and `src-tauri/src/mods.rs`.
+
+## Dependency audit
+
+```sh
+cargo audit --file src-tauri/Cargo.lock    # cargo install cargo-audit
+cargo audit --file index/tool/Cargo.lock
+pnpm audit --prod
+```
+
+Checks the dependencies that ship against known vulnerabilities (RustSec and
+the npm advisories). CI (`.github/workflows/audit.yml`) runs it weekly and
+whenever a lockfile changes; unmaintained or unsound crates only warn. ESLint
+and other build tools are left out, as they don't ship.
