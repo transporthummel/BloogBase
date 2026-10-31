@@ -1504,8 +1504,10 @@ fn stage(
     }
     if let Source::Zip(zip, _) = source {
         fs::create_dir_all(staging.join("source"))?;
+        // The name ends the download's URL; only its last part, so a `\..\`
+        // in it can't leave the folder on Windows.
         let name = archive_name
-            .map(std::ffi::OsStr::new)
+            .and_then(|n| Path::new(n).file_name())
             .unwrap_or_else(|| zip.file_name().expect("a file"));
         fs::copy(zip, staging.join("source").join(name))?;
     }
@@ -2790,6 +2792,26 @@ mod tests {
         assert_eq!(sha, sha256_hex(&fs::read(&zip).unwrap()));
         assert_eq!(composed, None);
         assert!(!paths.cache.join("mod-aurora-bliss-update").exists());
+    }
+
+    #[test]
+    fn the_archive_name_from_the_url_stays_in_the_source_folder() {
+        let (tmp, paths, db) = setup();
+        let zip = tmp.path().join("index-aurora-bliss.zip");
+        write_zip(&zip, AURORA);
+        let c = Curated {
+            url: r"https://example.com/..\..\..\evil.zip".into(),
+            ..curated(aurora_patch(&["/nocheck"]))
+        };
+        install_curated(&paths, &db, &zip, &c, None, false).unwrap();
+        let names: Vec<_> = fs::read_dir(paths.mods.join("aurora-bliss/source"))
+            .unwrap()
+            .map(|e| e.unwrap().file_name().into_string().unwrap())
+            .collect();
+        assert_eq!(names.len(), 1);
+        assert!(names[0].ends_with("evil.zip"));
+        assert!(!paths.mods.join("evil.zip").exists());
+        assert!(!paths.mods.parent().unwrap().join("evil.zip").exists());
     }
 
     #[test]
