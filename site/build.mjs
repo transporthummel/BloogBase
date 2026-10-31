@@ -16,6 +16,8 @@ const URL_BASE = "https://transporthummel.github.io/BloogBase/";
 // The first language is the site's root; the others live in a folder each.
 const LANGUAGES = ["en", "de"];
 const shotsDir = path.join(root, "docs", "screenshots");
+// Shown in the footer as "Last updated": when this build ran, in UTC.
+const builtAt = new Date();
 
 const template = fs.readFileSync(path.join(site, "page.html"), "utf8");
 const texts = Object.fromEntries(
@@ -61,7 +63,14 @@ function render(lang) {
     otherLang: other,
     urlEn: URL_BASE,
     urlDe: `${URL_BASE}de/`,
-    year: String(new Date().getFullYear()),
+    year: String(builtAt.getUTCFullYear()),
+    updatedIso: builtAt.toISOString().replace(/\.\d+Z$/, "Z"),
+    updated: `${new Intl.DateTimeFormat(lang, {
+      dateStyle: "long",
+      timeStyle: "short",
+      timeZone: "UTC",
+      hourCycle: "h23",
+    }).format(builtAt)} UTC`,
   };
   const page = template.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (match, expr) => {
     const [kind, arg] = expr.includes(":") ? expr.split(":") : ["t", expr];

@@ -147,5 +147,6 @@
   "footer.source": "Source code on GitHub",
   "footer.license": "BloogBase is free software under the MIT license. Games run in DOSBox Staging (GPL-2.0-or-later). The mod list is licensed under CC BY-SA 4.0. Fonts: Inter and Press Start 2P (SIL Open Font License).",
   "footer.trademark": "Commander Keen is a trademark of id Software. BloogBase is an unofficial fan project and is not affiliated with or endorsed by id Software, ZeniMax Media, Apogee or Softdisk. It contains no game data.",
-  "footer.top": "Back to the top"
+  "footer.top": "Back to the top",
+  "footer.updated": "Last updated:"
 }
