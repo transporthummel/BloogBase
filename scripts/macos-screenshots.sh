@@ -51,7 +51,7 @@ window_of() {
   for _ in $(seq 1 "$tries"); do
     pid=$(pgrep -x "$name" | head -n 1)
     if [ -n "$pid" ]; then
-      id=$("$work/windows" "$pid" | head -n 1 | cut -d ' ' -f 1)
+      id=$(limit 5 "$work/windows" "$pid" | head -n 1 | cut -d ' ' -f 1)
       if [ -n "$id" ]; then
         echo "$id"
         return 0
@@ -66,7 +66,7 @@ window_of() {
 list_windows() {
   local pid found
   for pid in $(ps -axo pid=); do
-    found=$("$work/windows" "$pid")
+    found=$(limit 5 "$work/windows" "$pid")
     [ -n "$found" ] && echo "  $(ps -o comm= -p "$pid"): $found"
   done
 }
@@ -170,7 +170,10 @@ for lang in "$@"; do
   spctl --assess --type execute -vv /Applications/BloogBase.app 2>&1 | sed 's/^/  spctl: /'
 
   step "open the app"
-  open /Applications/BloogBase.app
+  # In the background: when Gatekeeper blocks the app, `open` waits for an
+  # answer to the dialog, which hung the earlier runs.
+  open /Applications/BloogBase.app &
+  step "wait for the dialog"
   if dialog=$(window_of CoreServicesUIAgent 30); then
     sleep 1
     shot "blocked.$lang" "$dialog"
