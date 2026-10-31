@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="{{@lang}}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{press.meta.title}}</title>
+    <meta name="description" content="{{press.meta.description}}" />
+    <meta name="theme-color" content="#0d0c1d" />
+    <link rel="canonical" href="{{@url}}" />
+    <link rel="alternate" hreflang="en" href="{{@urlEn}}" />
+    <link rel="alternate" hreflang="de" href="{{@urlDe}}" />
+    <link rel="alternate" hreflang="x-default" href="{{@urlEn}}" />
+    <link rel="icon" type="image/png" href="{{@root}}img/icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{{press.meta.title}}" />
+    <meta property="og:description" content="{{press.meta.description}}" />
+    <meta property="og:url" content="{{@url}}" />
+    <meta property="og:image" content="{{@base}}img/library.png" />
+    <meta property="og:image:alt" content="{{meta.ogAlt}}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link
+      rel="preload"
+      href="{{@root}}fonts/press-start-2p-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="{{@root}}fonts/inter-latin-wght-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="{{@root}}style.css" />
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+    <script src="{{@root}}press.js" defer></script>
+  </head>
+  <body class="press">
+    <div class="sky" aria-hidden="true">
+      <div class="sky-layer sky-far"></div>
+      <div class="sky-layer sky-mid"></div>
+      <div class="sky-layer sky-near"></div>
+    </div>
+
+    <a class="skip" href="#main">{{nav.skip}}</a>
+
+    <header class="topbar">
+      <a class="wordmark" href="{{@home}}">
+        <img src="{{@root}}img/icon.png" alt="" width="32" height="32" />
+        <span>BloogBase</span>
+      </a>
+      <nav aria-label="{{press.nav.label}}">
+        <a href="#facts">{{press.nav.facts}}</a>
+        <a href="#texts">{{press.nav.texts}}</a>
+        <a href="#pictures">{{press.nav.pictures}}</a>
+        <a href="#contact">{{press.nav.contact}}</a>
+        <a
+          class="lang"
+          href="{{@otherUrl}}"
+          hreflang="{{@otherLang}}"
+          lang="{{@otherLang}}"
+          aria-label="{{press.nav.languageLabel}}"
+          >{{nav.language}}</a
+        >
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="press-intro" aria-labelledby="press-title">
+        <div>
+          <h1 id="press-title">{{press.title}}</h1>
+          <p class="lead">{{press.lead}}</p>
+          <div class="press-actions">
+            <a class="button primary" href="{{@root}}bloogbase-press-kit.zip" download>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 15V3M7 10l5 5 5-5M5 21h14" />
+              </svg>
+              <span>{{press.zip.button}}</span>
+            </a>
+            <span class="note">{{press.zip.what}} · {{@zipSize}}</span>
+          </div>
+        </div>
+        <img
+          class="hero-logo press-logo"
+          src="{{@root}}img/logo.jpg"
+          alt="BloogBase"
+          width="960"
+          height="540"
+        />
+      </section>
+
+      <section class="fact-sheet" id="facts" aria-labelledby="facts-title">
+        <h2 id="facts-title">{{press.facts.title}}</h2>
+        <dl class="fact-list">
+          <div>
+            <dt>{{press.facts.what}}</dt>
+            <dd>{{press.facts.whatValue}}</dd>
+          </div>
+          <div>
+            <dt>{{press.facts.by}}</dt>
+            <dd>{{press.facts.byValue}}</dd>
+          </div>
+          <div>
+            <dt>{{press.facts.release}}</dt>
+            <dd>{{press.facts.releaseValue}}</dd>
+          </div>
+          <div>
+            <dt>{{press.facts.systems}}</dt>
+            <dd>{{press.facts.systemsValue}}</dd>
+          </div>
+          <div>
+            <dt>{{press.facts.languages}}</dt>
+            <dd>{{press.facts.languagesValue}}</dd>
+          </div>
+          <div>
+            <dt>{{press.facts.price}}</dt>
+            <dd>{{press.facts.priceValue}}</dd>
+          </div>
+          <div>
+            <dt>{{press.facts.games}}</dt>
+            <dd>{{press.facts.gamesValue}}</dd>
+          </div>
+          <div>
+            <dt>{{press.facts.mods}}</dt>
+            <dd><span class="count">{{@modCount}}</span> {{press.facts.modsValue}}</dd>
+          </div>
+          <div>
+            <dt>{{press.facts.license}}</dt>
+            <dd>{{press.facts.licenseValue}}</dd>
+          </div>
+          <div>
+            <dt>{{press.facts.links}}</dt>
+            <dd>{{press.facts.linksValue}}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="texts" id="texts" aria-labelledby="texts-title">
+        <h2 id="texts-title">{{press.texts.title}}</h2>
+        <p class="lead">{{press.texts.text}}</p>
+        <div class="copy-blocks">
+          <div class="copy-block">
+            <div class="copy-head">
+              <h3>{{press.texts.oneTitle}}</h3>
+              <button
+                class="copy"
+                type="button"
+                aria-live="polite"
+                data-copied="{{press.texts.copied}}"
+              >
+                {{press.texts.copy}}
+              </button>
+            </div>
+            <p class="copy-text">{{press.texts.one}}</p>
+          </div>
+          <div class="copy-block">
+            <div class="copy-head">
+              <h3>{{press.texts.shortTitle}}</h3>
+              <button
+                class="copy"
+                type="button"
+                aria-live="polite"
+                data-copied="{{press.texts.copied}}"
+              >
+                {{press.texts.copy}}
+              </button>
+            </div>
+            <p class="copy-text">{{press.texts.short}}</p>
+          </div>
+          <div class="copy-block">
+            <div class="copy-head">
+              <h3>{{press.texts.longTitle}}</h3>
+              <button
+                class="copy"
+                type="button"
+                aria-live="polite"
+                data-copied="{{press.texts.copied}}"
+              >
+                {{press.texts.copy}}
+              </button>
+            </div>
+            <div class="copy-text">
+              <p>{{press.texts.long1}}</p>
+              <p>{{press.texts.long2}}</p>
+              <p>{{press.texts.long3}}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="story" aria-labelledby="story-title">
+        <h2 id="story-title">{{press.story.title}}</h2>
+        <figure class="quote">
+          <blockquote>
+            <p>{{press.story.p1}}</p>
+            <p>{{press.story.p2}}</p>
+          </blockquote>
+          <figcaption>{{press.story.by}}</figcaption>
+        </figure>
+      </section>
+
+      <section class="angles" aria-labelledby="angles-title">
+        <h2 id="angles-title">{{press.angles.title}}</h2>
+        <div class="details-columns">
+          <div class="detail-group">
+            <h3>{{press.angles.alive.title}}</h3>
+            <p>{{press.angles.alive.text}}</p>
+          </div>
+          <div class="detail-group">
+            <h3>{{press.angles.free.title}}</h3>
+            <p>{{press.angles.free.text}}</p>
+          </div>
+          <div class="detail-group">
+            <h3>{{press.angles.easy.title}}</h3>
+            <p>{{press.angles.easy.text}}</p>
+          </div>
+          <div class="detail-group">
+            <h3>{{press.angles.saves.title}}</h3>
+            <p>{{press.angles.saves.text}}</p>
+          </div>
+          <div class="detail-group">
+            <h3>{{press.angles.museum.title}}</h3>
+            <p>{{press.angles.museum.text}}</p>
+          </div>
+          <div class="detail-group">
+            <h3>{{press.angles.open.title}}</h3>
+            <p>{{press.angles.open.text}}</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pictures" id="pictures" aria-labelledby="pictures-title">
+        <h2 id="pictures-title">{{press.pictures.title}}</h2>
+        <p class="lead">{{press.use.text}} {{press.pictures.click}}</p>
+        <p class="note">{{press.use.credit}}</p>
+        <div class="picture-grid">
+          <figure class="picture picture-logo">
+            <a class="frame" href="{{@root}}img/logo.png" download="bloogbase-logo.png">
+              <img
+                src="{{@root}}img/logo.jpg"
+                alt="{{press.pictures.logoAlt}}"
+                width="960"
+                height="540"
+                loading="lazy"
+              />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.logo}}</span>
+              <a class="asset" href="{{@root}}img/logo.png" download="bloogbase-logo.png"
+                ><code>{{png:logo.png}}</code></a
+              >
+            </figcaption>
+          </figure>
+          <figure class="picture picture-icon">
+            <a class="frame" href="{{@root}}img/icon-512.png" download="bloogbase-icon.png">
+              <img
+                src="{{@root}}img/icon-512.png"
+                alt="{{press.pictures.iconAlt}}"
+                width="512"
+                height="512"
+                loading="lazy"
+              />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.icon}}</span>
+              <a class="asset" href="{{@root}}img/icon-512.png" download="bloogbase-icon.png"
+                ><code>{{png:icon-512.png}}</code></a
+              >
+            </figcaption>
+          </figure>
+          <figure class="picture">
+            <a class="frame" href="{{shot:library}}" download>
+              <img src="{{shot:library}}" {{size:library}} alt="{{hero.shotAlt}}" loading="lazy" />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.library}}</span>
+              <a class="asset" href="{{shot:library}}" download><code>{{png:library}}</code></a>
+            </figcaption>
+          </figure>
+          <figure class="picture">
+            <a class="frame" href="{{shot:discover}}" download>
+              <img src="{{shot:discover}}" {{size:discover}} alt="{{s2.alt}}" loading="lazy" />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.discover}}</span>
+              <a class="asset" href="{{shot:discover}}" download><code>{{png:discover}}</code></a>
+            </figcaption>
+          </figure>
+          <figure class="picture">
+            <a class="frame" href="{{shot:mod-page}}" download>
+              <img src="{{shot:mod-page}}" {{size:mod-page}} alt="{{s5.alt}}" loading="lazy" />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.modPage}}</span>
+              <a class="asset" href="{{shot:mod-page}}" download><code>{{png:mod-page}}</code></a>
+            </figcaption>
+          </figure>
+          <figure class="picture">
+            <a class="frame" href="{{shot:saves}}" download>
+              <img src="{{shot:saves}}" {{size:saves}} alt="{{s4.alt}}" loading="lazy" />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.saves}}</span>
+              <a class="asset" href="{{shot:saves}}" download><code>{{png:saves}}</code></a>
+            </figcaption>
+          </figure>
+          <figure class="picture">
+            <a class="frame" href="{{shot:setup}}" download>
+              <img src="{{shot:setup}}" {{size:setup}} alt="{{s1.alt}}" loading="lazy" />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.setup}}</span>
+              <a class="asset" href="{{shot:setup}}" download><code>{{png:setup}}</code></a>
+            </figcaption>
+          </figure>
+          <figure class="picture">
+            <a class="frame" href="{{shot:keenwiki}}" download>
+              <img src="{{shot:keenwiki}}" {{size:keenwiki}} alt="{{s3.alt}}" loading="lazy" />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.keenwiki}}</span>
+              <a class="asset" href="{{shot:keenwiki}}" download><code>{{png:keenwiki}}</code></a>
+            </figcaption>
+          </figure>
+          <figure class="picture">
+            <a class="frame" href="{{shot:library-light}}" download>
+              <img
+                src="{{shot:library-light}}"
+                {{size:library-light}}
+                alt="{{s6.lightAlt}}"
+                loading="lazy"
+              />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.light}}</span>
+              <a class="asset" href="{{shot:library-light}}" download
+                ><code>{{png:library-light}}</code></a
+              >
+            </figcaption>
+          </figure>
+          <figure class="picture">
+            <a class="frame" href="{{shot:discover-light}}" download>
+              <img
+                src="{{shot:discover-light}}"
+                {{size:discover-light}}
+                alt="{{press.pictures.discoverLightAlt}}"
+                loading="lazy"
+              />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.discoverLight}}</span>
+              <a class="asset" href="{{shot:discover-light}}" download
+                ><code>{{png:discover-light}}</code></a
+              >
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="press-end" id="contact" aria-labelledby="contact-title">
+        <div>
+          <h2 id="contact-title">{{press.contact.title}}</h2>
+          <p>{{press.contact.text}}</p>
+        </div>
+        <div>
+          <h2 id="legal-title">{{press.legal.title}}</h2>
+          <ul class="stars">
+            <li>{{press.legal.li1}}</li>
+            <li>{{press.legal.li2}}</li>
+            <li>{{press.legal.li3}}</li>
+            <li>{{press.legal.li4}}</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-top">
+        <a class="wordmark" href="{{@home}}" aria-label="{{press.footer.home}}">
+          <svg
+            class="bloog bloog-small"
+            viewBox="0 0 8 8"
+            shape-rendering="crispEdges"
+            aria-hidden="true"
+          >
+            <path class="body" d="M2 1h4v1h1v4h-1v1h-4v-1h-1v-4h1zM2 7h1v1h-1zM5 7h1v1h-1z" />
+            <path class="eye" d="M3 2h2v2h-2z" />
+            <path class="pupil" d="M4 3h1v1h-1z" />
+          </svg>
+          <span>BloogBase</span>
+        </a>
+        <a href="https://github.com/transporthummel/BloogBase">{{footer.source}}</a>
+        <a href="./" aria-current="page">{{footer.press}}</a>
+        <a href="{{@otherUrl}}" hreflang="{{@otherLang}}" lang="{{@otherLang}}">{{nav.language}}</a>
+      </div>
+      <p>{{footer.license}}</p>
+      <p>{{footer.trademark}}</p>
+      <p>{{footer.updated}} <time datetime="{{@updatedIso}}">{{@updated}}</time></p>
+    </footer>
+  </body>
+</html>

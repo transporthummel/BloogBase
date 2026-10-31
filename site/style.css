@@ -1071,6 +1071,295 @@ html:not(.js) .walker,
   margin: 0.6rem 0 0;
 }
 
+/* Press kit (press.html): the same night sky, quieter. Facts, texts to copy
+   and the pictures in full size, each findable at a glance. */
+.press-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4rem);
+  padding-top: clamp(2.5rem, 8vh, 5rem);
+}
+
+.press-intro h1 {
+  font: 800 clamp(2.1rem, 5vw, 3.5rem)/1.1 var(--sans);
+  letter-spacing: -0.025em;
+}
+
+.press-logo {
+  margin: 0;
+}
+
+.press-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-top: 2rem;
+}
+
+.press-actions .note {
+  margin: 0;
+}
+
+.press main > section:not(.press-intro) {
+  margin-top: clamp(5rem, 12vh, 7.5rem);
+}
+
+/* Facts: one row each, the label left of its value. */
+.fact-sheet {
+  padding: clamp(2rem, 5vw, 3.5rem);
+  background: var(--surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+}
+
+.fact-list {
+  margin: 2rem 0 0;
+  max-width: 56rem;
+}
+
+.fact-list > div {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: 0.5rem 1.5rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.fact-list dt {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.fact-list dd {
+  margin: 0;
+}
+
+.count {
+  font: 0.85rem/1 var(--pixel);
+  color: var(--green);
+  margin-right: 0.15rem;
+}
+
+/* Texts to copy: each one a block of its own, with its Copy button. */
+.copy-blocks {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 2.5rem;
+}
+
+.copy-block {
+  padding: 1.5rem clamp(1.25rem, 3vw, 2rem) 1.75rem;
+  background: var(--surface);
+  border-radius: 12px;
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+}
+
+.copy-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.25rem;
+}
+
+.copy-head h3 {
+  font: 0.75rem/1.625 var(--pixel);
+  color: var(--green);
+}
+
+.copy-text {
+  max-width: 68ch;
+  margin: 0.75rem 0 0;
+}
+
+.copy-text p {
+  margin: 0;
+}
+
+.copy-text p + p {
+  margin-top: 0.9em;
+}
+
+/* Without the script there's nothing to press; the text selects by hand. */
+.copy {
+  display: none;
+}
+
+.js .copy {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--raised);
+  color: var(--ink);
+  font: 600 0.875rem/1.2 var(--sans);
+  cursor: pointer;
+  transition:
+    border-color 150ms,
+    color 150ms;
+}
+
+.js .copy:hover {
+  border-color: var(--green);
+}
+
+.js .copy:active {
+  translate: 0 1px;
+}
+
+.js .copy.done {
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 50%, var(--border));
+}
+
+/* The story, in the maker's own words: a hanging pixel quote mark. */
+.quote {
+  position: relative;
+  margin: 2rem 0 0;
+  padding-left: clamp(2.5rem, 6vw, 4rem);
+  max-width: 48rem;
+}
+
+.quote::before {
+  content: "“";
+  position: absolute;
+  left: 0;
+  top: -0.1em;
+  font: 2.5rem/1 var(--pixel);
+  color: var(--green);
+}
+
+.quote blockquote {
+  margin: 0;
+  font-size: clamp(1.1rem, 1.7vw, 1.3rem);
+  line-height: 1.65;
+}
+
+.quote blockquote p {
+  margin: 0;
+}
+
+.quote blockquote p + p {
+  margin-top: 1em;
+}
+
+.quote figcaption {
+  margin-top: 1.25rem;
+  color: var(--muted);
+}
+
+.quote figcaption::before {
+  content: "– ";
+}
+
+.angles .detail-group p {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+}
+
+/* Pictures: two to a row, each with its size and a download. */
+.pictures .note {
+  max-width: 38rem;
+}
+
+.picture-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(1.75rem, 3vw, 2.5rem) clamp(1.25rem, 3vw, 2.5rem);
+  margin-top: 2.5rem;
+}
+
+.picture {
+  margin: 0;
+}
+
+.frame {
+  display: block;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+  transition:
+    outline-color 150ms,
+    translate 150ms var(--ease-out);
+}
+
+.frame:hover {
+  outline-color: var(--green);
+  translate: 0 -2px;
+}
+
+/* Every frame has the screenshots' 16:10, so the rows line up; taller
+   pictures show their top, the download is the whole picture. */
+.frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.picture .frame {
+  aspect-ratio: 16 / 10;
+}
+
+.picture-logo .frame img {
+  object-position: center;
+}
+
+.picture-icon .frame {
+  display: grid;
+  place-items: center;
+  background: radial-gradient(60% 80% at 50% 50%, var(--raised), var(--surface));
+}
+
+.picture-icon .frame img {
+  width: auto;
+  height: 62%;
+  object-fit: contain;
+}
+
+.picture figcaption {
+  display: grid;
+  gap: 0.4rem;
+  justify-items: start;
+  margin-top: 0.9rem;
+}
+
+.picture .asset code {
+  font-size: 0.8rem;
+}
+
+/* Contact and the things to know before writing, side by side. */
+.press-end {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2rem, 5vw, 4rem);
+}
+
+.press-end p {
+  color: var(--muted);
+  margin: 1rem 0 0;
+  max-width: 34rem;
+}
+
+.press-end .stars {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.footer-top a[aria-current="page"] {
+  color: var(--ink);
+}
+
 /* Narrow windows: one column, the trail runs down the left edge. */
 @media (max-width: 860px) {
   .station,
@@ -1112,6 +1401,23 @@ html:not(.js) .walker,
   .compare-label {
     display: none;
   }
+
+  .press-intro,
+  .picture-grid,
+  .press-end {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .press-logo {
+    order: -1;
+    width: min(28rem, 100%);
+    justify-self: center;
+  }
+
+  .fact-list > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.2rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1121,6 +1427,11 @@ html:not(.js) .walker,
 
   .sky-layer {
     transform: none;
+  }
+
+  .frame,
+  .frame:hover {
+    translate: none;
   }
 
   .sky-near,

@@ -16,6 +16,8 @@ on:
       - docs/screenshots/**
       - src/assets/logo.jpg
       - src/assets/icon.png
+      - docs/logo.png
+      - src-tauri/icons/icon.png
       - .github/workflows/index.yml
   pull_request:
     paths:
@@ -25,6 +27,8 @@ on:
       - docs/screenshots/**
       - src/assets/logo.jpg
       - src/assets/icon.png
+      - docs/logo.png
+      - src-tauri/icons/icon.png
       - .github/workflows/index.yml
   schedule:
     - cron: "41 4 * * 2"

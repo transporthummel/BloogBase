@@ -2,18 +2,25 @@
 
 The project website lives in `site/` and is published to GitHub Pages at
 `https://transporthummel.github.io/BloogBase/` (English) and `…/de/`
-(German), together with the mod index at `…/index/`.
+(German), together with the mod index at `…/index/`. The press kit is at
+`…/press/` and `…/de/press/`, linked from the footer.
 
 ## Files
 
-- `page.html`: the page, one template for both languages. `{{key}}` is a text
+- `page.html`: the main page, one template for both languages. `{{key}}` is a text
   from `i18n/<lang>.json`, `{{@root}}`, `{{@lang}}`, `{{@url}}` and
   `{{@otherUrl}}` are filled in per language, `{{@updated}}` (and
   `{{@updatedIso}}`) is the time of the last commit to the site, its
-  screenshots, logo or icon (the build time without git history), in UTC,
+  screenshots, logo, icon or mod list (the build time without git history), in UTC,
   shown in the footer as "Last updated", `{{shot:<name>}}` is a
   screenshot from `docs/screenshots/` (`<name>.<lang>.png` where it exists)
   and `{{size:<name>}}` its `width`/`height`.
+- `press.html`: the press kit, with the same placeholders, plus `{{@home}}`
+  (the main page), `{{@base}}` (the site's address), `{{@modCount}}` (the
+  files in `index/mods/`), `{{@zipSize}}` and `{{png:<name>}}`, a picture's
+  type, size and file size ("PNG · 2560 × 1600 · 398 KB") for a screenshot's
+  name or a file in `img/`. Its facts, texts to copy and story are in the
+  `press.*` texts; the story is the owner's, from the PCKF introduction.
 - `i18n/en.json`, `i18n/de.json`: every text, the same keys in both; the
   build stops when one is missing. Texts may hold inline HTML.
 - `style.css`: the app's Midnight Galaxy colours, type and components
@@ -27,10 +34,15 @@ The project website lives in `site/` and is published to GitHub Pages at
   via the GitHub API, else the release page; an `.asset` link's
   `data-asset` is the end of its file name). The page works without it;
   reduced motion turns the movement off.
+- `press.js`: the press kit's drifting sky and Copy buttons (hidden without
+  it).
 - `fonts/`: Inter and Press Start 2P (latin), with their OFL licences.
 - `build.mjs`: writes `site/dist/` (ignored): `index.html`, `de/index.html`,
-  the screenshots, logo, icon, fonts, styles and script. Node only, no
-  dependencies.
+  `press/index.html`, `de/press/index.html`, the screenshots, logo and icon
+  (also full size, `docs/logo.png` and the 512px app icon), fonts, styles,
+  scripts and `bloogbase-press-kit.zip` (logo, icon, every screenshot but the
+  macOS help, by language, and a README from the `press.*` texts). Node only,
+  no dependencies.
 
 ## Working on it
 
