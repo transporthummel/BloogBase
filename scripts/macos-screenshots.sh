@@ -193,8 +193,11 @@ for lang in "$@"; do
   esac
   defaults write -g AppleLanguages -array "$lang"
   defaults write -g AppleLocale "$locale"
+  # cfprefsd too: CoreServicesUIAgent otherwise comes back with the cached
+  # language, and the German dialog was English.
+  killall cfprefsd 2>/dev/null
   killall "System Settings" CoreServicesUIAgent 2>/dev/null
-  sleep 2
+  sleep 3
 
   # A fresh copy each time, as if just downloaded with Safari, so an earlier
   # language's attempt doesn't count.
@@ -291,7 +294,8 @@ APPLESCRIPT
     # The block sits under Security at the end of the pane; scroll there
     # unless the search above found it, then log its text and buttons.
     if grep -q "no text with BloogBase" "$work/settings.log"; then
-      limit 20 "$work/scroll" "$pid" -60
+      # Far more than the pane is long: the wheel stops at the end.
+      limit 30 "$work/scroll" "$pid" -400
       sleep 2
       osa - "$pid" <<'APPLESCRIPT' 2>&1 | sed 's/^/  after scrolling: /'
 on run argv
