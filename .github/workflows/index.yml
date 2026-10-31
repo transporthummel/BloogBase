@@ -104,13 +104,18 @@ jobs:
       - name: Website
         run: node site/build.mjs --out "$GITHUB_WORKSPACE/site-out"
 
-      - name: Build and sign
+      # Compiled without the key: build scripts of dependencies run here.
+      - name: Build the index tool
+        working-directory: index/tool
+        run: cargo build --release
+
+      - name: Build and sign the index
         working-directory: index/tool
         env:
           INDEX_MINISIGN_KEY: ${{ secrets.INDEX_MINISIGN_KEY }}
         # The commit time keeps rebuilds of the same commit identical.
         run: |
-          cargo run --release -- build --out "$GITHUB_WORKSPACE/site-out/index" \
+          target/release/bbindex build --out "$GITHUB_WORKSPACE/site-out/index" \
             --generated-at "$(git log -1 --format=%ct)"
 
       - uses: actions/upload-pages-artifact@v3
