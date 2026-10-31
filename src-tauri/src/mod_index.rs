@@ -556,16 +556,36 @@ fn version_at_least(version: &str, min: &str) -> bool {
 /// Ties installed mods that aren't tied to an entry to the one whose
 /// download they were installed from, byte for byte: added from KeenWiki
 /// or a file, maybe before the entry joined the index. An older download
-/// counts too, so the entry offers the update.
+/// counts too, so the entry offers the update. The entry's details replace
+/// what the mod brought along, as an install from the index would store
+/// them; its version is the download's.
 pub fn link_installed(index: &ModIndex, db: &Db) -> Result<()> {
     let conn = db.conn();
     for e in index.entries() {
-        for d in &e.downloads {
-            conn.execute(
-                "UPDATE mods SET index_id = ?1 WHERE index_id IS NULL AND game_id = ?2
-                 AND lower(archive_sha256) = lower(?3)",
-                params![e.id, e.game, d.sha256],
+        for (i, d) in e.downloads.iter().enumerate() {
+            let version = d.version.as_ref().or(e.version.as_ref().filter(|_| i == 0));
+            let tied = conn.execute(
+                "UPDATE mods SET index_id = ?1, source = 'index', name = ?4, authors = ?5,
+                                 author_links = ?6, description = ?7, released = ?8,
+                                 version = COALESCE(?9, version), keenwiki_url = ?10,
+                                 homepage = NULL, pckf = NULL, keenmodding = NULL
+                 WHERE index_id IS NULL AND game_id = ?2 AND lower(archive_sha256) = lower(?3)",
+                params![
+                    e.id,
+                    e.game,
+                    d.sha256,
+                    e.name,
+                    serde_json::to_string(&e.authors).expect("strings serialize"),
+                    serde_json::to_string(&e.author_links).expect("strings serialize"),
+                    e.description,
+                    e.released,
+                    version,
+                    e.links.keenwiki,
+                ],
             )?;
+            if tied > 0 {
+                tracing::info!("tied {tied} installed mod(s) to index entry {}", e.id);
+            }
         }
     }
     Ok(())
@@ -918,8 +938,10 @@ mod tests {
             db.conn()
                 .execute(
                     "INSERT INTO mods (id, game_id, index_id, name, authors, recipe_json, path,
-                                       source, archive_sha256, added_at)
-                     VALUES (?1, ?2, ?3, 'x', '[]', '{}', '/x', 'keenwiki', ?4, 0)",
+                                       source, archive_sha256, added_at, description,
+                                       version, pckf)
+                     VALUES (?1, ?2, ?3, 'x', '[\"Wiki\"]', '{}', '/x', 'keenwiki', ?4, 0,
+                             'From the wiki.', '1.0', 'https://pckf.com/wiki')",
                     params![id, game, index_id, sha],
                 )
                 .unwrap();
@@ -942,5 +964,48 @@ mod tests {
             list(&index, &db).unwrap()[0].mod_id.as_deref(),
             Some("wiki")
         );
+        // The entry's details replace the wiki's; untied mods keep theirs.
+        let details = |id: &str| -> (
+            String,
+            String,
+            String,
+            Option<String>,
+            String,
+            Option<String>,
+            Option<String>,
+        ) {
+            db.conn()
+                .query_row(
+                    "SELECT source, name, authors, description, version, keenwiki_url, pckf
+                     FROM mods WHERE id = ?1",
+                    [id],
+                    |r| {
+                        Ok((
+                            r.get(0)?,
+                            r.get(1)?,
+                            r.get(2)?,
+                            r.get(3)?,
+                            r.get(4)?,
+                            r.get(5)?,
+                            r.get(6)?,
+                        ))
+                    },
+                )
+                .unwrap()
+        };
+        assert_eq!(
+            details("wiki"),
+            (
+                "index".into(),
+                "Sample Patch Mod".into(),
+                r#"["Someone","Someone Else"]"#.into(),
+                Some("A made-up mod for tests.".into()),
+                "1.2".into(),
+                Some("https://keenwiki.shikadi.net/wiki/Sample".into()),
+                None,
+            )
+        );
+        assert_eq!(details("other").1, "x");
+        assert_eq!(details("tied").0, "keenwiki");
     }
 }

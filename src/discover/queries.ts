@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { commands, events } from "../bindings";
 import { unwrap } from "../ipc";
+import { modsKey, profilesKey } from "../library/queries";
 
 export const indexStatusKey = ["indexStatus"] as const;
 export const indexModsKey = ["indexMods"] as const;
@@ -48,6 +49,9 @@ export function useIndexEvents() {
     const unlisten = events.indexUpdated.listen(({ payload: status }) => {
       client.setQueryData(indexStatusKey, status);
       client.invalidateQueries({ queryKey: indexModsKey });
+      // Mods tied to an entry now carry its details.
+      client.invalidateQueries({ queryKey: modsKey });
+      client.invalidateQueries({ queryKey: profilesKey });
     });
     return () => {
       unlisten.then((f) => f());
