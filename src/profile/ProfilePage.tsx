@@ -59,6 +59,8 @@ import { PlayButton } from "../ui/PlayButton";
 import { RelativeTime } from "../ui/RelativeTime";
 import { Tabs } from "../ui/Tabs";
 import { ConfigPanel } from "./ConfigPanel";
+import { ControlsSheet } from "./Controls";
+import { useControlsGate } from "./controlsGate";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { ReadmePanel } from "./ReadmePanel";
 import { RemoveGameDialog } from "./RemoveGameDialog";
@@ -71,7 +73,7 @@ import { usePictureWidth } from "./heroPicture";
 import { backupsKey, savesKey, useSaves } from "./saves";
 import { usePageTitle } from "../ui/usePageTitle";
 
-type Tab = "readme" | "saves" | "screenshots" | "videos" | "config";
+type Tab = "readme" | "controls" | "saves" | "screenshots" | "videos" | "config";
 
 export function ProfileRoute() {
   const { profileId } = useParams({ from: "/profiles/$profileId" });
@@ -124,6 +126,8 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
 
   const profile = profiles.data?.find((p) => p.id === profileId);
   const game = games.data?.find((g) => g.id === profile?.gameId);
+  // The first start of a series shows its keys first.
+  const gate = useControlsGate(() => launch.mutate());
   const readmes = useReadmes(profile);
   const saves = useSaves(profileId);
   const shots = useScreenshots(profileId);
@@ -141,15 +145,24 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
 
   const tabs: { id: Tab; label: ReactNode }[] = [
     ...(readmes.data?.length ? [{ id: "readme" as const, label: t("profile.tabReadme") }] : []),
+    // A game's keys are what its page is read for; a mod's own README comes first.
+    ...(game && !profile?.modId
+      ? [{ id: "controls" as const, label: t("profile.tabControls") }]
+      : []),
     { id: "saves", label: <Counted label={t("profile.tabSaves")} items={saves.data} /> },
     {
       id: "screenshots",
       label: <Counted label={t("profile.tabScreenshots")} items={shots.data} />,
     },
     { id: "videos", label: <Counted label={t("profile.tabVideos")} items={videos.data} /> },
+    ...(game && profile?.modId
+      ? [{ id: "controls" as const, label: t("profile.tabControls") }]
+      : []),
     { id: "config", label: t("profile.tabConfig") },
   ];
-  const tab = tabs.find((x) => x.id === picked)?.id ?? tabs[0].id;
+  // Opens on the README, else on the saves, as before there was a Controls tab.
+  const tab =
+    tabs.find((x) => x.id === picked)?.id ?? (tabs[0].id === "readme" ? "readme" : "saves");
   // Wait for the README so the first tab doesn't change under the player.
   const tabsReady = !(readmes.isEnabled && readmes.isPending);
 
@@ -161,13 +174,14 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
           profile={profile}
           game={game}
           canPlay={!!runtime.data?.active && !launch.isPending}
-          onPlay={() => launch.mutate()}
+          onPlay={() => gate.play(profile, game)}
           modCount={
             profiles.data?.filter((p) => p.modId !== null && p.installId === profile.installId)
               .length ?? 0
           }
         />
       )}
+      {gate.dialog}
       {launch.error && (
         <div className="mb-4">
           <Notice tone="error">{errorMessage(t, launch.error)}</Notice>
@@ -197,6 +211,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
                 )}
               </>
             )}
+            {tab === "controls" && game && <ControlsSheet profile={profile} game={game} />}
             {tab === "saves" && <SavesPanel profile={profile} game={game} />}
             {tab === "screenshots" && <ScreenshotsPanel profile={profile} />}
             {tab === "videos" && <VideosPanel profile={profile} />}

@@ -813,7 +813,7 @@ test("tabs follow the arrow keys", async () => {
   await userEvent.keyboard("{End}");
   expect(screen.getByRole("tab", { name: "DOSBox settings" })).toHaveFocus();
   await userEvent.keyboard("{ArrowRight}");
-  expect(saves).toHaveFocus();
+  expect(screen.getByRole("tab", { name: "Controls" })).toHaveFocus();
 });
 
 test("screenshots open in a viewer and delete after a second click", async () => {

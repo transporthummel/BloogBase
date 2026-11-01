@@ -536,7 +536,8 @@
     "removeGameHint": "BloogBase löscht seine Kopie des Spiels. Der Ordner oder das Archiv, aus dem du es hinzugefügt hast, bleibt unberührt.",
     "removeGameMods_one": "Auch die Mod für dieses Spiel entfernen",
     "removeGameMods_other": "Auch die {{count}} Mods für dieses Spiel entfernen",
-    "removeGameModsKept": "Sonst wechseln sie auf eine andere Kopie des Spiels oder warten, bis es wieder da ist."
+    "removeGameModsKept": "Sonst wechseln sie auf eine andere Kopie des Spiels oder warten, bis es wieder da ist.",
+    "tabControls": "Steuerung"
   },
   "saves": {
     "title": "Spielstände",
@@ -775,5 +776,82 @@
     "keepHint_one": "Das Spiel läuft weiter; gezählt wird nur die Spielzeit bis jetzt.",
     "keepHint_other": "Die Spiele laufen weiter; gezählt wird nur die Spielzeit bis jetzt.",
     "confirm": "BloogBase schließen"
+  },
+  "controls": {
+    "series": {
+      "vorticons": "Keen 1–3",
+      "galaxy": "Keen 4–6",
+      "dreams": "Keen Dreams"
+    },
+    "remap": {
+      "vorticons": "Mit F3 kannst du die Tasten im Spiel ändern.",
+      "galaxy": "Im Menü des Spiels kannst du die Tasten ändern.",
+      "dreams": "Im Menü des Spiels kannst du die Tasten ändern."
+    },
+    "mod": "Mods können Tasten und Cheats ändern. Was anders ist, steht meist im README.",
+    "moving": "Bewegen",
+    "actions": "Aktionen",
+    "inGame": "Im Spiel",
+    "window": "Fenster und Aufnahmen",
+    "move": {
+      "vorticons": "Nach links und rechts laufen.",
+      "galaxy": "Laufen, hoch- und runterschauen, durch Türen gehen, an Stangen klettern.",
+      "dreams": "Laufen, hoch- und runterschauen, durch Türen gehen, an Stangen klettern."
+    },
+    "action": {
+      "jump": "Springen",
+      "pogo": "Pogo an und aus",
+      "pogoFound": "Pogo an und aus, sobald du ihn gefunden hast",
+      "fire": "Schießen",
+      "throw": "Flower Power werfen",
+      "status": "Statusfenster",
+      "menu": "Menü",
+      "help": "Hilfe",
+      "keys": "Tasten ändern",
+      "fullscreen": "Fenster oder Vollbild",
+      "screenshot": "Screenshot",
+      "video": "Video starten oder beenden"
+    },
+    "changed": "BloogBase",
+    "changedHint": "Geändert durch Schießen mit einer Taste in BloogBase",
+    "spaceOffer": "Lieber nur mit der Leertaste schießen?",
+    "spaceOfferLink": "Das geht in den Einstellungen.",
+    "cheats": "Cheatcodes",
+    "spoiler": "Spoiler",
+    "cheatsHint": "Drück die Tasten eines Cheats gleichzeitig.",
+    "debugFirst": "Schalte erst den Debug-Modus ein mit",
+    "debugThen": "dann F10 halten und drücken:",
+    "debugAlways": "F10 halten und drücken:",
+    "cheat": {
+      "ctSpace": "Alle Schlüsselkarten und jede Menge Ladungen für die Strahlenkanone",
+      "ctSpaceKeen1": "Pogostock, alle Schlüsselkarten und jede Menge Ladungen für die Strahlenkanone",
+      "bat": "Alle Edelsteine, 99 Schuss und ein Extraleben",
+      "god": "Gott-Modus: Keen kann nichts mehr passieren",
+      "skip": "Auf der Karte: durch ein Level laufen, ohne es zu spielen",
+      "items": "Gratis-Gegenstände, 99 Schuss und Punkte",
+      "itemsDreams": "Je 99 Schlüssel, Flower-Power-Samen und Boobus-Bomben",
+      "jump": "Beliebig hoch springen",
+      "warp": "In ein Level springen",
+      "secrets": "Versteckte Wege zeigen",
+      "end": "Level beenden",
+      "slow": "Zeitlupe"
+    },
+    "key": {
+      "ctrl": "Strg",
+      "cmd": "⌘",
+      "alt": "Alt",
+      "space": "Leertaste",
+      "enter": "Enter",
+      "esc": "Esc",
+      "tab": "Tab",
+      "shiftLeft": "Umschalt links",
+      "left": "Pfeil links",
+      "right": "Pfeil rechts",
+      "up": "Pfeil hoch",
+      "down": "Pfeil runter"
+    },
+    "dialogTitle": "So spielst du {{series}}",
+    "dialogIntro": "Lange her? Hier sind die Tasten. Du findest sie jederzeit wieder auf der Seite des Spiels unter „Steuerung“.",
+    "dontShow": "Beim nächsten Start nicht mehr anzeigen"
   }
 }

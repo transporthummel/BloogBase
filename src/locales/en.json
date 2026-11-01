@@ -536,7 +536,8 @@
     "removeGameHint": "BloogBase deletes its copy of the game. The folder or archive you added it from stays untouched.",
     "removeGameMods_one": "Also remove the mod played on it",
     "removeGameMods_other": "Also remove the {{count}} mods played on it",
-    "removeGameModsKept": "Otherwise they move to another copy of the game, or wait until it’s back."
+    "removeGameModsKept": "Otherwise they move to another copy of the game, or wait until it’s back.",
+    "tabControls": "Controls"
   },
   "saves": {
     "title": "Saved games",
@@ -775,5 +776,82 @@
     "keepHint_one": "The game keeps running; only the time played so far counts.",
     "keepHint_other": "The games keep running; only the time played so far counts.",
     "confirm": "Close BloogBase"
+  },
+  "controls": {
+    "series": {
+      "vorticons": "Keen 1–3",
+      "galaxy": "Keen 4–6",
+      "dreams": "Keen Dreams"
+    },
+    "remap": {
+      "vorticons": "You can change the keys in the game with F3.",
+      "galaxy": "You can change the keys in the game's menu.",
+      "dreams": "You can change the keys in the game's menu."
+    },
+    "mod": "Mods may change keys and cheats. If something works differently, the README usually says so.",
+    "moving": "Moving",
+    "actions": "Actions",
+    "inGame": "In the game",
+    "window": "Window and recordings",
+    "move": {
+      "vorticons": "Run left and right.",
+      "galaxy": "Run, look up and down, go through doors and climb poles.",
+      "dreams": "Run, look up and down, go through doors and climb poles."
+    },
+    "action": {
+      "jump": "Jump",
+      "pogo": "Pogo on and off",
+      "pogoFound": "Pogo on and off, once you've found it",
+      "fire": "Shoot",
+      "throw": "Throw Flower Power",
+      "status": "Status window",
+      "menu": "Menu",
+      "help": "Help",
+      "keys": "Change keys",
+      "fullscreen": "Window or full screen",
+      "screenshot": "Screenshot",
+      "video": "Start or stop a video"
+    },
+    "changed": "BloogBase",
+    "changedHint": "Changed by one-button firing in BloogBase",
+    "spaceOffer": "Rather shoot with Space alone?",
+    "spaceOfferLink": "Turn it on in Settings.",
+    "cheats": "Cheat codes",
+    "spoiler": "Spoiler",
+    "cheatsHint": "Press the keys of a cheat at the same time.",
+    "debugFirst": "First turn on debug mode with",
+    "debugThen": "then hold F10 and press:",
+    "debugAlways": "Hold F10 and press:",
+    "cheat": {
+      "ctSpace": "All key cards and lots of ray gun charges",
+      "ctSpaceKeen1": "Pogo stick, all key cards and lots of ray gun charges",
+      "bat": "All gems, 99 shots and an extra life",
+      "god": "God mode: nothing can hurt Keen",
+      "skip": "On the map: walk through a level without playing it",
+      "items": "Free items, 99 shots and points",
+      "itemsDreams": "99 keys, Flower Power seeds and Boobus Bombs",
+      "jump": "Jump as high as you like",
+      "warp": "Warp to a level",
+      "secrets": "Show hidden passages",
+      "end": "Finish the level",
+      "slow": "Slow motion"
+    },
+    "key": {
+      "ctrl": "Ctrl",
+      "cmd": "⌘",
+      "alt": "Alt",
+      "space": "Space",
+      "enter": "Enter",
+      "esc": "Esc",
+      "tab": "Tab",
+      "shiftLeft": "Left Shift",
+      "left": "Left arrow",
+      "right": "Right arrow",
+      "up": "Up arrow",
+      "down": "Down arrow"
+    },
+    "dialogTitle": "How to play {{series}}",
+    "dialogIntro": "Been a while? Here are the keys. You'll find them again on the game's page under Controls.",
+    "dontShow": "Don't show this again"
   }
 }

@@ -105,3 +105,20 @@ export function getLastVersion(): string | null {
 export function setLastVersion(version: string) {
   write(LAST_VERSION_KEY, version);
 }
+
+const CONTROLS_SHOWN_KEY = "bloogbase.controlsShown";
+
+/** The game series (engines) whose controls the first start has shown and needn't again. */
+export function getControlsShown(): string[] {
+  try {
+    const value: unknown = JSON.parse(read(CONTROLS_SHOWN_KEY) ?? "[]");
+    return Array.isArray(value) ? value.filter((v) => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+export function setControlsShown(engine: string) {
+  const shown = getControlsShown();
+  if (!shown.includes(engine)) write(CONTROLS_SHOWN_KEY, JSON.stringify([...shown, engine]));
+}

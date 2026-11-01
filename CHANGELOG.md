@@ -7,6 +7,7 @@
 - The page of a game, shareware episode or demo can open the folder with its files, as a mod's page opens the mod folder.
 - Games, shareware episodes and demos show their own documents in a README tab, as mods do, the games' own documents included.
 - "Mod won't start?": when a mod's first start with a new setup (base game, mod files or recipe) ends with a message or within 30 seconds, BloogBase offers to report it as a GitHub issue, with the details it needs; the mod's More menu offers it anytime.
+- A Controls tab on every game and mod page shows the keys of its series as keycaps, following one-button firing, with the known cheat codes folded away; the first start of each series shows it before the game starts.
 
 ### Improvements
 

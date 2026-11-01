@@ -32,6 +32,7 @@ import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
 import { RelativeTime } from "../ui/RelativeTime";
 import { PlayButton } from "../ui/PlayButton";
+import { useControlsGate } from "../profile/controlsGate";
 
 /** The games sold on Steam and GOG. */
 const SOLD_GAMES = ["keen1", "keen2", "keen3", "keen4", "keen5", "kdreams"];
@@ -71,6 +72,8 @@ export function Library() {
     mutationFn: (profileId: string) => unwrap(commands.launchProfile(profileId)),
     onSettled: () => queryClient.invalidateQueries({ queryKey: profilesKey }),
   });
+  // The first start of a series shows its keys first.
+  const gate = useControlsGate(launch.mutate);
 
   /** A single game imported opens right away; several are counted. */
   async function showImported(installs: Install[]) {
@@ -137,6 +140,7 @@ export function Library() {
           </p>
         </aside>
       )}
+      {gate.dialog}
       {adding && (
         <AddModDialog
           onClose={() => setAdding(false)}
@@ -266,7 +270,7 @@ export function Library() {
                       heading={grouped ? "h3" : "h2"}
                       sharedLabel={shared.has(profile.label)}
                       canPlay={!!runtime.data?.active && !launch.isPending}
-                      onPlay={launch.mutate}
+                      onPlay={() => gate.play(profile, gameById.get(profile.gameId))}
                     />
                   </li>
                 ))}

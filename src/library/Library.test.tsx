@@ -115,6 +115,8 @@ function renderLibrary(container?: HTMLElement) {
 
 beforeEach(() => {
   navigate.mockClear();
+  vi.mocked(commands.launchProfile).mockClear();
+  localStorage.removeItem("bloogbase.controlsShown");
   vi.mocked(commands.storageUsage).mockResolvedValue({
     status: "ok",
     data: {
@@ -206,7 +208,36 @@ test("play launches the profile", async () => {
   const play = await screen.findByRole("button", { name: `Play ${keen5.title}` });
   await vi.waitFor(() => expect(play).toBeEnabled());
   await userEvent.click(play);
+  // The series' first start shows its keys first.
+  const dialog = screen.getByRole("dialog", { name: "How to play Keen 4–6" });
+  expect(within(dialog).getByRole("checkbox", { name: "Don't show this again" })).toBeChecked();
+  expect(commands.launchProfile).not.toHaveBeenCalled();
+  await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));
   expect(commands.launchProfile).toHaveBeenCalledWith("keen5-1");
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  // Remembered: the next start goes straight ahead.
+  await userEvent.click(play);
+  expect(commands.launchProfile).toHaveBeenCalledTimes(2);
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  localStorage.removeItem("bloogbase.controlsShown");
+});
+
+test("the controls come again on the next start when the box is cleared, and cancel starts nothing", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
+  vi.mocked(commands.launchProfile).mockResolvedValue({ status: "ok", data: null });
+  renderLibrary();
+  const play = await screen.findByRole("button", { name: `Play ${keen5.title}` });
+  await vi.waitFor(() => expect(play).toBeEnabled());
+  await userEvent.click(play);
+  await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  expect(commands.launchProfile).not.toHaveBeenCalled();
+  await userEvent.click(play);
+  await userEvent.click(screen.getByRole("checkbox", { name: "Don't show this again" }));
+  await userEvent.click(screen.getByRole("button", { name: "Play" }));
+  expect(commands.launchProfile).toHaveBeenCalledTimes(1);
+  await userEvent.click(play);
+  expect(screen.getByRole("dialog", { name: "How to play Keen 4–6" })).toBeInTheDocument();
+  expect(localStorage.getItem("bloogbase.controlsShown")).toBeNull();
 });
 
 test("copies with the same name are told apart by their version", async () => {
