@@ -849,3 +849,204 @@ pub(super) fn slug(name: &str) -> String {
         out.into()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::mods::KeenwikiOrigin;
+
+    fn batch(file: &str) -> Recipe {
+        Recipe::Batch { file: file.into() }
+    }
+
+    fn option(recipe: Recipe) -> RecipeOption {
+        RecipeOption {
+            recipe,
+            origin: "PLAY.BAT".into(),
+            game_versions: vec!["1.4".into()],
+            version_ids: vec!["keen4-1.4-ega".into()],
+            missing_files: Vec::new(),
+            base_mod: None,
+            made_for: None,
+        }
+    }
+
+    fn info(recipes: Vec<RecipeOption>) -> ModInfo {
+        ModInfo {
+            name: "Aurora".into(),
+            authors: vec!["From the files".into()],
+            version: Some("1.0".into()),
+            released: Some("2020-01-01".into()),
+            game_id: "keen4".into(),
+            recipes,
+            confident: true,
+            file_count: 3,
+            index_id: None,
+            made_for: None,
+        }
+    }
+
+    fn base() -> Base {
+        Base {
+            name: "Lego Keen".into(),
+            recipe: batch("LEGO.BAT"),
+            requires: None,
+        }
+    }
+
+    #[test]
+    fn picks_the_players_recipe_or_the_one_of_the_mod_below() {
+        let own = info(vec![option(batch("PLAY.BAT")), option(Recipe::Episode)]);
+        let picked = |info: &ModInfo, base: Option<&Base>, recipe: &Recipe| {
+            picked_option(info, base, recipe).map(|o| (o.recipe, o.origin))
+        };
+        assert_eq!(
+            picked(&own, None, &batch("PLAY.BAT")).unwrap(),
+            (batch("PLAY.BAT"), "PLAY.BAT".into())
+        );
+        // Levels alone start as the mod below does, even where they could
+        // start the episode themselves.
+        assert_eq!(
+            picked(&own, Some(&base()), &Recipe::Episode).unwrap(),
+            (batch("LEGO.BAT"), "Lego Keen".into())
+        );
+        assert_eq!(
+            picked(&own, Some(&base()), &batch("PLAY.BAT")).unwrap().0,
+            batch("PLAY.BAT")
+        );
+        // The mod below's recipe may be picked though the files don't offer it.
+        assert_eq!(
+            picked(&info(Vec::new()), Some(&base()), &batch("LEGO.BAT"))
+                .unwrap()
+                .0,
+            batch("LEGO.BAT")
+        );
+        for (base, recipe) in [
+            (None, batch("LEGO.BAT")),
+            (Some(base()), batch("OTHER.BAT")),
+        ] {
+            assert!(matches!(
+                picked(&own, base.as_ref(), &recipe),
+                Err(Error::IncompatibleInstall(_))
+            ));
+        }
+    }
+
+    fn request(keenwiki: Option<KeenwikiOrigin>) -> InstallModRequest {
+        InstallModRequest {
+            path: "C:/mods/aurora.zip".into(),
+            name: String::new(),
+            recipe: batch("PLAY.BAT"),
+            install_id: None,
+            keenwiki,
+            extends: Some("lego".into()),
+            replace: None,
+        }
+    }
+
+    fn page() -> KeenwikiOrigin {
+        KeenwikiOrigin {
+            page_url: "https://keenwiki.shikadi.net/wiki/Aurora".into(),
+            download_url: "https://example.com/aurora.zip".into(),
+            game_id: None,
+            authors: vec!["From the page".into()],
+            author_links: BTreeMap::from([("From the page".into(), "https://a".into())]),
+            version: Some("2.0".into()),
+            description: Some("Levels.".into()),
+            released: None,
+            homepage: Some("https://home".into()),
+            pckf: None,
+            keenmodding: Some("https://km".into()),
+        }
+    }
+
+    #[test]
+    fn a_picked_mod_keeps_what_its_page_says_over_the_guesses() {
+        let info = info(Vec::new());
+        let stored = |req| Stored::picked(req, &info, "Aurora".into(), batch("PLAY.BAT"), None);
+
+        let manual = request(None);
+        let s = stored(&manual);
+        assert_eq!(s.source, ModSource::Manual);
+        assert_eq!(s.authors, ["From the files"]);
+        assert_eq!(s.version.as_deref(), Some("1.0"));
+        assert_eq!(s.source_url, "C:/mods/aurora.zip");
+        assert_eq!(s.extends.as_deref(), Some("lego"));
+        assert!(s.keenwiki_url.is_none() && s.description.is_none() && s.homepage.is_none());
+
+        let from_page = request(Some(page()));
+        let s = stored(&from_page);
+        assert_eq!(s.source, ModSource::Keenwiki);
+        assert_eq!(s.authors, ["From the page"]);
+        assert_eq!(s.author_links.len(), 1);
+        assert_eq!(s.version.as_deref(), Some("2.0"));
+        // What the page doesn't say comes from the files.
+        assert_eq!(s.released.as_deref(), Some("2020-01-01"));
+        assert_eq!(s.description.as_deref(), Some("Levels."));
+        assert_eq!(s.keenwiki_url, Some(page().page_url.as_str()));
+        assert_eq!(s.source_url, "https://example.com/aurora.zip");
+        assert_eq!(
+            (
+                s.homepage.as_deref(),
+                s.pckf.as_deref(),
+                s.keenmodding.as_deref()
+            ),
+            (Some("https://home"), None, Some("https://km"))
+        );
+
+        // A page without authors leaves the guessed ones.
+        let unnamed = request(Some(KeenwikiOrigin {
+            authors: Vec::new(),
+            ..page()
+        }));
+        assert_eq!(stored(&unnamed).authors, ["From the files"]);
+    }
+
+    #[test]
+    fn a_new_version_keeps_what_its_files_cant_tell() {
+        let info = info(Vec::new());
+        let old = Mod {
+            id: "aurora".into(),
+            game_id: "keen4".into(),
+            name: "Aurora".into(),
+            authors: vec!["Old".into()],
+            author_links: BTreeMap::from([("Old".into(), "https://old".into())]),
+            version: Some("1.0".into()),
+            description: Some("Old text.".into()),
+            released: None,
+            recipe: Recipe::Episode,
+            source: ModSource::Keenwiki,
+            index_id: None,
+            extends: None,
+            keenwiki_url: Some("https://keenwiki.shikadi.net/wiki/Old".into()),
+            homepage: Some("https://old-home".into()),
+            pckf: Some("https://pckf".into()),
+            keenmodding: None,
+            added_at: 0,
+            profile_id: "aurora".into(),
+        };
+
+        let manual = request(None);
+        let s =
+            Stored::picked(&manual, &info, "Aurora".into(), batch("PLAY.BAT"), None).keeping(&old);
+        assert_eq!(s.author_links, old.author_links);
+        assert_eq!(s.description, old.description);
+        assert_eq!(s.keenwiki_url, old.keenwiki_url.as_deref());
+        assert_eq!(s.homepage, old.homepage);
+        assert_eq!(s.pckf, old.pckf);
+        // What the new files tell wins.
+        assert_eq!(s.authors, ["From the files"]);
+        assert_eq!(s.source, ModSource::Manual);
+
+        // What the new page says wins too.
+        let from_page = request(Some(page()));
+        let s = Stored::picked(&from_page, &info, "Aurora".into(), batch("PLAY.BAT"), None)
+            .keeping(&old);
+        assert_eq!(s.author_links.len(), 1);
+        assert!(s.author_links.contains_key("From the page"));
+        assert_eq!(s.description.as_deref(), Some("Levels."));
+        assert_eq!(s.keenwiki_url, Some(page().page_url.as_str()));
+        assert_eq!(s.homepage.as_deref(), Some("https://home"));
+        assert_eq!(s.pckf, old.pckf);
+    }
+}
