@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    ignores: ["dist", "src-tauri", "src/bindings.ts", ".local/target-installer"],
+    ignores: ["dist", "src-tauri", "src/bindings.ts", ".local"],
   },
   {
     files: ["**/*.{ts,tsx}"],
