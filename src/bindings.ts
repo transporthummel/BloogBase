@@ -33,14 +33,7 @@ export const commands = {
 	 *  The profile's title screen as a PNG path, extracted on first use; `None`
 	 *  keeps the placeholder.
 	 */
-	profileCover: (profileId: string) => typedError<{
-	path: string,
-	/**
-	 *  The graphics files don't fit together, so the game shows scrambled
-	 *  graphics (as Keen Static does on purpose).
-	 */
-	scrambled: boolean,
-} | null, CommandError>(__TAURI_INVOKE("profile_cover", { profileId })),
+	profileCover: (profileId: string) => typedError<ProfileCover | null, CommandError>(__TAURI_INVOKE("profile_cover", { profileId })),
 	deleteScreenshot: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_screenshot", { profileId, file })),
 	/**  Videos recorded in DOSBox, newest first. */
 	listVideos: (profileId: string) => typedError<Video[], CommandError>(__TAURI_INVOKE("list_videos", { profileId })),
@@ -54,24 +47,7 @@ export const commands = {
 	 *  Backs up one save, or with `file` unset everything the game wrote.
 	 *  `None` if there was nothing to back up.
 	 */
-	createBackup: (profileId: string, label: string | null, file: string | null) => typedError<{
-	id: number,
-	profileId: string,
-	/**  The user's label; automatic backups have a `reason` instead. */
-	label: string | null,
-	reason: Reason | null,
-	createdAt: number,
-	files: string[],
-	/**
-	 *  Of `files`: the saves, the game's other files (settings, high
-	 *  scores), and anything else. Deletion markers count as none of them.
-	 */
-	saves: number,
-	settings: number,
-	other: number,
-	auto: boolean,
-	size: number,
-} | null, CommandError>(__TAURI_INVOKE("create_backup", { profileId, label, file })),
+	createBackup: (profileId: string, label: string | null, file: string | null) => typedError<Backup | null, CommandError>(__TAURI_INVOKE("create_backup", { profileId, label, file })),
 	backupSaves: (backupId: number) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("backup_saves", { backupId })),
 	/**
 	 *  Restores a backup's saves (all its files with `include_other`), or only
@@ -83,11 +59,7 @@ export const commands = {
 	 *  The backup made when this mod or game was removed before, to offer
 	 *  when it's added again.
 	 */
-	earlierBackup: (profileId: string) => typedError<{
-	backup: Backup,
-	/**  The version the saves come from, when known. */
-	versionId: string | null,
-} | null, CommandError>(__TAURI_INVOKE("earlier_backup", { profileId })),
+	earlierBackup: (profileId: string) => typedError<EarlierBackup | null, CommandError>(__TAURI_INVOKE("earlier_backup", { profileId })),
 	/**  Restores or declines the backup [`earlier_backup`] offered. */
 	answerEarlierBackup: (profileId: string, backupId: number, restore: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("answer_earlier_backup", { profileId, backupId, restore })),
 	deleteBackup: (backupId: number) => typedError<null, CommandError>(__TAURI_INVOKE("delete_backup", { backupId })),
@@ -106,30 +78,9 @@ export const commands = {
 	 *  Where a profile stands with one-button firing, whether it's on or not;
 	 *  `None` for games without it.
 	 */
-	profileFiring: (profileId: string) => typedError<
-/**  Fires with Ctrl and Alt; the patch fits. */
-"patchable" | 
-/**  Already fires with Space. */
-"builtIn" | 
-/**
- *  The code isn't as the patch expects: another version, or a mod that
- *  changed it differently.
- */
-"unavailable" | 
-/**
- *  The game's own executable is another version than 1.31, the one the
- *  patch is for.
- */
-"otherVersion" | null, CommandError>(__TAURI_INVOKE("profile_firing", { profileId })),
+	profileFiring: (profileId: string) => typedError<Firing | null, CommandError>(__TAURI_INVOKE("profile_firing", { profileId })),
 	/**  The machine a profile's mod needs instead of the default one, if any. */
-	profileMachine: (profileId: string) => typedError<
-/**
- *  It draws for a CGA composite monitor. Staging's composite emulation
- *  (`auto`, early-era for CGA) switches itself on in its graphics mode.
- */
-"compositeCga" | 
-/**  It uses video memory only a Paradise SVGA gives it. */
-"paradiseSvga" | null, CommandError>(__TAURI_INVOKE("profile_machine", { profileId })),
+	profileMachine: (profileId: string) => typedError<Machine | null, CommandError>(__TAURI_INVOKE("profile_machine", { profileId })),
 	/**
 	 *  The DOSBox config layers: the global override, and with `profile_id`
 	 *  that profile's layers and the effective result.
@@ -245,13 +196,13 @@ export const commands = {
 
 /** Events */
 export const events = {
-	archiveDamaged: makeEvent<ArchiveDamaged>("archive-damaged"),
-	gameLaunch: makeEvent<GameLaunch>("game-launch"),
-	indexUpdated: makeEvent<IndexUpdated>("index-updated"),
-	jobUpdated: makeEvent<JobUpdated>("job-updated"),
-	keenwikiProgress: makeEvent<KeenwikiProgress>("keenwiki-progress"),
-	playSessionEnded: makeEvent<PlaySessionEnded>("play-session-ended"),
-	quitRequested: makeEvent<QuitRequested>("quit-requested"),
+	archiveDamaged: makeEvent<ArchiveDamaged, ArchiveDamaged>("archive-damaged"),
+	gameLaunch: makeEvent<GameLaunch, GameLaunch>("game-launch"),
+	indexUpdated: makeEvent<IndexUpdated, IndexUpdated>("index-updated"),
+	jobUpdated: makeEvent<JobUpdated, JobUpdated>("job-updated"),
+	keenwikiProgress: makeEvent<KeenwikiProgress, KeenwikiProgress>("keenwiki-progress"),
+	playSessionEnded: makeEvent<PlaySessionEnded, PlaySessionEnded>("play-session-ended"),
+	quitRequested: makeEvent<QuitRequested, QuitRequested>("quit-requested"),
 };
 
 /* Types */
@@ -1104,20 +1055,24 @@ async function typedError<T, E>(result: Promise<T>): Promise<{ status: "ok"; dat
 
 type EventEmit<T> = [T] extends [null] ? () => Promise<void> : (payload: T) => Promise<void>;
 
-function makeEvent<T>(name: string, serialize?: (payload: T) => unknown, deserialize?: (payload: any) => T) {
-    const mapEvent = (cb: __TAURI_EVENT.EventCallback<T>) => (event: __TAURI_EVENT.Event<any>) => cb({ ...event, payload: deserialize ? deserialize(event.payload) : event.payload });
-    const mapPayload = (payload: T) => serialize ? serialize(payload) : payload;
+type EventEmitTo<T> = [T] extends [null] ? (target: __TAURI_EVENT.EventTarget | string) => Promise<void> : (target: __TAURI_EVENT.EventTarget | string, payload: T) => Promise<void>;
+
+function makeEvent<TListen, TEmit = TListen>(name: string, serialize?: (payload: TEmit) => unknown, deserialize?: (payload: any) => TListen) {
+    const mapEvent = (cb: __TAURI_EVENT.EventCallback<TListen>) => (event: __TAURI_EVENT.Event<any>) => cb({ ...event, payload: deserialize ? deserialize(event.payload) : event.payload });
+    const mapPayload = (payload: TEmit) => serialize ? serialize(payload) : payload;
 
     const base = {
-        listen: (cb: __TAURI_EVENT.EventCallback<T>) => __TAURI_EVENT.listen(name, mapEvent(cb)),
-        once: (cb: __TAURI_EVENT.EventCallback<T>) => __TAURI_EVENT.once(name, mapEvent(cb)),
-        emit: ((payload: T) => __TAURI_EVENT.emit(name, mapPayload(payload)) as unknown) as EventEmit<T>
+        listen: (cb: __TAURI_EVENT.EventCallback<TListen>) => __TAURI_EVENT.listen(name, mapEvent(cb)),
+        once: (cb: __TAURI_EVENT.EventCallback<TListen>) => __TAURI_EVENT.once(name, mapEvent(cb)),
+        emit: ((payload: TEmit) => __TAURI_EVENT.emit(name, mapPayload(payload)) as unknown) as EventEmit<TEmit>,
+        emitTo: ((to: __TAURI_EVENT.EventTarget | string, payload: TEmit) => __TAURI_EVENT.emitTo(to, name, mapPayload(payload)) as unknown) as EventEmitTo<TEmit>
     };
 
     const fn = (target: import("@tauri-apps/api/webview").Webview | import("@tauri-apps/api/window").Window) => ({
-        listen: (cb: __TAURI_EVENT.EventCallback<T>) => target.listen(name, mapEvent(cb)),
-        once: (cb: __TAURI_EVENT.EventCallback<T>) => target.once(name, mapEvent(cb)),
-        emit: ((payload: T) => target.emit(name, mapPayload(payload)) as unknown) as EventEmit<T>
+        listen: (cb: __TAURI_EVENT.EventCallback<TListen>) => target.listen(name, mapEvent(cb)),
+        once: (cb: __TAURI_EVENT.EventCallback<TListen>) => target.once(name, mapEvent(cb)),
+        emit: ((payload: TEmit) => target.emit(name, mapPayload(payload)) as unknown) as EventEmit<TEmit>,
+        emitTo: ((to: __TAURI_EVENT.EventTarget | string, payload: TEmit) => target.emitTo(to, name, mapPayload(payload)) as unknown) as EventEmitTo<TEmit>
     });
 
     return Object.assign(fn, base);

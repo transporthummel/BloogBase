@@ -51,6 +51,10 @@ const BINDINGS_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../src/binding
 
 fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
     tauri_specta::Builder::<tauri::Wry>::new()
+        // One type per Rust type, as our serde attributes read and write the
+        // same shape; phases would split each into `_Serialize` and
+        // `_Deserialize`.
+        .disable_serde_phases()
         .commands(collect_commands![
             commands::app_info,
             commands::diagnostics,
