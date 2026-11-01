@@ -1133,7 +1133,6 @@ async fn install_entry(
     install_id: Option<String>,
     without_game: bool,
 ) -> Result<()> {
-    let size = u64::from(entry.downloads[0].size);
     let archive = mod_index::archive(
         &a.state::<AppPaths>().cache,
         &entry,
@@ -1141,7 +1140,7 @@ async fn install_entry(
         &|r, t| report.progress(JobPhase::Downloading, r, t),
     )
     .await?;
-    report.progress(JobPhase::Installing, size, size);
+    report.progress(JobPhase::Installing, archive.size, archive.size);
     // Right after the setup wizard the game may still be on its way.
     while a.state::<Jobs>().is_running(JobKind::FreeGame, |v| {
         free_games::game_of(v) == Some(entry.game.as_str())

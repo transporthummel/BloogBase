@@ -617,6 +617,8 @@ pub fn list(index: &ModIndex, db: &Db) -> Result<Vec<IndexMod>> {
 /// this is dropped; the player's own copy stays.
 pub struct Archive {
     pub path: PathBuf,
+    /// In bytes, as the index tells.
+    pub size: u64,
     downloaded: bool,
 }
 
@@ -648,6 +650,7 @@ pub async fn archive(
         }
         return Ok(Archive {
             path,
+            size: u64::from(download.size),
             downloaded: false,
         });
     }
@@ -664,6 +667,7 @@ pub async fn archive(
     .await?;
     Ok(Archive {
         path,
+        size: u64::from(download.size),
         downloaded: true,
     })
 }
