@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Bug, Copy, ExternalLink, FileText } from "lucide-react";
+import { Bug, ExternalLink, FileText } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import logo from "../assets/logo.jpg";
@@ -14,6 +14,7 @@ import { Dialog } from "../ui/Dialog";
 import { Loading } from "../ui/Loading";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
+import { ReportDialog } from "../ui/ReportDialog";
 
 export const REPO_URL = "https://github.com/transporthummel/BloogBase";
 const DOSBOX_URL = "https://www.dosbox-staging.org/";
@@ -197,45 +198,14 @@ function LicensesDialog({ onClose }: { onClose: () => void }) {
 /** What a bug report needs, to copy into a new issue. */
 function DiagnosticsDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
-  const text = useQuery({
-    queryKey: ["diagnostics"],
-    queryFn: () => unwrap(commands.diagnostics()),
-    gcTime: 0,
-  });
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    if (text.data) {
-      await navigator.clipboard.writeText(text.data);
-      setCopied(true);
-    }
-  };
-  const report = async () => {
-    await copy();
-    await openUrl(`${REPO_URL}/issues/new`);
-  };
   return (
-    <Dialog wide title={t("about.diagnostics")} onClose={onClose}>
-      <p className="text-sm">{t("about.diagnosticsHint")}</p>
-      {text.isPending && <Loading />}
-      {text.isError && <Notice tone="error">{String(text.error)}</Notice>}
-      {text.data && (
-        <pre className="max-h-[55vh] overflow-auto rounded-lg bg-surface-raised p-3 text-xs whitespace-pre-wrap select-text">
-          {text.data}
-        </pre>
-      )}
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button variant="secondary" onClick={onClose}>
-          {t("common.close")}
-        </Button>
-        <Button variant="secondary" disabled={!text.data} onClick={() => void copy()}>
-          <Copy className="size-4" aria-hidden />
-          {copied ? t("about.copied") : t("about.copy")}
-        </Button>
-        <Button disabled={!text.data} onClick={() => void report()}>
-          <ExternalLink className="size-4" aria-hidden />
-          {t("about.newIssue")}
-        </Button>
-      </div>
-    </Dialog>
+    <ReportDialog
+      title={t("about.diagnostics")}
+      hint={t("about.diagnosticsHint")}
+      queryKey={["diagnostics"]}
+      load={() => unwrap(commands.diagnostics())}
+      issueUrl={`${REPO_URL}/issues/new`}
+      onClose={onClose}
+    />
   );
 }

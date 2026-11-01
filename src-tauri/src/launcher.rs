@@ -38,6 +38,7 @@ use crate::launcher_copies;
 use crate::library::now;
 use crate::paths::AppPaths;
 use crate::profiles;
+use crate::recipe::Recipe;
 use crate::runtime::{self, Runtime};
 
 /// Profiles with a running DOSBox process; one instance per profile (§6.2).
@@ -145,7 +146,13 @@ pub struct PlaySessionEnded {
     pub seconds: u32,
     /// What the game printed before it ended, e.g. an error.
     pub message: Option<String>,
+    /// A mod's first session with its setup ended with a message or after
+    /// less than 30 seconds (`SHORT_SESSION`): it may not have started properly.
+    pub start_problem: bool,
 }
+
+/// A first session shorter than this (seconds) looks like the mod didn't start.
+pub const SHORT_SESSION: u32 = 30;
 
 /// Everything needed to start DOSBox for one profile.
 #[derive(Debug)]
@@ -153,6 +160,8 @@ pub struct LaunchSpec {
     pub args: Vec<String>,
     pub cwd: PathBuf,
     pub log: PathBuf,
+    /// What a mod runs with, see [`mod_setup`]; `None` for games.
+    pub setup: Option<String>,
 }
 
 /// Ensures all directories and config layers exist and builds the command line.
@@ -160,6 +169,10 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
     let (profile, layers) = profiles::get(db, profile_id)?;
     let game = catalog::game(&profile.game_id)
         .ok_or_else(|| Error::NotFound(format!("game {}", profile.game_id)))?;
+    let setup = match &layers.mod_layer {
+        Some(m) => Some(mod_setup(db, &profile, &m.recipe)?),
+        None => None,
+    };
     let dirs = paths.profile(profile_id);
     for dir in [
         &layers.upper,
@@ -228,7 +241,27 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
         ),
         cwd: paths.root.clone(),
         log: paths.logs.join(format!("dosbox-{profile_id}.log")),
+        setup,
     })
+}
+
+/// What a mod profile runs with: the copy of the game, the mod's files (and
+/// those of the mod it's played over) and the recipe. A new one, after
+/// changing the recipe, the copy or the mod, starts over as a first session.
+fn mod_setup(db: &Db, profile: &profiles::Profile, recipe: &Recipe) -> Result<String> {
+    let (archive, base): (Option<String>, Option<String>) = db.conn().query_row(
+        "SELECT m.archive_sha256, (SELECT b.archive_sha256 FROM mods b WHERE b.id = m.extends)
+         FROM mods m WHERE m.id = ?1",
+        [&profile.mod_id],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    )?;
+    Ok(format!(
+        "install={};mod={};base={};recipe={}",
+        profile.install_id.as_deref().unwrap_or_default(),
+        archive.unwrap_or_default(),
+        base.unwrap_or_default(),
+        serde_json::to_string(recipe).unwrap_or_default()
+    ))
 }
 
 /// `path` relative to `root` if it's inside, else unchanged.
@@ -334,7 +367,7 @@ pub fn spawn(
         let pid = child.id().unwrap_or_default();
         tokio::spawn(watch(stderr, log, pid, shown));
     }
-    let session = start_session(db, profile_id, now())?;
+    let session = start_session(db, profile_id, spec.setup.as_deref(), now())?;
     Ok((child, session))
 }
 
@@ -470,13 +503,25 @@ fn shows_window(line: &[u8]) -> bool {
     line.contains("DISPLAY: ") && line.contains(" mode ") && line.contains(" scaled to ")
 }
 
-fn start_session(db: &Db, profile_id: &str, at: i64) -> Result<i64> {
+fn start_session(db: &Db, profile_id: &str, setup: Option<&str>, at: i64) -> Result<i64> {
     let conn = db.conn();
     conn.execute(
-        "INSERT INTO play_sessions (profile_id, started_at) VALUES (?1, ?2)",
-        params![profile_id, at],
+        "INSERT INTO play_sessions (profile_id, started_at, setup) VALUES (?1, ?2, ?3)",
+        params![profile_id, at, setup],
     )?;
     Ok(conn.last_insert_rowid())
+}
+
+/// Whether `session` is its profile's first with a mod's setup.
+pub fn first_with_setup(db: &Db, session: i64) -> Result<bool> {
+    Ok(db.conn().query_row(
+        "SELECT s.setup IS NOT NULL AND NOT EXISTS (
+             SELECT 1 FROM play_sessions e
+             WHERE e.profile_id = s.profile_id AND e.setup = s.setup AND e.id < s.id)
+         FROM play_sessions s WHERE s.id = ?1",
+        [session],
+        |r| r.get(0),
+    )?)
 }
 
 /// Records the end of a session and returns its length in seconds.
@@ -560,6 +605,8 @@ mod tests {
         let (_tmp, paths, db) = setup();
         let spec = prepare(&paths, &db, "keen4-1").unwrap();
         let dirs = paths.profile("keen4-1");
+        // Only mods tell first sessions apart.
+        assert_eq!(spec.setup, None);
 
         // Everything relative to the data root, which DOSBox runs in.
         let p = |parts: &[&str]| parts.iter().collect::<PathBuf>().display().to_string();
@@ -814,6 +861,8 @@ mod tests {
         assert_eq!(profiles::list(&db, |_| false).unwrap()[1].label, "My Mod");
 
         let spec = prepare(&paths, &db, &m.profile_id).unwrap();
+        let setup = spec.setup.as_deref().unwrap();
+        assert!(setup.contains("CK4PATCH.EXE"), "{setup}");
         let composed = paths.composed("my-mod");
         let tail: Vec<&str> = spec
             .args
@@ -928,13 +977,28 @@ machine = svga_paradise
     #[test]
     fn sessions_are_tracked() {
         let (_tmp, _paths, db) = setup();
-        let id = start_session(&db, "keen4-1", 100).unwrap();
+        let id = start_session(&db, "keen4-1", None, 100).unwrap();
         assert_eq!(end_session(&db, id, 160, Some(0)).unwrap(), 60);
         let p = &profiles::list(&db, |_| false).unwrap()[0];
         assert_eq!(
             (p.session_count, p.play_seconds, p.last_played_at),
             (1, 60, Some(100))
         );
+    }
+
+    #[test]
+    fn first_sessions_are_those_with_a_new_setup() {
+        let (_tmp, _paths, db) = setup();
+        let game = start_session(&db, "keen4-1", None, 100).unwrap();
+        assert!(!first_with_setup(&db, game).unwrap());
+        let first = start_session(&db, "keen4-1", Some("a"), 200).unwrap();
+        let again = start_session(&db, "keen4-1", Some("a"), 300).unwrap();
+        let changed = start_session(&db, "keen4-1", Some("b"), 400).unwrap();
+        let back = start_session(&db, "keen4-1", Some("a"), 500).unwrap();
+        assert!(first_with_setup(&db, first).unwrap());
+        assert!(!first_with_setup(&db, again).unwrap());
+        assert!(first_with_setup(&db, changed).unwrap());
+        assert!(!first_with_setup(&db, back).unwrap());
     }
 
     #[test]
@@ -954,7 +1018,7 @@ machine = svga_paradise
         let (_tmp, _paths, db) = setup();
         let playing = Playing::default();
         let mut stopped = playing.add("a", 1);
-        let mut left = playing.add("keen4-1", start_session(&db, "keen4-1", 100).unwrap());
+        let mut left = playing.add("keen4-1", start_session(&db, "keen4-1", None, 100).unwrap());
         assert_eq!(playing.profile_ids(), ["a", "keen4-1"]);
 
         playing.remove("a");

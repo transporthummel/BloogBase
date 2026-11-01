@@ -60,6 +60,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         .commands(collect_commands![
             commands::app_info,
             commands::diagnostics,
+            commands::mod_report,
             commands::list_games,
             commands::list_installs,
             commands::import_games,

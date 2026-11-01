@@ -11,6 +11,7 @@ use rusqlite::OptionalExtension;
 use crate::catalog;
 use crate::db::Db;
 use crate::error::Result;
+use crate::exit_screen;
 use crate::library;
 use crate::paths::AppPaths;
 use crate::profiles;
@@ -35,6 +36,35 @@ pub struct App {
 pub fn report(paths: &AppPaths, db: &Db, app: &App) -> Result<String> {
     let mut out = String::new();
     let _ = writeln!(out, "### BloogBase diagnostics\n");
+    versions(&mut out, db, app)?;
+    games(&mut out, db)?;
+    if let Some(id) = last_played(db)? {
+        let label = profiles::get(db, &id)?.0.label;
+        let _ = writeln!(out, "\n**Last played:** {label}\n");
+        profile_section(&mut out, paths, db, &id)?;
+    }
+    app_log(&mut out, paths);
+    Ok(anonymize(&out, paths))
+}
+
+/// The report for a mod that doesn't start, as Markdown: versions, the
+/// mod's profile, how its last session ended and the ends of the logs.
+pub fn mod_report(paths: &AppPaths, db: &Db, app: &App, profile_id: &str) -> Result<String> {
+    let mut out = String::new();
+    let label = profiles::get(db, profile_id)?.0.label;
+    let _ = writeln!(out, "### Mod doesn't start: {label}\n");
+    let _ = writeln!(
+        out,
+        "<!-- What happens when you start it? Did you try anything else? -->\n"
+    );
+    versions(&mut out, db, app)?;
+    let _ = writeln!(out, "\n**Mod**\n");
+    profile_section(&mut out, paths, db, profile_id)?;
+    app_log(&mut out, paths);
+    Ok(anonymize(&out, paths))
+}
+
+fn versions(out: &mut String, db: &Db, app: &App) -> Result<()> {
     let _ = writeln!(out, "- BloogBase {}", app.version);
     let _ = writeln!(out, "- {}, {}", system(), std::env::consts::ARCH);
     if let Some(webview) = &app.webview {
@@ -51,7 +81,10 @@ pub fn report(paths: &AppPaths, db: &Db, app: &App) -> Result<String> {
         "- Data folder: {}",
         if app.moved { "moved" } else { "default" }
     );
+    Ok(())
+}
 
+fn games(out: &mut String, db: &Db) -> Result<()> {
     let _ = writeln!(out, "\n**Games**\n");
     let installs = library::list(db)?;
     if installs.is_empty() {
@@ -81,14 +114,12 @@ pub fn report(paths: &AppPaths, db: &Db, app: &App) -> Result<String> {
     } else {
         writeln!(out, "\n**Mods:** 0")
     };
+    Ok(())
+}
 
-    if let Some(id) = last_played(db)? {
-        last_profile(&mut out, paths, db, &id)?;
-    }
-
+fn app_log(out: &mut String, paths: &AppPaths) {
     let log = paths.logs.join("bloogbase.log");
-    log_section(&mut out, "BloogBase log", &log, APP_LOG_LINES);
-    Ok(anonymize(&out, paths))
+    log_section(out, "BloogBase log", &log, APP_LOG_LINES);
 }
 
 fn last_played(db: &Db) -> Result<Option<String>> {
@@ -103,9 +134,10 @@ fn last_played(db: &Db) -> Result<Option<String>> {
         .optional()?)
 }
 
-fn last_profile(out: &mut String, paths: &AppPaths, db: &Db, id: &str) -> Result<()> {
+/// The profile's game, mod, start command and sessions, how the last one
+/// ended and the end of its DOSBox log.
+fn profile_section(out: &mut String, paths: &AppPaths, db: &Db, id: &str) -> Result<()> {
     let (profile, layers) = profiles::get(db, id)?;
-    let _ = writeln!(out, "\n**Last played:** {}\n", profile.label);
     let _ = writeln!(
         out,
         "- Game: {} · {}",
@@ -140,6 +172,29 @@ fn last_profile(out: &mut String, paths: &AppPaths, db: &Db, id: &str) -> Result
         let _ = writeln!(out, "- Waiting for: {missing}");
     }
     let _ = writeln!(out, "- Sessions: {}", profile.session_count);
+    let last: Option<(i64, Option<i64>, Option<i32>)> = db
+        .conn()
+        .query_row(
+            "SELECT started_at, ended_at, exit_code FROM play_sessions
+             WHERE profile_id = ?1 ORDER BY id DESC LIMIT 1",
+            [id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .optional()?;
+    if let Some((started, ended, code)) = last {
+        let length = ended.map_or_else(
+            || "didn't end properly".to_string(),
+            |e| format!("{}s", (e - started).max(0)),
+        );
+        let code = code.map_or_else(|| "none".to_string(), |c| c.to_string());
+        let _ = writeln!(out, "- Last session: {length}, exit code {code}");
+    }
+    if let Some(message) = exit_screen::message(&paths.profile(id).exit_screen) {
+        let _ = writeln!(
+            out,
+            "\nOn the DOS screen when it ended:\n\n````text\n{message}\n````"
+        );
+    }
     let log = paths.logs.join(format!("dosbox-{id}.log"));
     log_section(out, "DOSBox log", &log, DOSBOX_LOG_LINES);
     Ok(())
@@ -361,6 +416,34 @@ mod tests {
             "{report}"
         );
         assert!(!report.contains(&root), "{report}");
+    }
+
+    #[test]
+    fn mod_report_tells_how_the_last_session_ended() {
+        let (_tmp, paths, db) = setup();
+        db.conn()
+            .execute(
+                "INSERT INTO play_sessions (profile_id, started_at, ended_at, exit_code)
+                 VALUES ('keen4-1', 10, 14, 1)",
+                [],
+            )
+            .unwrap();
+        fs::write(
+            paths.logs.join("dosbox-keen4-1.log"),
+            "DOSBox says hi
+",
+        )
+        .unwrap();
+
+        let report = mod_report(&paths, &db, &app(), "keen4-1").unwrap();
+        assert!(report.starts_with("### Mod doesn't start: "), "{report}");
+        assert!(report.contains("- BloogBase 1.2.3"), "{report}");
+        assert!(
+            report.contains("- Last session: 4s, exit code 1"),
+            "{report}"
+        );
+        assert!(report.contains("DOSBox says hi"), "{report}");
+        assert!(!report.contains("**Games**"), "{report}");
     }
 
     #[test]

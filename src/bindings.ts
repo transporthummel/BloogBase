@@ -10,6 +10,8 @@ export const commands = {
 	appInfo: () => typedError<AppInfo, CommandError>(__TAURI_INVOKE("app_info")),
 	/**  The diagnostics for a bug report, as Markdown. */
 	diagnostics: () => typedError<string, CommandError>(__TAURI_INVOKE("diagnostics")),
+	/**  The report for a mod that doesn't start, as Markdown. */
+	modReport: (profileId: string) => typedError<string, CommandError>(__TAURI_INVOKE("mod_report", { profileId })),
 	listGames: () => __TAURI_INVOKE<Game[]>("list_games"),
 	listInstalls: () => typedError<Install[], CommandError>(__TAURI_INVOKE("list_installs")),
 	/**  Imports all games found in a folder or ZIP file. */
@@ -733,6 +735,11 @@ export type PlaySessionEnded = {
 	seconds: number,
 	/**  What the game printed before it ended, e.g. an error. */
 	message: string | null,
+	/**
+	 *  A mod's first session with its setup ended with a message or after
+	 *  less than 30 seconds (`SHORT_SESSION`): it may not have started properly.
+	 */
+	startProblem: boolean,
 };
 
 /**  The mod another one is played over. */

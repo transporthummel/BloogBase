@@ -2,11 +2,13 @@
   "unreleased": {
     "en": [
       "Games, shareware episodes and demos can now open the folder with their files from their page, just like mods.",
-      "Games, shareware episodes and demos now show their readmes in their own tab, just like mods."
+      "Games, shareware episodes and demos now show their readmes in their own tab, just like mods.",
+      "A mod won’t start? If it quits right away the first time, BloogBase offers to report it on GitHub and gathers what’s needed. It’s in the mod’s More menu too."
     ],
     "de": [
       "Auch Spiele, Shareware-Episoden und Demos öffnen jetzt auf ihrer Seite den Ordner mit ihren Dateien, so wie Mods.",
-      "Auch Spiele, Shareware-Episoden und Demos zeigen jetzt ihre Liesmich-Dateien in einem eigenen Tab, so wie Mods."
+      "Auch Spiele, Shareware-Episoden und Demos zeigen jetzt ihre Liesmich-Dateien in einem eigenen Tab, so wie Mods.",
+      "Eine Mod startet nicht? Beendet sie sich beim ersten Start gleich wieder, bietet BloogBase an, das auf GitHub zu melden, und sammelt alles Nötige. Das geht auch über das Mehr-Menü der Mod."
     ]
   },
   "releases": [

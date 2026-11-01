@@ -78,12 +78,31 @@ pub fn diagnostics(
     location: State<'_, DataLocation>,
     db: State<'_, Db>,
 ) -> CommandResult<String> {
-    let info = diagnostics::App {
+    let info = report_info(&app, &paths, &location);
+    Ok(diagnostics::report(&paths, &db, &info)?)
+}
+
+/// What reports say about the app itself.
+fn report_info(app: &AppHandle, paths: &AppPaths, location: &DataLocation) -> diagnostics::App {
+    diagnostics::App {
         version: app.package_info().version.to_string(),
         webview: tauri::webview_version().ok(),
         moved: paths.root != location.default_root,
-    };
-    Ok(diagnostics::report(&paths, &db, &info)?)
+    }
+}
+
+/// The report for a mod that doesn't start, as Markdown.
+#[tauri::command]
+#[specta::specta]
+pub fn mod_report(
+    app: AppHandle,
+    paths: State<'_, AppPaths>,
+    location: State<'_, DataLocation>,
+    db: State<'_, Db>,
+    profile_id: String,
+) -> CommandResult<String> {
+    let info = report_info(&app, &paths, &location);
+    Ok(diagnostics::mod_report(&paths, &db, &info, &profile_id)?)
 }
 
 #[tauri::command]
@@ -175,13 +194,13 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
 
     let mut stop = app.state::<Playing>().add(&profile_id, session);
     tauri::async_runtime::spawn(async move {
-        let status = tokio::select! {
-            status = child.wait() => status,
+        let (status, quitting) = tokio::select! {
+            status = child.wait() => (status, false),
             // Quitting BloogBase with the games: the session ends as usual.
             Ok(()) = &mut stop => {
                 tracing::info!("stopping {profile_id} as BloogBase quits");
                 let _ = child.start_kill();
-                child.wait().await
+                (child.wait().await, true)
             }
         };
         let exit_code = match status {
@@ -210,11 +229,18 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
         if let Some(m) = &message {
             tracing::info!("{profile_id} ended with: {m}");
         }
+        let start_problem = !quitting
+            && (message.is_some() || seconds < launcher::SHORT_SESSION)
+            && launcher::first_with_setup(&app.state::<Db>(), session).unwrap_or_else(|e| {
+                tracing::warn!("could not tell if session {session} was the first: {e}");
+                false
+            });
         let _ = PlaySessionEnded {
             profile_id,
             exit_code,
             seconds,
             message,
+            start_problem,
         }
         .emit(&app);
     });

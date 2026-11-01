@@ -68,7 +68,13 @@ test("goes when the game fails or ends before, or on a click", async () => {
   await screen.findByRole("status");
   act(() =>
     listeners.ended!({
-      payload: { profileId: "pak-een", exitCode: 1, seconds: 0, message: null },
+      payload: {
+        profileId: "pak-een",
+        exitCode: 1,
+        seconds: 0,
+        message: null,
+        startProblem: false,
+      },
     }),
   );
   expect(screen.queryByRole("status")).not.toBeInTheDocument();

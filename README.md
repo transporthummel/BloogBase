@@ -202,7 +202,10 @@ request.
 [Open an issue](https://github.com/transporthummel/BloogBase/issues/new). For
 bugs, _About → Diagnostics_ in BloogBase collects what helps (versions, your
 games, the end of the logs, with personal paths taken out) and opens a new
-issue with it; nothing is sent by itself.
+issue with it; nothing is sent by itself. For a mod that won't start, _Mod
+won't start?_ in its _More_ menu does the same with what's needed for that
+mod; BloogBase offers it by itself when a mod quits right away the first
+time.
 
 **You made a mod?** Thank you! Tell us if its entry needs fixing (a new
 version, a better description, a start that doesn't work), or if you'd rather

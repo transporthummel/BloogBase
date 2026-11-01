@@ -4,6 +4,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   ArrowLeft,
   ArrowLeftRight,
+  Bug,
   ChevronDown,
   Download,
   ExternalLink,
@@ -41,6 +42,7 @@ import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { Authors } from "../mods/Authors";
 import { AddModDialog } from "../mods/AddModDialog";
 import { SuggestToIndex } from "../mods/KeenwikiImport";
+import { ModReportDialog } from "../mods/ModReport";
 import { ModUpdate } from "../mods/ModUpdate";
 import { useModUpdateCheck } from "../mods/modUpdateCheck";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
@@ -257,6 +259,7 @@ function Hero({
   });
   const [removing, setRemoving] = useState(false);
   const [replacing, setReplacing] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const [picking, setPicking] = useState(false);
   const installs = useQuery({
     // Under the installs key, so it follows changes to the library.
@@ -322,6 +325,13 @@ function Hero({
       onSelect: () => setReplacing(true),
       disabled: profile.running,
     });
+    // Right after a first start that went wrong, the game's end offers it too.
+    if (profile.sessionCount > 0)
+      actions.push({
+        label: t("modReport.button"),
+        icon: <Bug className="size-4" />,
+        onSelect: () => setReporting(true),
+      });
   }
   // A game's own files: the full game, shareware episode or demo.
   if (profile.modId === null && profile.installId !== null) {
@@ -549,6 +559,13 @@ function Hero({
             queryClient.invalidateQueries({ queryKey: modsKey });
             navigate({ to: "/" });
           }}
+        />
+      )}
+      {reporting && (
+        <ModReportDialog
+          profileId={profile.id}
+          name={profile.label}
+          onClose={() => setReporting(false)}
         />
       )}
       {replacing && mod && (

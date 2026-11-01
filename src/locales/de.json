@@ -754,7 +754,15 @@
   },
   "exitMessage": {
     "title": "{{name}} hat sich mit einer Meldung beendet",
-    "text": "Das stand beim Beenden auf dem DOS-Bildschirm:"
+    "text": "Das stand beim Beenden auf dem DOS-Bildschirm:",
+    "shortTitle": "{{name}} hat sich gleich wieder beendet",
+    "shortText": "Wenn die Mod nicht richtig gestartet ist, kannst du das auf GitHub melden. BloogBase stellt zusammen, was zum Finden des Problems nötig ist.",
+    "fine": "Alles in Ordnung"
+  },
+  "modReport": {
+    "button": "Mod startet nicht?",
+    "title": "Problem mit {{name}} melden",
+    "hint": "Das hilft herauszufinden, warum die Mod nicht startet: Versionen, die Mod und wie sie gestartet wird, wie sie zuletzt beendet wurde und das Ende der Logs. Persönliche Pfade sind entfernt. Füge es in das neue Issue auf GitHub ein und schreib dazu, was beim Starten passiert."
   },
   "quit": {
     "title_one": "Ein Spiel läuft noch",

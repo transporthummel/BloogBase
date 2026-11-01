@@ -71,6 +71,7 @@ vi.mock("../bindings", () => {
     "listMods",
     "modReadmes",
     "openModFolder",
+    "modReport",
     "openGameFolder",
     "openModReadme",
     "gameReadmes",
@@ -412,6 +413,25 @@ test("a mod can be replaced with a local copy, unless it runs", async () => {
   renderDetail();
   await userEvent.click(await screen.findByRole("button", { name: "More" }));
   expect(screen.getByRole("menuitem", { name: "Replace with a local copy…" })).toBeDisabled();
+});
+
+test("a mod's More menu reports that it won't start, once it has been started", async () => {
+  const mine = { ...profile, modId: "aurora-bliss", label: "Aurora Bliss" };
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([mine]));
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  vi.mocked(commands.modReport).mockResolvedValue(ok("### Mod doesn't start: Aurora Bliss"));
+  renderDetail();
+  await pick("Mod won’t start?");
+  expect(
+    await screen.findByRole("dialog", { name: "Report a problem with Aurora Bliss" }),
+  ).toBeInTheDocument();
+  expect(commands.modReport).toHaveBeenCalledWith("keen4-1");
+
+  cleanup();
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([{ ...mine, sessionCount: 0 }]));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "More" }));
+  expect(screen.queryByRole("menuitem", { name: "Mod won’t start?" })).not.toBeInTheDocument();
 });
 
 test("a game's page opens the folder with its files", async () => {

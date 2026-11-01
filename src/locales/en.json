@@ -754,7 +754,15 @@
   },
   "exitMessage": {
     "title": "{{name}} ended with a message",
-    "text": "This was on the DOS screen when it ended:"
+    "text": "This was on the DOS screen when it ended:",
+    "shortTitle": "{{name}} ended right away",
+    "shortText": "If the mod didn’t start properly, you can report it on GitHub. BloogBase puts together what’s needed to find the problem.",
+    "fine": "All fine"
+  },
+  "modReport": {
+    "button": "Mod won’t start?",
+    "title": "Report a problem with {{name}}",
+    "hint": "This helps with finding out why the mod won’t start: versions, the mod and how it’s started, how it ended last time and the end of the logs. Personal paths are taken out. Paste it into the new issue on GitHub and say what happens when you start it."
   },
   "quit": {
     "title_one": "A game is still running",
