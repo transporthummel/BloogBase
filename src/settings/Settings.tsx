@@ -5,7 +5,7 @@ import { Eraser, FileCog, RefreshCw, Wand } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type BackupSettings, type DisplayOptions } from "../bindings";
-import { ConfigEditor } from "../config/ConfigEditor";
+import { ConfigEditor } from "../config/LazyConfigEditor";
 import { oneButtonFiringKey } from "../profile/firing";
 import { configKey } from "../config/queries";
 import { errorMessage } from "../errors";

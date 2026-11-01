@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { commands } from "../bindings";
-import { ConfigEditor, ConfigText } from "../config/ConfigEditor";
+import { ConfigEditor, ConfigText } from "../config/LazyConfigEditor";
 import { configKey } from "../config/queries";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";

@@ -948,7 +948,7 @@ test("config tab saves the profile layer and shows warnings and the result", asy
   expect(await screen.findByText("[cpu] cpu_cycles")).toBeInTheDocument();
   expect(screen.getByText("BloogBase default")).toBeInTheDocument();
 
-  const editor = screen.getByRole("textbox", { name: "Settings for this game" });
+  const editor = await screen.findByRole("textbox", { name: "Settings for this game" });
   await userEvent.clear(editor);
   await userEvent.type(editor, "[[autoexec]");
   await userEvent.click(screen.getByRole("button", { name: "Save" }));
