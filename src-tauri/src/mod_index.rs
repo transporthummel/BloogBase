@@ -1062,6 +1062,50 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_download_goes_again_once_installed() {
+        const BODY: &[u8] = b"the archive";
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/levels.zip", listener.local_addr().unwrap());
+        std::thread::spawn(move || {
+            let mut stream = listener.incoming().next().unwrap().unwrap();
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut line = String::new();
+            while reader.read_line(&mut line).unwrap() > 2 {
+                line.clear();
+            }
+            let head = format!(
+                "HTTP/1.1 200 OK
+Content-Length: {}
+Connection: close
+
+",
+                BODY.len()
+            );
+            stream.write_all(head.as_bytes()).unwrap();
+            stream.write_all(BODY).unwrap();
+        });
+        let tmp = tempfile::tempdir().unwrap();
+        let mut entry = sample_entry(&sha256_hex(BODY));
+        entry.downloads[0].url = url;
+        entry.downloads[0].size = BODY.len() as u32;
+        let progress = AtomicUsize::new(0);
+        let got = archive(tmp.path(), &entry, None, &|_, _| {
+            progress.fetch_add(1, Ordering::SeqCst);
+        })
+        .await
+        .unwrap();
+        let path = got.path.clone();
+        assert_eq!(
+            path,
+            tmp.path().join("downloads").join("index-sample-levels.zip")
+        );
+        assert_eq!(std::fs::read(&path).unwrap(), BODY);
+        assert!(progress.load(Ordering::SeqCst) > 0);
+        drop(got);
+        assert!(!path.exists(), "the download goes once installed");
+    }
+
+    #[tokio::test]
     async fn installs_from_the_players_own_copy_only_if_it_is_the_download() {
         let tmp = tempfile::tempdir().unwrap();
         let own = tmp.path().join("levels.zip");
