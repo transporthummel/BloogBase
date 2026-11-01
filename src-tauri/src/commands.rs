@@ -421,6 +421,30 @@ pub async fn open_mod_readme(app: AppHandle, mod_id: String, file: String) -> Co
     open_path(&app, &path)
 }
 
+/// Opens a web page or Word document of a game in the library, as
+/// [`open_mod_readme`].
+#[tauri::command]
+#[specta::specta]
+pub async fn open_game_readme(
+    app: AppHandle,
+    install_id: String,
+    file: String,
+) -> CommandResult<()> {
+    let path = {
+        let app = app.clone();
+        blocking(move || {
+            readme::game_file_path(
+                &app.state::<AppPaths>(),
+                &app.state::<Db>(),
+                &install_id,
+                &file,
+            )
+        })
+        .await?
+    };
+    open_path(&app, &path)
+}
+
 /// The documents in a folder or ZIP not installed yet, the README first.
 #[tauri::command]
 #[specta::specta]
@@ -810,6 +834,15 @@ pub fn list_mods(db: State<'_, Db>) -> CommandResult<Vec<Mod>> {
 #[specta::specta]
 pub async fn mod_readmes(app: AppHandle, mod_id: String) -> CommandResult<Vec<Readme>> {
     blocking(move || readme::for_mod(&app.state::<AppPaths>(), &app.state::<Db>(), &mod_id)).await
+}
+
+/// The documents of a game in the library, the README first; empty when it
+/// has none.
+#[tauri::command]
+#[specta::specta]
+pub async fn game_readmes(app: AppHandle, install_id: String) -> CommandResult<Vec<Readme>> {
+    blocking(move || readme::for_game(&app.state::<AppPaths>(), &app.state::<Db>(), &install_id))
+        .await
 }
 
 /// The installs a mod can be played on.

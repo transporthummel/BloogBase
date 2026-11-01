@@ -73,6 +73,8 @@ vi.mock("../bindings", () => {
     "openModFolder",
     "openGameFolder",
     "openModReadme",
+    "gameReadmes",
+    "openGameReadme",
     "deleteMod",
     "modInstalls",
     "setModInstall",
@@ -187,6 +189,7 @@ beforeEach(() => {
   vi.mocked(commands.listBackups).mockResolvedValue(ok([backup]));
   vi.mocked(commands.listMods).mockResolvedValue(ok([]));
   vi.mocked(commands.modReadmes).mockResolvedValue(ok([]));
+  vi.mocked(commands.gameReadmes).mockResolvedValue(ok([]));
   vi.mocked(commands.indexMods).mockResolvedValue(ok([]));
   vi.mocked(commands.freeGames).mockResolvedValue(ok([]));
   vi.mocked(commands.listScreenshots).mockResolvedValue(ok([]));
@@ -650,14 +653,48 @@ test("without a README there is no README tab", async () => {
   expect(screen.queryByRole("tab", { name: "Readme" })).toBeNull();
 });
 
-test("games don't look for a README", async () => {
+test("a game without documents has no README tab", async () => {
   renderDetail();
   expect(await screen.findByRole("tab", { name: /^Saves/ })).toHaveAttribute(
     "aria-selected",
     "true",
   );
+  expect(commands.gameReadmes).toHaveBeenCalledWith("keen4-1");
   expect(commands.modReadmes).not.toHaveBeenCalled();
-  expect(screen.queryByRole("button", { name: "Open mod folder" })).toBeNull();
+  expect(screen.queryByRole("tab", { name: "Readme" })).toBeNull();
+});
+
+test("a game's own documents are its README tab, web pages opening outside", async () => {
+  vi.mocked(commands.gameReadmes).mockResolvedValue(
+    ok([
+      { file: "README.DOC", text: "Commander Keen 4", html: false, pdf: false, word: false },
+      { file: "ORDER.HTM", text: "", html: true, pdf: false, word: false },
+    ]),
+  );
+  vi.mocked(commands.openGameReadme).mockResolvedValue(ok(null));
+  renderDetail();
+  const tab = await screen.findByRole("tab", { name: "Readme" });
+  expect(tab).toHaveAttribute("aria-selected", "true");
+  expect(screen.getByText(/sets up this game for you/)).toBeInTheDocument();
+  const panel = screen.getByRole("tabpanel");
+  expect(panel).toHaveTextContent("Commander Keen 4");
+  await userEvent.selectOptions(
+    within(panel).getByRole("combobox", { name: "File:" }),
+    "ORDER.HTM",
+  );
+  await userEvent.click(within(panel).getByRole("button", { name: "Open in browser" }));
+  expect(commands.openGameReadme).toHaveBeenCalledWith("keen4-1", "ORDER.HTM");
+  expect(commands.modReadmes).not.toHaveBeenCalled();
+});
+
+test("a mod's README tab never shows its game's documents", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
+  );
+  vi.mocked(commands.listMods).mockResolvedValue(ok([aurora]));
+  renderDetail();
+  expect(await screen.findByRole("tab", { name: /^Saves/ })).toBeInTheDocument();
+  expect(commands.gameReadmes).not.toHaveBeenCalled();
 });
 
 test("says how Keen 1-3 shoot where the setting or the mod changes it", async () => {

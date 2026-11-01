@@ -101,6 +101,11 @@ export const commands = {
 	 *  when it has none.
 	 */
 	modReadmes: (modId: string) => typedError<Readme[], CommandError>(__TAURI_INVOKE("mod_readmes", { modId })),
+	/**
+	 *  The documents of a game in the library, the README first; empty when it
+	 *  has none.
+	 */
+	gameReadmes: (installId: string) => typedError<Readme[], CommandError>(__TAURI_INVOKE("game_readmes", { installId })),
 	/**  Opens the folder with a mod's installed files. */
 	openModFolder: (modId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_folder", { modId })),
 	/**
@@ -113,6 +118,11 @@ export const commands = {
 	 *  its app; the app never shows HTML itself.
 	 */
 	openModReadme: (modId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_readme", { modId, file })),
+	/**
+	 *  Opens a web page or Word document of a game in the library, as
+	 *  [`open_mod_readme`].
+	 */
+	openGameReadme: (installId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_game_readme", { installId, file })),
 	/**  The documents in a folder or ZIP not installed yet, the README first. */
 	readmesAt: (path: string) => typedError<Readme[], CommandError>(__TAURI_INVOKE("readmes_at", { path })),
 	/**

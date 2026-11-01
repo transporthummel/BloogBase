@@ -664,6 +664,7 @@
   },
   "readme": {
     "handled": "BloogBase startet diese Mod und richtet sie für dich ein. Was die Liesmich über Batch-Dateien, DOSBox oder das Kopieren von Dateien sagt, musst du nicht tun: Drück einfach auf „Spielen“.",
+    "handledGame": "BloogBase startet dieses Spiel und richtet es für dich ein. Was die Liesmich über Installation, Batch-Dateien oder DOSBox sagt, musst du nicht tun: Drück einfach auf „Spielen“.",
     "title": "Readme",
     "file": "Datei:",
     "webPage": "Diese Datei ist eine Webseite und öffnet sich in deinem Browser.",

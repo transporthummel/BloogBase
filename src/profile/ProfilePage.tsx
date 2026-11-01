@@ -122,7 +122,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
 
   const profile = profiles.data?.find((p) => p.id === profileId);
   const game = games.data?.find((g) => g.id === profile?.gameId);
-  const readmes = useReadmes(profile?.modId ?? null);
+  const readmes = useReadmes(profile);
   const saves = useSaves(profileId);
   const shots = useScreenshots(profileId);
   const videos = useVideos(profileId);
@@ -149,7 +149,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   ];
   const tab = tabs.find((x) => x.id === picked)?.id ?? tabs[0].id;
   // Wait for the README so the first tab doesn't change under the player.
-  const tabsReady = !(profile?.modId && readmes.isPending);
+  const tabsReady = !(readmes.isEnabled && readmes.isPending);
 
   return (
     <>
@@ -175,14 +175,24 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
       {profile && tabsReady && (
         <Tabs tabs={tabs} selected={tab} onSelect={setTab} label={t("profile.tabs")}>
           <div className={tab === "screenshots" || tab === "videos" ? "" : "max-w-3xl"}>
-            {profile.modId && readmes.data && tab === "readme" && (
+            {readmes.data && tab === "readme" && (
               <>
                 {/* Readmes tell players of their time to run batch files and set up DOSBox. */}
                 <p className="mb-3 flex items-start gap-2 text-sm text-muted">
                   <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-                  {t("readme.handled")}
+                  {t(profile.modId ? "readme.handled" : "readme.handledGame")}
                 </p>
-                <ReadmePanel key={profile.id} modId={profile.modId} readmes={readmes.data} />
+                {profile.modId ? (
+                  <ReadmePanel key={profile.id} modId={profile.modId} readmes={readmes.data} />
+                ) : (
+                  profile.installId && (
+                    <ReadmePanel
+                      key={profile.id}
+                      installId={profile.installId}
+                      readmes={readmes.data}
+                    />
+                  )
+                )}
               </>
             )}
             {tab === "saves" && <SavesPanel profile={profile} game={game} />}

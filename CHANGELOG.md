@@ -5,6 +5,7 @@
 ### Features
 
 - The page of a game, shareware episode or demo can open the folder with its files, as a mod's page opens the mod folder.
+- Games, shareware episodes and demos show their own documents in a README tab, as mods do, the games' own documents included.
 
 ### Improvements
 

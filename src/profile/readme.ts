@@ -6,12 +6,20 @@ export const readmeKeys = ["readme"] as const;
 /** Invalidate it when the mod's files change, e.g. it's replaced. */
 export const readmeKey = (modId: string) => [...readmeKeys, modId] as const;
 
-/** The documents shipped with a mod, the README first. Off for games. */
-export function useReadmes(modId: string | null) {
+/**
+ * The documents of a profile, the README first: those shipped with its mod,
+ * else those of its game. Off for a mod waiting for its game's files.
+ */
+export function useReadmes(
+  profile: { modId: string | null; installId: string | null } | undefined,
+) {
+  const modId = profile?.modId ?? null;
+  const installId = profile?.installId ?? null;
   return useQuery({
-    queryKey: readmeKey(modId ?? ""),
-    queryFn: () => unwrap(commands.modReadmes(modId!)),
-    enabled: modId !== null,
+    queryKey: modId !== null ? readmeKey(modId) : [...readmeKeys, "game", installId ?? ""],
+    queryFn: () =>
+      unwrap(modId !== null ? commands.modReadmes(modId) : commands.gameReadmes(installId!)),
+    enabled: profile !== undefined && (modId !== null || installId !== null),
   });
 }
 

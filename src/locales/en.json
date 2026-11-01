@@ -664,6 +664,7 @@
   },
   "readme": {
     "handled": "BloogBase starts and sets up this mod for you. Whatever the readme says about batch files, DOSBox or copying files, you don't need to do it: just press Play.",
+    "handledGame": "BloogBase starts and sets up this game for you. Whatever the readme says about installing, batch files or DOSBox, you don't need to do it: just press Play.",
     "title": "Readme",
     "file": "File:",
     "webPage": "This file is a web page and opens in your browser.",

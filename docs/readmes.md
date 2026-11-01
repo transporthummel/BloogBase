@@ -1,10 +1,11 @@
-# Mod documents
+# Mod and game documents
 
 Mods ship their documentation under all kinds of names (`README.TXT`,
 `Read Me.txt`, `READ.ME`, `CHEEKY README.rtf`, `LIESMICH.TXT`, …) and in all
 kinds of formats. BloogBase finds it, ranks it and shows it as plain text:
 in the README tab of a mod's profile page and, before installing, behind the
-"readme" link of the "Add mod" dialog. The code is in `src-tauri/src/readme.rs`,
+"readme" link of the "Add mod" dialog. Games in the library (full games,
+shareware episodes, demos) get the same tab for their own documents. The code is in `src-tauri/src/readme.rs`,
 the panel in `src/profile/ReadmePanel.tsx`.
 
 ## Where it looks
@@ -14,6 +15,8 @@ the panel in `src/profile/ReadmePanel.tsx`.
   folder the mod was zipped in. Without an archive (a mod added from a
   folder), the installed files.
 - **Before installing:** the folder or ZIP the player picked or downloaded.
+- **Games:** their files in the library (`library/<install>/base`), which
+  hold everything that was next to the game when it was added.
 
 Files at most two folders deep count; deeper ones belong to tools or sources
 shipped along. Files over 1 MB are hardly a README and are skipped (web
@@ -51,7 +54,7 @@ After reading, a document is dropped if
 - it's empty,
 - it's a CKPatch script: its first line that isn't empty starts with `%`,
 - it's one of the games' own documents, which mods ship along with a copy
-  of a shareware episode (Apogee's `VENDOR.DOC`, Keen 4's `README.DOC`, Keen
+  of a shareware episode (only for mods: a game shows them) (Apogee's `VENDOR.DOC`, Keen 4's `README.DOC`, Keen
   Dreams' `HELPINFO.TXT`, …). These are known by the SHA-256 of their decoded
   text (`GAME_DOCUMENTS`), so line ends and end-of-file markers don't matter.
 
@@ -113,9 +116,10 @@ Manual.pdf`).
 The text shows in a monospace font, wrapped and selectable. `http` and
 `https` links become buttons that open in the browser, never in the app's
 window; trailing punctuation isn't part of the link. The profile page shows
-the README tab only for mods that have documents, and opens with it until
-the player picks another tab. When a mod is replaced by a newer version, its
-documents are read again.
+the README tab only for mods and games that have documents, and opens with
+it until the player picks another tab. Above a game's, a note says that
+BloogBase starts and sets up the game. When a mod is replaced by a newer
+version, its documents are read again.
 
 ## Readmes for installing
 

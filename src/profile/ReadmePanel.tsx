@@ -12,17 +12,18 @@ import { Notice } from "../ui/Notice";
 import { linkify } from "./readme";
 
 /**
- * A mod's README, with a picker for its other documents. Shown as plain text
+ * A mod's or game's README, with a picker for its other documents. Shown as plain text
  * only (React escapes it); links open in the browser, never in the app's
  * window. Web pages are never shown here, only opened in the browser, and
  * PDF documents only in their app; Word documents show their text and open
  * in their app for everything else.
- * The mod is installed (`modId`) or still a folder or ZIP (`path`).
+ * The mod is installed (`modId`) or still a folder or ZIP (`path`); a game
+ * is in the library (`installId`).
  */
 export function ReadmePanel({
   readmes,
   ...from
-}: { readmes: Readme[] } & ({ modId: string } | { path: string })) {
+}: { readmes: Readme[] } & ({ modId: string } | { installId: string } | { path: string })) {
   const { t } = useTranslation();
   const pickerId = useId();
   const [file, setFile] = useState(readmes[0].file);
@@ -32,7 +33,9 @@ export function ReadmePanel({
       unwrap(
         "modId" in from
           ? commands.openModReadme(from.modId, file)
-          : commands.openReadmeAt(from.path, file),
+          : "installId" in from
+            ? commands.openGameReadme(from.installId, file)
+            : commands.openReadmeAt(from.path, file),
       ),
   });
   return (

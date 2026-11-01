@@ -1,10 +1,12 @@
-//! README files shipped with mods, for the detail page and before installing.
+//! README files shipped with mods and games, for the detail page and before
+//! installing.
 //!
 //! Mods name their documentation freely (`README.TXT`, `Read Me.txt`,
 //! `READ.ME`, `CHEEKY README.rtf`, `LIESMICH.TXT`, …), so candidates are
 //! ranked by name; without one, other text documents are shown instead
 //! (`changes.txt`, `story.txt`). The games' own documents, which come along
-//! with a copy of a shareware episode, are left out. The text goes to the UI
+//! with a copy of a shareware episode, are left out of a mod's; a game in
+//! the library shows them. The text goes to the UI
 //! as plain text only: DOS code page 437 or Windows-1252 is decoded, RTF is
 //! reduced to its text, control characters are dropped, Word documents are
 //! reduced to their text and also open in their app. HTML is never shown in
@@ -57,7 +59,17 @@ const EXTENSIONS: &[&str] = &[
 /// folder count too.
 pub fn for_mod(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Vec<Readme>> {
     match mod_source(paths, db, mod_id)? {
-        Some(source) => find(&source),
+        Some(source) => find_documents(&source, Documents::OfMod),
+        None => Ok(Vec::new()),
+    }
+}
+
+/// The documents of a game in the library (a full game, shareware episode or
+/// demo), the README first, its own documents included; empty when it has
+/// none.
+pub fn for_game(paths: &AppPaths, db: &Db, install_id: &str) -> Result<Vec<Readme>> {
+    match game_source(paths, db, install_id)? {
+        Some(source) => find_documents(&source, Documents::All),
         None => Ok(Vec::new()),
     }
 }
@@ -74,6 +86,15 @@ pub fn file_path(paths: &AppPaths, db: &Db, mod_id: &str, file: &str) -> Result<
     let not_found = || Error::NotFound(format!("{file} of mod {mod_id}"));
     let source = mod_source(paths, db, mod_id)?.ok_or_else(not_found)?;
     page(&source, file, &paths.cache.join("readmes").join(mod_id))
+}
+
+/// The web page, Word or PDF document `file` of a game in the library, for
+/// the browser or its app.
+pub fn game_file_path(paths: &AppPaths, db: &Db, install_id: &str, file: &str) -> Result<PathBuf> {
+    let source = game_source(paths, db, install_id)?
+        .ok_or_else(|| Error::NotFound(format!("{file} of install {install_id}")))?;
+    // The library holds folders only, so nothing is copied.
+    page(&source, file, &paths.cache)
 }
 
 /// The web page, Word or PDF document `file` in a folder or ZIP not
@@ -130,6 +151,18 @@ fn mod_source(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Option<Source>>
     })
 }
 
+/// The files of a game in the library, `None` if they are gone.
+fn game_source(paths: &AppPaths, db: &Db, install_id: &str) -> Result<Option<Source>> {
+    db.conn()
+        .query_row("SELECT 1 FROM installs WHERE id = ?1", [install_id], |_| {
+            Ok(())
+        })
+        .optional()?
+        .ok_or_else(|| Error::NotFound(format!("install {install_id}")))?;
+    let base = paths.library.join(install_id).join("base");
+    Ok(base.is_dir().then_some(Source::Folder(base)))
+}
+
 fn archive(dir: &Path) -> Option<std::path::PathBuf> {
     fs::read_dir(dir)
         .ok()?
@@ -137,10 +170,23 @@ fn archive(dir: &Path) -> Option<std::path::PathBuf> {
         .find(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("zip")))
 }
 
+/// Which documents [`find_documents`] keeps.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Documents {
+    /// A mod's: without the games' own documents it ships along.
+    OfMod,
+    /// A game's: its own documents are what it has.
+    All,
+}
+
 /// The readable candidates in `source`, best-named first; web pages and PDF
 /// documents after text documents of the same rank, as only text shows in
-/// the app.
+/// the app. The games' own documents are left out, as for a mod.
 pub fn find(source: &Source) -> Result<Vec<Readme>> {
+    find_documents(source, Documents::OfMod)
+}
+
+fn find_documents(source: &Source, keep: Documents) -> Result<Vec<Readme>> {
     let mut candidates: Vec<((u8, bool, usize), String)> = source
         .files()?
         .into_iter()
@@ -193,7 +239,7 @@ pub fn find(source: &Source) -> Result<Vec<Readme>> {
         if let Some(text) = to_text(&bytes)
             && !text.trim().is_empty()
             && !is_patch_script(&text)
-            && !is_game_document(&text)
+            && (keep == Documents::All || !is_game_document(&text))
         {
             found.push(Readme {
                 file,
@@ -1108,6 +1154,50 @@ mod tests {
             file_path(&paths, &db, "other", "README.HTM"),
             Err(Error::NotFound(_))
         ));
+    }
+
+    #[test]
+    fn reads_a_game_in_the_library_with_its_own_documents() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(tmp.path().join("data"));
+        let db = Db::open_in_memory().unwrap();
+        assert!(matches!(
+            for_game(&paths, &db, "keen4-1"),
+            Err(Error::NotFound(_))
+        ));
+        db.conn()
+            .execute(
+                "INSERT INTO installs (id, game_id, label, source, path, added_at)
+                 VALUES ('keen4-1', 'keen4', 'Keen 4', 'folder', '/x', 0)",
+                [],
+            )
+            .unwrap();
+        // Its files are gone; nothing to show.
+        assert_eq!(for_game(&paths, &db, "keen4-1").unwrap(), []);
+
+        let base = paths.library.join("keen4-1/base");
+        write_folder(
+            &base,
+            &[
+                ("KEEN4E.EXE", b"MZ"),
+                ("README.DOC", b"Commander Keen 4"),
+                ("ORDER.HTM", b"<p>order"),
+            ],
+        );
+        let found = for_game(&paths, &db, "keen4-1").unwrap();
+        let files: Vec<&str> = found.iter().map(|r| r.file.as_str()).collect();
+        assert_eq!(files, ["README.DOC", "ORDER.HTM"]);
+        assert_eq!(found[0].text, "Commander Keen 4");
+        assert_eq!(
+            game_file_path(&paths, &db, "keen4-1", "ORDER.HTM").unwrap(),
+            base.join("ORDER.HTM")
+        );
+        for (install, file) in [("keen4-1", "KEEN4E.EXE"), ("keen4-2", "ORDER.HTM")] {
+            assert!(matches!(
+                game_file_path(&paths, &db, install, file),
+                Err(Error::NotFound(_))
+            ));
+        }
     }
 
     #[test]
