@@ -1,10 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { Bug } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, events } from "../bindings";
-import { unwrap } from "../ipc";
-import { profilesKey } from "../library/queries";
+import { events } from "../bindings";
+import { useProfiles } from "../library/queries";
 import { ModReportDialog } from "../mods/ModReport";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
@@ -21,10 +19,7 @@ export function ExitMessage() {
   const { t } = useTranslation();
   const [ended, setEnded] = useState<Ended[]>([]);
   const [reporting, setReporting] = useState<{ profileId: string; name: string } | null>(null);
-  const profiles = useQuery({
-    queryKey: profilesKey,
-    queryFn: () => unwrap(commands.listProfiles()),
-  });
+  const profiles = useProfiles();
 
   useEffect(() => {
     const unlisten = events.playSessionEnded.listen(({ payload }) => {

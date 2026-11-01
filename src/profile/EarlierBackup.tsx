@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type EarlierBackup, type Profile } from "../bindings";
@@ -6,7 +6,7 @@ import { useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatDate } from "../format";
 import { unwrap } from "../ipc";
-import { profilesKey } from "../library/queries";
+import { profilesKey, useProfiles } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
@@ -19,10 +19,7 @@ type Offer = { profile: Profile; earlier: EarlierBackup };
  * the saves backed up when it was removed before (§9.5).
  */
 export function EarlierBackupPrompt() {
-  const profiles = useQuery({
-    queryKey: profilesKey,
-    queryFn: () => unwrap(commands.listProfiles()),
-  });
+  const profiles = useProfiles();
   const [offers, setOffers] = useState<Offer[]>([]);
   // Profiles there before; a mod added again may get its old id back.
   const known = useRef<Set<string> | null>(null);

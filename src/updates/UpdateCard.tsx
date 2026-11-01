@@ -1,12 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
 import type { Update } from "@tauri-apps/plugin-updater";
 import { Download } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands } from "../bindings";
 import { errorMessage } from "../errors";
-import { unwrap } from "../ipc";
-import { profilesKey } from "../library/queries";
+import { useProfiles } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Notice } from "../ui/Notice";
@@ -22,10 +19,7 @@ export function UpdateCard({ update, onLater }: { update: Update; onLater?: () =
   const { t } = useTranslation();
   const install = useInstallUpdate();
   const [progress, setProgress] = useState<number | null>(null);
-  const profiles = useQuery({
-    queryKey: profilesKey,
-    queryFn: () => unwrap(commands.listProfiles()),
-  });
+  const profiles = useProfiles();
   // Installing restarts BloogBase, which would lose track of a running game.
   const playing = profiles.data?.some((p) => p.running) ?? false;
 

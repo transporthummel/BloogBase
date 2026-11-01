@@ -12,7 +12,7 @@ import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
 import { onImportPaths } from "./importPaths";
-import { installsKey, profilesKey } from "./queries";
+import { installsKey, profilesKey, profilesQuery } from "./queries";
 
 type Outcome = {
   games: Install[];
@@ -96,12 +96,7 @@ export function DropImport() {
     setOutcome(null);
     let profileId: string | undefined = mods[0]?.profileId;
     if (!profileId) {
-      const profiles = await queryClient
-        .fetchQuery({
-          queryKey: profilesKey,
-          queryFn: () => unwrap(commands.listProfiles()),
-        })
-        .catch(() => []);
+      const profiles = await queryClient.fetchQuery(profilesQuery).catch(() => []);
       // The game's own play profile, not one of a mod played on it.
       profileId = profiles.find((p) => p.installId === games[0].id && !p.modId)?.id;
     }

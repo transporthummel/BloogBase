@@ -10,7 +10,7 @@ import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
-import { profilesKey } from "../library/queries";
+import { useProfiles } from "../library/queries";
 import { getLastVersion, setLastVersion } from "../preferences";
 import { Button } from "../ui/Button";
 import { buttonClass } from "../ui/buttonClass";
@@ -47,10 +47,7 @@ export function WhatsNew() {
   const status = useIndexStatus().data;
   const indexMods = useIndexMods();
   const games = useGames().data;
-  const profiles = useQuery({
-    queryKey: profilesKey,
-    queryFn: () => unwrap(commands.listProfiles()),
-  });
+  const profiles = useProfiles();
   // Kept with the library: what it knows about the mod list.
   const known = useQuery({
     queryKey: ["indexNews"],

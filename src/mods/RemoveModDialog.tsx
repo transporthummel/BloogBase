@@ -1,11 +1,11 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Puzzle } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Profile } from "../bindings";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
-import { modsKey } from "../library/queries";
+import { useMods } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
@@ -23,7 +23,7 @@ export function RemoveModDialog({
 }) {
   const { t } = useTranslation();
   const [keepSaves, setKeepSaves] = useState(true);
-  const mods = useQuery({ queryKey: modsKey, queryFn: () => unwrap(commands.listMods()) });
+  const mods = useMods();
   // Mods played over this one go with it.
   const extensions = (mods.data ?? []).filter((m) => m.extends === profile.modId);
   const remove = useMutation({

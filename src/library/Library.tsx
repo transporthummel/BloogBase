@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { Compass, PackagePlus, Search } from "lucide-react";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -14,7 +14,7 @@ import { AddModDialog } from "../mods/AddModDialog";
 import { RunsOn } from "../mods/RunsOn";
 import { Cover } from "./Cover";
 import { useCover } from "./covers";
-import { profilesKey } from "./queries";
+import { profilesKey, profilesQuery, useProfiles } from "./queries";
 import { getLibrarySort, getShowTrivia, setLibrarySort } from "../preferences";
 import { arrange, librarySorts, type LibrarySort } from "./sort";
 import { StatusBar } from "./StatusBar";
@@ -43,8 +43,7 @@ export function Library() {
   const navigate = useNavigate();
   const games = useGames();
   const setup = useSetupStatus();
-  const profilesQuery = { queryKey: profilesKey, queryFn: () => unwrap(commands.listProfiles()) };
-  const profiles = useQuery(profilesQuery);
+  const profiles = useProfiles();
   const runtime = useRuntimeStatus();
   const [adding, setAdding] = useState(false);
   const [finding, setFinding] = useState(false);

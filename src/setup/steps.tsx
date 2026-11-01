@@ -16,7 +16,7 @@ import { entryDescription } from "../discover/description";
 import { compare, fitting, type Owned } from "../discover/fit";
 import { IndexError } from "../discover/IndexError";
 import { useFreeGames, useIndexMods, useIndexStatus } from "../discover/queries";
-import { installsKey, profilesKey } from "../library/queries";
+import { useInstalls, useProfiles } from "../library/queries";
 import { getTheme, setLanguage, setTheme, type Language, type Theme } from "../preferences";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { useRuntimeMutation, useRuntimeStatus } from "../runtime/queries";
@@ -315,10 +315,7 @@ export function EpisodesStep({ next, back }: StepProps) {
   const { t } = useTranslation();
   const free = useFreeGames();
   const games = useGames();
-  const installs = useQuery({
-    queryKey: installsKey,
-    queryFn: () => unwrap(commands.listInstalls()),
-  });
+  const installs = useInstalls();
   const jobs = useJobs().data ?? [];
   const jobLabel = useJobLabel();
   const start = useStartJob((versionId: string) => commands.installFreeGame(versionId));
@@ -411,10 +408,7 @@ export function ModsStep({ next, back }: StepProps) {
   const games = useGames().data ?? [];
   const status = useIndexStatus().data;
   const mods = useIndexMods();
-  const installs = useQuery({
-    queryKey: installsKey,
-    queryFn: () => unwrap(commands.listInstalls()),
-  });
+  const installs = useInstalls();
   const free = useFreeGames();
   const jobs = useJobs().data ?? [];
   const start = useStartJob((indexId: string) =>
@@ -605,10 +599,7 @@ function Arrival() {
     its way is in the job list below. */
 function Recap({ jobs }: { jobs: Job[] }) {
   const { t, i18n } = useTranslation();
-  const profiles = useQuery({
-    queryKey: profilesKey,
-    queryFn: () => unwrap(commands.listProfiles()),
-  });
+  const profiles = useProfiles();
   const runtime = useRuntimeStatus();
   if (!profiles.data || !runtime.data) return null;
 

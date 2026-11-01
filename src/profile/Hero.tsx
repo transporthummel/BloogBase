@@ -1,16 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ExternalLink, TriangleAlert } from "lucide-react";
 import { Fragment, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
+import { type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
 import { useIndexMods } from "../discover/queries";
 import { formatDate, formatLooseDate, formatPlayTime } from "../format";
-import { unwrap } from "../ipc";
 import { Cover } from "../library/Cover";
 import { useCover } from "../library/covers";
-import { modsKey } from "../library/queries";
+import { useMods } from "../library/queries";
 import { Authors } from "../mods/Authors";
 import { RunsOn } from "../mods/RunsOn";
 import { Badge } from "../ui/Badge";
@@ -38,11 +36,7 @@ export function Hero({
 }) {
   const { t, i18n } = useTranslation();
   usePageTitle(profile.label);
-  const mods = useQuery({
-    queryKey: modsKey,
-    queryFn: () => unwrap(commands.listMods()),
-    enabled: profile.modId !== null,
-  });
+  const mods = useMods({ enabled: profile.modId !== null });
   const index = useIndexMods();
   const shots = useScreenshots(profile.id);
   const cover = useCover(profile.id, profile.installId);

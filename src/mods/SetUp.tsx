@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { LibraryBig, Puzzle } from "lucide-react";
 import { type ReactElement, type ReactNode, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -18,7 +18,7 @@ import { unwrap } from "../ipc";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob, waitForJob } from "../jobs/queries";
 import { coverKey } from "../library/covers";
-import { installsKey, modsKey, profilesKey } from "../library/queries";
+import { modsKey, useInstalls, useMods, useProfiles } from "../library/queries";
 import { ReadmePanel } from "../profile/ReadmePanel";
 import { readmeKey, useReadmesAt } from "../profile/readme";
 import { Button } from "../ui/Button";
@@ -54,19 +54,13 @@ export function SetUp({
 }: SetUpProps) {
   const { t } = useTranslation();
   const games = useGames();
-  const installs = useQuery({
-    queryKey: installsKey,
-    queryFn: () => unwrap(commands.listInstalls()),
-  });
+  const installs = useInstalls();
   const [name, setName] = useState(info.name);
   const [recipeIndex, setRecipeIndex] = useState(0);
   const [installId, setInstallId] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const mods = useQuery({ queryKey: modsKey, queryFn: () => unwrap(commands.listMods()) });
-  const profiles = useQuery({
-    queryKey: profilesKey,
-    queryFn: () => unwrap(commands.listProfiles()),
-  });
+  const mods = useMods();
+  const profiles = useProfiles();
   // The mod this one replaces, `null` to install alongside; unset: the first that matches.
   const [replace, setReplace] = useState<string | null | undefined>(replacing);
 

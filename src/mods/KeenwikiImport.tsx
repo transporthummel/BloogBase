@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ArrowLeft, Download, ExternalLink, Search } from "lucide-react";
 import { type ReactNode, useRef, useState } from "react";
@@ -10,7 +10,7 @@ import { type Installed, useIndexInstalled, useIndexMods } from "../discover/que
 import { errorMessage } from "../errors";
 import { formatLooseDate } from "../format";
 import { unwrap } from "../ipc";
-import { installsKey } from "../library/queries";
+import { useInstalls } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
 import { useEnterAction } from "../ui/useEnterAction";
@@ -201,10 +201,7 @@ export function IndexHit({
   const { t } = useTranslation();
   const mods = useIndexMods();
   const games = useGames();
-  const installs = useQuery({
-    queryKey: installsKey,
-    queryFn: () => unwrap(commands.listInstalls()),
-  });
+  const installs = useInstalls();
   const mod = mods.data?.find((m) => m.entry.id === id);
   if (!mod || !games.data || !installs.data) return null;
   return (

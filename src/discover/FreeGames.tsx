@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Download, ExternalLink, Search } from "lucide-react";
 import { useState } from "react";
@@ -7,13 +6,12 @@ import { commands, type FreeGame, type Game } from "../bindings";
 import { gameTitle } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatMegabytes } from "../format";
-import { unwrap } from "../ipc";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { GameTile } from "./GameTile";
 import { DetailsLink } from "./DetailsLink";
 import { FindOwnedDialog } from "../library/FindOwnedDialog";
-import { profilesKey } from "../library/queries";
+import { useProfiles } from "../library/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -140,11 +138,7 @@ function FreeGameAction({ free, label }: { free: FreeGame; label: string }) {
   const { t } = useTranslation();
   const job = useJob("freeGame", free.versionId);
   const start = useStartJob((versionId: string) => commands.installFreeGame(versionId));
-  const profiles = useQuery({
-    queryKey: profilesKey,
-    queryFn: () => unwrap(commands.listProfiles()),
-    enabled: free.installed,
-  });
+  const profiles = useProfiles({ enabled: free.installed });
 
   if (job && !isFinished(job)) return <JobRow job={job} label={label} />;
   if (free.installed) {

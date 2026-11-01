@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Info } from "lucide-react";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
@@ -8,7 +8,7 @@ import { useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { scroller } from "../library/scroll";
-import { profilesKey } from "../library/queries";
+import { profilesKey, useProfiles } from "../library/queries";
 import { useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
 import { Notice } from "../ui/Notice";
@@ -40,10 +40,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   const queryClient = useQueryClient();
   const games = useGames();
   const runtime = useRuntimeStatus();
-  const profiles = useQuery({
-    queryKey: profilesKey,
-    queryFn: () => unwrap(commands.listProfiles()),
-  });
+  const profiles = useProfiles();
   // Until the player picks one: the README if the mod has one, else saves.
   const [picked, setTab] = useState<Tab | null>(null);
 

@@ -2,7 +2,7 @@ import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { commands } from "../bindings";
 import { unwrap } from "../ipc";
-import { profilesKey } from "./queries";
+import { profilesQuery } from "./queries";
 
 /** All covers. */
 export const coverKeys = ["cover"] as const;
@@ -19,11 +19,7 @@ export const coverKey = (profileId: string) => [...coverKeys, profileId] as cons
  */
 export async function forgetRemovedCovers(client: QueryClient) {
   try {
-    const profiles = await client.fetchQuery({
-      queryKey: profilesKey,
-      queryFn: () => unwrap(commands.listProfiles()),
-      staleTime: 0,
-    });
+    const profiles = await client.fetchQuery({ ...profilesQuery, staleTime: 0 });
     const ids = new Set(profiles.map((p) => p.id));
     client.removeQueries({
       queryKey: coverKeys,

@@ -1,13 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
 import { RefreshCw, Search } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Game, type ModKind } from "../bindings";
+import { type Game, type ModKind } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
-import { unwrap } from "../ipc";
-import { installsKey } from "../library/queries";
+import { useInstalls } from "../library/queries";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
 import { Notice } from "../ui/Notice";
@@ -80,10 +78,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
   const { t, i18n } = useTranslation();
   const status = useIndexStatus();
   const mods = useIndexMods();
-  const installs = useQuery({
-    queryKey: installsKey,
-    queryFn: () => unwrap(commands.listInstalls()),
-  });
+  const installs = useInstalls();
 
   const [query, setQuery] = useState("");
   const [game, setGame] = useState("");

@@ -1,12 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, events, type Profile } from "../bindings";
+import { events, type Profile } from "../bindings";
 import { useGames } from "../catalog";
-import { unwrap } from "../ipc";
 import { Cover } from "../library/Cover";
 import { useCover } from "../library/covers";
-import { profilesKey } from "../library/queries";
+import { useProfiles } from "../library/queries";
 import { Bloog } from "../ui/Bloog";
 
 /** Should DOSBox never say its window is up, the overlay goes anyway. */
@@ -18,10 +16,7 @@ const GIVE_UP_MS = 15_000;
  */
 export function LaunchOverlay() {
   const [starting, setStarting] = useState<string | null>(null);
-  const profiles = useQuery({
-    queryKey: profilesKey,
-    queryFn: () => unwrap(commands.listProfiles()),
-  });
+  const profiles = useProfiles();
 
   useEffect(() => {
     const done = (id: string) => setStarting((s) => (s === id ? null : s));
