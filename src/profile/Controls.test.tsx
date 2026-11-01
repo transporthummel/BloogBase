@@ -59,6 +59,8 @@ test("Keen 1-3 shoot with Ctrl and Alt, Space opens the status window", async ()
   expect(keysFor("Pogo on and off, once you've found it")).toBe("Alt");
   expect(keysFor("Shoot")).toBe("Ctrl+Alt");
   expect(keysFor("Status window")).toBe("Space");
+  expect(keysFor("Sound on and off")).toBe("F2");
+  expect(keysFor("Save the game")).toBe("F5");
   // The patch fits but is off: a pointer to the setting.
   expect(await screen.findByText("Turn it on in Settings.")).toBeInTheDocument();
 });

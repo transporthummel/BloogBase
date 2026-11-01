@@ -807,7 +807,9 @@
       "status": "Status window",
       "menu": "Menu",
       "help": "Help",
+      "sound": "Sound on and off",
       "keys": "Change keys",
+      "save": "Save the game",
       "fullscreen": "Window or full screen",
       "screenshot": "Screenshot",
       "video": "Start or stop a video"

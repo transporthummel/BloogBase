@@ -62,7 +62,9 @@ export function sheetFor(game: Pick<Game, "id" | "engine">, space: boolean, mac:
             : { keys: ["space"], action: "status" },
           { keys: ["esc"], action: "menu" },
           { keys: ["f1"], action: "help" },
+          { keys: ["f2"], action: "sound" },
           { keys: ["f3"], action: "keys" },
+          { keys: ["f5"], action: "save" },
         ],
         window,
         cheats: [
