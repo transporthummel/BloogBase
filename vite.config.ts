@@ -10,6 +10,11 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(() => ({
   plugins: [react(), tailwindcss()],
 
+  // The app loads its scripts from disk, not the network, so Vite's 500 kB
+  // web default is too strict. 800 kB leaves the main chunk (737 kB) some room
+  // and still warns when it grows noticeably.
+  build: { chunkSizeWarningLimit: 800 },
+
   test: {
     environment: "jsdom",
     setupFiles: ["src/test/setup.ts"],
