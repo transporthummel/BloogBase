@@ -4,6 +4,8 @@
 
 ### Features
 
+- The page of a game, shareware episode or demo can open the folder with its files, as a mod's page opens the mod folder.
+
 ### Improvements
 
 - A Content Security Policy keeps injected scripts from running, reaching the app's commands or loading anything from the internet; blocked sources are logged.

@@ -519,6 +519,7 @@
     "more": "More",
     "playOn": "Play with another copy…",
     "openModFolder": "Open mod folder",
+    "openGameFolder": "Open game folder",
     "replaceMod": "Replace with a local copy…",
     "firing": {
       "on": "Space shoots, Enter opens the status window.",

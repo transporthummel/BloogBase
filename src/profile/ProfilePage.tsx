@@ -240,7 +240,10 @@ function Hero({
   const textRef = useRef<HTMLDivElement>(null);
   const pictureWidth = usePictureWidth(cardRef, textRef);
   const openFolder = useMutation({
-    mutationFn: (modId: string) => unwrap(commands.openModFolder(modId)),
+    mutationFn: (of: { modId: string } | { installId: string }) =>
+      unwrap(
+        "modId" in of ? commands.openModFolder(of.modId) : commands.openGameFolder(of.installId),
+      ),
   });
   const [removing, setRemoving] = useState(false);
   const [replacing, setReplacing] = useState(false);
@@ -294,7 +297,7 @@ function Hero({
     actions.push({
       label: t("profile.openModFolder"),
       icon: <FolderOpen className="size-4" />,
-      onSelect: () => openFolder.mutate(mod.id),
+      onSelect: () => openFolder.mutate({ modId: mod.id }),
     });
     if (checkable)
       actions.push({
@@ -308,6 +311,15 @@ function Hero({
       icon: <FileArchive className="size-4" />,
       onSelect: () => setReplacing(true),
       disabled: profile.running,
+    });
+  }
+  // A game's own files: the full game, shareware episode or demo.
+  if (profile.modId === null && profile.installId !== null) {
+    const installId = profile.installId;
+    actions.push({
+      label: t("profile.openGameFolder"),
+      icon: <FolderOpen className="size-4" />,
+      onSelect: () => openFolder.mutate({ installId }),
     });
   }
   actions.push({

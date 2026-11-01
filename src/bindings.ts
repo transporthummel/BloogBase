@@ -104,6 +104,11 @@ export const commands = {
 	/**  Opens the folder with a mod's installed files. */
 	openModFolder: (modId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_mod_folder", { modId })),
 	/**
+	 *  Opens the folder with a game's files in the library, for a full game,
+	 *  shareware episode or demo alike.
+	 */
+	openGameFolder: (installId: string) => typedError<null, CommandError>(__TAURI_INVOKE("open_game_folder", { installId })),
+	/**
 	 *  Opens a web page or Word document shipped with a mod in the browser or
 	 *  its app; the app never shows HTML itself.
 	 */

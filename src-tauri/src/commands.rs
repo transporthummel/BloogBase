@@ -390,6 +390,22 @@ pub fn open_mod_folder(
     open_path(&app, &paths.mods.join(&mod_id).join("files"))
 }
 
+/// Opens the folder with a game's files in the library, for a full game,
+/// shareware episode or demo alike.
+#[tauri::command]
+#[specta::specta]
+pub fn open_game_folder(
+    app: AppHandle,
+    paths: State<'_, AppPaths>,
+    db: State<'_, Db>,
+    install_id: String,
+) -> CommandResult<()> {
+    if !library::list(&db)?.iter().any(|i| i.id == install_id) {
+        return Err(Error::NotFound(format!("install {install_id}")).into());
+    }
+    open_path(&app, &paths.library.join(&install_id).join("base"))
+}
+
 /// Opens a web page or Word document shipped with a mod in the browser or
 /// its app; the app never shows HTML itself.
 #[tauri::command]

@@ -71,6 +71,7 @@ vi.mock("../bindings", () => {
     "listMods",
     "modReadmes",
     "openModFolder",
+    "openGameFolder",
     "openModReadme",
     "deleteMod",
     "modInstalls",
@@ -281,6 +282,9 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   vi.mocked(commands.openModFolder).mockResolvedValue(ok(null));
   await pick("Open mod folder");
   expect(commands.openModFolder).toHaveBeenCalledWith("aurora-bliss");
+  // The game's folder is on the game's own page.
+  await userEvent.click(screen.getByRole("button", { name: "More" }));
+  expect(screen.queryByRole("menuitem", { name: "Open game folder" })).not.toBeInTheDocument();
 });
 
 test("a mod's page changes the copy of the game it plays on", async () => {
@@ -405,6 +409,16 @@ test("a mod can be replaced with a local copy, unless it runs", async () => {
   renderDetail();
   await userEvent.click(await screen.findByRole("button", { name: "More" }));
   expect(screen.getByRole("menuitem", { name: "Replace with a local copy…" })).toBeDisabled();
+});
+
+test("a game's page opens the folder with its files", async () => {
+  vi.mocked(commands.openGameFolder).mockResolvedValue(ok(null));
+  renderDetail();
+  await pick("Open game folder");
+  expect(commands.openGameFolder).toHaveBeenCalledWith("keen4-1");
+  // No mod folder for a game.
+  await userEvent.click(screen.getByRole("button", { name: "More" }));
+  expect(screen.queryByRole("menuitem", { name: "Open mod folder" })).not.toBeInTheDocument();
 });
 
 test("a game is removed from its page, with its mods if asked", async () => {

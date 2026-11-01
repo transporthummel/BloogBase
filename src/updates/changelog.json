@@ -1,7 +1,11 @@
 {
   "unreleased": {
-    "en": [],
-    "de": []
+    "en": [
+      "Games, shareware episodes and demos can now open the folder with their files from their page, just like mods."
+    ],
+    "de": [
+      "Auch Spiele, Shareware-Episoden und Demos öffnen jetzt auf ihrer Seite den Ordner mit ihren Dateien, so wie Mods."
+    ]
   },
   "releases": [
     {
