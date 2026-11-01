@@ -1074,11 +1074,7 @@ mod tests {
                 line.clear();
             }
             let head = format!(
-                "HTTP/1.1 200 OK
-Content-Length: {}
-Connection: close
-
-",
+                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
                 BODY.len()
             );
             stream.write_all(head.as_bytes()).unwrap();
