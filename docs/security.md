@@ -76,6 +76,8 @@ Only the latest release gets fixes. The in-app updater brings them.
 - Pull requests never get a key.
 - A weekly job checks the dependencies against known vulnerabilities
   (`cargo audit`, `pnpm audit`), and on every change to a lockfile.
+  Dependabot proposes updates weekly, each release at least 7 days old
+  ([dependencies.md](dependencies.md)).
 - BloogBase has no telemetry and no accounts. It only goes online for the
   mod list, updates, downloads and KeenWiki pages you ask for.
 

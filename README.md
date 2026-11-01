@@ -285,6 +285,8 @@ How BloogBase works inside:
   and videos
 - [docs/security.md](docs/security.md): how BloogBase handles untrusted mods,
   downloads and archives, and how to report a vulnerability
+- [docs/dependencies.md](docs/dependencies.md): what BloogBase pulls in and
+  how to bring it up to date
 
 ## Thanks
 

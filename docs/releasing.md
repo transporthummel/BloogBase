@@ -84,10 +84,12 @@ keep a backup of `.local/updater-signing/` outside the repo.
 All workflows use actions pinned to a commit, with the tag as a comment
 (`actions/checkout@<sha> # v4`), so a moved tag can't run foreign code, least
 of all next to a signing key (`release.yml`, the `publish` job of
-`index.yml`). To update an action, look up the commit its tag points at now
-(`git ls-remote https://github.com/<owner>/<action> refs/tags/<tag>`) and
-replace the hash. The index tool is compiled in a step of its own before the
-index key is in the environment, so dependencies' build scripts never see it.
+`index.yml`). Dependabot updates them weekly
+([dependencies.md](dependencies.md)); by hand, look up the commit a tag points
+at now (`git ls-remote https://github.com/<owner>/<action> refs/tags/<tag>`)
+and replace the hash. The index tool is compiled in a step of its own before
+the index key is in the environment, so dependencies' build scripts never see
+it.
 More in [security.md](security.md).
 
 ## No code signing (decided 2026-10-17)

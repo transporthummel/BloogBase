@@ -1,0 +1,67 @@
+# Weekly pull requests for newer dependencies (docs/dependencies.md).
+# New releases wait 7 days first, like pnpm's minimumReleaseAge, so a
+# compromised release is usually pulled before it reaches us. Minor and patch
+# updates come as one pull request per ecosystem; major updates one each.
+# Security updates (Settings → Code security) are separate and don't wait.
+
+version: 2
+
+updates:
+  - package-ecosystem: cargo
+    # The app workspace (with keen-saves and keen-graphics) and the index tool.
+    directories:
+      - /src-tauri
+      - /index/tool
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "Update Rust dependencies:"
+    groups:
+      # Pinned to one release candidate (`=2.0.0-rc.…`); they only move
+      # together.
+      specta:
+        patterns:
+          - specta
+          - specta-*
+          - tauri-specta
+      tauri:
+        patterns:
+          - tauri
+          - tauri-*
+        update-types: [minor, patch]
+      rust-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "Update npm packages:"
+    groups:
+      tauri:
+        patterns:
+          - "@tauri-apps/*"
+        update-types: [minor, patch]
+      npm-minor:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "Update GitHub Actions:"
+    groups:
+      actions:
+        patterns:
+          - "*"
