@@ -16,6 +16,8 @@
 
 ### Bug Fixes
 
+- Setting up a mod from a KeenWiki page shows the release date from the page, the one it is saved with, instead of one guessed from the files.
+
 ### Misc
 
 - Updated dependencies, among them Tauri 2.12.5.

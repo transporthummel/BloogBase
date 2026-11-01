@@ -293,10 +293,11 @@ function Facts({
   const { t, i18n } = useTranslation();
   const authors = origin?.authors.length ? origin.authors : info.authors;
   const version = origin?.version ?? info.version;
+  const released = origin?.released ?? info.released;
   const details = [
     authors.length > 0 && t("mods.by", { authors: authors.join(", ") }),
     version && t("mods.version", { version }),
-    info.released && formatLooseDate(i18n.language, info.released),
+    released && formatLooseDate(i18n.language, released),
   ].filter(Boolean);
   return (
     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
