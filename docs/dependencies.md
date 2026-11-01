@@ -38,7 +38,11 @@ games) and `keen-graphics` (title screens for the covers). The main crates:
   `minisign-verify`.
 - `scraper` (KeenWiki pages), `png`, `walkdir`, `serde`, `thiserror`,
   `tracing`.
-- Windows only: `windows-sys`, `windows-core`, `webview2-com`.
+- Windows only: `windows-sys`, `windows-core`, `webview2-com`. `windows-core`
+  must be the version `webview2-com` uses (`cargo tree -i windows-core`),
+  else `.cast()` on WebView2 types doesn't compile; only release builds
+  compile that code. Dependabot ignores `windows-core` from 0.63 on; raise it
+  together with `webview2-com` and drop the rule then.
 
 `cargo tree` in `src-tauri/` shows the full tree, `cargo tree -d` the crates
 that are in it in more than one version.

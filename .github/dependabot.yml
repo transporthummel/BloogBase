@@ -19,6 +19,12 @@ updates:
       default-days: 7
     commit-message:
       prefix: "Update Rust dependencies:"
+    ignore:
+      # Must match the windows-core that webview2-com uses: its `Interface`
+      # trait is what `.cast()` in lib.rs calls on WebView2 types. Raise both
+      # together once webview2-com (via wry/tauri) moves past 0.62.
+      - dependency-name: windows-core
+        versions: [">= 0.63"]
     groups:
       # Pinned to one release candidate (`=2.0.0-rc.…`); they only move
       # together.
