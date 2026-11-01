@@ -18,12 +18,11 @@ use crate::diagnostics;
 use crate::dosconf::{self, ConfigView, ConfigWarning, Machine};
 use crate::downloads;
 use crate::error::{CommandResult, Error, Result};
-use crate::exit_screen;
 use crate::firing::{self, Firing};
 use crate::free_games::{self, FreeGame};
 use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
 use crate::keenwiki::{self, UpdateStatus, WikiMod};
-use crate::launcher::{self, GameLaunch, LaunchPhase, PlaySessionEnded, Playing, Running};
+use crate::launcher::{GameLaunch, LaunchPhase, PlaySessionEnded, Playing, Running};
 use crate::library::{self, Install};
 use crate::mod_index::{self, IndexMod, IndexStatus, IndexUpdated, ModIndex};
 use crate::mods::{self, Curated, Dropped, InstallModRequest, Mod, ModInfo};
@@ -33,6 +32,7 @@ use crate::readme::{self, Readme};
 use crate::recipe::Recipe;
 use crate::runtime::{self, RuntimeStatus};
 use crate::saves::{self, SaveFile};
+use crate::session::{self, Started};
 use crate::settings::{self, IndexNews, SetupStatus};
 use crate::source::{ArchiveDamaged, Source};
 use crate::storage::{self, StorageUsage};
@@ -167,8 +167,6 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
     let a = app.clone();
     let id = profile_id.clone();
     let started = blocking(move || {
-        let backup = backups::before_launch(&a.state::<AppPaths>(), &a.state::<Db>(), &id);
-        let spec = launcher::prepare(&a.state::<AppPaths>(), &a.state::<Db>(), &id)?;
         let shown = {
             let (app, profile_id) = (a.clone(), id.clone());
             move || {
@@ -179,11 +177,20 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
                 .emit(&app);
             }
         };
-        let (child, session) = launcher::spawn(&runtime, &spec, &a.state::<Db>(), &id, shown)?;
-        Ok((child, session, backup))
+        session::start(
+            &a.state::<AppPaths>(),
+            &a.state::<Db>(),
+            &runtime,
+            &id,
+            shown,
+        )
     })
     .await;
-    let (mut child, session, backup) = match started {
+    let Started {
+        mut child,
+        session,
+        backup,
+    } = match started {
         Ok(s) => s,
         Err(e) => {
             launch(LaunchPhase::Failed);
@@ -210,36 +217,23 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
             }
         };
         app.state::<Playing>().remove(&profile_id);
-        let seconds =
-            launcher::finish(&app.state::<Db>(), session, exit_code).unwrap_or_else(|e| {
-                tracing::error!("could not record end of session {session}: {e}");
-                0
-            });
         // Still locked, so nothing changes the saves while they're compared.
-        if let Some(backup) = backup
-            && let Err(e) = backups::after_session(&app.state::<Db>(), &profile_id, backup)
-        {
-            tracing::warn!("could not check backup {backup} after the session: {e}");
-        }
+        let ended = session::end(
+            &app.state::<AppPaths>(),
+            &app.state::<Db>(),
+            &profile_id,
+            session,
+            backup,
+            exit_code,
+            quitting,
+        );
         drop(claim);
-        tracing::info!("{profile_id} exited with {exit_code:?} after {seconds}s");
-        let message =
-            exit_screen::message(&app.state::<AppPaths>().profile(&profile_id).exit_screen);
-        if let Some(m) = &message {
-            tracing::info!("{profile_id} ended with: {m}");
-        }
-        let start_problem = !quitting
-            && (message.is_some() || seconds < launcher::SHORT_SESSION)
-            && launcher::first_with_setup(&app.state::<Db>(), session).unwrap_or_else(|e| {
-                tracing::warn!("could not tell if session {session} was the first: {e}");
-                false
-            });
         let _ = PlaySessionEnded {
             profile_id,
             exit_code,
-            seconds,
-            message,
-            start_problem,
+            seconds: ended.seconds,
+            message: ended.message,
+            start_problem: ended.start_problem,
         }
         .emit(&app);
     });

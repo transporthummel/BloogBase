@@ -29,6 +29,7 @@ mod readme;
 mod recipe;
 mod runtime;
 mod saves;
+mod session;
 mod settings;
 mod source;
 mod storage;
