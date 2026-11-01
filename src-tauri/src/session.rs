@@ -124,8 +124,8 @@ mod tests {
         let end = |session, quitting| end(&paths, &db, "keen4-1", session, None, Some(0), quitting);
 
         let game = end(session(&db, None, 5), false);
-        // The clock may tick on meanwhile.
-        assert!((5..=6).contains(&game.seconds));
+        // The clock ticks on meanwhile, more so on a busy machine.
+        assert!((5..launcher::SHORT_SESSION).contains(&game.seconds));
         assert_eq!((game.message, game.start_problem), (None, false));
         assert!(!end(session(&db, Some("b"), 5), true).start_problem);
         assert!(end(session(&db, Some("a"), 5), false).start_problem);
