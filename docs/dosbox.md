@@ -4,7 +4,8 @@ BloogBase doesn't emulate anything itself: every game runs in
 [DOSBox Staging](https://www.dosbox-staging.org/), started as a separate
 program. This covers how BloogBase gets DOSBox, how it configures it, what
 it gives DOSBox to run, and what it reads back. The code is mostly in
-`src-tauri/src/runtime.rs`, `dosconf.rs` and `launcher.rs`.
+`src-tauri/src/runtime.rs`, `dosconf.rs`, `launcher.rs` and, for a play
+session from start to end, `session.rs`.
 
 ## The runtime
 
