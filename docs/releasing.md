@@ -5,7 +5,8 @@ prepares the version on `main` (commit "Prepare version …" and tag `v…`),
 builds installers for Windows (NSIS), Linux (AppImage, deb) and macOS (Apple
 Silicon and Intel, `.app` + DMG), signs the updater artifacts and drafts a
 GitHub release with everything plus `latest.json` for the in-app updater.
-Publish the draft by hand after a smoke test.
+Publish the draft by hand after a smoke test; after a change to the Content
+Security Policy, run its checks first (docs/testing.md).
 
 ## Changelogs
 

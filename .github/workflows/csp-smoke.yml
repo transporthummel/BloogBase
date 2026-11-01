@@ -1,0 +1,97 @@
+name: CSP smoke test
+
+# Started by hand (Actions → CSP smoke test → Run workflow), e.g. after
+# changing the Content Security Policy in src-tauri/tauri.conf.json or before a
+# release. The policy is only enforced in release builds, and macOS and Linux
+# use other URL schemes for the app's commands and files than Windows
+# (docs/testing.md). Builds the app on both, starts it with a fresh data
+# folder and fails when the interface doesn't come up ("Interface started"
+# missing from the log) or the log names something the policy blocked. The
+# log, and on Linux a screenshot, come back as the "csp-smoke-<os>" artifact.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  smoke:
+    name: Smoke (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev xvfb imagemagick
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          workspaces: src-tauri
+
+      - name: Collect third-party licenses
+        run: pnpm licenses:generate
+
+      - name: Build
+        run: pnpm tauri build --no-bundle
+
+      - name: Start the app
+        timeout-minutes: 5
+        run: |
+          out="$RUNNER_TEMP/out"
+          export BLOOGBASE_DATA_DIR="$RUNNER_TEMP/data"
+          mkdir -p "$out"
+          if [ "$RUNNER_OS" = Linux ]; then
+            Xvfb :99 -screen 0 1280x800x24 &
+            export DISPLAY=:99
+            sleep 2
+          fi
+          src-tauri/target/release/bloogbase > "$out/stdout.log" 2>&1 &
+          app=$!
+          log="$BLOOGBASE_DATA_DIR/logs/bloogbase.log"
+          for _ in $(seq 60); do
+            grep -q "Interface started" "$log" 2>/dev/null && break
+            sleep 1
+          done
+          # Time for the first page to load its pictures.
+          sleep 10
+          if [ "$RUNNER_OS" = Linux ]; then
+            import -window root "$out/window.png" || echo "::warning::Screenshot failed"
+          fi
+          kill "$app" 2>/dev/null
+          cp "$log" "$out/" 2>/dev/null
+          if ! grep -q "Interface started" "$log" 2>/dev/null; then
+            echo "::error::The interface didn't start (scripts or commands blocked?)"
+            exit 1
+          fi
+          if grep "CSP blocked" "$log"; then
+            echo "::error::The Content Security Policy blocked something"
+            exit 1
+          fi
+          echo "Interface started, nothing blocked."
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: csp-smoke-${{ matrix.os }}
+          path: ${{ runner.temp }}/out
+          if-no-files-found: warn

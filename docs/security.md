@@ -63,6 +63,10 @@ Only the latest release gets fixes. The in-app updater brings them.
   `http`/`https` links count.
 - Web pages, PDF and Word files that come with a mod open in the browser or
   their own app, never inside BloogBase.
+- A Content Security Policy in the app window is the second layer: should
+  some text ever end up as markup anyway, it can't run scripts, reach the
+  app's commands or load anything from the internet. What it blocks is
+  written to the log.
 
 ### Builds
 
@@ -88,6 +92,3 @@ Only the latest release gets fixes. The in-app updater brings them.
   [GitHub releases](https://github.com/transporthummel/BloogBase/releases).
 - Files a mod brings along (Word documents, PDFs, web pages) open in their
   usual app with that app's protection, not more.
-- There is no Content Security Policy in the app window yet. The app never
-  renders HTML from mods, so there's nothing for one to stop today; it is
-  planned as a second layer.

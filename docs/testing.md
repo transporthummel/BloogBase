@@ -176,3 +176,29 @@ Checks the dependencies that ship against known vulnerabilities (RustSec and
 the npm advisories). CI (`.github/workflows/audit.yml`) runs it weekly and
 whenever a lockfile changes; unmaintained or unsound crates only warn. ESLint
 and other build tools are left out, as they don't ship.
+
+## Content Security Policy
+
+The policy in `src-tauri/tauri.conf.json` (`app.security.csp`) only applies
+to release builds: `pnpm tauri dev` loads the page straight from Vite, where
+nothing is blocked. The frontend writes everything the policy blocks to
+`bloogbase.log` ("CSP blocked …"), so a source missing from the policy shows
+up in players' diagnostics reports too.
+
+- Windows: build with `pnpm tauri build --no-bundle`, start
+  `src-tauri/target/release/bloogbase.exe` with
+  `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333` and
+  `BLOOGBASE_DATA_DIR` pointing to a filled data folder, then go through every
+  page in both themes (covers, screenshots, a video, the DOSBox settings
+  editor, About with the licenses) and look for "CSP blocked" in the log.
+- macOS and Linux: start _Actions → CSP smoke test → Run workflow_
+  (`.github/workflows/csp-smoke.yml`). It builds the app, starts it with a
+  fresh data folder and fails when the interface doesn't come up or the log
+  names something blocked. A fresh data folder has no covers or screenshots,
+  so the `asset:` sources are only checked on Windows; macOS and Linux differ
+  from Windows in the URL schemes (`ipc://localhost`, `asset://localhost`
+  instead of `http://ipc.localhost`, `http://asset.localhost`), which the
+  policy lists both of.
+
+Change the policy after a new kind of source in the frontend (a remote
+picture, a worker, a frame), and run both checks before the release.
