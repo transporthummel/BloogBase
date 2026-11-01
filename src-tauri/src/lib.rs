@@ -47,6 +47,8 @@ use crate::mod_index::{IndexUpdated, ModIndex};
 use crate::paths::AppPaths;
 
 /// Where the generated TypeScript bindings for commands and events live.
+/// Debug builds write them on start, tests check them; release builds never do.
+#[cfg(any(debug_assertions, test))]
 const BINDINGS_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../src/bindings.ts");
 
 fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
@@ -145,6 +147,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         ])
 }
 
+#[cfg(any(debug_assertions, test))]
 fn export_bindings(builder: &tauri_specta::Builder<tauri::Wry>) {
     builder
         .export(
