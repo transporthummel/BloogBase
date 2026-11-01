@@ -1064,22 +1064,11 @@ mod tests {
     #[tokio::test]
     async fn a_download_goes_again_once_installed() {
         const BODY: &[u8] = b"the archive";
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-        let url = format!("http://{}/levels.zip", listener.local_addr().unwrap());
-        std::thread::spawn(move || {
-            let mut stream = listener.incoming().next().unwrap().unwrap();
-            let mut reader = BufReader::new(stream.try_clone().unwrap());
-            let mut line = String::new();
-            while reader.read_line(&mut line).unwrap() > 2 {
-                line.clear();
-            }
-            let head = format!(
-                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                BODY.len()
-            );
-            stream.write_all(head.as_bytes()).unwrap();
-            stream.write_all(BODY).unwrap();
-        });
+        let head = format!(
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            BODY.len()
+        );
+        let url = crate::downloads::tests::serve(vec![[head.as_bytes(), BODY].concat()]);
         let tmp = tempfile::tempdir().unwrap();
         let mut entry = sample_entry(&sha256_hex(BODY));
         entry.downloads[0].url = url;
