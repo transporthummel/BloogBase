@@ -123,7 +123,7 @@ version, its documents are read again.
 
 ## Readmes for installing
 
-`analyze` in `src-tauri/src/mods.rs` reads the same documents for one more
+`analyze` in `src-tauri/src/mods/analyze.rs` reads the same documents for one more
 thing. A mod of levels alone has nothing that says how the mod it belongs
 over starts. Its readme may say: xky1rooms' "Then run XkyKeen1.bat". DOS
 names of batch files and programs (8.3, `.BAT` or `.EXE`) that the readme

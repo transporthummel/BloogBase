@@ -5,7 +5,7 @@ export type Owned = Pick<Install, "gameId" | "versionId">;
 
 /**
  * Whether `entry` can be played on `owned`; mirrors `fits` in
- * mods.rs. Unknown versions get the benefit of the doubt, third-party
+ * mods/fit.rs. Unknown versions get the benefit of the doubt, third-party
  * builds count as their original.
  */
 export function fitsEntry(entry: IndexEntry, owned: Owned, game: Game | undefined): boolean {

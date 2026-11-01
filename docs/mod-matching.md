@@ -9,7 +9,7 @@ mod starts is in [recipes.md](recipes.md), which game copy it goes on in
 ## Name and details from the archive name
 
 Archives from the KeenWiki file server carry metadata in their name
-(`guess_metadata` in `src-tauri/src/mods.rs`):
+(`guess_metadata` in `src-tauri/src/mods/metadata.rs`):
 
 | Pattern                                      | Example                                              |
 | -------------------------------------------- | ---------------------------------------------------- |

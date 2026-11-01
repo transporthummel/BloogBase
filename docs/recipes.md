@@ -2,7 +2,7 @@
 
 A recipe says how a mod starts in DOSBox. Mods from the index bring a curated
 one; for everything else BloogBase guesses it from the files the mod ships
-(`src-tauri/src/recipe.rs`, used by `analyze` in `src-tauri/src/mods.rs`).
+(`src-tauri/src/recipe.rs`, used by `analyze` in `src-tauri/src/mods/analyze.rs`).
 
 ## Kinds
 

@@ -162,7 +162,7 @@ cd index/tool && cargo test            # the tool itself
 CI (`.github/workflows/index.yml`) runs both on every change to `index/` and
 weekly, then also asking the servers whether each download still exists. The
 app side (signature, cache, ETag, install from the index) is covered by the
-unit tests in `src-tauri/src/mod_index.rs` and `src-tauri/src/mods.rs`.
+unit tests in `src-tauri/src/mod_index.rs` and `src-tauri/src/mods/`.
 
 ## Dependency audit
 

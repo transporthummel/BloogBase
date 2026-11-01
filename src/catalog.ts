@@ -22,7 +22,7 @@ export function isModified(version: GameVersion | undefined): boolean {
 
 /**
  * The install a mod goes on by default, out of those it fits; mirrors
- * `fit_rank` in mods.rs: releases, then third-party builds, then unknown
+ * `fit_rank` in mods/fit.rs: releases, then third-party builds, then unknown
  * versions, each by the game's preferred versions, then the copy added first.
  */
 export function bestFit<T extends Pick<Install, "versionId">>(

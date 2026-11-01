@@ -1,5 +1,5 @@
 {
-  "_comment": "Real mods for the corpus test in src/mods.rs. Archives are downloaded from their original source, never committed.",
+  "_comment": "Real mods for the corpus test in src/mods/corpus.rs. Archives are downloaded from their original source, never committed.",
   "mods": [
     {
       "url": "https://files.shikadi.net/keenwiki/Packs/Keen6/l.alopex.back_to_fribbulus_xax_v1.0.k6.2024-10-03.zip",

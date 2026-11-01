@@ -122,7 +122,7 @@ Among the copies that fit, BloogBase picks:
 
 When a mod replaces an older version of itself, it stays on the old one's
 copy if that fits. The player can pick another fitting copy, both while
-installing and later. The rule is `mods::fit_rank` in Rust and `bestFit` in
+installing and later. The rule is `mods::fit::fit_rank` in Rust and `bestFit` in
 `src/catalog.ts`.
 
 ## Warnings and waiting
