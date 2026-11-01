@@ -155,7 +155,7 @@ pub async fn storage_usage(app: AppHandle) -> CommandResult<StorageUsage> {
 #[specta::specta]
 pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult<()> {
     let runtime = runtime::active(&app.state::<Db>())?;
-    app.state::<Running>().claim(&profile_id)?;
+    let claim = app.state::<Running>().claim(&profile_id)?;
     let launch = |phase| {
         let _ = GameLaunch {
             profile_id: profile_id.clone(),
@@ -187,7 +187,6 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
         Ok(s) => s,
         Err(e) => {
             launch(LaunchPhase::Failed);
-            app.state::<Running>().release(&profile_id);
             return Err(e);
         }
     };
@@ -222,7 +221,7 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
         {
             tracing::warn!("could not check backup {backup} after the session: {e}");
         }
-        app.state::<Running>().release(&profile_id);
+        drop(claim);
         tracing::info!("{profile_id} exited with {exit_code:?} after {seconds}s");
         let message =
             exit_screen::message(&app.state::<AppPaths>().profile(&profile_id).exit_screen);
@@ -254,11 +253,9 @@ async fn with_profile_locked<T: Send + 'static>(
     profile_id: &str,
     f: impl FnOnce(&AppPaths, &Db) -> Result<T> + Send + 'static,
 ) -> CommandResult<T> {
-    app.state::<Running>().claim(profile_id)?;
+    let _claim = app.state::<Running>().claim(profile_id)?;
     let a = app.clone();
-    let result = blocking(move || f(&a.state::<AppPaths>(), &a.state::<Db>())).await;
-    app.state::<Running>().release(profile_id);
-    result
+    blocking(move || f(&a.state::<AppPaths>(), &a.state::<Db>())).await
 }
 
 #[tauri::command]
@@ -826,15 +823,9 @@ pub async fn install_mod(app: AppHandle, request: InstallModRequest) -> CommandR
     blocking(move || {
         let paths = app.state::<AppPaths>();
         // Replacing must not swap files under a running game.
-        let running = app.state::<Running>();
-        if let Some(id) = &request.replace {
-            running.claim(id)?;
-        }
-        let m = mods::install(&paths, &app.state::<Db>(), &request);
-        if let Some(id) = &request.replace {
-            running.release(id);
-        }
-        let m = m?;
+        let claim = app.state::<Running>().claim_all(&request.replace)?;
+        let m = mods::install(&paths, &app.state::<Db>(), &request)?;
+        drop(claim);
         warn_if_damaged(&app, Path::new(&request.path), &m.name);
         // Installed by hand from an index download.
         link_installed(&app);
@@ -902,20 +893,10 @@ pub async fn delete_mod(app: AppHandle, mod_id: String, keep_saves: bool) -> Com
     // removal, of the mods played over this one too.
     let mut claimed = vec![mod_id.clone()];
     claimed.extend(mods::extensions(&app.state::<Db>(), &mod_id)?);
-    let running = app.state::<Running>();
-    for (n, id) in claimed.iter().enumerate() {
-        if let Err(e) = running.claim(id) {
-            claimed[..n].iter().for_each(|c| running.release(c));
-            return Err(e.into());
-        }
-    }
+    let _claim = app.state::<Running>().claim_all(claimed)?;
     let a = app.clone();
     let id = mod_id.clone();
-    let result =
-        blocking(move || mods::delete(&a.state::<AppPaths>(), &a.state::<Db>(), &id, keep_saves))
-            .await;
-    claimed.iter().for_each(|c| running.release(c));
-    result
+    blocking(move || mods::delete(&a.state::<AppPaths>(), &a.state::<Db>(), &id, keep_saves)).await
 }
 
 /// Uninstalls a game; `with_mods` removes the mods played on it too, else
@@ -934,15 +915,9 @@ pub async fn remove_game(
         .filter(|p| p.install_id.as_deref() == Some(install_id.as_str()))
         .map(|p| p.id)
         .collect();
-    let running = app.state::<Running>();
-    for (n, id) in affected.iter().enumerate() {
-        if let Err(e) = running.claim(id) {
-            affected[..n].iter().for_each(|id| running.release(id));
-            return Err(e.into());
-        }
-    }
+    let _claim = app.state::<Running>().claim_all(affected)?;
     let a = app.clone();
-    let result = blocking(move || {
+    blocking(move || {
         library::remove(
             &a.state::<AppPaths>(),
             &a.state::<Db>(),
@@ -951,9 +926,7 @@ pub async fn remove_game(
             with_mods,
         )
     })
-    .await;
-    affected.iter().for_each(|id| running.release(id));
-    result
+    .await
 }
 
 /// What a pasted KeenWiki link leads to: the curated index entry for that
@@ -1208,24 +1181,18 @@ async fn install_entry(
     let b = a.clone();
     let file = archive.clone();
     let result = tauri::async_runtime::spawn_blocking(move || {
-        let (paths, db, running) = (b.state::<AppPaths>(), b.state::<Db>(), b.state::<Running>());
+        let (paths, db) = (b.state::<AppPaths>(), b.state::<Db>());
         // An update must not swap files under a running game.
         let existing = mods::find_by_index(&db, &curated.index_id)?;
-        if let Some(m) = &existing {
-            running.claim(m)?;
-        }
-        let result = mods::install_curated(
+        let _claim = b.state::<Running>().claim_all(existing)?;
+        mods::install_curated(
             &paths,
             &db,
             &file,
             &curated,
             install_id.as_deref(),
             without_game,
-        );
-        if let Some(m) = &existing {
-            running.release(m);
-        }
-        result
+        )
     })
     .await
     .map_err(Error::from)

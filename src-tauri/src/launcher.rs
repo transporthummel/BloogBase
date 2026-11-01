@@ -18,7 +18,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
@@ -43,29 +43,55 @@ use crate::runtime::{self, Runtime};
 
 /// Profiles with a running DOSBox process; one instance per profile (§6.2).
 #[derive(Default)]
-pub struct Running(Mutex<HashSet<String>>);
+pub struct Running(Arc<Mutex<HashSet<String>>>);
 
 impl Running {
     pub fn contains(&self, id: &str) -> bool {
-        self.lock().contains(id)
+        lock(&self.0).contains(id)
     }
 
-    /// Marks `id` as running, failing if it already is.
-    pub fn claim(&self, id: &str) -> Result<()> {
-        if self.lock().insert(id.to_string()) {
-            Ok(())
-        } else {
-            Err(Error::AlreadyRunning)
+    /// Marks `id` as running until the claim is dropped, failing if it
+    /// already is.
+    pub fn claim(&self, id: &str) -> Result<Claim> {
+        self.claim_all([id])
+    }
+
+    /// Marks all of `ids` as running until the claim is dropped, or none
+    /// if one of them already is.
+    pub fn claim_all<S: Into<String>>(&self, ids: impl IntoIterator<Item = S>) -> Result<Claim> {
+        let mut ids: Vec<String> = ids.into_iter().map(Into::into).collect();
+        ids.sort();
+        ids.dedup();
+        let mut set = lock(&self.0);
+        if ids.iter().any(|id| set.contains(id)) {
+            return Err(Error::AlreadyRunning);
+        }
+        set.extend(ids.iter().cloned());
+        Ok(Claim {
+            set: Arc::clone(&self.0),
+            ids,
+        })
+    }
+}
+
+/// Profiles marked as running; dropping it releases them.
+#[must_use = "the profiles are released when the claim is dropped"]
+pub struct Claim {
+    set: Arc<Mutex<HashSet<String>>>,
+    ids: Vec<String>,
+}
+
+impl Drop for Claim {
+    fn drop(&mut self) {
+        let mut set = lock(&self.set);
+        for id in &self.ids {
+            set.remove(id);
         }
     }
+}
 
-    pub fn release(&self, id: &str) {
-        self.lock().remove(id);
-    }
-
-    fn lock(&self) -> std::sync::MutexGuard<'_, HashSet<String>> {
-        self.0.lock().unwrap_or_else(|e| e.into_inner())
-    }
+fn lock(set: &Mutex<HashSet<String>>) -> std::sync::MutexGuard<'_, HashSet<String>> {
+    set.lock().unwrap_or_else(|e| e.into_inner())
 }
 
 /// The games running right now, each with its session and a way to stop
@@ -1004,13 +1030,30 @@ machine = svga_paradise
     #[test]
     fn one_instance_per_profile() {
         let running = Running::default();
-        running.claim("a").unwrap();
+        let a = running.claim("a").unwrap();
         assert!(matches!(running.claim("a"), Err(Error::AlreadyRunning)));
-        running.claim("b").unwrap();
+        let _b = running.claim("b").unwrap();
         assert!(running.contains("a"));
-        running.release("a");
+        drop(a);
         assert!(!running.contains("a"));
-        running.claim("a").unwrap();
+        let _a = running.claim("a").unwrap();
+    }
+
+    #[test]
+    fn claims_all_or_none() {
+        let running = Running::default();
+        let b = running.claim("b").unwrap();
+        assert!(matches!(
+            running.claim_all(["a", "b", "c"]),
+            Err(Error::AlreadyRunning)
+        ));
+        assert!(!running.contains("a") && !running.contains("c"));
+        drop(b);
+        let all = running.claim_all(["a", "b", "b"]).unwrap();
+        assert!(running.contains("a") && running.contains("b"));
+        drop(all);
+        assert!(!running.contains("a") && !running.contains("b"));
+        let _none = running.claim_all(None::<String>).unwrap();
     }
 
     #[test]
