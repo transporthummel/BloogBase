@@ -71,7 +71,7 @@ Only the latest release gets fixes. The in-app updater brings them.
 ### Builds
 
 - The signing keys live in GitHub's encrypted secrets and only in the jobs
-  that sign. Actions in those workflows are pinned to a commit, and the mod
+  that sign. Actions in all workflows are pinned to a commit, and the mod
   list tool is compiled before its key is in the environment.
 - Pull requests never get a key.
 - A weekly job checks the dependencies against known vulnerabilities

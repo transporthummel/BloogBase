@@ -81,10 +81,10 @@ version" commit, which puts the unreleased entries back.
 Losing the updater key means installed apps can't verify updates any more;
 keep a backup of `.local/updater-signing/` outside the repo.
 
-Workflows that hold a signing key (`release.yml`, the `publish` job of
-`index.yml`) use actions pinned to a commit, with the tag as a comment
-(`actions/checkout@<sha> # v4`), so a moved tag can't run foreign code next to
-the key. To update an action, look up the commit its tag points at now
+All workflows use actions pinned to a commit, with the tag as a comment
+(`actions/checkout@<sha> # v4`), so a moved tag can't run foreign code, least
+of all next to a signing key (`release.yml`, the `publish` job of
+`index.yml`). To update an action, look up the commit its tag points at now
 (`git ls-remote https://github.com/<owner>/<action> refs/tags/<tag>`) and
 replace the hash. The index tool is compiled in a step of its own before the
 index key is in the environment, so dependencies' build scripts never see it.
