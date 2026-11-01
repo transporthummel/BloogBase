@@ -8,7 +8,7 @@ use std::path::Path;
 
 use rusqlite::{OptionalExtension, params};
 
-use crate::catalog;
+use crate::catalog::{self, Game};
 use crate::db::Db;
 use crate::detect::sha256_hex;
 use crate::error::{Error, Result};
@@ -21,7 +21,7 @@ use crate::source::{Source, split_dir};
 use super::analyze::{Analysis, analyze};
 use super::fit::{best_install, fits, needed_game, parse_requires, rehome, requires};
 use super::queries::list;
-use super::{InstallModRequest, Mod, ModSource, RecipeOption};
+use super::{InstallModRequest, Mod, ModInfo, ModSource, RecipeOption};
 
 /// What gets stored for a mod, whatever its source.
 struct Stored<'a> {
@@ -74,6 +74,63 @@ impl<'a> Stored<'a> {
             archive_name: c.url.rsplit('/').next().filter(|n| !n.is_empty()),
         }
     }
+
+    /// A mod the player picked, named `name`, with what its KeenWiki page
+    /// says when it came from there.
+    fn picked(
+        req: &'a InstallModRequest,
+        info: &ModInfo,
+        name: String,
+        recipe: Recipe,
+        requires: Option<Vec<String>>,
+    ) -> Self {
+        let page = req.keenwiki.as_ref();
+        Stored {
+            name,
+            authors: page
+                .map(|o| o.authors.clone())
+                .filter(|a| !a.is_empty())
+                .unwrap_or_else(|| info.authors.clone()),
+            author_links: page.map(|o| o.author_links.clone()).unwrap_or_default(),
+            version: page
+                .and_then(|o| o.version.clone())
+                .or_else(|| info.version.clone()),
+            description: page.and_then(|o| o.description.clone()),
+            released: page
+                .and_then(|o| o.released.clone())
+                .or_else(|| info.released.clone()),
+            recipe,
+            version_recipes: VersionRecipes::new(),
+            requires,
+            source: if page.is_some() {
+                ModSource::Keenwiki
+            } else {
+                ModSource::Manual
+            },
+            index_id: None,
+            extends: req.extends.clone(),
+            keenwiki_url: page.map(|o| o.page_url.as_str()),
+            homepage: page.and_then(|o| o.homepage.clone()),
+            pckf: page.and_then(|o| o.pckf.clone()),
+            keenmodding: page.and_then(|o| o.keenmodding.clone()),
+            source_url: page.map_or(&req.path, |o| &o.download_url),
+            archive_name: None,
+        }
+    }
+
+    /// Fills in from `old`, the version it replaces, what the files can't
+    /// tell but is still true of the new version.
+    fn keeping(mut self, old: &'a Mod) -> Self {
+        if self.author_links.is_empty() {
+            self.author_links = old.author_links.clone();
+        }
+        self.description = self.description.or_else(|| old.description.clone());
+        self.keenwiki_url = self.keenwiki_url.or(old.keenwiki_url.as_deref());
+        self.homepage = self.homepage.or_else(|| old.homepage.clone());
+        self.pckf = self.pckf.or_else(|| old.pckf.clone());
+        self.keenmodding = self.keenmodding.or_else(|| old.keenmodding.clone());
+        self
+    }
 }
 
 /// Installs a mod and creates its play profile on `install_id`, or without
@@ -81,25 +138,14 @@ impl<'a> Stored<'a> {
 pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod> {
     let path = Path::new(&req.path);
     let source = Source::open(path)?;
-    let origin = req.keenwiki.as_ref();
-    let analysis = analyze(&source, path, origin.and_then(|o| o.game_id.as_deref()))?;
+    let hint = req.keenwiki.as_ref().and_then(|o| o.game_id.as_deref());
+    let analysis = analyze(&source, path, hint)?;
+    let game_id = &analysis.info.game_id;
     let base = match &req.extends {
-        Some(id) => Some(base_of(db, id, &analysis.info.game_id)?),
+        Some(id) => Some(base_of(db, id, game_id)?),
         None => None,
     };
-    let own = analysis
-        .info
-        .recipes
-        .iter()
-        .find(|o| o.recipe == req.recipe)
-        .cloned();
-    // Levels alone start with the mod below's recipe, which it may also pick.
-    let option = match (&base, own) {
-        (Some(b), Some(o)) if o.recipe == Recipe::Episode => b.option(),
-        (_, Some(o)) => o,
-        (Some(b), None) if b.recipe == req.recipe => b.option(),
-        _ => return Err(Error::IncompatibleInstall("unknown recipe".into())),
-    };
+    let option = picked_option(&analysis.info, base.as_ref(), &req.recipe)?;
     // Like `check_install`: a patch that names versions plays on those only;
     // else where the mod below plays.
     let requires = if option.game_versions.is_empty() {
@@ -108,115 +154,92 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
         Some(option.version_ids.clone())
     };
     let target = match &req.install_id {
-        Some(id) => {
-            let target = library::list(db)?
-                .into_iter()
-                .find(|i| i.id == *id)
-                .ok_or_else(|| Error::NotFound(format!("install {id}")))?;
-            check_install(&analysis.info.game_id, &option, &target)?;
-            let game = catalog::game(&target.game_id)
-                .ok_or_else(|| Error::NotFound(format!("game {}", target.game_id)))?;
-            if !fits(game, requires.as_deref(), &target) {
-                return Err(Error::IncompatibleInstall(format!(
-                    "the mod it's played over doesn't fit {}",
-                    target.id
-                )));
-            }
-            Some(target)
-        }
+        Some(id) => Some(picked_install(
+            db,
+            id,
+            game_id,
+            &option,
+            requires.as_deref(),
+        )?),
         None => None,
     };
-
+    let replaced = match &req.replace {
+        Some(id) => Some(replaced_mod(db, id, game_id)?),
+        None => None,
+    };
     let name = match req.name.trim() {
         "" => analysis.info.name.clone(),
         n => n.to_string(),
     };
-    let replaced = match &req.replace {
-        Some(id) => {
-            let old = list(db)?
-                .into_iter()
-                .find(|m| m.id == *id)
-                .ok_or_else(|| Error::NotFound(format!("mod {id}")))?;
-            if old.game_id != analysis.info.game_id {
-                return Err(Error::IncompatibleInstall(format!(
-                    "{} is for {}, not {}",
-                    old.name, old.game_id, analysis.info.game_id
-                )));
-            }
-            Some(old)
-        }
-        None => None,
-    };
-    let mut stored = match origin {
-        Some(o) => Stored {
-            name,
-            authors: if o.authors.is_empty() {
-                analysis.info.authors.clone()
-            } else {
-                o.authors.clone()
-            },
-            author_links: o.author_links.clone(),
-            version: o.version.clone().or_else(|| analysis.info.version.clone()),
-            description: o.description.clone(),
-            released: o
-                .released
-                .clone()
-                .or_else(|| analysis.info.released.clone()),
-            recipe: option.recipe.clone(),
-            version_recipes: VersionRecipes::new(),
-            requires: requires.clone(),
-            source: ModSource::Keenwiki,
-            index_id: None,
-            extends: req.extends.clone(),
-            keenwiki_url: Some(&o.page_url),
-            homepage: o.homepage.clone(),
-            pckf: o.pckf.clone(),
-            keenmodding: o.keenmodding.clone(),
-            source_url: &o.download_url,
-            archive_name: None,
-        },
-        None => Stored {
-            name,
-            authors: analysis.info.authors.clone(),
-            author_links: BTreeMap::new(),
-            version: analysis.info.version.clone(),
-            description: None,
-            released: analysis.info.released.clone(),
-            recipe: option.recipe.clone(),
-            version_recipes: VersionRecipes::new(),
-            requires,
-            source: ModSource::Manual,
-            index_id: None,
-            extends: req.extends.clone(),
-            keenwiki_url: None,
-            homepage: None,
-            pckf: None,
-            keenmodding: None,
-            source_url: &req.path,
-            archive_name: None,
-        },
-    };
-    let Some(old) = &replaced else {
-        return store(paths, db, &source, &analysis, &stored, target.as_ref());
-    };
-    // What the files can't tell is still true of the new version.
-    if stored.author_links.is_empty() {
-        stored.author_links = old.author_links.clone();
+    let stored = Stored::picked(req, &analysis.info, name, option.recipe, requires);
+    match &replaced {
+        None => store(paths, db, &source, &analysis, &stored, target.as_ref()),
+        Some(old) => update(
+            paths,
+            db,
+            &old.id,
+            &source,
+            &analysis,
+            &stored.keeping(old),
+            target.as_ref(),
+        ),
     }
-    stored.description = stored.description.or_else(|| old.description.clone());
-    stored.keenwiki_url = stored.keenwiki_url.or(old.keenwiki_url.as_deref());
-    stored.homepage = stored.homepage.or_else(|| old.homepage.clone());
-    stored.pckf = stored.pckf.or_else(|| old.pckf.clone());
-    stored.keenmodding = stored.keenmodding.or_else(|| old.keenmodding.clone());
-    update(
-        paths,
-        db,
-        &old.id,
-        &source,
-        &analysis,
-        &stored,
-        target.as_ref(),
-    )
+}
+
+/// The recipe the player picked among `info`'s, or the one of `base`, the
+/// mod it's played over.
+fn picked_option(info: &ModInfo, base: Option<&Base>, recipe: &Recipe) -> Result<RecipeOption> {
+    let own = info.recipes.iter().find(|o| o.recipe == *recipe).cloned();
+    // Levels alone start with the mod below's recipe, which it may also pick.
+    Ok(match (base, own) {
+        (Some(b), Some(o)) if o.recipe == Recipe::Episode => b.option(),
+        (_, Some(o)) => o,
+        (Some(b), None) if b.recipe == *recipe => b.option(),
+        _ => return Err(Error::IncompatibleInstall("unknown recipe".into())),
+    })
+}
+
+/// The copy of the game the player picked, if the mod plays on it.
+fn picked_install(
+    db: &Db,
+    id: &str,
+    game_id: &str,
+    option: &RecipeOption,
+    requires: Option<&[String]>,
+) -> Result<Install> {
+    let target =
+        library_install(db, id)?.ok_or_else(|| Error::NotFound(format!("install {id}")))?;
+    check_install(game_id, option, &target)?;
+    if !fits(game(&target.game_id)?, requires, &target) {
+        return Err(Error::IncompatibleInstall(format!(
+            "the mod it's played over doesn't fit {}",
+            target.id
+        )));
+    }
+    Ok(target)
+}
+
+/// The mod a new version replaces, which must be for the same game.
+fn replaced_mod(db: &Db, id: &str, game_id: &str) -> Result<Mod> {
+    let old = list(db)?
+        .into_iter()
+        .find(|m| m.id == id)
+        .ok_or_else(|| Error::NotFound(format!("mod {id}")))?;
+    if old.game_id != game_id {
+        return Err(Error::IncompatibleInstall(format!(
+            "{} is for {}, not {game_id}",
+            old.name, old.game_id
+        )));
+    }
+    Ok(old)
+}
+
+fn library_install(db: &Db, id: &str) -> Result<Option<Install>> {
+    Ok(library::list(db)?.into_iter().find(|i| i.id == id))
+}
+
+fn game(id: &str) -> Result<&'static Game> {
+    catalog::game(id).ok_or_else(|| Error::NotFound(format!("game {id}")))
 }
 
 /// A mod as the index describes it. Its recipe is used as is: a curated
@@ -344,57 +367,20 @@ pub fn install_curated(
             analysis.info.game_id, c.game_id
         )));
     }
-    let mut in_root: Vec<String> = analysis
-        .files
-        .iter()
-        .filter(|f| split_dir(f).0 == analysis.root)
-        .map(|f| split_dir(f).1.to_string())
-        .collect();
     let base_id = match &c.extends {
         Some(base) => {
             Some(find_by_index(db, base)?.ok_or_else(|| Error::MissingGame(base.clone()))?)
         }
         None => None,
     };
-    // The recipe may run files of the mod it's played over.
-    if let Some(base_id) = &base_id {
-        for entry in fs::read_dir(paths.mods.join(base_id).join("files"))? {
-            in_root.push(entry?.file_name().to_string_lossy().into_owned());
-        }
-    }
-    let recipes = std::iter::once(&c.recipe).chain(c.version_recipes.values());
-    for file in recipes.flat_map(Recipe::files) {
-        if !in_root.iter().any(|n| n.eq_ignore_ascii_case(file)) {
-            return Err(Error::UnexpectedContent(format!("{file} is missing")));
-        }
-    }
+    check_recipe_files(paths, &analysis, c, base_id.as_deref())?;
     analysis.copies = copies_to_root(&analysis, &c.copy_to_root)?;
 
     let stored = Stored::curated(c, base_id);
-    let game =
-        catalog::game(&c.game_id).ok_or_else(|| Error::NotFound(format!("game {}", c.game_id)))?;
+    let game = game(&c.game_id)?;
     let requires = stored.requires.as_deref();
     if let Some(mod_id) = find_by_index(db, &c.index_id)? {
-        let install_id: Option<String> = db.conn().query_row(
-            "SELECT install_id FROM profiles WHERE mod_id = ?1",
-            [&mod_id],
-            |r| r.get(0),
-        )?;
-        // A mod still waiting for its game has nothing to fit yet.
-        let target = match install_id {
-            Some(id) => Some(
-                library::list(db)?
-                    .into_iter()
-                    .find(|i| i.id == id && fits(game, requires, i))
-                    .ok_or_else(|| {
-                        Error::IncompatibleInstall(format!(
-                            "the new version needs {}",
-                            needed_game(game, requires)
-                        ))
-                    })?,
-            ),
-            None => None,
-        };
+        let target = updated_install(db, &mod_id, game, requires)?;
         return update(
             paths,
             db,
@@ -405,12 +391,10 @@ pub fn install_curated(
             target.as_ref(),
         );
     }
-
     let target = match install_id {
         Some(id) => Some(
-            library::list(db)?
-                .into_iter()
-                .find(|i| i.id == id && fits(game, requires, i))
+            library_install(db, id)?
+                .filter(|i| fits(game, requires, i))
                 .ok_or_else(|| Error::IncompatibleInstall(format!("{id} can't play {}", c.name)))?,
         ),
         None => match best_install(db, game, requires)? {
@@ -421,6 +405,59 @@ pub fn install_curated(
         },
     };
     store(paths, db, &source, &analysis, &stored, target.as_ref())
+}
+
+/// Checks that the files the index recipes run are in the mod's root, or in
+/// the one of `base_id`, the mod it's played over.
+fn check_recipe_files(
+    paths: &AppPaths,
+    analysis: &Analysis,
+    c: &Curated,
+    base_id: Option<&str>,
+) -> Result<()> {
+    let mut in_root: Vec<String> = analysis
+        .files
+        .iter()
+        .filter(|f| split_dir(f).0 == analysis.root)
+        .map(|f| split_dir(f).1.to_string())
+        .collect();
+    if let Some(base_id) = base_id {
+        for entry in fs::read_dir(paths.mods.join(base_id).join("files"))? {
+            in_root.push(entry?.file_name().to_string_lossy().into_owned());
+        }
+    }
+    let recipes = std::iter::once(&c.recipe).chain(c.version_recipes.values());
+    for file in recipes.flat_map(Recipe::files) {
+        if !in_root.iter().any(|n| n.eq_ignore_ascii_case(file)) {
+            return Err(Error::UnexpectedContent(format!("{file} is missing")));
+        }
+    }
+    Ok(())
+}
+
+/// The copy an installed index mod plays on, which its new version must fit
+/// too; `None` while it waits for its game.
+fn updated_install(
+    db: &Db,
+    mod_id: &str,
+    game: &Game,
+    requires: Option<&[String]>,
+) -> Result<Option<Install>> {
+    let install_id: Option<String> = db.conn().query_row(
+        "SELECT install_id FROM profiles WHERE mod_id = ?1",
+        [mod_id],
+        |r| r.get(0),
+    )?;
+    let Some(id) = install_id else {
+        return Ok(None);
+    };
+    match library_install(db, &id)?.filter(|i| fits(game, requires, i)) {
+        Some(target) => Ok(Some(target)),
+        None => Err(Error::IncompatibleInstall(format!(
+            "the new version needs {}",
+            needed_game(game, requires)
+        ))),
+    }
 }
 
 /// The installed mod made from an index entry.
