@@ -13,10 +13,8 @@ use crate::captures::{self, Kind, Screenshot, Video, VideoIndex};
 use crate::catalog::{self, Game};
 use crate::covers;
 use crate::db::Db;
-use crate::detect;
 use crate::diagnostics;
 use crate::dosconf::{self, ConfigView, ConfigWarning, Machine};
-use crate::downloads;
 use crate::error::{CommandResult, Error, Result};
 use crate::firing::{self, Firing};
 use crate::free_games::{self, FreeGame};
@@ -1131,38 +1129,18 @@ async fn install_entry(
     a: &AppHandle,
     report: &jobs::Reporter,
     entry: mod_index::IndexEntry,
-    archive: Option<String>,
+    own: Option<String>,
     install_id: Option<String>,
     without_game: bool,
 ) -> Result<()> {
-    let id = entry.id.clone();
-    let download = entry.downloads[0].clone();
-    let size = u64::from(download.size);
-    let local = archive.map(PathBuf::from);
-    let archive = match &local {
-        Some(path) => {
-            let hash = detect::sha256_hex(&tokio::fs::read(path).await?);
-            if !hash.eq_ignore_ascii_case(&download.sha256) {
-                return Err(Error::UnexpectedContent(format!(
-                    "{} is not the download of {id}",
-                    path.display()
-                )));
-            }
-            path.clone()
-        }
-        None => {
-            let archive = a
-                .state::<AppPaths>()
-                .cache
-                .join("downloads")
-                .join(format!("index-{id}.zip"));
-            downloads::fetch(&download.url, &download.sha256, size, &archive, &|r, t| {
-                report.progress(JobPhase::Downloading, r, t)
-            })
-            .await?;
-            archive
-        }
-    };
+    let size = u64::from(entry.downloads[0].size);
+    let archive = mod_index::archive(
+        &a.state::<AppPaths>().cache,
+        &entry,
+        own.map(PathBuf::from),
+        &|r, t| report.progress(JobPhase::Downloading, r, t),
+    )
+    .await?;
     report.progress(JobPhase::Installing, size, size);
     // Right after the setup wizard the game may still be on its way.
     while a.state::<Jobs>().is_running(JobKind::FreeGame, |v| {
@@ -1173,7 +1151,7 @@ async fn install_entry(
 
     let curated = Curated::new(&entry, 0);
     let b = a.clone();
-    let file = archive.clone();
+    let file = archive.path.clone();
     let result = tauri::async_runtime::spawn_blocking(move || {
         let (paths, db) = (b.state::<AppPaths>(), b.state::<Db>());
         // An update must not swap files under a running game.
@@ -1192,11 +1170,7 @@ async fn install_entry(
     .map_err(Error::from)
     .and_then(|r| r);
     if let Ok(m) = &result {
-        warn_if_damaged(a, &archive, &m.name);
-    }
-    // The player's own copy stays.
-    if local.is_none() {
-        let _ = std::fs::remove_file(&archive);
+        warn_if_damaged(a, &archive.path, &m.name);
     }
     result.map(drop)
 }

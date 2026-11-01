@@ -17,7 +17,7 @@ use specta::Type;
 use crate::catalog;
 use crate::db::Db;
 use crate::detect::sha256_hex;
-use crate::downloads::USER_AGENT;
+use crate::downloads::{self, USER_AGENT};
 use crate::error::{CommandError, Error, Result};
 use crate::library::now;
 use crate::mods::{self, Curated};
@@ -613,6 +613,61 @@ pub fn list(index: &ModIndex, db: &Db) -> Result<Vec<IndexMod>> {
         .collect())
 }
 
+/// The archive an index entry installs from. A download goes again when
+/// this is dropped; the player's own copy stays.
+pub struct Archive {
+    pub path: PathBuf,
+    downloaded: bool,
+}
+
+impl Drop for Archive {
+    fn drop(&mut self) {
+        if self.downloaded {
+            let _ = std::fs::remove_file(&self.path);
+        }
+    }
+}
+
+/// The player's own copy of `entry`'s download if they picked one (it must
+/// be that file), else the download, fetched into `cache`.
+pub async fn archive(
+    cache: &Path,
+    entry: &IndexEntry,
+    own: Option<PathBuf>,
+    progress: &impl Fn(u64, u64),
+) -> Result<Archive> {
+    let download = &entry.downloads[0];
+    if let Some(path) = own {
+        let hash = sha256_hex(&tokio::fs::read(&path).await?);
+        if !hash.eq_ignore_ascii_case(&download.sha256) {
+            return Err(Error::UnexpectedContent(format!(
+                "{} is not the download of {}",
+                path.display(),
+                entry.id
+            )));
+        }
+        return Ok(Archive {
+            path,
+            downloaded: false,
+        });
+    }
+    let path = cache
+        .join("downloads")
+        .join(format!("index-{}.zip", entry.id));
+    downloads::fetch(
+        &download.url,
+        &download.sha256,
+        u64::from(download.size),
+        &path,
+        progress,
+    )
+    .await?;
+    Ok(Archive {
+        path,
+        downloaded: true,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use std::io::{BufRead, BufReader, Write};
@@ -997,5 +1052,30 @@ mod tests {
         );
         assert_eq!(details("other").1, "x");
         assert_eq!(details("tied").0, "keenwiki");
+    }
+
+    fn sample_entry(sha256: &str) -> IndexEntry {
+        let mut index: serde_json::Value = serde_json::from_str(SAMPLE).unwrap();
+        let mut entry = index["mods"][0].take();
+        entry["downloads"][0]["sha256"] = sha256.into();
+        serde_json::from_value(entry).unwrap()
+    }
+
+    #[tokio::test]
+    async fn installs_from_the_players_own_copy_only_if_it_is_the_download() {
+        let tmp = tempfile::tempdir().unwrap();
+        let own = tmp.path().join("levels.zip");
+        std::fs::write(&own, b"the archive").unwrap();
+        let entry = sample_entry(&sha256_hex(b"the archive").to_uppercase());
+        let got = archive(tmp.path(), &entry, Some(own.clone()), &|_, _| {})
+            .await
+            .unwrap();
+        assert_eq!(got.path, own);
+        drop(got);
+        assert!(own.exists(), "the player's copy stays");
+
+        let other = sample_entry(&sha256_hex(b"another archive"));
+        let err = archive(tmp.path(), &other, Some(own.clone()), &|_, _| {}).await;
+        assert!(matches!(err, Err(Error::UnexpectedContent(_))));
     }
 }
