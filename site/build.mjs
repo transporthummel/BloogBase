@@ -96,6 +96,36 @@ function fileSize(bytes, lang) {
   return bytes < 1e6 ? `${format(bytes / 1e3, 0)} KB` : `${format(bytes / 1e6, 1)} MB`;
 }
 
+/**
+ * Picks the visitor's language, inline in each page's head so the switch
+ * happens before anything shows. A click on a language link remembers the
+ * choice; the first language's pages (the site's root, where links and
+ * searches lead) send visitors to their chosen language, or without a choice
+ * to the first of their browser's languages the site has.
+ */
+function languageScript(lang, urls) {
+  const remember = `addEventListener("click", (event) => {
+  const link = event.target.closest?.("a[hreflang]");
+  if (link) try { localStorage.setItem("bloogbase-lang", link.hreflang); } catch {}
+});`;
+  if (lang !== first) return `<script>\n${remember}\n</script>`;
+  const others = Object.fromEntries(LANGUAGES.filter((l) => l !== first).map((l) => [l, urls[l]]));
+  return `<script>
+${remember}
+(() => {
+  const urls = ${JSON.stringify(others)};
+  let chosen = null;
+  try { chosen = localStorage.getItem("bloogbase-lang"); } catch {}
+  const wanted = chosen ? [chosen] : (navigator.languages ?? [navigator.language]);
+  for (const tag of wanted) {
+    const l = String(tag).toLowerCase().split("-")[0];
+    if (l === ${JSON.stringify(first)}) return;
+    if (urls[l]) return location.replace(urls[l] + location.search + location.hash);
+  }
+})();
+</script>`;
+}
+
 function render(page, lang) {
   const t = texts[lang];
   const template = fs.readFileSync(path.join(site, page.template), "utf8");
@@ -104,7 +134,12 @@ function render(page, lang) {
   const prefix = "../".repeat((langDir + page.dir).split("/").length - 1);
   const pageUrl = (l) => `${URL_BASE}${l === first ? "" : `${l}/`}${page.dir}`;
   const other = LANGUAGES.find((l) => l !== lang);
+  // This page in each language, relative to it.
+  const relUrls = Object.fromEntries(
+    LANGUAGES.map((l) => [l, `${prefix}${l === first ? "" : `${l}/`}${page.dir}` || "./"]),
+  );
   const vars = {
+    languageScript: languageScript(lang, relUrls),
     lang,
     root: prefix,
     // The main page in the same language.

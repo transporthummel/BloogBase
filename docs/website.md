@@ -42,7 +42,12 @@ The project website lives in `site/` and is published to GitHub Pages at
   (also full size, `docs/logo.png` and the 512px app icon), fonts, styles,
   scripts and `bloogbase-press-kit.zip` (logo, icon, every screenshot but the
   macOS help, by language, and a README from the `press.*` texts). Node only,
-  no dependencies.
+  no dependencies. `{{@languageScript}}`, inline in each page's head, picks
+  the language: a click on a language link (`a[hreflang]`) remembers it in
+  `localStorage` (`bloogbase-lang`), and the English pages send visitors on
+  to their chosen language, or without a choice to the first of the
+  browser's languages the site has (German for `de-DE`, also for `fr, de`).
+  Pages under `de/` never redirect, so links to them stay German.
 
 ## Working on it
 
