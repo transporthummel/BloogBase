@@ -12,7 +12,7 @@
 
 ### Misc
 
-- Updated dependencies.
+- Updated dependencies, among them Tauri 2.12.5.
 
 ## 1.0.0 (2026-10-31)
 
