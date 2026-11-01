@@ -5,15 +5,15 @@ to bring everything up to date.
 
 ## Overview
 
-| Source             | Declared in                                                       | Locked in                                 | Updated by                 |
-| ------------------ | ----------------------------------------------------------------- | ----------------------------------------- | -------------------------- |
-| Rust crates (app)  | `src-tauri/Cargo.toml` and its `keen-*/` crates                   | `src-tauri/Cargo.lock`                    | Dependabot, `cargo update` |
-| Rust crates (tool) | `index/tool/Cargo.toml`                                           | `index/tool/Cargo.lock`                   | Dependabot, `cargo update` |
-| npm packages       | `package.json`                                                    | `pnpm-lock.yaml`                          | Dependabot, `pnpm update`  |
-| DOSBox Staging     | `src-tauri/runtimes/dosbox-staging.json`                          | same file (SHA-256 and size per platform) | by hand                    |
-| Free game versions | `src-tauri/catalog/free-games.json`                               | same file (SHA-256 per mirror)            | by hand, rarely            |
-| GitHub Actions     | `.github/workflows/*.yml`                                         | commit hash per action (`@<sha> # v4`)    | Dependabot                 |
-| Toolchains         | Rust `stable`, Node 24, pnpm (`packageManager` in `package.json`) | —                                         | by hand (Node, pnpm)       |
+| Source             | Declared in                                                       | Locked in                                  | Updated by                 |
+| ------------------ | ----------------------------------------------------------------- | ------------------------------------------ | -------------------------- |
+| Rust crates (app)  | `src-tauri/Cargo.toml` and its `keen-*/` crates                   | `src-tauri/Cargo.lock`                     | Dependabot, `cargo update` |
+| Rust crates (tool) | `index/tool/Cargo.toml`                                           | `index/tool/Cargo.lock`                    | Dependabot, `cargo update` |
+| npm packages       | `package.json`                                                    | `pnpm-lock.yaml`                           | Dependabot, `pnpm update`  |
+| DOSBox Staging     | `src-tauri/runtimes/dosbox-staging.json`                          | same file (SHA-256 and size per platform)  | by hand                    |
+| Free game versions | `src-tauri/catalog/free-games.json`                               | same file (SHA-256 per mirror)             | by hand, rarely            |
+| GitHub Actions     | `.github/workflows/*.yml`                                         | commit hash per action (`@<sha> # v7.0.1`) | Dependabot                 |
+| Toolchains         | Rust `stable`, Node 24, pnpm (`packageManager` in `package.json`) | —                                          | by hand (Node, pnpm)       |
 
 Rust has no `rust-toolchain.toml`: CI and local builds use the latest
 stable each.
