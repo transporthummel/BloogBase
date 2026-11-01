@@ -18,7 +18,7 @@ import { unwrap } from "../ipc";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob, waitForJob } from "../jobs/queries";
 import { coverKey } from "../library/covers";
-import { modsKey, useInstalls, useMods, useProfiles } from "../library/queries";
+import { modsKey, modsQuery, useInstalls, useMods, useProfiles } from "../library/queries";
 import { ReadmePanel } from "../profile/ReadmePanel";
 import { readmeKey, useReadmesAt } from "../profile/readme";
 import { Button } from "../ui/Button";
@@ -95,7 +95,8 @@ export function SetUp({
         const indexId = base.indexId;
         const job = await waitForJob(queryClient, (await startBase.mutateAsync(indexId)).id);
         if (job.phase === "failed") throw job.error;
-        below = (await unwrap(commands.listMods())).find((m) => m.indexId === indexId)?.id ?? null;
+        const mods = await queryClient.fetchQuery({ ...modsQuery, staleTime: 0 });
+        below = mods.find((m) => m.indexId === indexId)?.id ?? null;
       }
       return unwrap(
         commands.installMod({

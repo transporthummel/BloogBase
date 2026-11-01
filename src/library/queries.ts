@@ -20,6 +20,12 @@ export function useInstalls() {
   return useQuery({ queryKey: installsKey, queryFn: () => unwrap(commands.listInstalls()) });
 }
 
+/** For `fetchQuery`, outside of components. */
+export const modsQuery = queryOptions({
+  queryKey: modsKey,
+  queryFn: () => unwrap(commands.listMods()),
+});
+
 export function useMods({ enabled = true }: { enabled?: boolean } = {}) {
-  return useQuery({ queryKey: modsKey, queryFn: () => unwrap(commands.listMods()), enabled });
+  return useQuery({ ...modsQuery, enabled });
 }
