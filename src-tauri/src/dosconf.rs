@@ -122,7 +122,7 @@ pub struct DisplayOptions {
 impl Default for DisplayOptions {
     fn default() -> Self {
         DisplayOptions {
-            fullscreen: false,
+            fullscreen: true,
             crt: true,
             vsync: false,
         }

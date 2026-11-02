@@ -10,7 +10,8 @@
       "Saves of mods that name them their own way, like Foray in the Forest, now show up in the Saves tab, with backups.",
       "BloogBase has a website now, and the About page takes you there.",
       "Two saves in the same slot? Their file names now tell them apart.",
-      "Foray in the Forest saves now show their name, score, lives and difficulty, Expert included."
+      "Foray in the Forest saves now show their name, score, lives and difficulty, Expert included.",
+      "Games now start in fullscreen. Prefer a window? Switch it off in Settings, or press Alt+Enter while playing."
     ],
     "de": [
       "Auch Spiele, Shareware-Episoden und Demos öffnen jetzt auf ihrer Seite den Ordner mit ihren Dateien, so wie Mods.",
@@ -22,7 +23,8 @@
       "Spielstände von Mods, die sie auf eigene Art benennen, wie Foray in the Forest, erscheinen jetzt im Tab „Spielstände“, mit Sicherungen.",
       "BloogBase hat jetzt eine Website, die Seite „Über BloogBase“ führt dorthin.",
       "Zwei Spielstände auf demselben Platz? Jetzt unterscheiden sie sich durch ihren Dateinamen.",
-      "Spielstände von Foray in the Forest zeigen jetzt Namen, Punkte, Leben und Schwierigkeit, auch „Experte“."
+      "Spielstände von Foray in the Forest zeigen jetzt Namen, Punkte, Leben und Schwierigkeit, auch „Experte“.",
+      "Spiele starten jetzt im Vollbild. Lieber im Fenster? Schalte es in den Einstellungen ab oder drück im Spiel Alt+Enter."
     ]
   },
   "releases": [
