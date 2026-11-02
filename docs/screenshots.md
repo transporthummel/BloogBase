@@ -50,7 +50,9 @@ Everything the script does is in [`screenshots/shots.json`](screenshots/shots.js
   - `clip`: a selector to take only that element (`clipPadding` around it).
 
 Every shot starts from a fresh load of its route, with animations off
-(reduced motion). The script waits for images to load before taking it.
+(reduced motion). Before the first one, every mod in the list counts as seen
+and the current version as the last one started, so the What's new dialog
+doesn't cover the pictures after the mod list or the app has changed. The script waits for images to load before taking it.
 
 ## Adding or changing a shot
 

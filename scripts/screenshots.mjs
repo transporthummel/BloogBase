@@ -357,7 +357,26 @@ const settle = () =>
 const fileName = (shot, language) =>
   language === "en" ? `${shot.name}.png` : `${shot.name}.${language}.png`;
 
-async function take(shot, language) {
+/**
+ * Nothing new to tell: marks every mod in the list as seen and every update
+ * as offered (src/updates/WhatsNew.tsx), so the What's new dialog doesn't
+ * cover the shots after the mod list or the app has changed. Returns the
+ * app's version, for the last version seen.
+ */
+async function quietNews() {
+  const mods = await invoke("index_mods");
+  await invoke("set_index_news", {
+    news: {
+      seen: mods.map((m) => m.entry.id),
+      offered: mods
+        .filter((m) => m.modId && m.updateAvailable)
+        .map((m) => `${m.entry.id}@${m.entry.downloads[0]?.url ?? ""}`),
+    },
+  });
+  return (await invoke("app_info")).version;
+}
+
+async function take(shot, language, version) {
   const width = shot.width ?? manifest.window.width;
   const height = shot.height ?? manifest.window.height;
   const scale = shot.scale ?? manifest.window.scale ?? 1;
@@ -376,6 +395,7 @@ async function take(shot, language) {
   const prefs = {
     "bloogbase.theme": shot.theme ?? "dark",
     "bloogbase.language": language,
+    "bloogbase.lastVersion": version,
     ...manifest.localStorage,
     ...shot.localStorage,
   };
@@ -433,10 +453,11 @@ try {
   await appReady();
   if (needsSeed) await seed();
 
+  const version = await quietNews();
   console.log("Taking screenshots…");
   for (const shot of manifest.shots) {
     if (only && !only.includes(shot.name)) continue;
-    for (const language of shot.languages ?? ["en"]) await take(shot, language);
+    for (const language of shot.languages ?? ["en"]) await take(shot, language, version);
   }
   await send("Emulation.clearDeviceMetricsOverride");
 } finally {
