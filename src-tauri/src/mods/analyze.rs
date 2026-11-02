@@ -153,7 +153,12 @@ pub(super) fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> 
             Some((f.as_str(), game))
         })
         .collect();
-    let root = find_root(&files, |f| patchers.contains_key(f)).ok_or(Error::NoModFound)?;
+    // A source mod has nothing of the game's (Foray in the Forest: its own
+    // executables, its data as *.CKS); where the index or the KeenWiki page
+    // says which game it's for, its programs mark the root.
+    let root = find_root(&files, |f| patchers.contains_key(f))
+        .or_else(|| game_hint.and_then(|_| program_root(&files)))
+        .ok_or(Error::NoModFound)?;
     let in_root = |f: &&String| root.is_empty() || f.starts_with(&format!("{root}/"));
     let mut files: Vec<String> = files.iter().filter(in_root).cloned().collect();
     // Bare names in the mod root, where recipes have to live.
@@ -442,6 +447,18 @@ pub(super) fn find_root(files: &[String], is_patcher: impl Fn(&str) -> bool) -> 
                 .then_with(|| b.0.cmp(a.0))
         })
         .map(|(dir, _)| dir.to_string())
+}
+
+/// The shallowest directory with a DOS program in it, for mods without any
+/// file `find_root` knows.
+fn program_root(files: &[String]) -> Option<String> {
+    files
+        .iter()
+        .map(|f| split_dir(f))
+        .filter(|(_, name)| has_ext(name, "EXE") || has_ext(name, "COM"))
+        .map(|(dir, _)| dir)
+        .min_by(|a, b| depth(a).cmp(&depth(b)).then_with(|| a.cmp(b)))
+        .map(str::to_string)
 }
 
 fn depth(dir: &str) -> usize {

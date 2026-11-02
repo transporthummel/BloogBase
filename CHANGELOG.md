@@ -14,6 +14,7 @@
 - A Content Security Policy keeps injected scripts from running, reaching the app's commands or loading anything from the internet; blocked sources are logged.
 - The DOSBox settings editor loads only when it is first opened, which makes the app script loaded at startup about a third smaller.
 - When a package manager installed BloogBase (the AUR package), the app leaves updates to it instead of offering its own.
+- Source mods that bring all their own files and nothing of the game's, like Foray in the Forest, install from the mod list or a KeenWiki page instead of ending with "No Commander Keen mod found there".
 
 ### Bug Fixes
 

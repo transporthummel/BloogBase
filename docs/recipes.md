@@ -26,6 +26,13 @@ start something (a patcher, a patch, an executable) beat folders with data
 only; on a tie the shallower one wins. Only bare names in that folder count
 for the recipe.
 
+A source mod may have none of these: Foray in the Forest brings its own
+executables and keeps all its data in `.CKS` files. When the game is known
+anyway (from the index entry or the KeenWiki page), the root is the
+shallowest folder with a DOS program (`.EXE`, `.COM`; `program_root`).
+Without a known game, as for a dropped folder or ZIP, such a source holds no
+mod BloogBase recognises.
+
 Before guessing:
 
 - **Patchers** are known by name (`CK1PATCH` … `CK6PATCH`, `KDRPATCH`) or, when

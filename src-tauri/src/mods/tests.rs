@@ -1275,6 +1275,34 @@ fn leaves_out_keen_1_3_settings() {
 }
 
 #[test]
+fn a_source_mod_with_its_own_files_is_found_for_a_known_game() {
+    // As Foray in the Forest: own executables, all data as *.CKS, nothing
+    // that names Keen 4. The index entry says which game it's for.
+    let tmp = tempfile::tempdir().unwrap();
+    write_folder(
+        tmp.path(),
+        &[
+            ("FITF/FITF.EXE", b"MZ"),
+            ("FITF/FITF-X.EXE", b"MZ"),
+            ("FITF/EGAGRAPH.CKS", b""),
+            ("FITF/MAPTEMP.CKS", b""),
+            ("FITF/HELPME.COM", b""),
+            ("FITF/COPYING.TXT", b"GPL"),
+        ],
+    );
+    let source = Source::open(tmp.path()).unwrap();
+    let a = analyze(&source, tmp.path(), Some("keen4")).unwrap();
+    assert_eq!(a.info.game_id, "keen4");
+    assert_eq!(a.root, "FITF");
+    assert!(a.files.contains(&"FITF/EGAGRAPH.CKS".to_string()));
+    // Without knowing the game it's still nothing BloogBase recognises.
+    assert!(matches!(
+        analyze(&source, tmp.path(), None),
+        Err(Error::NoModFound)
+    ));
+}
+
+#[test]
 fn patch_files_without_a_patcher_use_the_bundled_one() {
     // As Robot Rebellion: its menu runs `ck1patch ckrr.pat`, which the
     // player was to have already.

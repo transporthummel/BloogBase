@@ -93,6 +93,9 @@ downloaded files decide, in this order:
 6. and only then the page's "Modded episode".
 
 If the page and the files disagree, the files win and the player is told.
+A source mod with none of these files (its own executables and data, like
+Foray in the Forest) takes the page's game, and its programs mark the mod's
+folder ([recipes.md](recipes.md#finding-the-mod-root)).
 
 ## 5. Which versions does it need?
 
