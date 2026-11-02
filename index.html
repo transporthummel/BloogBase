@@ -21,8 +21,88 @@
         align-items: center;
         justify-content: center;
         gap: 24px;
-        background: #0d0c1d;
+        overflow: hidden;
+        background: radial-gradient(120% 80% at 50% 0%, #17143a 0%, #0d0c1d 60%);
         transition: opacity 0.4s ease-out;
+      }
+      /* The website's night sky (site/style.css): three star layers whose
+         sizes share no common factor, and two shooting stars that cross it
+         early, as the splash only stays a moment. */
+      .splash-stars {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .splash-far {
+        opacity: 0.6;
+        background-image:
+          radial-gradient(1px 1px at 12% 18%, #a19dc4 50%, transparent 51%),
+          radial-gradient(1px 1px at 47% 63%, #a19dc4 50%, transparent 51%),
+          radial-gradient(1px 1px at 81% 34%, #f2f0ff 50%, transparent 51%),
+          radial-gradient(1px 1px at 33% 85%, #a19dc4 50%, transparent 51%);
+        background-size: 263px 263px;
+      }
+      .splash-mid {
+        background-image:
+          radial-gradient(1px 1px at 8% 77%, #f2f0ff 50%, transparent 51%),
+          radial-gradient(1px 1px at 36% 29%, #a19dc4 50%, transparent 51%),
+          radial-gradient(1px 1px at 69% 88%, #f2f0ff 50%, transparent 51%),
+          radial-gradient(1px 1px at 93% 52%, #a19dc4 50%, transparent 51%);
+        background-size:
+          331px 331px,
+          331px 331px,
+          419px 419px,
+          419px 419px;
+      }
+      .splash-near {
+        background-image:
+          radial-gradient(2px 2px at 23% 41%, #ffff55 50%, transparent 51%),
+          radial-gradient(2px 2px at 74% 12%, #f2f0ff 50%, transparent 51%),
+          radial-gradient(2px 2px at 58% 67%, #ffff55 50%, transparent 51%);
+        background-size:
+          547px 547px,
+          547px 547px,
+          683px 683px;
+        animation: splash-twinkle 5s steps(2) infinite;
+      }
+      @keyframes splash-twinkle {
+        50% {
+          opacity: 0.7;
+        }
+      }
+      .splash-comet {
+        position: absolute;
+        top: 12%;
+        left: 70%;
+        width: 112px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #f2f0ff);
+        transform: rotate(-24deg);
+        opacity: 0;
+        animation: splash-shoot 5s 0.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+      }
+      .splash-comet + .splash-comet {
+        top: 58%;
+        left: 92%;
+        animation-delay: 1.6s;
+      }
+      @keyframes splash-shoot {
+        0% {
+          opacity: 0;
+          translate: 0 0;
+        }
+        2% {
+          opacity: 1;
+        }
+        20%,
+        100% {
+          opacity: 0;
+          translate: -448px 200px;
+        }
+      }
+      #splash > img,
+      #splash > svg {
+        position: relative;
       }
       #splash.hidden {
         opacity: 0;
@@ -44,9 +124,13 @@
       }
       @media (prefers-reduced-motion: reduce) {
         #splash,
-        #splash svg {
+        #splash svg,
+        .splash-near {
           animation: none;
           transition: none;
+        }
+        .splash-comet {
+          display: none;
         }
       }
     </style>
@@ -54,6 +138,11 @@
 
   <body>
     <div id="splash" role="status" aria-label="BloogBase is starting">
+      <div class="splash-stars splash-far" aria-hidden="true"></div>
+      <div class="splash-stars splash-mid" aria-hidden="true"></div>
+      <div class="splash-stars splash-near" aria-hidden="true"></div>
+      <div class="splash-comet" aria-hidden="true"></div>
+      <div class="splash-comet" aria-hidden="true"></div>
       <img src="/src/assets/logo.svg" alt="" width="677" height="175" />
       <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true">
         <path d="M2 1h4v1h1v4h-1v1h-4v-1h-1v-4h1zM2 7h1v1h-1zM5 7h1v1h-1z" fill="#55ff55" />
