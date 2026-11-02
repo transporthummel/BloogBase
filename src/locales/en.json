@@ -705,6 +705,7 @@
     "tagline": "A cozy home for Commander Keen: play the games and the community's mods with a single click.",
     "author": "Made by <profile>{{name}}</profile>",
     "authorProfile": "Open profile on the PCKF forum",
+    "website": "Website",
     "sourceCode": "Source code",
     "feedback": "Feedback & issues",
     "diagnostics": "Diagnostics",

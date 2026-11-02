@@ -17,6 +17,7 @@ import { PageHeader } from "../ui/PageHeader";
 import { ReportDialog } from "../ui/ReportDialog";
 
 export const REPO_URL = "https://github.com/transporthummel/BloogBase";
+const WEBSITE_URL = "https://transporthummel.github.io/BloogBase/";
 const DOSBOX_URL = "https://www.dosbox-staging.org/";
 const DOSBOX_SOURCE = "https://github.com/dosbox-staging/dosbox-staging";
 const GPL_URL = "https://www.gnu.org/licenses/old-licenses/gpl-2.0.html";
@@ -72,6 +73,7 @@ export function About() {
                 <span className="font-pixel text-xs text-ink">{info.data?.version}</span>
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
+                <LinkButton url={WEBSITE_URL}>{t("about.website")}</LinkButton>
                 <LinkButton url={REPO_URL}>{t("about.sourceCode")}</LinkButton>
                 <LinkButton url={`${REPO_URL}/issues`}>{t("about.feedback")}</LinkButton>
                 <Button

@@ -41,6 +41,12 @@ test("credits the author with a link to the PCKF profile", async () => {
   expect(openUrl).toHaveBeenCalledWith("https://pckf.com/memberlist.php?mode=viewprofile&u=16709");
 });
 
+test("links the website", async () => {
+  renderAbout();
+  await userEvent.click(screen.getByRole("button", { name: "Website" }));
+  expect(openUrl).toHaveBeenCalledWith("https://transporthummel.github.io/BloogBase/");
+});
+
 test("diagnostics are shown, copied and taken to a new issue", async () => {
   vi.mocked(commands.diagnostics).mockResolvedValue({
     status: "ok",
