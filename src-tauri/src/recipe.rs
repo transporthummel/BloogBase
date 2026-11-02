@@ -585,10 +585,18 @@ pub fn patches_named_in<'a>(
     program: &[u8],
     names: impl IntoIterator<Item = &'a str>,
 ) -> Vec<&'a str> {
+    files_named_in(program, names.into_iter().filter(|n| has_ext(n, "PAT")))
+}
+
+/// The files among `names` that a program names, in the order it first
+/// does, as Foray in the Forest's menu names `FITF-X.EXE` and `FITF-C.EXE`.
+pub fn files_named_in<'a>(
+    program: &[u8],
+    names: impl IntoIterator<Item = &'a str>,
+) -> Vec<&'a str> {
     let program = program.to_ascii_uppercase();
     let mut named: Vec<(usize, &str)> = names
         .into_iter()
-        .filter(|n| has_ext(n, "PAT"))
         .filter_map(|n| Some((named_at(&program, n)?, n)))
         .collect();
     named.sort();

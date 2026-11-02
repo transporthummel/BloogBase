@@ -19,6 +19,7 @@
 ### Bug Fixes
 
 - Setting up a mod from a KeenWiki page shows the release date from the page, the one it is saved with, instead of one guessed from the files.
+- Source mods that open their graphics under their own names, like Foray in the Forest, show their own title screen as cover, not the one of the game below.
 
 ### Misc
 

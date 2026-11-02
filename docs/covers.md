@@ -79,9 +79,16 @@ dictionary (`EGADICT`) are usually built into the executable. Instead of a
 table of where they sit in each version, they're searched for:
 
 1. **Executables.** The mod's own program first (its recipe may run a
-   changed game executable), then the version's start executable, then the
-   catalog's executables, all that exist. Each is unpacked (LZEXE 0.91 or
-   PKLITE) to its load image.
+   changed game executable), then the mod's executables that program names
+   (a menu like Foray in the Forest's `FITF.EXE` starts `FITF-X.EXE` or
+   `FITF-C.EXE`), then the version's start executable, then the catalog's
+   executables, all that exist. Each is unpacked (LZEXE 0.91 or PKLITE) to
+   its load image.
+   - **Source mods** open their graphics under names of their own. Where the
+     mod's own executables name an `EGAGRAPH` with another extension than
+     the game's (`EGAGRAPH.CKS`), that file is tried first, with the
+     `EGAHEAD` and `EGADICT` of the same executable if they're files, else
+     the ones built in.
 2. **Header.** A separate file if the mod ships one (or names one with
    `%egahead`). Otherwise the header in the executable: a run of 3-byte
    offsets (4 in the Keen 4 special demo) ending in the size of the graphics

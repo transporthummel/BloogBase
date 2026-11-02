@@ -21,7 +21,7 @@ use crate::profiles;
 use crate::recipe::{self, Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v17";
+const VERSION: &str = "covers v18";
 
 /// A profile's cover.
 #[derive(Debug, PartialEq, Eq)]
@@ -423,6 +423,45 @@ pub(crate) fn patch_texts(game: &Game, recipe: &Recipe, files: &Files) -> Vec<(u
         .unwrap_or_default()
 }
 
+/// The executables among `names` a mod's program `program` starts, as Foray
+/// in the Forest's menu FITF.EXE starts FITF-X.EXE or FITF-C.EXE.
+fn started_by<'a>(menu: &[u8], program: &str, names: &[&'a str]) -> Vec<&'a str> {
+    recipe::files_named_in(
+        menu,
+        names
+            .iter()
+            .copied()
+            .filter(|n| has_ext(n, "EXE") && !n.eq_ignore_ascii_case(program)),
+    )
+}
+
+/// Graphics files an executable opens under names of its own.
+#[derive(Debug, PartialEq)]
+struct OwnGraphics<'a> {
+    graph: &'a str,
+    head: Option<&'a str>,
+    dict: Option<&'a str>,
+}
+
+/// The graphics files among `names` that a source mod's executable (its
+/// unpacked `image`) opens instead of the game's `EGAGRAPH.<ext>`: Foray in
+/// the Forest's FITF-X.EXE opens EGAGRAPH.CKS and EGAHEAD.CKS and has the
+/// dictionary built in.
+fn own_graphics<'a>(image: &[u8], names: &[&'a str], ext: &str) -> Option<OwnGraphics<'a>> {
+    let opened = recipe::files_named_in(image, names.iter().copied());
+    let own = |stem: &str| {
+        opened.iter().copied().find(|n| {
+            n.rsplit_once('.')
+                .is_some_and(|(s, e)| s.eq_ignore_ascii_case(stem) && !e.eq_ignore_ascii_case(ext))
+        })
+    };
+    Some(OwnGraphics {
+        graph: own("EGAGRAPH")?,
+        head: own("EGAHEAD"),
+        dict: own("EGADICT"),
+    })
+}
+
 fn title(
     game: &Game,
     version_id: Option<&str>,
@@ -487,11 +526,38 @@ fn title(
         Engine::Galaxy => {
             // A mod's own program may be a changed game executable that
             // holds its own header and dictionary.
+            let names: Vec<&str> = files.names().collect();
             let mut exes: Vec<String> = match recipe {
-                Some(Recipe::Program { program, .. }) => vec![program.clone()],
+                Some(Recipe::Program { program, .. }) => {
+                    let menu = files.read(program).unwrap_or_default();
+                    std::iter::once(program.as_str())
+                        .chain(started_by(&menu, program, &names))
+                        .map(str::to_string)
+                        .collect()
+                }
                 _ => Vec::new(),
             };
-            let names: Vec<&str> = files.names().collect();
+            for exe_name in &exes {
+                let (Some(exe), Some(image)) = (files.read(exe_name), unpacked(files, exe_name))
+                else {
+                    continue;
+                };
+                let Some(own) = own_graphics(&image, &names, ext) else {
+                    continue;
+                };
+                let Some(graph) = files.read(own.graph) else {
+                    continue;
+                };
+                let (graph_name, head, dict) = (
+                    own.graph,
+                    own.head.and_then(|n| files.read(n)),
+                    own.dict.and_then(|n| files.read(n)),
+                );
+                match keen_graphics::galaxy_title(&exe, &graph, head.as_deref(), dict.as_deref()) {
+                    Ok(image) => return Ok((image, false, false)),
+                    Err(e) => last = format!("{graph_name} with {exe_name}: {e}"),
+                }
+            }
             exes.extend(
                 version_id
                     .and_then(|id| game.versions.iter().find(|v| v.id == id))
@@ -975,6 +1041,42 @@ mod tests {
         let broken = ("KDREAMS2.CMP", b"nonsense".to_vec());
         assert_eq!(lit(&[patch.clone(), original, broken.clone()]), 1);
         assert!(extract_from("kdreams", &[patch, broken]).is_err());
+    }
+
+    #[test]
+    fn finds_the_graphics_a_source_mod_opens() {
+        // As Foray in the Forest: a menu starting two builds, each opening
+        // graphics files of its own.
+        let names = [
+            "FITF.EXE",
+            "FITF-X.EXE",
+            "FITF-C.EXE",
+            "HINTS.COM",
+            "EGAGRAPH.CKS",
+            "EGAHEAD.CKS",
+            "EGAGRAPH.CKC",
+            "EGAHEAD.CKC",
+            "EGAGRAPH.CK4",
+        ];
+        let menu = b"LAUNCHER.PIC\0fitf-x.exe\0FITF-C.EXE\0HINTS.COM\0FITF.EXE";
+        assert_eq!(
+            started_by(menu, "FITF.EXE", &names),
+            ["FITF-X.EXE", "FITF-C.EXE"]
+        );
+
+        let x = b"CHKPOINT.CKS\0EGAHEAD.CKS\0EGAGRAPH.CKS\0MAPHEAD.CKS";
+        assert_eq!(
+            own_graphics(x, &names, "CK4"),
+            Some(OwnGraphics {
+                graph: "EGAGRAPH.CKS",
+                head: Some("EGAHEAD.CKS"),
+                dict: None,
+            })
+        );
+        // The game's own names are left to the usual search.
+        assert_eq!(own_graphics(b"EGAGRAPH.CK4\0", &names, "CK4"), None);
+        // A name it opens that the mod doesn't have doesn't count.
+        assert_eq!(own_graphics(b"EGAGRAPH.CKX\0", &names, "CK4"), None);
     }
 
     #[test]
