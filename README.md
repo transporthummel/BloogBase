@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/transporthummel/BloogBase/releases/latest"><strong>Download BloogBase</strong></a>
   ·
-  <a href="https://www.transporthummel.de/bloogbase">Website</a>
+  <a href="https://transporthummel.github.io/BloogBase/">Website</a>
   ·
   <a href="#features">Features</a>
   ·
