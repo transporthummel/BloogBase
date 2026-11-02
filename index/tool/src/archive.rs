@@ -112,6 +112,7 @@ pub fn problems(
     let wanted: Vec<&str> = entry
         .recipes()
         .flat_map(Recipe::files)
+        .chain(entry.cover.as_deref())
         .filter(|w| !inherited.iter().any(|n| n.eq_ignore_ascii_case(w)))
         .collect();
     // All recipe files have to sit together in one folder, the mod's root,
@@ -265,6 +266,24 @@ mod tests {
             Vec::<String>::new()
         );
         e.provides.push("gone.bat".into());
+        assert_eq!(problems(&e, &e.downloads[0], &data, &[]).len(), 1);
+    }
+
+    #[test]
+    fn the_cover_program_must_be_next_to_the_recipe() {
+        let data = zip(&[
+            ("Mod/CK4PATCH.EXE", b"p"),
+            ("Mod/x.pat", b"x"),
+            ("Mod/GAME.EXE", b"g"),
+            ("Other/MENU.EXE", b"m"),
+        ]);
+        let mut e = entry_for(&data);
+        e.cover = Some("game.exe".into());
+        assert_eq!(
+            problems(&e, &e.downloads[0], &data, &[]),
+            Vec::<String>::new()
+        );
+        e.cover = Some("MENU.EXE".into());
         assert_eq!(problems(&e, &e.downloads[0], &data, &[]).len(), 1);
     }
 

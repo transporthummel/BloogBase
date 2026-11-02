@@ -16,6 +16,7 @@ use crate::catalog::{self, Engine, Game};
 use crate::db::Db;
 use crate::detect::hex;
 use crate::error::{Error, Result};
+use crate::mods;
 use crate::paths::AppPaths;
 use crate::profiles;
 use crate::recipe::{self, Recipe, has_ext};
@@ -39,12 +40,19 @@ pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<Cover
     let game = catalog::game(&profile.game_id)
         .ok_or_else(|| Error::NotFound(format!("game {}", profile.game_id)))?;
     let recipe = layers.mod_layer.as_ref().map(|m| &m.recipe);
+    let cover_program = match &profile.mod_id {
+        Some(id) => mods::cover_program(db, id)?,
+        None => None,
+    };
     // A mod waiting for its game may have all it takes; once the game is
     // there, the changed files make for a new try.
     let files = Files::new(&layers.sources())?;
 
     let (png, stamp) = cache_files(paths, profile_id);
-    let key = files.fingerprint(recipe);
+    let key = match &cover_program {
+        Some(program) => format!("{}+{program}", files.fingerprint(recipe)),
+        None => files.fingerprint(recipe),
+    };
     let wanted = |state: &str| format!("{key} {state}");
     let found = |state: &str| match state {
         "none" => None,
@@ -61,7 +69,13 @@ pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<Cover
         _ => {}
     }
 
-    let title = extract(game, profile.version_id.as_deref(), recipe, &files);
+    let title = extract(
+        game,
+        profile.version_id.as_deref(),
+        recipe,
+        cover_program.as_deref(),
+        &files,
+    );
     fs::create_dir_all(stamp.parent().expect("covers have a folder"))?;
     let state = match title {
         Ok(title) => {
@@ -298,10 +312,13 @@ struct Title {
     scrambled: bool,
 }
 
+/// `cover_program` is the one whose title screen the index entry names as
+/// the cover, where the recipe runs a menu.
 fn extract(
     game: &Game,
     version_id: Option<&str>,
     recipe: Option<&Recipe>,
+    cover_program: Option<&str>,
     files: &Files,
 ) -> std::result::Result<Title, String> {
     let ext = extension(game);
@@ -310,7 +327,8 @@ fn extract(
         .and_then(|p| files.read(&p))
         .map(|t| patched(&String::from_utf8_lossy(&t), &ext))
         .unwrap_or_default();
-    let (image, cga, scrambled) = title(game, version_id, recipe, files, &ext, &patch)?;
+    let (image, cga, scrambled) =
+        title(game, version_id, recipe, cover_program, files, &ext, &patch)?;
     let colors = match patch.palette {
         _ if cga && patch.composite => Colors::Composite,
         Some(palette) => Colors::Palette(palette),
@@ -423,18 +441,6 @@ pub(crate) fn patch_texts(game: &Game, recipe: &Recipe, files: &Files) -> Vec<(u
         .unwrap_or_default()
 }
 
-/// The executables among `names` a mod's program `program` starts, as Foray
-/// in the Forest's menu FITF.EXE starts FITF-X.EXE or FITF-C.EXE.
-fn started_by<'a>(menu: &[u8], program: &str, names: &[&'a str]) -> Vec<&'a str> {
-    recipe::files_named_in(
-        menu,
-        names
-            .iter()
-            .copied()
-            .filter(|n| has_ext(n, "EXE") && !n.eq_ignore_ascii_case(program)),
-    )
-}
-
 /// Graphics files an executable opens under names of its own.
 #[derive(Debug, PartialEq)]
 struct OwnGraphics<'a> {
@@ -466,6 +472,7 @@ fn title(
     game: &Game,
     version_id: Option<&str>,
     recipe: Option<&Recipe>,
+    cover_program: Option<&str>,
     files: &Files,
     ext: &str,
     patch: &Patched,
@@ -527,16 +534,17 @@ fn title(
             // A mod's own program may be a changed game executable that
             // holds its own header and dictionary.
             let names: Vec<&str> = files.names().collect();
-            let mut exes: Vec<String> = match recipe {
-                Some(Recipe::Program { program, .. }) => {
-                    let menu = files.read(program).unwrap_or_default();
-                    std::iter::once(program.as_str())
-                        .chain(started_by(&menu, program, &names))
-                        .map(str::to_string)
-                        .collect()
-                }
-                _ => Vec::new(),
+            // The index entry may name the program whose title is the
+            // cover, where the recipe runs a menu.
+            let program = match recipe {
+                Some(Recipe::Program { program, .. }) => Some(program.as_str()),
+                _ => None,
             };
+            let mut exes: Vec<String> = cover_program
+                .into_iter()
+                .chain(program)
+                .map(str::to_string)
+                .collect();
             for exe_name in &exes {
                 let (Some(exe), Some(image)) = (files.read(exe_name), unpacked(files, exe_name))
                 else {
@@ -853,7 +861,13 @@ mod tests {
             args: Vec::new(),
         };
         let files = Files::new(&[tmp.path()]).unwrap();
-        extract(catalog::game(game).unwrap(), None, Some(&recipe), &files)
+        extract(
+            catalog::game(game).unwrap(),
+            None,
+            Some(&recipe),
+            None,
+            &files,
+        )
     }
 
     #[test]
@@ -1045,8 +1059,8 @@ mod tests {
 
     #[test]
     fn finds_the_graphics_a_source_mod_opens() {
-        // As Foray in the Forest: a menu starting two builds, each opening
-        // graphics files of its own.
+        // As Foray in the Forest: two builds, each opening graphics files of
+        // its own.
         let names = [
             "FITF.EXE",
             "FITF-X.EXE",
@@ -1058,12 +1072,6 @@ mod tests {
             "EGAHEAD.CKC",
             "EGAGRAPH.CK4",
         ];
-        let menu = b"LAUNCHER.PIC\0fitf-x.exe\0FITF-C.EXE\0HINTS.COM\0FITF.EXE";
-        assert_eq!(
-            started_by(menu, "FITF.EXE", &names),
-            ["FITF-X.EXE", "FITF-C.EXE"]
-        );
-
         let x = b"CHKPOINT.CKS\0EGAHEAD.CKS\0EGAGRAPH.CKS\0MAPHEAD.CKS";
         assert_eq!(
             own_graphics(x, &names, "CK4"),
@@ -1115,7 +1123,7 @@ mod tests {
             });
             let files = Files::new(&[&root, &base]).unwrap();
             let name = root.file_name().unwrap().to_string_lossy().into_owned();
-            match extract(game, None, Some(recipe), &files) {
+            match extract(game, None, Some(recipe), None, &files) {
                 Ok(title) => write_png(
                     &title.image,
                     &title.colors,

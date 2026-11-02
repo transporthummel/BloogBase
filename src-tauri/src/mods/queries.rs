@@ -280,6 +280,18 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
     Ok(url.to_string())
 }
 
+/// The program whose title screen is the mod's cover, if its index entry
+/// names one.
+pub fn cover_program(db: &Db, mod_id: &str) -> Result<Option<String>> {
+    Ok(db
+        .conn()
+        .query_row("SELECT cover FROM mods WHERE id = ?1", [mod_id], |r| {
+            r.get(0)
+        })
+        .optional()?
+        .flatten())
+}
+
 /// The mods played over `mod_id`.
 pub fn extensions(db: &Db, mod_id: &str) -> Result<Vec<String>> {
     let conn = db.conn();

@@ -564,6 +564,7 @@ fn curated(recipe: Recipe) -> Curated {
         version_recipes: VersionRecipes::new(),
         copy_to_root: Vec::new(),
         extends: None,
+        cover: None,
         requires: vec!["keen4-1.4-ega".into()],
         keenwiki_url: Some("https://keenwiki.shikadi.net/wiki/Aurora_Bliss".into()),
         url: "https://example.com/m.dave216.aurora.zip".into(),
@@ -603,6 +604,7 @@ fn curated_install_uses_the_index_recipe_and_updates_in_place() {
         .unwrap();
     assert_eq!(url, c.url);
     assert!(wiki.ends_with("Aurora_Bliss"));
+    assert_eq!(cover_program(&db, "aurora-bliss").unwrap(), None);
 
     // A new version: same mod and profile, new files, saves kept.
     let state = paths.profiles.join("aurora-bliss/state/SAVEGAM0.CK4");
@@ -612,10 +614,15 @@ fn curated_install_uses_the_index_recipe_and_updates_in_place() {
     write_zip(&zip, &v2);
     let c2 = Curated {
         version: Some("1.3".into()),
+        cover: Some("AURORA.EXE".into()),
         ..c.clone()
     };
     let updated = install_curated(&paths, &db, &zip, &c2, None, false).unwrap();
     assert_eq!(updated.id, "aurora-bliss");
+    assert_eq!(
+        cover_program(&db, "aurora-bliss").unwrap().as_deref(),
+        Some("AURORA.EXE")
+    );
     assert_eq!(updated.version.as_deref(), Some("1.3"));
     assert_eq!(list(&db).unwrap().len(), 1);
     assert_eq!(

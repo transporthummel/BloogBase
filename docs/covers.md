@@ -78,12 +78,15 @@ The graphics are in `EGAGRAPH`, but its header (`EGAHEAD`) and Huffman
 dictionary (`EGADICT`) are usually built into the executable. Instead of a
 table of where they sit in each version, they're searched for:
 
-1. **Executables.** The mod's own program first (its recipe may run a
-   changed game executable), then the mod's executables that program names
-   (a menu like Foray in the Forest's `FITF.EXE` starts `FITF-X.EXE` or
-   `FITF-C.EXE`), then the version's start executable, then the catalog's
-   executables, all that exist. Each is unpacked (LZEXE 0.91 or PKLITE) to
-   its load image.
+1. **Executables.** The program the index entry names as `cover` first, then
+   the mod's own program (its recipe may run a changed game executable), then
+   the version's start executable, then the catalog's executables, all that
+   exist. Each is unpacked (LZEXE 0.91 or PKLITE) to its load image. `cover`
+   is for recipes that run a menu: Foray in the Forest's `FITF.EXE` starts
+   `FITF-X.EXE` or `FITF-C.EXE`, and which of them has the right title can't
+   be told from the files. Stored per mod (`mods.cover`) at install from the
+   index, and when a mod is tied to its entry. Without it, such a mod gets
+   the game's title.
    - **Source mods** open their graphics under names of their own. Where the
      mod's own executables name an `EGAGRAPH` with another extension than
      the game's (`EGAGRAPH.CKS`), that file is tried first, with the

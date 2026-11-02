@@ -86,6 +86,10 @@ pub struct IndexEntry {
     /// Files of its own that mods copied over it lack, e.g. a start batch.
     #[serde(default)]
     pub provides: Vec<String>,
+    /// The program whose title screen is the cover, where the recipe runs a
+    /// menu starting several.
+    #[serde(default)]
+    pub cover: Option<String>,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]

@@ -58,6 +58,10 @@ pub struct Entry {
     /// the app finds the mod they need by them.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub provides: Vec<String>,
+    /// The program whose title screen is the cover, where the recipe runs
+    /// a menu starting several (Foray in the Forest's `FITF-X.EXE`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover: Option<String>,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]
@@ -310,6 +314,11 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
             fail(format!("provides: `{file}` must be a plain DOS file name"));
         }
     }
+    if let Some(file) = &entry.cover
+        && !(is_plain_name(file) && is_program(file))
+    {
+        fail(format!("cover: `{file}` must be a plain name of a program"));
+    }
     for folder in &entry.copy_to_root {
         if !is_plain_name(folder) || folder == "." || folder == ".." {
             fail(format!(
@@ -372,6 +381,11 @@ pub fn provides_problems(entries: &[Entry]) -> Vec<String> {
         }
     }
     out
+}
+
+fn is_program(name: &str) -> bool {
+    name.rsplit_once('.')
+        .is_some_and(|(_, ext)| ext.eq_ignore_ascii_case("EXE") || ext.eq_ignore_ascii_case("COM"))
 }
 
 fn is_plain_name(s: &str) -> bool {
@@ -534,6 +548,20 @@ recipe:
             .insert("keen4-1.0".into(), Recipe::Episode);
         let p = problems(&bad, "aurora-bliss", &catalog());
         assert_eq!(p.len(), 3, "{p:#?}");
+    }
+
+    #[test]
+    fn the_cover_is_a_program_in_the_mod_root() {
+        let mut e = parse(AURORA).unwrap();
+        e.cover = Some("AURORA.EXE".into());
+        assert_eq!(
+            problems(&e, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+        for bad in ["sub/AURORA.EXE", "AURORA.PAT"] {
+            e.cover = Some(bad.into());
+            assert_eq!(problems(&e, "aurora-bliss", &catalog()).len(), 1, "{bad}");
+        }
     }
 
     #[test]

@@ -39,6 +39,7 @@ one you agree to that. The mods they link to belong to their authors.
    | `copyToRoot`     | Folders in the mod's root whose files the readme says to copy into the root                 |
    | `extends`        | Id of the entry this mod is copied over, e.g. a level pack for a mod; installed with it     |
    | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)           |
+   | `cover`          | The program whose title screen is the cover, when the recipe runs a menu (see below)        |
    | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
    | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
 
@@ -69,6 +70,12 @@ one you agree to that. The mods they link to belong to their authors.
    (xky1rooms says to run Episode X's `XkyKeen1.bat`). List such files in
    the base mod's `provides`, only ones no other mod of the game has; the
    check makes sure the download has them. Older apps ignore `provides`.
+
+   The cover is the title screen the mod's files hold, found through the
+   program the recipe runs. When that is a menu starting several programs,
+   name the one whose title is the cover in `cover` (Foray in the Forest:
+   `FITF-X.EXE`); it has to be next to the recipe files. Older apps ignore
+   it and show the game's title instead.
 
 3. Check it, including the download:
 

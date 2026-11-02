@@ -30,4 +30,6 @@ recipe:
   type: program
   program: FITF.EXE
   args: [adlib]
+# The menu has no title screen; both builds show the same one.
+cover: FITF-X.EXE
 featured: true

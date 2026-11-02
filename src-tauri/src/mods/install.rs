@@ -39,6 +39,8 @@ struct Stored<'a> {
     index_id: Option<&'a str>,
     /// The installed mod it's played over.
     extends: Option<String>,
+    /// The program whose title screen is the cover; default: the recipe's.
+    cover: Option<String>,
     keenwiki_url: Option<&'a str>,
     homepage: Option<String>,
     pckf: Option<String>,
@@ -65,6 +67,7 @@ impl<'a> Stored<'a> {
             source: ModSource::Index,
             index_id: Some(&c.index_id),
             extends,
+            cover: c.cover.clone(),
             keenwiki_url: c.keenwiki_url.as_deref(),
             // The index entry links it.
             homepage: None,
@@ -109,6 +112,7 @@ impl<'a> Stored<'a> {
             },
             index_id: None,
             extends: req.extends.clone(),
+            cover: None,
             keenwiki_url: page.map(|o| o.page_url.as_str()),
             homepage: page.and_then(|o| o.homepage.clone()),
             pckf: page.and_then(|o| o.pckf.clone()),
@@ -264,6 +268,8 @@ pub struct Curated {
     pub requires: Vec<String>,
     /// The index mod it's played over, which has to be installed first.
     pub extends: Option<String>,
+    /// The program whose title screen is the cover.
+    pub cover: Option<String>,
     pub keenwiki_url: Option<String>,
     pub url: String,
 }
@@ -289,6 +295,7 @@ impl Curated {
             version_recipes: entry.version_recipes.clone(),
             copy_to_root: entry.copy_to_root.clone(),
             extends: entry.extends.clone(),
+            cover: entry.cover.clone(),
             requires: entry.requires.clone(),
             keenwiki_url: entry.links.keenwiki.clone(),
             url: d.url.clone(),
@@ -315,6 +322,7 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
         source,
         index_id,
         extends: _,
+        cover,
         keenwiki_url,
         homepage,
         pckf,
@@ -326,7 +334,7 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
         "UPDATE mods SET name = ?2, authors = ?3, author_links = ?4,
                          version = COALESCE(?5, version), description = ?6, released = ?7,
                          source = ?8, index_id = ?9, keenwiki_url = ?10, homepage = ?11,
-                         pckf = ?12, keenmodding = ?13
+                         pckf = ?12, keenmodding = ?13, cover = ?14
          WHERE id = ?1",
         params![
             mod_id,
@@ -342,6 +350,7 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
             homepage,
             pckf,
             keenmodding,
+            cover,
         ],
     )?;
     tracing::info!("tied mod {mod_id} to index entry {}", c.index_id);
@@ -598,9 +607,9 @@ fn store(
                                recipe_json, path, source, source_url, archive_sha256, added_at,
                                description, released, author_links, requires_json,
                                version_recipes_json, extends, homepage, pckf,
-                               keenmodding)
+                               keenmodding, cover)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?20, ?21, ?22)",
+                     ?18, ?19, ?20, ?21, ?22, ?23)",
             params![
                 m.id,
                 m.game_id,
@@ -623,7 +632,8 @@ fn store(
                 s.extends,
                 s.homepage,
                 s.pckf,
-                s.keenmodding
+                s.keenmodding,
+                s.cover
             ],
         )?;
         tx.execute(
@@ -697,7 +707,7 @@ fn update(
                              released = ?9, author_links = ?10, requires_json = ?11,
                              name = ?12, source = ?13, index_id = ?14,
                              version_recipes_json = ?15, extends = ?16, homepage = ?17,
-                             pckf = ?18, keenmodding = ?19
+                             pckf = ?18, keenmodding = ?19, cover = ?20
              WHERE id = ?1",
             params![
                 mod_id,
@@ -718,7 +728,8 @@ fn update(
                 s.extends,
                 s.homepage,
                 s.pckf,
-                s.keenmodding
+                s.keenmodding,
+                s.cover
             ],
         )?;
         tx.execute(

@@ -491,6 +491,11 @@ export type IndexEntry = {
 	extends?: string | null,
 	/**  Files of its own that mods copied over it lack, e.g. a start batch. */
 	provides?: string[],
+	/**
+	 *  The program whose title screen is the cover, where the recipe runs a
+	 *  menu starting several.
+	 */
+	cover?: string | null,
 	tags?: string[],
 	featured?: boolean,
 	minAppVersion?: string | null,
