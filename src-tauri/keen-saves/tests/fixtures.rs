@@ -160,3 +160,51 @@ fn episodes_from_game_ids() {
     assert_eq!(Episode::from_game_id("keen5"), Some(Episode::Keen5));
     assert_eq!(Episode::from_game_id("doom"), None);
 }
+
+/// Foray in the Forest 2.0a, a new Expert game saved right on the world map
+/// (`FITF-X.EXE /NOWAIT`, which marks the opening rocket done).
+#[test]
+fn foray_in_the_forest() {
+    let data = fixture("SAVEGAM0.CKS");
+    let info = parse(Episode::Keen4, &data).unwrap();
+    assert_eq!(
+        info,
+        SaveInfo {
+            name: Some("test".into()),
+            score: Some(0),
+            lives: Some(3),
+            ammo: Some(3),
+            levels_done: Some(0),
+            difficulty: Some(Difficulty::Expert),
+            on_world_map: Some(true),
+            ship_parts: None,
+        }
+    );
+
+    // The classic build writes the same layout under its own extension.
+    let mut classic = data.clone();
+    classic[..4].copy_from_slice(b"CKC\0");
+    assert_eq!(parse(Episode::Keen4, &classic).unwrap(), info);
+
+    // A level done counts; the world map and the opening rocket don't.
+    let mut later = data.clone();
+    let levels = 42 + 4;
+    later[levels + 2 * 5] = 3; // done and perfect
+    assert_eq!(parse(Episode::Keen4, &later).unwrap().levels_done, Some(1));
+
+    // Anything the game can't have written is refused.
+    let mut odd = data.clone();
+    odd[126] = 9; // difficulty
+    assert_eq!(
+        parse(Episode::Keen4, &odd),
+        Err(ParseError::Implausible("difficulty"))
+    );
+    let mut odd = data.clone();
+    odd[levels] = 7;
+    assert_eq!(
+        parse(Episode::Keen4, &odd),
+        Err(ParseError::Implausible("levels"))
+    );
+    // Only Keen 4 knows the signature.
+    assert_eq!(parse(Episode::Keen5, &data), Err(ParseError::BadSignature));
+}

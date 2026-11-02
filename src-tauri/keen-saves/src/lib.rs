@@ -11,6 +11,10 @@
 //!   aligned. Offsets checked against real saves of Keen 4 v1.4, Keen 6 v1.0
 //!   and Keen Dreams 1.13; Keen 5 shares Keen 4's code with three
 //!   episode-specific words.
+//! - Foray in the Forest 2.0, a Keen 4 source mod: the same header with its
+//!   file extension as signature (`CKS`, `CKC` for the classic build) and a
+//!   `gametype` of its own, from its source (`CK_DEF.H`). Checked against a
+//!   real save of v2.0a.
 
 use std::fmt;
 
@@ -46,6 +50,8 @@ pub enum Difficulty {
     Easy,
     Normal,
     Hard,
+    /// Foray in the Forest's fourth level.
+    Expert,
 }
 
 /// Everything known about one save. Fields a format doesn't have are `None`.
@@ -67,9 +73,17 @@ pub struct SaveInfo {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseError {
-    TooShort { needed: usize, got: usize },
+    TooShort {
+        needed: usize,
+        got: usize,
+    },
     BadSignature,
-    WrongSize { expected: usize, got: usize },
+    WrongSize {
+        expected: usize,
+        got: usize,
+    },
+    /// Values the game can't have written, e.g. from another layout.
+    Implausible(&'static str),
 }
 
 impl fmt::Display for ParseError {
@@ -82,6 +96,7 @@ impl fmt::Display for ParseError {
             ParseError::WrongSize { expected, got } => {
                 write!(f, "unexpected size: {got} bytes, expected {expected}")
             }
+            ParseError::Implausible(what) => write!(f, "implausible {what}"),
         }
     }
 }
@@ -91,7 +106,10 @@ impl std::error::Error for ParseError {}
 pub fn parse(episode: Episode, data: &[u8]) -> Result<SaveInfo, ParseError> {
     match episode {
         Episode::Keen1 | Episode::Keen2 | Episode::Keen3 => vorticons(episode, data),
-        Episode::Keen4 => galaxy(b"CK4\0", 2, data),
+        Episode::Keen4 => match data.get(..4) {
+            Some(b"CKS\0" | b"CKC\0") => foray(data),
+            _ => galaxy(b"CK4\0", 2, data),
+        },
         Episode::Keen5 => galaxy(b"CK5\0", 3, data),
         Episode::Keen6 => galaxy(b"CK6\0", 4, data),
         Episode::Dreams => dreams(data),
@@ -252,6 +270,51 @@ fn dreams(data: &[u8]) -> Result<SaveInfo, ParseError> {
             0 => Some(Difficulty::Normal),
             word => difficulty(word),
         },
+        ship_parts: None,
+    })
+}
+
+const FORAY_LEVELS: usize = 27;
+
+/// Foray in the Forest 2.0: after `score` come `nextextra` and `oldscore`,
+/// then `ammo`, `drops`, three words of its own, `mapon`, `lives` and
+/// `difficulty` (4 is Expert). Map 0 is the world map and map 1 the opening
+/// rocket, which the game marks done before the first level, so neither
+/// counts. Its saves have no version of their own; values the game can't
+/// have written are refused rather than shown.
+fn foray(data: &[u8]) -> Result<SaveInfo, ParseError> {
+    let r = Reader(data);
+    let name = r.name(8, NAME_LEN)?;
+    let state = (8 + NAME_LEN).next_multiple_of(2);
+    let levels = state + 4;
+    let score = levels + 2 * FORAY_LEVELS;
+    let ammo = score + 12;
+    let mapon = ammo + 10;
+    let (map, lives) = (r.u16(mapon)?, r.i16(mapon + 2)?);
+    let difficulty = match r.u16(mapon + 4)? {
+        4 => Difficulty::Expert,
+        word => self::difficulty(word).ok_or(ParseError::Implausible("difficulty"))?,
+    };
+    if map as usize >= FORAY_LEVELS {
+        return Err(ParseError::Implausible("map"));
+    }
+    if !(0..=99).contains(&lives) {
+        return Err(ParseError::Implausible("lives"));
+    }
+    // Done and perfect are flags 1 and 2.
+    for i in 0..FORAY_LEVELS {
+        if r.u16(levels + 2 * i)? > 3 {
+            return Err(ParseError::Implausible("levels"));
+        }
+    }
+    Ok(SaveInfo {
+        name,
+        score: Some(r.i32(score)?),
+        ammo: Some(r.i16(ammo)?),
+        levels_done: Some(r.count_words(levels + 4, FORAY_LEVELS - 2)?),
+        on_world_map: Some(map == 0),
+        lives: Some(lives),
+        difficulty: Some(difficulty),
         ship_parts: None,
     })
 }

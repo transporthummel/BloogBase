@@ -40,6 +40,8 @@ pub enum Difficulty {
     Easy,
     Normal,
     Hard,
+    /// Foray in the Forest's fourth level.
+    Expert,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]
@@ -67,6 +69,7 @@ impl From<keen_saves::SaveInfo> for SaveDetails {
                 keen_saves::Difficulty::Easy => Difficulty::Easy,
                 keen_saves::Difficulty::Normal => Difficulty::Normal,
                 keen_saves::Difficulty::Hard => Difficulty::Hard,
+                keen_saves::Difficulty::Expert => Difficulty::Expert,
             }),
             on_world_map: i.on_world_map,
             ship_parts: i.ship_parts,
@@ -551,6 +554,12 @@ pub(crate) mod tests {
         assert_eq!(game.saves, ["SAVEGAM?.CK4", "SAVEGAM?.CKC", "SAVEGAM?.CKS"]);
         assert_eq!(game.state_files, ["CONFIG.CK4", "CONFIG.CKS"]);
         assert_eq!(slot(game, "SAVEGAM0.CKC"), Some(1));
+
+        // Its saves are read with its own layout.
+        let real = include_bytes!("../keen-saves/tests/fixtures/SAVEGAM0.CKS");
+        let d = describe(game, "SAVEGAM0.CKS", real, None).details.unwrap();
+        assert_eq!(d.name.as_deref(), Some("test"));
+        assert_eq!((d.lives, d.difficulty), (Some(3), Some(Difficulty::Expert)));
     }
 
     #[test]

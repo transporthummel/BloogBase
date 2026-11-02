@@ -306,7 +306,9 @@ export type ConfigWarning = {
 	kind: WarningKind,
 };
 
-export type Difficulty = "easy" | "normal" | "hard";
+export type Difficulty = "easy" | "normal" | "hard" | 
+/**  Foray in the Forest's fourth level. */
+"expert";
 
 /**
  *  The simple options on the settings page, for all games. Written as their

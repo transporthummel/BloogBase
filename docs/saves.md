@@ -66,7 +66,7 @@ settings in `CONFIG.CKS`, its `FITF-C.EXE` saves as `.CKC`. Where a program
 in the mod's root names a pattern's stem, the `?` character(s) and a dot
 with another extension than the game's, that pattern is added
 (`saves::other_extensions`). These saves carry the extension as signature
-and a layout of their own, so they're listed without details.
+and a layout of their own (see below).
 
 `keen-saves` reads what a save says about itself. Saves come from any game
 version or mod, so every read is bounds-checked; an unexpected file is an
@@ -84,6 +84,16 @@ error, never a panic, and the save is listed without details.
   (neural stunner shots), whether it was saved on the world map, lives and
   difficulty. The offsets past the ammo differ by the episode's own items:
   two words in Keen 4, three in Keen 5, four in Keen 6.
+- **Foray in the Forest 2.0** (a Keen 4 source mod): the same header with
+  `CKS\0` or `CKC\0` (its classic build), recognized by that on a Keen 4
+  profile. Its `gametype` comes from its source: 27 level words (the world
+  map and the opening rocket, which the game marks done before the first
+  level, don't count), then score, two more longs, ammo, drops, three words
+  of its own, map, lives and difficulty, with a fourth level, Expert. The
+  layout has no version of its own, so values the game can't have written
+  (an unknown difficulty or map, lives over 99, level flags other than done
+  and perfect) make the save show without details rather than wrong ones.
+  Checked against a real v2.0a save.
 - **Keen Dreams:** the same idea with `KDR\0`, 17 level slots (slot 0 is the
   world map, which the game marks as done on entering a level, so it isn't
   counted) and flower power seeds as ammo. Normal difficulty is stored as 0.

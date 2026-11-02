@@ -558,7 +558,8 @@
     "difficulty": {
       "easy": "Easy",
       "normal": "Normal",
-      "hard": "Hard"
+      "hard": "Hard",
+      "expert": "Expert"
     },
     "savedAt": "Saved {{date}}",
     "backup": "Back up",
