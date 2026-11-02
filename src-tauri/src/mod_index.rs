@@ -506,7 +506,9 @@ fn parse(data: &[u8]) -> Result<Parsed> {
             generated_at: raw.generated_at,
         });
     }
-    let app = env!("CARGO_PKG_VERSION");
+    // Debug builds run the code of the next release, which entries made for
+    // it need, so they skip `minAppVersion` (tests keep it).
+    let app = (!cfg!(all(debug_assertions, not(test)))).then_some(env!("CARGO_PKG_VERSION"));
     let entries: Vec<IndexEntry> = raw
         .mods
         .into_iter()
@@ -533,12 +535,13 @@ fn parse(data: &[u8]) -> Result<Parsed> {
     })
 }
 
-fn usable(e: &IndexEntry, app_version: &str) -> bool {
+/// `app_version` `None`: any `minAppVersion` will do.
+fn usable(e: &IndexEntry, app_version: Option<&str>) -> bool {
     !e.downloads.is_empty()
         && catalog::game(&e.game).is_some()
         && e.min_app_version
             .as_deref()
-            .is_none_or(|min| version_at_least(app_version, min))
+            .is_none_or(|min| app_version.is_none_or(|v| version_at_least(v, min)))
 }
 
 /// `1.10.0` ≥ `1.9.2`; pre-release suffixes are ignored.

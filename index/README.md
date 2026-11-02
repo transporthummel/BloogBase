@@ -99,7 +99,9 @@ pnpm tauri dev       # debug builds use index/dist/index.json when it exists
 ```
 
 `BLOOGBASE_INDEX_URL` overrides the source (a URL or a local path to an
-`index.json` with its `.minisig` next to it).
+`index.json` with its `.minisig` next to it). Debug builds ignore
+`minAppVersion`: they run the code of the next release, which entries
+asking for it need.
 
 ## Signing
 
