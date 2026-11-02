@@ -35,6 +35,9 @@
     "saveCount_other": "{{count}} saved games",
     "details": "Saves and settings",
     "sortBy": "Sort",
+    "search": "Search library",
+    "noMatch": "Nothing in your library matches.",
+    "clearSearch": "Clear search",
     "sort": {
       "recent": "Last played",
       "name": "Alphabetical",

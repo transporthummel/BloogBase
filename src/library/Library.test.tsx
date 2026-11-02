@@ -328,6 +328,29 @@ test("sorting by type groups games and mods and is remembered", async () => {
   localStorage.removeItem("bloogbase.librarySort");
 });
 
+test("the search filters by name, game and version, and can be cleared", async () => {
+  const mod: Profile = { ...profile, id: "aurora", modId: "aurora", label: "Aurora Bliss" };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [mod, profile] });
+  renderLibrary();
+  const search = await screen.findByRole("searchbox", { name: "Search library" });
+  await userEvent.type(search, "aurora");
+  expect(screen.getByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: keen5.title })).not.toBeInTheDocument();
+  // The game's short title finds the mod played on it too.
+  await userEvent.clear(search);
+  await userEvent.type(search, "keen 5");
+  expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(2);
+  await userEvent.clear(search);
+  await userEvent.type(search, "v1.4 ega");
+  expect(screen.getByRole("heading", { name: keen5.title })).toBeInTheDocument();
+  await userEvent.clear(search);
+  await userEvent.type(search, "vorticon");
+  expect(screen.getByText("Nothing in your library matches.")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Clear search" }));
+  expect(search).toHaveValue("");
+  expect(screen.getByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
+});
+
 test("the status bar sums up the library and its disk space", async () => {
   const mod: Profile = { ...profile, id: "aurora", modId: "aurora", label: "Aurora Bliss" };
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [mod, profile] });

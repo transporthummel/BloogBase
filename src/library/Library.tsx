@@ -49,6 +49,7 @@ export function Library() {
   const [finding, setFinding] = useState(false);
   const [imported, setImported] = useState<number | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
+  const [query, setQuery] = useState("");
   // Only picked (and remembered as seen) when it's shown.
   const [trivia] = useState(() => (getShowTrivia() ? startupTrivia() : null));
   const list = useRef<HTMLDivElement>(null);
@@ -119,7 +120,16 @@ export function Library() {
   const error = launch.error ?? profiles.error;
   const empty = profiles.data?.length === 0;
   const needsRuntime = !empty && runtime.data && !runtime.data.active;
-  const groups = arrange(profiles.data ?? [], sort, games.data ?? [], i18n.language);
+  const needle = query.trim().toLowerCase();
+  const shown = (profiles.data ?? []).filter((p) => {
+    if (!needle) return true;
+    const game = gameById.get(p.gameId);
+    const version = game?.versions.find((v) => v.id === p.versionId)?.label;
+    return [p.label, game?.title, game?.shortTitle, version].some((s) =>
+      s?.toLowerCase().includes(needle),
+    );
+  });
+  const groups = arrange(shown, sort, games.data ?? [], i18n.language);
   // Names on more than one card, e.g. two copies of the same game.
   const labels = (profiles.data ?? []).map((p) => p.label);
   const shared = new Set(labels.filter((label, i) => labels.indexOf(label) !== i));
@@ -213,7 +223,22 @@ export function Library() {
       )}
 
       {profiles.data && profiles.data.length > 0 && (
-        <div className="mb-4 flex justify-end">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <label className="relative min-w-48 flex-1">
+            <span className="sr-only">{t("library.search")}</span>
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted"
+              aria-hidden
+            />
+            <input
+              type="search"
+              autoComplete="off"
+              className="w-full rounded-lg border border-border bg-surface-raised py-2 pr-3 pl-9 text-sm"
+              placeholder={t("library.search")}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
           <label className="flex items-center gap-2 text-sm text-muted">
             {t("library.sortBy")}
             <select
@@ -232,6 +257,15 @@ export function Library() {
               ))}
             </select>
           </label>
+        </div>
+      )}
+
+      {profiles.data && profiles.data.length > 0 && shown.length === 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <Notice>{t("library.noMatch")}</Notice>
+          <Button variant="secondary" onClick={() => setQuery("")}>
+            {t("library.clearSearch")}
+          </Button>
         </div>
       )}
 

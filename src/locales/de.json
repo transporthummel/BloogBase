@@ -35,6 +35,9 @@
     "saveCount_other": "{{count}} Spielstände",
     "details": "Spielstände und Einstellungen",
     "sortBy": "Sortieren",
+    "search": "Bibliothek durchsuchen",
+    "noMatch": "Nichts in deiner Bibliothek passt dazu.",
+    "clearSearch": "Suche zurücksetzen",
     "sort": {
       "recent": "Zuletzt gespielt",
       "name": "Alphabetisch",
