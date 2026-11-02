@@ -1,5 +1,8 @@
-/** Shortest time the boot splash stays, so it doesn't just flicker. */
-const MIN_VISIBLE_MS = 700;
+/**
+ * Shortest time the boot splash stays: until both shooting stars of
+ * index.html have crossed the sky (the second starts at 0.7s and flies 1s).
+ */
+const MIN_VISIBLE_MS = 1800;
 
 let hidden = false;
 

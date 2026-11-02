@@ -27,7 +27,8 @@
       }
       /* The website's night sky (site/style.css): three star layers whose
          sizes share no common factor, and two shooting stars that cross it
-         early, as the splash only stays a moment. */
+         early. Each flight takes 1s (20% of 5s); src/splash.ts keeps the
+         splash until the second one has landed. */
       .splash-stars {
         position: absolute;
         inset: 0;
@@ -79,12 +80,12 @@
         background: linear-gradient(90deg, transparent, #f2f0ff);
         transform: rotate(-24deg);
         opacity: 0;
-        animation: splash-shoot 5s 0.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+        animation: splash-shoot 5s 0.1s cubic-bezier(0.16, 1, 0.3, 1) infinite;
       }
       .splash-comet + .splash-comet {
         top: 58%;
         left: 92%;
-        animation-delay: 1.6s;
+        animation-delay: 0.7s;
       }
       @keyframes splash-shoot {
         0% {
