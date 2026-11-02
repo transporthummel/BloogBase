@@ -228,6 +228,11 @@ export type AppInfo = {
 	dataDir: string,
 	defaultDataDir: string,
 	schemaVersion: number,
+	/**
+	 *  A package manager installed BloogBase and brings its updates (the
+	 *  AUR package), so the app neither looks for nor installs any.
+	 */
+	updatesByPackageManager: boolean,
 };
 
 /**

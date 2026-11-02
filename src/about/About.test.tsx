@@ -14,7 +14,13 @@ vi.mock("../bindings", () => ({
 function renderAbout() {
   vi.mocked(commands.appInfo).mockResolvedValue({
     status: "ok",
-    data: { version: "0.1.0", dataDir: "/d", defaultDataDir: "/d", schemaVersion: 4 },
+    data: {
+      version: "0.1.0",
+      dataDir: "/d",
+      defaultDataDir: "/d",
+      schemaVersion: 4,
+      updatesByPackageManager: false,
+    },
   });
   vi.mocked(commands.runtimeStatus).mockResolvedValue({
     status: "ok",

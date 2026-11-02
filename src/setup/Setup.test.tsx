@@ -101,7 +101,13 @@ beforeEach(() => {
   });
   vi.mocked(commands.appInfo).mockResolvedValue({
     status: "ok",
-    data: { version: "0.1.0", dataDir: "/data", defaultDataDir: "/data", schemaVersion: 2 },
+    data: {
+      version: "0.1.0",
+      dataDir: "/data",
+      defaultDataDir: "/data",
+      schemaVersion: 2,
+      updatesByPackageManager: false,
+    },
   });
   vi.mocked(commands.completeSetup).mockResolvedValue({ status: "ok", data: null });
   vi.mocked(commands.listInstalls).mockResolvedValue({ status: "ok", data: [] });

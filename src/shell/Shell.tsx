@@ -1,9 +1,12 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Compass, Info, LibraryBig, Settings, type LucideIcon } from "lucide-react";
 import icon from "../assets/icon.png";
 import { useTranslation } from "react-i18next";
+import { commands } from "../bindings";
 import { useIndexEvents } from "../discover/queries";
+import { unwrap } from "../ipc";
 import { JobsPanel } from "../jobs/JobsPanel";
 import { DropImport } from "../library/DropImport";
 import { EarlierBackupPrompt } from "../profile/EarlierBackup";
@@ -30,8 +33,12 @@ export function Shell() {
   const inSetup = useRouterState({ select: (s) => s.location.pathname === "/setup" });
   useJobEvents();
   useIndexEvents();
-  // Release builds look for a new version once per start.
-  const update = useAppUpdate({ enabled: import.meta.env.PROD });
+  // Release builds look for a new version once per start, unless a package
+  // manager brings the updates.
+  const info = useQuery({ queryKey: ["appInfo"], queryFn: () => unwrap(commands.appInfo()) });
+  const update = useAppUpdate({
+    enabled: import.meta.env.PROD && info.data?.updatesByPackageManager === false,
+  });
   const [updateLater, setUpdateLater] = useState(false);
   const [footer, setFooter] = useState<HTMLElement | null>(null);
   const main = useRef<HTMLElement>(null);

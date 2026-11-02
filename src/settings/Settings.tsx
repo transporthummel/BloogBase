@@ -137,9 +137,12 @@ function UpdateSection() {
   const { t } = useTranslation();
   const update = useAppUpdate({ enabled: false });
   const checkNow = useCheckForUpdate();
+  const info = useQuery({ queryKey: ["appInfo"], queryFn: () => unwrap(commands.appInfo()) });
   return (
     <Group title={t("updates.title")}>
-      {update.data ? (
+      {info.data?.updatesByPackageManager ? (
+        <p className="text-sm">{t("updates.byPackageManager")}</p>
+      ) : update.data ? (
         <UpdateCard update={update.data} />
       ) : (
         <>

@@ -739,7 +739,8 @@
     "whilePlaying": "Close the running game first; BloogBase restarts to finish the update.",
     "check": "Check for updates",
     "upToDate": "You have the newest version.",
-    "checkFailed": "Couldn't check for updates: {{message}}"
+    "checkFailed": "Couldn't check for updates: {{message}}",
+    "byPackageManager": "Your package manager keeps BloogBase up to date."
   },
   "news": {
     "title": "What's new",

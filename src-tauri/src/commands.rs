@@ -49,6 +49,18 @@ pub struct AppInfo {
     pub data_dir: String,
     pub default_data_dir: String,
     pub schema_version: u32,
+    /// A package manager installed BloogBase and brings its updates (the
+    /// AUR package), so the app neither looks for nor installs any.
+    pub updates_by_package_manager: bool,
+}
+
+/// Where a Linux package that brings BloogBase's updates itself leaves a
+/// file. The updater would otherwise install the `.deb` with `dpkg` or
+/// overwrite a file the package manager owns.
+const PACKAGE_MANAGER_MARKER: &str = "/usr/share/bloogbase/package-manager";
+
+fn updates_by_package_manager() -> bool {
+    cfg!(target_os = "linux") && Path::new(PACKAGE_MANAGER_MARKER).is_file()
 }
 
 #[tauri::command]
@@ -64,6 +76,7 @@ pub fn app_info(
         data_dir: paths.root.display().to_string(),
         default_data_dir: location.default_root.display().to_string(),
         schema_version: db.schema_version()?,
+        updates_by_package_manager: updates_by_package_manager(),
     })
 }
 
