@@ -1,0 +1,33 @@
+id: foray-in-the-forest
+name: "Foray in the Forest"
+game: keen4
+authors: ["Nisaba", "K1n9_Duk3"]
+authorLinks:
+  "Nisaba": https://keenwiki.shikadi.net/wiki/User:Nisaba
+  "K1n9_Duk3": https://keenwiki.shikadi.net/wiki/User:K1n9_Duk3
+version: "2.0a"
+released: 2023-12-25
+updated: 2025-04-30
+added: 2026-11-02
+type: episode
+description: "Back home as Billy Blaze, Keen finds his plush hero friends kidnapped and follows a cryptic note to a colourful forest planet. A source mod built over 14 years, with new graphics, music and enemies; the choice between classic Keen and Xky's Keen graphics is made in its menu."
+translations:
+  de:
+    description: "Wieder zu Hause als Billy Blaze, findet Keen seine Plüsch-Heldenfreunde entführt und folgt einer rätselhaften Nachricht auf einen bunten Waldplaneten. Eine Source-Mod aus 14 Jahren Arbeit mit neuen Grafiken, neuer Musik und neuen Gegnern; im Menü wählt man zwischen klassischer Keen-Grafik und der von Xky."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Foray_in_the_Forest
+  pckf: https://pckf.com/viewtopic.php?t=16987
+downloads:
+  - version: "2.0a"
+    url: https://files.shikadi.net/keenwiki/mods/SourceCode/m.nisaba_k1n9_duk3.foray_in_the_forest_v2.0a.sc.2025-04-30.zip
+    sha256: f3b22297d1723a27f357e0e27dbf7de4cff851723aaf42ae94a88ac634dc9649
+    size: 5181575
+# A source mod: FITF.EXE is its own menu, which starts FITF-C.EXE (classic
+# Keen) or FITF-X.EXE (Xky's Keen), and the game data is all in its own
+# *.CKS files. It needs nothing from Keen 4 and plays on any copy; PLAY.BAT
+# only adds `cycles max` and the `adlib` argument.
+recipe:
+  type: program
+  program: FITF.EXE
+  args: [adlib]
+featured: true
