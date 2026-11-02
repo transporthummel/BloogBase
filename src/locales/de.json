@@ -544,6 +544,7 @@
     "empty": "Noch keine Spielstände. Speichere im Spiel, dann erscheinen sie hier.",
     "locked": "Das Spiel läuft. Beende es, um Spielstände zu ändern oder eine Sicherung wiederherzustellen.",
     "slot": "Platz {{slot}}",
+    "slotFile": "Platz {{slot}} ({{file}})",
     "unreadable": "Die Details dieses Spielstands ließen sich nicht lesen.",
     "score": "Punkte {{score}}",
     "lives_one": "{{count}} Leben",

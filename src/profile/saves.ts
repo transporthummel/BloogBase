@@ -28,8 +28,20 @@ export function saveSummary(t: TFunction, language: string, save: SaveFile): str
   return parts.join(" · ");
 }
 
-export function saveTitle(t: TFunction, save: SaveFile): string {
-  const slot = save.slot === null ? save.file : t("saves.slot", { slot: save.slot });
+/**
+ * "Slot 1 · pabba". Where another save among `others` has the same slot
+ * (a mod saving under two names, like Foray in the Forest's .CKS and .CKC
+ * builds), the file name tells them apart: "Slot 1 (SAVEGAM0.CKS)".
+ */
+export function saveTitle(t: TFunction, save: SaveFile, others: SaveFile[] = []): string {
+  const shared =
+    save.slot !== null && others.some((o) => o.slot === save.slot && o.file !== save.file);
+  const slot =
+    save.slot === null
+      ? save.file
+      : shared
+        ? t("saves.slotFile", { slot: save.slot, file: save.file })
+        : t("saves.slot", { slot: save.slot });
   const name = save.details?.name;
   return name ? `${slot} · ${name}` : slot;
 }

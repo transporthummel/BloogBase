@@ -894,6 +894,22 @@ test("lists saves with their details and backups", async () => {
   expect(screen.getByText(/1 save \+ settings and high scores/)).toBeInTheDocument();
 });
 
+test("saves sharing a slot show their file names", async () => {
+  // As Foray in the Forest: its two builds save as .CKS and .CKC.
+  vi.mocked(commands.listSaves).mockResolvedValue(
+    ok([
+      save("SAVEGAM0.CKC", 1, null),
+      save("SAVEGAM0.CKS", 1, "pabba"),
+      save("SAVEGAM1.CKS", 2, null),
+    ]),
+  );
+  renderDetail();
+  expect(await screen.findByText("Slot 1 (SAVEGAM0.CKS) · pabba")).toBeInTheDocument();
+  expect(screen.getByText("Slot 1 (SAVEGAM0.CKC)")).toBeInTheDocument();
+  expect(screen.getByText("Slot 2")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Delete Slot 1 (SAVEGAM0.CKC)" })).toBeInTheDocument();
+});
+
 test("deleting a save asks first and can be undone", async () => {
   vi.mocked(commands.deleteSave).mockResolvedValue(ok(12));
   vi.mocked(commands.restoreBackup).mockResolvedValue(ok(null));

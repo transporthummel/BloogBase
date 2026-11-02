@@ -15,6 +15,7 @@
 - The DOSBox settings editor loads only when it is first opened, which makes the app script loaded at startup about a third smaller.
 - When a package manager installed BloogBase (the AUR package), the app leaves updates to it instead of offering its own.
 - The About page links the BloogBase website.
+- Saves that share a slot show their file names, so a mod's two kinds of saves (Foray in the Forest's `.CKS` and `.CKC`) can be told apart.
 - Source mods that bring all their own files and nothing of the game's, like Foray in the Forest, install from the mod list or a KeenWiki page instead of ending with "No Commander Keen mod found there".
 
 ### Bug Fixes

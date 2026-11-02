@@ -44,7 +44,9 @@ that came with the mod writes such a marker, as DOSBox would.
 
 Save files are found by the game's patterns in the catalog (`SAVED?.CK1`,
 `SAVEGAM?.CK4`, `SAVEGM?.KDR`, …), in the drive root only. The `?` digit is the slot: Keen
-1–3 show it as it is, the others number slots from 1 for file 0.
+1–3 show it as it is, the others number slots from 1 for file 0. Where two
+saves share a slot (a mod saving under two names), the list shows their file
+names too: "Slot 1 (SAVEGAM0.CKS)".
 
 A mod may give these files other names. Its patch writes them over the
 ones in the executable, as it does for its data files

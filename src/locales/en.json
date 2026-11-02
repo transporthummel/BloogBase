@@ -544,6 +544,7 @@
     "empty": "No saved games yet. Save in the game and they show up here.",
     "locked": "The game is running. Close it to change saves or restore a backup.",
     "slot": "Slot {{slot}}",
+    "slotFile": "Slot {{slot}} ({{file}})",
     "unreadable": "Couldn’t read the details of this save.",
     "score": "Score {{score}}",
     "lives_one": "{{count}} life",

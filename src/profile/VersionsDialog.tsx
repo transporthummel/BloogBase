@@ -16,11 +16,14 @@ import { saveSummary, saveTitle } from "./saves";
 export function VersionsDialog({
   profileId,
   save,
+  others,
   onClose,
   onRestored,
 }: {
   profileId: string;
   save: SaveFile;
+  /** The profile's saves, which may share its slot. */
+  others: SaveFile[];
   onClose: () => void;
   onRestored: () => void;
 }) {
@@ -36,7 +39,10 @@ export function VersionsDialog({
   });
 
   return (
-    <Dialog title={t("saves.versionsNamed", { name: saveTitle(t, save) })} onClose={onClose}>
+    <Dialog
+      title={t("saves.versionsNamed", { name: saveTitle(t, save, others) })}
+      onClose={onClose}
+    >
       <p className="text-sm text-muted">{t("saves.versionsHint")}</p>
       {versions.error && <Notice tone="error">{errorMessage(t, versions.error)}</Notice>}
       {restore.error && <Notice tone="error">{errorMessage(t, restore.error)}</Notice>}
@@ -50,7 +56,7 @@ export function VersionsDialog({
               className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3"
             >
               <div className="grid min-w-0 flex-1 gap-0.5">
-                <h3 className="text-sm font-semibold">{saveTitle(t, v.save)}</h3>
+                <h3 className="text-sm font-semibold">{saveTitle(t, v.save, others)}</h3>
                 <p className="text-xs text-muted">{saveSummary(t, i18n.language, v.save)}</p>
                 <p className="text-xs text-muted">{t("saves.versionFrom", { date })}</p>
               </div>

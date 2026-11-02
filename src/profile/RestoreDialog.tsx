@@ -64,7 +64,7 @@ export function RestoreDialog({
           return (
             <li key={s.file} className="grid gap-2 rounded-lg border border-border p-3">
               <div className="grid gap-0.5">
-                <h3 className="text-sm font-semibold">{saveTitle(t, s)}</h3>
+                <h3 className="text-sm font-semibold">{saveTitle(t, s, inBackup.data)}</h3>
                 <p className="text-xs text-muted">{saveSummary(t, i18n.language, s)}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -94,7 +94,7 @@ export function RestoreDialog({
               </div>
               {replaced && (
                 <p className="text-xs text-muted">
-                  {t("backups.replaces", { name: saveTitle(t, replaced) })}
+                  {t("backups.replaces", { name: saveTitle(t, replaced, current) })}
                 </p>
               )}
             </li>

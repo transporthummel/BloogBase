@@ -206,7 +206,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
             <li key={s.file}>
               <Card className="flex flex-wrap items-center gap-3 p-3">
                 <div className="grid min-w-0 flex-1 gap-0.5">
-                  <h3 className="text-sm font-semibold">{saveTitle(t, s)}</h3>
+                  <h3 className="text-sm font-semibold">{saveTitle(t, s, saves.data)}</h3>
                   <p className="text-xs text-muted">{saveSummary(t, i18n.language, s)}</p>
                   {s.modifiedAt !== null && (
                     <p className="text-xs text-muted">
@@ -222,7 +222,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
                       variant="ghost"
                       disabled={locked}
                       onClick={() => setVersionsOf(s)}
-                      aria-label={t("saves.versionsNamed", { name: saveTitle(t, s) })}
+                      aria-label={t("saves.versionsNamed", { name: saveTitle(t, s, saves.data) })}
                     >
                       <History className="size-4" aria-hidden />
                       {t("saves.versions", { count: s.versions })}
@@ -233,7 +233,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
                     className="px-2"
                     disabled={locked || backup.isPending}
                     onClick={() => backup.mutate(s.file)}
-                    aria-label={t("saves.backupNamed", { name: saveTitle(t, s) })}
+                    aria-label={t("saves.backupNamed", { name: saveTitle(t, s, saves.data) })}
                     title={t("saves.backup")}
                   >
                     <Archive className="size-4" aria-hidden />
@@ -243,7 +243,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
                     className="px-2"
                     disabled={locked}
                     onClick={() => setDeleting(s)}
-                    aria-label={t("saves.deleteNamed", { name: saveTitle(t, s) })}
+                    aria-label={t("saves.deleteNamed", { name: saveTitle(t, s, saves.data) })}
                     title={t("saves.delete")}
                   >
                     <Trash2 className="size-4" aria-hidden />
@@ -306,6 +306,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
         <VersionsDialog
           profileId={profile.id}
           save={versionsOf}
+          others={saves.data ?? []}
           onClose={() => setVersionsOf(null)}
           onRestored={() => {
             setVersionsOf(null);
@@ -316,7 +317,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
       )}
       {deleting && (
         <ConfirmDialog
-          title={t("saves.deleteTitle", { name: saveTitle(t, deleting) })}
+          title={t("saves.deleteTitle", { name: saveTitle(t, deleting, saves.data) })}
           confirm={t("saves.delete")}
           busy={deleteSave.isPending}
           onConfirm={() => deleteSave.mutate(deleting.file)}
