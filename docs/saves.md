@@ -58,6 +58,14 @@ state files (save list, backups, restores, the launcher clean-up) uses
 these. The answer is kept while the files stay the same; unpacked
 executables are kept by file, as many profiles share one.
 
+A source mod's own executables may open them under another extension:
+Foray in the Forest's `FITF-X.EXE` saves as `SAVEGAMx.CKS` and keeps its
+settings in `CONFIG.CKS`, its `FITF-C.EXE` saves as `.CKC`. Where a program
+in the mod's root names a pattern's stem, the `?` character(s) and a dot
+with another extension than the game's, that pattern is added
+(`saves::other_extensions`). These saves carry the extension as signature
+and a layout of their own, so they're listed without details.
+
 `keen-saves` reads what a save says about itself. Saves come from any game
 version or mod, so every read is bounds-checked; an unexpected file is an
 error, never a panic, and the save is listed without details.

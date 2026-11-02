@@ -142,7 +142,16 @@ pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Ga
     }
     let texts = covers::patch_texts(game, &m.recipe, &files);
     let renamed = covers::renamer(game, &files, &texts);
-    let rename = |patterns: &[String]| rename_patterns(patterns, &renamed);
+    let images = own_programs(&m.files);
+    let rename = |patterns: &[String]| {
+        let mut out = rename_patterns(patterns, &renamed);
+        for p in images.iter().flat_map(|i| other_extensions(i, patterns)) {
+            if !out.contains(&p) {
+                out.push(p);
+            }
+        }
+        out
+    };
     let (saves, state_files) = (rename(&game.saves), rename(&game.state_files));
     let played = if saves == game.saves && state_files == game.state_files {
         game
@@ -160,6 +169,64 @@ pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Ga
         .unwrap_or_else(|e| e.into_inner())
         .insert(key, played);
     Ok(played)
+}
+
+/// The load images of the programs in a mod's own root: a source mod's
+/// executables open their files under names of their own.
+fn own_programs(dir: &Path) -> Vec<Vec<u8>> {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let mut paths: Vec<_> = entries
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.is_file() && p.extension().is_some_and(|e| e.eq_ignore_ascii_case("exe")))
+        .collect();
+    paths.sort();
+    paths
+        .iter()
+        .filter_map(|p| fs::read(p).ok())
+        .map(|exe| keen_graphics::load_image(&exe).unwrap_or(exe))
+        .collect()
+}
+
+/// `patterns` with another extension, where a program names them so: Foray
+/// in the Forest's FITF-X.EXE saves as `SAVEGAMx.CKS` and keeps its settings
+/// in `CONFIG.CKS`, its FITF-C.EXE uses `.CKC`. The `?` matches any one
+/// character, as the game puts the slot there.
+fn other_extensions(image: &[u8], patterns: &[String]) -> Vec<String> {
+    let image = image.to_ascii_uppercase();
+    let in_name = |b: u8| b.is_ascii_alphanumeric() || b == b'_';
+    let mut out = Vec::new();
+    for pattern in patterns {
+        let Some((name, ext)) = pattern.rsplit_once('.') else {
+            continue;
+        };
+        let (stem, rest) = name.split_at(name.find('?').unwrap_or(name.len()));
+        if stem.is_empty() {
+            continue;
+        }
+        let stem = stem.to_ascii_uppercase();
+        let len = stem.len() + rest.len() + 4;
+        for at in 0..image.len().saturating_sub(len - 1) {
+            let found = &image[at..at + len];
+            let new_ext = &found[len - 3..];
+            if found.starts_with(stem.as_bytes())
+                && found[stem.len()..len - 4].iter().all(|&b| in_name(b))
+                && found[len - 4] == b'.'
+                && new_ext.iter().all(|&b| in_name(b))
+                && !image.get(at + len).is_some_and(|&b| in_name(b))
+                && !(at > 0 && in_name(image[at - 1]))
+                && !new_ext.eq_ignore_ascii_case(ext.as_bytes())
+            {
+                let new = format!("{stem}{rest}.{}", String::from_utf8_lossy(new_ext));
+                if !out.contains(&new) {
+                    out.push(new);
+                }
+            }
+        }
+    }
+    out
 }
 
 /// Each pattern under its new name, once: Version 1.21 Revision 2 names
@@ -441,6 +508,49 @@ pub(crate) mod tests {
         // Text that can't be a name leaves it.
         let text = names(&[("SAVED", "Saved games"), ("CK2", "CKQ ")]);
         assert_eq!(rename_pattern("SAVED?.CK2", text), "SAVED?.CKQ");
+    }
+
+    #[test]
+    fn a_source_mods_programs_name_their_saves() {
+        // As Foray in the Forest: two builds with extensions of their own.
+        let saves = ["SAVEGAM?.CK4".to_string()];
+        let state = ["CONFIG.CK4".to_string()];
+        let x = b"CHKPOINT.CKS\0EGAHEAD.CKS\0SAVEGAMx.CKS\0CONFIG.CKS\0";
+        assert_eq!(other_extensions(x, &saves), ["SAVEGAM?.CKS"]);
+        assert_eq!(other_extensions(x, &state), ["CONFIG.CKS"]);
+        // The game's own names, and longer names, don't count.
+        let k4 = b"SAVEGAMx.CK4\0MYCONFIG.CKS\0CONFIG.CKSX\0SAVEGAM.CKS\0";
+        assert!(other_extensions(k4, &saves).is_empty());
+        assert!(other_extensions(k4, &state).is_empty());
+
+        use crate::recipe::Recipe;
+        let tmp = tempfile::tempdir().unwrap();
+        let files = tmp.path().join("mod");
+        let exe = |image: &[u8]| [b"MZ".as_slice(), &[0; 6], &[2, 0], &[0; 0x16], image].concat();
+        write_folder(
+            &files,
+            &[
+                ("FITF.EXE", &exe(b"FITF-X.EXE\0FITF-C.EXE\0")),
+                ("FITF-X.EXE", &exe(x)),
+                ("FITF-C.EXE", &exe(b"SAVEGAMx.CKC\0CONFIG.CKS\0")),
+            ],
+        );
+        let layers = Layers {
+            lower: None,
+            upper: tmp.path().join("state"),
+            mod_layer: Some(profiles::ModLayer {
+                files: files.clone(),
+                base: None,
+                recipe: Recipe::Program {
+                    program: "FITF.EXE".into(),
+                    args: Vec::new(),
+                },
+            }),
+        };
+        let game = profile_game("keen4", &layers).unwrap();
+        assert_eq!(game.saves, ["SAVEGAM?.CK4", "SAVEGAM?.CKC", "SAVEGAM?.CKS"]);
+        assert_eq!(game.state_files, ["CONFIG.CK4", "CONFIG.CKS"]);
+        assert_eq!(slot(game, "SAVEGAM0.CKC"), Some(1));
     }
 
     #[test]
