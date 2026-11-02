@@ -735,7 +735,7 @@ mod tests {
             ],
         );
         library::import(&paths, &db, &src).unwrap();
-        firing::set_enabled(&db, true).unwrap();
+        assert!(firing::enabled(&db).unwrap(), "on by default");
 
         let mount = |id: &str| prepare(&paths, &db, id).unwrap().args[14].clone();
         // Keen 4 has no such patch: it still runs from the install.

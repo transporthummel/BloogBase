@@ -23,7 +23,7 @@ use crate::settings;
 const SETTING_KEY: &str = "games.one_button_firing";
 
 pub fn enabled(db: &Db) -> Result<bool> {
-    Ok(settings::get(db, SETTING_KEY)?.is_some_and(|v| v == "1"))
+    Ok(settings::get(db, SETTING_KEY)?.is_none_or(|v| v == "1"))
 }
 
 pub fn set_enabled(db: &Db, on: bool) -> Result<()> {

@@ -16,6 +16,7 @@
 - When a package manager installed BloogBase (the AUR package), the app leaves updates to it instead of offering its own.
 - The About page links the BloogBase website.
 - Saves of Foray in the Forest show their details (name, score, lives, shots, levels done, difficulty including Expert).
+- One-button firing in Keen 1–3 is on unless the player has switched it off on the settings page.
 - Games start in fullscreen unless the player has switched it off on the settings page.
 - Saves that share a slot show their file names, so a mod's two kinds of saves (Foray in the Forest's `.CKS` and `.CKC`) can be told apart.
 - Source mods that bring all their own files and nothing of the game's, like Foray in the Forest, install from the mod list or a KeenWiki page instead of ending with "No Commander Keen mod found there".
