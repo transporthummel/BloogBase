@@ -33,8 +33,10 @@ const SOURCES = [
   "site",
   "docs/screenshots",
   "docs/logo.png",
-  "src/assets/logo.jpg",
-  "src/assets/icon.png",
+  "docs/logo-light.png",
+  "src/assets/logo.svg",
+  "src/assets/logo-light.svg",
+  "src/assets/icon.svg",
   "src-tauri/icons/icon.png",
   "index/mods",
 ];
@@ -262,7 +264,14 @@ function pressKit() {
   const files = [
     { name: "README.txt", data: Buffer.from(`${readme}\n`.replaceAll("\n", "\r\n"), "utf8") },
     { name: "logo.png", data: fs.readFileSync(path.join(root, "docs", "logo.png")) },
+    { name: "logo-light.png", data: fs.readFileSync(path.join(root, "docs", "logo-light.png")) },
+    { name: "logo.svg", data: fs.readFileSync(path.join(root, "src", "assets", "logo.svg")) },
+    {
+      name: "logo-light.svg",
+      data: fs.readFileSync(path.join(root, "src", "assets", "logo-light.svg")),
+    },
     { name: "icon.png", data: fs.readFileSync(path.join(root, "src-tauri", "icons", "icon.png")) },
+    { name: "icon.svg", data: fs.readFileSync(path.join(root, "src", "assets", "icon.svg")) },
   ];
   // The macOS warnings are help for the README, not pictures of BloogBase.
   const shots = fs
@@ -285,10 +294,11 @@ fs.mkdirSync(path.join(out, "img"), { recursive: true });
 for (const file of fs.readdirSync(shotsDir).filter((f) => f.endsWith(".png"))) {
   fs.copyFileSync(path.join(shotsDir, file), path.join(out, "img", file));
 }
-fs.copyFileSync(path.join(root, "src", "assets", "logo.jpg"), path.join(out, "img", "logo.jpg"));
-fs.copyFileSync(path.join(root, "src", "assets", "icon.png"), path.join(out, "img", "icon.png"));
+for (const file of ["logo.svg", "logo-light.svg", "icon.svg"])
+  fs.copyFileSync(path.join(root, "src", "assets", file), path.join(out, "img", file));
 // Full size, for the press kit.
-fs.copyFileSync(path.join(root, "docs", "logo.png"), path.join(out, "img", "logo.png"));
+for (const file of ["logo.png", "logo-light.png"])
+  fs.copyFileSync(path.join(root, "docs", file), path.join(out, "img", file));
 fs.copyFileSync(
   path.join(root, "src-tauri", "icons", "icon.png"),
   path.join(out, "img", "icon-512.png"),

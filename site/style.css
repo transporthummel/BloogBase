@@ -394,7 +394,7 @@ h3 {
   font-size: 0.9rem;
 }
 
-/* Hero: the logo melts into the sky, the library rises below it. */
+/* Hero: the logo in the sky, the library rises below it. */
 .hero {
   display: grid;
   justify-items: center;
@@ -408,14 +408,9 @@ h3 {
 }
 
 .hero-logo {
-  width: min(40rem, 100%);
-  /* The edges fade into the sky; two small ovals keep both ends of the name
-     (the logo's lower corners) whole. */
-  mask-image:
-    radial-gradient(closest-side, #000 70%, transparent 100%),
-    radial-gradient(10.4% 25.9% at 22.4% 69.4%, #000 80%, transparent 100%),
-    radial-gradient(10.4% 25.9% at 81.8% 69.4%, #000 80%, transparent 100%);
-  margin-bottom: 0.5rem;
+  width: min(34rem, 100%);
+  height: auto;
+  margin-bottom: 1.5rem;
 }
 
 .hero h1 {
@@ -1311,10 +1306,7 @@ html:not(.js) .walker,
   aspect-ratio: 16 / 10;
 }
 
-.picture-logo .frame img {
-  object-position: center;
-}
-
+.picture-logo .frame,
 .picture-icon .frame {
   display: grid;
   place-items: center;
@@ -1325,6 +1317,17 @@ html:not(.js) .walker,
   width: auto;
   height: 62%;
   object-fit: contain;
+}
+
+.picture-logo .frame img {
+  width: 82%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* The logo for light backgrounds on the app's Vintage Beige. */
+.picture-logo-light .frame {
+  background: #efe9da;
 }
 
 .picture figcaption {

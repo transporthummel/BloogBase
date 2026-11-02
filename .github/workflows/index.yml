@@ -14,9 +14,11 @@ on:
       - src-tauri/catalog/games.json
       - site/**
       - docs/screenshots/**
-      - src/assets/logo.jpg
-      - src/assets/icon.png
+      - src/assets/logo.svg
+      - src/assets/logo-light.svg
+      - src/assets/icon.svg
       - docs/logo.png
+      - docs/logo-light.png
       - src-tauri/icons/icon.png
       - .github/workflows/index.yml
   pull_request:
@@ -25,9 +27,11 @@ on:
       - src-tauri/catalog/games.json
       - site/**
       - docs/screenshots/**
-      - src/assets/logo.jpg
-      - src/assets/icon.png
+      - src/assets/logo.svg
+      - src/assets/logo-light.svg
+      - src/assets/icon.svg
       - docs/logo.png
+      - docs/logo-light.png
       - src-tauri/icons/icon.png
       - .github/workflows/index.yml
   schedule:

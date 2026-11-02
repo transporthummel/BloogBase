@@ -1,4 +1,9 @@
-<p align="center"><img src="docs/logo.png" alt="BloogBase" width="640"></p>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo.png">
+    <img src="docs/logo-light.png" alt="BloogBase" width="640">
+  </picture>
+</p>
 
 <p align="center">
   <strong>A cozy home for Commander Keen.</strong><br>

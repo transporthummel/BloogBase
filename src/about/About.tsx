@@ -3,7 +3,6 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { Bug, ExternalLink, FileText } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import logo from "../assets/logo.jpg";
 import { commands } from "../bindings";
 import { unwrap } from "../ipc";
 import { useRuntimeStatus } from "../runtime/queries";
@@ -12,6 +11,7 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Dialog } from "../ui/Dialog";
 import { Loading } from "../ui/Loading";
+import { Logo } from "../ui/Logo";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
 import { ReportDialog } from "../ui/ReportDialog";
@@ -44,11 +44,9 @@ export function About() {
       <PageHeader title={t("about.title")} />
       <div className="grid max-w-3xl gap-6">
         <Card>
-          <img
-            src={logo}
-            alt="BloogBase"
-            className="aspect-[16/9] w-full object-cover [image-rendering:pixelated]"
-          />
+          <div className="grid place-items-center border-b border-border px-8 py-10">
+            <Logo className="w-full max-w-md" />
+          </div>
           <div className="flex items-start gap-4 p-5">
             <div className="grid flex-1 gap-2">
               <p>{t("about.tagline")}</p>

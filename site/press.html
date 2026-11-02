@@ -11,7 +11,7 @@
     <link rel="alternate" hreflang="en" href="{{@urlEn}}" />
     <link rel="alternate" hreflang="de" href="{{@urlDe}}" />
     <link rel="alternate" hreflang="x-default" href="{{@urlEn}}" />
-    <link rel="icon" type="image/png" href="{{@root}}img/icon.png" />
+    <link rel="icon" type="image/svg+xml" href="{{@root}}img/icon.svg" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="{{press.meta.title}}" />
     <meta property="og:description" content="{{press.meta.description}}" />
@@ -50,7 +50,7 @@
 
     <header class="topbar">
       <a class="wordmark" href="{{@home}}">
-        <img src="{{@root}}img/icon.png" alt="" width="32" height="32" />
+        <img src="{{@root}}img/icon.svg" alt="" width="32" height="32" />
         <span>BloogBase</span>
       </a>
       <nav aria-label="{{press.nav.label}}">
@@ -86,10 +86,10 @@
         </div>
         <img
           class="hero-logo press-logo"
-          src="{{@root}}img/logo.jpg"
+          src="{{@root}}img/logo.svg"
           alt="BloogBase"
-          width="960"
-          height="540"
+          width="677"
+          height="175"
         />
       </section>
 
@@ -241,10 +241,10 @@
           <figure class="picture picture-logo">
             <a class="frame" href="{{@root}}img/logo.png" download="bloogbase-logo.png">
               <img
-                src="{{@root}}img/logo.jpg"
+                src="{{@root}}img/logo.svg"
                 alt="{{press.pictures.logoAlt}}"
-                width="960"
-                height="540"
+                width="677"
+                height="175"
                 loading="lazy"
               />
             </a>
@@ -252,6 +252,35 @@
               <span>{{press.pictures.logo}}</span>
               <a class="asset" href="{{@root}}img/logo.png" download="bloogbase-logo.png"
                 ><code>{{png:logo.png}}</code></a
+              >
+              <a class="asset" href="{{@root}}img/logo.svg" download="bloogbase-logo.svg"
+                ><code>SVG</code></a
+              >
+            </figcaption>
+          </figure>
+          <figure class="picture picture-logo picture-logo-light">
+            <a class="frame" href="{{@root}}img/logo-light.png" download="bloogbase-logo-light.png">
+              <img
+                src="{{@root}}img/logo-light.svg"
+                alt="{{press.pictures.logoLightAlt}}"
+                width="677"
+                height="175"
+                loading="lazy"
+              />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.logoLight}}</span>
+              <a
+                class="asset"
+                href="{{@root}}img/logo-light.png"
+                download="bloogbase-logo-light.png"
+                ><code>{{png:logo-light.png}}</code></a
+              >
+              <a
+                class="asset"
+                href="{{@root}}img/logo-light.svg"
+                download="bloogbase-logo-light.svg"
+                ><code>SVG</code></a
               >
             </figcaption>
           </figure>

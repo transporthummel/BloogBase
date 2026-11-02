@@ -2,6 +2,9 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource/press-start-2p/latin-400.css";
 
+/* `light:` styles apply in the light theme (Vintage Beige). */
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
 /*
  * Design tokens (PLAN.md §8.1). Dark is the default theme; `data-theme` on
  * <html> selects light. Accents come from the EGA 16-colour palette.

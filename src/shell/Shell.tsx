@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Compass, Info, LibraryBig, Settings, type LucideIcon } from "lucide-react";
-import icon from "../assets/icon.png";
+import icon from "../assets/icon.svg";
 import { useTranslation } from "react-i18next";
 import { commands } from "../bindings";
 import { useIndexEvents } from "../discover/queries";

@@ -19,6 +19,7 @@
 - One-button firing in Keen 1–3 is on unless the player has switched it off on the settings page.
 - Games start in fullscreen unless the player has switched it off on the settings page.
 - Saves that share a slot show their file names, so a mod's two kinds of saves (Foray in the Forest's `.CKS` and `.CKC`) can be told apart.
+- New logo and app icon (a floppy disk with a planet and a rocket) in the app, its window and taskbar icons, the installers, the README and the website with its press kit; game windows get a matching floppy with a DOS prompt, and the logo follows the theme.
 - Source mods that bring all their own files and nothing of the game's, like Foray in the Forest, install from the mod list or a KeenWiki page instead of ending with "No Commander Keen mod found there".
 
 ### Bug Fixes

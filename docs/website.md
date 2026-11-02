@@ -39,8 +39,10 @@ The project website lives in `site/` and is published to GitHub Pages at
 - `fonts/`: Inter and Press Start 2P (latin), with their OFL licences.
 - `build.mjs`: writes `site/dist/` (ignored): `index.html`, `de/index.html`,
   `press/index.html`, `de/press/index.html`, the screenshots, logo and icon
-  (also full size, `docs/logo.png` and the 512px app icon), fonts, styles,
-  scripts and `bloogbase-press-kit.zip` (logo, icon, every screenshot but the
+  (SVGs from `src/assets/`, also full size: `docs/logo.png` and
+  `docs/logo-light.png` and the 512px app icon), fonts, styles, scripts and
+  `bloogbase-press-kit.zip` (logo for dark and light backgrounds as PNG and
+  SVG, icon as PNG and SVG, every screenshot but the
   macOS help, by language, and a README from the `press.*` texts). Node only,
   no dependencies. `{{@languageScript}}`, inline in each page's head, picks
   the language: a click on a language link (`a[hreflang]`) remembers it in
