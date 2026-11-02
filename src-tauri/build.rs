@@ -1,4 +1,8 @@
 fn main() {
+    // tauri-build embeds icons/icon.ico in the Windows binary but only asks
+    // to rerun when tauri.conf.json or the capabilities change, so a new icon
+    // would never reach an existing build.
+    println!("cargo:rerun-if-changed=icons");
     // tauri-build embeds the Common Controls v6 manifest only into the app
     // binary, but unit-test binaries need it too, otherwise they fail to start
     // on Windows with STATUS_ENTRYPOINT_NOT_FOUND (TaskDialogIndirect). So we
