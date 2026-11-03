@@ -20,8 +20,9 @@ them:
   the file names link straight to the release's files (keep the hints in
   step with the README).
 - `src/updates/changelog.json`: what players should hear about, in English and
-  German (`unreleased.en`, `unreleased.de`). The app shows it once after
-  updating ("What's new"); the update card before updating shows no notes.
+  German (`unreleased.en`, `unreleased.de`), one short line per change ("Search
+  field in the library."). The app shows it once after updating ("What's new");
+  the update card before updating shows no notes.
 
 ## Version numbers
 
