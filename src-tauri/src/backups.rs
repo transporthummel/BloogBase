@@ -244,7 +244,7 @@ pub fn record_older(db: &Db) -> Result<()> {
             "SELECT id, archive_path FROM save_backups b
              WHERE NOT EXISTS (SELECT 1 FROM backup_files f WHERE f.backup_id = b.id)",
         )?;
-        stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?
+        stmt.query_map([], |r| Ok((r.get(0)?, archive_at(db, r.get(1)?))))?
             .collect::<rusqlite::Result<_>>()?
     };
     for (id, archive) in todo {
@@ -332,7 +332,7 @@ pub fn create<'a>(
             params![
                 profile_id,
                 label,
-                archive.display().to_string(),
+                db.store(&archive),
                 created_at,
                 serde_json::to_string(&names).expect("strings serialize"),
                 auto,
@@ -392,8 +392,10 @@ fn prune(db: &Db, profile_id: &str, keep: u32) -> Result<()> {
             "SELECT id, archive_path FROM save_backups WHERE profile_id = ?1 AND auto = 1
              ORDER BY created_at DESC, id DESC LIMIT -1 OFFSET ?2",
         )?;
-        stmt.query_map(params![profile_id, keep], |r| Ok((r.get(0)?, r.get(1)?)))?
-            .collect::<rusqlite::Result<_>>()?
+        stmt.query_map(params![profile_id, keep], |r| {
+            Ok((r.get(0)?, archive_at(db, r.get(1)?)))
+        })?
+        .collect::<rusqlite::Result<_>>()?
     };
     for (id, archive) in old {
         remove(db, id, &archive)?;
@@ -445,7 +447,7 @@ fn remove_where(db: &Db, condition: &str, params: impl rusqlite::Params) -> Resu
         let mut stmt = conn.prepare(&format!(
             "SELECT id, archive_path FROM save_backups b WHERE {condition}"
         ))?;
-        stmt.query_map(params, |r| Ok((r.get(0)?, r.get(1)?)))?
+        stmt.query_map(params, |r| Ok((r.get(0)?, archive_at(db, r.get(1)?))))?
             .collect::<rusqlite::Result<_>>()?
     };
     for (id, archive) in &gone {
@@ -468,10 +470,15 @@ fn remove(db: &Db, id: u32, archive: &str) -> Result<()> {
 const SELECT: &str = "SELECT id, profile_id, label, created_at, files_json, auto, archive_path
                       FROM save_backups";
 
-fn from_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<(Backup, String)> {
+/// Where a backup's archive is, from its stored path.
+fn archive_at(db: &Db, stored: String) -> String {
+    db.resolve(&stored).display().to_string()
+}
+
+fn from_row(db: &Db, r: &rusqlite::Row<'_>) -> rusqlite::Result<(Backup, String)> {
     let label: Option<String> = r.get(2)?;
     let files: String = r.get(4)?;
-    let archive: String = r.get(6)?;
+    let archive = archive_at(db, r.get(6)?);
     let reason = label.as_deref().and_then(Reason::from_label);
     Ok((
         Backup {
@@ -516,7 +523,9 @@ fn game_of_profile(db: &Db, profile_id: &str) -> Result<&'static Game> {
 
 fn get_with_archive(db: &Db, id: u32) -> Result<(Backup, String)> {
     db.conn()
-        .query_row(&format!("{SELECT} WHERE id = ?1"), [id], from_row)
+        .query_row(&format!("{SELECT} WHERE id = ?1"), [id], |r| {
+            from_row(db, r)
+        })
         .optional()?
         .ok_or_else(|| Error::NotFound(format!("backup {id}")))
 }
@@ -562,7 +571,7 @@ pub fn earlier(db: &Db, profile_id: &str) -> Result<Option<EarlierBackup>> {
                 OR NOT EXISTS (SELECT 1 FROM profiles p WHERE p.id = b.profile_id)
              ORDER BY created_at DESC, id DESC"
         ))?;
-        stmt.query_map([profile_id], from_row)?
+        stmt.query_map([profile_id], |r| from_row(db, r))?
             .collect::<rusqlite::Result<_>>()?
     };
     let answered = settings::get(db, &offered_key(profile_id))?;
@@ -633,7 +642,7 @@ pub fn list(db: &Db, profile_id: &str) -> Result<Vec<Backup>> {
         "{SELECT} WHERE profile_id = ?1 ORDER BY created_at DESC, id DESC"
     ))?;
     let rows = stmt
-        .query_map([profile_id], from_row)?
+        .query_map([profile_id], |r| from_row(db, r))?
         .map(|r| r.map(|(b, _)| tally(game, b)))
         .collect::<rusqlite::Result<_>>()?;
     Ok(rows)
@@ -827,7 +836,7 @@ pub fn import(paths: &AppPaths, db: &Db, profile_id: &str, src: &Path) -> Result
             params![
                 profile_id,
                 label,
-                archive.display().to_string(),
+                db.store(&archive),
                 created_at,
                 serde_json::to_string(&names).expect("strings serialize"),
                 content_hash(&files)

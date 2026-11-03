@@ -619,7 +619,7 @@ fn store(
                 serde_json::to_string(&m.authors).expect("strings serialize"),
                 m.version,
                 serde_json::to_string(&m.recipe).expect("recipes serialize"),
-                mod_dir.display().to_string(),
+                db.store(&mod_dir),
                 m.source.as_str(),
                 s.source_url,
                 archive_sha256(source)?,
@@ -642,7 +642,7 @@ fn store(
             params![
                 m.id,
                 target.map(|t| &t.id),
-                profile_dir.join("state").display().to_string(),
+                db.store(&profile_dir.join("state")),
                 m.added_at
             ],
         )?;

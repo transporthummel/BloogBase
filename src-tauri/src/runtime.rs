@@ -123,7 +123,7 @@ fn list(db: &Db) -> Result<Vec<Runtime>> {
         Ok(Runtime {
             id: r.get(0)?,
             version: r.get(1)?,
-            path: r.get(2)?,
+            path: db.resolve(&r.get::<_, String>(2)?).display().to_string(),
             managed: r.get(3)?,
         })
     })?;
@@ -150,7 +150,13 @@ fn register(db: &Db, rt: &Runtime) -> Result<()> {
     db.conn().execute(
         "INSERT OR REPLACE INTO runtimes (id, kind, version, path, managed)
          VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![rt.id, KIND, rt.version, rt.path, rt.managed],
+        params![
+            rt.id,
+            KIND,
+            rt.version,
+            db.store(Path::new(&rt.path)),
+            rt.managed
+        ],
     )?;
     Ok(())
 }

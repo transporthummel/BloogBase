@@ -192,6 +192,7 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
             [mod_id],
             |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
         )?;
+    let path = db.resolve(&path);
     let Mod {
         name,
         game_id,

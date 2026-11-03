@@ -251,18 +251,14 @@ fn import_one(
                 install.version_id,
                 install.label,
                 install.source.as_str(),
-                install.path,
+                db.store(&install_dir),
                 install.added_at,
                 origin
             ],
         )?;
         tx.execute(
             "INSERT INTO profiles (id, install_id, state_path, created_at) VALUES (?1, ?1, ?2, ?3)",
-            params![
-                id,
-                profile_dir.join("state").display().to_string(),
-                install.added_at
-            ],
+            params![id, db.store(&profile_dir.join("state")), install.added_at],
         )?;
         tx.commit()?;
         Ok(install)
@@ -429,7 +425,7 @@ pub fn list(db: &Db) -> Result<Vec<Install>> {
             label: r.get(3)?,
             // The CHECK constraint guarantees a known value.
             source: InstallSource::parse(&source).expect("valid install source"),
-            path: r.get(5)?,
+            path: db.resolve(&r.get::<_, String>(5)?).display().to_string(),
             added_at: r.get(6)?,
         })
     })?;

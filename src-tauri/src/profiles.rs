@@ -114,12 +114,13 @@ struct ProfileRow {
     layers: Layers,
 }
 
-fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
-    let install_path: Option<String> = r.get(10)?;
+fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
+    let at = |stored: Option<String>| stored.map(|s| db.resolve(&s));
+    let install_path = at(r.get(10)?);
     let game_id: String = r.get(2)?;
     let requires: Option<String> = r.get(14)?;
     let extends: Option<String> = r.get(16)?;
-    let base_path: Option<String> = r.get(17)?;
+    let base_path = at(r.get(17)?);
     let missing_game = match (&install_path, catalog::game(&game_id)) {
         // Removing a mod removes the ones played over it; just in case.
         _ if extends.is_some() && base_path.is_none() => extends,
@@ -130,8 +131,8 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
         )),
         (None, None) => Some(game_id.clone()),
     };
-    let state_path: String = r.get(9)?;
-    let mod_path: Option<String> = r.get(11)?;
+    let state_path = db.resolve(&r.get::<_, String>(9)?);
+    let mod_path = at(r.get(11)?);
     let recipe: Option<String> = r.get(12)?;
     let version_id: Option<String> = r.get(3)?;
     let by_version: VersionRecipes = r
@@ -142,8 +143,8 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
         // Written by `mods::install`; an unreadable one falls back to the episode.
         let recipe = serde_json::from_str(&recipe).unwrap_or(Recipe::Episode);
         ModLayer {
-            files: Path::new(&path).join("files"),
-            base: base_path.map(|b| Path::new(&b).join("files")),
+            files: path.join("files"),
+            base: base_path.map(|b| b.join("files")),
             recipe: recipe::for_version(&recipe, &by_version, &game_id, version_id.as_deref())
                 .clone(),
         }
@@ -169,8 +170,8 @@ fn from_row(r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
                 .map(|(name, profile_id)| PlayedOver { profile_id, name }),
         },
         layers: Layers {
-            lower: install_path.map(|p| Path::new(&p).join("base")),
-            upper: PathBuf::from(state_path),
+            lower: install_path.map(|p| p.join("base")),
+            upper: state_path,
             mod_layer,
         },
     })
@@ -184,7 +185,7 @@ pub fn list(db: &Db, is_running: impl Fn(&str) -> bool) -> Result<Vec<Profile>> 
         let mut stmt = conn.prepare(&format!(
             "{SELECT} ORDER BY s.last_played_at IS NULL, s.last_played_at DESC, p.created_at, p.id"
         ))?;
-        stmt.query_map([], from_row)?
+        stmt.query_map([], |r| from_row(db, r))?
             .collect::<rusqlite::Result<_>>()?
     };
     rows.into_iter()
@@ -205,7 +206,9 @@ pub fn list(db: &Db, is_running: impl Fn(&str) -> bool) -> Result<Vec<Profile>> 
 pub fn get(db: &Db, id: &str) -> Result<(Profile, Layers)> {
     let row = db
         .conn()
-        .query_row(&format!("{SELECT} WHERE p.id = ?1"), [id], from_row)
+        .query_row(&format!("{SELECT} WHERE p.id = ?1"), [id], |r| {
+            from_row(db, r)
+        })
         .optional()?
         .ok_or_else(|| Error::NotFound(format!("profile {id}")))?;
     Ok((row.profile, row.layers))
