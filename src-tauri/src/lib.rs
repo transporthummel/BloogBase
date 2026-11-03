@@ -211,9 +211,10 @@ pub fn run() {
                 default_root: app.path().app_data_dir()?,
             };
             // `BLOOGBASE_DATA_DIR` keeps tests away from the real data.
-            let root = match std::env::var_os("BLOOGBASE_DATA_DIR") {
-                Some(dir) if !dir.is_empty() => std::path::PathBuf::from(dir),
-                _ => paths::resolve_root(&location.config_dir, location.default_root.clone()),
+            let test_dir = std::env::var_os("BLOOGBASE_DATA_DIR").filter(|d| !d.is_empty());
+            let root = match &test_dir {
+                Some(dir) => std::path::PathBuf::from(dir),
+                None => paths::resolve_root(&location.config_dir, location.default_root.clone()),
             };
             let mut paths = AppPaths::new(root);
             if let Err(err) = paths.ensure() {
@@ -231,6 +232,20 @@ pub fn run() {
                 app.package_info().version,
                 paths.root.display()
             );
+
+            // The default data folder the first start made, once the wizard
+            // has chosen another.
+            if test_dir.is_none() && paths.root != location.default_root {
+                let default = AppPaths::new(location.default_root.clone());
+                match default.remove_if_unused() {
+                    Ok(true) => tracing::info!(
+                        "removed the unused default data folder {}",
+                        default.root.display()
+                    ),
+                    Ok(false) => {}
+                    Err(e) => tracing::warn!("could not tidy up the default data folder: {e}"),
+                }
+            }
 
             let db = Db::open(&paths.database)?;
             tracing::info!("database ready, schema version {}", db.schema_version()?);

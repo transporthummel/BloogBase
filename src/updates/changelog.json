@@ -15,7 +15,8 @@
       "In Keen 1–3, Space shoots, no Ctrl+Alt needed.",
       "New logo and app icon.",
       "Search field in the library.",
-      "A moved or restored BloogBase folder is found again."
+      "A moved or restored BloogBase folder is found again.",
+      "An unused default data folder is cleaned up once setup picks another one."
     ],
     "de": [
       "Spiele öffnen den Ordner mit ihren Dateien.",
@@ -32,7 +33,8 @@
       "In Keen 1–3 schießt die Leertaste, ohne Strg+Alt.",
       "Neues Logo und App-Icon.",
       "Suchfeld in der Bibliothek.",
-      "Ein verschobener oder wiederhergestellter BloogBase-Ordner wird wieder gefunden."
+      "Ein verschobener oder wiederhergestellter BloogBase-Ordner wird wieder gefunden.",
+      "Ein ungenutzter Standard-Datenordner wird aufgeräumt, wenn die Einrichtung einen anderen wählt."
     ]
   },
   "releases": [

@@ -24,6 +24,7 @@
 - The start screen shows the website's starry sky, with two shooting stars.
 - Source mods that bring all their own files and nothing of the game's, like Foray in the Forest, install from the mod list or a KeenWiki page instead of ending with "No Commander Keen mod found there".
 - "What's new" lists new mods and mod updates before the release notes, and its Close button stays in view while the dialog scrolls.
+- After the setup wizard chose another data folder, the next start removes the default one the first start made, as long as nothing of the player's is in it; on Windows and macOS the app's own settings stay there.
 
 ### Bug Fixes
 

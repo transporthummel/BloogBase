@@ -162,6 +162,48 @@ impl AppPaths {
         }
         Ok(())
     }
+
+    /// Removes this data folder if nothing of the player's is in it: the
+    /// default one the first start made before the wizard chose another.
+    /// Only what BloogBase puts there goes (as in `windows/hooks.nsh`); the
+    /// folder itself only if that leaves it empty, as it also holds the
+    /// pointer to the chosen one on Windows and macOS. Returns whether it
+    /// removed anything.
+    pub fn remove_if_unused(&self) -> Result<bool> {
+        if self.database.exists() {
+            if crate::db::holds_anything(&self.database)? {
+                return Ok(false);
+            }
+        } else if self.dirs()[1..].iter().any(|dir| !is_empty_dir(dir)) {
+            return Ok(false);
+        }
+        // The database first: on Windows that fails while another BloogBase
+        // still has it open, before anything else is gone.
+        let mut removed = false;
+        for ext in ["", "-wal", "-shm"] {
+            let file = self.root.join(format!("bloogbase.db{ext}"));
+            removed |= gone(std::fs::remove_file(file))?;
+        }
+        for dir in &self.dirs()[1..] {
+            removed |= gone(std::fs::remove_dir_all(dir))?;
+        }
+        // Not empty when it holds the app's own settings.
+        let _ = std::fs::remove_dir(&self.root);
+        Ok(removed)
+    }
+}
+
+fn is_empty_dir(dir: &Path) -> bool {
+    std::fs::read_dir(dir).map_or(true, |mut entries| entries.next().is_none())
+}
+
+/// Whether a removal removed something; a missing one is no error.
+fn gone(result: std::io::Result<()>) -> Result<bool> {
+    match result {
+        Ok(()) => Ok(true),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(e) => Err(e.into()),
+    }
 }
 
 #[cfg(test)]
@@ -217,5 +259,46 @@ mod tests {
             root_in(Path::new("relative")),
             Err(Error::InvalidLocation(_))
         ));
+    }
+
+    #[test]
+    fn removes_a_data_folder_only_while_nothing_of_the_players_is_in_it() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(tmp.path().join("default"));
+        paths.ensure().unwrap();
+        drop(crate::db::Db::open(&paths.database).unwrap());
+        std::fs::write(paths.cache.join("index.json"), b"{}").unwrap();
+        // The app's own settings, next to the data on Windows and macOS.
+        std::fs::write(paths.root.join(LOCATION_FILE), b"D:/Keen").unwrap();
+        assert!(paths.remove_if_unused().unwrap());
+        assert!(!paths.database.exists() && !paths.cache.exists() && !paths.library.exists());
+        assert!(paths.root.join(LOCATION_FILE).is_file());
+        assert!(!paths.remove_if_unused().unwrap());
+
+        // Without the settings, the folder goes too.
+        let bare = AppPaths::new(tmp.path().join("bare"));
+        bare.ensure().unwrap();
+        assert!(bare.remove_if_unused().unwrap());
+        assert!(!bare.root.exists());
+
+        // A library stays, and so do files without a database to tell.
+        let used = AppPaths::new(tmp.path().join("used"));
+        used.ensure().unwrap();
+        let db = crate::db::Db::open(&used.database).unwrap();
+        db.conn()
+            .execute(
+                "INSERT INTO installs (id, game_id, label, source, path, added_at)
+                 VALUES ('keen4-1', 'keen4', 'Keen 4', 'folder', 'library/keen4-1', 0)",
+                [],
+            )
+            .unwrap();
+        drop(db);
+        assert!(!used.remove_if_unused().unwrap());
+        assert!(used.database.is_file() && used.library.is_dir());
+        let loose = AppPaths::new(tmp.path().join("loose"));
+        loose.ensure().unwrap();
+        std::fs::write(loose.mods.join("readme.txt"), b"").unwrap();
+        assert!(!loose.remove_if_unused().unwrap());
+        assert!(loose.mods.join("readme.txt").is_file());
     }
 }

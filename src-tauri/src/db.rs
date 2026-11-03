@@ -104,6 +104,26 @@ impl Db {
     }
 }
 
+/// Whether the database at `path` holds anything of the player's: games,
+/// mods, profiles or backups. Opened read-only, without migrating.
+pub fn holds_anything(path: &Path) -> Result<bool> {
+    let conn = Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+    let mut any = false;
+    for table in ["installs", "mods", "profiles", "save_backups"] {
+        let exists: bool = conn.query_row(
+            "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?1)",
+            [table],
+            |r| r.get(0),
+        )?;
+        if exists {
+            any |= conn.query_row(&format!("SELECT EXISTS (SELECT 1 FROM {table})"), [], |r| {
+                r.get::<_, bool>(0)
+            })?;
+        }
+    }
+    Ok(any)
+}
+
 /// Where each table keeps paths inside the data folder: the rows to look at
 /// (not a player's own DOSBox) and the path's parts from the data folder on,
 /// `None` for any name. A DOSBox's executable may lie further down.
