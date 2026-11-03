@@ -4,25 +4,25 @@
 
 ### Features
 
+- A Controls tab on every game and mod page shows the keys of its series as keycaps, following one-button firing, with the known cheat codes folded away; the first start of each series shows it before the game starts.
+- The library has a search field, as Discover has: it filters the cards by name, game and version.
 - The page of a game, shareware episode or demo can open the folder with its files, as a mod's page opens the mod folder.
 - Games, shareware episodes and demos show their own documents in a README tab, as mods do, the games' own documents included.
 - "Mod won't start?": when a mod's first start with a new setup (base game, mod files or recipe) ends with a message or within 30 seconds, BloogBase offers to report it as a GitHub issue, with the details it needs; the mod's More menu offers it anytime.
-- A Controls tab on every game and mod page shows the keys of its series as keycaps, following one-button firing, with the known cheat codes folded away; the first start of each series shows it before the game starts.
-- The library has a search field, as Discover has: it filters the cards by name, game and version.
 
 ### Improvements
 
-- A Content Security Policy keeps injected scripts from running, reaching the app's commands or loading anything from the internet; blocked sources are logged.
-- The DOSBox settings editor loads only when it is first opened, which makes the app script loaded at startup about a third smaller.
-- When a package manager installed BloogBase (the AUR package), the app leaves updates to it instead of offering its own.
-- The About page links the BloogBase website.
+- New logo and app icon (a floppy disk with a planet and a rocket) in the app, its window and taskbar icons, the installers, the README and the website with its press kit; game windows get a matching floppy with a DOS prompt, and the logo follows the theme.
+- The start screen shows the website's starry sky, with two shooting stars.
 - Saves of Foray in the Forest show their details (name, score, lives, shots, levels done, difficulty including Expert).
+- Source mods that bring all their own files and nothing of the game's, like Foray in the Forest, install from the mod list or a KeenWiki page instead of ending with "No Commander Keen mod found there".
 - One-button firing in Keen 1–3 is on unless the player has switched it off on the settings page.
 - Games start in fullscreen unless the player has switched it off on the settings page.
 - Saves that share a slot show their file names, so a mod's two kinds of saves (Foray in the Forest's `.CKS` and `.CKC`) can be told apart.
-- New logo and app icon (a floppy disk with a planet and a rocket) in the app, its window and taskbar icons, the installers, the README and the website with its press kit; game windows get a matching floppy with a DOS prompt, and the logo follows the theme.
-- The start screen shows the website's starry sky, with two shooting stars.
-- Source mods that bring all their own files and nothing of the game's, like Foray in the Forest, install from the mod list or a KeenWiki page instead of ending with "No Commander Keen mod found there".
+- The About page links the BloogBase website.
+- A Content Security Policy keeps injected scripts from running, reaching the app's commands or loading anything from the internet; blocked sources are logged.
+- The DOSBox settings editor loads only when it is first opened, which makes the app script loaded at startup about a third smaller.
+- When a package manager installed BloogBase (the AUR package), the app leaves updates to it instead of offering its own.
 - "What's new" lists new mods and mod updates before the release notes, and its Close button stays in view while the dialog scrolls.
 - After the setup wizard chose another data folder, the next start removes the default one the first start made, as long as nothing of the player's is in it; on Windows and macOS the app's own settings stay there.
 
