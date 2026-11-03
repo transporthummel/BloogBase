@@ -4,6 +4,16 @@
 
 ### Features
 
+### Improvements
+
+### Bug Fixes
+
+### Misc
+
+## 1.1.0 (2026-11-03)
+
+### Features
+
 - A Controls tab on every game and mod page shows the keys of its series as keycaps, following one-button firing, with the known cheat codes folded away; the first start of each series shows it before the game starts.
 - The library has a search field, as Discover has: it filters the cards by name, game and version.
 - The page of a game, shareware episode or demo can open the folder with its files, as a mod's page opens the mod folder.

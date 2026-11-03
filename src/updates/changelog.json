@@ -1,31 +1,36 @@
 {
   "unreleased": {
-    "en": [
-      "Games can open the folder with their files.",
-      "Games show their readmes in their own tab.",
-      "BloogBase offers to report an issue when a new mod fails to start.",
-      "New Controls tab with the keys and cheat codes, also shown on first start.",
-      "Added support for mods with own game, save and graphics files, like Foray in the Forest",
-      "BloogBase has a website, linked from the About page.",
-      "Games now start in fullscreen by default, switchable in Settings.",
-      "In Keen 1–3, Space shoots by default, no Ctrl+Alt needed.",
-      "New logo and app icon.",
-      "Added a search field to the library."
-    ],
-    "de": [
-      "Spiele öffnen den Ordner mit ihren Dateien.",
-      "Spiele zeigen ihre Liesmich-Dateien in einem eigenen Tab.",
-      "BloogBase bietet an, ein Problem zu melden, wenn eine neue Mod nicht startet.",
-      "Neuer Tab „Steuerung“ mit Tasten und Cheatcodes, auch beim ersten Start.",
-      "Support für Mods mit eigenen Spiel- und Grafikdateien, wie Foray in the Forest.",
-      "BloogBase hat eine Website, verlinkt unter „Über BloogBase“.",
-      "Spiele starten jetzt standardmäßig im Vollbild, abschaltbar in den Einstellungen.",
-      "In Keen 1–3 schießt standardmäßig die Leertaste, ohne Strg+Alt.",
-      "Neues Logo und App-Icon.",
-      "Suchfeld in der Bibliothek hinzugefügt."
-    ]
+    "en": [],
+    "de": []
   },
   "releases": [
+    {
+      "version": "1.1.0",
+      "en": [
+        "Games can open the folder with their files.",
+        "Games show their readmes in their own tab.",
+        "BloogBase offers to report an issue when a new mod fails to start.",
+        "New Controls tab with the keys and cheat codes, also shown on first start.",
+        "Added support for mods with own game, save and graphics files, like Foray in the Forest",
+        "BloogBase has a website, linked from the About page.",
+        "Games now start in fullscreen by default, switchable in Settings.",
+        "In Keen 1–3, Space shoots by default, no Ctrl+Alt needed.",
+        "New logo and app icon.",
+        "Added a search field to the library."
+      ],
+      "de": [
+        "Spiele öffnen den Ordner mit ihren Dateien.",
+        "Spiele zeigen ihre Liesmich-Dateien in einem eigenen Tab.",
+        "BloogBase bietet an, ein Problem zu melden, wenn eine neue Mod nicht startet.",
+        "Neuer Tab „Steuerung“ mit Tasten und Cheatcodes, auch beim ersten Start.",
+        "Support für Mods mit eigenen Spiel- und Grafikdateien, wie Foray in the Forest.",
+        "BloogBase hat eine Website, verlinkt unter „Über BloogBase“.",
+        "Spiele starten jetzt standardmäßig im Vollbild, abschaltbar in den Einstellungen.",
+        "In Keen 1–3 schießt standardmäßig die Leertaste, ohne Strg+Alt.",
+        "Neues Logo und App-Icon.",
+        "Suchfeld in der Bibliothek hinzugefügt."
+      ]
+    },
     {
       "version": "1.0.0",
       "en": ["The first release of BloogBase."],
