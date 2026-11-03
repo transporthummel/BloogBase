@@ -71,7 +71,8 @@
         "sidebarImage": "icons/installer/sidebar.bmp",
         "headerImage": "icons/installer/header.bmp",
         "languages": ["English", "German"],
-        "installerHooks": "windows/hooks.nsh"
+        "installerHooks": "windows/hooks.nsh",
+        "template": "windows/installer.nsi"
       }
     },
     "macOS": {

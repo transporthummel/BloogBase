@@ -6,6 +6,8 @@
 
 ### Improvements
 
+- The Windows installer updates an older BloogBase in place, as the in-app updater does, instead of offering to uninstall it first.
+
 ### Bug Fixes
 
 ### Misc

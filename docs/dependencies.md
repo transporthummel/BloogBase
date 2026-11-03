@@ -59,6 +59,13 @@ CodeMirror (DOSBox settings editor), Motion and the `@tauri-apps/*`
 packages. Build tools (Vite, TypeScript, ESLint, Vitest, Tailwind, the Tauri
 CLI) are dev dependencies and don't ship.
 
+The Tauri CLI builds the Windows installer from BloogBase's copy of its NSIS
+template (`src-tauri/windows/installer.nsi`), changed to update an older
+version in place. When `@tauri-apps/cli` moves, take the template of the new
+version (the link at the top of the file, with the new version) and redo the
+change marked "BloogBase"; `installer.test.ts` fails until the version at the
+top matches.
+
 The `@tauri-apps/*` packages belong to the Rust crates of the same name
 (`@tauri-apps/api` to `tauri`, `@tauri-apps/plugin-dialog` to
 `tauri-plugin-dialog`, …). Keep each pair on the same minor version; the
