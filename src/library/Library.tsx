@@ -239,7 +239,7 @@ export function Library() {
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
-          <label className="flex items-center gap-2 text-sm text-muted">
+          <label className="ml-auto flex items-center gap-2 text-sm text-muted">
             {t("library.sortBy")}
             <select
               className="rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-ink"
