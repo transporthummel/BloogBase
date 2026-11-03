@@ -2,7 +2,7 @@
 
 Releases are made by `.github/workflows/release.yml`, started by hand. It
 prepares the version on `main` (commit "Prepare version …" and tag `v…`),
-builds installers for Windows (NSIS), Linux (AppImage, deb) and macOS (Apple
+builds installers for Windows (NSIS, also in a ZIP), Linux (AppImage, deb) and macOS (Apple
 Silicon and Intel, `.app` + DMG), signs the updater artifacts and drafts a
 GitHub release with everything plus `latest.json` for the in-app updater.
 Publish the draft by hand after a smoke test; after a change to the Content
@@ -99,8 +99,13 @@ worth their yearly cost for this project, so the installers are not
 code-signed. The updater signature above is separate and free; it still
 protects updates.
 
-- **Windows:** SmartScreen warns about the unsigned installer ("Windows
-  protected your PC" → _More info_ → _Run anyway_). The warning fades as more
+- **Windows:** the download is the installer in a ZIP
+  (`BloogBase_…_x64-setup.zip`), as Edge lets a ZIP through without its
+  "isn't commonly downloaded" warning, which hides _Keep anyway_ in a
+  submenu. The bare installer stays on the release for the updater
+  (`latest.json` points at it). SmartScreen still warns when the unsigned
+  installer starts ("Windows protected your PC" → _More info_ → _Run
+  anyway_). The warning fades as more
   people download a release. A free option for later: the
   [SignPath Foundation](https://signpath.org/) signs open source projects
   for free once the repo is public (application required).

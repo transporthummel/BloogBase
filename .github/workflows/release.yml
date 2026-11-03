@@ -3,7 +3,8 @@ name: Release
 # Started by hand on main (Actions → Release → Run workflow, see
 # docs/releasing.md): writes the version into the project, moves the
 # changelogs' unreleased entries under it, commits that to main as "Prepare
-# version …" with a tag, then builds installers for every OS (not code-signed)
+# version …" with a tag, then builds installers for every OS (not code-signed;
+# the Windows one also in a ZIP)
 # and drafts a GitHub release with them, the updater manifest (latest.json) and
 # the version's CHANGELOG.md section and the download hints
 # (.github/release-downloads.md, with links to this version's files) as its
@@ -168,3 +169,19 @@ jobs:
           uploadUpdaterJson: true
           # Updater artifacts only here: local builds have no signing key.
           args: ${{ matrix.args }} --config src-tauri/tauri.release.conf.json
+
+      # The download for Windows is the installer in a ZIP: Edge lets a ZIP
+      # through without its "isn't commonly downloaded" warning, so only
+      # SmartScreen asks. The bare installer stays on the release, as
+      # latest.json points the updater at it.
+      - name: Put the Windows installer in a ZIP
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          $setup = "src-tauri/target/release/bundle/nsis/BloogBase_${env:VERSION}_x64-setup.exe"
+          $zip = "$env:RUNNER_TEMP/BloogBase_${env:VERSION}_x64-setup.zip"
+          Compress-Archive -LiteralPath $setup -DestinationPath $zip
+          gh release upload "v$env:VERSION" $zip --clobber

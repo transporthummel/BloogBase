@@ -215,7 +215,7 @@ for (const link of document.querySelectorAll(".asset")) {
 
 // The installer the button offers on each system; for Macs only when the
 // browser says it's Apple Silicon.
-const INSTALLERS = { windows: "_x64-setup.exe", linux: "_amd64.AppImage" };
+const INSTALLERS = { windows: "_x64-setup.zip", linux: "_amd64.AppImage" };
 
 detectSystem().then(async (system) => {
   if (!system) return;

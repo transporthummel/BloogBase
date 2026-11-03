@@ -33,6 +33,7 @@
 ### Misc
 
 - Updated dependencies, among them Tauri 2.12.5.
+- The Windows download is the installer in a ZIP, so Edge no longer hides it behind its "isn't commonly downloaded" warning; only SmartScreen asks before the first start.
 
 ## 1.0.0 (2026-10-31)
 
