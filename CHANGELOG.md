@@ -23,6 +23,7 @@
 - New logo and app icon (a floppy disk with a planet and a rocket) in the app, its window and taskbar icons, the installers, the README and the website with its press kit; game windows get a matching floppy with a DOS prompt, and the logo follows the theme.
 - The start screen shows the website's starry sky, with two shooting stars.
 - Source mods that bring all their own files and nothing of the game's, like Foray in the Forest, install from the mod list or a KeenWiki page instead of ending with "No Commander Keen mod found there".
+- "What's new" lists new mods and mod updates before the release notes, and its Close button stays in view while the dialog scrolls.
 
 ### Bug Fixes
 

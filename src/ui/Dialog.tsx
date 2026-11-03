@@ -14,6 +14,7 @@ export function Dialog({
   onClose,
   icon,
   wide = false,
+  footer,
   children,
 }: {
   title: string;
@@ -22,6 +23,8 @@ export function Dialog({
   icon?: ReactNode;
   /** For pictures. */
   wide?: boolean;
+  /** Buttons that stay at the bottom while a long dialog scrolls. */
+  footer?: ReactNode;
   children: ReactNode;
 }) {
   const titleId = useId();
@@ -75,13 +78,19 @@ export function Dialog({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`bb-dialog-in grid max-h-full w-full gap-4 overflow-y-auto overscroll-none rounded-xl border border-border bg-surface p-5 shadow-card outline-none ${wide ? "max-w-4xl" : "max-w-lg"}`}
+        className={`bb-dialog-in grid max-h-full w-full gap-4 overflow-y-auto overscroll-none rounded-xl border border-border bg-surface p-5 shadow-card outline-none ${wide ? "max-w-4xl" : "max-w-lg"} ${footer ? "pb-0" : ""}`}
       >
         <h2 id={titleId} className="flex items-center gap-2 text-lg font-semibold">
           {icon}
           {title}
         </h2>
         {children}
+        {footer && (
+          // The panel leaves out its bottom padding, so this ends flush with it.
+          <div className="sticky bottom-0 -mx-5 flex justify-end gap-2 border-t border-border bg-surface px-5 py-4">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

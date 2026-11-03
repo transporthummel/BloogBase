@@ -36,10 +36,11 @@ function merge(a: IndexMod[], b: IndexMod[]): IndexMod[] {
 }
 
 /**
- * What's new since the last start: the changes of a new BloogBase version,
- * mods new in the mod list, and updates of installed ones. Opens on start, or
- * once the start's check of the mod list finds something; after that check,
- * nothing new opens it until the next start.
+ * What's new since the last start: mods new in the mod list, updates of
+ * installed ones (first, since they ask for a click), and the changes of a
+ * new BloogBase version. Opens on start, or once the start's check of the mod
+ * list finds something; after that check, nothing new opens it until the next
+ * start.
  */
 export function WhatsNew() {
   const { t, i18n } = useTranslation();
@@ -133,17 +134,8 @@ export function WhatsNew() {
       title={t("news.title")}
       icon={<Sparkles className="size-6 shrink-0 text-accent" aria-hidden />}
       onClose={close}
+      footer={<Button onClick={close}>{t("common.close")}</Button>}
     >
-      {news.releases.map((r) => (
-        <section key={r.version} className="grid gap-2">
-          <h3 className="font-semibold">{t("news.release", { version: r.version })}</h3>
-          <ul className="list-disc pl-6 text-sm select-text">
-            {(i18n.language === "de" ? r.de : r.en).map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </section>
-      ))}
       {news.mods.length > 0 && (
         <section className="grid gap-2">
           <h3 className="font-semibold">{t("news.mods", { count: news.mods.length })}</h3>
@@ -178,9 +170,16 @@ export function WhatsNew() {
           </ul>
         </section>
       )}
-      <div className="flex justify-end">
-        <Button onClick={close}>{t("common.close")}</Button>
-      </div>
+      {news.releases.map((r) => (
+        <section key={r.version} className="grid gap-2">
+          <h3 className="font-semibold">{t("news.release", { version: r.version })}</h3>
+          <ul className="list-disc pl-6 text-sm select-text">
+            {(i18n.language === "de" ? r.de : r.en).map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </Dialog>
   );
 }
