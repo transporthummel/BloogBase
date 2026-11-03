@@ -113,12 +113,12 @@ jobs:
           - name: linux
             os: ubuntu-22.04
             args: ""
-          - name: macos-arm64
+          # Both Macs in one job, one after the other: GitHub's macOS
+          # runners are scarce, and a second job waiting for one may be
+          # given up after 15 minutes ("not acquired by Runner").
+          - name: macos
             os: macos-latest
             args: --target aarch64-apple-darwin
-          - name: macos-x64
-            os: macos-latest
-            args: --target x86_64-apple-darwin
     runs-on: ${{ matrix.os }}
     steps:
       # The tag, so re-running a failed build builds the same commit.
@@ -169,6 +169,25 @@ jobs:
           uploadUpdaterJson: true
           # Updater artifacts only here: local builds have no signing key.
           args: ${{ matrix.args }} --config src-tauri/tauri.release.conf.json
+
+      # The Intel Mac build, on the same runner as the Apple Silicon one.
+      # As above but for the target.
+      - name: Build for Intel Macs
+        if: runner.os == 'macOS'
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          TAURI_BUNDLER_DMG_IGNORE_CI: true
+        with:
+          tagName: v${{ inputs.version }}
+          releaseName: BloogBase __VERSION__
+          releaseBody: ${{ needs.prepare.outputs.notes }}
+          releaseDraft: true
+          prerelease: false
+          uploadUpdaterJson: true
+          args: --target x86_64-apple-darwin --config src-tauri/tauri.release.conf.json
 
       # The download for Windows is the installer in a ZIP: Edge lets a ZIP
       # through without its "isn't commonly downloaded" warning, so only

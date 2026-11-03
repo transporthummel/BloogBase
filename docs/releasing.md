@@ -68,7 +68,10 @@ show it).
 5. `git pull`, so your `main` has the "Prepare version" commit.
 6. Download the draft's installers, try them, publish the draft.
 
-If a build fails, "Re-run failed jobs" builds the same tag again. To drop a
+If a build fails, "Re-run failed jobs" builds the same tag again; so does a
+job GitHub gave up on before it started ("not acquired by Runner", most
+often macOS when its runners are scarce). Both Macs build in one job, one
+after the other, so only one macOS runner is needed. To drop a
 release that went wrong, delete the draft and the tag and revert the "Prepare
 version" commit, which puts the unreleased entries back.
 
