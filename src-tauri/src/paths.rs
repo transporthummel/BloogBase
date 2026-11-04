@@ -15,7 +15,9 @@ pub fn dev_root() -> Option<PathBuf> {
     cfg!(debug_assertions).then(|| project.join(".local").join("dev-data"))
 }
 
-/// And their WebView2 profile (the frontend's settings live there).
+/// And their WebView2 profile (the frontend's settings live there). Windows
+/// only, as WebView2 is.
+#[cfg(windows)]
 pub fn dev_webview_dir() -> Option<PathBuf> {
     dev_root().and_then(|d| Some(d.parent()?.join("dev-webview")))
 }
