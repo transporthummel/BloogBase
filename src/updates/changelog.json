@@ -2,13 +2,11 @@
   "unreleased": {
     "en": [
       "The Windows installer updates an older version instead of uninstalling it.",
-      "Small downloads show their size in KB.",
-      "Download sizes use the decimal separator of your language."
+      "Download sizes show small files in KB and use your language's decimal separator."
     ],
     "de": [
       "Der Windows-Installer aktualisiert eine ältere Version, statt sie zu deinstallieren.",
-      "Kleine Downloads zeigen ihre Größe in KB.",
-      "Downloadgrößen stehen mit Komma statt Punkt da."
+      "Downloadgrößen zeigen kleine Dateien in KB und stehen mit Komma statt Punkt da."
     ]
   },
   "releases": [
