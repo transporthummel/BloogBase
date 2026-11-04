@@ -17,6 +17,7 @@
 ### Misc
 
 - A debug build takes its local mod list even when the cached one from the website is newer.
+- Debug builds keep their data in `.local/dev-data`, apart from an installed BloogBase.
 
 ## 1.1.0 (2026-11-03)
 

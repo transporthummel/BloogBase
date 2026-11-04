@@ -7,6 +7,19 @@ use crate::error::{Error, Result};
 /// In the app config dir: the data root the user chose, if not the default.
 const LOCATION_FILE: &str = "data-location.txt";
 
+/// Where debug builds keep their data, in the project's `.local/dev-data`,
+/// so a build in progress never touches the installed app's library. Also
+/// their config dir, as on Windows, so a moved data folder stays theirs.
+pub fn dev_root() -> Option<PathBuf> {
+    let project = Path::new(env!("CARGO_MANIFEST_DIR")).parent()?;
+    cfg!(debug_assertions).then(|| project.join(".local").join("dev-data"))
+}
+
+/// And their WebView2 profile (the frontend's settings live there).
+pub fn dev_webview_dir() -> Option<PathBuf> {
+    dev_root().and_then(|d| Some(d.parent()?.join("dev-webview")))
+}
+
 /// The data root: the user's choice if one was saved, else `default`.
 pub fn resolve_root(config_dir: &Path, default: PathBuf) -> PathBuf {
     match std::fs::read_to_string(config_dir.join(LOCATION_FILE)) {

@@ -274,6 +274,10 @@ pnpm install
 pnpm tauri dev
 ```
 
+Debug builds keep their data folder in `.local/dev-data` (and on Windows
+their WebView2 profile in `.local/dev-webview`), so they don't touch an
+installed BloogBase's library; `BLOOGBASE_DATA_DIR` points them at another.
+
 Checks: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and
 in `src-tauri/` `cargo fmt --check`, `cargo clippy --all-targets` and
 `cargo test`. `pnpm test:all` runs all of them plus the tests with real games

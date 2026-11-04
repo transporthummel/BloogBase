@@ -193,6 +193,16 @@ pub fn run() {
     #[cfg(debug_assertions)]
     export_bindings(&builder);
 
+    // Before any thread or webview exists. An explicit setting wins (a
+    // second instance for CDP brings its own).
+    #[cfg(windows)]
+    if let Some(dir) = paths::dev_webview_dir()
+        && std::env::var_os("WEBVIEW2_USER_DATA_FOLDER").is_none()
+    {
+        // SAFETY: nothing else runs yet that could read the environment.
+        unsafe { std::env::set_var("WEBVIEW2_USER_DATA_FOLDER", dir) };
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -206,9 +216,15 @@ pub fn run() {
             #[cfg(all(windows, not(debug_assertions)))]
             disable_browser_shortcuts(app);
 
-            let location = DataLocation {
-                config_dir: app.path().app_config_dir()?,
-                default_root: app.path().app_data_dir()?,
+            let location = match paths::dev_root() {
+                Some(dev) => DataLocation {
+                    config_dir: dev.clone(),
+                    default_root: dev,
+                },
+                None => DataLocation {
+                    config_dir: app.path().app_config_dir()?,
+                    default_root: app.path().app_data_dir()?,
+                },
             };
             // `BLOOGBASE_DATA_DIR` keeps tests away from the real data.
             let test_dir = std::env::var_os("BLOOGBASE_DATA_DIR").filter(|d| !d.is_empty());
