@@ -28,6 +28,7 @@ import { Button } from "../ui/Button";
 import { buttonClass } from "../ui/buttonClass";
 import { Card } from "../ui/Card";
 import { EmptyState } from "../ui/EmptyState";
+import { Loading } from "../ui/Loading";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
 import { RelativeTime } from "../ui/RelativeTime";
@@ -204,6 +205,8 @@ export function Library() {
         {imported !== null && <Notice>{t("library.imported", { count: imported })}</Notice>}
         {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
       </div>
+
+      {!loaded && !profiles.error && !games.error && <Loading label={t("library.loading")} />}
 
       {empty && (
         <EmptyState title={t("library.emptyTitle")}>

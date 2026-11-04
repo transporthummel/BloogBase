@@ -12,6 +12,7 @@
   },
   "library": {
     "trivia": "Schon gewusst?",
+    "loading": "Bibliothek wird geladen…",
     "title": "Bibliothek",
     "emptyTitle": "Noch ganz leer hier",
     "empty": "Such deine Commander-Keen-Spiele bei Steam oder GOG, füge sie aus einem Ordner oder einer ZIP-Datei hinzu oder hol dir eines der kostenlosen Spiele.",

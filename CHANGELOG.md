@@ -16,6 +16,7 @@
 - An older mod list from the server gets its own message instead of the one for a damaged download.
 - The library shows its games sooner after a start: looking for the names a mod's programs save under no longer scans them byte by byte.
 - The library remembers over restarts which names a mod saves under, so its games show right away after a start.
+- The library shows a hopping Bloog with "Loading your library…" until its games are there, instead of an empty page.
 
 ### Bug Fixes
 

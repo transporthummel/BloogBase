@@ -12,6 +12,7 @@
   },
   "library": {
     "trivia": "Did you know?",
+    "loading": "Loading your library…",
     "title": "Library",
     "emptyTitle": "Nothing here yet",
     "empty": "Find your Commander Keen games from Steam or GOG, add them from a folder or ZIP file, or get one of the free games.",

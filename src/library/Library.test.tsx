@@ -147,6 +147,16 @@ test("opens the setup wizard on first start", async () => {
   expect(await screen.findByText("redirect to /setup")).toBeInTheDocument();
 });
 
+test("says it is loading until the games are there", async () => {
+  let resolve: (value: { status: "ok"; data: Profile[] }) => void = () => {};
+  vi.mocked(commands.listProfiles).mockReturnValue(new Promise((r) => (resolve = r)));
+  renderLibrary();
+  expect(await screen.findByRole("status")).toHaveTextContent("Loading your library…");
+  resolve({ status: "ok", data: [profile] });
+  expect(await screen.findByText(keen5.title)).toBeInTheDocument();
+  expect(screen.queryByText("Loading your library…")).not.toBeInTheDocument();
+});
+
 test("shows the empty state with ways to add games", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [] });
   renderLibrary();
