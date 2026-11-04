@@ -168,7 +168,7 @@
     "runtime": "DOSBox Staging",
     "freeGame": "{{game}} ({{version}})",
     "starting": "Download startet…",
-    "progress": "{{received}} von {{total}} MB",
+    "progress": "{{received}} von {{total}}",
     "installing": "Wird installiert…",
     "done": "{{label}} ist bereit.",
     "failed": "{{label}} hat nicht geklappt.",
@@ -208,7 +208,6 @@
       "intro": "Einige Episoden gab es auch als Shareware. Die kannst du kostenlos spielen, auch wenn du Keen nicht gekauft hast. Mods dafür funktionieren sofort.",
       "installed": "In deiner Bibliothek",
       "owned": "Vollversion in deiner Bibliothek",
-      "size": "{{size}} MB",
       "terms": "BloogBase lädt die originalen, unveränderten Shareware-Versionen aus öffentlichen Archiven herunter (archive.org, textfiles.com). Shareware darf frei weitergegeben, aber nie verkauft werden.",
       "download_one": "{{count}} Episode herunterladen",
       "download_other": "{{count}} Episoden herunterladen"
@@ -441,7 +440,7 @@
     "updateTo": "Auf Version {{version}} aktualisieren",
     "needs": "Braucht {{game}}.",
     "needs_version": "Braucht {{game}} ({{versions}}).",
-    "install": "Installieren ({{size}} MB)",
+    "install": "Installieren ({{size}})",
     "installAnyway": "Trotzdem installieren",
     "withoutGameTitle": "{{name}} ohne Spiel installieren?",
     "withoutGameHint": "{{game}} ist nicht in deiner Bibliothek. Die Mod wird jetzt installiert und lässt sich spielen, sobald du das Spiel hinzufügst.",
@@ -459,7 +458,7 @@
         "demo": "Demo",
         "beta": "Beta"
       },
-      "download": "Installieren ({{size}} MB)",
+      "download": "Installieren ({{size}})",
       "about": {
         "keen1-1.31": "Die komplette erste Episode von Invasion of the Vorticons.",
         "keen4-1.4-ega": "Die komplette erste Episode von Goodbye, Galaxy! in 16 Farben.",
@@ -487,7 +486,6 @@
     "download": "Download",
     "noDownload": "Diese Seite hat keinen Download-Link. Lade die Mod im Browser herunter und füge sie als ZIP-Datei oder Ordner hinzu.",
     "downloading": "Die Mod wird heruntergeladen und geprüft …",
-    "received": "{{received}} MB",
     "checking": "Die Dateien werden geprüft …",
     "fetch": "Herunterladen und prüfen",
     "otherGame": "Laut KeenWiki ist diese Mod für {{page}}, ihre Dateien sehen aber nach {{files}} aus.",

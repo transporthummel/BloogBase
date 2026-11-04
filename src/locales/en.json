@@ -168,7 +168,7 @@
     "runtime": "DOSBox Staging",
     "freeGame": "{{game}} ({{version}})",
     "starting": "Starting download…",
-    "progress": "{{received}} of {{total}} MB",
+    "progress": "{{received}} of {{total}}",
     "installing": "Installing…",
     "done": "{{label}} is ready.",
     "failed": "{{label}} didn't work.",
@@ -208,7 +208,6 @@
       "intro": "Some episodes were also released as shareware. You can play them for free, even if you haven't bought Keen. Mods made for them work right away.",
       "installed": "In your library",
       "owned": "Full version in your library",
-      "size": "{{size}} MB",
       "terms": "BloogBase downloads the original, unmodified shareware releases from public archives (archive.org, textfiles.com). Shareware may be shared freely, but never sold.",
       "download_one": "Download {{count}} episode",
       "download_other": "Download {{count}} episodes"
@@ -441,7 +440,7 @@
     "updateTo": "Update to version {{version}}",
     "needs": "Needs {{game}}.",
     "needs_version": "Needs {{game}} ({{versions}}).",
-    "install": "Install ({{size}} MB)",
+    "install": "Install ({{size}})",
     "installAnyway": "Install anyway",
     "withoutGameTitle": "Install {{name}} without its game?",
     "withoutGameHint": "{{game}} isn’t in your library. The mod is installed now and can be played once you add the game.",
@@ -459,7 +458,7 @@
         "demo": "Demo",
         "beta": "Beta"
       },
-      "download": "Install ({{size}} MB)",
+      "download": "Install ({{size}})",
       "about": {
         "keen1-1.31": "The complete first episode of Invasion of the Vorticons.",
         "keen4-1.4-ega": "The complete first episode of Goodbye, Galaxy!, in 16 colors.",
@@ -487,7 +486,6 @@
     "download": "Download",
     "noDownload": "This page has no download link. Download the mod in your browser and add it as a ZIP file or folder.",
     "downloading": "Downloading and checking the mod…",
-    "received": "{{received}} MB",
     "checking": "Checking the files…",
     "fetch": "Download and check",
     "otherGame": "The KeenWiki page says this mod is for {{page}}, but its files look like {{files}}.",

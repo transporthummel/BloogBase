@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { commands, type FreeGame, type Game } from "../bindings";
 import { gameTitle } from "../catalog";
 import { errorMessage } from "../errors";
-import { formatMegabytes } from "../format";
+import { formatDownloadSize } from "../format";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { GameTile } from "./GameTile";
@@ -155,7 +155,7 @@ function FreeGameAction({ free, label }: { free: FreeGame; label: string }) {
         disabled={start.isPending}
       >
         <Download className="size-4" aria-hidden />
-        {t("discover.free.download", { size: formatMegabytes(free.size) })}
+        {t("discover.free.download", { size: formatDownloadSize(free.size) })}
       </Button>
     </>
   );

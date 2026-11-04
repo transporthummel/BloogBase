@@ -132,8 +132,22 @@ export function formatNumber(language: string, n: number): string {
   return numberFormat(language).format(n);
 }
 
-export function formatMegabytes(bytes: number): string {
-  return (bytes / 1024 / 1024).toFixed(1);
+const MB = 1024 * 1024;
+
+function inUnit(bytes: number, megabytes: boolean): string {
+  return megabytes ? (bytes / MB).toFixed(1) : String(Math.ceil(bytes / 1024));
+}
+
+/** A download's size: "850 KB" below a megabyte, else "2.0 MB". */
+export function formatDownloadSize(bytes: number): string {
+  const mb = bytes >= MB;
+  return `${inUnit(bytes, mb)} ${mb ? "MB" : "KB"}`;
+}
+
+/** Received and total of a download, both in the total's unit: "120", "400 KB". */
+export function formatDownloadProgress(received: number, total: number) {
+  const mb = total >= MB;
+  return { received: inUnit(received, mb), total: formatDownloadSize(total) };
 }
 
 /** "850 kB", "48.3 MB", "1.2 GB". */

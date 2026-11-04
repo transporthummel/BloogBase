@@ -1,7 +1,13 @@
 {
   "unreleased": {
-    "en": ["The Windows installer updates an older version instead of uninstalling it."],
-    "de": ["Der Windows-Installer aktualisiert eine ältere Version, statt sie zu deinstallieren."]
+    "en": [
+      "The Windows installer updates an older version instead of uninstalling it.",
+      "Small downloads show their size in KB."
+    ],
+    "de": [
+      "Der Windows-Installer aktualisiert eine ältere Version, statt sie zu deinstallieren.",
+      "Kleine Downloads zeigen ihre Größe in KB."
+    ]
   },
   "releases": [
     {

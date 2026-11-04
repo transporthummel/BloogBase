@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { events } from "../bindings";
-import { formatMegabytes } from "../format";
+import { formatDownloadProgress, formatDownloadSize } from "../format";
 import { Progress } from "../ui/Progress";
 
 /** A running download of a KeenWiki link, then the check of its files. */
@@ -34,12 +34,9 @@ export function DownloadProgress({ url }: { url: string }) {
         {checking
           ? t("keenwiki.checking")
           : known
-            ? t("jobs.progress", {
-                received: formatMegabytes(received),
-                total: formatMegabytes(total),
-              })
+            ? t("jobs.progress", formatDownloadProgress(received, total))
             : received > 0
-              ? t("keenwiki.received", { received: formatMegabytes(received) })
+              ? formatDownloadSize(received)
               : t("jobs.starting")}
       </p>
     </div>

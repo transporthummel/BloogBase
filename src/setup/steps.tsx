@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { commands, type FreeGame, type Install, type Job } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
-import { formatMegabytes, formatNumber } from "../format";
+import { formatDownloadSize, formatNumber } from "../format";
 import { unwrap } from "../ipc";
 import { JobList, JobRow } from "../jobs/JobList";
 import { useJobLabel } from "../jobs/label";
@@ -373,7 +373,7 @@ export function EpisodesStep({ next, back }: StepProps) {
                     ? t("setup.episodes.installed")
                     : owns(e)
                       ? t("setup.episodes.owned")
-                      : t("setup.episodes.size", { size: formatMegabytes(e.size) })}
+                      : formatDownloadSize(e.size)}
                 </span>
               </label>
               {job && <JobRow job={job} label={jobLabel(job)} />}

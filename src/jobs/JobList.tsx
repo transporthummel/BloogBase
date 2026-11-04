@@ -2,7 +2,7 @@ import { CircleAlert, CircleCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Job } from "../bindings";
 import { errorMessage } from "../errors";
-import { formatMegabytes } from "../format";
+import { formatDownloadProgress } from "../format";
 import { Progress } from "../ui/Progress";
 import { useJobLabel } from "./label";
 
@@ -54,10 +54,7 @@ export function JobRow({ job, label }: { job: Job; label: string }) {
         {job.phase === "installing"
           ? t("jobs.installing")
           : downloading
-            ? t("jobs.progress", {
-                received: formatMegabytes(job.received),
-                total: formatMegabytes(job.total),
-              })
+            ? t("jobs.progress", formatDownloadProgress(job.received, job.total))
             : t("jobs.starting")}
       </p>
     </>

@@ -4,7 +4,7 @@ import { Fragment, type RefObject, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Game, type IndexMod, type Install } from "../bindings";
 import { bestFit, gameTitle, shortGameTitle } from "../catalog";
-import { formatLooseDate, formatMegabytes } from "../format";
+import { formatDownloadSize, formatLooseDate } from "../format";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { DetailsLink } from "./DetailsLink";
@@ -161,7 +161,7 @@ function InstallAction({
   // A copy the player has needs no download.
   const installLabel = archive
     ? t("mods.install")
-    : t("discover.install", { size: formatMegabytes(size) });
+    : t("discover.install", { size: formatDownloadSize(size) });
   const busy = start.isPending || (job !== undefined && !isFinished(job));
   // Not without the game: that comes with a warning.
   const update = mod.modId && mod.updateAvailable;
