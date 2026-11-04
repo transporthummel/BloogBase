@@ -1,7 +1,8 @@
 # Releasing BloogBase
 
 Releases are made by `.github/workflows/release.yml`, started by hand. It
-prepares the version on `main` (commit "Prepare version …" and tag `v…`),
+first runs CI (`ci.yml`) on Windows, Linux and macOS for the commit it starts
+from and stops if anything fails. Then it prepares the version on `main` (commit "Prepare version …" and tag `v…`),
 builds installers for Windows (NSIS, also in a ZIP), Linux (AppImage, deb) and macOS (Apple
 Silicon and Intel, `.app` + DMG), signs the updater artifacts and drafts a
 GitHub release with everything plus `latest.json` for the in-app updater.
@@ -59,12 +60,16 @@ show it).
 3. On GitHub: Actions → Release → Run workflow (from `main`). Enter the
    version (like `1.2.0`) and, to be safe, the commit you checked; the
    workflow stops if `main` is somewhere else by then.
-4. The workflow stops before changing anything if the version isn't newer
+4. The workflow first runs CI on all three systems (some minutes, mostly
+   macOS) and stops there if a check fails, before changing anything. It also
+   stops before changing anything if the version isn't newer
    than the last release or than the project's, or if an unreleased section is
    empty. Otherwise it writes the version into `package.json`,
    `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and
    `src-tauri/tauri.conf.json`, moves the unreleased entries under it (dated,
-   in `CHANGELOG.md`), commits that to `main` with the tag and builds.
+   in `CHANGELOG.md`), commits that to `main` with the tag and builds. If
+   `main` moved on while CI ran, the commit isn't pushed and nothing changes;
+   start again from the new commit.
 5. `git pull`, so your `main` has the "Prepare version" commit.
 6. Download the draft's installers, try them, publish the draft.
 

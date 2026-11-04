@@ -1,7 +1,8 @@
 name: Release
 
 # Started by hand on main (Actions → Release → Run workflow, see
-# docs/releasing.md): writes the version into the project, moves the
+# docs/releasing.md): runs CI on Windows, Linux and macOS and goes on only
+# if it passes; then writes the version into the project, moves the
 # changelogs' unreleased entries under it, commits that to main as "Prepare
 # version …" with a tag, then builds installers for every OS (not code-signed;
 # the Windows one also in a ZIP)
@@ -31,8 +32,19 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # The commit the release starts from, on every OS (the event is
+  # workflow_dispatch, so ci.yml takes the full matrix).
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    with:
+      skip-app-build: true
+    permissions:
+      contents: read
+
   prepare:
     name: Prepare version ${{ inputs.version }}
+    needs: ci
     runs-on: ubuntu-latest
     outputs:
       notes: ${{ steps.prepare.outputs.notes }}
@@ -46,10 +58,11 @@ jobs:
           echo "::error::Start the release from main, not ${GITHUB_REF_NAME}."
           exit 1
 
-      # All history, for the tags of earlier releases.
+      # All history, for the tags of earlier releases. The commit CI checked,
+      # not main as it is now: if main has moved on, the push below fails.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: main
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - name: Check main is at the given commit

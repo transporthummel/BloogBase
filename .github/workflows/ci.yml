@@ -1,13 +1,20 @@
 name: CI
 
-# Pushes and pull requests are checked on Linux only: Windows and macOS
-# minutes count double and tenfold for private repositories. Start the
-# workflow by hand to check every OS and build the app (e.g. before a release).
+# Pushes and pull requests are checked on Linux only, for quicker results.
+# Start the workflow by hand to check every OS and build the app. A release
+# runs it first on every OS too (release.yml), without the app build, which
+# the release makes itself.
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      skip-app-build:
+        description: Leave out the release build of the app
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -68,5 +75,5 @@ jobs:
         run: git diff --exit-code src/bindings.ts
 
       - name: Release build
-        if: github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'workflow_dispatch' && !inputs.skip-app-build
         run: pnpm tauri build --no-bundle
