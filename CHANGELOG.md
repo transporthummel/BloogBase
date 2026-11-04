@@ -10,6 +10,7 @@
 - Download sizes under 1 MB are shown in KB instead of as 0.4 MB.
 - Download sizes use the decimal comma in German (2,0 MB).
 - The Windows uninstaller has the BloogBase icon instead of the NSIS default.
+- An older mod list from the server gets its own message instead of the one for a damaged download.
 
 ### Bug Fixes
 

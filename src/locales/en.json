@@ -154,6 +154,7 @@
     "generic": "Something went wrong: {{message}}",
     "missingGame": "This mod needs {{message}}. Add it to your library first.",
     "badSignature": "The mod list couldn't be verified, so it wasn't used.",
+    "olderIndex": "The server sent an older mod list than the one you already have, so it wasn't used.",
     "notKeenWikiLink": "Please paste a link to a mod page on keenwiki.shikadi.net, like https://keenwiki.shikadi.net/wiki/The_Alphamatic.",
     "notAModPage": "That KeenWiki page doesn't describe a mod.",
     "deadLink": "That download link doesn't work any more. Maybe the page lists another one, or the mod has moved.",

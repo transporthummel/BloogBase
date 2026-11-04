@@ -20,6 +20,7 @@ const translated: ErrorKind[] = [
   "incompatibleInstall",
   "missingGame",
   "badSignature",
+  "olderIndex",
   "notKeenWikiLink",
   "notAModPage",
   "deadLink",

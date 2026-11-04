@@ -55,6 +55,8 @@ pub enum Error {
     MissingGame(String),
     #[error("the mod index isn't signed correctly: {0}")]
     BadSignature(String),
+    #[error("the mod index from {0} is older than the one in use")]
+    OlderIndex(String),
     #[error("not a KeenWiki page link: {0}")]
     NotKeenWikiLink(String),
     #[error("that KeenWiki page doesn't describe a mod")]
@@ -117,6 +119,7 @@ impl Error {
             Error::IncompatibleInstall(_) => ErrorKind::IncompatibleInstall,
             Error::MissingGame(_) => ErrorKind::MissingGame,
             Error::BadSignature(_) => ErrorKind::BadSignature,
+            Error::OlderIndex(_) => ErrorKind::OlderIndex,
             Error::NotKeenWikiLink(_) => ErrorKind::NotKeenWikiLink,
             Error::NotAModPage => ErrorKind::NotAModPage,
             Error::DeadLink(_) => ErrorKind::DeadLink,
@@ -153,6 +156,7 @@ pub enum ErrorKind {
     IncompatibleInstall,
     MissingGame,
     BadSignature,
+    OlderIndex,
     NotKeenWikiLink,
     NotAModPage,
     DeadLink,

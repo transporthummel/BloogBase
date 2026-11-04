@@ -384,10 +384,7 @@ impl ModIndex {
                 && parsed.generated_at < current.generated_at
             {
                 // A replayed old (but validly signed) index.
-                return Err(Error::UnexpectedContent(format!(
-                    "the mod index from {} is older than the one in use",
-                    self.url
-                )));
+                return Err(Error::OlderIndex(self.url.clone()));
             }
             st.index.as_ref() != Some(&parsed)
         };
@@ -834,7 +831,7 @@ mod tests {
         let old = SAMPLE.replace("1760000000", "1700000000");
         publish(tmp.path(), &k, &old);
         let st = index.refresh(true).await;
-        assert!(st.error.is_some());
+        assert_eq!(st.error.unwrap().kind, crate::error::ErrorKind::OlderIndex);
         assert_eq!(st.generated_at, Some(1_760_000_000));
 
         // A cached file that was changed on disk is ignored.
