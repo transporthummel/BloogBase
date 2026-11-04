@@ -191,7 +191,12 @@ pub struct LaunchSpec {
 }
 
 /// Ensures all directories and config layers exist and builds the command line.
-pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec> {
+pub fn prepare(
+    paths: &AppPaths,
+    db: &Db,
+    profile_id: &str,
+    fullscreen: bool,
+) -> Result<LaunchSpec> {
     let (profile, layers) = profiles::get(db, profile_id)?;
     let game = catalog::game(&profile.game_id)
         .ok_or_else(|| Error::NotFound(format!("game {}", profile.game_id)))?;
@@ -245,6 +250,7 @@ pub fn prepare(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<LaunchSpec
         &dosconf::options(db)?,
         profile_id,
         dosconf::window_title(&profile, game),
+        fullscreen,
     )?;
 
     // DOSBox Staging 0.83 crashes on mount paths with non-ASCII characters
@@ -629,7 +635,7 @@ mod tests {
     #[test]
     fn prepare_writes_layers_and_builds_command_line() {
         let (_tmp, paths, db) = setup();
-        let spec = prepare(&paths, &db, "keen4-1").unwrap();
+        let spec = prepare(&paths, &db, "keen4-1", false).unwrap();
         let dirs = paths.profile("keen4-1");
         // Only mods tell first sessions apart.
         assert_eq!(spec.setup, None);
@@ -697,13 +703,13 @@ mod tests {
     #[test]
     fn user_overrides_are_kept_and_defaults_refreshed() {
         let (_tmp, paths, db) = setup();
-        prepare(&paths, &db, "keen4-1").unwrap();
+        prepare(&paths, &db, "keen4-1", false).unwrap();
         let dirs = paths.profile("keen4-1");
         fs::write(&dirs.override_conf, "[cpu]\ncpu_cycles = 1\n").unwrap();
         fs::write(paths.global_override_conf(), "[sdl]\nfullscreen = on\n").unwrap();
         fs::write(paths.default_conf("galaxy"), "stale").unwrap();
 
-        prepare(&paths, &db, "keen4-1").unwrap();
+        prepare(&paths, &db, "keen4-1", false).unwrap();
         assert_eq!(
             fs::read_to_string(&dirs.override_conf).unwrap(),
             "[cpu]\ncpu_cycles = 1\n"
@@ -737,7 +743,7 @@ mod tests {
         library::import(&paths, &db, &src).unwrap();
         assert!(firing::enabled(&db).unwrap(), "on by default");
 
-        let mount = |id: &str| prepare(&paths, &db, id).unwrap().args[14].clone();
+        let mount = |id: &str| prepare(&paths, &db, id, false).unwrap().args[14].clone();
         // Keen 4 has no such patch: it still runs from the install.
         assert!(mount("keen4-1").contains(&relative(&paths.root, &paths.library)));
         assert!(mount("keen1-1").contains(&relative(&paths.root, &paths.composed("keen1-1"))));
@@ -808,12 +814,12 @@ mod tests {
         // Brought along by an earlier backup restored into the new profile:
         // cleared on its first launch.
         run(b"save");
-        prepare(&paths, &db, &m.profile_id).unwrap();
+        prepare(&paths, &db, &m.profile_id, false).unwrap();
         assert_eq!(files(state), ["CONFIG.CK4", "SAVEGAM0.CK4"]);
 
         // Unchanged: everything stays.
         run(b"save 2");
-        prepare(&paths, &db, &m.profile_id).unwrap();
+        prepare(&paths, &db, &m.profile_id, false).unwrap();
         assert_eq!(files(state).len(), 4);
 
         // A mod update: the copies go, after a backup of all of state/.
@@ -826,7 +832,7 @@ mod tests {
         // goes after a session that lost no save; the one before clearing
         // the copies has the same content but stays.
         let before = crate::backups::before_launch(&paths, &db, &m.profile_id).unwrap();
-        prepare(&paths, &db, &m.profile_id).unwrap();
+        prepare(&paths, &db, &m.profile_id, false).unwrap();
         assert_eq!(files(state), ["CONFIG.CK4", "SAVEGAM0.CK4"]);
         assert!(!crate::backups::after_session(&db, &m.profile_id, before).unwrap());
         let backups = crate::backups::list(&db, &m.profile_id).unwrap();
@@ -841,7 +847,7 @@ mod tests {
         // clears them again. Restoring saves only rebuilds nothing.
         crate::backups::restore(&paths, &db, backups[0].id, None, None, true).unwrap();
         assert_eq!(files(state).len(), 4);
-        prepare(&paths, &db, &m.profile_id).unwrap();
+        prepare(&paths, &db, &m.profile_id, false).unwrap();
         assert_eq!(files(state), ["CONFIG.CK4", "SAVEGAM0.CK4"]);
         crate::backups::restore(&paths, &db, backups[0].id, None, None, false).unwrap();
         let hash = || -> Option<String> {
@@ -886,7 +892,7 @@ mod tests {
         .unwrap();
         assert_eq!(profiles::list(&db, |_| false).unwrap()[1].label, "My Mod");
 
-        let spec = prepare(&paths, &db, &m.profile_id).unwrap();
+        let spec = prepare(&paths, &db, &m.profile_id, false).unwrap();
         let setup = spec.setup.as_deref().unwrap();
         assert!(setup.contains("CK4PATCH.EXE"), "{setup}");
         let composed = paths.composed("my-mod");
@@ -924,7 +930,7 @@ mod tests {
 ",
         )
         .unwrap();
-        let spec = prepare(&paths, &db, &m.profile_id).unwrap();
+        let spec = prepare(&paths, &db, &m.profile_id, false).unwrap();
         let defaults = paths.profile(&m.profile_id).defaults_conf;
         assert!(spec.args.contains(&relative(&paths.root, &defaults)));
         let text = fs::read_to_string(&defaults).unwrap();
@@ -943,7 +949,7 @@ machine = cga
 ",
         )
         .unwrap();
-        prepare(&paths, &db, &m.profile_id).unwrap();
+        prepare(&paths, &db, &m.profile_id, false).unwrap();
         assert!(fs::read_to_string(&defaults).unwrap().contains(
             "[dosbox]
 machine = svga_paradise
@@ -952,7 +958,7 @@ machine = svga_paradise
 
         // Without its game the mod can't start.
         crate::library::remove(&paths, &db, "keen4-1", false, false).unwrap();
-        match prepare(&paths, &db, &m.profile_id) {
+        match prepare(&paths, &db, &m.profile_id, false) {
             Err(Error::MissingGame(game)) => assert!(game.starts_with("Commander Keen 4")),
             other => panic!("{other:?}"),
         }
@@ -1111,7 +1117,7 @@ mod e2e {
 
         let installs = library::import(&paths, &db, Path::new(&game)).unwrap();
         let id = &installs[0].id;
-        let spec = prepare(&paths, &db, id).unwrap();
+        let spec = prepare(&paths, &db, id, false).unwrap();
         let (mut child, session) = spawn(&rt, &spec, &db, id, || {}).unwrap();
         tokio::time::sleep(Duration::from_secs(8)).await;
         assert!(
@@ -1235,7 +1241,7 @@ $bmp.Save($env:SHOT_PATH)
                     }
                 };
                 tried = true;
-                let spec = prepare(&paths, &db, &m.profile_id).unwrap();
+                let spec = prepare(&paths, &db, &m.profile_id, false).unwrap();
                 let (mut child, session) = spawn(&rt, &spec, &db, &m.profile_id, || {}).unwrap();
                 tokio::time::sleep(Duration::from_secs(7)).await;
                 let exited = child.try_wait().unwrap();

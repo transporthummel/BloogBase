@@ -141,6 +141,7 @@ Midnight Galaxy; above it is in Vintage Beige. In English and German.
   instead of Ctrl+Alt, also in mods.
 - A controls cheat sheet for each series on every game's page, shown before
   its first start, with the known cheat codes folded away.
+- BloogBase itself in fullscreen (F11), with games following it.
 - Fullscreen, a CRT monitor effect and tear-free scrolling as simple
   switches; every DOSBox setting as text for all games or per game.
 - Keys follow your keyboard layout (Windows), so a German or French keyboard

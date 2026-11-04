@@ -11,6 +11,7 @@ import { JobsPanel } from "../jobs/JobsPanel";
 import { DropImport } from "../library/DropImport";
 import { EarlierBackupPrompt } from "../profile/EarlierBackup";
 import { ExitMessage } from "./ExitMessage";
+import { FullscreenButton } from "./FullscreenButton";
 import { LaunchOverlay } from "./LaunchOverlay";
 import { useJobEvents } from "../jobs/queries";
 import { hideSplash } from "../splash";
@@ -98,6 +99,7 @@ export function Shell() {
         <NavItem to="/discover" icon={Compass} label={t("nav.discover")} />
         <div className="mt-auto grid gap-1">
           <JobsPanel />
+          <FullscreenButton />
           <NavItem to="/settings" icon={Settings} label={t("nav.settings")} />
           <NavItem to="/about" icon={Info} label={t("nav.about")} />
         </div>

@@ -1,3 +1,4 @@
+mod app_window;
 mod backups;
 mod captures;
 mod catalog;
@@ -37,6 +38,7 @@ mod stores;
 
 use tauri::Manager;
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, log::LevelFilter};
+use tauri_plugin_window_state::StateFlags;
 use tauri_specta::Event;
 use tauri_specta::{collect_commands, collect_events};
 
@@ -91,6 +93,10 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::set_backup_settings,
             commands::display_options,
             commands::set_display_options,
+            commands::window_fullscreen,
+            commands::set_window_fullscreen,
+            commands::start_fullscreen,
+            commands::set_start_fullscreen,
             commands::one_button_firing,
             commands::set_one_button_firing,
             commands::profile_firing,
@@ -208,8 +214,13 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         // Restores the last size and position, then shows the window (it
-        // starts hidden so it doesn't jump from the default size).
-        .plugin(tauri_plugin_window_state::Builder::new().build())
+        // starts hidden so it doesn't jump from the default size). Not
+        // fullscreen: that follows the settings page, see `app_window`.
+        .plugin(
+            tauri_plugin_window_state::Builder::new()
+                .with_state_flags(StateFlags::all() - StateFlags::FULLSCREEN)
+                .build(),
+        )
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
@@ -266,6 +277,15 @@ pub fn run() {
 
             let db = Db::open(&paths.database)?;
             tracing::info!("database ready, schema version {}", db.schema_version()?);
+            match app_window::start_fullscreen(&db) {
+                Ok(true) => {
+                    if let Err(e) = app_window::set_fullscreen(app.handle(), true) {
+                        tracing::warn!("could not start in fullscreen: {e}");
+                    }
+                }
+                Ok(false) => {}
+                Err(e) => tracing::warn!("could not read the fullscreen setting: {e}"),
+            }
             if let Err(e) = backups::record_older(&db) {
                 tracing::warn!("could not note the files of older backups: {e}");
             }
@@ -311,10 +331,16 @@ pub fn run() {
         // Closing the window or quitting (Cmd+Q) while games run asks first;
         // `quit_app` then exits with a code, which passes.
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event
-                && ask_before_quitting(window.app_handle())
-            {
-                api.prevent_close();
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                if ask_before_quitting(window.app_handle()) {
+                    api.prevent_close();
+                } else if window.is_fullscreen().unwrap_or(false) {
+                    // Closes again out of fullscreen, so the window state
+                    // plugin notes the window's own size, not the screen's.
+                    api.prevent_close();
+                    let _ = window.set_fullscreen(false);
+                    let _ = window.close();
+                }
             }
         })
         .build(tauri::generate_context!())

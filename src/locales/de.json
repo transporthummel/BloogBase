@@ -5,7 +5,9 @@
     "library": "Bibliothek",
     "settings": "Einstellungen",
     "discover": "Entdecken",
-    "about": "Über"
+    "about": "Über",
+    "fullscreen": "Vollbild",
+    "fullscreenLeave": "Vollbild beenden"
   },
   "library": {
     "trivia": "Schon gewusst?",
@@ -100,6 +102,8 @@
     "themeSystem": "Passend zum System",
     "showTrivia": "„Schon gewusst?“ in der Bibliothek zeigen",
     "showTriviaHint": "Bei jedem Start eine andere Kuriosität über Commander Keen. Ob sie stimmt, ist eine andere Frage.",
+    "startFullscreen": "BloogBase im Vollbild starten",
+    "startFullscreenHint": "Ohne Taskleiste. Solange BloogBase im Vollbild ist, starten auch alle Spiele im Vollbild. F11 wechselt jederzeit.",
     "about": "Über",
     "version": "Version",
     "dataDir": "Datenordner",

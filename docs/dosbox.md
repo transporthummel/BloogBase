@@ -81,7 +81,9 @@ one wins for every setting it sets:
   can't be broken by accident: `automount = off`, `startup_verbosity =
 quiet`, the window title ("<game or mod> – BloogBase", without cycles and
   mouse hints) and `capture_dir`. DOSBox resolves a relative `capture_dir`
-  against the config file's folder, so it's `../capture`.
+  against the config file's folder, so it's `../capture`. While BloogBase's
+  own window is in fullscreen, the launch also sets `fullscreen = on`, over
+  every other layer.
 
 Files are only written when their content changes.
 

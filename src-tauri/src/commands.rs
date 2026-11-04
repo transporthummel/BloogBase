@@ -8,6 +8,7 @@ use specta::Type;
 use tauri::{AppHandle, Manager, State};
 use tauri_specta::Event;
 
+use crate::app_window;
 use crate::backups::{self, Backup, BackupSettings, Contents, Origin, SaveVersion};
 use crate::captures::{self, Kind, Screenshot, Video, VideoIndex};
 use crate::catalog::{self, Game};
@@ -175,6 +176,7 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
         .emit(&app);
     };
     launch(LaunchPhase::Starting);
+    let fullscreen = app_window::is_fullscreen(&app);
     let a = app.clone();
     let id = profile_id.clone();
     let started = blocking(move || {
@@ -193,6 +195,7 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
             &a.state::<Db>(),
             &runtime,
             &id,
+            fullscreen,
             shown,
         )
     })
@@ -661,6 +664,33 @@ pub fn set_display_options(
     options: dosconf::DisplayOptions,
 ) -> CommandResult<()> {
     Ok(dosconf::set_options(&db, &options)?)
+}
+
+/// Whether BloogBase's window is in fullscreen.
+#[tauri::command]
+#[specta::specta]
+pub fn window_fullscreen(app: AppHandle) -> bool {
+    app_window::is_fullscreen(&app)
+}
+
+/// Puts BloogBase's window in or out of fullscreen.
+#[tauri::command]
+#[specta::specta]
+pub fn set_window_fullscreen(app: AppHandle, on: bool) -> CommandResult<()> {
+    Ok(app_window::set_fullscreen(&app, on)?)
+}
+
+/// Whether BloogBase starts in fullscreen, from the settings page.
+#[tauri::command]
+#[specta::specta]
+pub fn start_fullscreen(db: State<'_, Db>) -> CommandResult<bool> {
+    Ok(app_window::start_fullscreen(&db)?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_start_fullscreen(db: State<'_, Db>, on: bool) -> CommandResult<()> {
+    Ok(app_window::set_start_fullscreen(&db, on)?)
 }
 
 /// Whether Keen 1-3 fire with Space, from the settings page.
@@ -1350,6 +1380,7 @@ pub fn set_data_location(
 #[tauri::command]
 #[specta::specta]
 pub fn restart_app(app: AppHandle) {
+    app_window::leave_fullscreen(&app);
     app.restart();
 }
 
@@ -1374,6 +1405,7 @@ pub async fn quit_app(app: AppHandle, stop_games: bool) {
     } else {
         playing.abandon_all(&app.state::<Db>());
     }
+    app_window::leave_fullscreen(&app);
     app.exit(0);
 }
 

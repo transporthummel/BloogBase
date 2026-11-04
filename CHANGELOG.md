@@ -4,6 +4,8 @@
 
 ### Features
 
+- BloogBase can go fullscreen, without the taskbar, from a button in the sidebar or with F11, and can start in fullscreen (off by default, in Settings); while it is in fullscreen, games start in fullscreen too, whatever their settings say.
+
 ### Improvements
 
 - The Windows installer updates an older BloogBase in place, as the in-app updater does, instead of offering to uninstall it first.

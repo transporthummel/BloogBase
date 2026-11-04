@@ -73,6 +73,13 @@ export const commands = {
 	/**  The simple display options on the settings page. */
 	displayOptions: () => typedError<DisplayOptionsView, CommandError>(__TAURI_INVOKE("display_options")),
 	setDisplayOptions: (options: DisplayOptions) => typedError<null, CommandError>(__TAURI_INVOKE("set_display_options", { options })),
+	/**  Whether BloogBase's window is in fullscreen. */
+	windowFullscreen: () => __TAURI_INVOKE<boolean>("window_fullscreen"),
+	/**  Puts BloogBase's window in or out of fullscreen. */
+	setWindowFullscreen: (on: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("set_window_fullscreen", { on })),
+	/**  Whether BloogBase starts in fullscreen, from the settings page. */
+	startFullscreen: () => typedError<boolean, CommandError>(__TAURI_INVOKE("start_fullscreen")),
+	setStartFullscreen: (on: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("set_start_fullscreen", { on })),
 	/**  Whether Keen 1-3 fire with Space, from the settings page. */
 	oneButtonFiring: () => typedError<boolean, CommandError>(__TAURI_INVOKE("one_button_firing")),
 	setOneButtonFiring: (on: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("set_one_button_firing", { on })),

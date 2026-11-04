@@ -85,6 +85,7 @@ export function Settings() {
             </label>
             <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.showTriviaHint")}</p>
           </div>
+          <StartFullscreenOption />
         </Section>
         <Section title={t("settings.games")}>
           <DisplaySection />
@@ -276,6 +277,44 @@ export function DisplaySection() {
         <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
       )}
     </Group>
+  );
+}
+
+const startFullscreenKey = ["startFullscreen"] as const;
+
+/** Whether BloogBase starts in fullscreen; the sidebar switches it anytime. */
+function StartFullscreenOption() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const setting = useQuery({
+    queryKey: startFullscreenKey,
+    queryFn: () => unwrap(commands.startFullscreen()),
+  });
+  const update = useMutation({
+    mutationFn: (on: boolean) => unwrap(commands.setStartFullscreen(on)),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: startFullscreenKey }),
+  });
+
+  return (
+    <div className="grid gap-1">
+      {setting.data !== undefined && (
+        <>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={setting.data}
+              disabled={update.isPending}
+              onChange={(e) => update.mutate(e.target.checked)}
+            />
+            {t("settings.startFullscreen")}
+          </label>
+          <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.startFullscreenHint")}</p>
+        </>
+      )}
+      {(setting.error ?? update.error) && (
+        <Notice tone="error">{errorMessage(t, setting.error ?? update.error)}</Notice>
+      )}
+    </div>
   );
 }
 

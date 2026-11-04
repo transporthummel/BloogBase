@@ -27,10 +27,11 @@ pub fn start(
     db: &Db,
     runtime: &Runtime,
     profile_id: &str,
+    fullscreen: bool,
     shown: impl FnOnce() + Send + 'static,
 ) -> Result<Started> {
     let backup = backups::before_launch(paths, db, profile_id);
-    let spec = launcher::prepare(paths, db, profile_id)?;
+    let spec = launcher::prepare(paths, db, profile_id, fullscreen)?;
     let (child, session) = launcher::spawn(runtime, &spec, db, profile_id, shown)?;
     Ok(Started {
         child,
