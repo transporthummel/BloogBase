@@ -57,8 +57,11 @@ follow (`saves::profile_game`): a whole name written where the catalog's
 starts, else the stem before the `?` and the extension each on their own.
 Only text that can be a DOS name counts. Everything that looks at saves or
 state files (save list, backups, restores, the launcher clean-up) uses
-these. The answer is kept while the files stay the same; unpacked
-executables are kept by file, as many profiles share one.
+these. The answer is kept while the files stay the same, also over
+restarts in `cache/save-names.json` (by the fingerprint of the mod's files;
+the library's profile list drops mods whose files changed or went away, and
+`NAMES_VERSION` drops it all when the search changes). Unpacked executables
+are kept by file, as many profiles share one.
 
 A source mod's own executables may open them under another extension:
 Foray in the Forest's `FITF-X.EXE` saves as `SAVEGAMx.CKS` and keeps its

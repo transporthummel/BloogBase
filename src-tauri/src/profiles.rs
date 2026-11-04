@@ -188,19 +188,21 @@ pub fn list(db: &Db, is_running: impl Fn(&str) -> bool) -> Result<Vec<Profile>> 
         stmt.query_map([], |r| from_row(db, r))?
             .collect::<rusqlite::Result<_>>()?
     };
-    rows.into_iter()
-        .map(|row| {
-            let mut p = row.profile;
-            p.running = is_running(&p.id);
-            if let Ok(game) = crate::saves::profile_game(&p.game_id, &row.layers) {
-                p.save_count = count_saves(game, &row.layers).unwrap_or_else(|e| {
-                    tracing::warn!("could not scan saves of {}: {e}", p.id);
-                    0
-                });
-            }
-            Ok(p)
-        })
-        .collect()
+    crate::saves::for_all_profiles(|| {
+        rows.into_iter()
+            .map(|row| {
+                let mut p = row.profile;
+                p.running = is_running(&p.id);
+                if let Ok(game) = crate::saves::profile_game(&p.game_id, &row.layers) {
+                    p.save_count = count_saves(game, &row.layers).unwrap_or_else(|e| {
+                        tracing::warn!("could not scan saves of {}: {e}", p.id);
+                        0
+                    });
+                }
+                Ok(p)
+            })
+            .collect()
+    })
 }
 
 pub fn get(db: &Db, id: &str) -> Result<(Profile, Layers)> {

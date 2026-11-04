@@ -1,12 +1,12 @@
 //! The save manager (PLAN.md §11): a profile's saved games as DOS sees them,
 //! with what each save says about itself.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::backups::{self, Contents, Reason};
@@ -136,13 +136,14 @@ pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Ga
         return Ok(game);
     };
     // Reading the executable takes unpacking it, so the answer is kept for
-    // as long as the files stay the same.
-    static KNOWN: OnceLock<Mutex<HashMap<String, &'static Game>>> = OnceLock::new();
-    let known = KNOWN.get_or_init(Default::default);
+    // as long as the files stay the same, also over restarts.
     let key = files.fingerprint(Some(&m.recipe));
-    if let Some(g) = known.lock().unwrap_or_else(|e| e.into_inner()).get(&key) {
-        return Ok(g);
+    let mut known = known_lock();
+    if let Some(names) = known.names.get(&key) {
+        let names = names.clone();
+        return Ok(known.game(&key, game, names));
     }
+    drop(known);
     let texts = covers::patch_texts(game, &m.recipe, &files);
     let renamed = covers::renamer(game, &files, &texts);
     let images = own_programs(&m.files);
@@ -155,23 +156,161 @@ pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Ga
         }
         out
     };
-    let (saves, state_files) = (rename(&game.saves), rename(&game.state_files));
-    let played = if saves == game.saves && state_files == game.state_files {
-        game
-    } else {
-        tracing::info!("{game_id} mod saves as {saves:?}, state {state_files:?}");
-        // One per mod and change of its files while BloogBase runs.
-        Box::leak(Box::new(Game {
-            saves,
-            state_files,
-            ..game.clone()
-        }))
+    let names = SaveNames {
+        game_id: game_id.to_string(),
+        saves: rename(&game.saves),
+        state_files: rename(&game.state_files),
     };
-    known
+    if names.saves != game.saves || names.state_files != game.state_files {
+        tracing::info!(
+            "{game_id} mod saves as {:?}, state {:?}",
+            names.saves,
+            names.state_files
+        );
+    }
+    let mut known = known_lock();
+    known.names.insert(key.clone(), names.clone());
+    known.dirty = true;
+    let played = known.game(&key, game, names);
+    if known.batch == 0 {
+        known.store();
+    }
+    Ok(played)
+}
+
+/// The save and state file patterns `profile_game` found for one mod's
+/// files, as kept in the cache.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SaveNames {
+    game_id: String,
+    saves: Vec<String>,
+    state_files: Vec<String>,
+}
+
+/// Raise when `profile_game` finds names differently, so a start doesn't
+/// keep what the old code found.
+const NAMES_VERSION: u32 = 1;
+
+#[derive(Serialize, Deserialize)]
+struct StoredNames {
+    version: u32,
+    names: HashMap<String, SaveNames>,
+}
+
+#[derive(Default)]
+struct Known {
+    /// `cache/save-names.json`, once the data folder is known.
+    file: Option<PathBuf>,
+    /// By the fingerprint of a mod's files.
+    names: HashMap<String, SaveNames>,
+    games: HashMap<String, &'static Game>,
+    dirty: bool,
+    /// How many `for_all_profiles` run: they store once at the end, and only
+    /// what they looked up.
+    batch: u32,
+    used: HashSet<String>,
+}
+
+impl Known {
+    fn game(&mut self, key: &str, game: &'static Game, names: SaveNames) -> &'static Game {
+        if self.batch > 0 {
+            self.used.insert(key.to_string());
+        }
+        if let Some(g) = self.games.get(key) {
+            return g;
+        }
+        let played = if names.saves == game.saves && names.state_files == game.state_files {
+            game
+        } else {
+            // One per mod and change of its files while BloogBase runs.
+            Box::leak(Box::new(Game {
+                saves: names.saves,
+                state_files: names.state_files,
+                ..game.clone()
+            }))
+        };
+        self.games.insert(key.to_string(), played);
+        played
+    }
+
+    fn store(&mut self) {
+        let Some(file) = &self.file else { return };
+        if !self.dirty {
+            return;
+        }
+        if let Err(e) = store_names(file, &self.names) {
+            tracing::warn!("could not keep the save names in {}: {e}", file.display());
+        }
+        self.dirty = false;
+    }
+}
+
+fn known_lock() -> std::sync::MutexGuard<'static, Known> {
+    static KNOWN: OnceLock<Mutex<Known>> = OnceLock::new();
+    KNOWN
+        .get_or_init(Default::default)
         .lock()
         .unwrap_or_else(|e| e.into_inner())
-        .insert(key, played);
-    Ok(played)
+}
+
+/// Keeps what `profile_game` finds in the data folder's cache from now on,
+/// and takes what an earlier start found there.
+pub fn keep_names_in(cache: &Path) {
+    let file = cache.join("save-names.json");
+    let mut known = known_lock();
+    for (key, names) in load_names(&file) {
+        known.names.entry(key).or_insert(names);
+    }
+    known.file = Some(file);
+}
+
+/// Runs `f`, which looks up every profile, and stores what it found once
+/// at the end, forgetting mods whose files are gone or changed.
+pub(crate) fn for_all_profiles<T>(f: impl FnOnce() -> T) -> T {
+    {
+        let mut known = known_lock();
+        if known.batch == 0 {
+            known.used.clear();
+        }
+        known.batch += 1;
+    }
+    let out = f();
+    let mut known = known_lock();
+    known.batch -= 1;
+    if known.batch > 0 {
+        return out;
+    }
+    let used = std::mem::take(&mut known.used);
+    let before = known.names.len();
+    known.names.retain(|key, _| used.contains(key));
+    known.dirty |= known.names.len() != before;
+    known.store();
+    out
+}
+
+fn load_names(file: &Path) -> HashMap<String, SaveNames> {
+    fs::read(file)
+        .ok()
+        .and_then(|data| serde_json::from_slice::<StoredNames>(&data).ok())
+        .filter(|s| s.version == NAMES_VERSION)
+        .map(|s| s.names)
+        .unwrap_or_default()
+}
+
+fn store_names(file: &Path, names: &HashMap<String, SaveNames>) -> Result<()> {
+    let stored = StoredNames {
+        version: NAMES_VERSION,
+        names: names.clone(),
+    };
+    let json = serde_json::to_vec(&stored).expect("save names serialize");
+    if let Some(dir) = file.parent() {
+        fs::create_dir_all(dir)?;
+    }
+    let tmp = file.with_extension("tmp");
+    fs::write(&tmp, json)?;
+    fs::rename(&tmp, file)?;
+    Ok(())
 }
 
 /// The load images of the programs in a mod's own root, in capitals: a
@@ -517,6 +656,62 @@ pub(crate) mod tests {
         // Text that can't be a name leaves it.
         let text = names(&[("SAVED", "Saved games"), ("CK2", "CKQ ")]);
         assert_eq!(rename_pattern("SAVED?.CK2", text), "SAVED?.CKQ");
+    }
+
+    #[test]
+    fn found_save_names_are_kept_for_the_next_start() {
+        let tmp = tempfile::tempdir().unwrap();
+        let file = tmp.path().join("cache/save-names.json");
+        let names = HashMap::from([(
+            "abc".to_string(),
+            SaveNames {
+                game_id: "keen2".into(),
+                saves: vec!["SAVED?.CKQ".into()],
+                state_files: vec!["CTLPANEL.CKQ".into()],
+            },
+        )]);
+        store_names(&file, &names).unwrap();
+        assert_eq!(load_names(&file), names);
+
+        // What older code found is found again.
+        let old = std::fs::read_to_string(&file)
+            .unwrap()
+            .replace(&format!("\"version\":{NAMES_VERSION}"), "\"version\":0");
+        std::fs::write(&file, old).unwrap();
+        assert!(load_names(&file).is_empty());
+        std::fs::write(&file, "not json").unwrap();
+        assert!(load_names(&file).is_empty());
+    }
+
+    #[test]
+    fn a_mod_that_keeps_the_games_names_plays_as_the_game() {
+        let game = game_of("keen2").unwrap();
+        let mut known = Known::default();
+        let same = SaveNames {
+            game_id: "keen2".into(),
+            saves: game.saves.clone(),
+            state_files: game.state_files.clone(),
+        };
+        assert!(std::ptr::eq(known.game("a", game, same), game));
+        let other = SaveNames {
+            game_id: "keen2".into(),
+            saves: vec!["SAVED?.CKQ".into()],
+            state_files: game.state_files.clone(),
+        };
+        let played = known.game("b", game, other);
+        assert_eq!(played.saves, ["SAVED?.CKQ"]);
+        assert!(std::ptr::eq(
+            known.game(
+                "b",
+                game,
+                SaveNames {
+                    game_id: "keen2".into(),
+                    saves: vec![],
+                    state_files: vec![]
+                }
+            ),
+            played
+        ));
     }
 
     #[test]

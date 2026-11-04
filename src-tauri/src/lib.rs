@@ -243,6 +243,7 @@ pub fn run() {
             // Registered here rather than on the builder because the log
             // directory lives inside the app data dir, known only at runtime.
             app.handle().plugin(log_plugin(&paths))?;
+            saves::keep_names_in(&paths.cache);
             tracing::info!(
                 "BloogBase {} starting, data dir {}",
                 app.package_info().version,
