@@ -377,7 +377,10 @@ impl ModIndex {
         let parsed = self.verify(&data, &sig)?;
         let changed = {
             let st = self.lock();
+            // Only against an index from the same place: switching to another
+            // one (a debug build's local index) may well go back in time.
             if let Some(current) = &st.index
+                && st.meta.url == self.url
                 && parsed.generated_at < current.generated_at
             {
                 // A replayed old (but validly signed) index.
@@ -842,6 +845,23 @@ mod tests {
         .unwrap();
         let reopened = ModIndex::with_keys(&paths, url, &[&k.pk]);
         assert_eq!(reopened.status().mod_count, 0);
+    }
+
+    #[tokio::test]
+    async fn takes_an_older_index_from_another_place() {
+        let (tmp, paths) = setup();
+        let k = keys();
+        let url = publish(tmp.path(), &k, SAMPLE);
+        let index = ModIndex::with_keys(&paths, url, &[&k.pk]);
+        assert!(index.refresh(true).await.error.is_none());
+
+        let elsewhere = tempfile::tempdir().unwrap();
+        let old = SAMPLE.replace("1760000000", "1700000000");
+        let other = publish(elsewhere.path(), &k, &old);
+        let moved = ModIndex::with_keys(&paths, other, &[&k.pk]);
+        let st = moved.refresh(true).await;
+        assert!(st.error.is_none());
+        assert_eq!(st.generated_at, Some(1_700_000_000));
     }
 
     /// Serves the index over HTTP with an ETag; counts full responses.
