@@ -2,11 +2,13 @@
   "unreleased": {
     "en": [
       "The Windows installer updates an older version instead of uninstalling it.",
-      "Download sizes show small files in KB and use your language's decimal separator."
+      "Download sizes show small files in KB and use your language's decimal separator.",
+      "The Windows uninstaller has the BloogBase icon."
     ],
     "de": [
       "Der Windows-Installer aktualisiert eine ältere Version, statt sie zu deinstallieren.",
-      "Downloadgrößen zeigen kleine Dateien in KB und stehen mit Komma statt Punkt da."
+      "Downloadgrößen zeigen kleine Dateien in KB und stehen mit Komma statt Punkt da.",
+      "Der Windows-Uninstaller hat das BloogBase-Icon."
     ]
   },
   "releases": [
