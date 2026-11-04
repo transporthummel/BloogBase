@@ -53,12 +53,21 @@ flate2 = { version = "1", features = ["zlib-rs"] }
 tauri-plugin-updater = "2.14.0"
 tauri-plugin-window-state = "2.5.0"
 cfb = "0.15.0"
+memchr = "2.8.3"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_System_Registry", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging"] }
 webview2-com = "0.39.1"
 windows-core = "0.62.2"
 
+
+# Unpacking executables and searching them is slow unoptimized; debug builds
+# read every mod's programs on the first library load.
+[profile.dev.package.keen-graphics]
+opt-level = 3
+
+[profile.dev.package.memchr]
+opt-level = 3
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]

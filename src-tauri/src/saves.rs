@@ -174,8 +174,8 @@ pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Ga
     Ok(played)
 }
 
-/// The load images of the programs in a mod's own root: a source mod's
-/// executables open their files under names of their own.
+/// The load images of the programs in a mod's own root, in capitals: a
+/// source mod's executables open their files under names of their own.
 fn own_programs(dir: &Path) -> Vec<Vec<u8>> {
     let Ok(entries) = fs::read_dir(dir) else {
         return Vec::new();
@@ -189,16 +189,19 @@ fn own_programs(dir: &Path) -> Vec<Vec<u8>> {
     paths
         .iter()
         .filter_map(|p| fs::read(p).ok())
-        .map(|exe| keen_graphics::load_image(&exe).unwrap_or(exe))
+        .map(|exe| {
+            let mut image = keen_graphics::load_image(&exe).unwrap_or(exe);
+            image.make_ascii_uppercase();
+            image
+        })
         .collect()
 }
 
 /// `patterns` with another extension, where a program names them so: Foray
 /// in the Forest's FITF-X.EXE saves as `SAVEGAMx.CKS` and keeps its settings
 /// in `CONFIG.CKS`, its FITF-C.EXE uses `.CKC`. The `?` matches any one
-/// character, as the game puts the slot there.
+/// character, as the game puts the slot there. `image` is in capitals.
 fn other_extensions(image: &[u8], patterns: &[String]) -> Vec<String> {
-    let image = image.to_ascii_uppercase();
     let in_name = |b: u8| b.is_ascii_alphanumeric() || b == b'_';
     let mut out = Vec::new();
     for pattern in patterns {
@@ -211,11 +214,14 @@ fn other_extensions(image: &[u8], patterns: &[String]) -> Vec<String> {
         }
         let stem = stem.to_ascii_uppercase();
         let len = stem.len() + rest.len() + 4;
-        for at in 0..image.len().saturating_sub(len - 1) {
-            let found = &image[at..at + len];
+        // Only where the stem is: scanning every byte took seconds in debug
+        // builds for a few hundred mods.
+        for at in memchr::memmem::find_iter(image, stem.as_bytes()) {
+            let Some(found) = image.get(at..at + len) else {
+                break;
+            };
             let new_ext = &found[len - 3..];
-            if found.starts_with(stem.as_bytes())
-                && found[stem.len()..len - 4].iter().all(|&b| in_name(b))
+            if found[stem.len()..len - 4].iter().all(|&b| in_name(b))
                 && found[len - 4] == b'.'
                 && new_ext.iter().all(|&b| in_name(b))
                 && !image.get(at + len).is_some_and(|&b| in_name(b))

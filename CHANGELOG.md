@@ -11,6 +11,7 @@
 - Download sizes use the decimal comma in German (2,0 MB).
 - The Windows uninstaller has the BloogBase icon instead of the NSIS default.
 - An older mod list from the server gets its own message instead of the one for a damaged download.
+- The library shows its games sooner after a start: looking for the names a mod's programs save under no longer scans them byte by byte.
 
 ### Bug Fixes
 

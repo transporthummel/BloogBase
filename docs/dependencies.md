@@ -36,8 +36,8 @@ games) and `keen-graphics` (title screens for the covers). The main crates:
 - `reqwest` with `rustls` (no system OpenSSL), `tokio`.
 - Archives and hashes: `zip`, `tar`, `lzma-rs`, `flate2`, `cfb`, `sha2`,
   `minisign-verify`.
-- `scraper` (KeenWiki pages), `png`, `walkdir`, `serde`, `thiserror`,
-  `tracing`.
+- `scraper` (KeenWiki pages), `memchr` (searching programs for file names),
+  `png`, `walkdir`, `serde`, `thiserror`, `tracing`.
 - Windows only: `windows-sys`, `windows-core`, `webview2-com`. `windows-core`
   must be the version `webview2-com` uses (`cargo tree -i windows-core`),
   else `.cast()` on WebView2 types doesn't compile; only release builds

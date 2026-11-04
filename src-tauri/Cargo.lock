@@ -372,6 +372,7 @@ dependencies = [
  "keen-graphics",
  "keen-saves",
  "lzma-rs",
+ "memchr",
  "minisign",
  "minisign-verify",
  "png",
