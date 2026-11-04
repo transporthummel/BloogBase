@@ -247,6 +247,10 @@ BloogBase is a [Tauri 2](https://tauri.app/) app: a Rust core does all the
 work with files, DOSBox, downloads and the database; a React and TypeScript
 interface talks to it through typed commands.
 
+BloogBase is written with [Claude Code](https://claude.com/claude-code), by a
+developer with more than 20 years of experience. I review all of its code
+myself.
+
 ```
 src/              interface: React 19, TanStack Router and Query, Tailwind CSS
 src-tauri/
