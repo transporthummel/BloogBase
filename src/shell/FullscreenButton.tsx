@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { commands } from "../bindings";
 import { unwrap } from "../ipc";
+import { navItemClass } from "./navItemClass";
 
 const windowFullscreenKey = ["windowFullscreen"] as const;
 
@@ -42,7 +43,7 @@ export function FullscreenButton() {
       title={`${label} (F11)`}
       disabled={fullscreen.data === undefined}
       onClick={() => toggle.mutate(!on)}
-      className="flex h-12 items-center justify-center gap-3 rounded-lg text-muted transition hover:bg-surface-raised hover:text-ink xl:justify-start xl:px-3"
+      className={navItemClass}
     >
       <Icon className="size-5 shrink-0" aria-hidden />
       <span className="sr-only xl:not-sr-only xl:text-sm xl:font-medium">{label}</span>

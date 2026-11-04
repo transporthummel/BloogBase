@@ -1377,6 +1377,17 @@ pub fn set_data_location(
     Ok(root.display().to_string())
 }
 
+/// Closes BloogBase's window as its close button does: asks first while
+/// games run (see `QuitRequested`), leaves fullscreen before it goes.
+#[tauri::command]
+#[specta::specta]
+pub fn close_app(app: AppHandle) -> CommandResult<()> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.close().map_err(Error::from)?;
+    }
+    Ok(())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn restart_app(app: AppHandle) {

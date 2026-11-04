@@ -12,6 +12,8 @@ import { DropImport } from "../library/DropImport";
 import { EarlierBackupPrompt } from "../profile/EarlierBackup";
 import { ExitMessage } from "./ExitMessage";
 import { FullscreenButton } from "./FullscreenButton";
+import { navItemClass } from "./navItemClass";
+import { QuitButton } from "./QuitButton";
 import { LaunchOverlay } from "./LaunchOverlay";
 import { useJobEvents } from "../jobs/queries";
 import { hideSplash } from "../splash";
@@ -102,6 +104,7 @@ export function Shell() {
           <FullscreenButton />
           <NavItem to="/settings" icon={Settings} label={t("nav.settings")} />
           <NavItem to="/about" icon={Info} label={t("nav.about")} />
+          <QuitButton />
         </div>
       </nav>
       <main
@@ -140,7 +143,7 @@ function NavItem({
     <Link
       to={to}
       title={label}
-      className="flex h-12 items-center justify-center gap-3 rounded-lg text-muted transition hover:bg-surface-raised hover:text-ink xl:justify-start xl:px-3"
+      className={navItemClass}
       activeProps={{ className: "bg-surface-raised text-ink", "aria-current": "page" }}
       activeOptions={{ exact: true }}
     >

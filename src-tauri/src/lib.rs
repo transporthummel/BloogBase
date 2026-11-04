@@ -144,6 +144,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::index_news,
             commands::set_index_news,
             commands::set_data_location,
+            commands::close_app,
             commands::restart_app,
             commands::quit_app,
         ])

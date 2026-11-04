@@ -209,6 +209,11 @@ export const commands = {
 	 *  so nothing has to be moved. Returns the new data folder.
 	 */
 	setDataLocation: (path: string | null) => typedError<string, CommandError>(__TAURI_INVOKE("set_data_location", { path })),
+	/**
+	 *  Closes BloogBase's window as its close button does: asks first while
+	 *  games run (see `QuitRequested`), leaves fullscreen before it goes.
+	 */
+	closeApp: () => typedError<null, CommandError>(__TAURI_INVOKE("close_app")),
 	restartApp: () => __TAURI_INVOKE<void>("restart_app"),
 	/**
 	 *  Quits after [`QuitRequested`](launcher::QuitRequested): with

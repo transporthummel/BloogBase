@@ -7,7 +7,8 @@
     "discover": "Entdecken",
     "about": "Über",
     "fullscreen": "Vollbild",
-    "fullscreenLeave": "Vollbild beenden"
+    "fullscreenLeave": "Vollbild beenden",
+    "quit": "BloogBase beenden"
   },
   "library": {
     "trivia": "Schon gewusst?",
