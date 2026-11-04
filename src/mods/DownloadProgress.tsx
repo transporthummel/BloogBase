@@ -6,7 +6,7 @@ import { Progress } from "../ui/Progress";
 
 /** A running download of a KeenWiki link, then the check of its files. */
 export function DownloadProgress({ url }: { url: string }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [bytes, setBytes] = useState({ received: 0, total: 0 });
   useEffect(() => {
     const unlisten = events.keenwikiProgress.listen(({ payload }) => {
@@ -34,9 +34,9 @@ export function DownloadProgress({ url }: { url: string }) {
         {checking
           ? t("keenwiki.checking")
           : known
-            ? t("jobs.progress", formatDownloadProgress(received, total))
+            ? t("jobs.progress", formatDownloadProgress(i18n.language, received, total))
             : received > 0
-              ? formatDownloadSize(received)
+              ? formatDownloadSize(i18n.language, received)
               : t("jobs.starting")}
       </p>
     </div>

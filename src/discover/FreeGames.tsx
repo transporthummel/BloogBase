@@ -135,7 +135,7 @@ function FreeGameCard({
 }
 
 function FreeGameAction({ free, label }: { free: FreeGame; label: string }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const job = useJob("freeGame", free.versionId);
   const start = useStartJob((versionId: string) => commands.installFreeGame(versionId));
   const profiles = useProfiles({ enabled: free.installed });
@@ -155,7 +155,7 @@ function FreeGameAction({ free, label }: { free: FreeGame; label: string }) {
         disabled={start.isPending}
       >
         <Download className="size-4" aria-hidden />
-        {t("discover.free.download", { size: formatDownloadSize(free.size) })}
+        {t("discover.free.download", { size: formatDownloadSize(i18n.language, free.size) })}
       </Button>
     </>
   );

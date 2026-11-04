@@ -52,15 +52,16 @@ test("play time says 0 min when nothing was played, not less than a minute", () 
   expect(formatPlayTime(counted, 720)).toBe("time.minutes:12");
 });
 
-test("downloads under a megabyte are shown in KB", () => {
-  expect(formatDownloadSize(437372)).toBe("428 KB");
-  expect(formatDownloadSize(2 * 1024 * 1024)).toBe("2.0 MB");
-  expect(formatDownloadProgress(120 * 1024, 400 * 1024)).toEqual({
+test("downloads under a megabyte are shown in KB, with the user's decimal separator", () => {
+  expect(formatDownloadSize("en", 437372)).toBe("428 KB");
+  expect(formatDownloadSize("en", 2 * 1024 * 1024)).toBe("2.0 MB");
+  expect(formatDownloadSize("de", 2 * 1024 * 1024)).toBe("2,0 MB");
+  expect(formatDownloadProgress("en", 120 * 1024, 400 * 1024)).toEqual({
     received: "120",
     total: "400 KB",
   });
-  expect(formatDownloadProgress(512 * 1024, 1024 * 1024)).toEqual({
-    received: "0.5",
-    total: "1.0 MB",
+  expect(formatDownloadProgress("de", 512 * 1024, 1024 * 1024)).toEqual({
+    received: "0,5",
+    total: "1,0 MB",
   });
 });

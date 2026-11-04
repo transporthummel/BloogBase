@@ -21,7 +21,7 @@ export function JobList({ jobs }: { jobs: Job[] }) {
 }
 
 export function JobRow({ job, label }: { job: Job; label: string }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   if (job.phase === "done") {
     return (
       <p className="flex items-center gap-2 text-sm">
@@ -54,7 +54,7 @@ export function JobRow({ job, label }: { job: Job; label: string }) {
         {job.phase === "installing"
           ? t("jobs.installing")
           : downloading
-            ? t("jobs.progress", formatDownloadProgress(job.received, job.total))
+            ? t("jobs.progress", formatDownloadProgress(i18n.language, job.received, job.total))
             : t("jobs.starting")}
       </p>
     </>

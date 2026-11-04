@@ -8,6 +8,7 @@
 
 - The Windows installer updates an older BloogBase in place, as the in-app updater does, instead of offering to uninstall it first.
 - Download sizes under 1 MB are shown in KB instead of as 0.4 MB.
+- Download sizes use the decimal comma in German (2,0 MB).
 
 ### Bug Fixes
 

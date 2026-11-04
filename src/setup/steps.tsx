@@ -310,7 +310,7 @@ export function OwnedStep({ next, back }: StepProps) {
 // 5. Free episodes --------------------------------------------------------
 
 export function EpisodesStep({ next, back }: StepProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const free = useFreeGames();
   const games = useGames();
   const installs = useInstalls();
@@ -373,7 +373,7 @@ export function EpisodesStep({ next, back }: StepProps) {
                     ? t("setup.episodes.installed")
                     : owns(e)
                       ? t("setup.episodes.owned")
-                      : formatDownloadSize(e.size)}
+                      : formatDownloadSize(i18n.language, e.size)}
                 </span>
               </label>
               {job && <JobRow job={job} label={jobLabel(job)} />}

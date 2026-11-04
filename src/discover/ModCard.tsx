@@ -140,7 +140,7 @@ function InstallAction({
   /** Where Enter installs, if it does. */
   enter: RefObject<HTMLDivElement | null> | null;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { entry } = mod;
   const job = useJob("mod", entry.id);
   const start = useStartJob((installId: string | null) =>
@@ -161,7 +161,7 @@ function InstallAction({
   // A copy the player has needs no download.
   const installLabel = archive
     ? t("mods.install")
-    : t("discover.install", { size: formatDownloadSize(size) });
+    : t("discover.install", { size: formatDownloadSize(i18n.language, size) });
   const busy = start.isPending || (job !== undefined && !isFinished(job));
   // Not without the game: that comes with a warning.
   const update = mod.modId && mod.updateAvailable;
