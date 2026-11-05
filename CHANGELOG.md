@@ -17,6 +17,7 @@
 - The library shows its games sooner after a start: looking for the names a mod's programs save under no longer scans them byte by byte.
 - The library remembers over restarts which names a mod saves under, so its games show right away after a start.
 - The library shows a hopping Bloog with "Loading your library…" until its games are there, instead of an empty page.
+- A player's own DOSBox Staging has to be 0.82.0 or newer, since older versions don't know the setting for the game speed; 0.82.x gets a notice that the CRT switch has no effect there.
 
 ### Bug Fixes
 

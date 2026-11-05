@@ -7,7 +7,8 @@
       "Download sizes show small files in KB and use your language's decimal separator.",
       "The Windows uninstaller has the BloogBase icon.",
       "The library shows its games faster after a start.",
-      "The library shows that it is loading instead of an empty page."
+      "The library shows that it is loading instead of an empty page.",
+      "Your own DOSBox Staging has to be version 0.82 or newer."
     ],
     "de": [
       "BloogBase kann ins Vollbild, und Spiele starten dann auch im Vollbild.",
@@ -16,7 +17,8 @@
       "Downloadgrößen zeigen kleine Dateien in KB und stehen mit Komma statt Punkt da.",
       "Der Windows-Uninstaller hat das BloogBase-Icon.",
       "Die Bibliothek zeigt ihre Spiele nach dem Start schneller an.",
-      "Die Bibliothek zeigt beim Laden einen Hinweis statt einer leeren Seite."
+      "Die Bibliothek zeigt beim Laden einen Hinweis statt einer leeren Seite.",
+      "Dein eigenes DOSBox Staging muss Version 0.82 oder neuer sein."
     ]
   },
   "releases": [

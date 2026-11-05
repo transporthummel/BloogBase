@@ -84,7 +84,8 @@
     "chooseCustom": "Eigenes DOSBox Staging verwenden…",
     "useManaged": "Wieder das DOSBox von BloogBase verwenden",
     "useManagedFirst": "Stattdessen das DOSBox von BloogBase verwenden",
-    "customHint": "Für Fortgeschrittene. Es muss DOSBox Staging sein; andere DOSBox-Versionen können Spielstände nicht getrennt von den Spieldateien speichern.",
+    "customHint": "Für Fortgeschrittene. Es muss DOSBox Staging 0.82 oder neuer sein. Normales DOSBox und andere Forks können Spielstände nicht getrennt von den Spieldateien speichern.",
+    "crtSwitchIgnored": "BloogBase ist mit DOSBox Staging {{version}} getestet. Diese ältere Version kann sich anders verhalten, und der Röhrenmonitor-Effekt lässt sich in den Einstellungen nicht ausschalten.",
     "chooseInSettings": "Wähle in den Einstellungen ein vorhandenes DOSBox Staging aus."
   },
   "time": {
@@ -152,6 +153,7 @@
     "unsupportedPlatform": "Für dein System gibt es keinen DOSBox-Staging-Download. Du kannst stattdessen eine vorhandene Installation auswählen.",
     "runtimeMissing": "Zum Spielen wird DOSBox Staging benötigt. Lade es zuerst herunter.",
     "invalidRuntime": "Das sieht nicht nach DOSBox Staging aus ({{message}}).",
+    "runtimeTooOld": "BloogBase braucht DOSBox Staging 0.82 oder neuer. Dieses hat Version {{message}}.",
     "busy": "Das läuft bereits.",
     "alreadyRunning": "Dieses Spiel läuft bereits.",
     "invalidLocation": "BloogBase kann seine Daten dort nicht speichern ({{message}}).",

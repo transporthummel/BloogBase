@@ -99,6 +99,7 @@ const ready: RuntimeStatus = {
   managed: runtime,
   pinnedVersion: "0.83.0",
   downloadAvailable: true,
+  crtSwitchIgnored: false,
 };
 
 function renderLibrary(container?: HTMLElement) {

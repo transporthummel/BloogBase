@@ -41,6 +41,11 @@ On the settings page the player can pick their own DOSBox Staging instead.
 BloogBase runs it with `--version` (10 seconds at most) and accepts it only if
 the banner says DOSBox Staging; plain DOSBox and other forks are refused,
 since launches rely on Staging's overlay mounts and command-line switches.
+Versions below 0.82.0 are refused too: they don't know `cpu_cycles`, so the
+games wouldn't run at the speed they're set to. One chosen before there was a
+minimum is skipped. 0.82.x works from what its source shows, but only 0.83 is
+tested; it doesn't know `shader` and stays on `crt-auto`, so the settings page
+and the setup wizard say the CRT switch has no effect there.
 A custom executable wins over the managed one while it's set; clearing it
 goes back to the managed one. Among managed installs, the pinned version
 wins, else the newest. Runtimes whose executable is gone are skipped.

@@ -22,6 +22,14 @@ use crate::paths::AppPaths;
 pub const KIND: &str = "dosbox-staging";
 const CUSTOM_ID: &str = "custom";
 
+/// The oldest DOSBox Staging a player's own executable may be: `cpu_cycles`,
+/// which sets how fast the games run, came in 0.82.0. The error text in the
+/// locales names it too.
+const MIN_VERSION: &str = "0.82.0";
+/// The first version with the `shader` setting behind the CRT switch; older
+/// ones skip it and stay on `crt-auto`.
+const SHADER_SETTING_VERSION: &str = "0.83.0";
+
 #[derive(Debug, Deserialize)]
 struct Manifest {
     version: String,
@@ -90,6 +98,8 @@ pub struct RuntimeStatus {
     pub pinned_version: String,
     /// Whether a managed download exists for this OS/architecture.
     pub download_available: bool,
+    /// The active runtime is too old for the CRT switch to have an effect.
+    pub crt_switch_ignored: bool,
 }
 
 pub fn status(db: &Db) -> Result<RuntimeStatus> {
@@ -101,11 +111,16 @@ pub fn status(db: &Db) -> Result<RuntimeStatus> {
         // Prefer the pinned version, else the newest one that's installed.
         .max_by_key(|r| (r.version == pinned_version(), version_key(&r.version)))
         .cloned();
+    let active = custom.or_else(|| managed.clone());
+    let crt_switch_ignored = active
+        .as_ref()
+        .is_some_and(|r| version_key(&r.version) < version_key(SHADER_SETTING_VERSION));
     Ok(RuntimeStatus {
-        active: custom.or_else(|| managed.clone()),
+        active,
         managed,
         pinned_version: pinned_version().to_string(),
         download_available: current_download().is_some(),
+        crt_switch_ignored,
     })
 }
 
@@ -114,7 +129,9 @@ pub fn active(db: &Db) -> Result<Runtime> {
     status(db)?.active.ok_or(Error::RuntimeMissing)
 }
 
-/// Registered runtimes whose executable still exists.
+/// Registered runtimes that can be used: their executable still exists, and
+/// a player's own isn't too old (it may have been chosen before there was a
+/// minimum).
 fn list(db: &Db) -> Result<Vec<Runtime>> {
     let conn = db.conn();
     let mut stmt =
@@ -135,9 +152,18 @@ fn list(db: &Db) -> Result<Vec<Runtime>> {
             if !exists {
                 tracing::warn!("runtime {} is gone: {}", r.id, r.path);
             }
-            exists
+            let usable = r.managed || supported(&r.version);
+            if !usable {
+                tracing::warn!("runtime {} is too old: {}", r.id, r.version);
+            }
+            exists && usable
         })
         .collect())
+}
+
+/// Whether a player's own DOSBox Staging may run the games.
+fn supported(version: &str) -> bool {
+    version_key(version) >= version_key(MIN_VERSION)
 }
 
 fn version_key(v: &str) -> Vec<u32> {
@@ -179,6 +205,9 @@ pub fn set_custom(db: &Db, path: Option<&Path>) -> Result<RuntimeStatus> {
                 )));
             }
             let version = probe(path)?;
+            if !supported(&version) {
+                return Err(Error::RuntimeTooOld(version));
+            }
             register(
                 db,
                 &Runtime {
@@ -639,7 +668,7 @@ mod tests {
                 &db,
                 &Runtime {
                     id: id.into(),
-                    version: "0.1".into(),
+                    version: if is_managed { "0.1" } else { "0.83.0" }.into(),
                     path: path.display().to_string(),
                     managed: is_managed,
                 },
@@ -659,6 +688,46 @@ mod tests {
             set_custom(&db, Some(&tmp.path().join("nope"))),
             Err(Error::InvalidRuntime(_))
         ));
+    }
+
+    #[test]
+    fn minimum_version_of_a_players_own_dosbox() {
+        for version in ["0.82.0", "0.82.2", "0.83.0", "0.84.0-alpha-5854b", "1.0.0"] {
+            assert!(supported(version), "{version}");
+        }
+        for version in ["0.81.2", "0.80.1", "0.75.0"] {
+            assert!(!supported(version), "{version}");
+        }
+    }
+
+    #[test]
+    fn own_dosbox_from_before_the_minimum_is_skipped() {
+        let (tmp, _paths, db) = setup();
+        let exe = tmp.path().join("my-dosbox.exe");
+        fs::write(&exe, b"").unwrap();
+        let own = |version: &str| {
+            register(
+                &db,
+                &Runtime {
+                    id: CUSTOM_ID.into(),
+                    version: version.into(),
+                    path: exe.display().to_string(),
+                    managed: false,
+                },
+            )
+            .unwrap();
+            status(&db).unwrap()
+        };
+
+        let old = own("0.81.2");
+        assert!(old.active.is_none());
+        assert!(!old.crt_switch_ignored);
+
+        let limited = own("0.82.2");
+        assert_eq!(limited.active.unwrap().version, "0.82.2");
+        assert!(limited.crt_switch_ignored);
+
+        assert!(!own("0.83.0").crt_switch_ignored);
     }
 
     #[test]

@@ -84,7 +84,8 @@
     "chooseCustom": "Use my own DOSBox Staging…",
     "useManaged": "Use BloogBase's DOSBox again",
     "useManagedFirst": "Use BloogBase's DOSBox instead",
-    "customHint": "For advanced users. It has to be DOSBox Staging; other DOSBox versions can't keep your saves separate from the game files.",
+    "customHint": "For advanced users. It has to be DOSBox Staging 0.82 or newer. Plain DOSBox and other forks can't keep your saves separate from the game files.",
+    "crtSwitchIgnored": "BloogBase is tested with DOSBox Staging {{version}}. This older version may behave differently, and the CRT monitor effect can't be turned off in the settings.",
     "chooseInSettings": "Choose an existing DOSBox Staging in the settings."
   },
   "time": {
@@ -152,6 +153,7 @@
     "unsupportedPlatform": "There's no DOSBox Staging download for your system. You can choose an existing installation instead.",
     "runtimeMissing": "DOSBox Staging is needed to play. Download it first.",
     "invalidRuntime": "That doesn't look like DOSBox Staging ({{message}}).",
+    "runtimeTooOld": "BloogBase needs DOSBox Staging 0.82 or newer. This one is version {{message}}.",
     "busy": "That's already in progress.",
     "alreadyRunning": "This game is already running.",
     "invalidLocation": "BloogBase can't keep its data there ({{message}}).",

@@ -39,6 +39,8 @@ pub enum Error {
     RuntimeMissing,
     #[error("not a usable DOSBox Staging executable: {0}")]
     InvalidRuntime(String),
+    #[error("DOSBox Staging {0} is too old")]
+    RuntimeTooOld(String),
     #[error("already in progress")]
     Busy,
     #[error("this game is already running")]
@@ -88,6 +90,7 @@ impl Error {
             | Error::OtherGame(s)
             | Error::IncompatibleInstall(s)
             | Error::InvalidRuntime(s)
+            | Error::RuntimeTooOld(s)
             | Error::InvalidLocation(s)
             | Error::UnsupportedDownload(s) => s.clone(),
             _ => self.to_string(),
@@ -111,6 +114,7 @@ impl Error {
             Error::UnsupportedPlatform => ErrorKind::UnsupportedPlatform,
             Error::RuntimeMissing => ErrorKind::RuntimeMissing,
             Error::InvalidRuntime(_) => ErrorKind::InvalidRuntime,
+            Error::RuntimeTooOld(_) => ErrorKind::RuntimeTooOld,
             Error::Busy => ErrorKind::Busy,
             Error::AlreadyRunning => ErrorKind::AlreadyRunning,
             Error::NotFound(_) => ErrorKind::NotFound,
@@ -148,6 +152,7 @@ pub enum ErrorKind {
     UnsupportedPlatform,
     RuntimeMissing,
     InvalidRuntime,
+    RuntimeTooOld,
     Busy,
     AlreadyRunning,
     NotFound,

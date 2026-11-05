@@ -221,6 +221,9 @@ export function EngineStep({ next, back }: StepProps) {
       ) : (
         st && <Notice>{t("errors.unsupportedPlatform")}</Notice>
       )}
+      {st?.crtSwitchIgnored && (
+        <Notice>{t("runtime.crtSwitchIgnored", { version: st.pinnedVersion })}</Notice>
+      )}
       <details className="text-sm">
         <summary className="cursor-pointer text-muted">{t("setup.advanced")}</summary>
         <div className="mt-3 grid gap-3">

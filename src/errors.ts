@@ -13,6 +13,7 @@ const translated: ErrorKind[] = [
   "unsupportedPlatform",
   "runtimeMissing",
   "invalidRuntime",
+  "runtimeTooOld",
   "busy",
   "alreadyRunning",
   "invalidLocation",

@@ -24,7 +24,13 @@ function renderAbout() {
   });
   vi.mocked(commands.runtimeStatus).mockResolvedValue({
     status: "ok",
-    data: { active: null, managed: null, pinnedVersion: "0.83.0", downloadAvailable: true },
+    data: {
+      active: null,
+      managed: null,
+      pinnedVersion: "0.83.0",
+      downloadAvailable: true,
+      crtSwitchIgnored: false,
+    },
   });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(

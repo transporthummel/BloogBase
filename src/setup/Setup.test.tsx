@@ -64,6 +64,7 @@ const missing: RuntimeStatus = {
   managed: null,
   pinnedVersion: "0.83.0",
   downloadAvailable: true,
+  crtSwitchIgnored: false,
 };
 
 const job = (versionId: string): Job => ({
@@ -170,6 +171,21 @@ test("resumes at the step the library kept", async () => {
   resumeAt("storage");
   renderSetup();
   expect(await screen.findByText("/data")).toBeInTheDocument();
+});
+
+test("says what an older DOSBox of the player's own can't do", async () => {
+  resumeAt("engine");
+  vi.mocked(commands.runtimeStatus).mockResolvedValue({
+    status: "ok",
+    data: {
+      ...missing,
+      active: { id: "custom", version: "0.82.2", path: "dosbox.exe", managed: false },
+      crtSwitchIgnored: true,
+    },
+  });
+  renderSetup();
+  expect(await screen.findByText("Using your own DOSBox Staging 0.82.2.")).toBeInTheDocument();
+  expect(screen.getByText(/tested with DOSBox Staging 0\.83\.0/)).toBeInTheDocument();
 });
 
 test("skipping setup refreshes the cached status before leaving", async () => {

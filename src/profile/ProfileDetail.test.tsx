@@ -167,6 +167,7 @@ const ready: RuntimeStatus = {
   managed: null,
   pinnedVersion: "0.83.0",
   downloadAvailable: true,
+  crtSwitchIgnored: false,
 };
 
 const ok = <T,>(data: T) => ({ status: "ok" as const, data });

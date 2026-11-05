@@ -196,6 +196,9 @@ function RuntimeSection() {
               : t("runtime.activeCustom", { version: active.version })}
       </p>
       {active && <p className="text-xs break-all text-muted select-text">{active.path}</p>}
+      {st?.crtSwitchIgnored && (
+        <Notice>{t("runtime.crtSwitchIgnored", { version: st.pinnedVersion })}</Notice>
+      )}
 
       {/* With the player's own DOSBox in use, ours is downloaded after
           switching back to it, not next to it. */}
