@@ -40,11 +40,20 @@ fn main() {
         )
     } else if let Some(cmp) = read("KDREAMS.CMP") {
         keen_graphics::dreams_title(&cmp)
+    } else if let Some(maps) = read("GAMEMAPS.KDR") {
+        let cga = read("EGAGRAPH.KDR").is_none();
+        let graphics = if cga { "CGAGRAPH.KDR" } else { "EGAGRAPH.KDR" };
+        keen_graphics::dreams_map_title(
+            &read("KDREAMS.EXE").expect("no executable"),
+            &read(graphics).expect("no graphics file"),
+            &maps,
+            cga,
+        )
     } else {
         let n = ["4", "5", "6"]
             .into_iter()
             .find(|n| read(&format!("EGAGRAPH.CK{n}")).is_some())
-            .expect("no Keen 4-6 or Keen Dreams 1.13 files found");
+            .expect("no Keen 4-6 or Keen Dreams files found");
         let exe = [format!("KEEN{n}E.EXE"), format!("KEEN{n}.EXE")]
             .iter()
             .find_map(|e| read(e))

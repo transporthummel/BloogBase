@@ -125,6 +125,13 @@ Keen Dreams 1.13 keeps `TITLESCR.LBM` in the Softdisk library `KDREAMS.CMP`
 does; the colors are the EGA ones. File names the patch writes into the
 executable (`KDREAMS2.CMP`) are tried first.
 
+v1.0 and the CGA release v1.05 have no such file. Their title is map 20 of
+`GAMEMAPS.KDR`, drawn from the 16x16 tiles of `EGAGRAPH.KDR` or `CGAGRAPH.KDR`
+as the game first shows it, 88 pixels from the left and 44 from the top of the
+map. The map's header table is found in the unpacked executable by its RLEW tag
+(`CD AB`) and its offsets, the Huffman dictionary by being the one that decodes
+the map. The tiles' chunk numbers are fixed (background 370, masked 1810 on).
+
 ## Colors
 
 The image holds one of 16 color indexes per pixel. It becomes RGB with:

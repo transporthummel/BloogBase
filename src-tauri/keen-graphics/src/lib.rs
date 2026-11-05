@@ -9,6 +9,7 @@
 //! - Keen 4-6: the most colorful 320x200 picture in EGAGRAPH ([`egagraph`]).
 //! - Keen Dreams 1.13: `TITLESCR` in the Softdisk library `KDREAMS.CMP`
 //!   ([`slib`], [`ilbm`]).
+//! - Keen Dreams 1.0 and 1.05: the title map in `GAMEMAPS.KDR` ([`titlemap`]).
 
 use std::fmt;
 
@@ -19,6 +20,7 @@ pub mod ilbm;
 pub mod lzexe;
 pub mod pklite;
 pub mod slib;
+pub mod titlemap;
 pub mod vorticons;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,6 +67,10 @@ pub const EGA_PALETTE: [[u8; 3]; 16] = [
     [0xFF, 0xFF, 0xFF],
 ];
 
+/// The EGA colors of the palette the CGA games use: black, light cyan, light
+/// magenta, white.
+pub(crate) const CGA_COLORS: [u8; 4] = [0, 11, 13, 15];
+
 impl Image {
     /// From EGA planar data: all of plane 0 (blue), then green, red and
     /// intensity, each `width / 8 * height` bytes.
@@ -89,14 +95,13 @@ impl Image {
     }
 
     /// From CGA data: 4 pixels per byte, leftmost in the top bits, in the
-    /// palette the games use (black, light cyan, light magenta, white).
+    /// palette the games use.
     pub fn from_cga(data: &[u8], width: usize, height: usize) -> Result<Self, Error> {
-        const CGA: [u8; 4] = [0, 11, 13, 15];
         if data.len() < width / 4 * height {
             return Err(Error::Format("picture data too short"));
         }
         let pixels = (0..width * height)
-            .map(|i| CGA[usize::from((data[i / 4] >> (6 - 2 * (i % 4))) & 3)])
+            .map(|i| CGA_COLORS[usize::from((data[i / 4] >> (6 - 2 * (i % 4))) & 3)])
             .collect();
         Ok(Image {
             width,
@@ -209,6 +214,20 @@ pub fn galaxy_cga_title(
 /// The title screen of Keen Dreams 1.13 from `KDREAMS.CMP`.
 pub fn dreams_title(cmp: &[u8]) -> Result<Image, Error> {
     ilbm::decode(&slib::entry(cmp, "TITLESCR.LBM")?)
+}
+
+/// The title screen of Keen Dreams 1.0 (`EGAGRAPH.KDR`) or the CGA release
+/// 1.05 (`CGAGRAPH.KDR`, with `cga`) from its executable and `GAMEMAPS.KDR`.
+pub fn dreams_map_title(
+    exe: &[u8],
+    graphics: &[u8],
+    gamemaps: &[u8],
+    cga: bool,
+) -> Result<Image, Error> {
+    let image = load_image(exe)?;
+    let graph = egagraph::EgaGraph::from_exe(graphics, &image, 4)?;
+    let graph = if cga { graph.cga() } else { graph };
+    titlemap::title(&image, gamemaps, &graph)
 }
 
 /// The load image of a DOS executable, unpacked if LZEXE or PKLITE packed it.

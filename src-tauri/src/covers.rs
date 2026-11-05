@@ -22,7 +22,7 @@ use crate::profiles;
 use crate::recipe::{self, Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v18";
+const VERSION: &str = "covers v19";
 
 /// A profile's cover.
 #[derive(Debug, PartialEq, Eq)]
@@ -526,6 +526,20 @@ fn title(
                     Some(Ok(image)) => return Ok((image, false, false)),
                     Some(Err(e)) => last = format!("{name}: {e}"),
                     None => last = format!("{name} missing"),
+                }
+            }
+            // v1.0 and the CGA release v1.05 draw it from a map.
+            let (Some(exe), Some(maps)) = (files.read("KDREAMS.EXE"), files.read("GAMEMAPS.KDR"))
+            else {
+                return Err(last);
+            };
+            for (name, cga) in [("EGAGRAPH.KDR", false), ("CGAGRAPH.KDR", true)] {
+                let Some(graphics) = files.read(name) else {
+                    continue;
+                };
+                match keen_graphics::dreams_map_title(&exe, &graphics, &maps, cga) {
+                    Ok(image) => return Ok((image, cga, false)),
+                    Err(e) => last = format!("{name}: {e}"),
                 }
             }
             Err(last)
@@ -1094,6 +1108,22 @@ mod tests {
             [ext("keen1"), ext("keen6"), ext("kdreams")],
             ["CK1", "CK6", "KDR"]
         );
+    }
+
+    /// The two Keen Dreams releases without a `KDREAMS.CMP` get their title
+    /// from the map, on the files as they are in `$KEEN_GAMES/versions`.
+    ///
+    /// `KEEN_GAMES=… cargo test covers::tests::dreams_map_titles -- --ignored`
+    #[test]
+    #[ignore]
+    fn dreams_map_titles() {
+        let games = PathBuf::from(std::env::var("KEEN_GAMES").expect("KEEN_GAMES"));
+        let game = catalog::game("kdreams").unwrap();
+        for folder in ["Keen Dreams v1.0", "Keen Dreams v1.05 REV 1"] {
+            let files = Files::new(&[&games.join("versions").join(folder)]).unwrap();
+            let title = extract(game, None, None, None, &files).expect(folder);
+            assert_eq!((title.image.width, title.image.height), (320, 200));
+        }
     }
 
     /// Extracts the titles of the mods in `$KEEN_MODS/<folder>` on top of

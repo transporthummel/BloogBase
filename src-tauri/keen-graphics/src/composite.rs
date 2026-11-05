@@ -2,7 +2,7 @@
 //! the color burst on: four pixels make one cycle of the color carrier, so
 //! each run of four becomes one of 16 artifact colors.
 
-use crate::Image;
+use crate::{CGA_COLORS, Image};
 
 /// The artifact color of four pixels by where they fall in the carrier
 /// cycle: bit 3 for the pixel at phase 0 (x divisible by 4) down to bit 0.
@@ -28,9 +28,6 @@ const COLORS: [[u8; 3]; 16] = [
     [0xFD, 0xFD, 0xFD],
 ];
 
-/// The CGA colors [`Image::from_cga`] gives each two-bit value.
-const CGA: [u8; 4] = [0, 11, 13, 15];
-
 /// 8-bit RGB of a CGA picture, at its own size: its two-bit pixels are the
 /// 640 one-bit pixels of each line. Each of those gets the mean color of the
 /// five four-pixel runs around it (closest to DOSBox's filtering), and each
@@ -45,7 +42,10 @@ pub fn to_rgb(image: &Image) -> Vec<u8> {
                 .ok()
                 .filter(|&x| x < wide)
                 .map_or(0, |x| {
-                    let value = CGA.iter().position(|&c| c == row[x / 2]).unwrap_or(0);
+                    let value = CGA_COLORS
+                        .iter()
+                        .position(|&c| c == row[x / 2])
+                        .unwrap_or(0);
                     (value >> (1 - x % 2)) & 1
                 })
         };

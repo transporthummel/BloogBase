@@ -82,4 +82,5 @@ jobs:
           for zip in "$GITHUB_WORKSPACE"/mod-cache/*.zip; do
             unzip -q "$zip" -d "$KEEN_MODS/$(basename "$zip" .zip)"
           done
+          cargo test --lib covers::tests::dreams_map_titles -- --ignored
           cargo test --lib covers::tests::mods -- --ignored

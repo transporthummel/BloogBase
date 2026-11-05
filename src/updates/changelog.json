@@ -9,7 +9,8 @@
       "The Windows uninstaller has the BloogBase icon.",
       "The library shows its games faster after a start.",
       "The library shows that it is loading instead of an empty page.",
-      "Your own DOSBox Staging has to be version 0.82 or newer."
+      "Your own DOSBox Staging has to be version 0.82 or newer.",
+      "Keen Dreams v1.0 and v1.05 show their title screen as cover."
     ],
     "de": [
       "BloogBase kann ins Vollbild, und Spiele starten dann auch im Vollbild.",
@@ -20,7 +21,8 @@
       "Der Windows-Uninstaller hat das BloogBase-Icon.",
       "Die Bibliothek zeigt ihre Spiele nach dem Start schneller an.",
       "Die Bibliothek zeigt beim Laden einen Hinweis statt einer leeren Seite.",
-      "Dein eigenes DOSBox Staging muss Version 0.82 oder neuer sein."
+      "Dein eigenes DOSBox Staging muss Version 0.82 oder neuer sein.",
+      "Keen Dreams v1.0 und v1.05 zeigen ihren Titelbildschirm als Cover."
     ]
   },
   "releases": [

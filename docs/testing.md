@@ -77,6 +77,7 @@ for the version test; the others need it set, as an absolute path):
 cd src-tauri
 cargo test --lib detect::tests::real_versions -- --ignored
 KEEN_GAMES=… cargo test -p keen-graphics corpus -- --ignored
+KEEN_GAMES=… cargo test --lib covers::tests::dreams_map_titles -- --ignored
 KEEN_MODS=<unpacked mods, one folder each> KEEN_GAMES=… KEEN_OUT=<folder> \
   cargo test --lib covers::tests::mods -- --ignored
 ```
@@ -85,7 +86,9 @@ KEEN_MODS=<unpacked mods, one folder each> KEEN_GAMES=… KEEN_OUT=<folder> \
   after it; `KEEN_VERSIONS.md` next to them lists what the owner has) must be recognized as that version, and every catalog version
   needs a folder. Add one when the catalog gets a new version.
 - **Title screens:** every game's title is a full, colorful 320x200 picture
-  (folders `keen1` … `keen6`, `kdreams113` in `test/`).
+  (folders `keen1` … `keen6`, `kdreams113` in `test/`, and Keen Dreams v1.0 and
+  v1.05 in `versions/`, whose title is a map; `dreams_map_titles` checks those
+  two through the cover code).
 - **Mod covers:** the title of every mod is extracted on top of its game
   (`versions/Commander Keen 4 v1.4` for Keen 4, `test/keen6-14` for Keen 6, the
   v1.4 CGA versions for CGA mods) into `KEEN_OUT` as PNG; look at them after

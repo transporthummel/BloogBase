@@ -312,8 +312,142 @@ fn vorticons_full_screen_titles_hide_the_level() {
     assert!(keen_graphics::vorticons_title(&head, &latch, b"broken", None).is_err());
 }
 
+/// A dictionary that reads each byte from eight bits, top bit first: a full
+/// binary tree, and the code to go with it.
+fn byte_dictionary() -> Vec<u8> {
+    let mut d = vec![0u8; 1024];
+    // Heap position `h` (1 is the root) is node `255 - h`.
+    for h in 1usize..256 {
+        for bit in 0..2 {
+            let child = 2 * h + bit;
+            let branch = if child < 256 {
+                256 + 255 - child
+            } else {
+                child - 256
+            };
+            d[(255 - h) * 4 + bit * 2..][..2].copy_from_slice(&(branch as u16).to_le_bytes());
+        }
+    }
+    d
+}
+
+fn byte_code(data: &[u8]) -> Vec<u8> {
+    let mut out = vec![0u8; data.len()];
+    for (i, &byte) in data.iter().enumerate() {
+        for bit in 0..8 {
+            out[i] |= ((byte >> (7 - bit)) & 1) << bit;
+        }
+    }
+    out
+}
+
+/// A plane of 32x19 tiles of `fill`, with `tile` at column 6, row 3.
+fn title_plane(fill: u16, tile: u16) -> Vec<u8> {
+    let words = [
+        vec![0xABCD, 3 * 32 + 6, fill],
+        vec![tile],
+        vec![0xABCD, 32 * 19 - 3 * 32 - 7, fill],
+    ]
+    .concat();
+    let mut rlew = (words.len() as u16 * 2 + 2).to_le_bytes().to_vec();
+    rlew.extend(words.iter().flat_map(|w| w.to_le_bytes()));
+    let mut plane = (rlew.len() as u16).to_le_bytes().to_vec();
+    plane.extend(byte_code(&rlew));
+    plane
+}
+
+/// `(graphics, gamemaps, executable)` of a title map: background tile 1 all
+/// over and foreground tile 1 at column 6, row 3.
+fn title_map_game(tile: &[u8], masked: &[u8]) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
+    let mut graph = 4u32.to_le_bytes().to_vec();
+    graph.extend([1, 0, 1, 0]); // the picture table
+    let mut offsets = vec![0xFFFF_FFFFu32; 1812];
+    offsets[0] = 0;
+    offsets[370 + 1] = graph.len() as u32;
+    graph.extend_from_slice(tile);
+    offsets[1810 + 1] = graph.len() as u32;
+    graph.extend_from_slice(masked);
+    offsets.push(graph.len() as u32);
+
+    let mut maps = b"TED5v1.0".to_vec();
+    let (back, fore) = (title_plane(1, 1), title_plane(0, 1));
+    let mut header = vec![];
+    header.extend((maps.len() as u32).to_le_bytes());
+    header.extend(((maps.len() + back.len()) as u32).to_le_bytes());
+    header.extend(0u32.to_le_bytes());
+    header.extend((back.len() as u16).to_le_bytes());
+    header.extend((fore.len() as u16).to_le_bytes());
+    header.extend(0u16.to_le_bytes());
+    header.extend([32, 0, 19, 0]);
+    header.resize(38, 0);
+    maps.extend(back);
+    maps.extend(fore);
+    let header_at = maps.len() as i32;
+    maps.extend(byte_code(&header));
+
+    let mut exe = vec![0x55u8; 32];
+    exe.extend(0xABCDu16.to_le_bytes());
+    for i in 0..100 {
+        let offset = if i == 20 { header_at } else { -1 };
+        exe.extend(offset.to_le_bytes());
+    }
+    exe.extend((0..100).map(|i| if i == 20 { 38 } else { 0u8 }));
+    exe.extend(byte_dictionary());
+    exe.extend(offsets.iter().flat_map(|o| o.to_le_bytes()));
+    exe.extend([0x55; 8]);
+    (graph, maps, exe)
+}
+
+#[test]
+fn title_map_draws_ega_tiles_with_their_masks() {
+    let blue = [vec![0xFF; 32], vec![0; 96]].concat(); // plane 0
+    let draw = |tile: &[u8], masked: &[u8]| {
+        let (graph, maps, exe) = title_map_game(tile, masked);
+        let g = EgaGraph::from_exe(&graph, &exe, 4).unwrap();
+        keen_graphics::titlemap::title(&exe, &maps, &g).unwrap()
+    };
+
+    // A solid foreground tile on black: column 6, row 3 is at (8, 4) on the
+    // screen, which starts 88 and 44 pixels into the map.
+    let image = draw(&[0; 128], &[vec![0; 32], blue.clone()].concat());
+    assert_eq!((image.width, image.height), (320, 200));
+    let at = |x: usize, y: usize| image.pixels[y * 320 + x];
+    assert_eq!((at(8, 4), at(23, 19)), (1, 1));
+    assert_eq!((at(7, 4), at(8, 3), at(24, 4), at(8, 20)), (0, 0, 0, 0));
+
+    // On blue, its mask keeps the upper half; the lower half is black.
+    let mask = [vec![0xFF; 16], vec![0; 16]].concat();
+    let image = draw(&blue, &[mask, vec![0; 128]].concat());
+    let at = |x: usize, y: usize| image.pixels[y * 320 + x];
+    assert_eq!((at(8, 4), at(8, 11), at(8, 12), at(7, 12)), (1, 1, 0, 1));
+}
+
+#[test]
+fn title_map_gives_cga_tiles_the_palette() {
+    // Background all light cyan, the masked tile white without a mask.
+    let (graph, maps, exe) =
+        title_map_game(&[0b0101_0101; 64], &[vec![0; 64], vec![0xFF; 64]].concat());
+    let g = EgaGraph::from_exe(&graph, &exe, 4).unwrap().cga();
+    let image = keen_graphics::titlemap::title(&exe, &maps, &g).unwrap();
+    assert_eq!(image.pixels[0], 11);
+    assert_eq!(image.pixels[4 * 320 + 8], 15);
+}
+
+#[test]
+fn title_map_refuses_what_does_not_fit() {
+    let (graph, maps, exe) = title_map_game(&[0; 128], &[0; 160]);
+    let g = EgaGraph::from_exe(&graph, &exe, 4).unwrap();
+    // A map cut short, no header table, and a tile that isn't there.
+    assert!(keen_graphics::titlemap::title(&exe, &maps[..20], &g).is_err());
+    assert!(keen_graphics::titlemap::title(&[0x55; 2048], &maps, &g).is_err());
+    let (graph, maps, exe) = title_map_game(&[0; 10], &[0; 10]);
+    let g = EgaGraph::from_exe(&graph, &exe, 4).unwrap();
+    assert!(keen_graphics::titlemap::title(&exe, &maps, &g).is_err());
+}
+
 /// Checks the real games in `$KEEN_GAMES/test/<folder>` (as in
-/// `.local/games`): every title is a full, colorful 320x200 picture.
+/// `.local/games`), and those in `versions/` that draw it from a map: every
+/// title is a full, colorful 320x200 picture.
 ///
 /// `KEEN_GAMES=<absolute path> cargo test -p keen-graphics corpus -- --ignored`
 #[test]
@@ -322,7 +456,28 @@ fn corpus() {
     let root = std::path::PathBuf::from(std::env::var("KEEN_GAMES").expect("KEEN_GAMES"));
     let read =
         |dir: &str, name: &str| std::fs::read(root.join("test").join(dir).join(name)).unwrap();
+    let release =
+        |dir: &str, name: &str| std::fs::read(root.join("versions").join(dir).join(name)).unwrap();
+    let (dreams10, dreams105) = ("Keen Dreams v1.0", "Keen Dreams v1.05 REV 1");
+    let cga = keen_graphics::dreams_map_title(
+        &release(dreams105, "KDREAMS.EXE"),
+        &release(dreams105, "CGAGRAPH.KDR"),
+        &release(dreams105, "GAMEMAPS.KDR"),
+        true,
+    )
+    .unwrap();
+    assert_eq!((cga.width, cga.height), (320, 200));
+    assert_eq!(cga.color_count(), 4);
     let titles = [
+        (
+            "kdreams10",
+            keen_graphics::dreams_map_title(
+                &release(dreams10, "kdreams.exe"),
+                &release(dreams10, "egagraph.kdr"),
+                &release(dreams10, "gamemaps.kdr"),
+                false,
+            ),
+        ),
         (
             "keen1",
             keen_graphics::vorticons_title(
@@ -385,11 +540,12 @@ fn corpus() {
     for (game, title) in titles {
         let image = title.unwrap_or_else(|e| panic!("{game}: {e}"));
         assert_eq!((image.width, image.height), (320, 200), "{game}");
-        // Keen 1-3 don't need all 16 colors on their title.
-        let colors = if ["keen1", "keen2", "keen3"].contains(&game) {
-            12
-        } else {
-            16
+        // Keen 1-3 and the tiled title of Keen Dreams 1.0 don't need all 16
+        // colors.
+        let colors = match game {
+            "keen1" | "keen2" | "keen3" => 12,
+            "kdreams10" => 11,
+            _ => 16,
         };
         assert!(image.color_count() >= colors, "{game}");
     }

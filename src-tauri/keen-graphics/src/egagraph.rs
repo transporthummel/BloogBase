@@ -83,9 +83,13 @@ impl<'a> EgaGraph<'a> {
         EgaGraph { cga: true, ..self }
     }
 
-    /// The decompressed chunk `n`. Only for chunks with a size prefix (all
-    /// but the 16x16 and 32x32 tiles).
-    pub fn chunk(&self, n: usize) -> Result<Vec<u8>, Error> {
+    /// Whether this is a CGAGRAPH (see [`EgaGraph::cga`]).
+    pub fn is_cga(&self) -> bool {
+        self.cga
+    }
+
+    /// The stored bytes of chunk `n`.
+    fn stored_chunk(&self, n: usize) -> Result<&'a [u8], Error> {
         let start = self
             .offsets
             .get(n)
@@ -99,9 +103,28 @@ impl<'a> EgaGraph<'a> {
             None => None,
         }
         .unwrap_or(self.data.len());
-        let raw = self
-            .data
+        self.data
             .get(start..end)
+            .ok_or(Error::Format("chunk outside the graphics file"))
+    }
+
+    /// The decompressed chunk `n` of `len` bytes, for the 16x16 and 32x32
+    /// tiles, which have no size prefix.
+    pub fn sized_chunk(&self, n: usize, len: usize) -> Result<Vec<u8>, Error> {
+        let raw = self.stored_chunk(n)?;
+        match &self.dict {
+            Some(dict) => dict.decode(raw, len),
+            None => raw
+                .get(..len)
+                .map(<[u8]>::to_vec)
+                .ok_or(Error::Format("chunk outside the graphics file")),
+        }
+    }
+
+    /// The decompressed chunk `n`. Only for chunks with a size prefix (all
+    /// but the 16x16 and 32x32 tiles).
+    pub fn chunk(&self, n: usize) -> Result<Vec<u8>, Error> {
+        let raw = Some(self.stored_chunk(n)?)
             .filter(|r| r.len() >= 4)
             .ok_or(Error::Format("chunk outside the graphics file"))?;
         let len = u32::from_le_bytes([raw[0], raw[1], raw[2], raw[3]]) as usize;
