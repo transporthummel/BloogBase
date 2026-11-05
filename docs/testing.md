@@ -82,12 +82,12 @@ KEEN_MODS=<unpacked mods, one folder each> KEEN_GAMES=… KEEN_OUT=<folder> \
 ```
 
 - **Versions:** every folder in `versions/` (one per catalog version, named
-  after it) must be recognized as that version, and every catalog version
+  after it; `KEEN_VERSIONS.md` next to them lists what the owner has) must be recognized as that version, and every catalog version
   needs a folder. Add one when the catalog gets a new version.
 - **Title screens:** every game's title is a full, colorful 320x200 picture
-  (folders `keen1` … `keen6`, `kdreams113`).
+  (folders `keen1` … `keen6`, `kdreams113` in `test/`).
 - **Mod covers:** the title of every mod is extracted on top of its game
-  (`versions/Commander Keen 4 v1.4` for Keen 4, `keen6-14` for Keen 6, the
+  (`versions/Commander Keen 4 v1.4` for Keen 4, `test/keen6-14` for Keen 6, the
   v1.4 CGA versions for CGA mods) into `KEEN_OUT` as PNG; look at them after
   changes to the covers.
   `pnpm test:all` unpacks the mod cache for it into
@@ -105,6 +105,9 @@ artifacts and pins its actions to commits.
 
 To get the games locally:
 `git clone git@github.com:transporthummel/bloogbase-games.git .local/games`.
+It holds `versions/` (one folder per catalog version), `disks/` (installer
+disks), `platforms/GOG/` (a GOG install) and `test/` (other copies the tests
+use).
 The repo stores files byte for byte (`* -text`); line ending conversion would
 change their hashes.
 
@@ -137,8 +140,8 @@ Launches every mod in DOSBox on every game version it fits, keeps it running
 for a few seconds and saves a screenshot of the DOSBox window. Windows only
 for now.
 
-It imports every folder in `.local/games` (folders with several episodes in
-subfolders work too) and takes the mod archives from `.local/mods`, the corpus
+It imports the game folders in `.local/games` (`platforms`, `disks`, `test`,
+`versions`; folders with several episodes in subfolders work too) and takes the mod archives from `.local/mods`, the corpus
 cache.
 
 ```sh

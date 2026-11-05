@@ -9,13 +9,13 @@
   },
   "seed": {
     "games": [
-      "GOG/KEEN1",
-      "GOG/KEEN2",
-      "GOG/KEEN3",
-      "GOG/KEEN4",
-      "GOG/KEEN5",
-      "keen6-14",
-      "kdreams113"
+      "platforms/GOG/KEEN1",
+      "platforms/GOG/KEEN2",
+      "platforms/GOG/KEEN3",
+      "platforms/GOG/KEEN4",
+      "platforms/GOG/KEEN5",
+      "test/keen6-14",
+      "test/kdreams113"
     ],
     "mods": [
       "the-keys-of-krodacia",

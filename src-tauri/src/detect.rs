@@ -367,7 +367,10 @@ mod tests {
         }
         // Every catalog version is covered, and no folder is left out.
         let versions: usize = catalog::games().iter().map(|g| g.versions.len()).sum();
-        let folders = std::fs::read_dir(&root).unwrap().count();
+        let folders = std::fs::read_dir(&root)
+            .unwrap()
+            .filter(|e| e.as_ref().unwrap().path().is_dir())
+            .count();
         assert!(wrong.is_empty(), "{wrong:#?}");
         assert_eq!((expected.len(), folders), (versions, versions));
     }

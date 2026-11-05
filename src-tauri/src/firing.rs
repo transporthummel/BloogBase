@@ -802,7 +802,7 @@ pub mod tests {
         );
     }
 
-    /// The real episodes in `$KEEN_GAMES/keen1` ... `keen3` take the patch.
+    /// The real episodes in `$KEEN_GAMES/test/keen1` ... `keen3` take the patch.
     ///
     /// `KEEN_GAMES=<absolute path> cargo test firing::tests::real -- --ignored`
     #[test]
@@ -813,7 +813,8 @@ pub mod tests {
             let tmp = tempfile::tempdir().unwrap();
             let game = catalog::game(episode.game).unwrap();
             let exe = &game.executables[0];
-            fs::copy(root.join(episode.game).join(exe), tmp.path().join(exe)).unwrap();
+            let game_dir = root.join("test").join(episode.game);
+            fs::copy(game_dir.join(exe), tmp.path().join(exe)).unwrap();
             let dirs = [tmp.path()];
             assert_eq!(
                 status(game, &Recipe::Episode, &dirs),

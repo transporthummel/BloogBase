@@ -312,7 +312,7 @@ fn vorticons_full_screen_titles_hide_the_level() {
     assert!(keen_graphics::vorticons_title(&head, &latch, b"broken", None).is_err());
 }
 
-/// Checks the real games in `$KEEN_GAMES/<folder>` (game folders as in
+/// Checks the real games in `$KEEN_GAMES/test/<folder>` (as in
 /// `.local/games`): every title is a full, colorful 320x200 picture.
 ///
 /// `KEEN_GAMES=<absolute path> cargo test -p keen-graphics corpus -- --ignored`
@@ -320,7 +320,8 @@ fn vorticons_full_screen_titles_hide_the_level() {
 #[ignore]
 fn corpus() {
     let root = std::path::PathBuf::from(std::env::var("KEEN_GAMES").expect("KEEN_GAMES"));
-    let read = |dir: &str, name: &str| std::fs::read(root.join(dir).join(name)).unwrap();
+    let read =
+        |dir: &str, name: &str| std::fs::read(root.join("test").join(dir).join(name)).unwrap();
     let titles = [
         (
             "keen1",

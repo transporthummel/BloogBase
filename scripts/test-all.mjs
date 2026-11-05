@@ -18,7 +18,7 @@ const windows = process.platform === "win32";
 
 const env = {
   ...process.env,
-  BLOOGBASE_E2E_GAME: process.env.BLOOGBASE_E2E_GAME ?? join(local, "games", "keen4"),
+  BLOOGBASE_E2E_GAME: process.env.BLOOGBASE_E2E_GAME ?? join(local, "games", "test", "keen4"),
   BLOOGBASE_E2E_DOSBOX:
     process.env.BLOOGBASE_E2E_DOSBOX ??
     join(local, "tmp", "dosbox", "dosbox-staging-v0.83.0", "dosbox.exe"),

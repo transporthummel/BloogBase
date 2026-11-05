@@ -1113,14 +1113,15 @@ mod tests {
             let (recipe, versions) = (&info.recipes[0].recipe, &info.recipes[0].version_ids);
             // CGA mods only go on the CGA release, as Keen4c16.
             let cga = !versions.is_empty() && versions.iter().all(|v| v.ends_with("-cga"));
-            let base = games.join(match game.id.as_str() {
-                "keen4" if cga => "versions/Commander Keen 4 v1.4 CGA",
-                "keen5" if cga => "versions/Commander Keen 5 v1.4 CGA",
-                "keen4" => "versions/Commander Keen 4 v1.4",
-                "keen6" => "keen6-14",
-                "kdreams" => "kdreams113",
-                id => id,
-            });
+            let (versions_dir, test_dir) = (games.join("versions"), games.join("test"));
+            let base = match game.id.as_str() {
+                "keen4" if cga => versions_dir.join("Commander Keen 4 v1.4 CGA"),
+                "keen5" if cga => versions_dir.join("Commander Keen 5 v1.4 CGA"),
+                "keen4" => versions_dir.join("Commander Keen 4 v1.4"),
+                "keen6" => test_dir.join("keen6-14"),
+                "kdreams" => test_dir.join("kdreams113"),
+                id => test_dir.join(id),
+            };
             let files = Files::new(&[&root, &base]).unwrap();
             let name = root.file_name().unwrap().to_string_lossy().into_owned();
             match extract(game, None, Some(recipe), None, &files) {

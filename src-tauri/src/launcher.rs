@@ -1132,8 +1132,8 @@ mod e2e {
     }
 }
 
-/// Manual check that real mods start: imports every game folder in
-/// `.local/games`, installs every mod in `.local/mods` on each install it
+/// Manual check that real mods start: imports the game folders in
+/// `.local/games` (`platforms`, `disks`, `test`, `versions`), installs every mod in `.local/mods` on each install it
 /// fits, runs it in DOSBox for a few seconds and saves a screenshot to
 /// `target/e2e-mods/shots/`.
 /// `BLOOGBASE_E2E_DOSBOX=<dosbox.exe> cargo test e2e_mods -- --ignored --nocapture --test-threads=1`
@@ -1201,7 +1201,13 @@ $bmp.Save($env:SHOT_PATH)
             .active
             .unwrap();
 
-        for game in sorted_entries(&local.join("games")) {
+        let games = local.join("games");
+        let folders = sorted_entries(&games.join("platforms"))
+            .into_iter()
+            .chain([games.join("disks")])
+            .chain(sorted_entries(&games.join("test")))
+            .chain([games.join("versions")]);
+        for game in folders {
             match library::import(&paths, &db, &game) {
                 Ok(found) => {
                     for i in found {
