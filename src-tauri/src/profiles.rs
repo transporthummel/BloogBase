@@ -319,6 +319,12 @@ mod tests {
             find_executable(kd, None, tmp.path()).unwrap(),
             "KDREAMS.EXE"
         );
+        write_folder(tmp.path(), &[("START.BAT", b"")]);
+        assert_eq!(
+            find_executable(kd, Some("kdreams-1.20"), tmp.path()).unwrap(),
+            "START.BAT"
+        );
+        fs::remove_file(tmp.path().join("START.BAT")).unwrap();
         fs::remove_file(tmp.path().join("start.exe")).unwrap();
         assert_eq!(
             find_executable(kd, Some("kdreams-1.13"), tmp.path()).unwrap(),

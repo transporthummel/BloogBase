@@ -3,6 +3,7 @@
     "en": [
       "BloogBase can go fullscreen, and games then start in fullscreen too.",
       "A button in the sidebar quits BloogBase, also in fullscreen.",
+      "BloogBase recognizes eight more game releases, 50 in all.",
       "The Windows installer updates an older version instead of uninstalling it.",
       "Download sizes show small files in KB and use your language's decimal separator.",
       "The Windows uninstaller has the BloogBase icon.",
@@ -13,6 +14,7 @@
     "de": [
       "BloogBase kann ins Vollbild, und Spiele starten dann auch im Vollbild.",
       "Ein Button in der Seitenleiste beendet BloogBase, auch im Vollbild.",
+      "BloogBase erkennt acht weitere Spielversionen, insgesamt 50.",
       "Der Windows-Installer aktualisiert eine ältere Version, statt sie zu deinstallieren.",
       "Downloadgrößen zeigen kleine Dateien in KB und stehen mit Komma statt Punkt da.",
       "Der Windows-Uninstaller hat das BloogBase-Icon.",

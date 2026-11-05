@@ -150,7 +150,7 @@ Midnight Galaxy; above it is in Vintage Beige. In English and German.
 
 **Games**
 
-- Knows 42 releases of the seven games by their files: every version from
+- Knows 50 releases of the seven games by their files: every version from
   v1.0 to v1.93, EGA and CGA, FormGen, GT Interactive and id Anthology
   releases, and even the betas and demos (also in Discover).
 - Several versions of a game side by side. Mods go on the copy they fit best,

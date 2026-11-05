@@ -6,6 +6,7 @@
 
 - BloogBase can go fullscreen, without the taskbar, from a button in the sidebar or with F11, and can start in fullscreen (off by default, in Settings); while it is in fullscreen, games start in fullscreen too, whatever their settings say.
 - A "Quit BloogBase" button at the bottom of the sidebar closes the app, also in fullscreen, and asks first while games run, as the window's close button does.
+- BloogBase knows 50 releases now, eight more: Keen 2 and 3 v1.1 and v1.32, the Keen 6 Apogee demo and id Anthology release, and Keen Dreams v1.05 and v1.20; mods get placed on them by the same ranking as on the others.
 
 ### Improvements
 

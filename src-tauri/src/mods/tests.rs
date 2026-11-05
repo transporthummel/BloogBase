@@ -1160,7 +1160,10 @@ fn curated_versions_and_ranking() {
     // Releases by the game's preferred versions, builds after all of them.
     assert!(rank(Some("keen6-1.4-ega")) < rank(Some("keen6-1.5-ega")));
     assert!(rank(Some("keen6-1.5-ega")) < rank(Some("keen6-1.0")));
-    assert!(rank(Some("keen6-demo")) < rank(Some("keen6-1.5-ega-nocp")));
+    assert!(rank(Some("keen6-1.4-cga")) < rank(Some("keen6-1.0-cga-anthology")));
+    assert!(rank(Some("keen6-1.0-cga-anthology")) < rank(Some("keen6-1.5-cga")));
+    assert!(rank(Some("keen6-demo")) < rank(Some("keen6-demo-apogee")));
+    assert!(rank(Some("keen6-demo-apogee")) < rank(Some("keen6-1.5-ega-nocp")));
     assert!(rank(Some("keen6-1.5-ega-nocp")) < rank(Some("keen6-1.0-nocp")));
     let k1 = catalog::game("keen1").unwrap();
     let k1_rank = |v: &str| {

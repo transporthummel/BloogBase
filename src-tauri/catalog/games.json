@@ -1,16 +1,9 @@
 {
-  "$comment": "Game definitions (PLAN.md §5). File names are matched case-insensitively; `requiredFiles` entries may list alternatives as `A|B`; `?` and `*` are wildcards in saves/stateFiles. A version is recognised by the SHA-256 of its `files` (at least one executable; the first version whose files all match wins, so a version that needs more files comes before one that needs fewer). `patchVersion`: what patch files call this release in `%version`, only set on releases patches are made for. `kind`: `beta` or `demo` for releases that aren't the full game. `original`: for third-party builds (e.g. copy protection removed), the release they were made from; mods for it are offered, but patches may not fit, unless `repackaged` says the game files are identical. `start` replaces the episode executable at launch (Keen Dreams 1.01/1.13 refuse to run without their START shell). Hashes checked 2026-10-20 against the owner's copies in .local/games/versions.",
+  "$comment": "Game definitions (PLAN.md §5). File names are matched case-insensitively; `requiredFiles` entries may list alternatives as `A|B`; `?` and `*` are wildcards in saves/stateFiles. A version is recognised by the SHA-256 of its `files` (at least one executable; the first version whose files all match wins, so a version that needs more files comes before one that needs fewer). `patchVersion`: what patch files call this release in `%version`, only set on releases patches are made for. `kind`: `beta` or `demo` for releases that aren't the full game. `original`: for third-party builds (e.g. copy protection removed), the release they were made from; mods for it are offered, but patches may not fit, unless `repackaged` says the game files are identical. `start` replaces the episode executable at launch (Keen Dreams 1.01/1.13/1.20 refuse to run without their START shell). Hashes checked 2026-11-05 against the owner's copies in .local/games/versions; Keen 2 and 3 v1.1 and v1.32 are checked against rebuilds that match the originals' size and CRC32.",
   "$missing": [
     "Releases known to exist that have no hashes yet, because no copy could be found:",
-    "Commander Keen 2 v1.1",
-    "Commander Keen 2 v1.32",
-    "Commander Keen 3 v1.1",
-    "Commander Keen 3 v1.32",
-    "Keen Dreams v1.05 REV 1",
     "Commander Keen 4 v1.2 CGA",
-    "Commander Keen 5 v1.0 CGA",
-    "Commander Keen 6 Apogee demo",
-    "Commander Keen 6 id Anthology release (CGA)"
+    "Commander Keen 5 v1.0 CGA"
   ],
   "games": [
     {
@@ -84,7 +77,7 @@
       "requiredFiles": ["EGAHEAD.CK2", "EGALATCH.CK2", "EGASPRIT.CK2", "LEVEL01.CK2"],
       "saves": ["SAVED?.CK2"],
       "stateFiles": ["CTLPANEL.CK2", "SCORES.CK2"],
-      "preferredVersions": ["keen2-1.31", "keen2-1.0"],
+      "preferredVersions": ["keen2-1.31", "keen2-1.32", "keen2-1.1", "keen2-1.0"],
       "versions": [
         {
           "id": "keen2-1.0",
@@ -94,11 +87,25 @@
           "patchVersion": "1.0"
         },
         {
+          "id": "keen2-1.1",
+          "label": "v1.1",
+          "files": { "KEEN2.EXE": "91b88f10fc704e36cb2bde2f06685b73732ba5aedf669c1def8a2559273b562c" },
+          "shareware": false,
+          "patchVersion": "1.1"
+        },
+        {
           "id": "keen2-1.31",
           "label": "v1.31",
           "files": { "KEEN2.EXE": "01a05a1584c4245dbf14b4de74bcc10205d4b0944b891ad9b24d01a33f93b966" },
           "shareware": false,
           "patchVersion": "1.31"
+        },
+        {
+          "id": "keen2-1.32",
+          "label": "v1.32",
+          "files": { "KEEN2.EXE": "62e1822dd53635ab421b9a16ff16ba400e04f05487cd02c0f75eba431481e3cc" },
+          "shareware": false,
+          "patchVersion": "1.32"
         }
       ]
     },
@@ -111,7 +118,7 @@
       "requiredFiles": ["EGAHEAD.CK3", "EGALATCH.CK3", "EGASPRIT.CK3", "LEVEL01.CK3"],
       "saves": ["SAVED?.CK3"],
       "stateFiles": ["CTLPANEL.CK3", "SCORES.CK3"],
-      "preferredVersions": ["keen3-1.31", "keen3-1.0"],
+      "preferredVersions": ["keen3-1.31", "keen3-1.32", "keen3-1.1", "keen3-1.0"],
       "versions": [
         {
           "id": "keen3-1.0",
@@ -121,11 +128,25 @@
           "patchVersion": "1.0"
         },
         {
+          "id": "keen3-1.1",
+          "label": "v1.1",
+          "files": { "KEEN3.EXE": "6de590d618f2c09d037d1c5f2e57b72add2b57088333dcee0f4882a1c3689c94" },
+          "shareware": false,
+          "patchVersion": "1.1"
+        },
+        {
           "id": "keen3-1.31",
           "label": "v1.31",
           "files": { "KEEN3.EXE": "ce240fee9e23e0c359492ce3d247a29cd2309b1b9822d0267e587df5838c9047" },
           "shareware": false,
           "patchVersion": "1.31"
+        },
+        {
+          "id": "keen3-1.32",
+          "label": "v1.32",
+          "files": { "KEEN3.EXE": "a64421abc8e8eb3ca3c60b64158aed4d05d7f410821f7e55740b5834be38c72d" },
+          "shareware": false,
+          "patchVersion": "1.32"
         }
       ]
     },
@@ -266,12 +287,19 @@
       "requiredFiles": ["GAMEMAPS.CK6", "AUDIO.CK6"],
       "saves": ["SAVEGAM?.CK6"],
       "stateFiles": ["CONFIG.CK6"],
-      "preferredVersions": ["keen6-1.4-ega", "keen6-1.5-ega", "keen6-1.0", "keen6-1.4-cga", "keen6-1.5-cga", "keen6-1.0-cga", "keen6-promo", "keen6-demo"],
+      "preferredVersions": ["keen6-1.4-ega", "keen6-1.5-ega", "keen6-1.0", "keen6-1.4-cga", "keen6-1.0-cga-anthology", "keen6-1.5-cga", "keen6-1.0-cga", "keen6-promo", "keen6-demo", "keen6-demo-apogee"],
       "versions": [
         {
           "id": "keen6-demo",
           "label": "Special demo",
           "files": { "K6DEMO.EXE": "318606e433ef2770743e43ad494f19eb5d59cc4c8104d303a6de0537edb2c8dd" },
+          "shareware": false,
+          "kind": "demo"
+        },
+        {
+          "id": "keen6-demo-apogee",
+          "label": "Apogee demo",
+          "files": { "KEEN6E.EXE": "f3c5b144ded7cc40ae7287aa312766eba30b9e682916cc979f658f6e4b503ac7" },
           "shareware": false,
           "kind": "demo"
         },
@@ -295,6 +323,17 @@
           "files": { "KEEN6C.EXE": "050dadf0c1902fcf9c7288e2a704057bd5ec2159388d3900a0f13ab326b134a3" },
           "shareware": false,
           "original": "keen6-1.0"
+        },
+        {
+          "id": "keen6-1.0-cga-anthology",
+          "label": "v1.0 CGA (id Anthology)",
+          "files": {
+            "KEEN6.EXE": "cfd83165bf89f16885dc0aa7c9ca13fbeb7e951b91cdd6b4d66955b85cad7574",
+            "EGAGRAPH.CK6": "84d782e776dcf0e431231cce4ca8aebf10bbb5c6ae6fd25670fe28a0dce0b675"
+          },
+          "shareware": false,
+          "original": "keen6-1.0-cga",
+          "repackaged": true
         },
         {
           "id": "keen6-1.0-cga",
@@ -346,7 +385,7 @@
       "requiredFiles": ["KDREAMS.MAP|GAMEMAPS.KDR", "KDREAMS.AUD|AUDIO.KDR"],
       "saves": ["SAVEGAM?.KDR", "SAVEGM?.KDR"],
       "stateFiles": ["CONFIG.KDR", "KDREAMS.CFG"],
-      "preferredVersions": ["kdreams-1.93-anthology", "kdreams-1.13", "kdreams-1.01", "kdreams-1.93", "kdreams-1.92", "kdreams-1.0"],
+      "preferredVersions": ["kdreams-1.93-anthology", "kdreams-1.13", "kdreams-1.20", "kdreams-1.01", "kdreams-1.93", "kdreams-1.92", "kdreams-1.05", "kdreams-1.0"],
       "versions": [
         {
           "id": "kdreams-1.0",
@@ -364,12 +403,27 @@
           "patchVersion": "1.01"
         },
         {
+          "id": "kdreams-1.05",
+          "label": "v1.05 CGA (rev 1)",
+          "files": { "KDREAMS.EXE": "e9244b7a08bc1c76ddd7e5e6fa595f8188db4ca09ca065959467114c912f61c9" },
+          "shareware": false,
+          "patchVersion": "1.05"
+        },
+        {
           "id": "kdreams-1.13",
           "label": "v1.13",
           "files": { "KDREAMS.EXE": "574d49b882af9ac15232eadb4c6edce94a35b30d622f6e01f6ae20565f7c5aab" },
           "shareware": true,
           "start": "START.EXE",
           "patchVersion": "1.13"
+        },
+        {
+          "id": "kdreams-1.20",
+          "label": "v1.20",
+          "files": { "KDREAMS.EXE": "7704b13375766937b76ddf8e3d75b3a51d8bd2e5553c2f562c421783e757c4fb" },
+          "shareware": true,
+          "start": "START.BAT",
+          "patchVersion": "1.20"
         },
         {
           "id": "kdreams-1.92",

@@ -30,7 +30,8 @@ Per version:
 - **`kind`**: release, beta or demo; **`shareware`**.
 - **`patchVersion`**: what patch files call it in `%version` (`1.4`), if
   they're made for it.
-- **`start`**: a program to launch instead of the episode executable.
+- **`start`**: a program or batch file to launch instead of the episode
+  executable.
 - **`original`**: for third-party builds (copy protection removed,
   re-releases), the version they were made from. Mods for that version are
   offered, but patches may not fit, so the player is warned.
