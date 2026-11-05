@@ -18,6 +18,7 @@ import { useFreeGames, useIndexMods, useIndexStatus } from "../discover/queries"
 import { useInstalls, useProfiles } from "../library/queries";
 import { getTheme, setLanguage, setTheme, type Language, type Theme } from "../preferences";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
+import { OldRuntimeWarning } from "../runtime/OldRuntimeWarning";
 import { useRuntimeMutation, useRuntimeStatus } from "../runtime/queries";
 import { Badge } from "../ui/Badge";
 import { Bloog } from "../ui/Bloog";
@@ -221,9 +222,7 @@ export function EngineStep({ next, back }: StepProps) {
       ) : (
         st && <Notice>{t("errors.unsupportedPlatform")}</Notice>
       )}
-      {st?.crtSwitchIgnored && (
-        <Notice>{t("runtime.crtSwitchIgnored", { version: st.pinnedVersion })}</Notice>
-      )}
+      {st?.crtSwitchIgnored && <OldRuntimeWarning testedVersion={st.pinnedVersion} />}
       <details className="text-sm">
         <summary className="cursor-pointer text-muted">{t("setup.advanced")}</summary>
         <div className="mt-3 grid gap-3">
