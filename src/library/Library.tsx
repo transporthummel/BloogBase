@@ -40,8 +40,8 @@ const SOLD_GAMES = ["keen1", "keen2", "keen3", "keen4", "keen5", "kdreams"];
 
 /** The search, kept across pages until the app closes. */
 let lastQuery = "";
-/** The games the library has seen, to notice a new one. */
-let knownGames: Set<string> | null = null;
+/** The games and mods the library has seen, to notice a new one. */
+let knownProfiles: Set<string> | null = null;
 
 export function Library() {
   const { t, i18n } = useTranslation();
@@ -56,13 +56,12 @@ export function Library() {
   const [imported, setImported] = useState<number | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
   const [query, setQuery] = useState(lastQuery);
-  // Games arrive from many places; an old search shouldn't hide a new one.
-  const gameIds = profiles.data?.filter((p) => !p.modId).map((p) => p.id);
-  const known = knownGames;
-  if (query && known && gameIds?.some((id) => !known.has(id))) setQuery("");
+  // Games and mods arrive from many places; an old search shouldn't hide a new one.
+  const known = knownProfiles;
+  if (query && known && profiles.data?.some((p) => !known.has(p.id))) setQuery("");
   useEffect(() => {
     lastQuery = query;
-    if (gameIds) knownGames = new Set(gameIds);
+    if (profiles.data) knownProfiles = new Set(profiles.data.map((p) => p.id));
   });
   // Only picked (and remembered as seen) when it's shown.
   const [trivia] = useState(() => (getShowTrivia() ? startupTrivia() : null));

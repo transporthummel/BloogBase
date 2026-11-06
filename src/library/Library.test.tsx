@@ -380,19 +380,32 @@ test("the search is still there after visiting another page, but not in storage"
   expect(screen.getByRole("heading", { name: keen5.title })).toBeInTheDocument();
 });
 
-test("a new game resets the search, a new mod doesn't", async () => {
+test("a new game or mod resets the search", async () => {
   const mod: Profile = { ...profile, id: "aurora", modId: "aurora", label: "Aurora Bliss" };
   const copy: Profile = { ...profile, id: "copy", label: "Second copy" };
+  async function searchThenLeave() {
+    const view = renderLibrary();
+    await userEvent.type(await screen.findByRole("searchbox", { name: "Search library" }), "keen");
+    view.unmount();
+  }
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
-  const first = renderLibrary();
-  await userEvent.type(await screen.findByRole("searchbox", { name: "Search library" }), "keen");
-  first.unmount();
+  await searchThenLeave();
 
+  // Nothing new: the search stays.
+  const same = renderLibrary();
+  const kept = await screen.findByRole("searchbox", { name: "Search library" });
+  expect(kept).toHaveValue("keen");
+  await userEvent.clear(kept);
+  same.unmount();
+
+  await searchThenLeave();
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [mod, profile] });
-  const second = renderLibrary();
-  expect(await screen.findByRole("searchbox", { name: "Search library" })).toHaveValue("keen");
-  second.unmount();
+  const withMod = renderLibrary();
+  expect(await screen.findByRole("searchbox", { name: "Search library" })).toHaveValue("");
+  expect(screen.getByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
+  withMod.unmount();
 
+  await searchThenLeave();
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [mod, profile, copy] });
   renderLibrary();
   expect(await screen.findByRole("searchbox", { name: "Search library" })).toHaveValue("");
