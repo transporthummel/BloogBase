@@ -112,3 +112,26 @@ test("reset all only shows when a key is set", async () => {
   await open();
   expect(screen.queryByRole("button", { name: "Reset all" })).not.toBeInTheDocument();
 });
+
+test("focus stays in the dialog after choosing a key", async () => {
+  await open();
+  const change = within(row("Jump")).getByRole("button", { name: "Change" });
+  await pressFor("Jump", "w", "KeyW");
+  expect(change).toHaveFocus();
+});
+
+test("focus stays in the dialog after a reset", async () => {
+  await open({ jump: 0x11 });
+  await userEvent.click(within(row("Jump")).getByRole("button", { name: "Reset" }));
+  await waitFor(() =>
+    expect(within(row("Jump")).getByRole("button", { name: "Change" })).toHaveFocus(),
+  );
+});
+
+test("focus stays in the dialog after resetting all keys", async () => {
+  await open({ jump: 0x11 });
+  await userEvent.click(screen.getByRole("button", { name: "Reset all" }));
+  await waitFor(() =>
+    expect(within(row("Up")).getByRole("button", { name: "Change" })).toHaveFocus(),
+  );
+});

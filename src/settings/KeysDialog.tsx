@@ -79,10 +79,15 @@ export function KeysDialog({ onClose }: { onClose: () => void }) {
           {keys && ACTIONS.some((action) => keys[action] !== null) && (
             <Button
               variant="ghost"
-              onClick={() => {
+              onClick={(e) => {
                 setMessage(null);
                 setWaiting(null);
                 update({ keys: NO_KEYS });
+                // This button goes away; focus mustn't fall out of the dialog.
+                e.currentTarget
+                  .closest('[role="dialog"]')
+                  ?.querySelector<HTMLElement>("li button")
+                  ?.focus();
               }}
             >
               {t("settings.keysResetAll")}
@@ -113,23 +118,24 @@ export function KeysDialog({ onClose }: { onClose: () => void }) {
                     <Keycap id={keyId(key)} changed />
                   )}
                 </span>
-                {waiting !== action && (
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setMessage(null);
-                      setWaiting(action);
-                    }}
-                  >
-                    {t("settings.keysChange")}
-                  </Button>
-                )}
+                {/* Stays while waiting: removing it would drop the focus out of the dialog. */}
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setMessage(null);
+                    setWaiting(action);
+                  }}
+                >
+                  {t("settings.keysChange")}
+                </Button>
                 {key !== null && waiting !== action && (
                   <Button
                     variant="ghost"
-                    onClick={() => {
+                    onClick={(e) => {
                       setMessage(null);
                       update({ keys: { ...keys, [action]: null } });
+                      // This button goes away; on to the row's first one.
+                      e.currentTarget.closest("li")?.querySelector("button")?.focus();
                     }}
                   >
                     {t("settings.keysReset")}
