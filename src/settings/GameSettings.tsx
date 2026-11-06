@@ -23,7 +23,7 @@ function OnOffField({
   return (
     <Field label={label}>
       <select
-        className={`${selectClass} w-44`}
+        className={`${selectClass} w-52`}
         value={value === null ? UNSET : value ? "on" : "off"}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value === UNSET ? null : e.target.value === "on")}
@@ -69,7 +69,7 @@ export function SoundSection() {
           <div className="grid gap-1">
             <Field label={t("settings.device")}>
               <select
-                className={`${selectClass} w-44`}
+                className={`${selectClass} w-52`}
                 value={s.device ?? UNSET}
                 disabled={pending || s.sound === false}
                 onChange={(e) =>
