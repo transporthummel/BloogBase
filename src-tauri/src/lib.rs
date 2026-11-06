@@ -37,6 +37,8 @@ mod source;
 mod storage;
 mod stores;
 
+pub use crate::mods::index_add;
+
 use tauri::Manager;
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, log::LevelFilter};
 use tauri_plugin_window_state::StateFlags;

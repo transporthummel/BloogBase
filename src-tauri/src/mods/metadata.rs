@@ -116,7 +116,7 @@ fn episode_code(code: &str) -> Option<&'static str> {
     })
 }
 
-fn is_date(s: &str) -> bool {
+pub(super) fn is_date(s: &str) -> bool {
     let b = s.as_bytes();
     b.len() == 10
         && b.iter().enumerate().all(|(i, c)| {

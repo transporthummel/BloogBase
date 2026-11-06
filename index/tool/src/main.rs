@@ -1,7 +1,7 @@
 //! `bbindex`: checks, builds and signs the BloogBase mod index.
 //!
 //! ```text
-//! bbindex check [--download [--links]] [--cache DIR]
+//! bbindex check [--download [--links]] [--only ID] [--cache DIR]
 //!                                                 validate index/mods/*.yaml
 //! bbindex build --out DIR [--key FILE|--unsigned] [--generated-at SECS]
 //! bbindex keygen --out DIR                        new minisign key pair
@@ -127,15 +127,25 @@ fn check(mut args: Args) -> Result<(), String> {
     // Also ask the servers about files that are cached already.
     let links = args.flag("--links");
     let cache = args.path("--cache", "../../.local/mods/index-cache")?;
+    // Downloads of this entry alone; all entries are still validated.
+    let only = args.value("--only")?;
     let entries = load(&mut args)?;
     args.done()?;
     eprintln!("{} entries are valid", entries.len());
+    if let Some(id) = &only
+        && !entries.iter().any(|e| e.id == *id)
+    {
+        return Err(format!("no entry `{id}`"));
+    }
     if !download {
         return Ok(());
     }
 
     let mut problems = Vec::new();
-    for e in &entries {
+    for e in entries
+        .iter()
+        .filter(|e| only.as_ref().is_none_or(|id| e.id == *id))
+    {
         eprintln!("{}", e.id);
         for d in &e.downloads {
             if links && let Err(err) = archive::reachable(d) {

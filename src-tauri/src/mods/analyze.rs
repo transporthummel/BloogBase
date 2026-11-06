@@ -401,7 +401,7 @@ fn is_junk(name: &str) -> bool {
 
 /// Whether a file name says "Commander Keen data": episode data, patches,
 /// patchers, episode executables.
-fn is_keen_file(name: &str) -> bool {
+pub(super) fn is_keen_file(name: &str) -> bool {
     episode_of_ext(name).is_some()
         || has_ext(name, "PAT")
         || patcher_game(name).is_some()

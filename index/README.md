@@ -14,6 +14,17 @@ one you agree to that. The mods they link to belong to their authors.
 
 ## Adding a mod
 
+`pnpm index:add <KeenWiki link>` drafts the entry from the mod's page and
+archive, with the parser and the detection the app uses: everything below but
+the descriptions, `featured` and the special fields. It adds the archive to
+the check's cache, runs the check on the new entry and then lists what's left
+to fill in and to check by hand, above all the recipe and `type`. It saves the
+mod's readmes to `.local/tmp/index-add/<id>/` for that. Options: `--id`,
+`--game` (source mods, whose page names no game), `--download N` (not the
+newest download), `--mods DIR`.
+
+By hand:
+
 1. Copy an existing file in `mods/`, name it `<id>.yaml`. The id is lower case
    with dashes and never changes once published: installed copies are tied to
    it.

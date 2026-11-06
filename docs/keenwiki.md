@@ -168,4 +168,5 @@ updating from the page takes the mod out of the index.
 A mod installed from KeenWiki that isn't in the index shows a link that opens
 a prefilled GitHub issue. It has a draft index entry with the page's
 details, the download, its SHA-256 and the recipe, to check by hand
-(index/README.md).
+(index/README.md). Maintainers get a fuller draft from `pnpm index:add <link>`,
+which reads the page and the archive the same way.

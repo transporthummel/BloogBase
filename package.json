@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:all": "node scripts/test-all.mjs",
     "typecheck": "tsc --noEmit",
+    "index:add": "cargo run --quiet --manifest-path src-tauri/Cargo.toml --example index_add --",
     "index:check": "cargo run --quiet --manifest-path index/tool/Cargo.toml -- check --download",
     "index:build": "cargo run --quiet --manifest-path index/tool/Cargo.toml -- build --out index/dist --key .local/index-signing/minisign.key",
     "licenses:generate": "node scripts/licenses.mjs"

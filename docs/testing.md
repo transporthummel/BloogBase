@@ -163,6 +163,7 @@ The index (`index/`, see `index/README.md`) has its own checks:
 
 ```sh
 pnpm index:check                       # entries + downloads (cached in .local/mods/index-cache)
+pnpm index:check --only <id>           # all entries, but only that one's download
 cd index/tool && cargo test            # the tool itself
 ```
 

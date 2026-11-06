@@ -26,6 +26,7 @@
 
 ### Misc
 
+- `pnpm index:add <KeenWiki link>` drafts a mod index entry from the mod's page and archive and lists what's left to do by hand.
 - A debug build takes its local mod list even when the cached one from the website is newer.
 - Debug builds keep their data in `.local/dev-data`, apart from an installed BloogBase.
 

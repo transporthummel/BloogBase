@@ -197,12 +197,14 @@ pub struct Mod {
 
 mod analyze;
 mod fit;
+mod index_add;
 mod install;
 mod metadata;
 mod queries;
 
 pub use analyze::*;
 pub use fit::*;
+pub use index_add::index_add;
 pub use install::*;
 pub use queries::*;
 
