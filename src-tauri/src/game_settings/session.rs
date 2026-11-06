@@ -109,7 +109,8 @@ pub fn apply(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> {
         // A file deleted in the game stays hidden from below by a marker.
         overlay_view::prepare_write(&layers.upper, &pending.file)?;
     }
-    if let Err(e) = fs::write(layers.upper.join(&pending.file), &data) {
+    let record = sidecar(paths, profile_id);
+    if let Err(e) = write_whole(&record, &layers.upper.join(&pending.file), &data) {
         let _ = fs::remove_file(sidecar(paths, profile_id));
         return Err(e.into());
     }
@@ -137,7 +138,7 @@ pub fn merge_pending(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> 
     let (_, layers) = profiles::get(db, profile_id)?;
     let file = layers.upper.join(&pending.file);
     match fs::read(&file) {
-        Ok(data) => restore(&file, data, &pending, &below_state(&layers))?,
+        Ok(data) => restore(&path, &file, data, &pending, &below_state(&layers))?,
         // Deleted meanwhile, e.g. with the profile's saves.
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
         Err(e) => return Err(e.into()),
@@ -146,7 +147,13 @@ pub fn merge_pending(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> 
     Ok(())
 }
 
-fn restore(file: &Path, mut data: Vec<u8>, pending: &Pending, below: &[&Path]) -> Result<()> {
+fn restore(
+    record: &Path,
+    file: &Path,
+    mut data: Vec<u8>,
+    pending: &Pending,
+    below: &[&Path],
+) -> Result<()> {
     let before = data.clone();
     for field in &pending.fields {
         if format::read(&data, field.offset, field.wide) == Some(field.written) {
@@ -167,7 +174,7 @@ fn restore(file: &Path, mut data: Vec<u8>, pending: &Pending, below: &[&Path]) -
     if pending.origin == Origin::Lower && lower.is_some_and(|below| below == data) {
         fs::remove_file(file)?;
     } else if data != before {
-        fs::write(file, data)?;
+        write_whole(record, file, &data)?;
     }
     Ok(())
 }
@@ -259,6 +266,15 @@ fn fields(data: &[u8], edits: &[Edit]) -> Vec<Field> {
 
 fn sidecar(paths: &AppPaths, profile_id: &str) -> PathBuf {
     paths.profile(profile_id).settings_session
+}
+
+/// Writes `file` in one step, so a crash can't cost its high scores. The
+/// temporary file goes beside the `record`, where DOS doesn't see it.
+fn write_whole(record: &Path, file: &Path, data: &[u8]) -> Result<()> {
+    let tmp = record.with_extension("file");
+    fs::write(&tmp, data)?;
+    fs::rename(&tmp, file)?;
+    Ok(())
 }
 
 /// In one step, so a crash leaves it whole or not at all.
@@ -692,5 +708,25 @@ mod tests {
         assert_eq!(settings_names("keen1", None, &state), ["CTLPANEL.CK1"]);
         let state = ["CONFIG.CK4".to_string(), "CONFIG.CKS".to_string()];
         assert_eq!(settings_names("keen4", None, &state), ["CONFIG.CK4"]);
+    }
+
+    #[test]
+    fn the_file_is_written_through_a_temporary_one() {
+        let (_tmp, paths, db) = setup();
+        let (file, original) = config(&db);
+        sound_off(&db);
+        // Writing the temporary file fails: the real one must be untouched.
+        let tmp = pending(&paths).with_extension("file");
+        fs::create_dir_all(&tmp).unwrap();
+
+        assert!(apply(&paths, &db, "keen4-1").is_err());
+        assert_eq!(fs::read(&file).unwrap(), original);
+        assert!(!pending(&paths).exists());
+
+        fs::remove_dir(&tmp).unwrap();
+        apply(&paths, &db, "keen4-1").unwrap();
+        merge_pending(&paths, &db, "keen4-1").unwrap();
+        assert_eq!(fs::read(&file).unwrap(), original);
+        assert!(!tmp.exists());
     }
 }
