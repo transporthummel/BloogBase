@@ -66,17 +66,12 @@ pub fn apply(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> {
     };
     // The settings file comes first; Keen Dreams has two names for it, and a
     // source mod may add its own.
-    let entries = overlay_view::list_root(layers.view_lower(), &layers.upper)?;
-    let entry = game
-        .state_files
-        .iter()
-        .find_map(|f| entries.iter().find(|e| e.path.eq_ignore_ascii_case(f)))
-        .cloned();
-    let (file, origin, mut data) = match entry {
-        Some(entry) => {
-            let (origin, source) = match entry.layer {
-                Layer::Upper => (Origin::State, layers.upper.join(&entry.path)),
-                Layer::Lower => (Origin::Lower, layers.view_lower().join(&entry.path)),
+    let found = find_file(&layers, &game.state_files)?;
+    let (file, origin, mut data) = match found {
+        Some((entry, source)) => {
+            let origin = match entry.layer {
+                Layer::Upper => Origin::State,
+                Layer::Lower => Origin::Lower,
             };
             let data = fs::read(source)?;
             (entry.path, origin, data)
@@ -139,7 +134,7 @@ pub fn merge_pending(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> 
     let (_, layers) = profiles::get(db, profile_id)?;
     let file = layers.upper.join(&pending.file);
     match fs::read(&file) {
-        Ok(data) => restore(&file, data, &pending, layers.view_lower())?,
+        Ok(data) => restore(&file, data, &pending, &below_state(&layers))?,
         // Deleted meanwhile, e.g. with the profile's saves.
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
         Err(e) => return Err(e.into()),
@@ -148,7 +143,7 @@ pub fn merge_pending(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> 
     Ok(())
 }
 
-fn restore(file: &Path, mut data: Vec<u8>, pending: &Pending, lower: &Path) -> Result<()> {
+fn restore(file: &Path, mut data: Vec<u8>, pending: &Pending, below: &[&Path]) -> Result<()> {
     let before = data.clone();
     for field in &pending.fields {
         if format::read(&data, field.offset, field.wide) == Some(field.written) {
@@ -163,14 +158,46 @@ fn restore(file: &Path, mut data: Vec<u8>, pending: &Pending, lower: &Path) -> R
         }
     }
     // Nothing of the session is left: the file below does again.
-    if pending.origin == Origin::Lower
-        && fs::read(lower.join(&pending.file)).is_ok_and(|below| below == data)
-    {
+    let lower = below
+        .iter()
+        .find_map(|dir| fs::read(dir.join(&pending.file)).ok());
+    if pending.origin == Origin::Lower && lower.is_some_and(|below| below == data) {
         fs::remove_file(file)?;
     } else if data != before {
         fs::write(file, data)?;
     }
     Ok(())
+}
+
+/// Where a settings file can come from below `state/`, top first: the game, or
+/// the mod and the mod it's played over.
+fn below_state(layers: &profiles::Layers) -> Vec<&Path> {
+    let below = layers.mod_layer.as_ref().and_then(|m| m.base.as_deref());
+    std::iter::once(layers.view_lower()).chain(below).collect()
+}
+
+/// The first of `names` that DOS sees, and where it is.
+fn find_file(
+    layers: &profiles::Layers,
+    names: &[String],
+) -> Result<Option<(overlay_view::Entry, PathBuf)>> {
+    for name in names {
+        for dir in below_state(layers) {
+            let entries = overlay_view::list_root(dir, &layers.upper)?;
+            if let Some(entry) = entries
+                .into_iter()
+                .find(|e| e.path.eq_ignore_ascii_case(name))
+            {
+                let root = match entry.layer {
+                    Layer::Upper => &layers.upper,
+                    Layer::Lower => dir,
+                };
+                let path = root.join(&entry.path);
+                return Ok(Some((entry, path)));
+            }
+        }
+    }
+    Ok(None)
 }
 
 /// A new settings file for a profile without one; `None` where we can't tell
@@ -558,5 +585,49 @@ mod tests {
 
         merge_pending(&paths, &db, "keen4-1").unwrap();
         assert_eq!(fs::read(&file).unwrap(), original);
+    }
+
+    #[test]
+    fn a_file_from_the_mod_below_is_found() {
+        let (tmp, paths, db) = setup();
+        let install = |folder: &str, name: &str, files: &[(&str, &[u8])], extends| {
+            let src = tmp.path().join(folder);
+            write_folder(&src, files);
+            let info = crate::mods::inspect(&src, None).unwrap();
+            crate::mods::install(
+                &paths,
+                &db,
+                &crate::mods::InstallModRequest {
+                    path: src.display().to_string(),
+                    name: name.into(),
+                    recipe: info.recipes[0].recipe.clone(),
+                    install_id: Some("keen4-1".into()),
+                    keenwiki: None,
+                    extends,
+                    replace: None,
+                },
+            )
+            .unwrap()
+        };
+        let mut below = sample(Format::GalaxyNew);
+        below[SCORE] = 0x42;
+        let patch: &[(&str, &[u8])] = &[
+            ("PLAY.BAT", b"ck4patch mod.pat"),
+            ("CK4PATCH.EXE", b"p"),
+            ("MOD.PAT", b"%ext ck4"),
+        ];
+        let mut with_config = patch.to_vec();
+        with_config.push(("CONFIG.CK4", &below));
+        let base = install("below", "Below", &with_config, None);
+        let over = install("over", "Over", patch, Some(base.id.clone()));
+        sound_off(&db);
+        let copy = upper(&db, &over.profile_id).join("CONFIG.CK4");
+
+        apply(&paths, &db, &over.profile_id).unwrap();
+        let during = fs::read(&copy).unwrap();
+        assert_eq!((during[SCORE], during[SOUND]), (0x42, 0));
+
+        merge_pending(&paths, &db, &over.profile_id).unwrap();
+        assert!(!copy.exists(), "unchanged: the file below shows again");
     }
 }
