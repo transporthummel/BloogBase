@@ -1282,6 +1282,14 @@ $bmp.Save($env:SHOT_PATH)
         let shots = root.join("shots");
         fs::create_dir_all(&shots).unwrap();
         let db = Db::open(&paths.database).unwrap();
+        dosconf::set_options(
+            &db,
+            &dosconf::DisplayOptions {
+                fullscreen: false,
+                ..Default::default()
+            },
+        )
+        .unwrap();
         let rt = runtime::set_custom(&db, Some(Path::new(&dosbox)))
             .unwrap()
             .active

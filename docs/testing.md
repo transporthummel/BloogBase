@@ -140,8 +140,8 @@ was recorded.
 ### Mods in DOSBox
 
 Launches every mod in DOSBox on every game version it fits, keeps it running
-for a few seconds and saves a screenshot of the DOSBox window. Windows only
-for now.
+for a few seconds and saves a screenshot of the DOSBox window. The games open
+in a window, with "Start games in fullscreen" turned off. Windows only for now.
 
 It imports the game folders in `.local/games` (`platforms`, `disks`, `test`,
 `versions`; folders with several episodes in subfolders work too) and takes the mod archives from `.local/mods`, the corpus
