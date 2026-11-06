@@ -1,4 +1,6 @@
-@import "tailwindcss";
+/* Only `src` has classes. Looking through the whole project stalls Vite for up
+   to a minute in development, with every rebuild: `src-tauri/target` is huge. */
+@import "tailwindcss" source(".");
 @import "@fontsource-variable/inter";
 @import "@fontsource/press-start-2p/latin-400.css";
 
