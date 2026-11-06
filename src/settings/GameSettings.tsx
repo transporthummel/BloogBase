@@ -98,7 +98,7 @@ export function ScoreBoxSection() {
   const { settings: s, update, pending, error } = useGameSettings();
 
   return (
-    <Group title={t("settings.scoreBoxTitle")}>
+    <Group title={t("settings.other")}>
       {s && (
         <div className="grid gap-1">
           <OnOffField

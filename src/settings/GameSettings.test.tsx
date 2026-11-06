@@ -78,3 +78,8 @@ test("going back to the game's value stores nothing for it", async () => {
   await userEvent.selectOptions(select, "Set by the game");
   expect(commands.setGameSettings).toHaveBeenCalledWith(unset);
 });
+
+test("the score box sits under Other", async () => {
+  renderSections(unset);
+  expect(await screen.findByRole("heading", { name: "Other" })).toBeInTheDocument();
+});

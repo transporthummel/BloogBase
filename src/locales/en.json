@@ -152,7 +152,7 @@
     "musicHint": "For games with music, also Keen 1–3 mods with their own.",
     "deviceHint": "For Keen 4–6 and Keen Dreams.",
     "gameSettingsHint": "What you set here applies from the next start, and then also replaces what was set in the game.",
-    "scoreBoxTitle": "Score box",
+    "other": "Other",
     "scoreBox": "Show score box",
     "scoreBoxHint": "For Keen 4–6.",
     "controls": "Controls",
