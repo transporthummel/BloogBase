@@ -73,7 +73,7 @@ pub fn find_score_table(image: &[u8], count: usize) -> Option<Vec<u8>> {
 
 fn is_table(table: &[u8], count: usize) -> bool {
     let mut names = 0;
-    for record in table.chunks_exact(RECORD) {
+    for record in table.as_chunks::<RECORD>().0 {
         let Some(name) = record_name(record) else {
             return false;
         };
