@@ -14,7 +14,8 @@
       "Keen Dreams v1.0 and v1.05 show their title screen as cover.",
       "The library keeps its search when you switch pages.",
       "Discover keeps the mods' search, filters and sort when you switch pages.",
-      "KeenWiki downloads no longer show a stray comma in their name."
+      "KeenWiki downloads no longer show a stray comma in their name.",
+      "KeenWiki links no longer miss versions some mod pages list."
     ],
     "de": [
       "Sound, Musik, Scorebox und Tasten lassen sich einmal für alle Spiele und Mods festlegen.",
@@ -30,7 +31,8 @@
       "Keen Dreams v1.0 und v1.05 zeigen ihren Titelbildschirm als Cover.",
       "Die Bibliothek behält ihre Suche beim Wechsel zwischen den Seiten.",
       "Discover behält Suche, Filter und Sortierung der Mods beim Wechsel zwischen den Seiten.",
-      "KeenWiki-Downloads zeigen kein überzähliges Komma mehr im Namen."
+      "KeenWiki-Downloads zeigen kein überzähliges Komma mehr im Namen.",
+      "KeenWiki-Links übersehen keine Versionen mehr, die manche Mod-Seiten aufführen."
     ]
   },
   "releases": [

@@ -384,7 +384,8 @@ fn author_links(
 }
 
 /// Links in the "Download" cell, one per line: `<a>label</a> note<br>`.
-/// A whole line may be in brackets: `(<a>label</a> note)`.
+/// A whole line may be in brackets: `(<a>label</a> note)`. Lines may sit in a
+/// paragraph.
 fn parse_downloads(td: ElementRef, base: Option<&Url>) -> Vec<WikiDownload> {
     let mut out: Vec<WikiDownload> = Vec::new();
     // Text before the line's first link, the one before the latest link,
@@ -413,7 +414,15 @@ fn parse_downloads(td: ElementRef, base: Option<&Url>) -> Vec<WikiDownload> {
         }
         note.clear();
     };
-    for node in td.children() {
+    // A paragraph's lines count as the cell's own; its ends break the line.
+    let nodes = td.children().flat_map(|node| match node.value() {
+        Node::Element(e) if e.name() == "p" => std::iter::once(node)
+            .chain(node.children())
+            .chain(std::iter::once(node))
+            .collect(),
+        _ => vec![node],
+    });
+    for node in nodes {
         match node.value() {
             Node::Element(e) if e.name() == "a" => {
                 finish(&mut out, &last_lead, &mut note);
@@ -435,7 +444,7 @@ fn parse_downloads(td: ElementRef, base: Option<&Url>) -> Vec<WikiDownload> {
                 }
                 on_line = true;
             }
-            Node::Element(e) if e.name() == "br" => {
+            Node::Element(e) if matches!(e.name(), "br" | "p") => {
                 finish(&mut out, &last_lead, &mut note);
                 lead.clear();
                 on_line = false;
@@ -847,6 +856,29 @@ mod tests {
             .unwrap();
         assert_eq!(demo.note, None);
         assert_eq!(demo.version.as_deref(), Some("0.2"));
+    }
+
+    #[test]
+    fn downloads_in_a_paragraph_are_listed() {
+        let m = fixture("Atroxian_Realm");
+        let shown: Vec<_> = m
+            .downloads
+            .iter()
+            .map(|d| (d.label.as_str(), d.note.as_deref()))
+            .collect();
+        assert_eq!(
+            shown,
+            [
+                ("newest", Some("v1.4")),
+                ("v1.4 (source code)", None),
+                ("v1.3", None),
+                ("v1.1", None),
+                ("v1.0", None),
+                ("v1.0 (source code)", None),
+                ("v0.2 (demo)", None),
+                ("v0.1 (demo)", None),
+            ]
+        );
     }
 
     #[test]

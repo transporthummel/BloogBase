@@ -27,6 +27,7 @@
 ### Bug Fixes
 
 - A comma after a download on a KeenWiki page no longer shows up as the version's note, as in "v0.2 (demo) (,)".
+- Versions a KeenWiki page lists inside a paragraph show up in the download choice too; Atroxian Realm's v1.3, v1.1 and v1.0 were missing.
 
 ### Misc
 
