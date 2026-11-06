@@ -83,3 +83,19 @@ test("the score box sits under Other", async () => {
   renderSections(unset);
   expect(await screen.findByRole("heading", { name: "Other" })).toBeInTheDocument();
 });
+
+test("a change right after another one keeps both", async () => {
+  let finish = (_: ReturnType<typeof ok<null>>) => {};
+  vi.mocked(commands.setGameSettings).mockReturnValueOnce(new Promise((r) => (finish = r)));
+  renderSections(unset);
+  await userEvent.selectOptions(await screen.findByRole("combobox", { name: "Sound" }), "Off");
+  // Still saving; the other section has its own save.
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Show score box" }), "Off");
+  finish(ok(null));
+  await waitFor(() => expect(commands.setGameSettings).toHaveBeenCalledTimes(2));
+  expect(commands.setGameSettings).toHaveBeenLastCalledWith({
+    ...unset,
+    sound: false,
+    scoreBox: false,
+  });
+});
