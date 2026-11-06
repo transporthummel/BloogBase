@@ -399,12 +399,14 @@ fn parse_downloads(td: ElementRef, base: Option<&Url>) -> Vec<WikiDownload> {
         {
             let squash = |s: &str| s.split_whitespace().collect::<Vec<_>>().join(" ");
             let (lead, n) = (squash(lead), squash(note));
+            // Some pages separate the versions with commas.
+            let n = n.trim_matches([',', ' ']);
             let n = match (lead.strip_prefix('('), n.strip_suffix(')')) {
                 (Some(""), Some(n)) => n.trim(),
                 _ => n
                     .strip_prefix('(')
                     .and_then(|n| n.strip_suffix(')'))
-                    .unwrap_or(&n),
+                    .unwrap_or(n),
             };
             d.note = non_empty(n.to_string());
             d.version = version_in(&d.label).or_else(|| d.note.as_deref().and_then(version_in));
@@ -833,6 +835,18 @@ mod tests {
             .map(|d| (d.label.as_str(), d.note.as_deref()))
             .collect();
         assert_eq!(shown, [("newest", None), ("easy", None)]);
+    }
+
+    #[test]
+    fn commas_between_downloads_are_not_notes() {
+        let m = fixture("Atroxian_Realm");
+        let demo = m
+            .downloads
+            .iter()
+            .find(|d| d.label == "v0.2 (demo)")
+            .unwrap();
+        assert_eq!(demo.note, None);
+        assert_eq!(demo.version.as_deref(), Some("0.2"));
     }
 
     #[test]

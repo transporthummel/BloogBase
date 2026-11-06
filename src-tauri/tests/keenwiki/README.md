@@ -8,6 +8,7 @@ contributors; it is kept here with the KeenWiki admin's permission
 
 | File                      | Page                                                           |
 | ------------------------- | -------------------------------------------------------------- |
+| `Atroxian_Realm.html`     | https://keenwiki.shikadi.net/wiki/Atroxian_Realm               |
 | `Buried_in_Oblivion.html` | https://keenwiki.shikadi.net/wiki/Buried_in_Oblivion           |
 | `Candy_Dreams.html`       | https://keenwiki.shikadi.net/wiki/Candy_Dreams                 |
 | `Keen_3_Part_2.html`      | https://keenwiki.shikadi.net/wiki/Keen_3_Part_2                |

@@ -26,6 +26,8 @@
 
 ### Bug Fixes
 
+- A comma after a download on a KeenWiki page no longer shows up as the version's note, as in "v0.2 (demo) (,)".
+
 ### Misc
 
 - `pnpm index:add <KeenWiki link>` drafts a mod index entry from the mod's page and archive and lists what's left to do by hand.

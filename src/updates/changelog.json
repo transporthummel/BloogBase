@@ -13,7 +13,8 @@
       "Your own DOSBox Staging has to be version 0.82 or newer.",
       "Keen Dreams v1.0 and v1.05 show their title screen as cover.",
       "The library keeps its search when you switch pages.",
-      "Discover keeps the mods' search, filters and sort when you switch pages."
+      "Discover keeps the mods' search, filters and sort when you switch pages.",
+      "KeenWiki downloads no longer show a stray comma in their name."
     ],
     "de": [
       "Sound, Musik, Scorebox und Tasten lassen sich einmal für alle Spiele und Mods festlegen.",
@@ -28,7 +29,8 @@
       "Dein eigenes DOSBox Staging muss Version 0.82 oder neuer sein.",
       "Keen Dreams v1.0 und v1.05 zeigen ihren Titelbildschirm als Cover.",
       "Die Bibliothek behält ihre Suche beim Wechsel zwischen den Seiten.",
-      "Discover behält Suche, Filter und Sortierung der Mods beim Wechsel zwischen den Seiten."
+      "Discover behält Suche, Filter und Sortierung der Mods beim Wechsel zwischen den Seiten.",
+      "KeenWiki-Downloads zeigen kein überzähliges Komma mehr im Namen."
     ]
   },
   "releases": [
