@@ -8,7 +8,8 @@ layers.
 
 `pnpm test:all` (`scripts/test-all.mjs`) runs everything CI runs plus all
 ignored Rust tests below, keeps going after a failure and lists the failed
-steps at the end. Use it before a release or after broad changes; it expects
+steps at the end, along with the folders of the DOSBox screenshots and mod
+covers to look at. Use it before a release or after broad changes; it expects
 the games, mods and DOSBox in `.local` (see the script for the variables that
 override the paths).
 

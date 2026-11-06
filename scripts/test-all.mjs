@@ -1,7 +1,7 @@
 // Runs every check CI runs, plus all ignored Rust tests (downloads, DOSBox
 // windows, mod corpus, cover extraction). Meant for before pushing bigger
 // changes: `pnpm test:all`. Keeps going after a failure and lists all
-// failed steps at the end.
+// failed steps and the folders of images to check by eye at the end.
 //
 // The ignored tests read their inputs from .local; override with
 // BLOOGBASE_E2E_GAME, BLOOGBASE_E2E_DOSBOX, BLOOGBASE_MOD_CACHE, KEEN_GAMES.
@@ -104,6 +104,16 @@ try {
 // One at a time: the DOSBox tests open windows and share the screen.
 step("App: ignored tests", "cargo", ["test", "--", "--ignored", "--test-threads=1"], app);
 step("Index entries and downloads", "pnpm", ["index:check"]);
+
+// The tests can't judge these images; someone has to look at them.
+const toCheck = [
+  ["DOSBox screenshots", join(app, "target", "e2e-mods", "shots")],
+  ["Mod covers", env.KEEN_OUT],
+].filter(([, dir]) => existsSync(dir));
+if (toCheck.length) {
+  console.log("\nImages to check by eye:");
+  for (const [label, dir] of toCheck) console.log(`  ${label}: ${dir}`);
+}
 
 if (failed.length) {
   console.error(`\nFailed:\n${failed.map((f) => `  - ${f}`).join("\n")}`);
