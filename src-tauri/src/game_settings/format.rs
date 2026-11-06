@@ -76,7 +76,8 @@ fn layout(format: Format) -> Layout {
         },
         Format::GalaxyOld => galaxy(&[0x21E]),
         Format::GalaxyNew => galaxy(&[0x222]),
-        Format::Keen5V10 => galaxy(&[0x21E, 0x222]),
+        // It holds Space at 0x222 too, but reads 0x21E (checked in its key menu).
+        Format::Keen5V10 => galaxy(&[0x21E]),
         Format::GalaxyDemo => Layout {
             sound: 0x200,
             device: true,
@@ -436,7 +437,6 @@ pub(crate) mod tests {
                     (0x212, 0x20),
                     (0x214, 0x1F),
                     (0x21E, 0x26),
-                    (0x222, 0x26),
                 ],
             ),
             (
