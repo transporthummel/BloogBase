@@ -40,6 +40,8 @@ const SOLD_GAMES = ["keen1", "keen2", "keen3", "keen4", "keen5", "kdreams"];
 
 /** The search, kept across pages until the app closes. */
 let lastQuery = "";
+/** The games the library has seen, to notice a new one. */
+let knownGames: Set<string> | null = null;
 
 export function Library() {
   const { t, i18n } = useTranslation();
@@ -54,10 +56,14 @@ export function Library() {
   const [imported, setImported] = useState<number | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
   const [query, setQuery] = useState(lastQuery);
-  function search(value: string) {
-    lastQuery = value;
-    setQuery(value);
-  }
+  // Games arrive from many places; an old search shouldn't hide a new one.
+  const gameIds = profiles.data?.filter((p) => !p.modId).map((p) => p.id);
+  const known = knownGames;
+  if (query && known && gameIds?.some((id) => !known.has(id))) setQuery("");
+  useEffect(() => {
+    lastQuery = query;
+    if (gameIds) knownGames = new Set(gameIds);
+  });
   // Only picked (and remembered as seen) when it's shown.
   const [trivia] = useState(() => (getShowTrivia() ? startupTrivia() : null));
   const list = useRef<HTMLDivElement>(null);
@@ -246,7 +252,7 @@ export function Library() {
               className="w-full rounded-lg border border-border bg-surface-raised py-2 pr-3 pl-9 text-sm"
               placeholder={t("library.search")}
               value={query}
-              onChange={(e) => search(e.target.value)}
+              onChange={(e) => setQuery(e.target.value)}
             />
           </label>
           <label className="ml-auto flex items-center gap-2 text-sm text-muted">
@@ -273,7 +279,7 @@ export function Library() {
       {profiles.data && profiles.data.length > 0 && shown.length === 0 && (
         <div className="flex flex-wrap items-center gap-3">
           <Notice>{t("library.noMatch")}</Notice>
-          <Button variant="secondary" onClick={() => search("")}>
+          <Button variant="secondary" onClick={() => setQuery("")}>
             {t("library.clearSearch")}
           </Button>
         </div>
