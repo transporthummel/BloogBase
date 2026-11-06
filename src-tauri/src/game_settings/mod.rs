@@ -3,6 +3,7 @@
 
 pub(crate) mod format;
 mod session;
+mod template;
 
 pub use session::{apply, merge_pending};
 

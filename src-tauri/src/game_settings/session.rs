@@ -6,12 +6,16 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use super::format::{self, Edit};
+use super::format::{self, Edit, Format};
+use super::template;
+use crate::catalog::Game;
 use crate::db::Db;
 use crate::error::Result;
+use crate::firing;
 use crate::overlay_view::{self, Layer};
 use crate::paths::AppPaths;
 use crate::profiles;
+use crate::recipe::Recipe;
 use crate::saves;
 
 /// What a session changed, kept beside it so a crash can't lose the player's
@@ -54,17 +58,31 @@ pub fn apply(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> {
     let Some(name) = game.state_files.first() else {
         return Ok(());
     };
-    let entry = overlay_view::list_root(layers.view_lower(), &layers.upper)?
-        .into_iter()
-        .find(|e| e.path.eq_ignore_ascii_case(name));
-    let Some(entry) = entry else {
-        return Ok(());
+    // The settings file comes first; Keen Dreams has two names for it, and a
+    // source mod may add its own.
+    let entries = overlay_view::list_root(layers.view_lower(), &layers.upper)?;
+    let entry = game
+        .state_files
+        .iter()
+        .find_map(|f| entries.iter().find(|e| e.path.eq_ignore_ascii_case(f)))
+        .cloned();
+    let (file, origin, mut data) = match entry {
+        Some(entry) => {
+            let (origin, source) = match entry.layer {
+                Layer::Upper => (Origin::State, layers.upper.join(&entry.path)),
+                Layer::Lower => (Origin::Lower, layers.view_lower().join(&entry.path)),
+            };
+            let data = fs::read(source)?;
+            (entry.path, origin, data)
+        }
+        None => {
+            let Some(data) = new_file(&profile, &layers, game) else {
+                tracing::info!("global settings: no {name} yet for {profile_id}, first start");
+                return Ok(());
+            };
+            (name.clone(), Origin::Created, data)
+        }
     };
-    let (origin, source) = match entry.layer {
-        Layer::Upper => (Origin::State, layers.upper.join(&entry.path)),
-        Layer::Lower => (Origin::Lower, layers.view_lower().join(&entry.path)),
-    };
-    let mut data = fs::read(source)?;
     let Some(file_format) = format::recognize(&profile.game_id, &data) else {
         tracing::info!("global settings: leaving {name} of {profile_id} alone, unknown format");
         return Ok(());
@@ -78,11 +96,15 @@ pub fn apply(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> {
         format::write(&mut data, edit);
     }
     let pending = Pending {
-        file: entry.path,
+        file,
         origin,
         fields,
     };
     write_pending(&sidecar(paths, profile_id), &pending)?;
+    if origin == Origin::Created {
+        // A file deleted in the game stays hidden from below by a marker.
+        overlay_view::prepare_write(&layers.upper, &pending.file)?;
+    }
     if let Err(e) = fs::write(layers.upper.join(&pending.file), &data) {
         let _ = fs::remove_file(sidecar(paths, profile_id));
         return Err(e.into());
@@ -145,6 +167,31 @@ fn restore(file: &Path, mut data: Vec<u8>, pending: &Pending, lower: &Path) -> R
     Ok(())
 }
 
+/// A new settings file for a profile without one; `None` where we can't tell
+/// what it would hold. Then the game writes its own after the first session.
+fn new_file(
+    profile: &profiles::Profile,
+    layers: &profiles::Layers,
+    game: &Game,
+) -> Option<Vec<u8>> {
+    let file_format =
+        template::format_for_version(&profile.game_id, profile.version_id.as_deref())?;
+    if file_format == Format::Vorticons {
+        return template::new_file(file_format, &profile.game_id, None);
+    }
+    // A source mod may keep its settings in a file of its own.
+    if file_format != Format::Dreams && game.state_files.len() > 1 {
+        return None;
+    }
+    let recipe = layers
+        .mod_layer
+        .as_ref()
+        .map_or(&Recipe::Episode, |m| &m.recipe);
+    let image = firing::image_as_dos_runs(game, recipe, &layers.sources())?;
+    let scores = template::find_score_table(&image, template::table_records(file_format))?;
+    template::new_file(file_format, &profile.game_id, Some(scores))
+}
+
 /// The fields `edits` change in `data`, with their values before.
 fn fields(data: &[u8], edits: &[Edit]) -> Vec<Field> {
     edits
@@ -180,7 +227,6 @@ fn write_pending(path: &Path, pending: &Pending) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::game_settings::format::Format;
     use crate::game_settings::format::tests::file as sample;
     use crate::game_settings::{self, GameSettings};
     use crate::library;
@@ -423,5 +469,69 @@ mod tests {
         #[allow(clippy::permissions_set_readonly_false)]
         permissions.set_readonly(false);
         fs::set_permissions(&file, permissions).unwrap();
+    }
+
+    #[test]
+    fn missing_file_is_created_and_stays() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("k1");
+        write_folder(
+            &src,
+            &[
+                ("KEEN1.EXE", b"exe"),
+                ("EGAHEAD.CK1", b"h"),
+                ("EGALATCH.CK1", b"l"),
+                ("EGASPRIT.CK1", b"s"),
+                ("LEVEL01.CK1", b"1"),
+                ("SOUNDS.CK1", b"a"),
+            ],
+        );
+        let profile = library::import(&paths, &db, &src).unwrap()[0].id.clone();
+        let file = upper(&db, &profile).join("CTLPANEL.CK1");
+        sound_off(&db);
+
+        apply(&paths, &db, &profile).unwrap();
+        assert_eq!(fs::read(&file).unwrap()[0], 0);
+        merge_pending(&paths, &db, &profile).unwrap();
+        assert!(!sidecar(&paths, &profile).exists());
+        let merged = fs::read(&file).unwrap();
+        assert_eq!(merged[0], 1, "the default again");
+        assert_eq!(merged[0x2A], 0x1D);
+    }
+
+    #[test]
+    fn keen_dreams_later_name_is_used() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("kd");
+        write_folder(
+            &src,
+            &[
+                ("KDREAMS.EXE", b"exe"),
+                ("KDREAMS.MAP", b"m"),
+                ("KDREAMS.AUD", b"a"),
+                ("KDREAMS.CFG", &sample(Format::Dreams)),
+            ],
+        );
+        let profile = library::import(&paths, &db, &src).unwrap()[0].id.clone();
+        sound_off(&db);
+
+        apply(&paths, &db, &profile).unwrap();
+        let file = upper(&db, &profile).join("KDREAMS.CFG");
+        assert_eq!(fs::read(&file).unwrap()[0x280], 0);
+        assert!(!upper(&db, &profile).join("CONFIG.KDR").exists());
+    }
+
+    #[test]
+    fn no_table_no_file() {
+        let (_tmp, paths, db) = setup();
+        let file = upper(&db, "keen4-1").join("config.ck4");
+        fs::remove_file(&file).unwrap();
+        sound_off(&db);
+
+        // The test game's program holds no high scores.
+        apply(&paths, &db, "keen4-1").unwrap();
+        assert!(!pending(&paths).exists());
+        assert!(!file.exists());
+        assert!(!upper(&db, "keen4-1").join("CONFIG.CK4").exists());
     }
 }

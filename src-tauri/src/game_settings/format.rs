@@ -634,7 +634,7 @@ pub(crate) mod tests {
                 ("CONFIG", "CK4") => "keen4",
                 ("CONFIG", "CK5") => "keen5",
                 ("CONFIG", "CK6") => "keen6",
-                ("CONFIG", "KDR") => "kdreams",
+                ("CONFIG", "KDR") | ("KDREAMS", "CFG") => "kdreams",
                 _ => continue,
             };
             checked += 1;

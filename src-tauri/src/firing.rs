@@ -306,9 +306,9 @@ fn image(exe: &Path) -> Option<Vec<u8>> {
     lzexe::load_image(&fs::read(exe).ok()?).ok()
 }
 
-/// How `target` leaves the episode's code.
-fn judge(episode: &Episode, game: &Game, target: &Target, files: &Files) -> Firing {
-    let image = match target {
+/// The load image `target` runs, with its patch file's writes.
+fn target_image(game: &Game, target: &Target, files: &Files) -> Option<Vec<u8>> {
+    match target {
         Target::Exe(exe) => image(exe),
         Target::Patch(patch) => files.episode_exe(game).and_then(|exe| {
             let mut image = image(&exe)?;
@@ -316,8 +316,20 @@ fn judge(episode: &Episode, game: &Game, target: &Target, files: &Files) -> Firi
             apply_writes(&mut image, &String::from_utf8_lossy(&text), files);
             Some(image)
         }),
-    };
-    image.map_or(Firing::Unavailable, |i| classify(episode, &i))
+    }
+}
+
+/// How `target` leaves the episode's code.
+fn judge(episode: &Episode, game: &Game, target: &Target, files: &Files) -> Firing {
+    target_image(game, target, files).map_or(Firing::Unavailable, |i| classify(episode, &i))
+}
+
+/// The executable a profile runs as DOS loads it, with the writes of its
+/// patch file. `dirs` are its files, topmost first.
+pub fn image_as_dos_runs(game: &Game, recipe: &Recipe, dirs: &[&Path]) -> Option<Vec<u8>> {
+    let files = Files(dirs);
+    let target = targets(game, recipe, &files).into_iter().next()?;
+    target_image(game, &target, &files)
 }
 
 /// Where a profile stands with the patch; `None` for games without it.
