@@ -49,6 +49,12 @@ struct Field {
 /// Writes the global settings into the profile's settings file. Does nothing
 /// if none are set, or the file is in a format we don't know.
 pub fn apply(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> {
+    // The merge before this start failed: the file still holds the last
+    // session's values, and the record is all that knows the player's.
+    if sidecar(paths, profile_id).exists() {
+        tracing::warn!("global settings: {profile_id} still has a session to merge, not applying");
+        return Ok(());
+    }
     let settings = super::get(db)?;
     if settings == super::GameSettings::default() {
         return Ok(());
@@ -533,5 +539,24 @@ mod tests {
         assert!(!pending(&paths).exists());
         assert!(!file.exists());
         assert!(!upper(&db, "keen4-1").join("CONFIG.CK4").exists());
+    }
+
+    #[test]
+    fn an_unmerged_record_is_never_replaced() {
+        let (_tmp, paths, db) = setup();
+        let (file, original) = config(&db);
+        sound_off(&db);
+        apply(&paths, &db, "keen4-1").unwrap();
+
+        // The merge failed; the player changes a setting and starts again.
+        let settings = GameSettings {
+            music: Some(false),
+            ..GameSettings::default()
+        };
+        game_settings::set(&db, &settings).unwrap();
+        apply(&paths, &db, "keen4-1").unwrap();
+
+        merge_pending(&paths, &db, "keen4-1").unwrap();
+        assert_eq!(fs::read(&file).unwrap(), original);
     }
 }
