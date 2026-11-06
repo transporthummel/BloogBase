@@ -64,9 +64,12 @@ pub fn apply(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> {
     let Some(name) = game.state_files.first() else {
         return Ok(());
     };
-    // The settings file comes first; Keen Dreams has two names for it, and a
-    // source mod may add its own.
-    let found = find_file(&layers, &game.state_files)?;
+    let names = settings_names(
+        &profile.game_id,
+        profile.version_id.as_deref(),
+        &game.state_files,
+    );
+    let found = find_file(&layers, &names)?;
     let (file, origin, mut data) = match found {
         Some((entry, source)) => {
             let origin = match entry.layer {
@@ -167,6 +170,20 @@ fn restore(file: &Path, mut data: Vec<u8>, pending: &Pending, below: &[&Path]) -
         fs::write(file, data)?;
     }
     Ok(())
+}
+
+/// What the settings file of a game can be called, likeliest first. It's the
+/// first of its state files; the others are high scores or a source mod's own.
+/// Keen Dreams has two names for it, depending on the version.
+fn settings_names(game_id: &str, version_id: Option<&str>, state_files: &[String]) -> Vec<String> {
+    if game_id != "kdreams" {
+        return state_files.iter().take(1).cloned().collect();
+    }
+    let mut names = state_files.to_vec();
+    if !matches!(version_id, Some("kdreams-1.0" | "kdreams-1.05")) {
+        names.reverse();
+    }
+    names
 }
 
 /// Where a settings file can come from below `state/`, top first: the game, or
@@ -629,5 +646,51 @@ mod tests {
 
         merge_pending(&paths, &db, &over.profile_id).unwrap();
         assert!(!copy.exists(), "unchanged: the file below shows again");
+    }
+
+    #[test]
+    fn other_state_files_are_not_the_settings_file() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("k1");
+        write_folder(
+            &src,
+            &[
+                ("KEEN1.EXE", b"exe"),
+                ("EGAHEAD.CK1", b"h"),
+                ("EGALATCH.CK1", b"l"),
+                ("EGASPRIT.CK1", b"s"),
+                ("LEVEL01.CK1", b"1"),
+                ("SOUNDS.CK1", b"a"),
+                ("SCORES.CK1", b"scores"),
+            ],
+        );
+        let profile = library::import(&paths, &db, &src).unwrap()[0].id.clone();
+        sound_off(&db);
+
+        apply(&paths, &db, &profile).unwrap();
+        let state = upper(&db, &profile);
+        assert_eq!(fs::read(state.join("CTLPANEL.CK1")).unwrap()[0], 0);
+        assert_eq!(fs::read(state.join("SCORES.CK1")).unwrap(), b"scores");
+    }
+
+    #[test]
+    fn keen_dreams_versions_read_their_own_name() {
+        let state = ["CONFIG.KDR".to_string(), "KDREAMS.CFG".to_string()];
+        let names = |version| settings_names("kdreams", version, &state);
+        for version in ["kdreams-1.0", "kdreams-1.05"] {
+            assert_eq!(names(Some(version))[0], "CONFIG.KDR", "{version}");
+        }
+        for version in [Some("kdreams-1.13"), Some("kdreams-1.93"), None] {
+            assert_eq!(names(version)[0], "KDREAMS.CFG", "{version:?}");
+        }
+        assert_eq!(names(None).len(), 2);
+    }
+
+    #[test]
+    fn other_games_have_one_settings_file() {
+        let state = ["CTLPANEL.CK1".to_string(), "SCORES.CK1".to_string()];
+        assert_eq!(settings_names("keen1", None, &state), ["CTLPANEL.CK1"]);
+        let state = ["CONFIG.CK4".to_string(), "CONFIG.CKS".to_string()];
+        assert_eq!(settings_names("keen4", None, &state), ["CONFIG.CK4"]);
     }
 }
