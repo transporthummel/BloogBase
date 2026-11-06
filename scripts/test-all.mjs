@@ -46,9 +46,13 @@ function step(name, cmd, args, cwd = root) {
   }
 }
 
-/** Unpacks every mod zip from the mod cache into KEEN_MODS, one folder each. */
+/**
+ * Unpacks every mod zip from the mod cache into KEEN_MODS, one folder each, and
+ * empties KEEN_OUT so it only holds the covers of this run.
+ */
 function unpackMods() {
   rmSync(env.KEEN_MODS, { recursive: true, force: true });
+  rmSync(env.KEEN_OUT, { recursive: true, force: true });
   for (const zip of readdirSync(env.BLOOGBASE_MOD_CACHE)) {
     if (!zip.endsWith(".zip")) continue;
     const out = join(env.KEEN_MODS, zip.slice(0, -4));

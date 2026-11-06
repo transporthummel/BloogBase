@@ -95,7 +95,8 @@ KEEN_MODS=<unpacked mods, one folder each> KEEN_GAMES=… KEEN_OUT=<folder> \
   v1.4 CGA versions for CGA mods) into `KEEN_OUT` as PNG; look at them after
   changes to the covers.
   `pnpm test:all` unpacks the mod cache for it into
-  `src-tauri/target/covers-mods` and writes to `target/covers-out`.
+  `src-tauri/target/covers-mods` and writes to `target/covers-out`, which it
+  empties first.
 
 To render a single title: `cargo run -p keen-graphics --example title --
 <out.png> <mod folder> <game folder>`.
