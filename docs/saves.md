@@ -105,6 +105,25 @@ The offsets were checked against real saves of Keen 4 v1.4, Keen 5, Keen 6
 v1.0 and Keen Dreams 1.13. Names are shown as ASCII,
 other bytes as replacement characters.
 
+## Global settings
+
+The settings page can set sound, music, the sound device, the score box and
+keys for all games (`game_settings`). Each stays with the game until set.
+
+Before a session, the set values go into the settings file as DOS sees it,
+as a file in `state/`. `generated/settings-session.json` records each changed
+field's original and written value first. After the session each field still
+as written gets its original back. Anything else stays: high scores, and what
+the player changed in the game. A copy of a mod's file that ends up equal to
+it goes away again. A session that never ended (a crash, or BloogBase quit
+with the game running) is merged at the profile's next start, so backups made
+before a launch hold the player's values.
+
+Only files of a known size and signature are changed (`game_settings::format`),
+others stay as they are. So do the games' diagonal keys, Quiet AdLib and
+two-button firing. A setting overwrites an in-game change at the next start;
+it comes back into effect when the setting goes back to unset.
+
 ## Backups
 
 A backup is a ZIP in `backups/<profile>/` with a manifest

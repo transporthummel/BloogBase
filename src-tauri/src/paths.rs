@@ -98,6 +98,8 @@ pub struct ProfileDirs {
     pub launch_conf: PathBuf,
     /// The defaults layer of a mod that needs more than its engine's.
     pub defaults_conf: PathBuf,
+    /// What the global settings changed for the session under way.
+    pub settings_session: PathBuf,
     /// Mounted as drive X: where the screen is saved after the game.
     pub exit_screen: PathBuf,
     pub capture: PathBuf,
@@ -144,6 +146,7 @@ impl AppPaths {
             override_conf: config.join("override.conf"),
             launch_conf: root.join("generated").join("launch.conf"),
             defaults_conf: root.join("generated").join("defaults.conf"),
+            settings_session: root.join("generated").join("settings-session.json"),
             exit_screen: root.join("generated").join("exit"),
             capture: root.join("capture"),
             video_thumbs: root.join("generated").join("video-thumbs"),

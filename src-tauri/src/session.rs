@@ -8,6 +8,7 @@ use crate::backups;
 use crate::db::Db;
 use crate::error::Result;
 use crate::exit_screen;
+use crate::game_settings;
 use crate::launcher;
 use crate::paths::AppPaths;
 use crate::runtime::Runtime;
@@ -30,14 +31,32 @@ pub fn start(
     fullscreen: bool,
     shown: impl FnOnce() + Send + 'static,
 ) -> Result<Started> {
+    // Left by a session that ended without us, e.g. in a crash.
+    merge_settings(paths, db, profile_id);
     let backup = backups::before_launch(paths, db, profile_id);
     let spec = launcher::prepare(paths, db, profile_id, fullscreen)?;
-    let (child, session) = launcher::spawn(runtime, &spec, db, profile_id, shown)?;
+    if let Err(e) = game_settings::apply(paths, db, profile_id) {
+        tracing::warn!("could not apply global settings to {profile_id}: {e}");
+    }
+    let (child, session) = match launcher::spawn(runtime, &spec, db, profile_id, shown) {
+        Ok(started) => started,
+        Err(e) => {
+            merge_settings(paths, db, profile_id);
+            return Err(e);
+        }
+    };
     Ok(Started {
         child,
         session,
         backup,
     })
+}
+
+/// Puts the player's values back; the next start tries again if this fails.
+fn merge_settings(paths: &AppPaths, db: &Db, profile_id: &str) {
+    if let Err(e) = game_settings::merge_pending(paths, db, profile_id) {
+        tracing::warn!("could not take global settings out of {profile_id}: {e}");
+    }
 }
 
 /// How a session ended.
@@ -66,6 +85,7 @@ pub fn end(
         tracing::error!("could not record end of session {session}: {e}");
         0
     });
+    merge_settings(paths, db, profile_id);
     if let Some(backup) = backup
         && let Err(e) = backups::after_session(db, profile_id, backup)
     {
@@ -133,5 +153,35 @@ mod tests {
         assert!(!end(session(&db, Some("a"), 5), false).start_problem);
         let long = launcher::SHORT_SESSION as i64 + 10;
         assert!(!end(session(&db, Some("c"), long), false).start_problem);
+    }
+
+    #[test]
+    fn a_failed_start_takes_the_settings_out_again() {
+        use crate::game_settings::GameSettings;
+
+        let (_tmp, paths, db) = setup();
+        let file = crate::profiles::get(&db, "keen4-1")
+            .unwrap()
+            .1
+            .upper
+            .join("config.ck4");
+        let original = crate::game_settings::format::tests::file(
+            crate::game_settings::format::Format::GalaxyNew,
+        );
+        std::fs::write(&file, &original).unwrap();
+        let off = GameSettings {
+            sound: Some(false),
+            ..GameSettings::default()
+        };
+        crate::game_settings::set(&db, &off).unwrap();
+        let runtime = Runtime {
+            id: "none".into(),
+            version: "0".into(),
+            path: "does-not-exist.exe".into(),
+            managed: false,
+        };
+
+        assert!(start(&paths, &db, &runtime, "keen4-1", false, || {}).is_err());
+        assert_eq!(std::fs::read(&file).unwrap(), original);
     }
 }

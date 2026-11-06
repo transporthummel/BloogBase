@@ -238,12 +238,12 @@ pub fn write(data: &mut [u8], edit: &Edit) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     /// A file of `format` with the games' defaults: AdLib effects and music,
     /// Ctrl and Alt, arrows, score box on.
-    fn file(format: Format) -> Vec<u8> {
+    pub(crate) fn file(format: Format) -> Vec<u8> {
         let (size, head): (usize, &[u8]) = match format {
             Format::Vorticons => (44, &[1, 0]),
             Format::GalaxyOld => (543, b"CK4\0\x02\0"),

@@ -1,7 +1,10 @@
 //! Settings for all games and mods: sound, music, the sound device, the score
 //! box and the keys. Each can stay unset, which leaves it to the game.
 
-mod format;
+pub(crate) mod format;
+mod session;
+
+pub use session::{apply, merge_pending};
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
