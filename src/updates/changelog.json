@@ -1,6 +1,7 @@
 {
   "unreleased": {
     "en": [
+      "Set sound, music, score box and keys once for all games and mods.",
       "BloogBase can go fullscreen, and games then start in fullscreen too.",
       "A button in the sidebar quits BloogBase, also in fullscreen.",
       "BloogBase recognizes eight more game releases, 50 in all.",
@@ -13,6 +14,7 @@
       "Keen Dreams v1.0 and v1.05 show their title screen as cover."
     ],
     "de": [
+      "Sound, Musik, Scorebox und Tasten lassen sich einmal für alle Spiele und Mods festlegen.",
       "BloogBase kann ins Vollbild, und Spiele starten dann auch im Vollbild.",
       "Ein Button in der Seitenleiste beendet BloogBase, auch im Vollbild.",
       "BloogBase erkennt acht weitere Spielversionen, insgesamt 50.",

@@ -29,6 +29,8 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
+import { ScoreBoxSection, SoundSection } from "./GameSettings";
+import { Field, Group, selectClass } from "./parts";
 
 export function Settings() {
   const { t, i18n } = useTranslation();
@@ -90,7 +92,9 @@ export function Settings() {
         </Section>
         <Section title={t("settings.games")}>
           <DisplaySection />
+          <SoundSection />
           <ControlsSection />
+          <ScoreBoxSection />
           <BackupSection />
         </Section>
         <Section title={t("runtime.title")}>
@@ -456,10 +460,6 @@ function GlobalConfigSection() {
   );
 }
 
-// Selects get a fixed width (w-44) where they sit under each other: on their
-// own they're as wide as their longest option and don't line up.
-const selectClass = "rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-ink";
-
 /** A card of related settings, split into groups. */
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -467,24 +467,5 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <h2 className="mb-4 font-semibold">{title}</h2>
       <div className="grid gap-5">{children}</div>
     </Card>
-  );
-}
-
-/** Settings of one kind within a card, set apart from the group above. */
-function Group({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="grid gap-4 border-t border-border pt-5 first:border-t-0 first:pt-0">
-      <h3 className="text-sm font-semibold text-muted">{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="flex flex-wrap items-center justify-between gap-3 text-sm">
-      <span>{label}</span>
-      {children}
-    </label>
   );
 }
