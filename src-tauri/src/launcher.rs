@@ -1192,6 +1192,14 @@ mod e2e {
         let paths = AppPaths::new(&root);
         paths.ensure().unwrap();
         let db = Db::open(&paths.database).unwrap();
+        dosconf::set_options(
+            &db,
+            &dosconf::DisplayOptions {
+                fullscreen: false,
+                ..Default::default()
+            },
+        )
+        .unwrap();
 
         let status = runtime::install(paths.clone(), &db, |phase, received, total| {
             eprintln!("{phase:?} {received}/{total}")

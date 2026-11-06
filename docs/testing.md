@@ -134,8 +134,8 @@ BLOOGBASE_E2E_GAME=<folder with a Keen game> \
 ```
 
 Downloads the managed DOSBox Staging, imports the game into a data folder
-with a non-ASCII path, starts it for eight seconds and checks the play time
-was recorded.
+with a non-ASCII path, starts it in a window for eight seconds, with "Start
+games in fullscreen" turned off, and checks the play time was recorded.
 
 ### Mods in DOSBox
 
