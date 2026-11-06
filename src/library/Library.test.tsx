@@ -362,6 +362,24 @@ test("the search filters by name, game and version, and can be cleared", async (
   expect(screen.getByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
 });
 
+test("the search is still there after visiting another page, but not in storage", async () => {
+  const mod: Profile = { ...profile, id: "aurora", modId: "aurora", label: "Aurora Bliss" };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [mod, profile] });
+  const { unmount } = renderLibrary();
+  await userEvent.type(await screen.findByRole("searchbox", { name: "Search library" }), "aurora");
+  unmount();
+
+  renderLibrary();
+  const search = await screen.findByRole("searchbox", { name: "Search library" });
+  expect(search).toHaveValue("aurora");
+  expect(screen.queryByRole("heading", { name: keen5.title })).not.toBeInTheDocument();
+  expect(JSON.stringify(localStorage)).not.toContain("aurora");
+  expect(JSON.stringify(sessionStorage)).not.toContain("aurora");
+
+  await userEvent.clear(search);
+  expect(screen.getByRole("heading", { name: keen5.title })).toBeInTheDocument();
+});
+
 test("the status bar sums up the library and its disk space", async () => {
   const mod: Profile = { ...profile, id: "aurora", modId: "aurora", label: "Aurora Bliss" };
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [mod, profile] });

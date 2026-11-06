@@ -38,6 +38,9 @@ import { useControlsGate } from "../profile/controlsGate";
 /** The games sold on Steam and GOG. */
 const SOLD_GAMES = ["keen1", "keen2", "keen3", "keen4", "keen5", "kdreams"];
 
+/** The search, kept across pages until the app closes. */
+let lastQuery = "";
+
 export function Library() {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -50,7 +53,11 @@ export function Library() {
   const [finding, setFinding] = useState(false);
   const [imported, setImported] = useState<number | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(lastQuery);
+  function search(value: string) {
+    lastQuery = value;
+    setQuery(value);
+  }
   // Only picked (and remembered as seen) when it's shown.
   const [trivia] = useState(() => (getShowTrivia() ? startupTrivia() : null));
   const list = useRef<HTMLDivElement>(null);
@@ -239,7 +246,7 @@ export function Library() {
               className="w-full rounded-lg border border-border bg-surface-raised py-2 pr-3 pl-9 text-sm"
               placeholder={t("library.search")}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => search(e.target.value)}
             />
           </label>
           <label className="ml-auto flex items-center gap-2 text-sm text-muted">
@@ -266,7 +273,7 @@ export function Library() {
       {profiles.data && profiles.data.length > 0 && shown.length === 0 && (
         <div className="flex flex-wrap items-center gap-3">
           <Notice>{t("library.noMatch")}</Notice>
-          <Button variant="secondary" onClick={() => setQuery("")}>
+          <Button variant="secondary" onClick={() => search("")}>
             {t("library.clearSearch")}
           </Button>
         </div>
