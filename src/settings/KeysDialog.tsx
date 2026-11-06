@@ -21,7 +21,7 @@ const NO_KEYS: GameKeys = {
   fire: null,
 };
 
-type Message ={ tone: "error" | "info"; text: string };
+type Message = { tone: "error" | "info"; text: string };
 
 /** Chooses the keys for all games, one at a time, by pressing them. */
 export function KeysDialog({ onClose }: { onClose: () => void }) {
