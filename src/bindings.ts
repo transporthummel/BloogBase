@@ -83,6 +83,9 @@ export const commands = {
 	/**  Whether Keen 1-3 fire with Space, from the settings page. */
 	oneButtonFiring: () => typedError<boolean, CommandError>(__TAURI_INVOKE("one_button_firing")),
 	setOneButtonFiring: (on: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("set_one_button_firing", { on })),
+	/**  Sound, music, the score box and keys for all games, from the settings page. */
+	gameSettings: () => typedError<GameSettings, CommandError>(__TAURI_INVOKE("game_settings")),
+	setGameSettings: (settings: GameSettings) => typedError<null, CommandError>(__TAURI_INVOKE("set_game_settings", { settings })),
 	/**
 	 *  Where a profile stands with one-button firing, whether it's on or not;
 	 *  `None` for games without it.
@@ -365,7 +368,7 @@ export type EarlierBackup = {
 export type Engine = "vorticons" | "galaxy" | "dreams";
 
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
-export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "alreadyInLibrary" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "runtimeTooOld" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "olderIndex" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload" | "noSavesFound" | "otherGame";
+export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "alreadyInLibrary" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "runtimeTooOld" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "invalidSetting" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "olderIndex" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload" | "noSavesFound" | "otherGame";
 
 /**  Where a game or mod stands with the patch. */
 export type Firing = 
@@ -434,6 +437,17 @@ export type Game = {
 	preferredVersions?: string[],
 };
 
+/**  DOS scancodes. */
+export type GameKeys = {
+	up: number | null,
+	down: number | null,
+	left: number | null,
+	right: number | null,
+	jump: number | null,
+	pogo: number | null,
+	fire: number | null,
+};
+
 /**
  *  How far a launch has got, so the frontend can cover the seconds until
  *  DOSBox shows its window. [`PlaySessionEnded`] follows when it closes.
@@ -441,6 +455,14 @@ export type Game = {
 export type GameLaunch = {
 	profileId: string,
 	phase: LaunchPhase,
+};
+
+export type GameSettings = {
+	sound: boolean | null,
+	music: boolean | null,
+	device: SoundDevice | null,
+	scoreBox: boolean | null,
+	keys: GameKeys,
 };
 
 export type GameVersion = {
@@ -963,6 +985,8 @@ export type SetupStatus = {
 	/**  The wizard step to resume at; `None` when it isn't running. */
 	step: string | null,
 };
+
+export type SoundDevice = "pcSpeaker" | "soundBlaster";
 
 /**  Sizes in bytes. Floats, as JavaScript numbers can't hold every u64. */
 export type StorageUsage = {

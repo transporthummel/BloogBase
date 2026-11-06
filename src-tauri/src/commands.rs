@@ -706,6 +706,22 @@ pub fn set_one_button_firing(db: State<'_, Db>, on: bool) -> CommandResult<()> {
     Ok(firing::set_enabled(&db, on)?)
 }
 
+/// Sound, music, the score box and keys for all games, from the settings page.
+#[tauri::command]
+#[specta::specta]
+pub fn game_settings(db: State<'_, Db>) -> CommandResult<crate::game_settings::GameSettings> {
+    Ok(crate::game_settings::get(&db)?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_game_settings(
+    db: State<'_, Db>,
+    settings: crate::game_settings::GameSettings,
+) -> CommandResult<()> {
+    Ok(crate::game_settings::set(&db, &settings)?)
+}
+
 /// Where a profile stands with one-button firing, whether it's on or not;
 /// `None` for games without it.
 #[tauri::command]

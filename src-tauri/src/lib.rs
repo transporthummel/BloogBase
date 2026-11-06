@@ -15,6 +15,7 @@ mod error;
 mod exit_screen;
 mod firing;
 mod free_games;
+mod game_settings;
 mod jobs;
 mod keenwiki;
 mod keymap;
@@ -99,6 +100,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::set_start_fullscreen,
             commands::one_button_firing,
             commands::set_one_button_firing,
+            commands::game_settings,
+            commands::set_game_settings,
             commands::profile_firing,
             commands::profile_machine,
             commands::config_view,

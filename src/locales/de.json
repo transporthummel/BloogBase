@@ -157,6 +157,7 @@
     "busy": "Das läuft bereits.",
     "alreadyRunning": "Dieses Spiel läuft bereits.",
     "invalidLocation": "BloogBase kann seine Daten dort nicht speichern ({{message}}).",
+    "invalidSetting": "Diese Einstellung lässt sich nicht speichern ({{message}}).",
     "noModFound": "Dort wurde keine Commander-Keen-Mod gefunden.",
     "incompatibleInstall": "Die Mod passt nicht zu diesem Spiel ({{message}}).",
     "generic": "Etwas ist schiefgelaufen: {{message}}",

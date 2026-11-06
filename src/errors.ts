@@ -17,6 +17,7 @@ const translated: ErrorKind[] = [
   "busy",
   "alreadyRunning",
   "invalidLocation",
+  "invalidSetting",
   "noModFound",
   "incompatibleInstall",
   "missingGame",

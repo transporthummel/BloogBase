@@ -49,6 +49,8 @@ pub enum Error {
     NotFound(String),
     #[error("can't store data there: {0}")]
     InvalidLocation(String),
+    #[error("invalid setting: {0}")]
+    InvalidSetting(String),
     #[error("no Commander Keen mod found")]
     NoModFound,
     #[error("this mod doesn't fit that game: {0}")]
@@ -92,6 +94,7 @@ impl Error {
             | Error::InvalidRuntime(s)
             | Error::RuntimeTooOld(s)
             | Error::InvalidLocation(s)
+            | Error::InvalidSetting(s)
             | Error::UnsupportedDownload(s) => s.clone(),
             _ => self.to_string(),
         }
@@ -119,6 +122,7 @@ impl Error {
             Error::AlreadyRunning => ErrorKind::AlreadyRunning,
             Error::NotFound(_) => ErrorKind::NotFound,
             Error::InvalidLocation(_) => ErrorKind::InvalidLocation,
+            Error::InvalidSetting(_) => ErrorKind::InvalidSetting,
             Error::NoModFound => ErrorKind::NoModFound,
             Error::IncompatibleInstall(_) => ErrorKind::IncompatibleInstall,
             Error::MissingGame(_) => ErrorKind::MissingGame,
@@ -157,6 +161,7 @@ pub enum ErrorKind {
     AlreadyRunning,
     NotFound,
     InvalidLocation,
+    InvalidSetting,
     NoModFound,
     IncompatibleInstall,
     MissingGame,
