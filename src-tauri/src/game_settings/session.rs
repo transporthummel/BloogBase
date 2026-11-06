@@ -271,6 +271,10 @@ fn sidecar(paths: &AppPaths, profile_id: &str) -> PathBuf {
 /// Writes `file` in one step, so a crash can't cost its high scores. The
 /// temporary file goes beside the `record`, where DOS doesn't see it.
 fn write_whole(record: &Path, file: &Path, data: &[u8]) -> Result<()> {
+    // Only Windows refuses to rename over a read-only file.
+    if fs::metadata(file).is_ok_and(|m| m.permissions().readonly()) {
+        return Err(std::io::Error::from(std::io::ErrorKind::PermissionDenied).into());
+    }
     let tmp = record.with_extension("file");
     fs::write(&tmp, data)?;
     fs::rename(&tmp, file)?;
