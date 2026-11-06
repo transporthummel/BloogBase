@@ -112,7 +112,7 @@ pub fn apply(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> {
     let record = sidecar(paths, profile_id);
     if let Err(e) = write_whole(&record, &layers.upper.join(&pending.file), &data) {
         let _ = fs::remove_file(sidecar(paths, profile_id));
-        return Err(e.into());
+        return Err(e);
     }
     Ok(())
 }
