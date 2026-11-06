@@ -114,7 +114,7 @@ pub fn recognize(game_id: &str, data: &[u8]) -> Option<Format> {
     let format = match (game_id, data.len()) {
         ("keen1" | "keen2" | "keen3", 44) => Format::Vorticons,
         ("kdreams", 656) => Format::Dreams,
-        ("keen4", 534) if data.starts_with(b"ID Software") => Format::GalaxyDemo,
+        ("keen4", 534) => Format::GalaxyDemo,
         ("keen4" | "keen5" | "keen6", size) => {
             let episode = game_id.as_bytes()[4];
             if data.get(..4)? != [b'C', b'K', episode, 0] {
@@ -644,5 +644,12 @@ pub(crate) mod tests {
         }
         assert!(checked > 30, "only {checked} files");
         assert!(unknown.is_empty(), "{unknown:#?}");
+    }
+
+    #[test]
+    fn the_demo_is_recognized_with_a_new_high_score() {
+        let mut data = file(Format::GalaxyDemo);
+        data[..11].copy_from_slice(b"Keen Player");
+        assert_eq!(recognize("keen4", &data), Some(Format::GalaxyDemo));
     }
 }
