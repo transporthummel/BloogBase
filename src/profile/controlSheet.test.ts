@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import type { GameKeys } from "../bindings";
-import { sheetFor } from "./controlSheet";
+import { keysInEffect, sheetFor } from "./controlSheet";
 
 const noKeys: GameKeys = {
   up: null,
@@ -65,4 +65,16 @@ test("nothing set shows the games' defaults", () => {
     keys: ["ctrl", "alt"],
     action: "fire",
   });
+});
+
+test("the Fire key only shows where it's applied", () => {
+  const keys = { ...noKeys, jump: 0x11, fire: 0x25 };
+  // One-button firing off, so a mod's own patch keeps Space.
+  expect(keysInEffect(keys, keen1, null, false).fire).toBeNull();
+  expect(keysInEffect(keys, keen1, null, undefined).fire).toBeNull();
+  expect(keysInEffect(keys, keen1, null, true).fire).toBe(0x25);
+  // Keen 4's special demo has no such key in its file.
+  expect(keysInEffect(keys, keen4, "keen4-demo", false)).toEqual({ ...keys, fire: null });
+  expect(keysInEffect(keys, keen4, "keen4-1.4-ega", false)).toEqual(keys);
+  expect(keysInEffect(keys, dreams, "kdreams-1.13", false)).toEqual(keys);
 });

@@ -36,6 +36,20 @@ export function spaceFires(enabled: boolean | undefined, firing: Firing | null |
 }
 
 /**
+ * The keys from the settings as far as they reach this game: Keen 1-3's Fire
+ * key goes in with one-button firing, and Keen 4's special demo has none.
+ */
+export function keysInEffect(
+  keys: GameKeys,
+  game: Pick<Game, "engine">,
+  versionId: string | null,
+  oneButtonFiring: boolean | undefined,
+): GameKeys {
+  const noFire = (game.engine === "vorticons" && !oneButtonFiring) || versionId === "keen4-demo";
+  return noFire ? { ...keys, fire: null } : keys;
+}
+
+/**
  * The keys from the games' own help and source code (Keen 1's HELPTEXT,
  * Keen Dreams' source), the cheats from KeenWiki. Cheats that need a start
  * parameter are left out, as BloogBase can't set one.

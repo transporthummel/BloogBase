@@ -10,7 +10,14 @@ import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { PlayButton } from "../ui/PlayButton";
-import { type Binding, type Chord, type Sheet, sheetFor, spaceFires } from "./controlSheet";
+import {
+  type Binding,
+  type Chord,
+  keysInEffect,
+  type Sheet,
+  sheetFor,
+  spaceFires,
+} from "./controlSheet";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { Keycap } from "./Keycap";
 
@@ -116,7 +123,8 @@ export function ControlsSheet({ profile, game }: { profile: Profile; game: Game 
     queryFn: () => unwrap(commands.gameSettings()),
   });
   const space = spaceFires(enabled.data, firing.data);
-  const sheet = sheetFor(game, space, mac(), settings.data?.keys ?? noKeys);
+  const keys = keysInEffect(settings.data?.keys ?? noKeys, game, profile.versionId, enabled.data);
+  const sheet = sheetFor(game, space, mac(), keys);
   // A copy the patch fits, with the setting off: worth a pointer.
   const offerSpace = firing.data === "patchable" && enabled.data === false;
 
