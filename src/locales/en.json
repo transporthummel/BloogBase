@@ -164,6 +164,7 @@
     "keysPress": "Press a key… (Esc cancels)",
     "keysChange": "Change",
     "keysReset": "Reset",
+    "keysResetAll": "Reset all",
     "keysUnknown": "DOS doesn't know this key. Please pick another one.",
     "keysReserved": "This key is taken: the games use it themselves.",
     "keysTaken": "This key is already set for {{action}}.",

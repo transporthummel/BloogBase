@@ -11,7 +11,17 @@ import { clashesWithDefault, isReserved, keyId, scancodeFor } from "./scancodes"
 
 const ACTIONS: (keyof GameKeys)[] = ["up", "down", "left", "right", "jump", "pogo", "fire"];
 
-type Message = { tone: "error" | "info"; text: string };
+const NO_KEYS: GameKeys = {
+  up: null,
+  down: null,
+  left: null,
+  right: null,
+  jump: null,
+  pogo: null,
+  fire: null,
+};
+
+type Message ={ tone: "error" | "info"; text: string };
 
 /** Chooses the keys for all games, one at a time, by pressing them. */
 export function KeysDialog({ onClose }: { onClose: () => void }) {
@@ -65,8 +75,20 @@ export function KeysDialog({ onClose }: { onClose: () => void }) {
       title={t("settings.keysTitle")}
       onClose={onClose}
       footer={
-        <div className="flex justify-end">
-          <Button variant="secondary" onClick={onClose}>
+        <div className="flex flex-wrap items-center gap-3">
+          {keys && ACTIONS.some((action) => keys[action] !== null) && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setMessage(null);
+                setWaiting(null);
+                update({ keys: NO_KEYS });
+              }}
+            >
+              {t("settings.keysResetAll")}
+            </Button>
+          )}
+          <Button className="ml-auto" variant="secondary" onClick={onClose}>
             {t("common.close")}
           </Button>
         </div>

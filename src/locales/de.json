@@ -164,6 +164,7 @@
     "keysPress": "Drücke eine Taste… (Esc bricht ab)",
     "keysChange": "Ändern",
     "keysReset": "Zurücksetzen",
+    "keysResetAll": "Alle zurücksetzen",
     "keysUnknown": "Diese Taste kennt DOS nicht. Bitte nimm eine andere.",
     "keysReserved": "Diese Taste ist vergeben: Die Spiele nutzen sie selbst.",
     "keysTaken": "Diese Taste ist schon für {{action}} festgelegt.",

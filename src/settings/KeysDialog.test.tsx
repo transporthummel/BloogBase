@@ -101,3 +101,14 @@ test("reset goes back to the game's key", async () => {
   await userEvent.click(within(row("Jump")).getByRole("button", { name: "Reset" }));
   expect(commands.setGameSettings).toHaveBeenCalledWith(settings());
 });
+
+test("one click resets all keys and nothing else", async () => {
+  await open({ jump: 0x11, fire: 0x13 });
+  await userEvent.click(screen.getByRole("button", { name: "Reset all" }));
+  expect(commands.setGameSettings).toHaveBeenCalledWith(settings());
+});
+
+test("reset all only shows when a key is set", async () => {
+  await open();
+  expect(screen.queryByRole("button", { name: "Reset all" })).not.toBeInTheDocument();
+});
