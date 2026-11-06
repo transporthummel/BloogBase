@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import {
@@ -132,7 +132,7 @@ const status: IndexStatus = {
 
 function renderDiscover() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
+  return render(
     <QueryClientProvider client={client}>
       <Discover />
     </QueryClientProvider>,
@@ -234,6 +234,82 @@ test("filters by text, type and what the library can play", async () => {
   await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
   expect(screen.queryByRole("heading", { name: "Fribbulus" })).not.toBeInTheDocument();
   expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(3);
+  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+});
+
+/** The choices of the mods tab, all set to something else than the defaults. */
+async function chooseAll(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByRole("searchbox"), "a");
+  await user.selectOptions(screen.getByRole("combobox", { name: "Game" }), "keen4");
+  await user.selectOptions(screen.getByRole("combobox", { name: "Type" }), "episode");
+  await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "name");
+  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+}
+
+function expectAllChosen() {
+  expect(screen.getByRole("searchbox")).toHaveValue("a");
+  expect(screen.getByRole("combobox", { name: "Game" })).toHaveValue("keen4");
+  expect(screen.getByRole("combobox", { name: "Type" })).toHaveValue("episode");
+  expect(screen.getByRole("combobox", { name: "Sort by" })).toHaveValue("name");
+  expect(screen.getByRole("checkbox", { name: "Works with my games" })).toBeChecked();
+}
+
+async function resetChoices(user: ReturnType<typeof userEvent.setup>) {
+  await user.clear(screen.getByRole("searchbox"));
+  await user.selectOptions(screen.getByRole("combobox", { name: "Game" }), "");
+  await user.selectOptions(screen.getByRole("combobox", { name: "Type" }), "");
+  await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "featured");
+  const playable = screen.getByRole("checkbox", { name: "Works with my games" });
+  if ((playable as HTMLInputElement).checked) await user.click(playable);
+}
+
+test("keeps filters and sort across other pages and tabs, but not in storage", async () => {
+  const user = userEvent.setup();
+  const first = renderDiscover();
+  await screen.findByRole("heading", { name: "Aurora" });
+  await chooseAll(user);
+  first.unmount();
+
+  renderDiscover();
+  await screen.findByRole("heading", { name: "Aurora" });
+  expectAllChosen();
+  expect(JSON.stringify(localStorage)).not.toContain("keen4");
+  expect(JSON.stringify(sessionStorage)).not.toContain("keen4");
+
+  await user.click(screen.getByRole("tab", { name: "Games" }));
+  await user.click(screen.getByRole("tab", { name: "Mods" }));
+  await screen.findByRole("heading", { name: "Aurora" });
+  expectAllChosen();
+  await resetChoices(user);
+});
+
+test("a link to the newest mods clears remembered filters once", async () => {
+  const user = userEvent.setup();
+  const first = renderDiscover();
+  await screen.findByRole("heading", { name: "Aurora" });
+  await chooseAll(user);
+  first.unmount();
+
+  search = { tab: "mods", sort: "newest" };
+  renderDiscover();
+  await screen.findByRole("heading", { name: "Fribbulus" });
+  expect(screen.getByRole("searchbox")).toHaveValue("");
+  expect(screen.getByRole("combobox", { name: "Game" })).toHaveValue("");
+  expect(screen.getByRole("combobox", { name: "Sort by" })).toHaveValue("newest");
+
+  // Going to another tab and back isn't following the link again.
+  await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "name");
+  await user.click(screen.getByRole("tab", { name: "Games" }));
+  await user.click(screen.getByRole("tab", { name: "Mods" }));
+  await screen.findByRole("heading", { name: "Fribbulus" });
+  expect(screen.getByRole("combobox", { name: "Sort by" })).toHaveValue("name");
+
+  // Leaving the page and following the link again is.
+  cleanup();
+  renderDiscover();
+  await screen.findByRole("heading", { name: "Fribbulus" });
+  expect(screen.getByRole("combobox", { name: "Sort by" })).toHaveValue("newest");
+  await resetChoices(user);
 });
 
 test("opens sorted by newest when linked that way", async () => {
@@ -241,6 +317,7 @@ test("opens sorted by newest when linked that way", async () => {
   renderDiscover();
   await screen.findByRole("heading", { name: "Aurora" });
   expect(screen.getByRole("combobox", { name: "Sort by" })).toHaveValue("newest");
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "featured");
 });
 
 test("keeps showing the cached list when a check fails", async () => {

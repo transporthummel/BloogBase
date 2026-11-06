@@ -1,6 +1,6 @@
 import { useSearch } from "@tanstack/react-router";
 import { RefreshCw, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type Game, type ModKind } from "../bindings";
 import { gameTitle, useGames } from "../catalog";
@@ -24,6 +24,13 @@ const KINDS: ModKind[] = ["episode", "levelpack", "conversion"];
 
 const field = "rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm";
 
+const NO_FILTERS = { query: "", game: "", kind: "" as ModKind | "", playable: false };
+
+/** The mods tab's filters and sort, kept across pages until the app closes. */
+let last = { ...NO_FILTERS, sort: "featured" as Sort };
+/** The sort the open page was linked with, so going back to the tab doesn't count as the link. */
+let lastLink: Sort | undefined;
+
 /** Mods from the curated index and freely available game versions (PLAN.md §8.3). */
 export function Discover() {
   const { t } = useTranslation();
@@ -37,6 +44,12 @@ export function Discover() {
     setLinked(search.tab);
     if (search.tab) setTab(search.tab);
   }
+  useEffect(
+    () => () => {
+      lastLink = undefined;
+    },
+    [],
+  );
 
   return (
     <>
@@ -80,16 +93,34 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
   const mods = useIndexMods();
   const installs = useInstalls();
 
-  const [query, setQuery] = useState("");
-  const [game, setGame] = useState("");
-  const [kind, setKind] = useState<ModKind | "">("");
-  const [playable, setPlayable] = useState(false);
-  const [sort, setSort] = useState<Sort>(linkedSort ?? "featured");
+  // A link, e.g. to the news dialog's new mods, shows what it promises:
+  // remembered filters could hide them.
+  const [start] = useState(() =>
+    linkedSort && linkedSort !== lastLink ? { ...NO_FILTERS, sort: linkedSort } : last,
+  );
+  const [query, setQuery] = useState(start.query);
+  const [game, setGame] = useState(start.game);
+  const [kind, setKind] = useState(start.kind);
+  const [playable, setPlayable] = useState(start.playable);
+  const [sort, setSort] = useState(start.sort);
   const [linked, setLinked] = useState(linkedSort);
+  function clearFilters() {
+    setQuery(NO_FILTERS.query);
+    setGame(NO_FILTERS.game);
+    setKind(NO_FILTERS.kind);
+    setPlayable(NO_FILTERS.playable);
+  }
   if (linked !== linkedSort) {
     setLinked(linkedSort);
-    if (linkedSort) setSort(linkedSort);
+    if (linkedSort) {
+      setSort(linkedSort);
+      clearFilters();
+    }
   }
+  useEffect(() => {
+    last = { query, game, kind, playable, sort };
+    lastLink = linkedSort;
+  });
 
   const owned = installs.data ?? [];
   const all = mods.data ?? [];
@@ -211,15 +242,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
       {all.length > 0 && shown.length === 0 && (
         <div className="flex flex-wrap items-center gap-3">
           <Notice>{t("discover.noMatch")}</Notice>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setQuery("");
-              setGame("");
-              setKind("");
-              setPlayable(false);
-            }}
-          >
+          <Button variant="secondary" onClick={clearFilters}>
             {t("discover.clearFilters")}
           </Button>
         </div>
