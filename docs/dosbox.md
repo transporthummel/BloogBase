@@ -92,6 +92,15 @@ quiet`, the window title ("<game or mod> – BloogBase", without cycles and
 
 Files are only written when their content changes.
 
+### Music off in Keen 1-3
+
+Keen 1-3 only use the PC Speaker. A mod's music comes from TSRMUSIC.COM, whose
+INT 65h its patch makes the game call. So "music off" in the settings mutes
+the OPL channel with `mixer opl 0`, before secure mode locks the session.
+`oplmode = none` won't do: the TSR then refuses to install while the game
+still calls its interrupt. Keen 4-6 and Dreams play effects over OPL too, and
+get the setting through their settings file ([saves.md](saves.md)).
+
 ### The keyboard
 
 Keen and most DOS games read raw scancodes, so DOSBox's `keyboard_layout`

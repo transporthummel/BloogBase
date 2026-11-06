@@ -34,6 +34,7 @@ use crate::dosconf;
 use crate::error::{Error, Result};
 use crate::exit_screen;
 use crate::firing;
+use crate::game_settings;
 use crate::launcher_copies;
 use crate::library::now;
 use crate::paths::AppPaths;
@@ -218,9 +219,11 @@ pub fn prepare(
         .lower
         .as_ref()
         .ok_or_else(|| Error::MissingGame(profile.missing_game.clone().unwrap_or_default()))?;
-    let firing = firing::supports(&game.id) && firing::enabled(db)?;
+    let settings = game_settings::get(db)?;
+    let firing = (firing::supports(&game.id) && firing::enabled(db)?)
+        .then(|| settings.keys.fire.unwrap_or(firing::SPACE));
     let (lower, command) = match &layers.mod_layer {
-        None if !firing => (base.clone(), None),
+        None if firing.is_none() => (base.clone(), None),
         m => {
             let composed = compose::ensure(paths, db, profile_id, base, m.as_ref(), game, firing)?;
             if let (true, Some(m)) = (composed.changed, m) {
@@ -270,6 +273,9 @@ pub fn prepare(
             &rel(&layers.upper),
             &rel(&dirs.exit_screen),
             &command,
+            // Their own sound is the PC Speaker's: what the OPL channel plays
+            // in these games is a mod's music, through TSRMUSIC.COM.
+            game.engine == catalog::Engine::Vorticons && settings.music == Some(false),
         ),
         cwd: paths.root.clone(),
         log: paths.logs.join(format!("dosbox-{profile_id}.log")),
@@ -349,6 +355,7 @@ fn dosbox_args(
     upper: &str,
     exit_screen: &str,
     command: &str,
+    mute_opl: bool,
 ) -> Vec<String> {
     let mut args: Vec<String> = vec!["--noprimaryconf".into(), "--nolocalconf".into()];
     for conf in confs {
@@ -359,16 +366,20 @@ fn dosbox_args(
     // `@` and `> NUL` keep our commands and their messages off the screen,
     // so the game's output comes first. Batch files still echo, as in DOS.
     // The screen saver stays visible: it marks the end of the game's output.
-    for cmd in [
+    let mute = mute_opl.then(|| "@mixer opl 0 > NUL".to_string());
+    let mounts = [
         format!("@mount C \"{lower}\" > NUL"),
         format!("@mount C \"{upper}\" -t overlay > NUL"),
         format!("@mount {} \"{exit_screen}\" > NUL", exit_screen::DRIVE),
+    ];
+    let run = [
         "@config -securemode > NUL".into(),
         "@C:".into(),
         run_line(command),
         exit_screen::command(),
         "exit".into(),
-    ] {
+    ];
+    for cmd in mounts.into_iter().chain(mute).chain(run) {
         args.push("-c".into());
         args.push(cmd);
     }
@@ -594,7 +605,7 @@ mod tests {
 
     #[test]
     fn batch_files_are_called_so_dosbox_exits() {
-        let cmd = |c: &str| dosbox_args(&[], "l", "u", "x", c)[14].clone();
+        let cmd = |c: &str| dosbox_args(&[], "l", "u", "x", c, false)[14].clone();
         assert_eq!(cmd("cool1.bat"), "@call cool1.bat");
         assert_eq!(cmd("PLAY.BAT -x"), "@call PLAY.BAT -x");
         assert_eq!(cmd("KEEN1.EXE"), "@KEEN1.EXE");
@@ -613,7 +624,7 @@ mod tests {
             "@CK5PATCH.EXE Can't.pat\r\n"
         );
         assert_eq!(
-            dosbox_args(&[], "l", "u", "x", &cmd)[14],
+            dosbox_args(&[], "l", "u", "x", &cmd, false)[14],
             r"@call X:\START.BAT"
         );
     }
@@ -1083,6 +1094,81 @@ machine = svga_paradise
         playing.stop_all();
         assert_eq!(stopped.try_recv(), Ok(()));
         assert!(playing.profile_ids().is_empty());
+    }
+
+    /// Imports a Keen 1 with the given settings.
+    fn keen1(tmp: &Path, paths: &AppPaths, db: &Db) -> String {
+        let src = tmp.join("k1");
+        let exe = firing::tests::exe();
+        write_folder(
+            &src,
+            &[
+                ("KEEN1.EXE", &exe),
+                ("EGAHEAD.CK1", b"h"),
+                ("EGALATCH.CK1", b"l"),
+                ("EGASPRIT.CK1", b"s"),
+                ("LEVEL01.CK1", b"1"),
+                ("SOUNDS.CK1", b"a"),
+            ],
+        );
+        library::import(paths, db, &src).unwrap()[0].id.clone()
+    }
+
+    fn music(db: &Db, on: Option<bool>) {
+        let settings = crate::game_settings::GameSettings {
+            music: on,
+            ..Default::default()
+        };
+        crate::game_settings::set(db, &settings).unwrap();
+    }
+
+    const MUTE: &str = "@mixer opl 0 > NUL";
+
+    #[test]
+    fn music_off_mutes_opl_in_keen_1_3() {
+        let (tmp, paths, db) = setup();
+        let id = keen1(tmp.path(), &paths, &db);
+        music(&db, Some(false));
+        let args = prepare(&paths, &db, &id, false).unwrap().args;
+        let at = |line: &str| args.iter().position(|a| a == line);
+        assert!(at(MUTE).unwrap() < at("@config -securemode > NUL").unwrap());
+    }
+
+    #[test]
+    fn music_off_leaves_keen_4_to_its_file() {
+        let (_tmp, paths, db) = setup();
+        music(&db, Some(false));
+        let args = prepare(&paths, &db, "keen4-1", false).unwrap().args;
+        assert!(!args.iter().any(|a| a == MUTE));
+    }
+
+    #[test]
+    fn music_unset_or_on_changes_nothing() {
+        let (tmp, paths, db) = setup();
+        let id = keen1(tmp.path(), &paths, &db);
+        for on in [None, Some(true)] {
+            music(&db, on);
+            let args = prepare(&paths, &db, &id, false).unwrap().args;
+            assert!(!args.iter().any(|a| a == MUTE), "{on:?}");
+        }
+    }
+
+    #[test]
+    fn the_fire_key_reaches_the_composed_copy() {
+        let (tmp, paths, db) = setup();
+        let id = keen1(tmp.path(), &paths, &db);
+        let settings = crate::game_settings::GameSettings {
+            keys: crate::game_settings::GameKeys {
+                fire: Some(0x1E),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        crate::game_settings::set(&db, &settings).unwrap();
+        prepare(&paths, &db, &id, false).unwrap();
+        let exe = fs::read(paths.composed(&id).join("KEEN1.EXE")).unwrap();
+        let at = 0x20 + 0x3B23 + 9;
+        assert_eq!(&exe[at..at + 2], &0x504Au16.to_le_bytes());
     }
 }
 

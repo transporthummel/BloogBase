@@ -57,7 +57,7 @@ pub struct Composed {
 
 /// Returns the composed directory of `profile_id`, a profile of `game`,
 /// building it if it's missing or out of date. With `firing`, one-button
-/// firing is patched in where it fits.
+/// firing with that key's scancode is patched in where it fits.
 pub fn ensure(
     paths: &AppPaths,
     db: &Db,
@@ -65,7 +65,7 @@ pub fn ensure(
     base: &Path,
     mod_layer: Option<&ModLayer>,
     game: &Game,
-    firing: bool,
+    firing: Option<u8>,
 ) -> Result<Composed> {
     let recipe = mod_layer.map_or(&Recipe::Episode, |m| &m.recipe);
     // Upper-cased path → file. DOS names are case-insensitive, so a mod's
@@ -133,8 +133,8 @@ pub fn ensure(
         fs::write(tmp.join(name), exe)?;
         adapt_patches(game, &inputs, &tmp)?;
     }
-    if firing {
-        let status = firing::apply(game, recipe, &tmp)?;
+    if let Some(key) = firing {
+        let status = firing::apply(game, recipe, &tmp, key)?;
         tracing::info!("one-button firing for {profile_id}: {status:?}");
     }
     match fs::remove_dir_all(&dir) {
@@ -299,7 +299,11 @@ fn scan(root: &Path) -> Result<Vec<Input>> {
 
 /// Base and mod files are never modified in place, so names, sizes and
 /// modification times identify them well enough without reading them.
-fn composition_hash(inputs: &BTreeMap<String, Input>, recipe: &Recipe, firing: bool) -> String {
+fn composition_hash(
+    inputs: &BTreeMap<String, Input>,
+    recipe: &Recipe,
+    firing: Option<u8>,
+) -> String {
     let mut h = Sha256::new();
     // v2: the episode unpacked for old patchers; v3: CWSDPMI; v4: CKPatch;
     // v5: patch files adapted to it; v6: unchanged, but rebuilt once so
@@ -307,8 +311,12 @@ fn composition_hash(inputs: &BTreeMap<String, Input>, recipe: &Recipe, firing: b
     // files launchers run.
     h.update(b"composed v6\n");
     h.update(serde_json::to_string(recipe).expect("recipes serialize"));
-    if firing {
+    if let Some(key) = firing {
         h.update(b"\none-button firing v2");
+        // Space adds nothing, so copies made before the key could be chosen stay.
+        if key != firing::SPACE {
+            h.update(format!("\nfire key {key:02X}"));
+        }
     }
     for input in inputs.values() {
         h.update(format!(
@@ -383,7 +391,7 @@ mod tests {
                 base: None,
                 recipe,
             };
-            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false)
+            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None)
                 .unwrap()
                 .dir;
             let exe = fs::read(dir.join("KEEN1.EXE")).unwrap();
@@ -417,7 +425,7 @@ mod tests {
                 file: "RUN.BAT".into(),
             },
         };
-        let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false)
+        let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None)
             .unwrap()
             .dir;
         assert!(!lzexe::is_lzexe91(
@@ -441,7 +449,7 @@ mod tests {
                 base: None,
                 recipe: Recipe::Episode,
             };
-            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false)
+            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None)
                 .unwrap()
                 .dir;
             fs::read(dir.join("CWSDPMI.EXE")).ok()
@@ -475,7 +483,7 @@ mod tests {
                     args: Vec::new(),
                 },
             };
-            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false)
+            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None)
                 .unwrap()
                 .dir;
             fs::read(dir.join("CK1PATCH.EXE")).ok()
@@ -533,7 +541,7 @@ mod tests {
             base: None,
             recipe: Recipe::Episode,
         };
-        let dir = ensure(&paths, &db, "p", &base, Some(&episode), keen1(), false)
+        let dir = ensure(&paths, &db, "p", &base, Some(&episode), keen1(), None)
             .unwrap()
             .dir;
         assert_eq!(dir, paths.composed("p"));
@@ -548,7 +556,7 @@ mod tests {
 
         // Unchanged inputs: the directory is reused as is.
         fs::write(dir.join("MARK"), b"").unwrap();
-        let again = ensure(&paths, &db, "p", &base, Some(&episode), keen1(), false).unwrap();
+        let again = ensure(&paths, &db, "p", &base, Some(&episode), keen1(), None).unwrap();
         assert!(dir.join("MARK").exists());
         assert!(!again.changed);
 
@@ -560,11 +568,11 @@ mod tests {
                 file: "GO.BAT".into(),
             },
         };
-        let rebuilt = ensure(&paths, &db, "p", &base, Some(&batch), keen1(), false).unwrap();
+        let rebuilt = ensure(&paths, &db, "p", &base, Some(&batch), keen1(), None).unwrap();
         assert!(!dir.join("MARK").exists());
         assert!(rebuilt.changed);
         fs::write(modf.join("NEW.CK1"), b"n").unwrap();
-        ensure(&paths, &db, "p", &base, Some(&batch), keen1(), false).unwrap();
+        ensure(&paths, &db, "p", &base, Some(&batch), keen1(), None).unwrap();
         assert!(dir.join("NEW.CK1").exists());
         assert!(!paths.cache.join("composed/p.tmp").exists());
     }
@@ -593,7 +601,7 @@ mod tests {
             base: Some(lego.clone()),
             recipe: Recipe::Episode,
         };
-        let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false)
+        let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None)
             .unwrap()
             .dir;
         let mut names: Vec<String> = fs::read_dir(&dir)
@@ -611,8 +619,32 @@ mod tests {
         // A changed file of the mod below rebuilds it.
         fs::write(dir.join("MARK"), b"").unwrap();
         fs::write(lego.join("LEVEL06.CK1"), b"6").unwrap();
-        ensure(&paths, &db, "p", &base, Some(&layer), keen1(), false).unwrap();
+        ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None).unwrap();
         assert!(!dir.join("MARK").exists());
         assert!(dir.join("LEVEL06.CK1").exists());
+    }
+
+    #[test]
+    fn space_keeps_the_hash() {
+        let inputs = BTreeMap::new();
+        let recipe = Recipe::Episode;
+        // As it was before the key could be chosen.
+        let mut before = Sha256::new();
+        before.update(b"composed v6\n");
+        before.update(serde_json::to_string(&recipe).unwrap());
+        before.update(b"\none-button firing v2");
+        assert_eq!(
+            composition_hash(&inputs, &recipe, Some(firing::SPACE)),
+            hex(&before.finalize())
+        );
+    }
+
+    #[test]
+    fn other_key_changes_the_hash() {
+        let inputs = BTreeMap::new();
+        let hash = |firing| composition_hash(&inputs, &Recipe::Episode, firing);
+        assert_ne!(hash(Some(0x1E)), hash(Some(firing::SPACE)));
+        assert_ne!(hash(Some(0x1E)), hash(Some(0x1F)));
+        assert_ne!(hash(None), hash(Some(firing::SPACE)));
     }
 }

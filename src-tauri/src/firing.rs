@@ -22,6 +22,9 @@ use crate::settings;
 
 const SETTING_KEY: &str = "games.one_button_firing";
 
+/// The scancode of the key that fires unless another one is chosen.
+pub const SPACE: u8 = 0x39;
+
 pub fn enabled(db: &Db) -> Result<bool> {
     Ok(settings::get(db, SETTING_KEY)?.is_none_or(|v| v == "1"))
 }
@@ -112,7 +115,15 @@ struct Site {
 }
 
 impl Episode {
+    /// The patch as KeenWiki has it, which is what's looked for in mods.
     fn sites(&self) -> Vec<Site> {
+        self.sites_for(SPACE)
+    }
+
+    /// The patch with `fire` as the key. The key states are a table indexed
+    /// by scancode, so the address of any key follows from Space's.
+    fn sites_for(&self, fire: u8) -> Vec<Site> {
+        let key_state = self.space - u16::from(SPACE) + u16::from(fire);
         let le = |w: u16| w.to_le_bytes();
         let mut sites: Vec<Site> = self
             .status
@@ -132,7 +143,7 @@ impl Episode {
             original.extend([0x83, 0x3E, b[0], b[1], 0x00]);
             let mut patched = vec![0x90; 7];
             patched.extend([0x80, 0x3E]);
-            patched.extend(le(self.space));
+            patched.extend(le(key_state));
             patched.push(0x00);
             sites.push(Site {
                 offset: offset as usize,
@@ -149,9 +160,9 @@ impl Episode {
     }
 
     /// The patch as patch file lines.
-    fn patch_lines(&self) -> String {
+    fn patch_lines(&self, fire: u8) -> String {
         let mut out = String::from("\n# One-button firing, added by BloogBase\n");
-        for site in self.sites() {
+        for site in self.sites_for(fire) {
             out.push_str(&format!("%patch ${:04X}", site.offset));
             for b in &site.patched {
                 out.push_str(&format!(" ${b:02X}"));
@@ -376,34 +387,39 @@ pub fn profile_status(
     )
 }
 
-/// Applies the patch to the files in `dir`, a disposable copy, wherever
-/// what the profile runs fits it. Patch files get the patch's lines; an
-/// executable run directly is rewritten unpacked and patched.
-pub fn apply(game: &Game, recipe: &Recipe, dir: &Path) -> Result<Firing> {
+/// Applies the patch with `fire` as the key to the files in `dir`, a
+/// disposable copy, wherever what the profile runs fits it. Patch files get
+/// the patch's lines; an executable run directly is rewritten unpacked and
+/// patched. Where the patch is built in, only another key than Space changes
+/// anything.
+pub fn apply(game: &Game, recipe: &Recipe, dir: &Path, fire: u8) -> Result<Firing> {
     let dirs = [dir];
     let Some(status) = status(game, recipe, &dirs) else {
         return Ok(Firing::Unavailable);
     };
-    if status != Firing::Patchable {
+    let wanted = |firing: Firing| {
+        firing == Firing::Patchable || (firing == Firing::BuiltIn && fire != SPACE)
+    };
+    if !wanted(status) {
         return Ok(status);
     }
     let episode = episode(&game.id).expect("status said it exists");
     let files = Files(&dirs);
     for target in targets(game, recipe, &files) {
-        if judge(episode, game, &target, &files) != Firing::Patchable {
+        if !wanted(judge(episode, game, &target, &files)) {
             continue;
         }
         match target {
             Target::Patch(path) => {
                 let text = fs::read(&path)?;
-                fs::write(&path, with_lines(&text, &episode.patch_lines()))?;
+                fs::write(&path, with_lines(&text, &episode.patch_lines(fire)))?;
             }
             Target::Exe(path) => {
                 let Ok(mut exe) = lzexe::unpack_exe(&fs::read(&path)?) else {
                     continue;
                 };
                 let header = usize::from(u16::from_le_bytes([exe[8], exe[9]])) * 16;
-                for site in episode.sites() {
+                for site in episode.sites_for(fire) {
                     let at = header + site.offset;
                     exe[at..at + site.patched.len()].copy_from_slice(&site.patched);
                 }
@@ -411,7 +427,7 @@ pub fn apply(game: &Game, recipe: &Recipe, dir: &Path) -> Result<Firing> {
             }
         }
     }
-    Ok(Firing::Patchable)
+    Ok(status)
 }
 
 /// `text` with `lines` added before its `%end`. In a patch file with
@@ -634,7 +650,7 @@ pub mod tests {
         assert_eq!(status("missing.pat"), Some(Firing::Unavailable));
 
         assert_eq!(
-            apply(keen1(), &patch("plain.pat"), dir).unwrap(),
+            apply(keen1(), &patch("plain.pat"), dir, SPACE).unwrap(),
             Firing::Patchable
         );
         let text = fs::read_to_string(dir.join("plain.pat")).unwrap();
@@ -646,7 +662,7 @@ pub mod tests {
         assert_eq!(fs::read(dir.join("KEEN1.EXE")).unwrap(), exe());
 
         assert_eq!(
-            apply(keen1(), &patch("other.pat"), dir).unwrap(),
+            apply(keen1(), &patch("other.pat"), dir, SPACE).unwrap(),
             Firing::Unavailable
         );
         assert_eq!(fs::read_to_string(dir.join("other.pat")).unwrap(), other);
@@ -674,7 +690,7 @@ pub mod tests {
         assert_eq!(status(keen1(), &menu, &[dir]), Some(Firing::Unavailable));
 
         assert_eq!(
-            apply(keen1(), &Recipe::Episode, dir).unwrap(),
+            apply(keen1(), &Recipe::Episode, dir, SPACE).unwrap(),
             Firing::Patchable
         );
         let patched = fs::read(dir.join("keen1.exe")).unwrap();
@@ -685,7 +701,7 @@ pub mod tests {
             Some(Firing::BuiltIn)
         );
         assert_eq!(
-            apply(keen1(), &Recipe::Episode, dir).unwrap(),
+            apply(keen1(), &Recipe::Episode, dir, SPACE).unwrap(),
             Firing::BuiltIn
         );
     }
@@ -772,7 +788,10 @@ pub mod tests {
             args: Vec::new(),
         };
         assert_eq!(status(keen1(), &launcher, &[dir]), Some(Firing::Patchable));
-        assert_eq!(apply(keen1(), &launcher, dir).unwrap(), Firing::Patchable);
+        assert_eq!(
+            apply(keen1(), &launcher, dir, SPACE).unwrap(),
+            Firing::Patchable
+        );
         for name in ["GEEL.PAT", "GEEL3.PAT"] {
             let text = fs::read_to_string(dir.join(name)).unwrap();
             assert!(text.contains("%patch $3DCC $90 $90\n"), "{name}");
@@ -832,8 +851,61 @@ pub mod tests {
                 status(game, &Recipe::Episode, &dirs),
                 Some(Firing::Patchable)
             );
-            apply(game, &Recipe::Episode, tmp.path()).unwrap();
+            apply(game, &Recipe::Episode, tmp.path(), SPACE).unwrap();
             assert_eq!(status(game, &Recipe::Episode, &dirs), Some(Firing::BuiltIn));
         }
+    }
+
+    #[test]
+    fn fire_key_address_follows_the_scancode() {
+        for episode in &EPISODES {
+            let at = (episode.space - 0x39 + 0x1E).to_le_bytes();
+            let site = &episode.sites_for(0x1E)[2];
+            assert_eq!(&site.patched[9..11], &at[..], "{}", episode.game);
+            assert_eq!(
+                episode.sites_for(SPACE)[2].patched,
+                episode.sites()[2].patched
+            );
+        }
+        // Enter stays the status window.
+        assert_eq!(
+            EPISODES[0].sites_for(0x1E)[0].patched,
+            0x5048u16.to_le_bytes()
+        );
+    }
+
+    #[test]
+    fn built_in_patch_gets_the_key() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        let built_in = format!("%ext ck1\n#Space fires\n{MOD_LINES}%end\n");
+        write_folder(
+            dir,
+            &[("KEEN1.EXE", &exe()), ("mod.pat", built_in.as_bytes())],
+        );
+        apply(keen1(), &patch("mod.pat"), dir, SPACE).unwrap();
+        assert_eq!(fs::read_to_string(dir.join("mod.pat")).unwrap(), built_in);
+
+        apply(keen1(), &patch("mod.pat"), dir, 0x1E).unwrap();
+        let text = fs::read_to_string(dir.join("mod.pat")).unwrap();
+        // 0x502C + 0x1E, after the mod's own lines.
+        let line = "%patch $3B23 $90 $90 $90 $90 $90 $90 $90 $80 $3E $4A $50 $00\n";
+        assert!(text.find(line).unwrap() > text.find("#Space fires").unwrap());
+    }
+
+    #[test]
+    fn space_writes_what_it_always_did() {
+        assert_eq!(EPISODES[0].patch_lines(SPACE).matches("$65 $50").count(), 6);
+    }
+
+    #[test]
+    fn other_keys_patch_an_executable_run_directly() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path();
+        write_folder(dir, &[("KEEN1.EXE", &exe())]);
+        apply(keen1(), &Recipe::Episode, dir, 0x1E).unwrap();
+        let out = fs::read(dir.join("KEEN1.EXE")).unwrap();
+        let at = 0x20 + 0x3B23 + 9;
+        assert_eq!(&out[at..at + 2], &0x504Au16.to_le_bytes());
     }
 }
