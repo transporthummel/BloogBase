@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Eraser, FileCog, RefreshCw, Wand } from "lucide-react";
+import { Eraser, FileCog, Keyboard, RefreshCw, Wand } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type BackupSettings, type DisplayOptions } from "../bindings";
@@ -30,7 +30,9 @@ import { Card } from "../ui/Card";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
 import { ScoreBoxSection, SoundSection } from "./GameSettings";
+import { KeysDialog } from "./KeysDialog";
 import { Field, Group, selectClass } from "./parts";
+import { useGameSettings } from "./queries";
 
 export function Settings() {
   const { t, i18n } = useTranslation();
@@ -327,6 +329,9 @@ function StartFullscreenOption() {
 function ControlsSection() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [choosingKeys, setChoosingKeys] = useState(false);
+  const { settings: game } = useGameSettings();
+  const keysSet = game ? Object.values(game.keys).filter((k) => k !== null).length : 0;
   const firing = useQuery({
     queryKey: oneButtonFiringKey,
     queryFn: () => unwrap(commands.oneButtonFiring()),
@@ -352,6 +357,16 @@ function ControlsSection() {
           <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.oneButtonFiringHint")}</p>
         </div>
       )}
+      <div className="flex flex-wrap items-center gap-3">
+        <Button variant="secondary" onClick={() => setChoosingKeys(true)}>
+          <Keyboard className="size-4" aria-hidden />
+          {t("settings.keysOpen")}
+        </Button>
+        {keysSet > 0 && (
+          <span className="text-sm text-muted">{t("settings.keysSet", { count: keysSet })}</span>
+        )}
+      </div>
+      {choosingKeys && <KeysDialog onClose={() => setChoosingKeys(false)} />}
       {(firing.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, firing.error ?? update.error)}</Notice>
       )}
