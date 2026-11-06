@@ -3,13 +3,14 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight, Info } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Engine, type Game, type Profile } from "../bindings";
+import { commands, type Engine, type Game, type GameKeys, type Profile } from "../bindings";
 import { unwrap } from "../ipc";
+import { gameSettingsKey } from "../settings/queries";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { PlayButton } from "../ui/PlayButton";
-import { type Binding, type Chord, sheetFor, spaceFires } from "./controlSheet";
+import { type Binding, type Chord, type Sheet, sheetFor, spaceFires } from "./controlSheet";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { Keycap } from "./Keycap";
 
@@ -64,19 +65,29 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/** The arrow keys in their inverted T. */
-function ArrowCluster({ upDown }: { upDown: boolean }) {
+/** The movement keys in an inverted T. */
+function ArrowCluster({ moving, upDown }: { moving: Sheet["moving"]; upDown: boolean }) {
   return (
     <div className="grid w-max grid-cols-3 gap-1">
       <span />
-      <Keycap id="up" unused={!upDown} />
+      <Keycap id={moving.up.id} changed={moving.up.changed} unused={!upDown} />
       <span />
-      <Keycap id="left" />
-      <Keycap id="down" unused={!upDown} />
-      <Keycap id="right" />
+      <Keycap id={moving.left.id} changed={moving.left.changed} />
+      <Keycap id={moving.down.id} changed={moving.down.changed} unused={!upDown} />
+      <Keycap id={moving.right.id} changed={moving.right.changed} />
     </div>
   );
 }
+
+const noKeys: GameKeys = {
+  up: null,
+  down: null,
+  left: null,
+  right: null,
+  jump: null,
+  pogo: null,
+  fire: null,
+};
 
 const engineDot: Record<Engine, string> = {
   vorticons: "bg-vorticons",
@@ -100,8 +111,12 @@ export function ControlsSheet({ profile, game }: { profile: Profile; game: Game 
     queryFn: () => unwrap(commands.profileFiring(profile.id)),
     enabled: game.engine === "vorticons",
   });
+  const settings = useQuery({
+    queryKey: gameSettingsKey,
+    queryFn: () => unwrap(commands.gameSettings()),
+  });
   const space = spaceFires(enabled.data, firing.data);
-  const sheet = sheetFor(game, space, mac());
+  const sheet = sheetFor(game, space, mac(), settings.data?.keys ?? noKeys);
   // A copy the patch fits, with the setting off: worth a pointer.
   const offerSpace = firing.data === "patchable" && enabled.data === false;
 
@@ -124,7 +139,7 @@ export function ControlsSheet({ profile, game }: { profile: Profile; game: Game 
       <div className="grid gap-4 sm:grid-cols-2">
         <Group title={t("controls.moving")}>
           <div className="flex flex-wrap items-center gap-4">
-            <ArrowCluster upDown={sheet.engine !== "vorticons"} />
+            <ArrowCluster moving={sheet.moving} upDown={sheet.engine !== "vorticons"} />
             <p className="max-w-56 text-sm">{t(`controls.move.${sheet.move}`)}</p>
           </div>
         </Group>
