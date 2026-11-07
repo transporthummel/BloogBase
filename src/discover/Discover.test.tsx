@@ -237,6 +237,53 @@ test("filters by text, type and what the library can play", async () => {
   await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
 });
 
+test("standalone mods are under no game and install on none", async () => {
+  vi.mocked(commands.listInstalls).mockResolvedValue({ status: "ok", data: [] });
+  vi.mocked(commands.indexMods).mockResolvedValue({
+    status: "ok",
+    data: [
+      mod(entry("Aurora")),
+      mod(
+        entry("Foray", {
+          requires: [],
+          recipe: { type: "program", program: "FITF.EXE", args: [] },
+          standalone: true,
+        }),
+      ),
+    ],
+  });
+  vi.mocked(commands.installIndexMod).mockResolvedValue({
+    id: 3,
+    kind: "mod",
+    subject: "Foray",
+    phase: "downloading",
+    received: 0,
+    total: 0,
+    error: null,
+  });
+  renderDiscover();
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { name: "Foray" });
+
+  const foray = within(card("Foray"));
+  expect(foray.getByText("Built on Keen 4")).toBeInTheDocument();
+  expect(foray.getByText("Standalone")).toBeInTheDocument();
+  const heading = () => screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+  expect(heading()).toEqual(["Foray"]);
+  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+  const gameFilter = screen.getByRole("combobox", { name: "Game" });
+  await user.selectOptions(gameFilter, "keen4");
+  expect(heading()).toEqual(["Aurora"]);
+  await user.selectOptions(gameFilter, "No game needed");
+  expect(heading()).toEqual(["Foray"]);
+
+  await user.click(within(card("Foray")).getByRole("button", { name: "Install (2.0 MB)" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(commands.installIndexMod).toHaveBeenCalledWith("Foray", null, true, null);
+  await user.selectOptions(gameFilter, "");
+});
+
 /** The choices of the mods tab, all set to something else than the defaults. */
 async function chooseAll(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByRole("searchbox"), "a");
@@ -403,6 +450,7 @@ test("offers shareware episodes and demos on their own tabs", async () => {
         saveCount: 0,
         running: false,
         missingGame: null,
+        standalone: false,
         playedOver: null,
       },
     ],

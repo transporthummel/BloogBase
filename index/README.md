@@ -30,29 +30,30 @@ By hand:
    it.
 2. Fill it in:
 
-   | Field            | Meaning                                                                                     |
-   | ---------------- | ------------------------------------------------------------------------------------------- |
-   | `name`           | As the authors call it                                                                      |
-   | `game`           | `keen1` … `keen6`, `kdreams`                                                                |
-   | `requires`       | Game versions it works with (ids from `src-tauri/catalog/games.json`); leave out for any    |
-   | `authors`        | Names as on KeenWiki                                                                        |
-   | `authorLinks`    | Name: page for authors whose name KeenWiki links (their `User:` page); leave out red links  |
-   | `version`        | The mod's version, in quotes                                                                |
-   | `released`       | First release, `YYYY-MM-DD`; `updated` for the latest one                                   |
-   | `added`          | Today: when the entry joined the index (sorts "Newest" first)                               |
-   | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (plays unlike Keen, "Offbeat")     |
-   | `description`    | One or two sentences in your own words, in English                                          |
-   | `translations`   | Language: texts in it; for now `de` with `description` (see below)                          |
-   | `links`          | `keenwiki`, `pckf`, `keenmodding` (Keen: Modding forum), `homepage`                         |
-   | `downloads`      | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`             |
-   | `recipe`         | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode` |
-   | `versionRecipes` | Version id: recipe, for game versions the mod starts differently on (one patch per version) |
-   | `copyToRoot`     | Folders in the mod's root whose files the readme says to copy into the root                 |
-   | `extends`        | Id of the entry this mod is copied over, e.g. a level pack for a mod; installed with it     |
-   | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)           |
-   | `cover`          | The program whose title screen is the cover, when the recipe runs a menu (see below)        |
-   | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
-   | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
+   | Field            | Meaning                                                                                      |
+   | ---------------- | -------------------------------------------------------------------------------------------- |
+   | `name`           | As the authors call it                                                                       |
+   | `game`           | `keen1` … `keen6`, `kdreams`; for a standalone mod, the game it's built on                   |
+   | `requires`       | Game versions it works with (ids from `src-tauri/catalog/games.json`); leave out for any     |
+   | `authors`        | Names as on KeenWiki                                                                         |
+   | `authorLinks`    | Name: page for authors whose name KeenWiki links (their `User:` page); leave out red links   |
+   | `version`        | The mod's version, in quotes                                                                 |
+   | `released`       | First release, `YYYY-MM-DD`; `updated` for the latest one                                    |
+   | `added`          | Today: when the entry joined the index (sorts "Newest" first)                                |
+   | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (plays unlike Keen, "Offbeat")      |
+   | `description`    | One or two sentences in your own words, in English                                           |
+   | `translations`   | Language: texts in it; for now `de` with `description` (see below)                           |
+   | `links`          | `keenwiki`, `pckf`, `keenmodding` (Keen: Modding forum), `homepage`                          |
+   | `downloads`      | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`              |
+   | `recipe`         | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode`  |
+   | `versionRecipes` | Version id: recipe, for game versions the mod starts differently on (one patch per version)  |
+   | `copyToRoot`     | Folders in the mod's root whose files the readme says to copy into the root                  |
+   | `extends`        | Id of the entry this mod is copied over, e.g. a level pack for a mod; installed with it      |
+   | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)            |
+   | `cover`          | The program whose title screen is the cover, when the recipe runs a menu (see below)         |
+   | `standalone`     | `true` for a source mod that ships its whole game and plays without a copy of it (see below) |
+   | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                     |
+   | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                              |
 
    The app shows the description in the player's language when the entry
    has it, otherwise the English one:
@@ -87,6 +88,19 @@ By hand:
    name the one whose title is the cover in `cover` (Foray in the Forest:
    `FITF-X.EXE`); it has to be next to the recipe files. Older apps ignore
    it and show the game's title instead.
+
+   A source mod ships its own executables and all its data, nothing of the
+   game's (Foray in the Forest: `FITF.EXE` and its `*.CKS` files). With
+   `standalone: true` BloogBase plays it without a copy of `game`, lists it
+   under "No game needed" and suggests it in the setup wizard even to players
+   without any Keen. `game` stays the game it's built on: its saves, settings
+   and DOSBox defaults are that game's. The recipe has to run a `program` or
+   `batch` file of the mod, without `requires`, `versionRecipes` or
+   `extends`, and no other entry can extend it. Only entries can make a mod
+   standalone: added by hand, the same files play on a copy of `game`. Apps
+   before 1.2.0 ignore the field and play the mod on that game, so an entry
+   can take it up without a `minAppVersion`; mods installed from it leave
+   their copy of the game at the next index check, with their saves.
 
 3. Check it, including the download:
 

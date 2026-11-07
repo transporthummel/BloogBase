@@ -1201,9 +1201,11 @@ async fn install_entry(
     .await?;
     report.progress(JobPhase::Installing, archive.size, archive.size);
     // Right after the setup wizard the game may still be on its way.
-    while a.state::<Jobs>().is_running(JobKind::FreeGame, |v| {
-        free_games::game_of(v) == Some(entry.game.as_str())
-    }) {
+    while !entry.standalone
+        && a.state::<Jobs>().is_running(JobKind::FreeGame, |v| {
+            free_games::game_of(v) == Some(entry.game.as_str())
+        })
+    {
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
     }
 

@@ -90,6 +90,11 @@ pub struct IndexEntry {
     /// menu starting several.
     #[serde(default)]
     pub cover: Option<String>,
+    /// Ships its whole game (a source mod) and plays without a copy of
+    /// `game`, the game it's built on. Older apps ignore it and play it on
+    /// that game.
+    #[serde(default)]
+    pub standalone: bool,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]
@@ -565,7 +570,8 @@ fn version_at_least(version: &str, min: &str) -> bool {
 /// download they were installed from, byte for byte: added from KeenWiki
 /// or a file, maybe before the entry joined the index. An older download
 /// counts too, so the entry offers the update. The entry's details replace
-/// what the mod brought along ([`mods::tie_to_index`]).
+/// what the mod brought along ([`mods::tie_to_index`]). Mods tied already
+/// follow their entry's `standalone`, so an entry can drop its game.
 pub fn link_installed(index: &ModIndex, db: &Db) -> Result<()> {
     for e in index.entries() {
         for (i, d) in e.downloads.iter().enumerate() {
@@ -581,6 +587,7 @@ pub fn link_installed(index: &ModIndex, db: &Db) -> Result<()> {
                 mods::tie_to_index(db, &mod_id, &Curated::new(&e, i))?;
             }
         }
+        mods::set_standalone(db, &e.id, e.standalone)?;
     }
     Ok(())
 }
@@ -1080,6 +1087,42 @@ mod tests {
         );
         assert_eq!(details("other").1, "x");
         assert_eq!(details("tied").0, "keenwiki");
+    }
+
+    #[test]
+    fn tied_mods_follow_their_entry_as_it_becomes_standalone() {
+        let (tmp, paths) = setup();
+        let k = keys();
+        let standalone = SAMPLE.replace(
+            r#""id": "sample-patch","#,
+            r#""id": "sample-patch", "standalone": true,"#,
+        );
+        let url = publish(tmp.path(), &k, &standalone);
+        let index = ModIndex::with_keys(&paths, url, &[&k.pk]);
+        tauri::async_runtime::block_on(index.refresh(false));
+        assert!(index.entry("sample-patch").unwrap().standalone);
+        let db = Db::open_in_memory().unwrap();
+        db.conn()
+            .execute_batch(
+                "INSERT INTO installs (id, game_id, label, source, path, added_at)
+                 VALUES ('keen4-1', 'keen4', 'Keen 4', 'folder', '/k4', 0);
+                 INSERT INTO mods (id, game_id, index_id, name, authors, recipe_json, path,
+                                   source, added_at)
+                 VALUES ('m', 'keen4', 'sample-patch', 'x', '[]', '{}', '/x', 'index', 0);
+                 INSERT INTO profiles (id, install_id, mod_id, state_path, created_at)
+                 VALUES ('m', 'keen4-1', 'm', '/s', 0);",
+            )
+            .unwrap();
+        link_installed(&index, &db).unwrap();
+        let (install, flag): (Option<String>, bool) = db
+            .conn()
+            .query_row(
+                "SELECT p.install_id, m.standalone FROM profiles p JOIN mods m ON m.id = p.mod_id",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!((install, flag), (None, true));
     }
 
     fn sample_entry(sha256: &str) -> IndexEntry {

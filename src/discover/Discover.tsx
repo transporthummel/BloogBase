@@ -13,7 +13,7 @@ import { PageHeader } from "../ui/PageHeader";
 import { RelativeTime } from "../ui/RelativeTime";
 import { Tabs } from "../ui/Tabs";
 import { entryDescription } from "./description";
-import { compare, fitting, SORTS, type Sort } from "./fit";
+import { compare, listedUnder, NO_GAME, playable as isPlayable, SORTS, type Sort } from "./fit";
 import { FreeGames } from "./FreeGames";
 import { IndexError } from "./IndexError";
 import { ModCard } from "./ModCard";
@@ -124,13 +124,13 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
 
   const owned = installs.data ?? [];
   const all = mods.data ?? [];
-  const gamesInIndex = games.filter((g) => all.some((m) => m.entry.game === g.id));
+  const gamesInIndex = games.filter((g) => all.some((m) => listedUnder(m.entry, g.id)));
   const needle = query.trim().toLowerCase();
   const shown = all
     .filter(({ entry: e }) => {
-      if (game && e.game !== game) return false;
+      if (game && !listedUnder(e, game)) return false;
       if (kind && e.type !== kind) return false;
-      if (playable && fitting(e, owned, games).length === 0) return false;
+      if (playable && !isPlayable(e, owned, games)) return false;
       if (!needle) return true;
       const description = entryDescription(e, i18n.language) ?? "";
       return [e.name, description, ...e.authors, ...(e.tags ?? [])].some((s) =>
@@ -190,6 +190,9 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
                   {gameTitle(games, g.id)}
                 </option>
               ))}
+              {all.some((m) => m.entry.standalone) && (
+                <option value={NO_GAME}>{t("discover.noGame")}</option>
+              )}
             </select>
           </label>
           <label className="grid gap-1 text-xs">

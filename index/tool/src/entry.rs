@@ -62,6 +62,11 @@ pub struct Entry {
     /// a menu starting several (Foray in the Forest's `FITF-X.EXE`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cover: Option<String>,
+    /// Ships its whole game (a source mod) and plays without a copy of
+    /// `game`, the game it's built on. Apps before 1.2.0 ignore it and play
+    /// it on that game.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub standalone: bool,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]
@@ -336,6 +341,17 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
     if entry.extends.as_deref() == Some(entry.id.as_str()) {
         fail("extends names the entry itself".into());
     }
+    if entry.standalone {
+        if !matches!(entry.recipe, Recipe::Program { .. } | Recipe::Batch { .. }) {
+            fail("standalone: the recipe has to run a program or batch file of the mod".into());
+        }
+        if !entry.requires.is_empty() || !entry.version_recipes.is_empty() {
+            fail("standalone: plays on no game version, so no requires or versionRecipes".into());
+        }
+        if entry.extends.is_some() {
+            fail("standalone: can't extend another mod".into());
+        }
+    }
     for t in &entry.tags {
         if !is_slug(t) {
             fail(format!("tag `{t}` must be lower-case with dashes"));
@@ -360,6 +376,9 @@ pub fn extends_problems(entries: &[Entry]) -> Vec<String> {
                 "{}: extends `{base_id}`, which extends another mod itself",
                 e.id
             )),
+            Some(b) if b.standalone => {
+                out.push(format!("{}: extends `{base_id}`, a standalone mod", e.id))
+            }
             Some(_) => {}
         }
     }
@@ -608,6 +627,31 @@ recipe:
         let mut chained = base.clone();
         chained.extends = Some("x".into());
         assert_eq!(extends_problems(&[chained, pack]).len(), 2);
+    }
+
+    #[test]
+    fn standalone_mods_run_their_own_program_on_no_version() {
+        let mut e = parse(AURORA).unwrap();
+        e.standalone = true;
+        e.requires.clear();
+        e.recipe = Recipe::Program {
+            program: "FITF.EXE".into(),
+            args: vec![],
+        };
+        assert_eq!(
+            problems(&e, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+        let mut pack = e.clone();
+        pack.id = "pack".into();
+        pack.standalone = false;
+        pack.extends = Some("aurora-bliss".into());
+        assert_eq!(extends_problems(&[e.clone(), pack]).len(), 1);
+
+        e.recipe = Recipe::Episode;
+        e.requires = vec!["keen4-1.4-ega".into()];
+        e.extends = Some("x".into());
+        assert_eq!(problems(&e, "aurora-bliss", &catalog()).len(), 4);
     }
 
     #[test]

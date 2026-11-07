@@ -18,6 +18,21 @@ export function fitsEntry(entry: IndexEntry, owned: Owned, game: Game | undefine
   );
 }
 
+/** Discover's game filter for mods that need no game. */
+export const NO_GAME = "none";
+
+/** Whether `entry` can be played with `owned`: on a copy it fits, or on none
+ * at all for a standalone mod. */
+export function playable(entry: IndexEntry, owned: Owned[], games: Game[] = []): boolean {
+  return !!entry.standalone || fitting(entry, owned, games).length > 0;
+}
+
+/** Whether `entry` is listed under `game`, a game id or {@link NO_GAME};
+ * standalone mods are under no game, not the one they're built on. */
+export function listedUnder(entry: IndexEntry, game: string): boolean {
+  return game === NO_GAME ? !!entry.standalone : !entry.standalone && entry.game === game;
+}
+
 export function fitting<T extends Owned>(entry: IndexEntry, owned: T[], games: Game[] = []): T[] {
   const game = games.find((g) => g.id === entry.game);
   return owned.filter((o) => fitsEntry(entry, o, game));

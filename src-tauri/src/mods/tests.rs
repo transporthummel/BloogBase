@@ -565,6 +565,7 @@ fn curated(recipe: Recipe) -> Curated {
         copy_to_root: Vec::new(),
         extends: None,
         cover: None,
+        standalone: false,
         requires: vec!["keen4-1.4-ega".into()],
         keenwiki_url: Some("https://keenwiki.shikadi.net/wiki/Aurora_Bliss".into()),
         url: "https://example.com/m.dave216.aurora.zip".into(),
@@ -641,6 +642,66 @@ fn curated_install_uses_the_index_recipe_and_updates_in_place() {
     assert_eq!(sha, sha256_hex(&fs::read(&zip).unwrap()));
     assert_eq!(composed, None);
     assert!(!paths.cache.join("mod-aurora-bliss-update").exists());
+}
+
+#[test]
+fn standalone_mods_play_without_their_game_and_follow_their_entry() {
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("foray.zip");
+    write_zip(
+        &zip,
+        &[
+            ("FITF.EXE", b"menu"),
+            ("FITF-X.EXE", b"game"),
+            ("GAMEMAPS.CKS", b"maps"),
+        ],
+    );
+    let c = Curated {
+        index_id: "foray-in-the-forest".into(),
+        name: "Foray in the Forest".into(),
+        requires: Vec::new(),
+        standalone: true,
+        ..curated(Recipe::Program {
+            program: "FITF.EXE".into(),
+            args: vec!["adlib".into()],
+        })
+    };
+    // Not on the Keen 4 copy there is, and no game is missing.
+    let m = install_curated(&paths, &db, &zip, &c, Some("keen4-1"), false).unwrap();
+    let (p, layers) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!(
+        (p.install_id, p.missing_game, p.standalone),
+        (None, None, true)
+    );
+    assert_eq!(p.game_id, "keen4");
+    assert_eq!(layers.lower, None);
+    assert!(fitting_installs(&db, &m.id).unwrap().is_empty());
+    assert!(set_install(&db, &m.id, "keen4-1").is_err());
+    assert!(rehome(&db, None).unwrap().is_empty());
+    // An update stays without it.
+    install_curated(&paths, &db, &zip, &c, None, false).unwrap();
+    assert_eq!(
+        profiles::get(&db, &m.profile_id).unwrap().0.install_id,
+        None
+    );
+
+    // An entry that drops it puts the mod on a copy, one that takes it up
+    // takes the mod off again; the saves stay.
+    let save = paths
+        .profiles
+        .join(&m.profile_id)
+        .join("state/SAVEGAM0.CKS");
+    fs::write(&save, b"save").unwrap();
+    set_standalone(&db, "foray-in-the-forest", false).unwrap();
+    let (p, _) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!(
+        (p.install_id.as_deref(), p.standalone),
+        (Some("keen4-1"), false)
+    );
+    set_standalone(&db, "foray-in-the-forest", true).unwrap();
+    let (p, _) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!((p.install_id, p.standalone), (None, true));
+    assert_eq!(fs::read(&save).unwrap(), b"save");
 }
 
 #[test]

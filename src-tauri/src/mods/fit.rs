@@ -88,14 +88,15 @@ pub fn parse_requires(json: Option<&str>) -> Option<Vec<String>> {
 }
 
 /// Puts mods without a game, or with `except` gone, on the install they
-/// fit best; those without one wait for it. Returns the profiles that moved.
+/// fit best; those without one wait for it. Standalone mods stay without.
+/// Returns the profiles that moved.
 pub fn rehome(db: &Db, except: Option<&str>) -> Result<Vec<String>> {
     let waiting: Vec<(String, String, Option<String>)> = {
         let conn = db.conn();
         let mut stmt = conn.prepare(
             "SELECT p.id, m.game_id, m.requires_json
              FROM profiles p JOIN mods m ON m.id = p.mod_id
-             WHERE p.install_id IS NULL OR p.install_id IS ?1",
+             WHERE (p.install_id IS NULL OR p.install_id IS ?1) AND NOT m.standalone",
         )?;
         stmt.query_map([except], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?
             .collect::<rusqlite::Result<_>>()?
@@ -174,16 +175,17 @@ pub fn identify_requirements(paths: &AppPaths, db: &Db) -> Result<()> {
 
 /// The installs `mod_id` can be played on, in library order.
 pub fn fitting_installs(db: &Db, mod_id: &str) -> Result<Vec<Install>> {
-    let (game_id, requires): (String, Option<String>) = db
+    let (game_id, requires, standalone): (String, Option<String>, bool) = db
         .conn()
         .query_row(
-            "SELECT game_id, requires_json FROM mods WHERE id = ?1",
+            "SELECT game_id, requires_json, standalone FROM mods WHERE id = ?1",
             [mod_id],
-            |r| Ok((r.get(0)?, r.get(1)?)),
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
         )
         .optional()?
         .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))?;
-    let Some(game) = catalog::game(&game_id) else {
+    // Standalone mods play on none.
+    let Some(game) = catalog::game(&game_id).filter(|_| !standalone) else {
         return Ok(Vec::new());
     };
     let requires = parse_requires(requires.as_deref());

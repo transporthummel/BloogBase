@@ -360,6 +360,17 @@ struct Found<'a> {
     source_mod: bool,
 }
 
+impl Found<'_> {
+    /// A source mod that runs a program of its own plays without its game.
+    fn standalone(&self) -> bool {
+        self.source_mod
+            && matches!(
+                self.info.recipes[0].recipe,
+                Recipe::Program { .. } | Recipe::Batch { .. }
+            )
+    }
+}
+
 fn keen_folders(files: &[String], root: &str) -> Vec<String> {
     let mut folders: Vec<String> = files
         .iter()
@@ -550,6 +561,10 @@ fn yaml(facts: &Facts, found: &Found) -> String {
         facts.sha256,
         facts.size
     );
+    if found.standalone() {
+        y += "# A source mod: it ships its whole game and plays without a copy of it.\n";
+        y += "standalone: true\n";
+    }
     y += &recipe_yaml(&info.recipes[0].recipe);
     if found.source_mod {
         y += "# Older apps find no mod in it, as it has no Keen files.\n";
@@ -715,6 +730,13 @@ fn notes(facts: &Facts, found: &Found) -> (Vec<String>, Vec<String>) {
         check.push(format!(
             "minAppVersion: set to {SOURCE_MOD_APP_VERSION}, as the archive has no Keen files \
              (a source mod); also see if it plays on any copy"
+        ));
+    }
+    if found.standalone() {
+        check.push(format!(
+            "standalone: set, as the archive has nothing of {}'s; take it out if the mod still \
+             loads the game's own files (a lone executable)",
+            found.info.game_id
         ));
     }
 
@@ -1025,6 +1047,12 @@ recipe:
         ];
         let d = draft_of(&page(), "foray.zip", files);
         assert!(d.yaml.contains("minAppVersion: 1.1.0\n"), "{}", d.yaml);
+        assert!(d.yaml.contains("standalone: true\nrecipe:"), "{}", d.yaml);
+        assert!(
+            d.check.iter().any(|n| n.starts_with("standalone: ")),
+            "{:?}",
+            d.check
+        );
         assert!(
             d.check.iter().any(|n| n.starts_with("cover: ")),
             "{:?}",

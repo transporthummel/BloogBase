@@ -41,6 +41,8 @@ struct Stored<'a> {
     extends: Option<String>,
     /// The program whose title screen is the cover; default: the recipe's.
     cover: Option<String>,
+    /// Plays without a copy of its game; only index entries say so.
+    standalone: bool,
     keenwiki_url: Option<&'a str>,
     homepage: Option<String>,
     pckf: Option<String>,
@@ -68,6 +70,7 @@ impl<'a> Stored<'a> {
             index_id: Some(&c.index_id),
             extends,
             cover: c.cover.clone(),
+            standalone: c.standalone,
             keenwiki_url: c.keenwiki_url.as_deref(),
             // The index entry links it.
             homepage: None,
@@ -113,6 +116,7 @@ impl<'a> Stored<'a> {
             index_id: None,
             extends: req.extends.clone(),
             cover: None,
+            standalone: false,
             keenwiki_url: page.map(|o| o.page_url.as_str()),
             homepage: page.and_then(|o| o.homepage.clone()),
             pckf: page.and_then(|o| o.pckf.clone()),
@@ -270,6 +274,8 @@ pub struct Curated {
     pub extends: Option<String>,
     /// The program whose title screen is the cover.
     pub cover: Option<String>,
+    /// Plays without a copy of `game_id`.
+    pub standalone: bool,
     pub keenwiki_url: Option<String>,
     pub url: String,
 }
@@ -296,6 +302,7 @@ impl Curated {
             copy_to_root: entry.copy_to_root.clone(),
             extends: entry.extends.clone(),
             cover: entry.cover.clone(),
+            standalone: entry.standalone,
             requires: entry.requires.clone(),
             keenwiki_url: entry.links.keenwiki.clone(),
             url: d.url.clone(),
@@ -323,6 +330,8 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
         index_id,
         extends: _,
         cover,
+        // Follows the entry for tied mods too: `set_standalone`.
+        standalone: _,
         keenwiki_url,
         homepage,
         pckf,
@@ -360,6 +369,7 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
 /// Installs a downloaded index mod, or updates it when it's installed
 /// already. Without `install_id` the best fitting game is used; when there
 /// is none, the mod waits for one if `without_game`, else it's an error.
+/// A standalone mod goes on no game.
 pub fn install_curated(
     paths: &AppPaths,
     db: &Db,
@@ -389,7 +399,10 @@ pub fn install_curated(
     let game = game(&c.game_id)?;
     let requires = stored.requires.as_deref();
     if let Some(mod_id) = find_by_index(db, &c.index_id)? {
-        let target = updated_install(db, &mod_id, game, requires)?;
+        let target = match c.standalone {
+            true => None,
+            false => updated_install(db, &mod_id, game, requires)?,
+        };
         return update(
             paths,
             db,
@@ -401,6 +414,7 @@ pub fn install_curated(
         );
     }
     let target = match install_id {
+        _ if c.standalone => None,
         Some(id) => Some(
             library_install(db, id)?
                 .filter(|i| fits(game, requires, i))
@@ -467,6 +481,30 @@ fn updated_install(
             needed_game(game, requires)
         ))),
     }
+}
+
+/// Makes the mods installed from the index entry `index_id` follow its
+/// `standalone`: a standalone one leaves its copy of the game, one that no
+/// longer is goes on the copy that fits best, or waits for one. Saves stay.
+pub fn set_standalone(db: &Db, index_id: &str, standalone: bool) -> Result<()> {
+    let changed = db.conn().execute(
+        "UPDATE mods SET standalone = ?2 WHERE index_id = ?1 AND standalone IS NOT ?2",
+        params![index_id, standalone],
+    )?;
+    if changed == 0 {
+        return Ok(());
+    }
+    tracing::info!("mods of index entry {index_id} now standalone: {standalone}");
+    if standalone {
+        db.conn().execute(
+            "UPDATE profiles SET install_id = NULL, composed_hash = NULL
+             WHERE mod_id IN (SELECT id FROM mods WHERE index_id = ?1)",
+            [index_id],
+        )?;
+    } else {
+        rehome(db, None)?;
+    }
+    Ok(())
 }
 
 /// The installed mod made from an index entry.
@@ -607,9 +645,9 @@ fn store(
                                recipe_json, path, source, source_url, archive_sha256, added_at,
                                description, released, author_links, requires_json,
                                version_recipes_json, extends, homepage, pckf,
-                               keenmodding, cover)
+                               keenmodding, cover, standalone)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?20, ?21, ?22, ?23)",
+                     ?18, ?19, ?20, ?21, ?22, ?23, ?24)",
             params![
                 m.id,
                 m.game_id,
@@ -633,7 +671,8 @@ fn store(
                 s.homepage,
                 s.pckf,
                 s.keenmodding,
-                s.cover
+                s.cover,
+                s.standalone
             ],
         )?;
         tx.execute(
@@ -707,7 +746,7 @@ fn update(
                              released = ?9, author_links = ?10, requires_json = ?11,
                              name = ?12, source = ?13, index_id = ?14,
                              version_recipes_json = ?15, extends = ?16, homepage = ?17,
-                             pckf = ?18, keenmodding = ?19, cover = ?20
+                             pckf = ?18, keenmodding = ?19, cover = ?20, standalone = ?21
              WHERE id = ?1",
             params![
                 mod_id,
@@ -729,7 +768,8 @@ fn update(
                 s.homepage,
                 s.pckf,
                 s.keenmodding,
-                s.cover
+                s.cover,
+                s.standalone
             ],
         )?;
         tx.execute(

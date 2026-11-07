@@ -532,6 +532,12 @@ export type IndexEntry = {
 	 *  menu starting several.
 	 */
 	cover?: string | null,
+	/**
+	 *  Ships its whole game (a source mod) and plays without a copy of
+	 *  `game`, the game it's built on. Older apps ignore it and play it on
+	 *  that game.
+	 */
+	standalone?: boolean,
 	tags?: string[],
 	featured?: boolean,
 	minAppVersion?: string | null,
@@ -813,6 +819,11 @@ export type Profile = {
 	running: boolean,
 	/**  The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`. */
 	missingGame: string | null,
+	/**
+	 *  A mod that ships its whole game and plays without a copy of
+	 *  `game_id`, the game it's built on.
+	 */
+	standalone: boolean,
 	/**  The mod a mod is played over, e.g. Lego Keen. */
 	playedOver: PlayedOver | null,
 };

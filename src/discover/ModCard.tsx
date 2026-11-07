@@ -65,7 +65,11 @@ export function ModCard({
           <GameTile gameId={entry.game} game={game} />
           <div className="grid min-w-0 content-start gap-1">
             <h2 className="leading-tight font-semibold">{entry.name}</h2>
-            <p className="text-xs text-muted">{gameTitle(games, entry.game)}</p>
+            <p className="text-xs text-muted">
+              {entry.standalone
+                ? t("mods.builtOn", { game: shortGameTitle(games, entry.game) })
+                : gameTitle(games, entry.game)}
+            </p>
             {base && (
               <p className="text-xs text-muted">
                 {t(baseMissing ? "discover.extendsInstall" : "discover.extends", {
@@ -80,6 +84,7 @@ export function ModCard({
           {mod.modId && <Badge tone="status">{t("discover.installed")}</Badge>}
           {mod.updateAvailable && <Badge tone="status">{t("discover.updateBadge")}</Badge>}
           <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
+          {entry.standalone && <Badge>{t("mods.standalone")}</Badge>}
           {mod.new && <Badge>{t("mods.new")}</Badge>}
           {entry.featured && <Badge>{t("discover.featured")}</Badge>}
         </div>
@@ -165,7 +170,8 @@ function InstallAction({
   const busy = start.isPending || (job !== undefined && !isFinished(job));
   // Not without the game: that comes with a warning.
   const update = mod.modId && mod.updateAvailable;
-  const enterInstall = update ? null : !mod.modId ? target?.id : undefined;
+  // Standalone mods go on no copy.
+  const enterInstall = update || entry.standalone ? null : !mod.modId ? target?.id : undefined;
   useEnterAction(
     enter,
     !busy && enterInstall !== undefined ? () => start.mutate(enterInstall) : null,
@@ -189,6 +195,17 @@ function InstallAction({
           {entry.version
             ? t("discover.updateTo", { version: entry.version })
             : t("discover.update")}
+        </Button>
+      </>
+    );
+  }
+  if (entry.standalone) {
+    return (
+      <>
+        {failed}
+        <Button variant="card" onClick={() => start.mutate(null)} disabled={start.isPending}>
+          <Download className="size-4" aria-hidden />
+          {installLabel}
         </Button>
       </>
     );

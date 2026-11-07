@@ -46,6 +46,7 @@ const old: Profile = {
   saveCount: 0,
   running: false,
   missingGame: null,
+  standalone: false,
   playedOver: null,
 };
 

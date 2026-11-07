@@ -33,6 +33,12 @@ shallowest folder with a DOS program (`.EXE`, `.COM`; `program_root`).
 Without a known game, as for a dropped folder or ZIP, such a source holds no
 mod BloogBase recognises.
 
+An index entry can mark such a mod `standalone` (index/README.md): it is
+composed from its own files alone, with no copy of the game below them, and
+its profile has no install. It stays a mod of the game it's built on for
+saves, settings and DOSBox defaults. Only the index does this; the same files
+added by hand play on a copy of the game.
+
 Before guessing:
 
 - **Patchers** are known by name (`CK1PATCH` … `CK6PATCH`, `KDRPATCH`) or, when

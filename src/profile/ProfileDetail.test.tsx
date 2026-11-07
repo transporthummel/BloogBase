@@ -125,6 +125,7 @@ const profile: Profile = {
   saveCount: 2,
   running: false,
   missingGame: null,
+  standalone: false,
   playedOver: null,
 };
 

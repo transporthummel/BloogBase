@@ -16,7 +16,7 @@ import { Cover } from "./Cover";
 import { useCover } from "./covers";
 import { profilesKey, profilesQuery, useProfiles } from "./queries";
 import { getLibrarySort, getShowTrivia, setLibrarySort } from "../preferences";
-import { arrange, librarySorts, type LibrarySort } from "./sort";
+import { arrange, librarySorts, STANDALONE, type LibrarySort } from "./sort";
 import { StatusBar } from "./StatusBar";
 import { leaveLibrary, returnToLibrary } from "./scroll";
 import { startupTrivia, triviaText } from "./trivia";
@@ -288,7 +288,7 @@ export function Library() {
         {groups.map((group) => {
           const grouped = group.key !== "all";
           const title =
-            group.key === "games" || group.key === "mods"
+            group.key === "games" || group.key === "mods" || group.key === STANDALONE
               ? t(`library.group.${group.key}`)
               : (gameById.get(group.key)?.title ?? group.key);
           return (
@@ -396,13 +396,18 @@ const ProfileCard = memo(function ProfileCard({
             profile.modId !== null &&
             game && (
               <p className="text-xs text-muted">
-                <RunsOn profile={profile} game={game.shortTitle} version={versionLabel} />
+                {profile.standalone ? (
+                  t("mods.builtOn", { game: game.shortTitle })
+                ) : (
+                  <RunsOn profile={profile} game={game.shortTitle} version={versionLabel} />
+                )}
               </p>
             )
           )}
         </div>
         <div className="flex flex-wrap gap-1">
           {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
+          {profile.standalone && <Badge>{t("mods.standalone")}</Badge>}
           {profile.modId === null && <Badge>{versionLabel}</Badge>}
         </div>
         <dl className="grid gap-0.5 text-xs text-muted">

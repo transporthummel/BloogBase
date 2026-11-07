@@ -78,3 +78,10 @@ test("copies of one game keep their order whichever was played last", () => {
   expect(order(copies)).toEqual(["v10", "v10-later", "v14", "unknown"]);
   expect(order([...copies].reverse())).toEqual(order(copies));
 });
+
+test("standalone mods get their own group after the games", () => {
+  const foray = { ...profile("foray", "keen4", "Foray", 50, true), standalone: true } as Profile;
+  const grouped = arrange([foray, ...profiles], "game", games, "en");
+  expect(grouped.map((g) => g.key)).toEqual(["keen1", "keen4", "kdreams", "standalone"]);
+  expect(grouped[3].profiles.map((p) => p.id)).toEqual(["foray"]);
+});

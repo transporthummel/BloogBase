@@ -215,17 +215,29 @@ pub fn prepare(
         fs::create_dir_all(dir)?;
     }
     exit_screen::prepare(&dirs.exit_screen)?;
-    let base = layers
-        .lower
-        .as_ref()
-        .ok_or_else(|| Error::MissingGame(profile.missing_game.clone().unwrap_or_default()))?;
+    // Standalone mods have no copy of their game below them.
+    let base =
+        match &layers.lower {
+            None if profile.standalone && layers.mod_layer.is_some() => None,
+            lower => Some(lower.as_ref().ok_or_else(|| {
+                Error::MissingGame(profile.missing_game.clone().unwrap_or_default())
+            })?),
+        };
     let settings = game_settings::get(db)?;
     let firing = (firing::supports(&game.id) && firing::enabled(db)?)
         .then(|| settings.keys.fire.unwrap_or(firing::SPACE));
-    let (lower, command) = match &layers.mod_layer {
-        None if firing.is_none() => (base.clone(), None),
-        m => {
-            let composed = compose::ensure(paths, db, profile_id, base, m.as_ref(), game, firing)?;
+    let (lower, command) = match (&layers.mod_layer, base) {
+        (None, Some(base)) if firing.is_none() => (base.clone(), None),
+        (m, base) => {
+            let composed = compose::ensure(
+                paths,
+                db,
+                profile_id,
+                base.map(PathBuf::as_path),
+                m.as_ref(),
+                game,
+                firing,
+            )?;
             if let (true, Some(m)) = (composed.changed, m) {
                 launcher_copies::drop(
                     paths,
@@ -973,6 +985,15 @@ machine = svga_paradise
             Err(Error::MissingGame(game)) => assert!(game.starts_with("Commander Keen 4")),
             other => panic!("{other:?}"),
         }
+        // A standalone one starts on its own files alone.
+        db.conn()
+            .execute("UPDATE mods SET index_id = 'my-mod'", [])
+            .unwrap();
+        crate::mods::set_standalone(&db, "my-mod", true).unwrap();
+        let spec = prepare(&paths, &db, &m.profile_id, false).unwrap();
+        assert!(spec.args.iter().any(|a| a == "@CK4PATCH.EXE MOD.PAT"));
+        assert_eq!(fs::read(composed.join("gamemaps.ck4")).unwrap(), b"new");
+        assert!(!composed.join("KEEN4E.EXE").exists());
     }
 
     #[test]

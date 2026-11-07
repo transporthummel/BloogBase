@@ -36,6 +36,9 @@ pub struct Profile {
     pub running: bool,
     /// The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`.
     pub missing_game: Option<String>,
+    /// A mod that ships its whole game and plays without a copy of
+    /// `game_id`, the game it's built on.
+    pub standalone: bool,
     /// The mod a mod is played over, e.g. Lego Keen.
     pub played_over: Option<PlayedOver>,
 }
@@ -53,7 +56,7 @@ pub struct PlayedOver {
 pub struct Layers {
     /// What DOSBox mounts as C: below the overlay. For a mod profile, the
     /// install's base files, which still need the mod composed on top;
-    /// `None` while a mod waits for its game.
+    /// `None` while a mod waits for its game, and for standalone mods.
     pub lower: Option<PathBuf>,
     /// The overlay: the profile's persistent `state/` directory.
     pub upper: PathBuf,
@@ -103,7 +106,8 @@ const SELECT: &str = "
            m.version_recipes_json, m.extends,
            (SELECT b.path FROM mods b WHERE b.id = m.extends),
            (SELECT b.name FROM mods b WHERE b.id = m.extends),
-           (SELECT bp.id FROM profiles bp WHERE bp.mod_id = m.extends)
+           (SELECT bp.id FROM profiles bp WHERE bp.mod_id = m.extends),
+           COALESCE(m.standalone, 0)
     FROM profiles p
     LEFT JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id
@@ -121,10 +125,12 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
     let requires: Option<String> = r.get(14)?;
     let extends: Option<String> = r.get(16)?;
     let base_path = at(r.get(17)?);
+    let standalone: bool = r.get(20)?;
     let missing_game = match (&install_path, catalog::game(&game_id)) {
         // Removing a mod removes the ones played over it; just in case.
         _ if extends.is_some() && base_path.is_none() => extends,
         (Some(_), _) => None,
+        _ if standalone => None,
         (None, Some(game)) => Some(mods::needed_game(
             game,
             mods::parse_requires(requires.as_deref()).as_deref(),
@@ -164,6 +170,7 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             save_count: 0,
             running: false,
             missing_game,
+            standalone,
             played_over: r
                 .get::<_, Option<String>>(18)?
                 .zip(r.get::<_, Option<String>>(19)?)

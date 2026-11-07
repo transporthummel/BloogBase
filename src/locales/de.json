@@ -51,7 +51,8 @@
     },
     "group": {
       "games": "Spiele",
-      "mods": "Mods"
+      "mods": "Mods",
+      "standalone": "Kein Spiel nötig"
     },
     "status": {
       "games_one": "{{n}} Spiel",
@@ -380,6 +381,8 @@
     "installing": "Wird installiert…",
     "installed": "{{name}} ist bereit zum Spielen.",
     "badge": "Mod",
+    "standalone": "Allein lauffähig",
+    "builtOn": "Basiert auf {{game}}",
     "baseGame": "Läuft mit {{game}} {{version}}",
     "baseGame_over": "Läuft mit {{game}} {{version}} und <mod>{{mod}}</mod>",
     "new": "Neu",
@@ -460,6 +463,7 @@
     "search": "Mods durchsuchen",
     "game": "Spiel",
     "allGames": "Alle Spiele",
+    "noGame": "Kein Spiel nötig",
     "type": "Art",
     "allKinds": "Alle Arten",
     "sort": "Sortieren nach",

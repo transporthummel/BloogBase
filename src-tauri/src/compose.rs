@@ -56,13 +56,14 @@ pub struct Composed {
 }
 
 /// Returns the composed directory of `profile_id`, a profile of `game`,
-/// building it if it's missing or out of date. With `firing`, one-button
+/// building it if it's missing or out of date. `base` is `None` for a
+/// standalone mod, which has only its own files. With `firing`, one-button
 /// firing with that key's scancode is patched in where it fits.
 pub fn ensure(
     paths: &AppPaths,
     db: &Db,
     profile_id: &str,
-    base: &Path,
+    base: Option<&Path>,
     mod_layer: Option<&ModLayer>,
     game: &Game,
     firing: Option<u8>,
@@ -75,7 +76,7 @@ pub fn ensure(
     // saves: they are for the levels this one replaces.
     let below = mod_layer.and_then(|m| m.base.as_deref());
     let layers = [
-        (Some(base), Layer::Game),
+        (base, Layer::Game),
         (below, Layer::Below),
         (mod_layer.map(|m| m.files.as_path()), Layer::Mod),
     ];
@@ -391,9 +392,17 @@ mod tests {
                 base: None,
                 recipe,
             };
-            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None)
-                .unwrap()
-                .dir;
+            let dir = ensure(
+                &paths,
+                &db,
+                "p",
+                Some(base.as_path()),
+                Some(&layer),
+                keen1(),
+                None,
+            )
+            .unwrap()
+            .dir;
             let exe = fs::read(dir.join("KEEN1.EXE")).unwrap();
             assert_eq!(lzexe::load_image(&exe).unwrap(), b"ABC");
             !lzexe::is_lzexe91(&exe)
@@ -425,9 +434,17 @@ mod tests {
                 file: "RUN.BAT".into(),
             },
         };
-        let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None)
-            .unwrap()
-            .dir;
+        let dir = ensure(
+            &paths,
+            &db,
+            "p",
+            Some(base.as_path()),
+            Some(&layer),
+            keen1(),
+            None,
+        )
+        .unwrap()
+        .dir;
         assert!(!lzexe::is_lzexe91(
             &fs::read(dir.join("KEEN1.EXE")).unwrap()
         ));
@@ -449,9 +466,17 @@ mod tests {
                 base: None,
                 recipe: Recipe::Episode,
             };
-            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None)
-                .unwrap()
-                .dir;
+            let dir = ensure(
+                &paths,
+                &db,
+                "p",
+                Some(base.as_path()),
+                Some(&layer),
+                keen1(),
+                None,
+            )
+            .unwrap()
+            .dir;
             fs::read(dir.join("CWSDPMI.EXE")).ok()
         };
         assert_eq!(compose(&[("random.exe", &djgpp)]).as_deref(), Some(CWSDPMI));
@@ -483,9 +508,17 @@ mod tests {
                     args: Vec::new(),
                 },
             };
-            let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None)
-                .unwrap()
-                .dir;
+            let dir = ensure(
+                &paths,
+                &db,
+                "p",
+                Some(base.as_path()),
+                Some(&layer),
+                keen1(),
+                None,
+            )
+            .unwrap()
+            .dir;
             fs::read(dir.join("CK1PATCH.EXE")).ok()
         };
         // As Robot Rebellion, whose ROBOKEEN.EXE runs `ck1patch ckrr.pat`.
@@ -541,9 +574,17 @@ mod tests {
             base: None,
             recipe: Recipe::Episode,
         };
-        let dir = ensure(&paths, &db, "p", &base, Some(&episode), keen1(), None)
-            .unwrap()
-            .dir;
+        let dir = ensure(
+            &paths,
+            &db,
+            "p",
+            Some(base.as_path()),
+            Some(&episode),
+            keen1(),
+            None,
+        )
+        .unwrap()
+        .dir;
         assert_eq!(dir, paths.composed("p"));
         let mut names: Vec<String> = fs::read_dir(&dir)
             .unwrap()
@@ -556,7 +597,16 @@ mod tests {
 
         // Unchanged inputs: the directory is reused as is.
         fs::write(dir.join("MARK"), b"").unwrap();
-        let again = ensure(&paths, &db, "p", &base, Some(&episode), keen1(), None).unwrap();
+        let again = ensure(
+            &paths,
+            &db,
+            "p",
+            Some(base.as_path()),
+            Some(&episode),
+            keen1(),
+            None,
+        )
+        .unwrap();
         assert!(dir.join("MARK").exists());
         assert!(!again.changed);
 
@@ -568,11 +618,29 @@ mod tests {
                 file: "GO.BAT".into(),
             },
         };
-        let rebuilt = ensure(&paths, &db, "p", &base, Some(&batch), keen1(), None).unwrap();
+        let rebuilt = ensure(
+            &paths,
+            &db,
+            "p",
+            Some(base.as_path()),
+            Some(&batch),
+            keen1(),
+            None,
+        )
+        .unwrap();
         assert!(!dir.join("MARK").exists());
         assert!(rebuilt.changed);
         fs::write(modf.join("NEW.CK1"), b"n").unwrap();
-        ensure(&paths, &db, "p", &base, Some(&batch), keen1(), None).unwrap();
+        ensure(
+            &paths,
+            &db,
+            "p",
+            Some(base.as_path()),
+            Some(&batch),
+            keen1(),
+            None,
+        )
+        .unwrap();
         assert!(dir.join("NEW.CK1").exists());
         assert!(!paths.cache.join("composed/p.tmp").exists());
     }
@@ -601,9 +669,17 @@ mod tests {
             base: Some(lego.clone()),
             recipe: Recipe::Episode,
         };
-        let dir = ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None)
-            .unwrap()
-            .dir;
+        let dir = ensure(
+            &paths,
+            &db,
+            "p",
+            Some(base.as_path()),
+            Some(&layer),
+            keen1(),
+            None,
+        )
+        .unwrap()
+        .dir;
         let mut names: Vec<String> = fs::read_dir(&dir)
             .unwrap()
             .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
@@ -619,7 +695,16 @@ mod tests {
         // A changed file of the mod below rebuilds it.
         fs::write(dir.join("MARK"), b"").unwrap();
         fs::write(lego.join("LEVEL06.CK1"), b"6").unwrap();
-        ensure(&paths, &db, "p", &base, Some(&layer), keen1(), None).unwrap();
+        ensure(
+            &paths,
+            &db,
+            "p",
+            Some(base.as_path()),
+            Some(&layer),
+            keen1(),
+            None,
+        )
+        .unwrap();
         assert!(!dir.join("MARK").exists());
         assert!(dir.join("LEVEL06.CK1").exists());
     }

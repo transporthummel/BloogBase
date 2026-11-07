@@ -51,7 +51,8 @@
     },
     "group": {
       "games": "Games",
-      "mods": "Mods"
+      "mods": "Mods",
+      "standalone": "No game needed"
     },
     "status": {
       "games_one": "{{n}} game",
@@ -380,6 +381,8 @@
     "installing": "Installing…",
     "installed": "{{name}} is ready to play.",
     "badge": "Mod",
+    "standalone": "Standalone",
+    "builtOn": "Built on {{game}}",
     "baseGame": "Runs on {{game}} {{version}}",
     "baseGame_over": "Runs on {{game}} {{version}} and <mod>{{mod}}</mod>",
     "new": "New",
@@ -460,6 +463,7 @@
     "search": "Search mods",
     "game": "Game",
     "allGames": "All games",
+    "noGame": "No game needed",
     "type": "Type",
     "allKinds": "All types",
     "sort": "Sort by",

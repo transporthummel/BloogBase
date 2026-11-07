@@ -375,6 +375,25 @@ test("suggests featured mods for games on their way and queues the picked ones",
   expect(await screen.findByRole("heading", { name: "Pick your look" })).toBeInTheDocument();
 });
 
+test("suggests standalone mods without any game", async () => {
+  resumeAt("mods");
+  vi.mocked(commands.freeGames).mockResolvedValue({ status: "ok", data: [] });
+  const foray = indexMod("foray", "keen4", []);
+  vi.mocked(commands.indexMods).mockResolvedValue({
+    status: "ok",
+    data: [
+      indexMod("for-keen4", "keen4", []),
+      { ...foray, entry: { ...foray.entry, standalone: true } },
+    ],
+  });
+  renderSetup();
+
+  const choice = await screen.findByRole("checkbox", { name: /foray/ });
+  expect(choice.closest("label")).toHaveTextContent("Standalone");
+  expect(choice.closest("label")).toHaveTextContent("Built on");
+  expect(screen.queryByText("for-keen4")).not.toBeInTheDocument();
+});
+
 test("applies the picked theme right away", async () => {
   resumeAt("theme");
   localStorage.clear();
