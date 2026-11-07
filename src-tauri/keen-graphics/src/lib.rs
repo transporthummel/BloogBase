@@ -192,7 +192,7 @@ pub fn galaxy_title(
         None => egagraph::EgaGraph::from_exe(egagraph, &image, 3)
             .or_else(|_| egagraph::EgaGraph::from_exe(egagraph, &image, 4))?,
     };
-    graph.title()
+    graph.title(&image)
 }
 
 /// The title screen of a CGA release of Keen 4-6 from its executable and
@@ -208,7 +208,7 @@ pub fn galaxy_cga_title(
         None => egagraph::EgaGraph::from_exe(cgagraph, &image, 3)?,
     }
     .cga()
-    .title()
+    .title(&image)
 }
 
 /// The title screen of Keen Dreams 1.13 from `KDREAMS.CMP`.

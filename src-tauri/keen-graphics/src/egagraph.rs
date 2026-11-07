@@ -172,21 +172,27 @@ impl<'a> EgaGraph<'a> {
     pub fn picture(&self, index: usize) -> Result<Image, Error> {
         let pics = self.pictures()?;
         let (w, h) = *pics.get(index).ok_or(Error::Format("no such picture"))?;
-        // Pictures follow the fonts, whose number differs per game: find the
-        // first chunk that has the size of picture 0.
-        let (w0, h0) = pics[0];
-        let first = (3..16)
-            .find(|&c| {
-                self.chunk(c)
-                    .is_ok_and(|d| d.len() == w0 * h0 * self.planes())
-            })
-            .ok_or(Error::Format("pictures not found"))?;
-        let data = self.chunk(first + index)?;
+        let data = self.chunk(self.first_picture_chunk()? + index)?;
         if self.cga {
             Image::from_cga(&data, w * 4, h)
         } else {
             Image::from_planar(&data, w * 8, h)
         }
+    }
+
+    /// The chunk of picture 0. Pictures follow the fonts, whose number
+    /// differs per game: it's the first chunk that has the size of picture 0.
+    fn first_picture_chunk(&self) -> Result<usize, Error> {
+        let (w0, h0) = *self
+            .pictures()?
+            .first()
+            .ok_or(Error::Format("no pictures"))?;
+        (3..16)
+            .find(|&c| {
+                self.chunk(c)
+                    .is_ok_and(|d| d.len() == w0 * h0 * self.planes())
+            })
+            .ok_or(Error::Format("pictures not found"))
     }
 
     /// Picture widths count bytes: 8 pixels in each of 4 EGA planes, or 4
@@ -201,10 +207,13 @@ impl<'a> EgaGraph<'a> {
     }
 
     /// The title screen: the known title picture of Keen 4-6, else the
-    /// full-screen (320x200) picture with the most colors. In the original
-    /// games that's the only one using all 16 (in CGA all 4); the others are the menu frame,
-    /// the story backdrop and, in Keen 5, the ending's galaxy.
-    pub fn title(&self) -> Result<Image, Error> {
+    /// full-screen picture the unpacked `exe` draws at the top left right
+    /// after loading it (see [`drawn_pictures`]), else the full-screen
+    /// (320x200) picture with the most colors. In the original games that's
+    /// the only one using all 16 (in CGA all 4); the others are the menu
+    /// frame, the story backdrop and, in Keen 5, the ending's galaxy. Source
+    /// mods may have colorful cutscenes, as Atroxian Realm does.
+    pub fn title(&self, exe: &[u8]) -> Result<Image, Error> {
         // Mods can change pictures but not their numbers, so the original
         // title picture's number is the surest guide. Its game is told apart
         // by the number of pictures.
@@ -224,8 +233,17 @@ impl<'a> EgaGraph<'a> {
         {
             return self.picture(index);
         }
+        let full_screen = self.full_screen()?;
+        if let Ok(first) = self.first_picture_chunk()
+            && let Some(index) = drawn_pictures(exe)
+                .into_iter()
+                .filter_map(|chunk| chunk.checked_sub(first))
+                .find(|i| full_screen.contains(i))
+        {
+            return self.picture(index);
+        }
         let mut best: Option<(usize, Image)> = None;
-        for index in self.full_screen()? {
+        for index in full_screen {
             let image = self.picture(index)?;
             let colors = image.color_count();
             if best.as_ref().is_none_or(|(c, _)| colors >= *c) {
@@ -246,6 +264,28 @@ impl<'a> EgaGraph<'a> {
             .map(|(i, _)| i)
             .collect())
     }
+}
+
+/// The chunks a source mod's `exe` (unpacked) loads and then draws at 0,0,
+/// in order: `CA_CacheGrChunk(n); VW_DrawPic(0, 0, n);` as Borland C++
+/// compiles the title page of the reconstructed Keen 4-6 source. The
+/// original games aren't built like that and have known title numbers.
+fn drawn_pictures(exe: &[u8]) -> Vec<usize> {
+    // mov ax,n; push ax; call far CA_CacheGrChunk; pop cx;
+    // mov ax,n; push ax; xor ax,ax; push ax; push ax; call far VW_DrawPic
+    const LEN: usize = 19;
+    exe.windows(LEN)
+        .filter(|w| {
+            w[0] == 0xB8
+                && w[3] == 0x50
+                && w[4] == 0x9A
+                && w[9] == 0x59
+                && w[10] == 0xB8
+                && w[11..13] == w[1..3]
+                && w[13..] == [0x50, 0x33, 0xC0, 0x50, 0x50, 0x9A]
+        })
+        .map(|w| usize::from(u16::from_le_bytes([w[1], w[2]])))
+        .collect()
 }
 
 fn read_offset(entry: &[u8]) -> usize {
@@ -292,4 +332,28 @@ fn find_header(exe: &[u8], graph_len: usize, offset_len: usize) -> Option<Vec<u8
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::drawn_pictures;
+
+    #[test]
+    fn finds_pictures_drawn_right_after_loading() {
+        // As in Atroxian Realm's AREALM.EXE: picture chunk 109.
+        let title = [
+            0xB8, 0x6D, 0x00, 0x50, 0x9A, 0xA6, 0x0D, 0xD9, 0x12, 0x59, 0xB8, 0x6D, 0x00, 0x50,
+            0x33, 0xC0, 0x50, 0x50, 0x9A,
+        ];
+        let mut exe = vec![0x90; 8];
+        exe.extend(title);
+        assert_eq!(drawn_pictures(&exe), [109]);
+        // Another picture drawn than loaded, or drawn elsewhere, doesn't count.
+        let mut other = title;
+        other[11] = 0x6E;
+        assert!(drawn_pictures(&other).is_empty());
+        let mut elsewhere = title;
+        elsewhere[14..16].copy_from_slice(&[0xB8, 0x08]);
+        assert!(drawn_pictures(&elsewhere).is_empty());
+    }
 }

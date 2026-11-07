@@ -22,7 +22,7 @@ use crate::profiles;
 use crate::recipe::{self, Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v19";
+const VERSION: &str = "covers v20";
 
 /// A profile's cover.
 #[derive(Debug, PartialEq, Eq)]
