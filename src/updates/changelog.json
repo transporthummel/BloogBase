@@ -19,7 +19,8 @@
       "Discover keeps the mods' search, filters and sort when you switch pages.",
       "KeenWiki downloads no longer show a stray comma in their name.",
       "KeenWiki links no longer miss versions some mod pages list.",
-      "Source mods like Atroxian Realm show their title screen as cover instead of a cutscene."
+      "Source mods like Atroxian Realm show their title screen as cover instead of a cutscene.",
+      "Alt+Enter to fullscreen no longer garbles the picture of a running game."
     ],
     "de": [
       "Sound, Musik, Scorebox und Tasten lassen sich einmal für alle Spiele und Mods festlegen.",
@@ -40,7 +41,8 @@
       "Discover behält Suche, Filter und Sortierung der Mods beim Wechsel zwischen den Seiten.",
       "KeenWiki-Downloads zeigen kein überzähliges Komma mehr im Namen.",
       "KeenWiki-Links übersehen keine Versionen mehr, die manche Mod-Seiten aufführen.",
-      "Source-Mods wie Atroxian Realm zeigen ihren Titelbildschirm als Cover statt einer Zwischensequenz."
+      "Source-Mods wie Atroxian Realm zeigen ihren Titelbildschirm als Cover statt einer Zwischensequenz.",
+      "Alt+Enter in den Vollbildmodus stört das Bild eines laufenden Spiels nicht mehr."
     ]
   },
   "releases": [

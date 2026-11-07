@@ -66,7 +66,9 @@ one wins for every setting it sets:
 | Profile  | `profiles/<id>/config/override.conf`                  | By the player; a template if missing    |
 | Launch   | `profiles/<id>/generated/launch.conf`                 | Every launch                            |
 
-- **Defaults** per engine: `aspect = on`, the normal core, 4000 cycles for
+- **Defaults** per engine: `aspect = on`,
+  `fullscreen_mode = forced-borderless` (exclusive fullscreen garbled the
+  picture when Alt+Enter switched to it during a game), the normal core, 4000 cycles for
   the speed-sensitive Keen 1-3, 20000 for Keen 4-6 and Keen Dreams. A mod
   whose patch needs another machine gets a defaults file of its own with
   `machine = cga` (composite CGA graphics, Staging then switches on its
