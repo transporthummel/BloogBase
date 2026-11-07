@@ -143,7 +143,6 @@ function Credits({
           </span>
         )}
         {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
-        {profile.standalone && <Badge>{t("mods.standalone")}</Badge>}
         {profile.modId === null && <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>}
         {profile.modId === null && version?.shareware && <Badge>{t("profile.shareware")}</Badge>}
         {mod?.version && (

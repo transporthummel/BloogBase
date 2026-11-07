@@ -84,7 +84,6 @@ export function ModCard({
           {mod.modId && <Badge tone="status">{t("discover.installed")}</Badge>}
           {mod.updateAvailable && <Badge tone="status">{t("discover.updateBadge")}</Badge>}
           <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
-          {entry.standalone && <Badge>{t("mods.standalone")}</Badge>}
           {mod.new && <Badge>{t("mods.new")}</Badge>}
           {entry.featured && <Badge>{t("discover.featured")}</Badge>}
         </div>

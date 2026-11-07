@@ -478,7 +478,6 @@ export function ModsStep({ next, back }: StepProps) {
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{entry.name}</span>
                     <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
-                    {entry.standalone && <Badge>{t("mods.standalone")}</Badge>}
                   </span>
                   <span className="text-xs text-muted">
                     {entry.standalone
