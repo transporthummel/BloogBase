@@ -24,8 +24,10 @@ downloads:
     size: 5181575
 # A source mod: FITF.EXE is its own menu, which starts FITF-C.EXE (classic
 # Keen) or FITF-X.EXE (Xky's Keen), and the game data is all in its own
-# *.CKS files. It needs nothing from Keen 4 and plays on any copy; PLAY.BAT
-# only adds `cycles max` and the `adlib` argument.
+# *.CKS files. It needs nothing from Keen 4, so it's standalone (apps before
+# 1.2.0 play it on any Keen 4 copy); PLAY.BAT only adds `cycles max` and the
+# `adlib` argument.
+standalone: true
 recipe:
   type: program
   program: FITF.EXE
