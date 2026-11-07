@@ -75,7 +75,10 @@ one wins for every setting it sets:
   composite emulation) or `machine = svga_paradise` (128K of video memory
   at A0000h). The patch file decides ([recipes.md](recipes.md)).
 - **Options** from the settings page: fullscreen, CRT shader (`crt-auto`,
-  else `sharp`) and vsync, plus the keyboard mapper file if there is one.
+  else `sharp`), vsync, what a game does in the background
+  (`mute_when_inactive`, `pause_when_inactive`) and the legacy PC mode
+  (`[dosbox] hard_disk_speed = slow` and `[disknoise] hard_disk_noise = on`,
+  else `maximum` and `off`), plus the keyboard mapper file if there is one.
   If the global override sets the same setting, the settings page says so
   and disables the switch.
 - **Global and profile overrides** are the player's own DOSBox settings,

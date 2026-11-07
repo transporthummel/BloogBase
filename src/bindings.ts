@@ -376,6 +376,8 @@ export type DisplayOptions = {
 	vsync: boolean,
 	/**  What the game does while its window isn't the active one. */
 	inactive: WhenInactive,
+	/**  Like a PC of the time: a slow hard disk you can hear. */
+	legacyPc: boolean,
 };
 
 export type DisplayOptionsView = {

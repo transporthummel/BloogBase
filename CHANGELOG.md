@@ -11,6 +11,7 @@
 - Mods that bring their whole game with them (source mods such as Foray in the Forest) can be marked standalone in the mod list: they play without a copy of the game they're built on, show up under "No game needed" in Discover and in the library, and the setup wizard suggests them even without any Keen; installed ones leave their copy of the game at the next check of the mod list, saves included. `pnpm index:add` marks source mods standalone.
 - Custom patches: patch file lines for a game copy, entered in the new Settings tab of its page (which also holds the DOSBox settings), go into the game and every mod played on that copy at each start, after the mod's own lines; a mod's Settings tab says whether it gets them.
 - A new setting for all games says what a game does while another window is active: keep running (as before), mute, or pause (DOSBox's `mute_when_inactive` and `pause_when_inactive`).
+- A "Legacy PC Mode" setting for all games (off by default) makes the hard disk slow and audible, as on a PC of the time (DOSBox's `hard_disk_speed = slow` and `hard_disk_noise = on`).
 
 ### Improvements
 

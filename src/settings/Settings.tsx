@@ -96,6 +96,7 @@ export function Settings() {
           <DisplaySection />
           <SoundSection />
           <InactiveSection />
+          <LegacyPcSection />
           <ControlsSection />
           <ScoreBoxSection />
           <BackupSection />
@@ -325,6 +326,38 @@ export function InactiveSection() {
           </Field>
           <p className="max-w-prose text-xs text-muted">
             {overridden ? t("settings.displayOverridden") : t("settings.inactiveHint")}
+          </p>
+        </div>
+      )}
+      {(view.error ?? update.error) && (
+        <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
+      )}
+    </Group>
+  );
+}
+
+/** A slow hard disk you can hear, as on a PC of the time. */
+export function LegacyPcSection() {
+  const { t } = useTranslation();
+  const { view, update } = useDisplayOptions();
+  const v = view.data;
+  const overridden = v?.overridden.includes("legacyPc");
+
+  return (
+    <Group title={t("settings.legacyPc")}>
+      {v && (
+        <div className="grid gap-1">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={v.options.legacyPc}
+              disabled={overridden || update.isPending}
+              onChange={(e) => update.mutate({ ...v.options, legacyPc: e.target.checked })}
+            />
+            {t("settings.legacyPcOption")}
+          </label>
+          <p className="ml-6 max-w-prose text-xs text-muted">
+            {overridden ? t("settings.displayOverridden") : t("settings.legacyPcHint")}
           </p>
         </div>
       )}

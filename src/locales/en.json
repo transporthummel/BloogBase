@@ -148,6 +148,9 @@
       "pause": "Pause"
     },
     "inactiveHint": "A paused game goes on as soon as you switch back to its window. Applies to all games from their next start.",
+    "legacyPc": "Legacy PC Mode",
+    "legacyPcOption": "Hard disk noises and slower loading",
+    "legacyPcHint": "Games load as slowly as from a hard disk of the time, and you hear it seek and spin. Applies to all games from their next start.",
     "soundMusic": "Sound and music",
     "sound": "Sound",
     "music": "Music",

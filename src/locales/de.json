@@ -148,6 +148,9 @@
       "pause": "Anhalten"
     },
     "inactiveHint": "Angehalten geht das Spiel weiter, sobald du zurück in sein Fenster wechselst. Gilt für alle Spiele ab dem nächsten Start.",
+    "legacyPc": "Retro-PC-Modus",
+    "legacyPcOption": "Festplattengeräusche und langsameres Laden",
+    "legacyPcHint": "Spiele laden so langsam wie von einer Festplatte von damals, und du hörst sie rattern und surren. Gilt für alle Spiele ab dem nächsten Start.",
     "soundMusic": "Sound und Musik",
     "sound": "Sound",
     "music": "Musik",

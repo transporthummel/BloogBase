@@ -119,6 +119,8 @@ pub struct DisplayOptions {
     pub vsync: bool,
     /// What the game does while its window isn't the active one.
     pub inactive: WhenInactive,
+    /// Like a PC of the time: a slow hard disk you can hear.
+    pub legacy_pc: bool,
 }
 
 impl Default for DisplayOptions {
@@ -128,6 +130,7 @@ impl Default for DisplayOptions {
             crt: true,
             vsync: false,
             inactive: WhenInactive::Run,
+            legacy_pc: false,
         }
     }
 }
@@ -165,6 +168,7 @@ const FULLSCREEN_KEY: &str = "dosbox.fullscreen";
 const CRT_KEY: &str = "dosbox.crt";
 const VSYNC_KEY: &str = "dosbox.vsync";
 const INACTIVE_KEY: &str = "dosbox.inactive";
+const LEGACY_PC_KEY: &str = "dosbox.legacy_pc";
 
 pub fn options(db: &Db) -> Result<DisplayOptions> {
     let d = DisplayOptions::default();
@@ -178,6 +182,7 @@ pub fn options(db: &Db) -> Result<DisplayOptions> {
         inactive: settings::get(db, INACTIVE_KEY)?
             .and_then(|v| WhenInactive::from_str(&v))
             .unwrap_or(d.inactive),
+        legacy_pc: flag(LEGACY_PC_KEY, d.legacy_pc)?,
     })
 }
 
@@ -186,6 +191,7 @@ pub fn set_options(db: &Db, o: &DisplayOptions) -> Result<()> {
         (FULLSCREEN_KEY, o.fullscreen),
         (CRT_KEY, o.crt),
         (VSYNC_KEY, o.vsync),
+        (LEGACY_PC_KEY, o.legacy_pc),
     ] {
         settings::set(db, key, if on { "1" } else { "0" })?;
     }
@@ -193,12 +199,14 @@ pub fn set_options(db: &Db, o: &DisplayOptions) -> Result<()> {
 }
 
 /// Each option's name and the DOSBox settings behind it.
-const OPTION_SETTINGS: [(&str, &str, &str); 5] = [
+const OPTION_SETTINGS: [(&str, &str, &str); 7] = [
     ("fullscreen", "sdl", "fullscreen"),
     ("crt", "render", "shader"),
     ("vsync", "sdl", "vsync"),
     ("inactive", "sdl", "mute_when_inactive"),
     ("inactive", "sdl", "pause_when_inactive"),
+    ("legacyPc", "dosbox", "hard_disk_speed"),
+    ("legacyPc", "disknoise", "hard_disk_noise"),
 ];
 
 /// `with_keymap`: whether the keyboard layout's mapper file is next to this layer
@@ -221,12 +229,20 @@ pub fn options_conf(o: &DisplayOptions, with_keymap: bool) -> String {
          {mapper}\
          \n\
          [render]\n\
-         shader = {}\n",
+         shader = {}\n\
+         \n\
+         [dosbox]\n\
+         hard_disk_speed = {}\n\
+         \n\
+         [disknoise]\n\
+         hard_disk_noise = {}\n",
         on_off(o.fullscreen),
         on_off(o.vsync),
         on_off(o.inactive == WhenInactive::Mute),
         on_off(o.inactive == WhenInactive::Pause),
         if o.crt { "crt-auto" } else { "sharp" },
+        if o.legacy_pc { "slow" } else { "maximum" },
+        on_off(o.legacy_pc),
     )
 }
 
@@ -718,6 +734,7 @@ mod tests {
             crt: false,
             vsync: true,
             inactive: WhenInactive::Pause,
+            legacy_pc: true,
         };
         set_options(&db, &mine).unwrap();
         assert_eq!(options(&db).unwrap(), mine);
@@ -732,8 +749,13 @@ mod tests {
             (value("mute_when_inactive"), value("pause_when_inactive")),
             (Some("off"), Some("on"))
         );
+        assert_eq!(
+            (value("hard_disk_speed"), value("hard_disk_noise")),
+            (Some("slow"), Some("on"))
+        );
         let muted = DisplayOptions {
             inactive: WhenInactive::Mute,
+            legacy_pc: false,
             ..mine
         };
         let (set, _) = parse(&options_conf(&muted, false), ConfigLayer::Options);
@@ -741,6 +763,10 @@ mod tests {
         assert_eq!(
             (value("mute_when_inactive"), value("pause_when_inactive")),
             (Some("on"), Some("off"))
+        );
+        assert_eq!(
+            (value("hard_disk_speed"), value("hard_disk_noise")),
+            (Some("maximum"), Some("off"))
         );
 
         // Their own layer in the result; the user's global override wins.
@@ -767,6 +793,15 @@ pause_when_inactive = off
         )
         .unwrap();
         assert_eq!(overridden_options(&paths).unwrap(), ["inactive"]);
+
+        save(
+            &paths,
+            &db,
+            None,
+            "[disknoise]\nhard_disk_noise = seek-only\n",
+        )
+        .unwrap();
+        assert_eq!(overridden_options(&paths).unwrap(), ["legacyPc"]);
     }
 
     #[test]

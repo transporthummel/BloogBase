@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { commands } from "../bindings";
-import { DisplaySection, InactiveSection } from "./Settings";
+import { DisplaySection, InactiveSection, LegacyPcSection } from "./Settings";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
 vi.mock("@tanstack/react-router", () => ({ Link: vi.fn(), useNavigate: vi.fn() }));
@@ -12,7 +12,13 @@ vi.mock("../bindings", () => ({
 }));
 
 const ok = <T,>(data: T) => ({ status: "ok" as const, data });
-const defaults = { fullscreen: false, crt: true, vsync: false, inactive: "run" as const };
+const defaults = {
+  fullscreen: false,
+  crt: true,
+  vsync: false,
+  inactive: "run" as const,
+  legacyPc: false,
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -68,4 +74,23 @@ test("the background choice is locked when the DOSBox settings set it", async ()
   expect(
     screen.getByText("Set by your DOSBox settings for all games (below)."),
   ).toBeInTheDocument();
+});
+
+test("the legacy PC mode is off by default and saves all options", async () => {
+  vi.mocked(commands.displayOptions).mockResolvedValue(ok({ options: defaults, overridden: [] }));
+  renderSection(<LegacyPcSection />);
+  const box = await screen.findByRole("checkbox", { name: "Hard disk noises and slower loading" });
+  expect(box).not.toBeChecked();
+  await userEvent.click(box);
+  expect(commands.setDisplayOptions).toHaveBeenCalledWith({ ...defaults, legacyPc: true });
+});
+
+test("the legacy PC mode is locked when the DOSBox settings set it", async () => {
+  vi.mocked(commands.displayOptions).mockResolvedValue(
+    ok({ options: defaults, overridden: ["legacyPc"] }),
+  );
+  renderSection(<LegacyPcSection />);
+  expect(
+    await screen.findByRole("checkbox", { name: "Hard disk noises and slower loading" }),
+  ).toBeDisabled();
 });
