@@ -25,6 +25,7 @@ mod library;
 mod mod_index;
 mod mods;
 mod overlay_view;
+mod patchfile;
 mod paths;
 mod profiles;
 mod readme;
