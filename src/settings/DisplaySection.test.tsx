@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { commands } from "../bindings";
-import { DisplaySection } from "./Settings";
+import { DisplaySection, InactiveSection } from "./Settings";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
 vi.mock("@tanstack/react-router", () => ({ Link: vi.fn(), useNavigate: vi.fn() }));
@@ -12,20 +12,16 @@ vi.mock("../bindings", () => ({
 }));
 
 const ok = <T,>(data: T) => ({ status: "ok" as const, data });
-const defaults = { fullscreen: false, crt: true, vsync: false };
+const defaults = { fullscreen: false, crt: true, vsync: false, inactive: "run" as const };
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(commands.setDisplayOptions).mockResolvedValue(ok(null));
 });
 
-function renderSection() {
+function renderSection(section = <DisplaySection />) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(
-    <QueryClientProvider client={client}>
-      <DisplaySection />
-    </QueryClientProvider>,
-  );
+  render(<QueryClientProvider client={client}>{section}</QueryClientProvider>);
 }
 
 test("toggling an option saves all options", async () => {
@@ -50,4 +46,26 @@ test("options the DOSBox settings set are locked and say so", async () => {
     screen.getByText("Set by your DOSBox settings for all games (below)."),
   ).toBeInTheDocument();
   expect(screen.getByRole("checkbox", { name: "CRT monitor effect" })).toBeEnabled();
+});
+
+test("choosing what a game does in the background saves all options", async () => {
+  vi.mocked(commands.displayOptions).mockResolvedValue(ok({ options: defaults, overridden: [] }));
+  renderSection(<InactiveSection />);
+  const select = await screen.findByRole("combobox", { name: "When you switch to another window" });
+  expect(select).toHaveValue("run");
+  await userEvent.selectOptions(select, "pause");
+  expect(commands.setDisplayOptions).toHaveBeenCalledWith({ ...defaults, inactive: "pause" });
+});
+
+test("the background choice is locked when the DOSBox settings set it", async () => {
+  vi.mocked(commands.displayOptions).mockResolvedValue(
+    ok({ options: defaults, overridden: ["inactive"] }),
+  );
+  renderSection(<InactiveSection />);
+  expect(
+    await screen.findByRole("combobox", { name: "When you switch to another window" }),
+  ).toBeDisabled();
+  expect(
+    screen.getByText("Set by your DOSBox settings for all games (below)."),
+  ).toBeInTheDocument();
 });

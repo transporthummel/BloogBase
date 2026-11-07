@@ -140,6 +140,14 @@
       "all": "Applies to all games from their next start. Single games can differ on their page under “DOSBox settings”."
     },
     "displayOverridden": "Set by your DOSBox settings for all games (below).",
+    "inactive": "In the background",
+    "inactiveLabel": "When you switch to another window",
+    "inactiveChoice": {
+      "run": "Keep running",
+      "mute": "Mute",
+      "pause": "Pause"
+    },
+    "inactiveHint": "A paused game goes on as soon as you switch back to its window. Applies to all games from their next start.",
     "soundMusic": "Sound and music",
     "sound": "Sound",
     "music": "Music",

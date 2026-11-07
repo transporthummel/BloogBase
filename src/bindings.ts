@@ -374,6 +374,8 @@ export type DisplayOptions = {
 	crt: boolean,
 	/**  Against tearing while scrolling, at the cost of a little input lag. */
 	vsync: boolean,
+	/**  What the game does while its window isn't the active one. */
+	inactive: WhenInactive,
 };
 
 export type DisplayOptionsView = {
@@ -1144,6 +1146,16 @@ export type WarningKind =
 "syntax" | 
 /**  A setting before the first section header. */
 "noSection";
+
+/**
+ *  What the game does while another window is active: Staging's
+ *  `mute_when_inactive` and `pause_when_inactive`.
+ */
+export type WhenInactive = 
+/**  It runs on as before, with sound. */
+"run" | "mute" | 
+/**  The emulation stops, sound and all, until the window is active again. */
+"pause";
 
 export type WikiDownload = {
 	url: string,

@@ -140,6 +140,14 @@
       "all": "Gilt für alle Spiele ab dem nächsten Start. Einzelne Spiele kannst du auf ihrer Seite unter „DOSBox-Einstellungen“ abweichend einstellen."
     },
     "displayOverridden": "Wird von deinen DOSBox-Einstellungen für alle Spiele (unten) festgelegt.",
+    "inactive": "Im Hintergrund",
+    "inactiveLabel": "Wenn du zu einem anderen Fenster wechselst",
+    "inactiveChoice": {
+      "run": "Weiterlaufen lassen",
+      "mute": "Stummschalten",
+      "pause": "Anhalten"
+    },
+    "inactiveHint": "Angehalten geht das Spiel weiter, sobald du zurück in sein Fenster wechselst. Gilt für alle Spiele ab dem nächsten Start.",
     "soundMusic": "Sound und Musik",
     "sound": "Sound",
     "music": "Musik",

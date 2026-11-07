@@ -4,7 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Eraser, FileCog, Keyboard, RefreshCw, Wand } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type BackupSettings, type DisplayOptions } from "../bindings";
+import { commands, type BackupSettings, type DisplayOptions, type WhenInactive } from "../bindings";
 import { ConfigEditor } from "../config/LazyConfigEditor";
 import { oneButtonFiringKey } from "../profile/firing";
 import { configKey } from "../config/queries";
@@ -95,6 +95,7 @@ export function Settings() {
         <Section title={t("settings.games")}>
           <DisplaySection />
           <SoundSection />
+          <InactiveSection />
           <ControlsSection />
           <ScoreBoxSection />
           <BackupSection />
@@ -242,9 +243,8 @@ function RuntimeSection() {
 // Under "config" so saving the DOSBox settings refreshes what they override.
 const displayOptionsKey = ["config", "display"] as const;
 
-/** Simple DOSBox options for all games, so nobody needs to know DOSBox. */
-export function DisplaySection() {
-  const { t } = useTranslation();
+/** The simple DOSBox options for all games, and a way to save them. */
+function useDisplayOptions() {
   const queryClient = useQueryClient();
   const view = useQuery({
     queryKey: displayOptionsKey,
@@ -255,8 +255,15 @@ export function DisplaySection() {
     // Also the per-game views of what DOSBox gets.
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["config"] }),
   });
+  return { view, update };
+}
+
+/** Simple DOSBox options for all games, so nobody needs to know DOSBox. */
+export function DisplaySection() {
+  const { t } = useTranslation();
+  const { view, update } = useDisplayOptions();
   const v = view.data;
-  const options: (keyof DisplayOptions)[] = ["fullscreen", "crt", "vsync"];
+  const options = ["fullscreen", "crt", "vsync"] as const;
 
   return (
     <Group title={t("settings.display")}>
@@ -281,6 +288,46 @@ export function DisplaySection() {
           );
         })}
       {v && <p className="max-w-prose text-xs text-muted">{t("settings.displayHint.all")}</p>}
+      {(view.error ?? update.error) && (
+        <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
+      )}
+    </Group>
+  );
+}
+
+/** What the game does while another window is active. */
+export function InactiveSection() {
+  const { t } = useTranslation();
+  const { view, update } = useDisplayOptions();
+  const v = view.data;
+  const overridden = v?.overridden.includes("inactive");
+  const choices: WhenInactive[] = ["run", "mute", "pause"];
+
+  return (
+    <Group title={t("settings.inactive")}>
+      {v && (
+        <div className="grid gap-1">
+          <Field label={t("settings.inactiveLabel")}>
+            <select
+              className={`${selectClass} w-52`}
+              value={v.options.inactive}
+              disabled={overridden || update.isPending}
+              onChange={(e) =>
+                update.mutate({ ...v.options, inactive: e.target.value as WhenInactive })
+              }
+            >
+              {choices.map((c) => (
+                <option key={c} value={c}>
+                  {t(`settings.inactiveChoice.${c}`)}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <p className="max-w-prose text-xs text-muted">
+            {overridden ? t("settings.displayOverridden") : t("settings.inactiveHint")}
+          </p>
+        </div>
+      )}
       {(view.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
       )}

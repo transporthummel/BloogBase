@@ -117,6 +117,8 @@ pub struct DisplayOptions {
     pub crt: bool,
     /// Against tearing while scrolling, at the cost of a little input lag.
     pub vsync: bool,
+    /// What the game does while its window isn't the active one.
+    pub inactive: WhenInactive,
 }
 
 impl Default for DisplayOptions {
@@ -125,13 +127,44 @@ impl Default for DisplayOptions {
             fullscreen: true,
             crt: true,
             vsync: false,
+            inactive: WhenInactive::Run,
         }
+    }
+}
+
+/// What the game does while another window is active: Staging's
+/// `mute_when_inactive` and `pause_when_inactive`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum WhenInactive {
+    /// It runs on as before, with sound.
+    #[default]
+    Run,
+    Mute,
+    /// The emulation stops, sound and all, until the window is active again.
+    Pause,
+}
+
+impl WhenInactive {
+    fn as_str(self) -> &'static str {
+        match self {
+            WhenInactive::Run => "run",
+            WhenInactive::Mute => "mute",
+            WhenInactive::Pause => "pause",
+        }
+    }
+
+    fn from_str(s: &str) -> Option<Self> {
+        [WhenInactive::Run, WhenInactive::Mute, WhenInactive::Pause]
+            .into_iter()
+            .find(|w| w.as_str() == s)
     }
 }
 
 const FULLSCREEN_KEY: &str = "dosbox.fullscreen";
 const CRT_KEY: &str = "dosbox.crt";
 const VSYNC_KEY: &str = "dosbox.vsync";
+const INACTIVE_KEY: &str = "dosbox.inactive";
 
 pub fn options(db: &Db) -> Result<DisplayOptions> {
     let d = DisplayOptions::default();
@@ -142,6 +175,9 @@ pub fn options(db: &Db) -> Result<DisplayOptions> {
         fullscreen: flag(FULLSCREEN_KEY, d.fullscreen)?,
         crt: flag(CRT_KEY, d.crt)?,
         vsync: flag(VSYNC_KEY, d.vsync)?,
+        inactive: settings::get(db, INACTIVE_KEY)?
+            .and_then(|v| WhenInactive::from_str(&v))
+            .unwrap_or(d.inactive),
     })
 }
 
@@ -153,14 +189,16 @@ pub fn set_options(db: &Db, o: &DisplayOptions) -> Result<()> {
     ] {
         settings::set(db, key, if on { "1" } else { "0" })?;
     }
-    Ok(())
+    settings::set(db, INACTIVE_KEY, o.inactive.as_str())
 }
 
-/// Each option's name and the DOSBox setting behind it.
-const OPTION_SETTINGS: [(&str, &str, &str); 3] = [
+/// Each option's name and the DOSBox settings behind it.
+const OPTION_SETTINGS: [(&str, &str, &str); 5] = [
     ("fullscreen", "sdl", "fullscreen"),
     ("crt", "render", "shader"),
     ("vsync", "sdl", "vsync"),
+    ("inactive", "sdl", "mute_when_inactive"),
+    ("inactive", "sdl", "pause_when_inactive"),
 ];
 
 /// `with_keymap`: whether the keyboard layout's mapper file is next to this layer
@@ -178,12 +216,16 @@ pub fn options_conf(o: &DisplayOptions, with_keymap: bool) -> String {
          [sdl]\n\
          fullscreen = {}\n\
          vsync = {}\n\
+         mute_when_inactive = {}\n\
+         pause_when_inactive = {}\n\
          {mapper}\
          \n\
          [render]\n\
          shader = {}\n",
         on_off(o.fullscreen),
         on_off(o.vsync),
+        on_off(o.inactive == WhenInactive::Mute),
+        on_off(o.inactive == WhenInactive::Pause),
         if o.crt { "crt-auto" } else { "sharp" },
     )
 }
@@ -201,11 +243,14 @@ fn has_keymap(paths: &AppPaths) -> bool {
 pub fn overridden_options(paths: &AppPaths) -> Result<Vec<String>> {
     let global = read_or(&paths.global_override_conf(), GLOBAL_TEMPLATE)?;
     let (set, _) = parse(&global, ConfigLayer::Global);
-    Ok(OPTION_SETTINGS
+    let mut names: Vec<String> = OPTION_SETTINGS
         .iter()
         .filter(|(_, section, key)| set.iter().any(|s| s.section == *section && s.key == *key))
         .map(|(name, ..)| name.to_string())
-        .collect())
+        .collect();
+    // An option with two settings behind it, both set.
+    names.dedup();
+    Ok(names)
 }
 
 /// The capture folder as DOSBox needs it in the launch layer: DOSBox resolves
@@ -672,6 +717,7 @@ mod tests {
             fullscreen: true,
             crt: false,
             vsync: true,
+            inactive: WhenInactive::Pause,
         };
         set_options(&db, &mine).unwrap();
         assert_eq!(options(&db).unwrap(), mine);
@@ -681,6 +727,20 @@ mod tests {
         assert_eq!(
             (value("fullscreen"), value("vsync"), value("shader")),
             (Some("on"), Some("on"), Some("sharp"))
+        );
+        assert_eq!(
+            (value("mute_when_inactive"), value("pause_when_inactive")),
+            (Some("off"), Some("on"))
+        );
+        let muted = DisplayOptions {
+            inactive: WhenInactive::Mute,
+            ..mine
+        };
+        let (set, _) = parse(&options_conf(&muted, false), ConfigLayer::Options);
+        let value = |key: &str| set.iter().find(|s| s.key == key).map(|s| s.value.as_str());
+        assert_eq!(
+            (value("mute_when_inactive"), value("pause_when_inactive")),
+            (Some("on"), Some("off"))
         );
 
         // Their own layer in the result; the user's global override wins.
@@ -695,6 +755,18 @@ mod tests {
         let layer = |key: &str| effective.iter().find(|s| s.key == key).unwrap().layer;
         assert_eq!(layer("fullscreen"), ConfigLayer::Global);
         assert_eq!(layer("shader"), ConfigLayer::Options);
+
+        save(
+            &paths,
+            &db,
+            None,
+            "[sdl]
+mute_when_inactive = on
+pause_when_inactive = off
+",
+        )
+        .unwrap();
+        assert_eq!(overridden_options(&paths).unwrap(), ["inactive"]);
     }
 
     #[test]
