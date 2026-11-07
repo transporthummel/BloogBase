@@ -557,7 +557,7 @@
     "notFound": "This game isn’t in the library any more.",
     "tabReadme": "Readme",
     "tabSaves": "Saves",
-    "tabConfig": "DOSBox settings",
+    "tabConfig": "Settings",
     "tabs": "Sections",
     "tabScreenshots": "Screenshots",
     "tabVideos": "Videos",
@@ -687,11 +687,31 @@
       "launcherReset": "Before refreshing the mod's files"
     }
   },
+  "patches": {
+    "title": "Custom patches",
+    "hint": "Patch file lines for this copy of the game, e.g. for another key layout. BloogBase adds them at every start of this game and of all mods on this copy, after the mod's own lines. They can break mods that change the same places. Applies from the next start.",
+    "unpatchable": "There are no patches for this version of the game, so you can't add your own here.",
+    "bad": {
+      "reserved": "Line {{line}}: BloogBase writes {{word}} itself. Please leave the line out.",
+      "value": "Line {{line}}: \"{{word}}\" isn't a number the patcher understands (e.g. $1F, $1F2BW or 31). With this error the patcher would stop every mod on this copy."
+    },
+    "edit": "Edit them on the game copy",
+    "status": {
+      "applied": "This mod gets the custom patches of {{game}}.",
+      "ownProgram": "This mod doesn't get the custom patches of {{game}}: it starts a program of its own.",
+      "patcherOnly": "This mod doesn't get the custom patches of {{game}}: they have lines only the patcher understands, and the mod starts the game without it.",
+      "packed": "This mod doesn't get the custom patches of {{game}}: the game's program is packed in a way BloogBase can't change."
+    },
+    "gameStatus": {
+      "patcherOnly": "The game starts without the patcher, so BloogBase only understands %patch and %patchfile lines here. The patches are skipped; mods with a patch file still get them.",
+      "packed": "The game's program is packed in a way BloogBase can't change. The patches are skipped; mods with a patch file still get them."
+    }
+  },
   "config": {
     "globalTitle": "DOSBox settings for all games",
     "globalHint": "DOSBox Staging settings that apply to every game. Each game can override them on its page.",
     "globalLink": "Settings for all games",
-    "profileTitle": "Settings for this game",
+    "profileTitle": "DOSBox settings for this game",
     "profileHint": "Only for this game; they win over BloogBase’s defaults and your settings for all games.",
     "effectiveTitle": "What DOSBox gets",
     "effectiveHint": "All layers together. The last one that sets a value wins.",

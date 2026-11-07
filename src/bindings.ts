@@ -91,6 +91,16 @@ export const commands = {
 	 *  `None` for games without it.
 	 */
 	profileFiring: (profileId: string) => typedError<Firing | null, CommandError>(__TAURI_INVOKE("profile_firing", { profileId })),
+	/**
+	 *  The custom patches a profile's page shows: a game's to edit, or how a
+	 *  mod takes those of the game copy it's played on.
+	 */
+	profileCustomPatches: (profileId: string) => typedError<ProfilePatches | null, CommandError>(__TAURI_INVOKE("profile_custom_patches", { profileId })),
+	/**
+	 *  Stores the custom patches of a game profile's copy; refused with the
+	 *  first line the patcher would stop at or BloogBase writes itself.
+	 */
+	setCustomPatches: (profileId: string, text: string) => typedError<BadLine | null, CommandError>(__TAURI_INVOKE("set_custom_patches", { profileId, text })),
 	/**  The machine a profile's mod needs instead of the default one, if any. */
 	profileMachine: (profileId: string) => typedError<Machine | null, CommandError>(__TAURI_INVOKE("profile_machine", { profileId })),
 	/**
@@ -286,6 +296,19 @@ export type BackupSettings = {
 	keep: number,
 };
 
+/**
+ *  A line the patcher would stop at, or that BloogBase writes itself. The
+ *  patcher reads every line, also in sections for other versions, so one
+ *  bad value would stop every mod on the copy.
+ */
+export type BadLine = {
+	/**  1-based. */
+	line: number,
+	problem: Problem,
+	/**  The word in question as written, e.g. `%end` or `$1G`. */
+	word: string,
+};
+
 /**  A mod another one is made to be copied over, installed or in the index. */
 export type BaseMod = {
 	name: string,
@@ -320,6 +343,21 @@ export type ConfigWarning = {
 	line: number,
 	kind: WarningKind,
 };
+
+/**  How a profile takes the custom patches of its game copy. */
+export type CustomStatus = "applied" | 
+/**  The mod runs a program of its own, not the episode's. */
+"ownProgram" | 
+/**
+ *  The episode's executable runs directly, and the lines have directives
+ *  only the patcher understands.
+ */
+"patcherOnly" | 
+/**
+ *  The episode's executable runs directly and is packed in a way
+ *  BloogBase can't unpack.
+ */
+"packed";
 
 export type Difficulty = "easy" | "normal" | "hard" | 
 /**  Foray in the Forest's fourth level. */
@@ -800,6 +838,12 @@ export type PlayedOver = {
 	name: string,
 };
 
+export type Problem = 
+/**  `%ext`, `%end` or `%version`. */
+"reserved" | 
+/**  An offset or value that isn't a number the patcher takes. */
+"value";
+
 export type Profile = {
 	id: string,
 	/**  `None` for a mod waiting for its game. */
@@ -844,6 +888,21 @@ export type ProfileCover = {
 	 */
 	scrambled: boolean,
 };
+
+/**  The custom patches as a profile page shows them. */
+export type ProfilePatches = 
+/**
+ *  A game profile: its copy's patches, which it can edit, and how the
+ *  game takes them, if it has some.
+ */
+{ kind: "game"; text: string; status: CustomStatus | null } | 
+/**  A game profile whose version patches aren't made for. */
+{ kind: "unpatchable" } | 
+/**
+ *  A mod on a copy with custom patches: how it takes them, and the
+ *  game profile they're set in.
+ */
+{ kind: "mod"; status: CustomStatus; gameProfileId: string; gameLabel: string };
 
 /**  Quitting was asked for while these games run; the frontend asks what to do. */
 export type QuitRequested = {

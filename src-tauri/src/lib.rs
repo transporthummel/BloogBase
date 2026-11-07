@@ -6,6 +6,7 @@ mod ckpatch;
 mod commands;
 mod compose;
 mod covers;
+mod custom_patches;
 mod db;
 mod detect;
 mod diagnostics;
@@ -106,6 +107,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::game_settings,
             commands::set_game_settings,
             commands::profile_firing,
+            commands::profile_custom_patches,
+            commands::set_custom_patches,
             commands::profile_machine,
             commands::config_view,
             commands::save_config,

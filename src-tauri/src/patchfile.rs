@@ -219,7 +219,7 @@ pub fn apply_writes(image: &mut [u8], text: &str, files: &Files, version: &str) 
 }
 
 /// Words, with quoted strings kept whole (quotes included).
-fn tokens(text: &str) -> Vec<String> {
+pub fn tokens(text: &str) -> Vec<String> {
     let mut out = Vec::new();
     let mut chars = text.chars().peekable();
     while let Some(&c) = chars.peek() {
@@ -250,7 +250,7 @@ fn tokens(text: &str) -> Vec<String> {
 }
 
 /// `$1F2B`, `0x1F2B` or decimal.
-fn number(token: &str) -> Option<u32> {
+pub fn number(token: &str) -> Option<u32> {
     if let Some(hex) = token
         .strip_prefix('$')
         .or_else(|| token.strip_prefix("0x"))
@@ -264,7 +264,7 @@ fn number(token: &str) -> Option<u32> {
 
 /// A `%patch` value: a byte, a word (`$1234W`), a long (`$12345678L`) or a
 /// quoted string.
-fn value(token: &str) -> Option<Vec<u8>> {
+pub fn value(token: &str) -> Option<Vec<u8>> {
     if let Some(s) = token.strip_prefix('"') {
         return Some(s.strip_suffix('"').unwrap_or(s).bytes().collect());
     }

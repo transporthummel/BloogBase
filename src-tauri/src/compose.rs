@@ -1,7 +1,8 @@
 //! Composed lower layers: the install's base files with a mod's files copied
 //! on top (PLAN.md §4.2), the episode unpacked for patchers that need it, a
 //! DPMI host for DJGPP programs, CKPatch for mods without one, and
-//! one-button firing patched in where it's on. Disposable; rebuilt whenever the inputs change.
+//! one-button firing patched in where it's on, and the player's custom
+//! patches. Disposable; rebuilt whenever the inputs change.
 
 use std::collections::BTreeMap;
 use std::fs::{self, File};
@@ -16,6 +17,7 @@ use walkdir::WalkDir;
 
 use crate::catalog::{Game, glob_match};
 use crate::ckpatch;
+use crate::custom_patches::{self, Custom};
 use crate::db::Db;
 use crate::detect::hex;
 use crate::error::Result;
@@ -58,7 +60,9 @@ pub struct Composed {
 /// Returns the composed directory of `profile_id`, a profile of `game`,
 /// building it if it's missing or out of date. `base` is `None` for a
 /// standalone mod, which has only its own files. With `firing`, one-button
-/// firing with that key's scancode is patched in where it fits.
+/// firing with that key's scancode is patched in where it fits; `custom`
+/// patches go in after it.
+#[allow(clippy::too_many_arguments)]
 pub fn ensure(
     paths: &AppPaths,
     db: &Db,
@@ -67,6 +71,7 @@ pub fn ensure(
     mod_layer: Option<&ModLayer>,
     game: &Game,
     firing: Option<u8>,
+    custom: Option<&Custom>,
 ) -> Result<Composed> {
     let recipe = mod_layer.map_or(&Recipe::Episode, |m| &m.recipe);
     // Upper-cased path → file. DOS names are case-insensitive, so a mod's
@@ -92,7 +97,7 @@ pub fn ensure(
         }
     }
 
-    let hash = composition_hash(&inputs, recipe, firing);
+    let hash = composition_hash(&inputs, recipe, firing, custom);
     let dir = paths.composed(profile_id);
     let stored: Option<String> = db.conn().query_row(
         "SELECT composed_hash FROM profiles WHERE id = ?1",
@@ -137,6 +142,10 @@ pub fn ensure(
     if let Some(key) = firing {
         let status = firing::apply(game, recipe, &tmp, key)?;
         tracing::info!("one-button firing for {profile_id}: {status:?}");
+    }
+    if let Some(custom) = custom {
+        let status = custom_patches::apply(game, recipe, &tmp, custom)?;
+        tracing::info!("custom patches for {profile_id}: {status:?}");
     }
     match fs::remove_dir_all(&dir) {
         Err(e) if e.kind() != io::ErrorKind::NotFound => return Err(e.into()),
@@ -304,6 +313,7 @@ fn composition_hash(
     inputs: &BTreeMap<String, Input>,
     recipe: &Recipe,
     firing: Option<u8>,
+    custom: Option<&Custom>,
 ) -> String {
     let mut h = Sha256::new();
     // v2: the episode unpacked for old patchers; v3: CWSDPMI; v4: CKPatch;
@@ -318,6 +328,12 @@ fn composition_hash(
         if key != firing::SPACE {
             h.update(format!("\nfire key {key:02X}"));
         }
+    }
+    if let Some(custom) = custom {
+        h.update(format!(
+            "\ncustom patches v1\n{}\n{}",
+            custom.version, custom.text
+        ));
     }
     for input in inputs.values() {
         h.update(format!(
@@ -400,6 +416,7 @@ mod tests {
                 Some(&layer),
                 keen1(),
                 None,
+                None,
             )
             .unwrap()
             .dir;
@@ -442,6 +459,7 @@ mod tests {
             Some(&layer),
             keen1(),
             None,
+            None,
         )
         .unwrap()
         .dir;
@@ -473,6 +491,7 @@ mod tests {
                 Some(base.as_path()),
                 Some(&layer),
                 keen1(),
+                None,
                 None,
             )
             .unwrap()
@@ -515,6 +534,7 @@ mod tests {
                 Some(base.as_path()),
                 Some(&layer),
                 keen1(),
+                None,
                 None,
             )
             .unwrap()
@@ -582,6 +602,7 @@ mod tests {
             Some(&episode),
             keen1(),
             None,
+            None,
         )
         .unwrap()
         .dir;
@@ -605,6 +626,7 @@ mod tests {
             Some(&episode),
             keen1(),
             None,
+            None,
         )
         .unwrap();
         assert!(dir.join("MARK").exists());
@@ -626,6 +648,7 @@ mod tests {
             Some(&batch),
             keen1(),
             None,
+            None,
         )
         .unwrap();
         assert!(!dir.join("MARK").exists());
@@ -638,6 +661,7 @@ mod tests {
             Some(base.as_path()),
             Some(&batch),
             keen1(),
+            None,
             None,
         )
         .unwrap();
@@ -677,6 +701,7 @@ mod tests {
             Some(&layer),
             keen1(),
             None,
+            None,
         )
         .unwrap()
         .dir;
@@ -703,6 +728,7 @@ mod tests {
             Some(&layer),
             keen1(),
             None,
+            None,
         )
         .unwrap();
         assert!(!dir.join("MARK").exists());
@@ -719,7 +745,7 @@ mod tests {
         before.update(serde_json::to_string(&recipe).unwrap());
         before.update(b"\none-button firing v2");
         assert_eq!(
-            composition_hash(&inputs, &recipe, Some(firing::SPACE)),
+            composition_hash(&inputs, &recipe, Some(firing::SPACE), None),
             hex(&before.finalize())
         );
     }
@@ -727,7 +753,7 @@ mod tests {
     #[test]
     fn other_key_changes_the_hash() {
         let inputs = BTreeMap::new();
-        let hash = |firing| composition_hash(&inputs, &Recipe::Episode, firing);
+        let hash = |firing| composition_hash(&inputs, &Recipe::Episode, firing, None);
         assert_ne!(hash(Some(0x1E)), hash(Some(firing::SPACE)));
         assert_ne!(hash(Some(0x1E)), hash(Some(0x1F)));
         assert_ne!(hash(None), hash(Some(firing::SPACE)));

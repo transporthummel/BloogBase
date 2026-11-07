@@ -13,6 +13,7 @@ use crate::backups::{self, Backup, BackupSettings, Contents, Origin, SaveVersion
 use crate::captures::{self, Kind, Screenshot, Video, VideoIndex};
 use crate::catalog::{self, Game};
 use crate::covers;
+use crate::custom_patches;
 use crate::db::Db;
 use crate::diagnostics;
 use crate::dosconf::{self, ConfigView, ConfigWarning, Machine};
@@ -738,6 +739,29 @@ pub fn profile_firing(db: State<'_, Db>, profile_id: String) -> CommandResult<Op
         &layers.sources(),
         profile.version_id.as_deref(),
     ))
+}
+
+/// The custom patches a profile's page shows: a game's to edit, or how a
+/// mod takes those of the game copy it's played on.
+#[tauri::command]
+#[specta::specta]
+pub fn profile_custom_patches(
+    db: State<'_, Db>,
+    profile_id: String,
+) -> CommandResult<Option<custom_patches::ProfilePatches>> {
+    Ok(custom_patches::profile_view(&db, &profile_id)?)
+}
+
+/// Stores the custom patches of a game profile's copy; refused with the
+/// first line the patcher would stop at or BloogBase writes itself.
+#[tauri::command]
+#[specta::specta]
+pub fn set_custom_patches(
+    db: State<'_, Db>,
+    profile_id: String,
+    text: String,
+) -> CommandResult<Option<custom_patches::BadLine>> {
+    Ok(custom_patches::set_for_profile(&db, &profile_id, &text)?)
 }
 
 /// The machine a profile's mod needs instead of the default one, if any.

@@ -4,8 +4,8 @@ Before a mod starts, BloogBase builds the folder DOSBox mounts as drive C
 below the profile's saves: the game, the mod below if any, and the mod's
 files on top, plus whatever the start needs. The original files are never
 changed; everything here happens in a disposable copy. The code is in
-`src-tauri/src/compose.rs`, `ckpatch.rs`, `firing.rs` and the `lzexe` module
-of `keen-graphics`.
+`src-tauri/src/compose.rs`, `ckpatch.rs`, `firing.rs`, `custom_patches.rs`,
+`patchfile.rs` and the `lzexe` module of `keen-graphics`.
 
 ## The composed folder
 
@@ -158,3 +158,38 @@ With the setting on, the profile page says when the patch doesn't fit: a
 mod that changes the controls differently, or a copy that isn't version
 1.31. A game or mod that fires with Space already says so either way. The setting applies from the next start,
 as it's part of the composed folder's hash.
+
+## Custom patches
+
+A player can enter patch file lines for a game copy in the Settings tab of
+its profile page (`custom_patches.rs`). They're stored with the install
+(`installs.custom_patches`), never exported, and go into the composed folder
+of the game and of every mod played on that copy, after one-button firing,
+so they come last. A copy with custom patches is composed even without a
+mod. BloogBase ships no patches for this field and doesn't look for
+particular ones.
+
+- Only for versions with a `patchVersion` (or a `repackaged` build of one);
+  other versions get no field.
+- `%ext`, `%end` and `%version` are refused when saving, with the line:
+  BloogBase writes them itself. So are offsets and values of `%patch` and
+  `%patchfile` lines the patcher wouldn't take: CKPatch 0.10 reads every
+  line, also in sections for other versions, and stops at the first bad one
+  ("Invalid numeric format"), which would stop every mod on the copy.
+  Checked in DOSBox Staging with Keen 4 v1.4: a trailing `%version 1.4`
+  section in a patch file without sections of its own applies, and a bad
+  value in a `%version 1.0` section stops the patcher too.
+- **Patch files** of what the profile runs (the same targets as one-button
+  firing) get the lines before their `%end`, always in a
+  `%version <patchVersion>` section, so the patcher skips them on any other
+  executable.
+- **The episode's executable run directly** (the game itself, or a mod
+  without a patch file) is written unpacked with the lines' `%patch` and
+  `%patchfile` writes. Lines with other directives can't be applied that
+  way, and an executable BloogBase can't unpack (PKLITE) can't be patched:
+  then nothing is applied.
+- **A program of the mod's own** is left alone.
+
+The game's Settings tab says when its own start skips them; a mod's says
+whether it gets them, with a link to the game copy. The text is part of the
+composed folder's hash, so a change applies from the next start.

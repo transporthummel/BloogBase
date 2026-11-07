@@ -9,6 +9,7 @@
 - A "Quit BloogBase" button at the bottom of the sidebar closes the app, also in fullscreen, and asks first while games run, as the window's close button does.
 - BloogBase knows 50 releases now, eight more: Keen 2 and 3 v1.1 and v1.32, the Keen 6 Apogee demo and id Anthology release, and Keen Dreams v1.05 and v1.20; mods get placed on them by the same ranking as on the others.
 - Mods that bring their whole game with them (source mods such as Foray in the Forest) can be marked standalone in the mod list: they play without a copy of the game they're built on, show up under "No game needed" in Discover and in the library, and the setup wizard suggests them even without any Keen; installed ones leave their copy of the game at the next check of the mod list, saves included. `pnpm index:add` marks source mods standalone.
+- Custom patches: patch file lines for a game copy, entered in the new Settings tab of its page (which also holds the DOSBox settings), go into the game and every mod played on that copy at each start, after the mod's own lines; a mod's Settings tab says whether it gets them.
 
 ### Improvements
 

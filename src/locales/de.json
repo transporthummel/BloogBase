@@ -557,7 +557,7 @@
     "notFound": "Dieses Spiel ist nicht mehr in der Bibliothek.",
     "tabReadme": "Liesmich",
     "tabSaves": "Spielstände",
-    "tabConfig": "DOSBox-Einstellungen",
+    "tabConfig": "Einstellungen",
     "tabs": "Bereiche",
     "tabScreenshots": "Screenshots",
     "tabVideos": "Videos",
@@ -687,11 +687,31 @@
       "launcherReset": "Vor dem Auffrischen der Mod-Dateien"
     }
   },
+  "patches": {
+    "title": "Eigene Patches",
+    "hint": "Patchzeilen für diese Kopie des Spiels, z.B. für eine andere Tastenbelegung. BloogBase fügt sie bei jedem Start dieses Spiels und aller Mods auf dieser Kopie an, nach den Zeilen der Mod. Sie können Mods stören, die dieselben Stellen ändern. Gilt ab dem nächsten Start.",
+    "unpatchable": "Für diese Version des Spiels gibt es keine Patches, darum lassen sich hier keine eigenen eintragen.",
+    "bad": {
+      "reserved": "Zeile {{line}}: {{word}} schreibt BloogBase selbst. Bitte lass die Zeile weg.",
+      "value": "Zeile {{line}}: „{{word}}“ ist keine Zahl, die der Patcher versteht (z.B. $1F, $1F2BW oder 31). Mit diesem Fehler würde der Patcher jede Mod auf dieser Kopie abbrechen."
+    },
+    "edit": "Bei der Spielkopie bearbeiten",
+    "status": {
+      "applied": "Diese Mod bekommt die eigenen Patches von {{game}}.",
+      "ownProgram": "Diese Mod bekommt die eigenen Patches von {{game}} nicht: Sie startet ein eigenes Programm.",
+      "patcherOnly": "Diese Mod bekommt die eigenen Patches von {{game}} nicht: Sie enthalten Zeilen, die nur der Patcher versteht, und die Mod startet das Spiel ohne ihn.",
+      "packed": "Diese Mod bekommt die eigenen Patches von {{game}} nicht: Das Programm des Spiels ist so gepackt, dass BloogBase es nicht ändern kann."
+    },
+    "gameStatus": {
+      "patcherOnly": "Das Spiel startet ohne Patcher, darum versteht BloogBase hier nur %patch- und %patchfile-Zeilen. Die Patches werden übersprungen, Mods mit Patchdatei bekommen sie trotzdem.",
+      "packed": "Das Programm des Spiels ist so gepackt, dass BloogBase es nicht ändern kann. Die Patches werden übersprungen, Mods mit Patchdatei bekommen sie trotzdem."
+    }
+  },
   "config": {
     "globalTitle": "DOSBox-Einstellungen für alle Spiele",
     "globalHint": "DOSBox-Staging-Einstellungen, die für jedes Spiel gelten. Jedes Spiel kann sie auf seiner Seite überschreiben.",
     "globalLink": "Einstellungen für alle Spiele",
-    "profileTitle": "Einstellungen für dieses Spiel",
+    "profileTitle": "DOSBox-Einstellungen für dieses Spiel",
     "profileHint": "Nur für dieses Spiel; sie gehen BloogBases Vorgaben und deinen Einstellungen für alle Spiele vor.",
     "effectiveTitle": "Was DOSBox bekommt",
     "effectiveHint": "Alle Ebenen zusammen. Die letzte, die einen Wert setzt, gewinnt.",

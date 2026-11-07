@@ -92,6 +92,8 @@ vi.mock("../bindings", () => {
     "oneButtonFiring",
     "profileFiring",
     "profileMachine",
+    "profileCustomPatches",
+    "setCustomPatches",
   ];
   return {
     commands: Object.fromEntries(names.map((n) => [n, vi.fn()])),
@@ -201,6 +203,7 @@ beforeEach(() => {
   vi.mocked(commands.oneButtonFiring).mockResolvedValue(ok(false));
   vi.mocked(commands.profileFiring).mockResolvedValue(ok(null));
   vi.mocked(commands.profileMachine).mockResolvedValue(ok(null));
+  vi.mocked(commands.profileCustomPatches).mockResolvedValue(ok(null));
   vi.mocked(commands.modInstalls).mockResolvedValue(ok([]));
 });
 
@@ -813,7 +816,7 @@ test("tabs follow the arrow keys", async () => {
   expect(shots).toHaveAttribute("aria-selected", "true");
   expect(await screen.findByText("No screenshots yet")).toBeInTheDocument();
   await userEvent.keyboard("{End}");
-  expect(screen.getByRole("tab", { name: "DOSBox settings" })).toHaveFocus();
+  expect(screen.getByRole("tab", { name: "Settings" })).toHaveFocus();
   await userEvent.keyboard("{ArrowRight}");
   expect(screen.getByRole("tab", { name: "Controls" })).toHaveFocus();
 });
@@ -1033,16 +1036,67 @@ test("config tab saves the profile layer and shows warnings and the result", asy
   );
   vi.mocked(commands.saveConfig).mockResolvedValue(ok([{ line: 2, kind: "autoexec" }]));
   renderDetail();
-  await userEvent.click(await screen.findByRole("tab", { name: "DOSBox settings" }));
+  await userEvent.click(await screen.findByRole("tab", { name: "Settings" }));
   expect(await screen.findByText("[cpu] cpu_cycles")).toBeInTheDocument();
   expect(screen.getByText("BloogBase default")).toBeInTheDocument();
 
-  const editor = await screen.findByRole("textbox", { name: "Settings for this game" });
+  const editor = await screen.findByRole("textbox", { name: "DOSBox settings for this game" });
   await userEvent.clear(editor);
   await userEvent.type(editor, "[[autoexec]");
   await userEvent.click(screen.getByRole("button", { name: "Save" }));
   expect(commands.saveConfig).toHaveBeenCalledWith("keen4-1", "[autoexec]");
   expect(await screen.findByText(/Line 2: \[autoexec\] is ignored/)).toBeInTheDocument();
+});
+
+test("a game's settings tab saves its custom patches and names a reserved line", async () => {
+  vi.mocked(commands.configView).mockResolvedValue(
+    ok({ global: "", globalWarnings: [], profile: null }),
+  );
+  vi.mocked(commands.profileCustomPatches).mockResolvedValue(
+    ok({ kind: "game", text: "", status: null }),
+  );
+  vi.mocked(commands.setCustomPatches).mockResolvedValueOnce(
+    ok({ line: 2, problem: "reserved", word: "%end" }),
+  );
+  renderDetail();
+  await userEvent.click(await screen.findByRole("tab", { name: "Settings" }));
+  const field = await screen.findByRole("textbox", { name: "Custom patches" });
+  await userEvent.type(field, "%patch $10 $01\n%end");
+  await userEvent.click(screen.getByRole("button", { name: "Save" }));
+  expect(commands.setCustomPatches).toHaveBeenCalledWith("keen4-1", "%patch $10 $01\n%end");
+  expect(
+    await screen.findByText("Line 2: BloogBase writes %end itself. Please leave the line out."),
+  ).toBeInTheDocument();
+
+  vi.mocked(commands.setCustomPatches).mockResolvedValueOnce(ok(null));
+  await userEvent.type(field, "{Backspace}{Backspace}{Backspace}{Backspace}");
+  await userEvent.click(screen.getByRole("button", { name: "Save" }));
+  expect(commands.setCustomPatches).toHaveBeenLastCalledWith("keen4-1", "%patch $10 $01\n");
+  await vi.waitFor(() => expect(commands.profileCustomPatches).toHaveBeenCalledTimes(2));
+});
+
+test("a mod's settings tab says whether it gets the game's custom patches", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
+  );
+  vi.mocked(commands.configView).mockResolvedValue(
+    ok({ global: "", globalWarnings: [], profile: null }),
+  );
+  vi.mocked(commands.profileCustomPatches).mockResolvedValue(
+    ok({
+      kind: "mod",
+      status: "ownProgram",
+      gameProfileId: "keen4-1",
+      gameLabel: "Keen 4 v1.4",
+    }),
+  );
+  renderDetail();
+  await userEvent.click(await screen.findByRole("tab", { name: "Settings" }));
+  expect(
+    await screen.findByText(/doesn't get the custom patches of Keen 4 v1\.4: it starts a program/),
+  ).toBeInTheDocument();
+  expect(screen.getByText("Edit them on the game copy")).toBeInTheDocument();
+  expect(screen.queryByRole("textbox", { name: "Custom patches" })).toBeNull();
 });
 
 test("slot files follow the episode's numbering", () => {

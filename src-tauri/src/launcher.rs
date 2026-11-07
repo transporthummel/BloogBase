@@ -29,6 +29,7 @@ use tokio::sync::oneshot;
 
 use crate::catalog;
 use crate::compose;
+use crate::custom_patches;
 use crate::db::Db;
 use crate::dosconf;
 use crate::error::{Error, Result};
@@ -226,8 +227,14 @@ pub fn prepare(
     let settings = game_settings::get(db)?;
     let firing = (firing::supports(&game.id) && firing::enabled(db)?)
         .then(|| settings.keys.fire.unwrap_or(firing::SPACE));
+    let custom = match (&profile.install_id, base) {
+        (Some(install), Some(_)) => {
+            custom_patches::for_install(db, game, install, profile.version_id.as_deref())?
+        }
+        _ => None,
+    };
     let (lower, command) = match (&layers.mod_layer, base) {
-        (None, Some(base)) if firing.is_none() => (base.clone(), None),
+        (None, Some(base)) if firing.is_none() && custom.is_none() => (base.clone(), None),
         (m, base) => {
             let composed = compose::ensure(
                 paths,
@@ -237,6 +244,7 @@ pub fn prepare(
                 m.as_ref(),
                 game,
                 firing,
+                custom.as_ref(),
             )?;
             if let (true, Some(m)) = (composed.changed, m) {
                 launcher_copies::drop(
@@ -779,6 +787,35 @@ mod tests {
 
         firing::set_enabled(&db, false).unwrap();
         assert!(mount("keen1-1").contains(&relative(&paths.root, &paths.library)));
+    }
+
+    #[test]
+    fn custom_patches_patch_a_copy_of_the_game() {
+        let (_tmp, paths, db) = setup();
+        let mut exe = vec![0u8; 0x30];
+        exe[..2].copy_from_slice(b"MZ");
+        exe[8] = 2;
+        let base = paths.library.join("keen4-1/base");
+        fs::write(base.join("KEEN4E.EXE"), &exe).unwrap();
+        // The fake files aren't a version the catalog knows.
+        db.conn()
+            .execute("UPDATE installs SET version_id = 'keen4-1.4-ega'", [])
+            .unwrap();
+        let mount = || prepare(&paths, &db, "keen4-1", false).unwrap().args[14].clone();
+        assert!(mount().contains(&relative(&paths.root, &paths.library)));
+
+        custom_patches::set(&db, "keen4-1", "%patch $1 $AB").unwrap();
+        assert!(mount().contains(&relative(&paths.root, &paths.composed("keen4-1"))));
+        let patched = || fs::read(paths.composed("keen4-1").join("KEEN4E.EXE")).unwrap();
+        assert_eq!(patched()[0x21], 0xAB);
+        assert_eq!(fs::read(base.join("KEEN4E.EXE")).unwrap(), exe);
+
+        custom_patches::set(&db, "keen4-1", "%patch $1 $CD").unwrap();
+        mount();
+        assert_eq!(patched()[0x21], 0xCD, "a changed text recomposes");
+
+        custom_patches::set(&db, "keen4-1", "").unwrap();
+        assert!(mount().contains(&relative(&paths.root, &paths.library)));
     }
 
     #[test]
