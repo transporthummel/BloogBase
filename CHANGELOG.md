@@ -23,6 +23,7 @@
 - The library shows its games sooner after a start: looking for the names a mod's programs save under no longer scans them byte by byte.
 - The library remembers over restarts which names a mod saves under, so its games show right away after a start.
 - The library shows a hopping Bloog with "Loading your library…" until its games are there, instead of an empty page.
+- On Windows the title bar wears BloogBase's theme (Midnight Galaxy or Vintage Beige) instead of following Windows' light or dark mode and accent colour; Windows 10 gets light or dark only.
 - A player's own DOSBox Staging has to be 0.82.0 or newer, since older versions don't know the setting for the game speed; 0.82.x gets a notice that the CRT switch has no effect there.
 - Keen Dreams v1.0 and v1.05 get their title screen as cover instead of the placeholder; these releases draw it from a map rather than keep a picture.
 - The library keeps its search when you switch to another page and back, until the app closes or a new game or mod is added.

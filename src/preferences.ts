@@ -1,6 +1,7 @@
 // Per-device UI preferences. Kept in localStorage for now; they move to the
 // settings table once a settings screen needs to share them with the backend.
 
+import { commands } from "./bindings";
 import { librarySorts, type LibrarySort } from "./library/sort";
 
 export type Theme = "dark" | "light" | "system";
@@ -38,11 +39,16 @@ export function setTheme(theme: Theme) {
 
 const lightQuery = window.matchMedia?.("(prefers-color-scheme: light)");
 
-/** Sets `data-theme` on <html> from the stored preference and the OS setting. */
+/**
+ * Sets `data-theme` on <html> from the stored preference and the OS setting,
+ * and colours the window's title bar to match.
+ */
 export function applyTheme() {
   const theme = getTheme();
   const light = theme === "light" || (theme === "system" && !!lightQuery?.matches);
   document.documentElement.dataset.theme = light ? "light" : "dark";
+  // Only the look of the title bar; outside the app (tests) there is none.
+  commands.setTitleBarTheme(light).catch(() => {});
 }
 
 lightQuery?.addEventListener("change", applyTheme);

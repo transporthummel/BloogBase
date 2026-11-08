@@ -100,6 +100,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::set_display_options,
             commands::window_fullscreen,
             commands::set_window_fullscreen,
+            commands::set_title_bar_theme,
             commands::start_fullscreen,
             commands::set_start_fullscreen,
             commands::one_button_firing,
@@ -234,6 +235,8 @@ pub fn run() {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
+            // Dark until the frontend says which theme it shows.
+            app_window::set_title_bar(app.handle(), false);
             #[cfg(all(windows, not(debug_assertions)))]
             disable_browser_shortcuts(app);
 
@@ -341,6 +344,9 @@ pub fn run() {
         // Closing the window or quitting (Cmd+Q) while games run asks first;
         // `quit_app` then exits with a code, which passes.
         .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Focused(focused) = event {
+                app_window::title_bar_focus(window, *focused);
+            }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if ask_before_quitting(window.app_handle()) {
                     api.prevent_close();

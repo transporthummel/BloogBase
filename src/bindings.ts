@@ -77,6 +77,8 @@ export const commands = {
 	windowFullscreen: () => __TAURI_INVOKE<boolean>("window_fullscreen"),
 	/**  Puts BloogBase's window in or out of fullscreen. */
 	setWindowFullscreen: (on: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("set_window_fullscreen", { on })),
+	/**  Colours the window's title bar in the app's theme (Windows only). */
+	setTitleBarTheme: (light: boolean) => __TAURI_INVOKE<void>("set_title_bar_theme", { light }),
 	/**  Whether BloogBase starts in fullscreen, from the settings page. */
 	startFullscreen: () => typedError<boolean, CommandError>(__TAURI_INVOKE("start_fullscreen")),
 	setStartFullscreen: (on: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("set_start_fullscreen", { on })),

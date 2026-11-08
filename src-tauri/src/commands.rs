@@ -681,6 +681,13 @@ pub fn set_window_fullscreen(app: AppHandle, on: bool) -> CommandResult<()> {
     Ok(app_window::set_fullscreen(&app, on)?)
 }
 
+/// Colours the window's title bar in the app's theme (Windows only).
+#[tauri::command]
+#[specta::specta]
+pub fn set_title_bar_theme(app: AppHandle, light: bool) {
+    app_window::set_title_bar(&app, light);
+}
+
 /// Whether BloogBase starts in fullscreen, from the settings page.
 #[tauri::command]
 #[specta::specta]
