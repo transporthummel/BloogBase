@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { commands, type GameKeys, type GameSettings } from "../bindings";
@@ -45,10 +45,8 @@ async function open(keys: Partial<GameKeys> = {}) {
   await screen.findByText("Jump");
 }
 
-const row = (name: string) => screen.getByText(name).closest("li")!;
-
 async function pressFor(name: string, key: string, code: string) {
-  await userEvent.click(within(row(name)).getByRole("button", { name: "Change" }));
+  await userEvent.click(screen.getByRole("button", { name: `Change ${name}` }));
   fireEvent.keyDown(document, { key, code });
 }
 
@@ -63,7 +61,7 @@ test("Esc cancels waiting for a key and leaves the dialog open", async () => {
   await pressFor("Jump", "Escape", "Escape");
   expect(commands.setGameSettings).not.toHaveBeenCalled();
   expect(onClose).not.toHaveBeenCalled();
-  expect(within(row("Jump")).getByRole("button", { name: "Change" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Change Jump" })).toBeInTheDocument();
 });
 
 test("a reserved key says so", async () => {
@@ -98,7 +96,7 @@ test("a game's default on another action warns, but is stored", async () => {
 
 test("reset goes back to the game's key", async () => {
   await open({ jump: 0x11 });
-  await userEvent.click(within(row("Jump")).getByRole("button", { name: "Reset" }));
+  await userEvent.click(screen.getByRole("button", { name: "Reset Jump" }));
   expect(commands.setGameSettings).toHaveBeenCalledWith(settings());
 });
 
@@ -115,23 +113,19 @@ test("reset all only shows when a key is set", async () => {
 
 test("focus stays in the dialog after choosing a key", async () => {
   await open();
-  const change = within(row("Jump")).getByRole("button", { name: "Change" });
+  const change = screen.getByRole("button", { name: "Change Jump" });
   await pressFor("Jump", "w", "KeyW");
   expect(change).toHaveFocus();
 });
 
 test("focus stays in the dialog after a reset", async () => {
   await open({ jump: 0x11 });
-  await userEvent.click(within(row("Jump")).getByRole("button", { name: "Reset" }));
-  await waitFor(() =>
-    expect(within(row("Jump")).getByRole("button", { name: "Change" })).toHaveFocus(),
-  );
+  await userEvent.click(screen.getByRole("button", { name: "Reset Jump" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Change Jump" })).toHaveFocus());
 });
 
 test("focus stays in the dialog after resetting all keys", async () => {
   await open({ jump: 0x11 });
   await userEvent.click(screen.getByRole("button", { name: "Reset all" }));
-  await waitFor(() =>
-    expect(within(row("Up")).getByRole("button", { name: "Change" })).toHaveFocus(),
-  );
+  await waitFor(() => expect(screen.getByRole("button", { name: "Change Up" })).toHaveFocus());
 });

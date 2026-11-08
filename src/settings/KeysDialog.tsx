@@ -104,9 +104,10 @@ export function KeysDialog({ onClose }: { onClose: () => void }) {
         <ul className="grid gap-2">
           {ACTIONS.map((action) => {
             const key = keys[action];
+            const name = t(`settings.keyAction.${action}`);
             return (
               <li key={action} className="flex flex-wrap items-center gap-3 text-sm">
-                <span className="w-24">{t(`settings.keyAction.${action}`)}</span>
+                <span className="w-24">{name}</span>
                 <span className="mr-auto">
                   {waiting === action ? (
                     <span role="status" className="text-muted">
@@ -121,6 +122,7 @@ export function KeysDialog({ onClose }: { onClose: () => void }) {
                 {/* Stays while waiting: removing it would drop the focus out of the dialog. */}
                 <Button
                   variant="secondary"
+                  aria-label={t("settings.keysChangeFor", { action: name })}
                   onClick={() => {
                     setMessage(null);
                     setWaiting(action);
@@ -131,6 +133,7 @@ export function KeysDialog({ onClose }: { onClose: () => void }) {
                 {key !== null && waiting !== action && (
                   <Button
                     variant="ghost"
+                    aria-label={t("settings.keysResetFor", { action: name })}
                     onClick={(e) => {
                       setMessage(null);
                       update({ keys: { ...keys, [action]: null } });
