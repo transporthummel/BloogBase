@@ -107,8 +107,6 @@
     "themeSystem": "Match the system",
     "showTrivia": "Show a fun fact in the library",
     "showTriviaHint": "A different Commander Keen fun fact on each start. They may or may not be true.",
-    "startFullscreen": "Start BloogBase in fullscreen",
-    "startFullscreenHint": "Without the taskbar. While BloogBase is in fullscreen, games start in fullscreen too. F11 switches at any time.",
     "about": "About",
     "version": "Version",
     "dataDir": "Data folder",
@@ -129,13 +127,19 @@
     "dosbox": "DOSBox Staging",
     "aboutMore": "Licenses and credits",
     "display": "Display",
+    "fullscreen": "Start in fullscreen",
+    "fullscreenChoice": {
+      "none": "Nothing",
+      "games": "Games only",
+      "both": "BloogBase and games"
+    },
+    "fullscreenHint": "BloogBase in fullscreen covers the taskbar, and every game started from it goes fullscreen too. F11 switches BloogBase anytime, Alt+Enter a running game.",
+    "fullscreenOverridden": "Whether games start in fullscreen is set by your DOSBox settings for all games (below); while BloogBase is in fullscreen, they do anyway.",
     "displayOption": {
-      "fullscreen": "Start games in fullscreen",
       "crt": "CRT monitor effect",
       "vsync": "Prevent tearing while scrolling (VSync)"
     },
     "displayHint": {
-      "fullscreen": "Press Alt+Enter at any time to switch between window and fullscreen.",
       "crt": "Shows the games as on a monitor of the time, with scanlines and soft pixels. Turned off, pixels stay sharp.",
       "vsync": "Helps if the picture tears horizontally while moving. Controls then react a tiny bit later; not needed on FreeSync or G-Sync monitors.",
       "all": "Applies to all games from their next start. Single games can differ on their page under “DOSBox settings”."

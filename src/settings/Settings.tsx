@@ -104,7 +104,6 @@ export function Settings() {
               </label>
               <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.showTriviaHint")}</p>
             </div>
-            <StartFullscreenOption />
           </Section>
           <Section id="pictureSound" title={titles.pictureSound}>
             <DisplaySection>
@@ -352,10 +351,11 @@ export function DisplaySection({ children }: { children?: ReactNode }) {
   const { t } = useTranslation();
   const { view, update } = useDisplayOptions();
   const v = view.data;
-  const options = ["fullscreen", "crt", "vsync"] as const;
+  const options = ["crt", "vsync"] as const;
 
   return (
     <Group title={t("settings.display")}>
+      <FullscreenField />
       {v &&
         options.map((name) => {
           const overridden = v.overridden.includes(name);
@@ -459,38 +459,63 @@ export function LegacyPcSection() {
 
 const startFullscreenKey = ["startFullscreen"] as const;
 
-/** Whether BloogBase starts in fullscreen; the sidebar switches it anytime. */
-function StartFullscreenOption() {
+type FullscreenChoice = "none" | "games" | "both";
+
+/**
+ * One choice for two settings: whether games start in fullscreen (the display
+ * option) and whether BloogBase does, which takes its games along.
+ */
+function FullscreenField() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const setting = useQuery({
+  const { view, update } = useDisplayOptions();
+  const app = useQuery({
     queryKey: startFullscreenKey,
     queryFn: () => unwrap(commands.startFullscreen()),
   });
-  const update = useMutation({
+  const updateApp = useMutation({
     mutationFn: (on: boolean) => unwrap(commands.setStartFullscreen(on)),
     onSettled: () => queryClient.invalidateQueries({ queryKey: startFullscreenKey }),
   });
+  const v = view.data;
+  const error = app.error ?? updateApp.error;
+
+  if (!v || app.data === undefined) {
+    return error ? <Notice tone="error">{errorMessage(t, error)}</Notice> : null;
+  }
+  // DOSBox settings for all games may set it; BloogBase in fullscreen still
+  // takes the games along.
+  const overridden = v.overridden.includes("fullscreen");
+  const value: FullscreenChoice = app.data ? "both" : v.options.fullscreen ? "games" : "none";
+
+  function choose(choice: FullscreenChoice) {
+    const games = choice !== "none";
+    if (!overridden && v && games !== v.options.fullscreen) {
+      update.mutate({ ...v.options, fullscreen: games });
+    }
+    if ((choice === "both") !== app.data) updateApp.mutate(choice === "both");
+  }
 
   return (
     <div className="grid gap-1">
-      {setting.data !== undefined && (
-        <>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={setting.data}
-              disabled={update.isPending}
-              onChange={(e) => update.mutate(e.target.checked)}
-            />
-            {t("settings.startFullscreen")}
-          </label>
-          <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.startFullscreenHint")}</p>
-        </>
-      )}
-      {(setting.error ?? update.error) && (
-        <Notice tone="error">{errorMessage(t, setting.error ?? update.error)}</Notice>
-      )}
+      <Field label={t("settings.fullscreen")}>
+        <select
+          className={`${selectClass} w-52`}
+          value={value}
+          disabled={update.isPending || updateApp.isPending}
+          onChange={(e) => choose(e.target.value as FullscreenChoice)}
+        >
+          {(["none", "games", "both"] as const).map((c) => (
+            <option key={c} value={c}>
+              {t(`settings.fullscreenChoice.${c}`)}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <p className="max-w-prose text-xs text-muted">
+        {overridden ? t("settings.fullscreenOverridden") : t("settings.fullscreenHint")}
+      </p>
+      {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
     </div>
   );
 }
