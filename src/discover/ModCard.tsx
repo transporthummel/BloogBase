@@ -4,7 +4,7 @@ import { Fragment, type RefObject, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Game, type IndexMod, type Install } from "../bindings";
 import { bestFit, gameTitle, shortGameTitle } from "../catalog";
-import { formatDownloadSize, formatLooseDate } from "../format";
+import { formatDownloadSize, looseDateText } from "../format";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
 import { DetailsLink } from "./DetailsLink";
@@ -45,11 +45,13 @@ export function ModCard({
   const base = entry.extends ? index.data?.find((m) => m.entry.id === entry.extends) : undefined;
   const baseMissing = base !== undefined && base.modId === null;
   const description = entryDescription(entry, i18n.language);
-  const date = entry.updated ?? entry.released;
   const details = [
     entry.authors.length > 0 && <Authors authors={entry.authors} links={entry.authorLinks} />,
     entry.version && t("mods.version", { version: entry.version }),
-    date && formatLooseDate(i18n.language, date),
+    // The newest version's date when there is one, else the first release.
+    entry.updated
+      ? looseDateText(t, i18n.language, "mods.updatedOn", entry.updated)
+      : entry.released && looseDateText(t, i18n.language, "mods.releasedOn", entry.released),
   ].filter(Boolean);
   const links = [
     ["KeenWiki", entry.links.keenwiki],

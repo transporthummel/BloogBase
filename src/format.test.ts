@@ -4,6 +4,7 @@ import {
   formatDownloadProgress,
   formatDownloadSize,
   formatLooseDate,
+  looseDatePrecision,
   formatPlayTime,
   formatRelative,
 } from "./format";
@@ -64,4 +65,11 @@ test("downloads under a megabyte are shown in KB, with the user's decimal separa
     received: "0,5",
     total: "1,0 MB",
   });
+});
+
+test("a loose date's precision picks on, in or neither", () => {
+  expect(looseDatePrecision("2017-07-04")).toBe("day");
+  expect(looseDatePrecision("November 1991")).toBe("month");
+  expect(looseDatePrecision("2017")).toBe("year");
+  expect(looseDatePrecision("sometime")).toBeUndefined();
 });

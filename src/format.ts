@@ -66,12 +66,8 @@ const monthNames = [
   "dec",
 ];
 
-/**
- * A date as KeenWiki and the index write it ("2017-07-04", "2017-07", "2017",
- * "November 22, 1991[1]", "22 November 1991", "November 1991") in the
- * user's language, as precise as the source. Anything else is shown as is.
- */
-export function formatLooseDate(language: string, raw: string): string {
+/** Year, month and day of a loose date (see below), as far as it has them. */
+function parseLooseDate(raw: string): [number, number?, number?] | undefined {
   const text = raw.replace(/\[\d+\]/g, "").trim();
   const month = (name: string) => monthNames.indexOf(name.slice(0, 3).toLowerCase()) + 1;
   let parts: [number, number?, number?] | undefined;
@@ -83,17 +79,48 @@ export function formatLooseDate(language: string, raw: string): string {
   } else if ((m = /^(\d{1,2})(?:st|nd|rd|th)?\.? ([a-z]+)\.?,? (\d{4})$/i.exec(text))) {
     parts = [+m[3], month(m[2]), +m[1]];
   }
+  if (!parts) return undefined;
+  const [year, mon, day] = parts;
+  if (mon !== undefined && (mon < 1 || mon > 12)) return undefined;
+  const date = new Date(Date.UTC(year, (mon ?? 1) - 1, day ?? 1));
+  if (day !== undefined && date.getUTCDate() !== day) return undefined;
+  return parts;
+}
+
+/**
+ * How precise a loose date is, so a text can say "on 4 July 2017" but
+ * "in July 2017" or just "2017"; undefined when it isn't a date.
+ */
+export function looseDatePrecision(raw: string): "day" | "month" | "year" | undefined {
+  const parts = parseLooseDate(raw);
+  if (!parts) return undefined;
+  return parts[2] !== undefined ? "day" : parts[1] !== undefined ? "month" : "year";
+}
+
+/**
+ * A date as KeenWiki and the index write it ("2017-07-04", "2017-07", "2017",
+ * "November 22, 1991[1]", "22 November 1991", "November 1991") in the
+ * user's language, as precise as the source. Anything else is shown as is.
+ */
+export function formatLooseDate(language: string, raw: string): string {
+  const parts = parseLooseDate(raw);
   if (!parts) return raw;
   const [year, mon, day] = parts;
-  if (mon !== undefined && (mon < 1 || mon > 12)) return raw;
   const date = new Date(Date.UTC(year, (mon ?? 1) - 1, day ?? 1));
-  if (day !== undefined && date.getUTCDate() !== day) return raw;
   return dateTimeFormat(language, {
     timeZone: "UTC",
     year: "numeric",
     ...(mon !== undefined && { month: day !== undefined ? "short" : "long" }),
     ...(day !== undefined && { day: "numeric" }),
   }).format(date);
+}
+
+/**
+ * A loose date in a sentence: `key` takes the precision as context, so it can
+ * say "Released on 4 Jul 2017", "Released in July 2017" or "Released 2017".
+ */
+export function looseDateText(t: TFunction, language: string, key: string, raw: string): string {
+  return t(key, { date: formatLooseDate(language, raw), context: looseDatePrecision(raw) });
 }
 
 /**

@@ -5,7 +5,7 @@ import { Fragment, useRef, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
 import { useIndexMods } from "../discover/queries";
-import { formatDate, formatLooseDate, formatPlayTime } from "../format";
+import { formatDate, formatPlayTime, looseDateText } from "../format";
 import { Cover } from "../library/Cover";
 import { useCover } from "../library/covers";
 import { useMods } from "../library/queries";
@@ -158,7 +158,7 @@ function Credits({
       )}
       {mod?.released && (
         <p className="text-sm text-muted">
-          {t("profile.released", { date: formatLooseDate(i18n.language, mod.released) })}
+          {looseDateText(t, i18n.language, "mods.releasedOn", mod.released)}
         </p>
       )}
       {extensions.length > 0 && (
