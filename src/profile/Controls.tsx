@@ -41,6 +41,8 @@ function ChordKeys({ keys, changed }: { keys: Chord; changed?: boolean }) {
   );
 }
 
+type HeadingTag = "h2" | "h3";
+
 function Bindings({ items, prefix }: { items: Binding[]; prefix: "action" | "cheat" }) {
   const { t } = useTranslation();
   return (
@@ -63,10 +65,20 @@ function Bindings({ items, prefix }: { items: Binding[]; prefix: "action" | "che
   );
 }
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
+function Group({
+  title,
+  heading: Heading,
+  children,
+}: {
+  title: string;
+  heading: HeadingTag;
+  children: ReactNode;
+}) {
   return (
     <section className="grid content-start gap-3 rounded-xl border border-border bg-surface p-4">
-      <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">{title}</h3>
+      <Heading className="text-xs font-semibold tracking-wide text-muted uppercase">
+        {title}
+      </Heading>
       {children}
     </section>
   );
@@ -106,7 +118,16 @@ const engineDot: Record<Engine, string> = {
  * The keys of a game or mod and, folded away, its cheats. With one-button
  * firing on (or a mod that has it), Keen 1-3 shoot with Space here too.
  */
-export function ControlsSheet({ profile, game }: { profile: Profile; game: Game }) {
+export function ControlsSheet({
+  profile,
+  game,
+  heading = "h2",
+}: {
+  profile: Profile;
+  game: Game;
+  /** Its groups' headings: under the page title, or under a dialog's (h2). */
+  heading?: HeadingTag;
+}) {
   const { t } = useTranslation();
   const enabled = useQuery({
     queryKey: oneButtonFiringKey,
@@ -145,13 +166,13 @@ export function ControlsSheet({ profile, game }: { profile: Profile; game: Game 
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Group title={t("controls.moving")}>
+        <Group title={t("controls.moving")} heading={heading}>
           <div className="flex flex-wrap items-center gap-4">
             <ArrowCluster moving={sheet.moving} upDown={sheet.engine !== "vorticons"} />
             <p className="max-w-56 text-sm">{t(`controls.move.${sheet.move}`)}</p>
           </div>
         </Group>
-        <Group title={t("controls.actions")}>
+        <Group title={t("controls.actions")} heading={heading}>
           <Bindings items={sheet.actions} prefix="action" />
           {offerSpace && (
             <p className="text-xs text-muted">
@@ -162,10 +183,10 @@ export function ControlsSheet({ profile, game }: { profile: Profile; game: Game 
             </p>
           )}
         </Group>
-        <Group title={t("controls.inGame")}>
+        <Group title={t("controls.inGame")} heading={heading}>
           <Bindings items={sheet.game} prefix="action" />
         </Group>
-        <Group title={t("controls.window")}>
+        <Group title={t("controls.window")} heading={heading}>
           <Bindings items={sheet.window} prefix="action" />
         </Group>
       </div>
@@ -232,7 +253,7 @@ export function ControlsDialog({
       wide
     >
       <p className="text-sm text-muted">{t("controls.dialogIntro")}</p>
-      <ControlsSheet profile={profile} game={game} />
+      <ControlsSheet profile={profile} game={game} heading="h3" />
       <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-3">
         <label className="mr-auto flex items-center gap-2 text-sm">
           <input
