@@ -48,7 +48,7 @@ export function ReportDialog({
   return (
     <Dialog wide title={title} onClose={onClose}>
       <p className="max-w-prose text-sm">{hint}</p>
-      <ol className="grid max-w-prose list-decimal gap-1 pl-5 text-sm">
+      <ol className="grid max-w-prose list-decimal gap-1 pl-5 text-sm text-pretty">
         <li>{t("report.open")}</li>
         <li>{paste}</li>
       </ol>
