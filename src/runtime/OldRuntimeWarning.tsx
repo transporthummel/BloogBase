@@ -5,7 +5,12 @@ import { useTranslation } from "react-i18next";
 export function OldRuntimeWarning({ testedVersion }: { testedVersion: string }) {
   const { t } = useTranslation();
   return (
-    <p role="status" className="flex items-start gap-2 text-sm text-muted">
+    // Boxed in the warning colour, like an error but softer: it matters, but
+    // games still start.
+    <p
+      role="status"
+      className="flex items-start gap-2 rounded-lg border border-warning/50 bg-warning/10 px-3 py-2 text-sm"
+    >
       <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
       {t("runtime.crtSwitchIgnored", { version: testedVersion })}
     </p>
