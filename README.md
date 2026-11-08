@@ -78,7 +78,7 @@ After that, BloogBase keeps itself up to date.
 
 <img src="docs/screenshots/discover.png" alt="Discover: the mod list with search, filters and recommended mods" width="900">
 
-**Discover** lists close to a hundred community mods for every Keen game,
+**Discover** lists more than a hundred community mods for every Keen game,
 with descriptions, authors and links to their KeenWiki pages. Search and
 filter them, or start with the recommended ones. One click downloads a mod
 from its original source, checks it, puts it on the right copy of the game
@@ -101,8 +101,9 @@ mods and sets them up.
 
 A short setup downloads DOSBox Staging, looks for Keen on Steam and GOG, and
 offers the free shareware episodes: Keen 1, Keen 4 and Keen Dreams, complete
-games that hundreds of mods are made for. A few minutes after installing,
-you're playing.
+games that hundreds of mods are made for. It suggests a few mods that run
+on what you have, some of which need no game at all. A few minutes after
+installing, you're playing.
 
 ### Your saves are safe
 
@@ -142,6 +143,10 @@ Midnight Galaxy; above it is in Vintage Beige. In English and German.
 - A controls cheat sheet for each series on every game's page, shown before
   its first start, with the known cheat codes folded away.
 - BloogBase itself in fullscreen (F11), with games following it.
+- Sound, music, the score box and keys set once for all games; while you're
+  in another window, a game keeps running, goes quiet or pauses.
+- A Legacy PC mode makes the hard disk slow and audible, as on a PC of the
+  time.
 - Fullscreen, a CRT monitor effect and tear-free scrolling as simple
   switches; every DOSBox setting as text for all games or per game.
 - Keys follow your keyboard layout (Windows), so a German or French keyboard
@@ -157,12 +162,16 @@ Midnight Galaxy; above it is in Vintage Beige. In English and German.
   and you can switch.
 - A mod can be installed before its game; it waits and tells you where to
   get it.
+- Your own patch lines for a copy of a game go into it and every mod played
+  on it.
 
 **Mods that just work**
 
 - Finds how a mod starts, even with renamed patchers or unusual batch files.
 - Brings what mods leave out: CKPatch, KDrPatch and a DPMI host for DJGPP
   programs, unmodified and with their licences.
+- Some mods bring their whole game along, like Foray in the Forest: they
+  play without any copy of Keen.
 - Level packs made for another mod are played over it, each with its own
   saves.
 - Runs DOSBox as the machine a mod needs: a composite CGA for the Composite
@@ -174,7 +183,7 @@ Midnight Galaxy; above it is in Vintage Beige. In English and German.
 **Everything else**
 
 - "What's new" on start: changes in BloogBase, new mods, updates for yours.
-- Library sorted or grouped your way, with play time, saves and disk space at
+- Library searchable, sorted or grouped your way, with play time, saves and disk space at
   a glance.
 - Keyboard friendly, with screen reader labels, and respects reduced motion.
 - No telemetry. You copy diagnostics for bug reports yourself, with personal
