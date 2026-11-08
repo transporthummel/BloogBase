@@ -96,7 +96,7 @@ export function Shell() {
           className="mb-4 flex h-12 items-center justify-center gap-3 rounded-lg xl:justify-start xl:px-1"
         >
           <img src={icon} alt="" className="size-10 shrink-0" />
-          <Wordmark className="hidden h-5 w-auto xl:block" />
+          <Wordmark className="hidden h-5 w-auto translate-y-1 xl:block" />
           <span className="sr-only">BloogBase</span>
         </Link>
         <NavItem to="/" icon={LibraryBig} label={t("nav.library")} />
