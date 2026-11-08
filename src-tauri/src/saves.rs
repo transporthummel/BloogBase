@@ -34,20 +34,6 @@ pub struct SaveFile {
     pub versions: u32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
-#[serde(rename_all = "camelCase")]
-pub enum Difficulty {
-    Easy,
-    Normal,
-    Hard,
-    /// Foray in the Forest's fourth level.
-    Expert,
-    /// Keen Dreams Gold Edition's fourth level.
-    Keen,
-    /// Keen Dreams Gold Edition's fifth, played as Mortimer.
-    Grand,
-}
-
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SaveDetails {
@@ -56,7 +42,7 @@ pub struct SaveDetails {
     pub lives: Option<i16>,
     pub ammo: Option<i16>,
     pub levels_done: Option<u16>,
-    pub difficulty: Option<Difficulty>,
+    pub difficulty: Option<keen_saves::Difficulty>,
     pub on_world_map: Option<bool>,
     pub ship_parts: Option<u8>,
 }
@@ -69,14 +55,7 @@ impl From<keen_saves::SaveInfo> for SaveDetails {
             lives: i.lives,
             ammo: i.ammo,
             levels_done: i.levels_done,
-            difficulty: i.difficulty.map(|d| match d {
-                keen_saves::Difficulty::Easy => Difficulty::Easy,
-                keen_saves::Difficulty::Normal => Difficulty::Normal,
-                keen_saves::Difficulty::Hard => Difficulty::Hard,
-                keen_saves::Difficulty::Expert => Difficulty::Expert,
-                keen_saves::Difficulty::Keen => Difficulty::Keen,
-                keen_saves::Difficulty::Grand => Difficulty::Grand,
-            }),
+            difficulty: i.difficulty,
             on_world_map: i.on_world_map,
             ship_parts: i.ship_parts,
         }
@@ -807,7 +786,10 @@ pub(crate) mod tests {
         let real = include_bytes!("../keen-saves/tests/fixtures/SAVEGAM0.CKS");
         let d = describe(game, "SAVEGAM0.CKS", real, None).details.unwrap();
         assert_eq!(d.name.as_deref(), Some("test"));
-        assert_eq!((d.lives, d.difficulty), (Some(3), Some(Difficulty::Expert)));
+        assert_eq!(
+            (d.lives, d.difficulty),
+            (Some(3), Some(keen_saves::Difficulty::Expert))
+        );
     }
 
     #[test]

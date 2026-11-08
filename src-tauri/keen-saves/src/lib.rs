@@ -11,23 +11,17 @@
 //!   aligned. Offsets checked against real saves of Keen 4 v1.4, Keen 6 v1.0
 //!   and Keen Dreams 1.13; Keen 5 shares Keen 4's code with three
 //!   episode-specific words.
-//! - Foray in the Forest 2.0, a Keen 4 source mod: the same header with its
-//!   file extension as signature (`CKS`, `CKC` for the classic build) and a
-//!   `gametype` of its own, from its source (`CK_DEF.H`). Checked against a
-//!   real save of v2.0a.
-//! - Atroxian Realm 1.4, a source mod on the Keen Dreams source played as
-//!   Keen 4: the header with `CKD`, its file extension, and Keen 5's game
-//!   state with 26 levels, from its source (`KD_DEF.H`). Checked against
-//!   real saves of v1.4.
-//! - Keen Dreams Gold Edition, a source mod on the Keen Dreams source played
-//!   as Keen 4: the header with `KDG` and a byte-packed game state of its
-//!   own, from its source (`KDG_DEF.H`). Checked against real saves of the
-//!   2026-05-31 release.
-//! - Return to the Shadowlands 1.8, a Keen 4 source mod: the header with
-//!   `CK4`, but the game state packed without the padding byte and with
-//!   three more item words. Checked against real saves of v1.8.
+//! - Source mods (Foray in the Forest, Atroxian Realm, Return to the
+//!   Shadowlands, Keen Dreams Gold Edition): the same header, mostly with a
+//!   signature of their own, and a `gametype` of their own from their
+//!   source. Each is a [`Layout`] in [`SOURCE_MODS`], read by one reader;
+//!   unlike the games' own saves, values the game can't have written are
+//!   refused.
 
 use std::fmt;
+
+use serde::Serialize;
+use specta::Type;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Episode {
@@ -56,7 +50,8 @@ impl Episode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub enum Difficulty {
     Easy,
     Normal,
@@ -121,19 +116,32 @@ impl std::error::Error for ParseError {}
 pub fn parse(episode: Episode, data: &[u8]) -> Result<SaveInfo, ParseError> {
     match episode {
         Episode::Keen1 | Episode::Keen2 | Episode::Keen3 => vorticons(episode, data),
-        Episode::Keen4 => match data.get(..4) {
-            Some(b"CKS\0" | b"CKC\0") => foray(data),
-            Some(b"CKD\0") => atroxian(data),
-            Some(b"KDG\0") => gold_edition(data),
-            Some(b"CK4\0") if !galaxy_levels_plausible(data) => {
-                shadowlands(data).or_else(|_| galaxy(b"CK4\0", 2, data))
-            }
-            _ => galaxy(b"CK4\0", 2, data),
-        },
-        Episode::Keen5 => galaxy(b"CK5\0", 3, data),
-        Episode::Keen6 => galaxy(b"CK6\0", 4, data),
+        Episode::Keen4 => galaxy_or_source_mod(episode, b"CK4\0", 2, data),
+        Episode::Keen5 => galaxy_or_source_mod(episode, b"CK5\0", 3, data),
+        Episode::Keen6 => galaxy_or_source_mod(episode, b"CK6\0", 4, data),
         Episode::Dreams => dreams(data),
     }
+}
+
+/// A save of the episode itself, or of a source mod played as it. A source
+/// mod may save under the episode's own signature (Return to the
+/// Shadowlands); then the episode's layout comes first where its levels
+/// read right, and is the last resort where no source mod's checks pass.
+fn galaxy_or_source_mod(
+    episode: Episode,
+    signature: &[u8; 4],
+    extra_words: usize,
+    data: &[u8],
+) -> Result<SaveInfo, ParseError> {
+    let own = data.starts_with(signature);
+    if !(own && galaxy_levels_plausible(data)) {
+        match source_mod(episode, data) {
+            Some(Ok(info)) => return Ok(info),
+            Some(Err(e)) if !own => return Err(e),
+            _ => {}
+        }
+    }
+    galaxy(signature, extra_words, data)
 }
 
 struct Reader<'a>(&'a [u8]);
@@ -302,189 +310,254 @@ fn dreams(data: &[u8]) -> Result<SaveInfo, ParseError> {
     })
 }
 
-const FORAY_LEVELS: usize = 27;
-
-/// Foray in the Forest 2.0: after `score` come `nextextra` and `oldscore`,
-/// then `ammo`, `drops`, three words of its own, `mapon`, `lives` and
-/// `difficulty` (4 is Expert). Map 0 is the world map and map 1 the opening
-/// rocket, which the game marks done before the first level, so neither
-/// counts. Its saves have no version of their own; values the game can't
-/// have written are refused rather than shown.
-fn foray(data: &[u8]) -> Result<SaveInfo, ParseError> {
-    let r = Reader(data);
-    let name = r.name(8, NAME_LEN)?;
-    let state = (8 + NAME_LEN).next_multiple_of(2);
-    let levels = state + 4;
-    let score = levels + 2 * FORAY_LEVELS;
-    let ammo = score + 12;
-    let mapon = ammo + 10;
-    let (map, lives) = (r.u16(mapon)?, r.i16(mapon + 2)?);
-    let difficulty = match r.u16(mapon + 4)? {
-        4 => Difficulty::Expert,
-        word => self::difficulty(word).ok_or(ParseError::Implausible("difficulty"))?,
-    };
-    if map as usize >= FORAY_LEVELS {
-        return Err(ParseError::Implausible("map"));
-    }
-    if !(0..=99).contains(&lives) {
-        return Err(ParseError::Implausible("lives"));
-    }
-    // Done and perfect are flags 1 and 2.
-    for i in 0..FORAY_LEVELS {
-        if r.u16(levels + 2 * i)? > 3 {
-            return Err(ParseError::Implausible("levels"));
-        }
-    }
-    Ok(SaveInfo {
-        name,
-        score: Some(r.i32(score)?),
-        ammo: Some(r.i16(ammo)?),
-        levels_done: Some(r.count_words(levels + 4, FORAY_LEVELS - 2)?),
-        on_world_map: Some(map == 0),
-        lives: Some(lives),
-        difficulty: Some(difficulty),
-        ship_parts: None,
-    })
+/// How a field of a source mod's game state is stored.
+#[derive(Clone, Copy)]
+enum Width {
+    Byte,
+    Word,
 }
 
-const GOLD_LEVELS: usize = 47;
+impl Width {
+    fn bytes(self) -> usize {
+        match self {
+            Width::Byte => 1,
+            Width::Word => 2,
+        }
+    }
+}
 
-/// Keen Dreams Gold Edition, built on the Keen Dreams source: the header
-/// with `KDG`, then `gametype` from its `KDG_DEF.H`: world position, score,
-/// `nextextra`, a done byte for each of 47 maps, then bytes for damage time,
-/// flower powers, ammo, bombs, bombs this level, keys, keycard, keycard
-/// text, `mapon`, `lives` and `difficulty` (Easy 1 to Hard 3, then its own
-/// Keen 4 and Grand 5). Maps 21 and 22 are where a new game starts and don't
-/// count, as in its own count. The score box shows the ammo on maps 23-46
-/// and the flower powers elsewhere. Values the game can't have written are
-/// refused. Checked against real saves of the 2026-05-31 release.
-fn gold_edition(data: &[u8]) -> Result<SaveInfo, ParseError> {
-    let r = Reader(data);
-    let name = r.name(8, NAME_LEN)?;
-    let state = (8 + NAME_LEN).next_multiple_of(2);
-    let score = state + 4;
-    let levels = score + 8;
-    let items = r.bytes(levels + GOLD_LEVELS, 11)?;
-    let (flower_powers, ammo, map) = (items[1], items[2], items[8]);
-    let lives = items[9] as i8;
-    let difficulty = match items[10] {
-        word @ 1..=3 => difficulty(word.into()),
-        4 => Some(Difficulty::Keen),
-        5 => Some(Difficulty::Grand),
-        _ => return Err(ParseError::Implausible("difficulty")),
-    };
-    if map as usize > GOLD_LEVELS {
-        return Err(ParseError::Implausible("map"));
+/// Where the score box takes the ammo from.
+enum Ammo {
+    At(usize),
+    /// `at` on `maps`, `otherwise` elsewhere.
+    ByMap {
+        maps: std::ops::RangeInclusive<u16>,
+        at: usize,
+        otherwise: usize,
+    },
+}
+
+/// Where a source mod keeps what a save says, from the `gametype` of its
+/// source. Offsets count from the start of the game state, after the header
+/// of id's `SaveGame` (signature, two words, the 33-byte name). Its saves
+/// have no version of their own, so values the game can't have written are
+/// refused rather than shown.
+struct Layout {
+    episode: Episode,
+    signatures: &'static [&'static [u8; 4]],
+    /// The game state starts on a word after the name, as in id's games;
+    /// some mods pack it right after the name.
+    padded: bool,
+    levels_at: usize,
+    levels: usize,
+    level_width: Width,
+    /// The highest flag a level can have: done is 1, Foray's perfect 2.
+    level_max: u16,
+    /// Maps that don't count as levels done: where a new game starts, the
+    /// high scores.
+    uncounted: &'static [usize],
+    /// A 32-bit score.
+    score_at: usize,
+    ammo: Ammo,
+    /// The map, lives and difficulty, one after another.
+    map_at: usize,
+    fields: Width,
+    /// How many map numbers the game can save on.
+    maps: u16,
+    /// Map 0 is the world map.
+    world_map: bool,
+    /// Difficulty values beyond Easy 1 to Hard 3.
+    difficulties: &'static [(u16, Difficulty)],
+}
+
+/// The source mods whose saves are known.
+const SOURCE_MODS: &[Layout] = &[
+    // Foray in the Forest 2.0 (`CK_DEF.H`): its file extension as signature,
+    // `CKC` for the classic build. After the score come `nextextra` and
+    // `oldscore`, then `ammo`, `drops`, three words of its own. Map 0 is the
+    // world map and map 1 the opening rocket, which the game marks done
+    // before the first level. Checked against a real save of v2.0a.
+    Layout {
+        episode: Episode::Keen4,
+        signatures: &[b"CKS\0", b"CKC\0"],
+        padded: true,
+        levels_at: 4,
+        levels: 27,
+        level_width: Width::Word,
+        level_max: 3,
+        uncounted: &[0, 1],
+        score_at: 4 + 2 * 27,
+        ammo: Ammo::At(4 + 2 * 27 + 12),
+        map_at: 4 + 2 * 27 + 22,
+        fields: Width::Word,
+        maps: 27,
+        world_map: true,
+        difficulties: &[(4, Difficulty::Expert)],
+    },
+    // Atroxian Realm 1.4, on the Keen Dreams source with Keen 5's game state
+    // (`CK_GameState` in its `KD_DEF.H`): `keenScore`, `nextKeenAt`,
+    // `numShots`, vitalin, security card, vines, fuses, four key gems. A new
+    // game starts on map 25, the crash site, marked done after it. Older
+    // versions saved in another layout. Checked against real saves of v1.4.
+    Layout {
+        episode: Episode::Keen4,
+        signatures: &[b"CKD\0"],
+        padded: true,
+        levels_at: 4,
+        levels: 26,
+        level_width: Width::Word,
+        level_max: 1,
+        uncounted: &[25],
+        score_at: 4 + 2 * 26,
+        ammo: Ammo::At(4 + 2 * 26 + 8),
+        map_at: 4 + 2 * 26 + 26,
+        fields: Width::Word,
+        maps: 26,
+        world_map: true,
+        difficulties: &[],
+    },
+    // Return to the Shadowlands 1.8 saves as `CK4`, but packed without the
+    // padding byte, and with ten words after `nextKeenAt` (the third is the
+    // ammo, the rest its items). Map 19 holds the high scores and map 20, the
+    // rocket the game starts on, is marked done from the start, so only maps
+    // 0-18 count. Checked against real saves of v1.8.
+    Layout {
+        episode: Episode::Keen4,
+        signatures: &[b"CK4\0"],
+        padded: false,
+        levels_at: 4,
+        levels: GALAXY_LEVELS,
+        level_width: Width::Word,
+        level_max: 1,
+        uncounted: &[19, 20, 21, 22, 23, 24],
+        score_at: 4 + 2 * 25,
+        ammo: Ammo::At(4 + 2 * 25 + 12),
+        map_at: 4 + 2 * 25 + 28,
+        fields: Width::Word,
+        maps: 21,
+        world_map: true,
+        difficulties: &[],
+    },
+    // Keen Dreams Gold Edition, on the Keen Dreams source (`KDG_DEF.H`),
+    // packed in bytes: world position, score, `nextextra`, a done byte for
+    // each of 47 maps, then damage time, flower powers, ammo, bombs, bombs
+    // this level, keys, keycard, keycard text, `mapon`, `lives` and
+    // `difficulty` (its own Keen 4 and Grand 5). Maps 21 and 22 are where a
+    // new game starts, as in its own count. The score box shows the ammo on
+    // maps 23-46 and the flower powers elsewhere. Checked against real saves
+    // of the 2026-05-31 release.
+    Layout {
+        episode: Episode::Keen4,
+        signatures: &[b"KDG\0"],
+        padded: true,
+        levels_at: 12,
+        levels: 47,
+        level_width: Width::Byte,
+        level_max: 1,
+        uncounted: &[21, 22],
+        score_at: 4,
+        ammo: Ammo::ByMap {
+            maps: 23..=46,
+            at: 12 + 47 + 2,
+            otherwise: 12 + 47 + 1,
+        },
+        map_at: 12 + 47 + 8,
+        fields: Width::Byte,
+        maps: 48,
+        world_map: false,
+        difficulties: &[(4, Difficulty::Keen), (5, Difficulty::Grand)],
+    },
+];
+
+impl Reader<'_> {
+    fn field(&self, at: usize, width: Width) -> Result<u16, ParseError> {
+        match width {
+            Width::Byte => Ok(self.bytes(at, 1)?[0].into()),
+            Width::Word => self.u16(at),
+        }
     }
-    if !(0..=99).contains(&lives) {
-        return Err(ParseError::Implausible("lives"));
+
+    fn signed(&self, at: usize, width: Width) -> Result<i16, ParseError> {
+        match width {
+            Width::Byte => Ok((self.bytes(at, 1)?[0] as i8).into()),
+            Width::Word => self.i16(at),
+        }
     }
-    let done = r.bytes(levels, GOLD_LEVELS)?;
-    if done.iter().any(|&d| d > 1) {
-        return Err(ParseError::Implausible("levels"));
-    }
-    let score = u32::from_le_bytes(r.bytes(score, 4)?.try_into().unwrap());
-    Ok(SaveInfo {
-        name,
-        score: Some(score.min(i32::MAX as u32) as i32),
-        lives: Some(lives.into()),
-        ammo: Some(
-            if (23..=46).contains(&map) {
-                ammo
-            } else {
-                flower_powers
+}
+
+impl Layout {
+    fn read(&self, data: &[u8]) -> Result<SaveInfo, ParseError> {
+        let r = Reader(data);
+        let name = r.name(8, NAME_LEN)?;
+        let state = if self.padded {
+            (8 + NAME_LEN).next_multiple_of(2)
+        } else {
+            8 + NAME_LEN
+        };
+        let step = self.fields.bytes();
+        let map_at = state + self.map_at;
+        let map = r.field(map_at, self.fields)?;
+        let lives = r.signed(map_at + step, self.fields)?;
+        let difficulty = match r.field(map_at + 2 * step, self.fields)? {
+            word @ 1..=3 => difficulty(word),
+            word => self
+                .difficulties
+                .iter()
+                .find(|(w, _)| *w == word)
+                .map(|(_, d)| *d),
+        }
+        .ok_or(ParseError::Implausible("difficulty"))?;
+        if map >= self.maps {
+            return Err(ParseError::Implausible("map"));
+        }
+        if !(0..=99).contains(&lives) {
+            return Err(ParseError::Implausible("lives"));
+        }
+        let mut levels_done = 0;
+        for i in 0..self.levels {
+            let at = state + self.levels_at + self.level_width.bytes() * i;
+            let level = r.field(at, self.level_width)?;
+            if level > self.level_max {
+                return Err(ParseError::Implausible("levels"));
             }
-            .into(),
-        ),
-        levels_done: Some(
-            done.iter()
-                .enumerate()
-                .filter(|&(i, &d)| d == 1 && i != 21 && i != 22)
-                .count() as u16,
-        ),
-        difficulty,
-        on_world_map: None,
-        ship_parts: None,
-    })
+            if level != 0 && !self.uncounted.contains(&i) {
+                levels_done += 1;
+            }
+        }
+        let ammo_at = match &self.ammo {
+            Ammo::At(at) => *at,
+            Ammo::ByMap { maps, at, .. } if maps.contains(&map) => *at,
+            Ammo::ByMap { otherwise, .. } => *otherwise,
+        };
+        Ok(SaveInfo {
+            name,
+            score: Some(r.i32(state + self.score_at)?),
+            ammo: Some(r.signed(state + ammo_at, self.fields)?),
+            levels_done: Some(levels_done),
+            difficulty: Some(difficulty),
+            on_world_map: self.world_map.then_some(map == 0),
+            lives: Some(lives),
+            ship_parts: None,
+        })
+    }
 }
 
-const ATROXIAN_LEVELS: usize = 26;
-
-/// Atroxian Realm 1.4, built on the Keen Dreams source with Keen 5's game
-/// state (`CK_GameState` in its `KD_DEF.H`): a level word for each of its 26
-/// maps, then `keenScore`, `nextKeenAt`, `numShots`, vitalin, security card,
-/// vines, fuses, four key gems, `currentLevel`, `numLives` and `difficulty`.
-/// A new game starts on map 25, the crash site, which is marked done after
-/// it, so it doesn't count. Older versions saved in another layout; values
-/// the game can't have written are refused.
-fn atroxian(data: &[u8]) -> Result<SaveInfo, ParseError> {
-    let r = Reader(data);
-    let name = r.name(8, NAME_LEN)?;
-    let state = (8 + NAME_LEN).next_multiple_of(2);
-    let levels = state + 4;
-    let score = levels + 2 * ATROXIAN_LEVELS;
-    let ammo = score + 8;
-    let mapon = ammo + 18;
-    let (map, lives) = (r.u16(mapon)?, r.i16(mapon + 2)?);
-    let difficulty = difficulty(r.u16(mapon + 4)?).ok_or(ParseError::Implausible("difficulty"))?;
-    if map as usize >= ATROXIAN_LEVELS {
-        return Err(ParseError::Implausible("map"));
-    }
-    if !(0..=99).contains(&lives) {
-        return Err(ParseError::Implausible("lives"));
-    }
-    for i in 0..ATROXIAN_LEVELS {
-        if r.u16(levels + 2 * i)? > 1 {
-            return Err(ParseError::Implausible("levels"));
+/// The save as the first source mod layout of its signature reads it whose
+/// checks pass, else the first one's error; `None` if no source mod played
+/// as `episode` saves under this signature.
+fn source_mod(episode: Episode, data: &[u8]) -> Option<Result<SaveInfo, ParseError>> {
+    let signature = data.get(..4)?;
+    let mut first = None;
+    let layouts = SOURCE_MODS
+        .iter()
+        .filter(|l| l.episode == episode && l.signatures.iter().any(|s| *s == signature));
+    for layout in layouts {
+        match layout.read(data) {
+            Ok(info) => return Some(Ok(info)),
+            Err(e) => {
+                first.get_or_insert(e);
+            }
         }
     }
-    Ok(SaveInfo {
-        name,
-        score: Some(r.i32(score)?),
-        ammo: Some(r.i16(ammo)?),
-        levels_done: Some(r.count_words(levels, ATROXIAN_LEVELS - 1)?),
-        on_world_map: Some(map == 0),
-        lives: Some(lives),
-        difficulty: Some(difficulty),
-        ship_parts: None,
-    })
-}
-
-/// Return to the Shadowlands 1.8 saves as `CK4`, but its game state follows
-/// the name without a padding byte: world position, 25 level words, score,
-/// `nextKeenAt`, ten words (the third is the ammo, the rest its items), map,
-/// lives and difficulty. Map 20, the rocket the game starts on, is marked
-/// done from the start and map 19 holds the high scores, so only maps 0-18
-/// count. Values the game can't have written are refused.
-fn shadowlands(data: &[u8]) -> Result<SaveInfo, ParseError> {
-    let r = Reader(data);
-    let name = r.name(8, NAME_LEN)?;
-    let state = 8 + NAME_LEN;
-    let levels = state + 4;
-    let score = levels + 2 * GALAXY_LEVELS;
-    let ammo = score + 8 + 4;
-    let mapon = score + 8 + 2 * 10;
-    let (map, lives) = (r.u16(mapon)?, r.i16(mapon + 2)?);
-    let difficulty = difficulty(r.u16(mapon + 4)?).ok_or(ParseError::Implausible("difficulty"))?;
-    if map > 20 {
-        return Err(ParseError::Implausible("map"));
-    }
-    if !(0..=99).contains(&lives) {
-        return Err(ParseError::Implausible("lives"));
-    }
-    for i in 0..GALAXY_LEVELS {
-        if r.u16(levels + 2 * i)? > 1 {
-            return Err(ParseError::Implausible("levels"));
-        }
-    }
-    Ok(SaveInfo {
-        name,
-        score: Some(r.i32(score)?),
-        ammo: Some(r.i16(ammo)?),
-        levels_done: Some(r.count_words(levels, 19)?),
-        on_world_map: Some(map == 0),
-        lives: Some(lives),
-        difficulty: Some(difficulty),
-        ship_parts: None,
-    })
+    first.map(Err)
 }

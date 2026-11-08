@@ -2411,6 +2411,10 @@ dependencies = [
 [[package]]
 name = "keen-saves"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "specta",
+]
 
 [[package]]
 name = "keyboard-types"

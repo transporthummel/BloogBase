@@ -87,32 +87,49 @@ error, never a panic, and the save is listed without details.
   (neural stunner shots), whether it was saved on the world map, lives and
   difficulty. The offsets past the ammo differ by the episode's own items:
   two words in Keen 4, three in Keen 5, four in Keen 6.
-- **Foray in the Forest 2.0** (a Keen 4 source mod): the same header with
-  `CKS\0` or `CKC\0` (its classic build), recognized by that on a Keen 4
-  profile. Its `gametype` comes from its source: 27 level words (the world
-  map and the opening rocket, which the game marks done before the first
-  level, don't count), then score, two more longs, ammo, drops, three words
-  of its own, map, lives and difficulty, with a fourth level, Expert. The
-  layout has no version of its own, so values the game can't have written
-  (an unknown difficulty or map, lives over 99, level flags other than done
-  and perfect) make the save show without details rather than wrong ones.
-  Checked against a real v2.0a save.
-- **Atroxian Realm 1.4** (a source mod on the Keen Dreams source, played as
-  Keen 4): the header with `CKD\0`, its file extension, on a Keen 4 profile.
-  Its game state is Keen 5's, from its source (`KD_DEF.H`): a level word for
-  each of its 26 maps, score, `nextKeenAt`, ammo, six item words, map, lives
-  and difficulty. A new game starts on map 25, the crash site, which is
-  marked done after it, so it isn't counted. Earlier versions saved in
-  another layout; values the game can't have written make the save show
-  without details, as for Foray. Checked against real v1.4 saves.
-- **Return to the Shadowlands 1.8** (a Keen 4 source mod): the header with
-  `CK4\0`, like Keen 4, but the game state follows the name without the
-  padding byte, and has ten words between `nextKeenAt` and the map where
-  Keen 4 has eight (ammo, drops, two items, four keys); the ammo is the
-  third of the ten. Read in Keen 4's layout its level words come out as
-  0x0100 and the like, which tells the two apart. Map 20, the rocket the
-  game starts on, is marked done from the start and map 19 holds the high
-  scores; only maps 0-18 count. Checked against real v1.8 saves.
+- **Source mods:** the same header, mostly with a signature of their own,
+  and a `gametype` from their source. Each is one `Layout` in
+  `keen_saves::SOURCE_MODS`, read by one reader: whether the game state is
+  word-aligned after the name, where the levels sit and how wide they are,
+  the highest flag a level can have, maps that don't count, where score,
+  ammo, map, lives and difficulty are, how many maps there are, and
+  difficulties beyond Easy to Hard. A new source mod is a new entry plus a
+  real save in the fixtures. Their saves have no version of their own, so
+  values the game can't have written (an unknown difficulty or map, lives
+  over 99, level flags too high) make the save show without details rather
+  than wrong ones. On a profile of the episode, the first layout of the
+  signature whose checks pass reads it. Under the episode's own signature
+  (`CK4\0`) the episode's layout comes first where its levels read as 0 or
+  1, and is taken last where no source mod's checks pass.
+  - **Foray in the Forest 2.0** (Keen 4): `CKS\0` or `CKC\0` (its classic
+    build). 27 level words (the world map and the opening rocket, which the
+    game marks done before the first level, don't count; perfect is flag
+    2), then score, two more longs, ammo, drops, three words of its own,
+    map, lives and difficulty, with a fourth level, Expert. Checked against
+    a real v2.0a save.
+  - **Atroxian Realm 1.4** (on the Keen Dreams source, played as Keen 4):
+    `CKD\0`, its file extension. Its game state is Keen 5's (`KD_DEF.H`): a
+    level word for each of its 26 maps, score, `nextKeenAt`, ammo, six item
+    words, map, lives and difficulty. A new game starts on map 25, the crash
+    site, which is marked done after it, so it isn't counted. Earlier
+    versions saved in another layout. Checked against real v1.4 saves.
+  - **Return to the Shadowlands 1.8** (Keen 4): `CK4\0`, like Keen 4, but
+    the game state follows the name without the padding byte, and has ten
+    words between `nextKeenAt` and the map where Keen 4 has eight (ammo,
+    drops, two items, four keys); the ammo is the third of the ten. Read in
+    Keen 4's layout its level words come out as 0x0100 and the like, which
+    tells the two apart. Map 20, the rocket the game starts on, is marked
+    done from the start and map 19 holds the high scores; only maps 0-18
+    count. Checked against real v1.8 saves.
+  - **Keen Dreams Gold Edition** (on the Keen Dreams source, played as
+    Keen 4): `KDG\0`, saved as `KDGOLD0.SAV` and on. Its game state
+    (`KDG_DEF.H`) is packed in bytes: score before the levels, a done byte
+    for each of 47 maps (21 and 22, where a new game starts, don't count),
+    then items, map, lives and difficulty, with Keen and Grand (played as
+    Mortimer) beyond Hard. The ammo is the flower powers, except on maps
+    23-46, where the score box shows the gun's. It doesn't say whether it
+    was saved on the world map. Checked against real saves of the
+    2026-05-31 release.
 - **Keen Dreams:** the same idea with `KDR\0`, 17 level slots (slot 0 is the
   world map, which the game marks as done on entering a level, so it isn't
   counted) and flower power seeds as ammo. Normal difficulty is stored as 0.
