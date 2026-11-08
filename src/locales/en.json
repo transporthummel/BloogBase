@@ -74,7 +74,7 @@
     }
   },
   "runtime": {
-    "title": "Game engine",
+    "title": "DOSBox",
     "neededTitle": "One more step: DOSBox",
     "needed": "BloogBase runs the games in DOSBox Staging, a free DOS emulator. It's downloaded once from its official website.",
     "install": "Download DOSBox Staging {{version}}",
@@ -125,7 +125,7 @@
     "app": "BloogBase",
     "soundBackground": "Sound and background",
     "nextStart": "What you set for the games applies from their next start.",
-    "dosbox": "DOSBox Staging",
+    "dosbox": "Installation",
     "aboutMore": "Licenses and credits",
     "display": "Display",
     "fullscreen": "Start in fullscreen",
