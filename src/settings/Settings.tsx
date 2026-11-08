@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Eraser, FileCog, Keyboard, RefreshCw, Wand } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type BackupSettings, type DisplayOptions, type WhenInactive } from "../bindings";
 import { ConfigEditor } from "../config/LazyConfigEditor";
@@ -225,6 +225,42 @@ function SectionNav({ titles }: { titles: Record<SectionId, string> }) {
     };
   }, []);
 
+  // As a bar on narrow windows the list may not fit: the marked item is
+  // scrolled into it, and a fade shows on the side where more items are.
+  const list = useRef<HTMLUListElement>(null);
+  const [more, setMore] = useState({ before: false, after: false });
+  const measure = useCallback(() => {
+    const ul = list.current;
+    if (!ul) return;
+    const before = ul.scrollLeft > 1;
+    const after = ul.scrollLeft + ul.clientWidth < ul.scrollWidth - 1;
+    setMore((m) => (m.before === before && m.after === after ? m : { before, after }));
+  }, []);
+
+  useEffect(() => {
+    const ul = list.current;
+    const item = ul?.querySelector<HTMLElement>("[aria-current]");
+    if (!ul || !item || ul.scrollWidth <= ul.clientWidth) {
+      measure();
+      return;
+    }
+    const box = ul.getBoundingClientRect();
+    const at = item.getBoundingClientRect();
+    if (at.left < box.left) ul.scrollLeft -= box.left - at.left + 24;
+    else if (at.right > box.right) ul.scrollLeft += at.right - box.right + 24;
+    measure();
+  }, [current, measure]);
+
+  useEffect(() => {
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [measure]);
+
+  const fade = [
+    more.before ? "transparent, black 1.5rem" : "black",
+    more.after ? "black calc(100% - 1.5rem), transparent" : "black",
+  ].join(", ");
+
   function jump(id: SectionId, byKeyboard: boolean) {
     const section = document.getElementById(`settings-${id}`);
     if (!section) return;
@@ -242,14 +278,19 @@ function SectionNav({ titles }: { titles: Record<SectionId, string> }) {
       aria-label={t("settings.sections")}
       className="sticky top-0 z-10 -mx-6 border-b border-border bg-bg px-6 py-2 lg:top-6 lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0"
     >
-      <ul className="flex gap-1 overflow-x-auto lg:grid lg:gap-0.5 lg:overflow-visible">
+      <ul
+        ref={list}
+        onScroll={measure}
+        style={{ maskImage: `linear-gradient(to right, ${fade})` }}
+        className="flex gap-0.5 overflow-x-auto [scrollbar-width:none] min-[900px]:gap-1 lg:grid lg:gap-0.5 lg:overflow-visible"
+      >
         {sectionIds.map((id) => (
           <li key={id}>
             <button
               type="button"
               onClick={(e) => jump(id, e.detail === 0)}
               aria-current={current === id ? "location" : undefined}
-              className={`flex h-9 w-full items-center rounded-lg px-2.5 text-left text-sm whitespace-nowrap lg:px-3 transition hover:bg-surface-raised hover:text-ink ${
+              className={`flex h-9 w-full items-center rounded-lg px-2 text-left text-sm whitespace-nowrap min-[900px]:px-2.5 lg:px-3 transition hover:bg-surface-raised hover:text-ink ${
                 current === id ? "bg-surface-raised text-ink" : "text-muted"
               }`}
             >
