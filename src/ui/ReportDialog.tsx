@@ -15,13 +15,17 @@ import { Notice } from "./Notice";
 export function ReportDialog({
   title,
   hint,
+  paste,
   queryKey,
   load,
   issueUrl,
   onClose,
 }: {
   title: string;
+  /** What the report is for and what's in it. */
   hint: string;
+  /** What to do with it in the issue. */
+  paste: string;
   queryKey: readonly unknown[];
   load: () => Promise<string>;
   /** The new issue to open, e.g. with a title filled in. */
@@ -43,13 +47,20 @@ export function ReportDialog({
   };
   return (
     <Dialog wide title={title} onClose={onClose}>
-      <p className="text-sm">{hint}</p>
+      <p className="max-w-prose text-sm">{hint}</p>
+      <ol className="grid max-w-prose list-decimal gap-1 pl-5 text-sm">
+        <li>{t("report.open")}</li>
+        <li>{paste}</li>
+      </ol>
       {text.isPending && <Loading />}
       {text.isError && <Notice tone="error">{String(text.error)}</Notice>}
       {text.data && (
-        <pre className="max-h-[55vh] overflow-auto rounded-lg bg-surface-raised p-3 text-xs whitespace-pre-wrap select-text">
-          {text.data}
-        </pre>
+        <details className="text-sm">
+          <summary className="w-fit cursor-pointer text-muted">{t("report.show")}</summary>
+          <pre className="mt-2 max-h-[45vh] overflow-auto rounded-lg bg-surface-raised p-3 text-xs whitespace-pre-wrap select-text">
+            {text.data}
+          </pre>
+        </details>
       )}
       <div className="flex flex-wrap justify-end gap-2">
         <Button variant="secondary" onClick={onClose}>

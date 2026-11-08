@@ -202,6 +202,7 @@ function DiagnosticsDialog({ onClose }: { onClose: () => void }) {
     <ReportDialog
       title={t("about.diagnostics")}
       hint={t("about.diagnosticsHint")}
+      paste={t("about.diagnosticsPaste")}
       queryKey={["diagnostics"]}
       load={() => unwrap(commands.diagnostics())}
       issueUrl={`${REPO_URL}/issues/new`}

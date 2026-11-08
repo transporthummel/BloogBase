@@ -802,7 +802,8 @@
     "sourceCode": "Quellcode",
     "feedback": "Feedback & Probleme",
     "diagnostics": "Diagnose",
-    "diagnosticsHint": "Das hilft beim Melden eines Problems: Versionen, deine Spiele, das zuletzt gespielte Spiel und das Ende der Logs. Persönliche Pfade sind entfernt. Füge es in ein neues Issue auf GitHub ein.",
+    "diagnosticsHint": "Ein Bericht hilft, ein Problem zu finden. Er enthält die Versionen, deine Spiele, das zuletzt gespielte Spiel und das Ende der Logs; persönliche Pfade sind entfernt. Ohne dich wird nichts gesendet.",
+    "diagnosticsPaste": "Füge den Bericht in das Issue ein und beschreib das Problem.",
     "copy": "Kopieren",
     "copied": "Kopiert",
     "newIssue": "Kopieren und Issue öffnen",
@@ -858,7 +859,12 @@
   "modReport": {
     "button": "Mod startet nicht?",
     "title": "Problem mit {{name}} melden",
-    "hint": "Das hilft herauszufinden, warum die Mod nicht startet: Versionen, die Mod und wie sie gestartet wird, wie sie zuletzt beendet wurde und das Ende der Logs. Persönliche Pfade sind entfernt. Füge es in das neue Issue auf GitHub ein und schreib dazu, was beim Starten passiert."
+    "hint": "Ein Bericht hilft herauszufinden, warum die Mod nicht startet. Er enthält die Versionen, die Mod und wie sie gestartet wird, wie sie zuletzt beendet wurde und das Ende der Logs; persönliche Pfade sind entfernt. Ohne dich wird nichts gesendet.",
+    "paste": "Füge den Bericht in das Issue ein und schreib dazu, was beim Starten der Mod passiert."
+  },
+  "report": {
+    "open": "„Kopieren und Issue öffnen“ kopiert den Bericht und öffnet ein neues Issue auf GitHub. Dafür brauchst du ein GitHub-Konto, das kostenlos ist.",
+    "show": "Bericht ansehen"
   },
   "quit": {
     "title_one": "Ein Spiel läuft noch",

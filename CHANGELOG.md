@@ -32,6 +32,7 @@
 - Return to the Shadowlands saves show their real score, lives, ammo, difficulty and levels done instead of numbers read from the wrong place.
 - The settings page is split into Appearance, Picture and sound, Controls, Backups, Game engine and BloogBase, with a list beside them that jumps to each and marks the one in view; keys come first under Controls, with how many are set, and "applies from the next start" is said once per card instead of under each setting.
 - "What DOSBox gets" on a game's page names the settings page as the source of what it sets ("Settings page") instead of "Display options", since it sets sound, keys and more now.
+- The "Mod won't start?" and bug report dialogs say in two steps what to do, including that GitHub needs a free account, and fold the report away behind "Show the report".
 
 ### Bug Fixes
 

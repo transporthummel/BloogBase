@@ -25,6 +25,7 @@ export function ModReportDialog({
     <ReportDialog
       title={t("modReport.title", { name })}
       hint={t("modReport.hint")}
+      paste={t("modReport.paste")}
       queryKey={["modReport", profileId]}
       load={() => unwrap(commands.modReport(profileId))}
       issueUrl={modIssueUrl(name)}

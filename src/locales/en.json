@@ -802,7 +802,8 @@
     "sourceCode": "Source code",
     "feedback": "Feedback & issues",
     "diagnostics": "Diagnostics",
-    "diagnosticsHint": "This helps with reporting a problem: versions, your games, the game you played last and the end of the logs. Personal paths are taken out. Paste it into a new issue on GitHub.",
+    "diagnosticsHint": "A report helps with finding a problem. It has the versions, your games, the game you played last and the end of the logs; personal paths are taken out. Nothing is sent without you.",
+    "diagnosticsPaste": "Paste the report into the issue and describe the problem.",
     "copy": "Copy",
     "copied": "Copied",
     "newIssue": "Copy and open an issue",
@@ -858,7 +859,12 @@
   "modReport": {
     "button": "Mod won’t start?",
     "title": "Report a problem with {{name}}",
-    "hint": "This helps with finding out why the mod won’t start: versions, the mod and how it’s started, how it ended last time and the end of the logs. Personal paths are taken out. Paste it into the new issue on GitHub and say what happens when you start it."
+    "hint": "A report helps to find out why the mod won’t start. It has the versions, the mod and how it’s started, how it ended last time and the end of the logs; personal paths are taken out. Nothing is sent without you.",
+    "paste": "Paste the report into the issue and say what happens when you start the mod."
+  },
+  "report": {
+    "open": "“Copy and open an issue” copies the report and opens a new issue on GitHub. For that you need a GitHub account, which is free.",
+    "show": "Show the report"
   },
   "quit": {
     "title_one": "A game is still running",
