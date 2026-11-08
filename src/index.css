@@ -14,6 +14,7 @@
 :root {
   --bb-ega-blue: #0000aa;
   --bb-ega-magenta: #aa00aa;
+  --bb-ega-cyan: #00aaaa;
   --bb-ega-brown: #aa5500;
   --bb-ega-bright-blue: #5555ff;
   --bb-ega-bright-green: #55ff55;
@@ -41,6 +42,8 @@
   --bb-vorticons: var(--bb-ega-magenta);
   --bb-galaxy: var(--bb-ega-bright-blue);
   --bb-dreams: var(--bb-ega-brown);
+  /* Source mods: no episode of their own, so not an engine's colour. */
+  --bb-source: var(--bb-ega-cyan);
   --bb-bloog: var(--bb-ega-bright-green);
   --bb-star: var(--bb-ink);
   --bb-star-dim: var(--bb-muted);
@@ -126,6 +129,7 @@
   --color-vorticons: var(--bb-vorticons);
   --color-galaxy: var(--bb-galaxy);
   --color-dreams: var(--bb-dreams);
+  --color-source: var(--bb-source);
   --color-sidebar: var(--bb-sidebar);
   --shadow-card: var(--bb-shadow);
   --shadow-key: var(--bb-key);

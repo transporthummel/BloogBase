@@ -13,7 +13,6 @@ test("a placeholder shows the episode on its engine's colour", () => {
 
 test("a source mod's placeholder doesn't claim the episode it's built on", () => {
   const { container } = render(<Cover gameId="keen4" game={keen4} standalone />);
-  expect(container.textContent).toBe("");
-  expect(container.firstElementChild).not.toHaveClass("bg-galaxy");
-  expect(container.querySelector("svg")).not.toBeNull();
+  expect(container.textContent).toBe("+");
+  expect(container.firstElementChild).toHaveClass("bg-source");
 });
