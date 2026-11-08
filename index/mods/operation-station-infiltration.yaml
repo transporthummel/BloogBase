@@ -1,0 +1,28 @@
+id: operation-station-infiltration
+name: "Operation Station Infiltration"
+game: keen5
+authors: ["Ceilick"]
+authorLinks:
+  "Ceilick": https://keenwiki.shikadi.net/wiki/User:Ceilick
+version: "1.4"
+released: 2022-12-25
+updated: 2023-03-14
+added: 2026-11-08
+type: episode
+description: "After learning that the Bloogs are responsible for the kidnapping of his pet Yorp Spot, Commander Keen sets course for Fribbulus Xax. However, the planet is protected by the Shikadi's space station: The Omegamatrix! Keen must disable the station in order to reach the planet."
+translations:
+  de:
+    description: "Nachdem er herausgefunden hat, dass die Bloogs für die Entführung seines Haustiers Yorp Spot verantwortlich sind, nimmt Commander Keen Kurs auf Fribbulus Xax. Der Planet wird jedoch von der Raumstation der Shikadi beschützt: der Omegamatrix! Um den Planeten erreichen zu können, muss Keen die Station außer Gefecht setzen."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Operation_Station_Infiltration
+  pckf: https://pckf.com/viewtopic.php?t=15448
+downloads:
+  - version: "1.4"
+    url: https://files.shikadi.net/keenwiki/Packs/SourceCode/l.ceilick.operation_station_infiltration_v1.4.sc.2022-03-15.zip
+    sha256: 0a9ea1216d956a5d9c547fd06a4f7632837378a113eee66b50d8a2d09e6620d4
+    size: 3232443
+standalone: true
+recipe:
+  type: program
+  program: OSI.EXE
+minAppVersion: 1.2.0
