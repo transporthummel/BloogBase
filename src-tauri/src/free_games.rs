@@ -96,7 +96,9 @@ pub async fn install(
         .ok_or_else(|| Error::NotFound(format!("free version {version_id}")))?;
     let mut last_err = None;
     for mirror in &entry.mirrors {
-        let name = mirror.url.rsplit('/').next().unwrap_or("download.zip");
+        let name = Some(crate::downloads::url_file_name(&mirror.url))
+            .filter(|n| !n.is_empty())
+            .unwrap_or("download.zip");
         let archive = paths
             .cache
             .join("downloads")

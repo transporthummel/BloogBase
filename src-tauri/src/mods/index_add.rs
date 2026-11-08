@@ -391,7 +391,7 @@ fn keen_folders(files: &[String], root: &str) -> Vec<String> {
 }
 
 fn kind(facts: &Facts) -> &'static str {
-    let file = facts.download.url.rsplit('/').next().unwrap_or_default();
+    let file = crate::downloads::url_file_name(&facts.download.url);
     if file.to_ascii_lowercase().starts_with("l.") {
         "levelpack"
     } else {
@@ -596,7 +596,7 @@ fn notes(facts: &Facts, found: &Found) -> (Vec<String>, Vec<String>) {
         );
     }
     if let Some(v) = version(facts, found) {
-        let file = facts.download.url.rsplit('/').next().unwrap_or_default();
+        let file = crate::downloads::url_file_name(&facts.download.url);
         if longer_in_name(file, v) {
             check.push(format!(
                 "version: {v} from the page, but the archive is called {file}"

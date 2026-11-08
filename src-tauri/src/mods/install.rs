@@ -77,7 +77,7 @@ impl<'a> Stored<'a> {
             pckf: None,
             keenmodding: None,
             source_url: &c.url,
-            archive_name: c.url.rsplit('/').next().filter(|n| !n.is_empty()),
+            archive_name: Some(crate::downloads::url_file_name(&c.url)).filter(|n| !n.is_empty()),
         }
     }
 

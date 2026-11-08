@@ -62,7 +62,7 @@ fn cache_dir() -> PathBuf {
 /// The cached archive, downloaded first if missing. Downloads are spaced
 /// out so the community's file server isn't hammered.
 async fn archive(entry: &Entry) -> std::result::Result<PathBuf, String> {
-    let file = entry.url.rsplit('/').next().unwrap_or_default();
+    let file = downloads::url_file_name(&entry.url);
     let path = cache_dir().join(file);
     if !path.is_file() {
         if entry.sha256.is_empty() {

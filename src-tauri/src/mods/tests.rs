@@ -725,6 +725,19 @@ fn the_archive_name_from_the_url_stays_in_the_source_folder() {
 }
 
 #[test]
+fn archives_from_urls_with_a_query_keep_only_their_file_name() {
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("index-aurora-bliss.zip");
+    write_zip(&zip, AURORA);
+    let c = Curated {
+        url: "https://www.dropbox.com/scl/fi/abc/AURORA.ZIP?rlkey=xyz&dl=1".into(),
+        ..curated(aurora_patch(&["/nocheck"]))
+    };
+    install_curated(&paths, &db, &zip, &c, None, false).unwrap();
+    assert!(paths.mods.join("aurora-bliss/source/AURORA.ZIP").is_file());
+}
+
+#[test]
 fn mods_played_over_another_need_it_and_go_with_it() {
     let (tmp, paths, db) = setup();
     let zip = tmp.path().join("index-pack.zip");

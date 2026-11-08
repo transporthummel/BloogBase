@@ -45,6 +45,7 @@
 - Versions a KeenWiki page lists inside a paragraph show up in the download choice too; Atroxian Realm's v1.3, v1.1 and v1.0 were missing.
 - Source mods whose cutscenes are as colorful as their title, like Atroxian Realm, get the title screen as cover: BloogBase takes the full-screen picture the mod's program draws right after loading it.
 - Switching a running game to fullscreen with Alt+Enter no longer garbles the picture or breaks the game: DOSBox now uses borderless fullscreen by default (`fullscreen_mode = forced-borderless`).
+- Mods downloaded from a link with a query, such as Dropbox's `…/KDGOLD.ZIP?rlkey=…&dl=1`, install on Windows instead of failing with an invalid file name: the archive is kept under the name before the `?`.
 
 ### Misc
 

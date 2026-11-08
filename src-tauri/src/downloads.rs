@@ -166,6 +166,14 @@ pub fn verify(actual: &str, expected: &str) -> Result<()> {
     }
 }
 
+/// The file name that ends `url`'s path, without its query or fragment:
+/// `…/KDGOLD.ZIP?rlkey=…&dl=1` (Dropbox) → `KDGOLD.ZIP`. Empty when the path
+/// ends in `/`.
+pub fn url_file_name(url: &str) -> &str {
+    let path = url.split(['?', '#']).next().unwrap_or(url);
+    path.rsplit('/').next().unwrap_or(path)
+}
+
 /// `attachment; filename="mod.zip"` → `mod.zip`.
 fn disposition_file_name(value: &str) -> Option<String> {
     value.split(';').find_map(|part| {
@@ -188,6 +196,15 @@ fn is_dead(url: &str, status: u16) -> bool {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
+
+    #[test]
+    fn file_names_in_urls_leave_out_the_query_and_fragment() {
+        let dropbox = "https://www.dropbox.com/scl/fi/9w5j/KDGOLD.ZIP?rlkey=2fjk&dl=1";
+        assert_eq!(url_file_name(dropbox), "KDGOLD.ZIP");
+        assert_eq!(url_file_name("https://example.com/a/m.zip#top"), "m.zip");
+        assert_eq!(url_file_name("https://example.com/a/m.zip"), "m.zip");
+        assert_eq!(url_file_name("https://example.com/a/"), "");
+    }
 
     #[test]
     fn missing_files_on_the_file_server_are_dead_links() {
