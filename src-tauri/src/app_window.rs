@@ -51,7 +51,8 @@ pub fn leave_fullscreen<R: Runtime>(app: &AppHandle<R>) {
 /// Whether the app shows its light theme; the title bar follows it.
 static LIGHT: AtomicBool = AtomicBool::new(false);
 
-/// Title bar colours from DESIGN.md, as 0xRRGGBB.
+/// Title bar colours from DESIGN.md, as 0xRRGGBB. Only Windows takes them.
+#[cfg(windows)]
 struct TitleBar {
     caption: u32,
     text: u32,
@@ -59,6 +60,7 @@ struct TitleBar {
     border: u32,
 }
 
+#[cfg(windows)]
 const NIGHT_TITLE_BAR: TitleBar = TitleBar {
     caption: 0x181631,       // night-surface, as the sidebar
     text: 0xf2f0ff,          // starlight
@@ -66,6 +68,7 @@ const NIGHT_TITLE_BAR: TitleBar = TitleBar {
     border: 0x34305e,        // night-border
 };
 
+#[cfg(windows)]
 const DAY_TITLE_BAR: TitleBar = TitleBar {
     caption: 0xcfc6ad,       // day-sidebar
     text: 0x221e1a,          // day-ink
