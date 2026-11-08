@@ -705,7 +705,8 @@
   },
   "patches": {
     "title": "Custom patches",
-    "hint": "Patch file lines for this copy of the game, e.g. for another key layout. BloogBase adds them at every start of this game and of all mods on this copy, after the mod's own lines. They can break mods that change the same places. Applies from the next start.",
+    "hint": "Patch file lines for this copy of the game, e.g. for another key layout. They come along at every start of this game and of all mods on this copy, after the mod's own lines, and can break mods that change the same places.",
+    "example": "One line each, as in a patch file:\n%patch $1F2B $90 $90",
     "unpatchable": "There are no patches for this version of the game, so you can't add your own here.",
     "bad": {
       "reserved": "Line {{line}}: BloogBase writes {{word}} itself. Please leave the line out.",

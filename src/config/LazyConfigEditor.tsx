@@ -5,6 +5,7 @@ import { lazy, Suspense, type ComponentProps } from "react";
 const load = () => import("./ConfigEditor");
 const Editor = lazy(() => load().then((m) => ({ default: m.ConfigEditor })));
 const Text = lazy(() => load().then((m) => ({ default: m.ConfigText })));
+const Lines = lazy(() => load().then((m) => ({ default: m.LineEditor })));
 
 /** Holds the editor's place while it loads, so the layout doesn't jump. */
 function Placeholder() {
@@ -23,6 +24,14 @@ export function ConfigText(props: ComponentProps<typeof Text>) {
   return (
     <Suspense fallback={<Placeholder />}>
       <Text {...props} />
+    </Suspense>
+  );
+}
+
+export function LineEditor(props: ComponentProps<typeof Lines>) {
+  return (
+    <Suspense fallback={<Placeholder />}>
+      <Lines {...props} />
     </Suspense>
   );
 }

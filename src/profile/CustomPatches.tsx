@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Save } from "lucide-react";
+import { ChevronRight, Save } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type CustomStatus } from "../bindings";
+import { LineEditor } from "../config/LazyConfigEditor";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { Button } from "../ui/Button";
@@ -24,12 +25,29 @@ export function CustomPatchesSection({ profileId }: { profileId: string }) {
   if (view.error) return <Notice tone="error">{errorMessage(t, view.error)}</Notice>;
   if (!v) return null;
 
+  if (v.kind === "game") {
+    // For players who patch: folded away until there are patches.
+    return (
+      <details className="group grid gap-2" open={v.text.trim() !== ""}>
+        <summary className="flex w-fit cursor-pointer items-center gap-2 rounded-lg">
+          <ChevronRight
+            className="size-4 text-muted transition group-open:rotate-90 motion-reduce:transition-none"
+            aria-hidden
+          />
+          <h2 className="font-semibold">{t("patches.title")}</h2>
+        </summary>
+        <div className="mt-2 grid gap-2">
+          <GamePatches profileId={profileId} text={v.text} status={v.status} />
+        </div>
+      </details>
+    );
+  }
+
   return (
     <section className="grid gap-2" aria-labelledby="custom-patches">
       <h2 id="custom-patches" className="font-semibold">
         {t("patches.title")}
       </h2>
-      {v.kind === "game" && <GamePatches profileId={profileId} text={v.text} status={v.status} />}
       {v.kind === "unpatchable" && <p className="text-sm text-muted">{t("patches.unpatchable")}</p>}
       {v.kind === "mod" && (
         <p className="text-sm text-muted">
@@ -76,17 +94,15 @@ function GamePatches({
 
   return (
     <>
-      <p className="text-sm text-muted">{t("patches.hint")}</p>
-      <textarea
-        aria-label={t("patches.title")}
+      <p className="max-w-prose text-sm text-muted">{t("patches.hint")}</p>
+      <LineEditor
+        label={t("patches.title")}
         value={draft}
-        onChange={(e) => {
-          setDraft(e.target.value);
+        example={t("patches.example")}
+        onChange={(value) => {
+          setDraft(value);
           save.reset();
         }}
-        rows={6}
-        spellCheck={false}
-        className="w-full rounded-lg border border-border bg-surface-raised px-3 py-2 font-mono text-xs select-text"
       />
       {status && status !== "applied" && status !== "ownProgram" && (
         <p className="text-sm text-muted">{t(`patches.gameStatus.${status}`)}</p>

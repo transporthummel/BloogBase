@@ -705,11 +705,12 @@
   },
   "patches": {
     "title": "Eigene Patches",
-    "hint": "Patchzeilen für diese Kopie des Spiels, z.B. für eine andere Tastenbelegung. BloogBase fügt sie bei jedem Start dieses Spiels und aller Mods auf dieser Kopie an, nach den Zeilen der Mod. Sie können Mods stören, die dieselben Stellen ändern. Gilt ab dem nächsten Start.",
+    "hint": "Patchzeilen für diese Kopie des Spiels, z. B. für eine andere Tastenbelegung. Sie kommen bei jedem Start dieses Spiels und aller Mods auf dieser Kopie dazu, nach den Zeilen der Mod, und können Mods stören, die dieselben Stellen ändern.",
+    "example": "Eine Zeile je Patch, wie in einer Patchdatei:\n%patch $1F2B $90 $90",
     "unpatchable": "Für diese Version des Spiels gibt es keine Patches, darum lassen sich hier keine eigenen eintragen.",
     "bad": {
       "reserved": "Zeile {{line}}: {{word}} schreibt BloogBase selbst. Bitte lass die Zeile weg.",
-      "value": "Zeile {{line}}: „{{word}}“ ist keine Zahl, die der Patcher versteht (z.B. $1F, $1F2BW oder 31). Mit diesem Fehler würde der Patcher jede Mod auf dieser Kopie abbrechen."
+      "value": "Zeile {{line}}: „{{word}}“ ist keine Zahl, die der Patcher versteht (z. B. $1F, $1F2BW oder 31). Mit diesem Fehler würde der Patcher jede Mod auf dieser Kopie abbrechen."
     },
     "edit": "Bei der Spielkopie bearbeiten",
     "status": {

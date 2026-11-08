@@ -10,8 +10,8 @@ import { Notice } from "../ui/Notice";
 import { CustomPatchesSection } from "./CustomPatches";
 
 /**
- * A profile's settings: custom patches, then its DOSBox settings with its own
- * layer, the defaults and the result (§6.1).
+ * A profile's settings: its DOSBox settings with its own layer, the defaults
+ * and the result (§6.1), then custom patches, which few players need.
  */
 export function ConfigPanel({ profileId }: { profileId: string }) {
   const { t } = useTranslation();
@@ -23,7 +23,6 @@ export function ConfigPanel({ profileId }: { profileId: string }) {
 
   return (
     <div className="grid gap-6">
-      <CustomPatchesSection profileId={profileId} />
       {view.error && <Notice tone="error">{errorMessage(t, view.error)}</Notice>}
       <section className="grid gap-2" aria-labelledby="config-own">
         <h2 id="config-own" className="font-semibold">
@@ -81,6 +80,7 @@ export function ConfigPanel({ profileId }: { profileId: string }) {
           </details>
         </section>
       )}
+      <CustomPatchesSection profileId={profileId} />
     </div>
   );
 }

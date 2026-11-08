@@ -1,6 +1,6 @@
 import { HighlightStyle, StreamLanguage, syntaxHighlighting } from "@codemirror/language";
 import { properties } from "@codemirror/legacy-modes/mode/properties";
-import { EditorView } from "@codemirror/view";
+import { EditorView, placeholder } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import CodeMirror from "@uiw/react-codemirror";
@@ -32,6 +32,7 @@ const theme = EditorView.theme({
   ".cm-activeLine, .cm-activeLineGutter": { backgroundColor: "transparent" },
   "&.cm-focused": { outline: "2px solid var(--bb-focus)" },
   ".cm-cursor": { borderLeftColor: "var(--bb-ink)" },
+  ".cm-placeholder": { color: "var(--bb-muted)" },
   ".cm-content": { fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" },
 });
 
@@ -57,6 +58,35 @@ export function ConfigText({ text, label }: { text: string; label: string }) {
       theme="none"
       extensions={extensions}
       basicSetup={{ foldGutter: false, highlightActiveLine: false }}
+      aria-label={label}
+    />
+  );
+}
+
+/**
+ * Plain lines with their numbers, for text whose errors name a line, such as
+ * custom patches.
+ */
+export function LineEditor({
+  value,
+  onChange,
+  label,
+  example,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  label: string;
+  /** Shown greyed while it's empty. */
+  example: string;
+}) {
+  return (
+    <CodeMirror
+      value={value}
+      onChange={onChange}
+      theme="none"
+      extensions={[theme, placeholder(example)]}
+      basicSetup={{ foldGutter: false, highlightActiveLine: false }}
+      minHeight="6rem"
       aria-label={label}
     />
   );
