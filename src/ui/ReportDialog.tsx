@@ -62,7 +62,11 @@ export function ReportDialog({
           </pre>
         </details>
       )}
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {/* The buttons' label change alone isn't announced. */}
+        <span role="status" className="sr-only">
+          {copied ? t("about.copied") : ""}
+        </span>
         <Button variant="secondary" onClick={onClose}>
           {t("common.close")}
         </Button>
