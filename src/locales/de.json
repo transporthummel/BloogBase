@@ -737,7 +737,7 @@
     "from": "Aus",
     "layer": {
       "defaults": "BloogBase-Vorgabe",
-      "options": "Bild-Einstellungen",
+      "options": "Seite Einstellungen",
       "global": "Alle Spiele",
       "profile": "Dieses Spiel",
       "launch": "BloogBase (fest)"

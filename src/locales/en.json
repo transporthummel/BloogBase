@@ -737,7 +737,7 @@
     "from": "From",
     "layer": {
       "defaults": "BloogBase default",
-      "options": "Display options",
+      "options": "Settings page",
       "global": "All games",
       "profile": "This game",
       "launch": "BloogBase (fixed)"
