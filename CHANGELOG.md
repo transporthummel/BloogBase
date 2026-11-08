@@ -4,16 +4,6 @@
 
 ### Features
 
-### Improvements
-
-### Bug Fixes
-
-### Misc
-
-## 1.2.0 (2026-11-08)
-
-### Features
-
 - Sound, music, the sound device, the score box and keys can be set once for all games and mods in the settings.
 - BloogBase can go fullscreen, without the taskbar, from a button in the sidebar or with F11, and can start in fullscreen; while it is in fullscreen, games start in fullscreen too, whatever their settings say.
 - A "Quit BloogBase" button at the bottom of the sidebar closes the app, also in fullscreen, and asks first while games run, as the window's close button does.
