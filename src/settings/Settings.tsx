@@ -604,21 +604,13 @@ function BackupSection() {
     <>
       {s && (
         <>
-          <label className="flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="mt-1"
-              checked={s.auto}
-              onChange={(e) => update.mutate({ ...s, auto: e.target.checked })}
-            />
-            <span>
-              {t("settings.autoBackup")}
-              <span className="block max-w-prose text-xs text-muted">
-                {t("settings.autoBackupHint")}
-              </span>
-            </span>
-          </label>
-          <Field label={t("settings.keepBackups")}>
+          <Check
+            label={t("settings.autoBackup")}
+            hint={t("settings.autoBackupHint")}
+            checked={s.auto}
+            onChange={(e) => update.mutate({ ...s, auto: e.target.checked })}
+          />
+          <Field label={t("settings.keepBackups")} hint={t("settings.backupsHint")}>
             <input
               type="number"
               min={1}
@@ -631,7 +623,6 @@ function BackupSection() {
               }}
             />
           </Field>
-          <p className="max-w-prose text-xs text-muted">{t("settings.backupsHint")}</p>
         </>
       )}
       {(settings.error ?? update.error) && (
