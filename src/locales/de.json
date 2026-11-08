@@ -737,7 +737,7 @@
     "effectiveHint": "Alle Ebenen zusammen. Die letzte, die einen Wert setzt, gewinnt.",
     "setting": "Einstellung",
     "value": "Wert",
-    "from": "Aus",
+    "from": "Quelle",
     "layer": {
       "defaults": "BloogBase-Vorgabe",
       "options": "Einstellungsseite",

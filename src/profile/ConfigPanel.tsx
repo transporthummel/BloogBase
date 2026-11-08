@@ -67,7 +67,9 @@ export function ConfigPanel({ profileId }: { profileId: string }) {
                     <td className="py-1 pr-4 font-mono text-xs [overflow-wrap:anywhere] select-text">
                       {s.value}
                     </td>
-                    <td className="py-1 text-xs text-muted">{t(`config.layer.${s.layer}`)}</td>
+                    <td className="py-1 text-xs whitespace-nowrap text-muted">
+                      {t(`config.layer.${s.layer}`)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

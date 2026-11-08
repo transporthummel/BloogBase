@@ -737,7 +737,7 @@
     "effectiveHint": "All layers together. The last one that sets a value wins.",
     "setting": "Setting",
     "value": "Value",
-    "from": "From",
+    "from": "Source",
     "layer": {
       "defaults": "BloogBase default",
       "options": "Settings page",
