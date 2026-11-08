@@ -6,6 +6,22 @@ import { Cover } from "../library/Cover";
  * colour, as a small tile beside the title. Nothing is installed to draw a
  * title screen from, so it stays a marker rather than a picture.
  */
-export function GameTile({ gameId, game }: { gameId: string; game?: Game }) {
-  return <Cover gameId={gameId} game={game} className="size-11 shrink-0 rounded-md text-base" />;
+export function GameTile({
+  gameId,
+  game,
+  standalone = false,
+}: {
+  gameId: string;
+  game?: Game;
+  /** A source mod: not the episode's number, which it shares nothing but its engine with. */
+  standalone?: boolean;
+}) {
+  return (
+    <Cover
+      gameId={gameId}
+      game={game}
+      standalone={standalone}
+      className="size-11 shrink-0 rounded-md text-base"
+    />
+  );
 }

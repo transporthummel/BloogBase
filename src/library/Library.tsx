@@ -371,7 +371,12 @@ const ProfileCard = memo(function ProfileCard({
         aria-hidden
         className="block"
       >
-        <Cover gameId={profile.gameId} game={game} src={cover.data?.src} />
+        <Cover
+          gameId={profile.gameId}
+          game={game}
+          src={cover.data?.src}
+          standalone={profile.standalone}
+        />
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="grid gap-0.5">

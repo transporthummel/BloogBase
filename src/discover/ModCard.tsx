@@ -64,7 +64,7 @@ export function ModCard({
     <Card className="flex h-full flex-col">
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex gap-3">
-          <GameTile gameId={entry.game} game={game} />
+          <GameTile gameId={entry.game} game={game} standalone={entry.standalone} />
           <div className="grid min-w-0 content-start gap-1">
             <h2 className="leading-tight font-semibold">{entry.name}</h2>
             <p className="text-xs text-muted">

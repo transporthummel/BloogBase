@@ -1,3 +1,4 @@
+import { CodeXml } from "lucide-react";
 import type { Game } from "../bindings";
 
 const engineColor = {
@@ -8,17 +9,20 @@ const engineColor = {
 
 /**
  * The game's title screen when `src` is given, else a placeholder: the
- * episode number on the engine's color.
+ * episode number on the engine's color, or for a source mod, which shares
+ * nothing with that episode but its engine, a neutral tile with </>.
  */
 export function Cover({
   gameId,
   game,
   src,
+  standalone = false,
   className = "aspect-[4/3] text-5xl",
 }: {
   gameId: string;
   game?: Game;
   src?: string | null;
+  standalone?: boolean;
   className?: string;
 }) {
   if (src) {
@@ -31,6 +35,16 @@ export function Cover({
         decoding="async"
         className={`object-fill [image-rendering:pixelated] ${className}`}
       />
+    );
+  }
+  if (standalone) {
+    return (
+      <div
+        className={`flex items-center justify-center border border-border bg-surface-raised text-muted ${className}`}
+        aria-hidden
+      >
+        <CodeXml className="size-[1.3em]" strokeWidth={1.75} />
+      </div>
     );
   }
   const episode = gameId.replace(/^keen/, "").replace(/^kdreams$/, "D");
