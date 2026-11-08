@@ -6,12 +6,14 @@ import { ConfigEditor, ConfigText } from "../config/LazyConfigEditor";
 import { configKey } from "../config/queries";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
+import { Disclosure } from "../ui/Disclosure";
 import { Notice } from "../ui/Notice";
 import { CustomPatchesSection } from "./CustomPatches";
 
 /**
- * A profile's settings: its DOSBox settings with its own layer, the defaults
- * and the result (§6.1), then custom patches, which few players need.
+ * A profile's settings: its DOSBox settings with its own layer, then folded
+ * away the result and the defaults (§6.1) and custom patches, which few
+ * players need.
  */
 export function ConfigPanel({ profileId }: { profileId: string }) {
   const { t } = useTranslation();
@@ -45,10 +47,7 @@ export function ConfigPanel({ profileId }: { profileId: string }) {
       </section>
 
       {p && (
-        <section className="grid gap-2" aria-labelledby="config-effective">
-          <h2 id="config-effective" className="font-semibold">
-            {t("config.effectiveTitle")}
-          </h2>
+        <Disclosure title={t("config.effectiveTitle")}>
           <p className="text-sm text-muted">{t("config.effectiveHint")}</p>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -72,13 +71,12 @@ export function ConfigPanel({ profileId }: { profileId: string }) {
               </tbody>
             </table>
           </div>
-          <details className="text-sm">
-            <summary className="cursor-pointer text-muted">{t("config.defaultsTitle")}</summary>
-            <div className="mt-2">
-              <ConfigText text={p.defaults} label={t("config.defaultsTitle")} />
-            </div>
-          </details>
-        </section>
+        </Disclosure>
+      )}
+      {p && (
+        <Disclosure title={t("config.defaultsTitle")}>
+          <ConfigText text={p.defaults} label={t("config.defaultsTitle")} />
+        </Disclosure>
       )}
       <CustomPatchesSection profileId={profileId} />
     </div>

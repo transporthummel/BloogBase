@@ -32,6 +32,7 @@
 - Return to the Shadowlands saves show their real score, lives, ammo, difficulty and levels done instead of numbers read from the wrong place.
 - The settings page is split into Appearance, Display, Sound and background, Controls, Backups, Game engine and BloogBase, with a list that jumps to each and marks the one in view, beside the cards on wide windows and as a bar above them on narrow ones; keys come first under Controls, with how many are set, and "applies from the next start" is said once per card instead of under each setting.
 - "What DOSBox gets" on a game's page names the settings page as the source of what it sets ("Settings page") instead of "Display options", since it sets sound, keys and more now.
+- On a game's "DOSBox & patches" tab, "What DOSBox gets", BloogBase's defaults and custom patches fold away the same way under their headings; the first two start folded.
 - The "Mod won't start?" and bug report dialogs say in two steps what to do, including that GitHub needs a free account, and fold the report away behind "Show the report".
 
 ### Bug Fixes

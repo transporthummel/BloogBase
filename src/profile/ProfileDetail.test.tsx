@@ -1037,6 +1037,9 @@ test("config tab saves the profile layer and shows warnings and the result", asy
   vi.mocked(commands.saveConfig).mockResolvedValue(ok([{ line: 2, kind: "autoexec" }]));
   renderDetail();
   await userEvent.click(await screen.findByRole("tab", { name: "DOSBox & patches" }));
+  // The result is folded away.
+  expect(screen.queryByText("[cpu] cpu_cycles")).toBeNull();
+  await userEvent.click(await screen.findByRole("button", { name: "What DOSBox gets" }));
   expect(await screen.findByText("[cpu] cpu_cycles")).toBeInTheDocument();
   expect(screen.getByText("BloogBase default")).toBeInTheDocument();
 
@@ -1060,6 +1063,10 @@ test("a game's settings tab saves its custom patches and names a reserved line",
   );
   renderDetail();
   await userEvent.click(await screen.findByRole("tab", { name: "DOSBox & patches" }));
+  // Folded away while there are none.
+  const fold = await screen.findByRole("button", { name: "Custom patches" });
+  expect(fold).toHaveAttribute("aria-expanded", "false");
+  await userEvent.click(fold);
   const field = await screen.findByRole("textbox", { name: "Custom patches" });
   await userEvent.type(field, "%patch $10 $01\n%end");
   await userEvent.click(screen.getByRole("button", { name: "Save" }));

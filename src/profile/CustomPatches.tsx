@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type CustomStatus } from "../bindings";
@@ -8,6 +8,7 @@ import { LineEditor } from "../config/LazyConfigEditor";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { Button } from "../ui/Button";
+import { Disclosure } from "../ui/Disclosure";
 import { Notice } from "../ui/Notice";
 
 // Every profile's view shares the prefix, so saving a game's patches
@@ -28,18 +29,9 @@ export function CustomPatchesSection({ profileId }: { profileId: string }) {
   if (v.kind === "game") {
     // For players who patch: folded away until there are patches.
     return (
-      <details className="group grid gap-2" open={v.text.trim() !== ""}>
-        <summary className="flex w-fit cursor-pointer items-center gap-2 rounded-lg">
-          <ChevronRight
-            className="size-4 text-muted transition group-open:rotate-90 motion-reduce:transition-none"
-            aria-hidden
-          />
-          <h2 className="font-semibold">{t("patches.title")}</h2>
-        </summary>
-        <div className="mt-2 grid gap-2">
-          <GamePatches profileId={profileId} text={v.text} status={v.status} />
-        </div>
-      </details>
+      <Disclosure title={t("patches.title")} defaultOpen={v.text.trim() !== ""}>
+        <GamePatches profileId={profileId} text={v.text} status={v.status} />
+      </Disclosure>
     );
   }
 
