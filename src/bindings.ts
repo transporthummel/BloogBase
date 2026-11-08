@@ -1014,17 +1014,6 @@ export type RuntimeStatus = {
 	crtSwitchIgnored: boolean,
 };
 
-export type SaveDetails = {
-	name: string | null,
-	score: number | null,
-	lives: number | null,
-	ammo: number | null,
-	levelsDone: number | null,
-	difficulty: Difficulty | null,
-	onWorldMap: boolean | null,
-	shipParts: number | null,
-};
-
 export type SaveFile = {
 	/**  File name in the drive root, spelled as on disk. */
 	file: string,
@@ -1034,9 +1023,25 @@ export type SaveFile = {
 	modifiedAt: number | null,
 	size: number,
 	/**  `None` if the file couldn't be read as a save of this game. */
-	details: SaveDetails | null,
+	details: SaveInfo | null,
 	/**  Earlier versions of it kept in backups (§11.1); 0 for a save in a backup. */
 	versions: number,
+};
+
+/**  Everything known about one save. Fields a format doesn't have are `None`. */
+export type SaveInfo = {
+	/**  What the player typed when saving (Keen 4-6, Keen Dreams). */
+	name: string | null,
+	score: number | null,
+	lives: number | null,
+	/**  Raygun or neural stunner shots (Keen Dreams: flower power seeds). */
+	ammo: number | null,
+	levelsDone: number | null,
+	difficulty: Difficulty | null,
+	/**  Saved on the world map rather than inside a level. */
+	onWorldMap: boolean | null,
+	/**  Keen 1 only: how many of the four ship parts were found. */
+	shipParts: number | null,
 };
 
 /**  An earlier version of a save, kept in a backup. */

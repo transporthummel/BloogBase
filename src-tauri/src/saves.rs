@@ -29,37 +29,9 @@ pub struct SaveFile {
     pub modified_at: Option<u32>,
     pub size: u32,
     /// `None` if the file couldn't be read as a save of this game.
-    pub details: Option<SaveDetails>,
+    pub details: Option<keen_saves::SaveInfo>,
     /// Earlier versions of it kept in backups (§11.1); 0 for a save in a backup.
     pub versions: u32,
-}
-
-#[derive(Debug, Clone, Serialize, Type)]
-#[serde(rename_all = "camelCase")]
-pub struct SaveDetails {
-    pub name: Option<String>,
-    pub score: Option<i32>,
-    pub lives: Option<i16>,
-    pub ammo: Option<i16>,
-    pub levels_done: Option<u16>,
-    pub difficulty: Option<keen_saves::Difficulty>,
-    pub on_world_map: Option<bool>,
-    pub ship_parts: Option<u8>,
-}
-
-impl From<keen_saves::SaveInfo> for SaveDetails {
-    fn from(i: keen_saves::SaveInfo) -> Self {
-        SaveDetails {
-            name: i.name,
-            score: i.score,
-            lives: i.lives,
-            ammo: i.ammo,
-            levels_done: i.levels_done,
-            difficulty: i.difficulty,
-            on_world_map: i.on_world_map,
-            ship_parts: i.ship_parts,
-        }
-    }
 }
 
 pub fn is_save(game: &Game, name: &str) -> bool {
@@ -86,7 +58,7 @@ pub fn describe(game: &Game, file: &str, data: &[u8], modified_at: Option<u32>) 
     let details =
         keen_saves::Episode::from_game_id(&game.id).and_then(|ep| {
             match keen_saves::parse(ep, data) {
-                Ok(info) => Some(info.into()),
+                Ok(info) => Some(info),
                 Err(e) => {
                     tracing::debug!("{file} isn't a readable {} save: {e}", game.id);
                     None

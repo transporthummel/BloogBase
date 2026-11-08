@@ -65,7 +65,8 @@ pub enum Difficulty {
 }
 
 /// Everything known about one save. Fields a format doesn't have are `None`.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct SaveInfo {
     /// What the player typed when saving (Keen 4-6, Keen Dreams).
     pub name: Option<String>,
