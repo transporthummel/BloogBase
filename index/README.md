@@ -103,12 +103,13 @@ By hand:
    can take it up without a `minAppVersion`; mods installed from it leave
    their copy of the game at the next index check, with their saves.
 
-   A source mod that ships the game's own graphics or sounds (most built on
-   the recreated Keen 4-6 source: DarkAle's New Keen 5 Levelpack) also gets
+   A source mod that ships the graphics or sounds of a game with no free
+   shareware (Keen 2, 3, 5 and 6; DarkAle's New Keen 5 Levelpack) also gets
    `requiresGame: true`. It still plays from its own files alone, but only
    for players who own `game`: it's listed under that game, waits for a copy
-   of it like any other mod and shows no "Source mod" badge. Free shareware
-   counts, so for Keen 1, Keen 4 and Keen Dreams it's a formality.
+   of it like any other mod and shows no "Source mod" badge. Those of Keen 1,
+   Keen 4 and Keen Dreams are in their free shareware, so source mods built
+   on them stay without it (Return to the Shadowlands).
 
 3. Check it, including the download:
 
