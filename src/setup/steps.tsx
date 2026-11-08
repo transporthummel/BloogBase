@@ -12,7 +12,7 @@ import { JobList, JobRow } from "../jobs/JobList";
 import { useJobLabel } from "../jobs/label";
 import { isFinished, useJobs, useStartJob } from "../jobs/queries";
 import { entryDescription } from "../discover/description";
-import { compare, fitting, type Owned } from "../discover/fit";
+import { compare, fitting, needsNoGame, type Owned } from "../discover/fit";
 import { IndexError } from "../discover/IndexError";
 import { useFreeGames, useIndexMods, useIndexStatus } from "../discover/queries";
 import { useInstalls, useProfiles } from "../library/queries";
@@ -429,9 +429,9 @@ export function ModsStep({ next, back }: StepProps) {
   // Mods that need no game are a choice of their own, also without any Keen.
   const suggestions = [
     ...featured
-      .filter((m) => !m.entry.standalone && fitting(m.entry, owned, games).length > 0)
+      .filter((m) => !needsNoGame(m.entry) && fitting(m.entry, owned, games).length > 0)
       .slice(0, 6),
-    ...featured.filter((m) => m.entry.standalone).slice(0, 3),
+    ...featured.filter((m) => needsNoGame(m.entry)).slice(0, 3),
   ];
   const toStart = suggestions.filter((m) => picked.has(m.entry.id) && !queued(m.entry.id));
   const loading = status && status.checkedAt === null && !status.error && status.modCount === 0;
@@ -478,10 +478,10 @@ export function ModsStep({ next, back }: StepProps) {
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{entry.name}</span>
                     <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
-                    {entry.standalone && <Badge>{t("mods.sourceMod")}</Badge>}
+                    {needsNoGame(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
                   </span>
                   <span className="text-xs text-muted">
-                    {entry.standalone ? t("mods.standalone") : gameTitle(games, entry.game)}
+                    {needsNoGame(entry) ? t("mods.standalone") : gameTitle(games, entry.game)}
                     {entry.authors.length > 0 &&
                       ` · ${t("mods.by", { authors: entry.authors.join(", ") })}`}
                   </span>

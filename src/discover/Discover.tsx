@@ -13,7 +13,15 @@ import { PageHeader } from "../ui/PageHeader";
 import { RelativeTime } from "../ui/RelativeTime";
 import { Tabs } from "../ui/Tabs";
 import { entryDescription } from "./description";
-import { compare, listedUnder, NO_GAME, playable as isPlayable, SORTS, type Sort } from "./fit";
+import {
+  compare,
+  listedUnder,
+  needsNoGame,
+  NO_GAME,
+  playable as isPlayable,
+  SORTS,
+  type Sort,
+} from "./fit";
 import { FreeGames } from "./FreeGames";
 import { IndexError } from "./IndexError";
 import { ModCard } from "./ModCard";
@@ -190,7 +198,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
                   {gameTitle(games, g.id)}
                 </option>
               ))}
-              {all.some((m) => m.entry.standalone) && (
+              {all.some((m) => needsNoGame(m.entry)) && (
                 <option value={NO_GAME}>{t("discover.noGame")}</option>
               )}
             </select>

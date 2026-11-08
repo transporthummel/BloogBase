@@ -284,6 +284,37 @@ test("standalone mods are under no game and install on none", async () => {
   await user.selectOptions(gameFilter, "");
 });
 
+test("source mods that require their game are listed like other mods", async () => {
+  vi.mocked(commands.listInstalls).mockResolvedValue({ status: "ok", data: [] });
+  vi.mocked(commands.indexMods).mockResolvedValue({
+    status: "ok",
+    data: [
+      mod(
+        entry("Pack", {
+          requires: [],
+          recipe: { type: "program", program: "RCK4.EXE", args: [] },
+          standalone: true,
+          requiresGame: true,
+        }),
+      ),
+    ],
+  });
+  renderDiscover();
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { name: "Pack" });
+
+  const pack = within(card("Pack"));
+  expect(pack.queryByText("Standalone")).not.toBeInTheDocument();
+  expect(pack.queryByText("Source mod")).not.toBeInTheDocument();
+  expect(screen.queryByRole("option", { name: "No game needed" })).not.toBeInTheDocument();
+  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+  expect(screen.queryByRole("heading", { name: "Pack" })).not.toBeInTheDocument();
+  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+  await user.selectOptions(screen.getByRole("combobox", { name: "Game" }), "keen4");
+  expect(screen.getByRole("heading", { name: "Pack" })).toBeInTheDocument();
+  await user.selectOptions(screen.getByRole("combobox", { name: "Game" }), "");
+});
+
 /** The choices of the mods tab, all set to something else than the defaults. */
 async function chooseAll(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByRole("searchbox"), "a");

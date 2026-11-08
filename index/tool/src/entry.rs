@@ -67,6 +67,11 @@ pub struct Entry {
     /// it on that game.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub standalone: bool,
+    /// With `standalone`: still plays from its own files alone, but only for
+    /// players who own `game`, as it carries the game's own graphics or
+    /// sounds (from an episode with no free shareware).
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub requires_game: bool,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]
@@ -351,6 +356,9 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
         if entry.extends.is_some() {
             fail("standalone: can't extend another mod".into());
         }
+    }
+    if entry.requires_game && !entry.standalone {
+        fail("requiresGame: only for standalone mods; the others need their game anyway".into());
     }
     for t in &entry.tags {
         if !is_slug(t) {
@@ -652,6 +660,13 @@ recipe:
         e.requires = vec!["keen4-1.4-ega".into()];
         e.extends = Some("x".into());
         assert_eq!(problems(&e, "aurora-bliss", &catalog()).len(), 4);
+    }
+
+    #[test]
+    fn only_standalone_mods_require_their_game() {
+        let mut e = parse(AURORA).unwrap();
+        e.requires_game = true;
+        assert_eq!(problems(&e, "aurora-bliss", &catalog()).len(), 1);
     }
 
     #[test]

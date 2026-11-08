@@ -735,7 +735,8 @@ fn notes(facts: &Facts, found: &Found) -> (Vec<String>, Vec<String>) {
     if found.standalone() {
         check.push(format!(
             "standalone: set, as the archive has nothing of {}'s; take it out if the mod still \
-             loads the game's own files (a lone executable)",
+             loads the game's own files (a lone executable), and add requiresGame: true if its \
+             data holds the game's graphics or sounds",
             found.info.game_id
         ));
     }

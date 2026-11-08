@@ -16,7 +16,7 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Dialog } from "../ui/Dialog";
 import { useEnterAction } from "../ui/useEnterAction";
-import { fitting, requiredLabels } from "./fit";
+import { fitting, needsNoGame, requiredLabels } from "./fit";
 import { useIndexMods } from "./queries";
 
 /** A mod from the index with everything needed to install it. */
@@ -64,11 +64,11 @@ export function ModCard({
     <Card className="flex h-full flex-col">
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex gap-3">
-          <GameTile gameId={entry.game} game={game} standalone={entry.standalone} />
+          <GameTile gameId={entry.game} game={game} standalone={needsNoGame(entry)} />
           <div className="grid min-w-0 content-start gap-1">
             <h2 className="leading-tight font-semibold">{entry.name}</h2>
             <p className="text-xs text-muted">
-              {entry.standalone ? t("mods.standalone") : gameTitle(games, entry.game)}
+              {needsNoGame(entry) ? t("mods.standalone") : gameTitle(games, entry.game)}
             </p>
             {base && (
               <p className="text-xs text-muted">
@@ -84,7 +84,7 @@ export function ModCard({
           {mod.modId && <Badge tone="status">{t("discover.installed")}</Badge>}
           {mod.updateAvailable && <Badge tone="status">{t("discover.updateBadge")}</Badge>}
           <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
-          {entry.standalone && <Badge>{t("mods.sourceMod")}</Badge>}
+          {needsNoGame(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
           {mod.new && <Badge>{t("mods.new")}</Badge>}
           {entry.featured && <Badge>{t("discover.featured")}</Badge>}
         </div>
@@ -171,7 +171,7 @@ function InstallAction({
   // Not without the game: that comes with a warning.
   const update = mod.modId && mod.updateAvailable;
   // Standalone mods go on no copy.
-  const enterInstall = update || entry.standalone ? null : !mod.modId ? target?.id : undefined;
+  const enterInstall = update || needsNoGame(entry) ? null : !mod.modId ? target?.id : undefined;
   useEnterAction(
     enter,
     !busy && enterInstall !== undefined ? () => start.mutate(enterInstall) : null,
@@ -199,7 +199,7 @@ function InstallAction({
       </>
     );
   }
-  if (entry.standalone) {
+  if (needsNoGame(entry)) {
     return (
       <>
         {failed}

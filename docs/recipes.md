@@ -36,8 +36,11 @@ mod BloogBase recognises.
 An index entry can mark such a mod `standalone` (index/README.md): it is
 composed from its own files alone, with no copy of the game below them, and
 its profile has no install. It stays a mod of the game it's built on for
-saves, settings and DOSBox defaults. Only the index does this; the same files
-added by hand play on a copy of the game.
+saves, settings and DOSBox defaults. With `requiresGame` as well (a source
+mod carrying the game's own graphics or sounds) it's composed from its own
+files alone too, but goes on a copy of the game like any other mod and can't
+start without one. Only the index does this; the same files added by hand
+play on a copy of the game.
 
 Before guessing:
 

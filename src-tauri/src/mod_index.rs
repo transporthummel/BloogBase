@@ -95,12 +95,24 @@ pub struct IndexEntry {
     /// that game.
     #[serde(default)]
     pub standalone: bool,
+    /// With `standalone`: still plays from its own files alone, but needs
+    /// a copy of `game` like any other mod, as it carries the game's own
+    /// graphics or sounds. Apps before 1.2.0 ignore it.
+    #[serde(default)]
+    pub requires_game: bool,
     #[serde(default)]
     pub tags: Vec<String>,
     #[serde(default)]
     pub featured: bool,
     #[serde(default)]
     pub min_app_version: Option<String>,
+}
+
+impl IndexEntry {
+    /// Plays without a copy of its game: standalone, and not `requiresGame`.
+    pub fn needs_no_game(&self) -> bool {
+        self.standalone && !self.requires_game
+    }
 }
 
 /// An entry's texts in another language.
@@ -587,7 +599,7 @@ pub fn link_installed(index: &ModIndex, db: &Db) -> Result<()> {
                 mods::tie_to_index(db, &mod_id, &Curated::new(&e, i))?;
             }
         }
-        mods::set_standalone(db, &e.id, e.standalone)?;
+        mods::set_standalone(db, &e.id, e.needs_no_game(), e.standalone)?;
     }
     Ok(())
 }

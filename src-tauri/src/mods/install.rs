@@ -43,6 +43,8 @@ struct Stored<'a> {
     cover: Option<String>,
     /// Plays without a copy of its game; only index entries say so.
     standalone: bool,
+    /// Composed from its own files alone; only index entries say so.
+    own_files: bool,
     keenwiki_url: Option<&'a str>,
     homepage: Option<String>,
     pckf: Option<String>,
@@ -71,6 +73,7 @@ impl<'a> Stored<'a> {
             extends,
             cover: c.cover.clone(),
             standalone: c.standalone,
+            own_files: c.own_files,
             keenwiki_url: c.keenwiki_url.as_deref(),
             // The index entry links it.
             homepage: None,
@@ -117,6 +120,7 @@ impl<'a> Stored<'a> {
             extends: req.extends.clone(),
             cover: None,
             standalone: false,
+            own_files: false,
             keenwiki_url: page.map(|o| o.page_url.as_str()),
             homepage: page.and_then(|o| o.homepage.clone()),
             pckf: page.and_then(|o| o.pckf.clone()),
@@ -276,6 +280,10 @@ pub struct Curated {
     pub cover: Option<String>,
     /// Plays without a copy of `game_id`.
     pub standalone: bool,
+    /// Composed from its own files alone, without the game's below them;
+    /// set for every standalone mod, and for source mods that need their
+    /// game all the same (`requiresGame`).
+    pub own_files: bool,
     pub keenwiki_url: Option<String>,
     pub url: String,
 }
@@ -302,7 +310,8 @@ impl Curated {
             copy_to_root: entry.copy_to_root.clone(),
             extends: entry.extends.clone(),
             cover: entry.cover.clone(),
-            standalone: entry.standalone,
+            standalone: entry.needs_no_game(),
+            own_files: entry.standalone,
             requires: entry.requires.clone(),
             keenwiki_url: entry.links.keenwiki.clone(),
             url: d.url.clone(),
@@ -330,8 +339,9 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
         index_id,
         extends: _,
         cover,
-        // Follows the entry for tied mods too: `set_standalone`.
+        // Follow the entry for tied mods too: `set_standalone`.
         standalone: _,
+        own_files: _,
         keenwiki_url,
         homepage,
         pckf,
@@ -484,9 +494,15 @@ fn updated_install(
 }
 
 /// Makes the mods installed from the index entry `index_id` follow its
-/// `standalone`: a standalone one leaves its copy of the game, one that no
-/// longer is goes on the copy that fits best, or waits for one. Saves stay.
-pub fn set_standalone(db: &Db, index_id: &str, standalone: bool) -> Result<()> {
+/// `standalone` and `requiresGame`: one that needs no game (`standalone`)
+/// leaves its copy of the game, one that does again goes on the copy that
+/// fits best, or waits for one; `own_files` says whether it's composed from
+/// its own files alone. Saves stay.
+pub fn set_standalone(db: &Db, index_id: &str, standalone: bool, own_files: bool) -> Result<()> {
+    db.conn().execute(
+        "UPDATE mods SET own_files = ?2 WHERE index_id = ?1 AND own_files IS NOT ?2",
+        params![index_id, own_files],
+    )?;
     let changed = db.conn().execute(
         "UPDATE mods SET standalone = ?2 WHERE index_id = ?1 AND standalone IS NOT ?2",
         params![index_id, standalone],
@@ -505,6 +521,15 @@ pub fn set_standalone(db: &Db, index_id: &str, standalone: bool) -> Result<()> {
         rehome(db, None)?;
     }
     Ok(())
+}
+
+/// Whether mod `mod_id` is composed from its own files alone.
+pub fn own_files(db: &Db, mod_id: &str) -> Result<bool> {
+    Ok(db
+        .conn()
+        .query_row("SELECT own_files FROM mods WHERE id = ?1", [mod_id], |r| {
+            r.get(0)
+        })?)
 }
 
 /// The installed mod made from an index entry.
@@ -645,9 +670,9 @@ fn store(
                                recipe_json, path, source, source_url, archive_sha256, added_at,
                                description, released, author_links, requires_json,
                                version_recipes_json, extends, homepage, pckf,
-                               keenmodding, cover, standalone)
+                               keenmodding, cover, standalone, own_files)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?20, ?21, ?22, ?23, ?24)",
+                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25)",
             params![
                 m.id,
                 m.game_id,
@@ -672,7 +697,8 @@ fn store(
                 s.pckf,
                 s.keenmodding,
                 s.cover,
-                s.standalone
+                s.standalone,
+                s.own_files
             ],
         )?;
         tx.execute(
@@ -746,7 +772,8 @@ fn update(
                              released = ?9, author_links = ?10, requires_json = ?11,
                              name = ?12, source = ?13, index_id = ?14,
                              version_recipes_json = ?15, extends = ?16, homepage = ?17,
-                             pckf = ?18, keenmodding = ?19, cover = ?20, standalone = ?21
+                             pckf = ?18, keenmodding = ?19, cover = ?20, standalone = ?21,
+                             own_files = ?22
              WHERE id = ?1",
             params![
                 mod_id,
@@ -769,7 +796,8 @@ fn update(
                 s.pckf,
                 s.keenmodding,
                 s.cover,
-                s.standalone
+                s.standalone,
+                s.own_files
             ],
         )?;
         tx.execute(

@@ -566,6 +566,7 @@ fn curated(recipe: Recipe) -> Curated {
         extends: None,
         cover: None,
         standalone: false,
+        own_files: false,
         requires: vec!["keen4-1.4-ega".into()],
         keenwiki_url: Some("https://keenwiki.shikadi.net/wiki/Aurora_Bliss".into()),
         url: "https://example.com/m.dave216.aurora.zip".into(),
@@ -661,6 +662,7 @@ fn standalone_mods_play_without_their_game_and_follow_their_entry() {
         name: "Foray in the Forest".into(),
         requires: Vec::new(),
         standalone: true,
+        own_files: true,
         ..curated(Recipe::Program {
             program: "FITF.EXE".into(),
             args: vec!["adlib".into()],
@@ -692,16 +694,47 @@ fn standalone_mods_play_without_their_game_and_follow_their_entry() {
         .join(&m.profile_id)
         .join("state/SAVEGAM0.CKS");
     fs::write(&save, b"save").unwrap();
-    set_standalone(&db, "foray-in-the-forest", false).unwrap();
+    set_standalone(&db, "foray-in-the-forest", false, true).unwrap();
     let (p, _) = profiles::get(&db, &m.profile_id).unwrap();
     assert_eq!(
         (p.install_id.as_deref(), p.standalone),
         (Some("keen4-1"), false)
     );
-    set_standalone(&db, "foray-in-the-forest", true).unwrap();
+    set_standalone(&db, "foray-in-the-forest", true, true).unwrap();
     let (p, _) = profiles::get(&db, &m.profile_id).unwrap();
     assert_eq!((p.install_id, p.standalone), (None, true));
     assert_eq!(fs::read(&save).unwrap(), b"save");
+}
+
+#[test]
+fn source_mods_that_require_their_game_go_on_a_copy_of_it() {
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("pack.zip");
+    write_zip(&zip, &[("RCK4.EXE", b"game"), ("GAMEMAPS.CK4", b"maps")]);
+    let c = Curated {
+        index_id: "pack".into(),
+        name: "Pack".into(),
+        requires: Vec::new(),
+        standalone: false,
+        own_files: true,
+        ..curated(Recipe::Program {
+            program: "RCK4.EXE".into(),
+            args: vec![],
+        })
+    };
+    let m = install_curated(&paths, &db, &zip, &c, None, false).unwrap();
+    let (p, layers) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!(
+        (p.install_id.as_deref(), p.standalone),
+        (Some("keen4-1"), false)
+    );
+    assert!(layers.lower.is_some());
+    assert!(own_files(&db, &m.id).unwrap());
+    // Without the game it waits for one.
+    crate::library::remove(&paths, &db, "keen4-1", false, false).unwrap();
+    let (p, _) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!(p.install_id, None);
+    assert!(p.missing_game.is_some());
 }
 
 #[test]

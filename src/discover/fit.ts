@@ -21,16 +21,23 @@ export function fitsEntry(entry: IndexEntry, owned: Owned, game: Game | undefine
 /** Discover's game filter for mods that need no game. */
 export const NO_GAME = "none";
 
+/** Whether `entry` plays without a copy of its game: standalone, and not
+ * `requiresGame` (source mods that carry the game's own graphics or sounds
+ * are listed and installed like any other mod). */
+export function needsNoGame(entry: IndexEntry): boolean {
+  return !!entry.standalone && !entry.requiresGame;
+}
+
 /** Whether `entry` can be played with `owned`: on a copy it fits, or on none
  * at all for a standalone mod. */
 export function playable(entry: IndexEntry, owned: Owned[], games: Game[] = []): boolean {
-  return !!entry.standalone || fitting(entry, owned, games).length > 0;
+  return needsNoGame(entry) || fitting(entry, owned, games).length > 0;
 }
 
 /** Whether `entry` is listed under `game`, a game id or {@link NO_GAME};
  * standalone mods are under no game, not the one they're built on. */
 export function listedUnder(entry: IndexEntry, game: string): boolean {
-  return game === NO_GAME ? !!entry.standalone : !entry.standalone && entry.game === game;
+  return game === NO_GAME ? needsNoGame(entry) : !needsNoGame(entry) && entry.game === game;
 }
 
 export function fitting<T extends Owned>(entry: IndexEntry, owned: T[], games: Game[] = []): T[] {

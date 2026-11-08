@@ -1232,7 +1232,7 @@ async fn install_entry(
     .await?;
     report.progress(JobPhase::Installing, archive.size, archive.size);
     // Right after the setup wizard the game may still be on its way.
-    while !entry.standalone
+    while !entry.needs_no_game()
         && a.state::<Jobs>().is_running(JobKind::FreeGame, |v| {
             free_games::game_of(v) == Some(entry.game.as_str())
         })

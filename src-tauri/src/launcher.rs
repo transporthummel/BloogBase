@@ -216,7 +216,8 @@ pub fn prepare(
         fs::create_dir_all(dir)?;
     }
     exit_screen::prepare(&dirs.exit_screen)?;
-    // Standalone mods have no copy of their game below them.
+    // Standalone mods have no copy of their game below them. Source mods
+    // that need theirs anyway (`requiresGame`) only check it's there.
     let base =
         match &layers.lower {
             None if profile.standalone && layers.mod_layer.is_some() => None,
@@ -224,6 +225,10 @@ pub fn prepare(
                 Error::MissingGame(profile.missing_game.clone().unwrap_or_default())
             })?),
         };
+    let base = match &profile.mod_id {
+        Some(m) if base.is_some() && crate::mods::own_files(db, m)? => None,
+        _ => base,
+    };
     let settings = game_settings::get(db)?;
     let firing = (firing::supports(&game.id) && firing::enabled(db)?)
         .then(|| settings.keys.fire.unwrap_or(firing::SPACE));
@@ -1016,17 +1021,28 @@ machine = svga_paradise
 "
         ));
 
-        // Without its game the mod can't start.
-        crate::library::remove(&paths, &db, "keen4-1", false, false).unwrap();
-        match prepare(&paths, &db, &m.profile_id, false) {
-            Err(Error::MissingGame(game)) => assert!(game.starts_with("Commander Keen 4")),
-            other => panic!("{other:?}"),
-        }
-        // A standalone one starts on its own files alone.
+        // One that requires its game starts on its own files alone, but
+        // only with the game there.
         db.conn()
             .execute("UPDATE mods SET index_id = 'my-mod'", [])
             .unwrap();
-        crate::mods::set_standalone(&db, "my-mod", true).unwrap();
+        crate::mods::set_standalone(&db, "my-mod", false, true).unwrap();
+        prepare(&paths, &db, &m.profile_id, false).unwrap();
+        assert_eq!(fs::read(composed.join("gamemaps.ck4")).unwrap(), b"new");
+        assert!(!composed.join("KEEN4E.EXE").exists());
+        crate::mods::set_standalone(&db, "my-mod", false, false).unwrap();
+
+        // Without its game the mod can't start.
+        crate::library::remove(&paths, &db, "keen4-1", false, false).unwrap();
+        for own_files in [false, true] {
+            crate::mods::set_standalone(&db, "my-mod", false, own_files).unwrap();
+            match prepare(&paths, &db, &m.profile_id, false) {
+                Err(Error::MissingGame(game)) => assert!(game.starts_with("Commander Keen 4")),
+                other => panic!("{other:?}"),
+            }
+        }
+        // A standalone one starts on its own files alone.
+        crate::mods::set_standalone(&db, "my-mod", true, true).unwrap();
         let spec = prepare(&paths, &db, &m.profile_id, false).unwrap();
         assert!(spec.args.iter().any(|a| a == "@CK4PATCH.EXE MOD.PAT"));
         assert_eq!(fs::read(composed.join("gamemaps.ck4")).unwrap(), b"new");

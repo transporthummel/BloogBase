@@ -52,6 +52,7 @@ By hand:
    | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)            |
    | `cover`          | The program whose title screen is the cover, when the recipe runs a menu (see below)         |
    | `standalone`     | `true` for a source mod that ships its whole game and plays without a copy of it (see below) |
+   | `requiresGame`   | with `standalone`, for a source mod that carries the game's own graphics or sounds           |
    | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                     |
    | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                              |
 
@@ -101,6 +102,13 @@ By hand:
    before 1.2.0 ignore the field and play the mod on that game, so an entry
    can take it up without a `minAppVersion`; mods installed from it leave
    their copy of the game at the next index check, with their saves.
+
+   A source mod that ships the game's own graphics or sounds (most built on
+   the recreated Keen 4-6 source: DarkAle's New Keen 5 Levelpack) also gets
+   `requiresGame: true`. It still plays from its own files alone, but only
+   for players who own `game`: it's listed under that game, waits for a copy
+   of it like any other mod and shows no "Source mod" badge. Free shareware
+   counts, so for Keen 1, Keen 4 and Keen Dreams it's a formality.
 
 3. Check it, including the download:
 

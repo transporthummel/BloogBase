@@ -586,6 +586,12 @@ export type IndexEntry = {
 	 *  that game.
 	 */
 	standalone?: boolean,
+	/**
+	 *  With `standalone`: still plays from its own files alone, but needs
+	 *  a copy of `game` like any other mod, as it carries the game's own
+	 *  graphics or sounds. Apps before 1.2.0 ignore it.
+	 */
+	requiresGame?: boolean,
 	tags?: string[],
 	featured?: boolean,
 	minAppVersion?: string | null,
