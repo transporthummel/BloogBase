@@ -146,3 +146,16 @@ test("fullscreen set by the DOSBox settings leaves the games' option alone", asy
   expect(commands.setDisplayOptions).not.toHaveBeenCalled();
   expect(commands.setStartFullscreen).toHaveBeenCalledWith(true);
 });
+
+test("hints are read out with their settings", async () => {
+  vi.mocked(commands.displayOptions).mockResolvedValue(
+    ok({ options: defaults, overridden: ["vsync"] }),
+  );
+  renderSection();
+  expect(
+    await screen.findByRole("checkbox", { name: "Prevent tearing while scrolling (VSync)" }),
+  ).toHaveAccessibleDescription("Set by your DOSBox settings for all games (below).");
+  expect(screen.getByRole("combobox", { name: "Start in fullscreen" })).toHaveAccessibleDescription(
+    /F11 switches BloogBase anytime/,
+  );
+});

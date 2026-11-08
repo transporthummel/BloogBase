@@ -10,18 +10,20 @@ const UNSET = "";
 /** On, off, or left to the game. */
 function OnOffField({
   label,
+  hint,
   value,
   disabled,
   onChange,
 }: {
   label: string;
+  hint?: string;
   value: boolean | null;
   disabled: boolean;
   onChange: (value: boolean | null) => void;
 }) {
   const { t } = useTranslation();
   return (
-    <Field label={label}>
+    <Field label={label} hint={hint}>
       <select
         className={`${selectClass} w-52`}
         value={value === null ? UNSET : value ? "on" : "off"}
@@ -48,42 +50,35 @@ export function SoundSection() {
     <Group title={t("settings.soundMusic")}>
       {s && (
         <>
-          <div className="grid gap-1">
-            <OnOffField
-              label={t("settings.sound")}
-              value={s.sound}
-              disabled={pending}
-              onChange={(sound) => update({ sound })}
-            />
-          </div>
-          <div className="grid gap-1">
-            <OnOffField
-              label={t("settings.music")}
-              value={s.music}
-              disabled={pending}
-              onChange={(music) => update({ music })}
-            />
-            <Hint>{t("settings.musicHint")}</Hint>
-          </div>
-          <div className="grid gap-1">
-            <Field label={t("settings.device")}>
-              <select
-                className={`${selectClass} w-52`}
-                value={s.device ?? UNSET}
-                disabled={pending || s.sound === false}
-                onChange={(e) =>
-                  update({
-                    device: e.target.value === UNSET ? null : (e.target.value as SoundDevice),
-                  })
-                }
-              >
-                <option value={UNSET}>{t("settings.setByGame")}</option>
-                <option value="pcSpeaker">{t("settings.pcSpeaker")}</option>
-                <option value="soundBlaster">{t("settings.soundBlaster")}</option>
-              </select>
-            </Field>
-            <Hint>{t("settings.deviceHint")}</Hint>
-          </div>
+          <OnOffField
+            label={t("settings.sound")}
+            value={s.sound}
+            disabled={pending}
+            onChange={(sound) => update({ sound })}
+          />
+          <OnOffField
+            label={t("settings.music")}
+            hint={t("settings.musicHint")}
+            value={s.music}
+            disabled={pending}
+            onChange={(music) => update({ music })}
+          />
+          <Field label={t("settings.device")} hint={t("settings.deviceHint")}>
+            <select
+              className={`${selectClass} w-52`}
+              value={s.device ?? UNSET}
+              disabled={pending || s.sound === false}
+              onChange={(e) =>
+                update({
+                  device: e.target.value === UNSET ? null : (e.target.value as SoundDevice),
+                })
+              }
+            >
+              <option value={UNSET}>{t("settings.setByGame")}</option>
+              <option value="pcSpeaker">{t("settings.pcSpeaker")}</option>
+              <option value="soundBlaster">{t("settings.soundBlaster")}</option>
+            </select>
+          </Field>
           <Hint>{t("settings.gameSettingsHint")}</Hint>
         </>
       )}
@@ -100,15 +95,13 @@ export function ScoreBoxField() {
   return (
     <>
       {s && (
-        <div className="grid gap-1">
-          <OnOffField
-            label={t("settings.scoreBox")}
-            value={s.scoreBox}
-            disabled={pending}
-            onChange={(scoreBox) => update({ scoreBox })}
-          />
-          <Hint>{t("settings.scoreBoxHint")}</Hint>
-        </div>
+        <OnOffField
+          label={t("settings.scoreBox")}
+          hint={t("settings.scoreBoxHint")}
+          value={s.scoreBox}
+          disabled={pending}
+          onChange={(scoreBox) => update({ scoreBox })}
+        />
       )}
       {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
     </>

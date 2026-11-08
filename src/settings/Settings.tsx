@@ -31,7 +31,7 @@ import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
 import { ScoreBoxField, SoundSection } from "./GameSettings";
 import { KeysDialog } from "./KeysDialog";
-import { Field, Group, selectClass } from "./parts";
+import { Check, Field, Group, selectClass } from "./parts";
 import { useGameSettings } from "./queries";
 
 /** The cards of the page, in order, for the list that jumps to them. */
@@ -90,20 +90,15 @@ export function Settings() {
                 <option value="system">{t("settings.themeSystem")}</option>
               </select>
             </Field>
-            <div className="grid gap-1">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={showTrivia}
-                  onChange={(e) => {
-                    setShowTrivia(e.target.checked);
-                    setShowTriviaState(e.target.checked);
-                  }}
-                />
-                {t("settings.showTrivia")}
-              </label>
-              <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.showTriviaHint")}</p>
-            </div>
+            <Check
+              label={t("settings.showTrivia")}
+              hint={t("settings.showTriviaHint")}
+              checked={showTrivia}
+              onChange={(e) => {
+                setShowTrivia(e.target.checked);
+                setShowTriviaState(e.target.checked);
+              }}
+            />
           </Section>
           <Section id="pictureSound" title={titles.pictureSound} intro={t("settings.nextStart")}>
             <DisplaySection>
@@ -360,20 +355,16 @@ export function DisplaySection({ children }: { children?: ReactNode }) {
         options.map((name) => {
           const overridden = v.overridden.includes(name);
           return (
-            <div key={name} className="grid gap-1">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={v.options[name]}
-                  disabled={overridden || update.isPending}
-                  onChange={(e) => update.mutate({ ...v.options, [name]: e.target.checked })}
-                />
-                {t(`settings.displayOption.${name}`)}
-              </label>
-              <p className="ml-6 max-w-prose text-xs text-muted">
-                {overridden ? t("settings.displayOverridden") : t(`settings.displayHint.${name}`)}
-              </p>
-            </div>
+            <Check
+              key={name}
+              label={t(`settings.displayOption.${name}`)}
+              hint={
+                overridden ? t("settings.displayOverridden") : t(`settings.displayHint.${name}`)
+              }
+              checked={v.options[name]}
+              disabled={overridden || update.isPending}
+              onChange={(e) => update.mutate({ ...v.options, [name]: e.target.checked })}
+            />
           );
         })}
       {v && <p className="max-w-prose text-xs text-muted">{t("settings.displayHint.all")}</p>}
@@ -396,27 +387,25 @@ export function InactiveSection() {
   return (
     <Group title={t("settings.inactive")}>
       {v && (
-        <div className="grid gap-1">
-          <Field label={t("settings.inactiveLabel")}>
-            <select
-              className={`${selectClass} w-52`}
-              value={v.options.inactive}
-              disabled={overridden || update.isPending}
-              onChange={(e) =>
-                update.mutate({ ...v.options, inactive: e.target.value as WhenInactive })
-              }
-            >
-              {choices.map((c) => (
-                <option key={c} value={c}>
-                  {t(`settings.inactiveChoice.${c}`)}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <p className="max-w-prose text-xs text-muted">
-            {overridden ? t("settings.displayOverridden") : t("settings.inactiveHint")}
-          </p>
-        </div>
+        <Field
+          label={t("settings.inactiveLabel")}
+          hint={overridden ? t("settings.displayOverridden") : t("settings.inactiveHint")}
+        >
+          <select
+            className={`${selectClass} w-52`}
+            value={v.options.inactive}
+            disabled={overridden || update.isPending}
+            onChange={(e) =>
+              update.mutate({ ...v.options, inactive: e.target.value as WhenInactive })
+            }
+          >
+            {choices.map((c) => (
+              <option key={c} value={c}>
+                {t(`settings.inactiveChoice.${c}`)}
+              </option>
+            ))}
+          </select>
+        </Field>
       )}
       {(view.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
@@ -435,20 +424,13 @@ export function LegacyPcSection() {
   return (
     <Group title={t("settings.legacyPc")}>
       {v && (
-        <div className="grid gap-1">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={v.options.legacyPc}
-              disabled={overridden || update.isPending}
-              onChange={(e) => update.mutate({ ...v.options, legacyPc: e.target.checked })}
-            />
-            {t("settings.legacyPcOption")}
-          </label>
-          <p className="ml-6 max-w-prose text-xs text-muted">
-            {overridden ? t("settings.displayOverridden") : t("settings.legacyPcHint")}
-          </p>
-        </div>
+        <Check
+          label={t("settings.legacyPcOption")}
+          hint={overridden ? t("settings.displayOverridden") : t("settings.legacyPcHint")}
+          checked={v.options.legacyPc}
+          disabled={overridden || update.isPending}
+          onChange={(e) => update.mutate({ ...v.options, legacyPc: e.target.checked })}
+        />
       )}
       {(view.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
@@ -498,7 +480,10 @@ function FullscreenField() {
 
   return (
     <div className="grid gap-1">
-      <Field label={t("settings.fullscreen")}>
+      <Field
+        label={t("settings.fullscreen")}
+        hint={overridden ? t("settings.fullscreenOverridden") : t("settings.fullscreenHint")}
+      >
         <select
           className={`${selectClass} w-52`}
           value={value}
@@ -512,9 +497,6 @@ function FullscreenField() {
           ))}
         </select>
       </Field>
-      <p className="max-w-prose text-xs text-muted">
-        {overridden ? t("settings.fullscreenOverridden") : t("settings.fullscreenHint")}
-      </p>
       {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
     </div>
   );
@@ -550,18 +532,13 @@ function ControlsSection() {
         </Button>
       </div>
       {firing.data !== undefined && (
-        <div className="grid gap-1">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={firing.data}
-              disabled={update.isPending}
-              onChange={(e) => update.mutate(e.target.checked)}
-            />
-            {t("settings.oneButtonFiring")}
-          </label>
-          <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.oneButtonFiringHint")}</p>
-        </div>
+        <Check
+          label={t("settings.oneButtonFiring")}
+          hint={t("settings.oneButtonFiringHint")}
+          checked={firing.data}
+          disabled={update.isPending}
+          onChange={(e) => update.mutate(e.target.checked)}
+        />
       )}
       {choosingKeys && <KeysDialog onClose={() => setChoosingKeys(false)} />}
       {(firing.error ?? update.error) && (

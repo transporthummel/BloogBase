@@ -1,4 +1,11 @@
-import type { ReactNode } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useId,
+  type ComponentProps,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 
 // Selects get a fixed width (w-44) where they sit under each other: on their
 // own they're as wide as their longest option and don't line up.
@@ -15,11 +22,57 @@ export function Group({ title, children }: { title: string; children: ReactNode 
   );
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
+/**
+ * A label beside its control. A hint goes below and is read out with the
+ * control (`aria-describedby`).
+ */
+export function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: ReactNode;
+  children: ReactElement<{ "aria-describedby"?: string }>;
+}) {
+  const hintId = useId();
+  const field = (
     <label className="flex flex-wrap items-center justify-between gap-3 text-sm">
       <span>{label}</span>
-      {children}
+      {hint && isValidElement(children)
+        ? cloneElement(children, { "aria-describedby": hintId })
+        : children}
     </label>
+  );
+  if (!hint) return field;
+  return (
+    <div className="grid gap-1">
+      {field}
+      <p id={hintId} className="max-w-prose text-xs text-muted">
+        {hint}
+      </p>
+    </div>
+  );
+}
+
+/** A checkbox with its label, and a hint below that is read out with it. */
+export function Check({
+  label,
+  hint,
+  ...input
+}: { label: ReactNode; hint?: ReactNode } & Omit<ComponentProps<"input">, "type">) {
+  const hintId = useId();
+  return (
+    <div className="grid gap-1">
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" aria-describedby={hint ? hintId : undefined} {...input} />
+        {label}
+      </label>
+      {hint && (
+        <p id={hintId} className="ml-6 max-w-prose text-xs text-muted">
+          {hint}
+        </p>
+      )}
+    </div>
   );
 }
