@@ -22,7 +22,7 @@ downloads:
     url: https://files.shikadi.net/keenwiki/Packs/SourceCode/l.ceilick.return_to_the_shadowlands_v1.8.sc.2022-12-21.zip
     sha256: b09318ee02e4a3200005a6f67ad95f3f8fd498e681aaf7ea5bff3829b0d9bb8b
     size: 724306
-standalone: true    
+standalone: true
 recipe:
   type: program
   program: RTTS.EXE
