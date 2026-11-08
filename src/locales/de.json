@@ -965,7 +965,7 @@
       "down": "Pfeil runter"
     },
     "dialogTitle": "So spielst du {{series}}",
-    "dialogIntro": "Lange her? Hier sind die Tasten. Du findest sie jederzeit wieder auf der Seite des Spiels unter „Steuerung“.",
+    "dialogIntro": "Hier sind die Tasten. Du findest sie jederzeit wieder auf der Seite des Spiels unter „Steuerung“.",
     "dontShow": "Beim nächsten Start nicht mehr anzeigen"
   }
 }

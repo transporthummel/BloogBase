@@ -965,7 +965,7 @@
       "down": "Down arrow"
     },
     "dialogTitle": "How to play {{series}}",
-    "dialogIntro": "Been a while? Here are the keys. You'll find them again on the game's page under Controls.",
+    "dialogIntro": "Here are the keys. You'll find them again on the game's page under Controls.",
     "dontShow": "Don't show this again"
   }
 }
