@@ -68,7 +68,7 @@ export function Settings() {
       <PageHeader title={t("settings.title")} />
       {/* Once for the page instead of under each card of game settings. */}
       <p className="-mt-3 mb-6 text-sm text-muted">{t("settings.nextStart")}</p>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,42rem)_11rem] lg:items-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,42rem)_12rem] lg:items-start">
         <SectionNav titles={titles} />
         <div className="grid min-w-0 gap-4 lg:order-first">
           <Section id="appearance" title={titles.appearance}>
@@ -280,7 +280,7 @@ function SectionNav({ titles }: { titles: Record<SectionId, string> }) {
         ref={list}
         onScroll={measure}
         style={{ maskImage: `linear-gradient(to right, ${fade})` }}
-        className="flex gap-0.5 overflow-x-auto [scrollbar-width:none] min-[900px]:gap-1 lg:grid lg:gap-0.5 lg:overflow-visible"
+        className="flex gap-0.5 overflow-x-auto [scrollbar-width:none] min-[900px]:gap-1 lg:grid lg:gap-0.5 lg:overflow-visible lg:[mask-image:none]!"
       >
         {sectionIds.map((id) => (
           <li key={id}>
@@ -288,7 +288,7 @@ function SectionNav({ titles }: { titles: Record<SectionId, string> }) {
               type="button"
               onClick={(e) => jump(id, e.detail === 0)}
               aria-current={current === id ? "location" : undefined}
-              className={`flex h-9 w-full items-center rounded-lg px-2 text-left text-sm whitespace-nowrap min-[900px]:px-2.5 lg:px-3 transition hover:bg-surface-raised hover:text-ink ${
+              className={`flex min-h-9 w-full items-center rounded-lg px-2 py-1 text-left text-sm whitespace-nowrap lg:whitespace-normal min-[900px]:px-2.5 lg:px-3 transition hover:bg-surface-raised hover:text-ink ${
                 current === id ? "bg-surface-raised text-ink" : "text-muted"
               }`}
             >
