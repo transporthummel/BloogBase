@@ -677,7 +677,7 @@ export function KeenwikiCacheSection() {
 
   return (
     <Group title={t("settings.keenwikiCache")}>
-      <p className="text-sm text-muted">{t("settings.keenwikiCacheHint")}</p>
+      <p className="max-w-prose text-sm text-muted">{t("settings.keenwikiCacheHint")}</p>
       <div className="flex items-center gap-3">
         <Button variant="secondary" disabled={clear.isPending} onClick={() => clear.mutate()}>
           <Eraser className="size-4" aria-hidden />
