@@ -1,34 +1,39 @@
 {
   "unreleased": {
-    "en": [
-      "Set sound, music, score box and keys once for all games and mods.",
-      "BloogBase can go fullscreen, and games then start in fullscreen too.",
-      "BloogBase recognizes eight more game releases, 50 in all.",
-      "Legacy PC mode: hear the hard disk and load as slowly as back then.",
-      "Added support for Atroxian Realm, Keen Dreams Gold Edition and Return to the Shadowlands.",
-      "Games can mute or pause while you are in another window.",
-      "Retro-PC-Modus: Festplattengeräusche und Laden so langsam wie damals.",
-      "Add your own patches to a game copy, and its mods get them too.",
-      "Library and Discover keep their search and filter settings when you switch pages.",
-      "On Windows the title bar matches BloogBase's theme.",
-      "Keen Dreams v1.0 and v1.05 show their title screen as cover.",
-      "The settings page is split into clear parts you can jump to."
-    ],
-    "de": [
-      "Sound, Musik, Scorebox und Tasten lassen sich einmal für alle Spiele und Mods festlegen.",
-      "BloogBase kann ins Vollbild, und Spiele starten dann auch im Vollbild.",
-      "BloogBase erkennt acht weitere Spielversionen, insgesamt 50.",
-      "Retro-PC-Modus: Festplattengeräusche und Laden so langsam wie damals.",
-      "Support für Atroxian Realm, Keen Dreams Gold Edition und Return to the Shadowlands.",
-      "Spiele können stummschalten oder anhalten, während du in einem anderen Fenster bist.",
-      "Eigene Patches für eine Spielkopie gelten auch für ihre Mods.",
-      "Bibliothek und Mod-Liste behalten Suche, Filter und Sortierung beim Wechsel zwischen den Seiten.",
-      "Unter Windows passt die Titelleiste zum Theme von BloogBase.",
-      "Keen Dreams v1.0 und v1.05 zeigen ihren Titelbildschirm als Cover.",
-      "Die Einstellungsseite ist in klare Bereiche geteilt, zu denen du springen kannst."
-    ]
+    "en": [],
+    "de": []
   },
   "releases": [
+    {
+      "version": "1.2.0",
+      "en": [
+        "Set sound, music, score box and keys once for all games and mods.",
+        "BloogBase can go fullscreen, and games then start in fullscreen too.",
+        "BloogBase recognizes eight more game releases, 50 in all.",
+        "Legacy PC mode: hear the hard disk and load as slowly as back then.",
+        "Added support for Atroxian Realm, Keen Dreams Gold Edition and Return to the Shadowlands.",
+        "Games can mute or pause while you are in another window.",
+        "Retro-PC-Modus: Festplattengeräusche und Laden so langsam wie damals.",
+        "Add your own patches to a game copy, and its mods get them too.",
+        "Library and Discover keep their search and filter settings when you switch pages.",
+        "On Windows the title bar matches BloogBase's theme.",
+        "Keen Dreams v1.0 and v1.05 show their title screen as cover.",
+        "The settings page is split into clear parts you can jump to."
+      ],
+      "de": [
+        "Sound, Musik, Scorebox und Tasten lassen sich einmal für alle Spiele und Mods festlegen.",
+        "BloogBase kann ins Vollbild, und Spiele starten dann auch im Vollbild.",
+        "BloogBase erkennt acht weitere Spielversionen, insgesamt 50.",
+        "Retro-PC-Modus: Festplattengeräusche und Laden so langsam wie damals.",
+        "Support für Atroxian Realm, Keen Dreams Gold Edition und Return to the Shadowlands.",
+        "Spiele können stummschalten oder anhalten, während du in einem anderen Fenster bist.",
+        "Eigene Patches für eine Spielkopie gelten auch für ihre Mods.",
+        "Bibliothek und Mod-Liste behalten Suche, Filter und Sortierung beim Wechsel zwischen den Seiten.",
+        "Unter Windows passt die Titelleiste zum Theme von BloogBase.",
+        "Keen Dreams v1.0 und v1.05 zeigen ihren Titelbildschirm als Cover.",
+        "Die Einstellungsseite ist in klare Bereiche geteilt, zu denen du springen kannst."
+      ]
+    },
     {
       "version": "1.1.0",
       "en": [
