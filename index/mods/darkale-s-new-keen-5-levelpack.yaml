@@ -1,0 +1,31 @@
+id: darkale-s-new-keen-5-levelpack
+name: "DarkAle's New Keen 5 Levelpack"
+game: keen5
+authors: ["DarkAle"]
+authorLinks:
+  "DarkAle": https://keenwiki.shikadi.net/wiki/User:DarkAle
+version: "1.1"
+released: 2022-12-16
+updated: 2023-01-01
+added: 2026-11-08
+type: levelpack
+description: "Contains 15 new levels in the style of Keen 5. This is the source mod remake of a levelpack previously made by the same author."
+translations:
+  de:
+    description: "Enthält 15 neue Level im Stil von Keen 5. Dies ist das Source-Mod-Remake eines Levelpacks, das zuvor vom selben Autor erstellt wurde."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/DarkAle%27s_New_Keen_5_Levelpack
+  pckf: https://pckf.com/viewtopic.php?t=15386
+downloads:
+  - version: "1.1"
+    url: https://files.shikadi.net/keenwiki/Packs/Keen5/l.alessandro.darkales_new_levelpack_v1.1.k5.2023-01-01.zip
+    sha256: f4c8a535fc215d17c33dd95bee8cdb6334bdfd2ca55da2d8e16c38ce8964452c
+    size: 739962
+standalone: true
+# Carries Keen 5's own graphics and sound effects.
+requiresGame: true
+recipe:
+  type: program
+  program: RCK5.EXE
+minAppVersion: 1.2.0
+
