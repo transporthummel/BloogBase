@@ -27,7 +27,7 @@
       "Return to the Shadowlands saves show the right score.",
       "The settings page is split into clear parts you can jump to.",
       "Reporting a problem says what to do step by step.",
-      "Discover says whether a mod's date is its release or its latest update."
+      "Discover says \"Released on\" before a mod's date."
     ],
     "de": [
       "Sound, Musik, Scorebox und Tasten lassen sich einmal für alle Spiele und Mods festlegen.",
@@ -56,7 +56,7 @@
       "Spielstände von Return to the Shadowlands zeigen die richtigen Punkte.",
       "Die Einstellungsseite ist in klare Bereiche geteilt, zu denen du springen kannst.",
       "Beim Melden eines Problems steht Schritt für Schritt, was zu tun ist.",
-      "Discover sagt, ob das Datum einer Mod ihr Erscheinen oder ihr letztes Update ist."
+      "Discover schreibt „Erschienen am“ vor das Datum einer Mod."
     ]
   },
   "releases": [

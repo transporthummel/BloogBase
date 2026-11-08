@@ -34,7 +34,7 @@
 - "What DOSBox gets" on a game's page names the settings page as the source of what it sets ("Settings page") instead of "Display options", since it sets sound, keys and more now.
 - The sidebar shows the logo's "BloogBase" lettering, in the theme's colours, instead of the name in pixel type.
 - Source mods get a tile of their own in Discover, and as placeholder cover, a "+" on EGA dark cyan instead of the blue number of the game they're built on.
-- Discover says whether a mod's date is its release ("Released on …") or its latest update ("Updated on …"), and a mod's page says "Released on …"; dates known only to the month or year read "in July 2017" or "2017".
+- Discover and a mod's page say "Released on …" before a mod's date; dates known only to the month or year read "in July 2017" or "2017".
 - On a game's "DOSBox & patches" tab, "What DOSBox gets", BloogBase's defaults and custom patches fold away the same way under their headings; the first two start folded.
 - The "Mod won't start?" and bug report dialogs say in two steps what to do, including that GitHub needs a free account, and fold the report away behind "Show the report".
 

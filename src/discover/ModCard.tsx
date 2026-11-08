@@ -45,13 +45,13 @@ export function ModCard({
   const base = entry.extends ? index.data?.find((m) => m.entry.id === entry.extends) : undefined;
   const baseMissing = base !== undefined && base.modId === null;
   const description = entryDescription(entry, i18n.language);
+  const date = entry.updated ?? entry.released;
   const details = [
     entry.authors.length > 0 && <Authors authors={entry.authors} links={entry.authorLinks} />,
     entry.version && t("mods.version", { version: entry.version }),
-    // The newest version's date when there is one, else the first release.
-    entry.updated
-      ? looseDateText(t, i18n.language, "mods.updatedOn", entry.updated)
-      : entry.released && looseDateText(t, i18n.language, "mods.releasedOn", entry.released),
+    // The shown version's date when known, else the first release's; with the
+    // version beside it, "released" fits both.
+    date && looseDateText(t, i18n.language, "mods.releasedOn", date),
   ].filter(Boolean);
   const links = [
     ["KeenWiki", entry.links.keenwiki],
