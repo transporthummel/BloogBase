@@ -188,7 +188,7 @@
     "keysReserved": "Diese Taste ist vergeben: Die Spiele nutzen sie selbst.",
     "keysTaken": "Diese Taste ist schon für {{action}} festgelegt.",
     "keysClash": "Diese Taste hat in den Spielen noch eine andere Aufgabe, solange du die nicht auch verlegst.",
-    "keysHint": "Schießen in Keen 1–3 braucht „Schießen mit einer Taste“; ohne das schießt Keen mit Springen und Pogo zusammen. Keen Dreams hat keinen Pogo-Stick: Schießen wirft.",
+    "keysHint": "Welche Tasten ein Spiel nutzt, steht auf seiner Seite unter „Steuerung“. Schießen in Keen 1–3 braucht „Schießen mit einer Taste“; ohne das schießt Keen mit Springen und Pogo zusammen. Keen Dreams hat keinen Pogo-Stick: Schießen wirft.",
     "keysSet_one": "{{count}} Taste festgelegt",
     "keysSet_other": "{{count}} Tasten festgelegt",
     "keysNone": "Wie im jeweiligen Spiel eingestellt",

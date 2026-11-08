@@ -188,7 +188,7 @@
     "keysReserved": "This key is taken: the games use it themselves.",
     "keysTaken": "This key is already set for {{action}}.",
     "keysClash": "This key also does something else in the games, unless you move that too.",
-    "keysHint": "Fire in Keen 1–3 needs “one-button firing”; without it, Keen fires with Jump and Pogo together. Keen Dreams has no pogo stick: Fire throws.",
+    "keysHint": "Which keys a game uses is on its page under Controls. Fire in Keen 1–3 needs “one-button firing”; without it, Keen fires with Jump and Pogo together. Keen Dreams has no pogo stick: Fire throws.",
     "keysSet_one": "{{count}} key set",
     "keysSet_other": "{{count}} keys set",
     "keysNone": "As set in each game",
