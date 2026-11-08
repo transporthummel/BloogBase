@@ -180,6 +180,9 @@ function SectionNav({ titles }: { titles: Record<SectionId, string> }) {
   const { t } = useTranslation();
   const nav = useRef<HTMLElement>(null);
   const [current, setCurrent] = useState<SectionId>(sectionIds[0]);
+  // The card jumped to stays marked, even when a short one can't reach the
+  // top, until the player scrolls on their own.
+  const jumped = useRef<SectionId | null>(null);
 
   useEffect(() => {
     const main = nav.current?.closest("main");
@@ -187,11 +190,15 @@ function SectionNav({ titles }: { titles: Record<SectionId, string> }) {
     let frame = 0;
     const update = () => {
       frame = 0;
+      if (jumped.current) {
+        setCurrent(jumped.current);
+        return;
+      }
       const top = main.getBoundingClientRect().top;
       let at: SectionId = sectionIds[0];
       for (const id of sectionIds) {
         const el = document.getElementById(`settings-${id}`);
-        if (el && el.getBoundingClientRect().top - top <= main.clientHeight * 0.4) at = id;
+        if (el && el.getBoundingClientRect().top - top <= main.clientHeight * 0.3) at = id;
       }
       // At the bottom the last card can't reach the top: it counts anyway.
       const atEnd =
@@ -201,10 +208,19 @@ function SectionNav({ titles }: { titles: Record<SectionId, string> }) {
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
+    const ownScroll = () => {
+      jumped.current = null;
+    };
     update();
     main.addEventListener("scroll", onScroll, { passive: true });
+    main.addEventListener("wheel", ownScroll, { passive: true });
+    main.addEventListener("pointerdown", ownScroll);
+    main.addEventListener("keydown", ownScroll);
     return () => {
       main.removeEventListener("scroll", onScroll);
+      main.removeEventListener("wheel", ownScroll);
+      main.removeEventListener("pointerdown", ownScroll);
+      main.removeEventListener("keydown", ownScroll);
       cancelAnimationFrame(frame);
     };
   }, []);
@@ -212,6 +228,8 @@ function SectionNav({ titles }: { titles: Record<SectionId, string> }) {
   function jump(id: SectionId, byKeyboard: boolean) {
     const section = document.getElementById(`settings-${id}`);
     if (!section) return;
+    jumped.current = id;
+    setCurrent(id);
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     section.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" });
     // Keyboard users go on reading from there.
@@ -683,7 +701,11 @@ function Section({
 }) {
   return (
     <Card id={`settings-${id}`} className="scroll-mt-20 p-5 lg:scroll-mt-6">
-      <h2 tabIndex={-1} className={`font-semibold ${intro ? "mb-1" : "mb-4"}`}>
+      {/* Focused after a jump from the keyboard; the app's ring shows where. */}
+      <h2
+        tabIndex={-1}
+        className={`rounded-sm font-semibold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${intro ? "mb-1" : "mb-4"}`}
+      >
         {title}
       </h2>
       {intro && <p className="mb-5 text-sm text-muted">{intro}</p>}
