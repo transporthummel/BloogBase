@@ -143,7 +143,7 @@
     "displayHint": {
       "crt": "Zeigt die Spiele wie auf einem Monitor von damals, mit Zeilen und weichen Pixeln. Ausgeschaltet bleiben die Pixel scharf.",
       "vsync": "Hilft, wenn das Bild beim Laufen horizontal zerreißt. Die Steuerung reagiert dann minimal verzögert; bei Monitoren mit FreeSync oder G-Sync nicht nötig.",
-      "all": "Einzelne Spiele kannst du auf ihrer Seite unter „DOSBox-Einstellungen“ abweichend einstellen."
+      "all": "Einzelne Spiele kannst du auf ihrer Seite unter „DOSBox & Patches“ abweichend einstellen."
     },
     "displayOverridden": "Wird von deinen DOSBox-Einstellungen für alle Spiele (unten) festgelegt.",
     "inactive": "Im Hintergrund",
@@ -573,7 +573,7 @@
     "notFound": "Dieses Spiel ist nicht mehr in der Bibliothek.",
     "tabReadme": "Liesmich",
     "tabSaves": "Spielstände",
-    "tabConfig": "Einstellungen",
+    "tabConfig": "DOSBox & Patches",
     "tabs": "Bereiche",
     "tabScreenshots": "Screenshots",
     "tabVideos": "Videos",

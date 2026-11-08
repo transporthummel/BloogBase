@@ -816,7 +816,7 @@ test("tabs follow the arrow keys", async () => {
   expect(shots).toHaveAttribute("aria-selected", "true");
   expect(await screen.findByText("No screenshots yet")).toBeInTheDocument();
   await userEvent.keyboard("{End}");
-  expect(screen.getByRole("tab", { name: "Settings" })).toHaveFocus();
+  expect(screen.getByRole("tab", { name: "DOSBox & patches" })).toHaveFocus();
   await userEvent.keyboard("{ArrowRight}");
   expect(screen.getByRole("tab", { name: "Controls" })).toHaveFocus();
 });
@@ -1036,7 +1036,7 @@ test("config tab saves the profile layer and shows warnings and the result", asy
   );
   vi.mocked(commands.saveConfig).mockResolvedValue(ok([{ line: 2, kind: "autoexec" }]));
   renderDetail();
-  await userEvent.click(await screen.findByRole("tab", { name: "Settings" }));
+  await userEvent.click(await screen.findByRole("tab", { name: "DOSBox & patches" }));
   expect(await screen.findByText("[cpu] cpu_cycles")).toBeInTheDocument();
   expect(screen.getByText("BloogBase default")).toBeInTheDocument();
 
@@ -1059,7 +1059,7 @@ test("a game's settings tab saves its custom patches and names a reserved line",
     ok({ line: 2, problem: "reserved", word: "%end" }),
   );
   renderDetail();
-  await userEvent.click(await screen.findByRole("tab", { name: "Settings" }));
+  await userEvent.click(await screen.findByRole("tab", { name: "DOSBox & patches" }));
   const field = await screen.findByRole("textbox", { name: "Custom patches" });
   await userEvent.type(field, "%patch $10 $01\n%end");
   await userEvent.click(screen.getByRole("button", { name: "Save" }));
@@ -1091,7 +1091,7 @@ test("a mod's settings tab says whether it gets the game's custom patches", asyn
     }),
   );
   renderDetail();
-  await userEvent.click(await screen.findByRole("tab", { name: "Settings" }));
+  await userEvent.click(await screen.findByRole("tab", { name: "DOSBox & patches" }));
   expect(
     await screen.findByText(/doesn't get the custom patches of Keen 4 v1\.4: it starts a program/),
   ).toBeInTheDocument();

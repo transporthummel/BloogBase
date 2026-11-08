@@ -161,8 +161,8 @@ as it's part of the composed folder's hash.
 
 ## Custom patches
 
-A player can enter patch file lines for a game copy in the Settings tab of
-its profile page (`custom_patches.rs`). They're stored with the install
+A player can enter patch file lines for a game copy in the "DOSBox & patches"
+tab of its profile page (`custom_patches.rs`). They're stored with the install
 (`installs.custom_patches`), never exported, and go into the composed folder
 of the game and of every mod played on that copy, after one-button firing,
 so they come last. A copy with custom patches is composed even without a
@@ -190,6 +190,6 @@ particular ones.
   then nothing is applied.
 - **A program of the mod's own** is left alone.
 
-The game's Settings tab says when its own start skips them; a mod's says
-whether it gets them, with a link to the game copy. The text is part of the
+The game's "DOSBox & patches" tab says when its own start skips them; a mod's
+says whether it gets them, with a link to the game copy. The text is part of the
 composed folder's hash, so a change applies from the next start.
