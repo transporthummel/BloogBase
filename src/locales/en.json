@@ -130,7 +130,7 @@
     "display": "Display",
     "fullscreen": "Start in fullscreen",
     "fullscreenChoice": {
-      "none": "Nothing",
+      "none": "Off",
       "games": "Games only",
       "both": "BloogBase and games"
     },

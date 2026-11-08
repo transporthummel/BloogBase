@@ -123,7 +123,7 @@ test("choosing BloogBase and games sets both", async () => {
   expect(commands.setStartFullscreen).toHaveBeenCalledWith(true);
 });
 
-test("choosing nothing turns off BloogBase's fullscreen and the games'", async () => {
+test("choosing off turns off BloogBase's fullscreen and the games'", async () => {
   vi.mocked(commands.startFullscreen).mockResolvedValue(ok(true));
   vi.mocked(commands.displayOptions).mockResolvedValue(
     ok({ options: { ...defaults, fullscreen: true }, overridden: [] }),
@@ -131,7 +131,7 @@ test("choosing nothing turns off BloogBase's fullscreen and the games'", async (
   renderSection();
   const select = await screen.findByRole("combobox", { name: "Start in fullscreen" });
   expect(select).toHaveValue("both");
-  await userEvent.selectOptions(select, "Nothing");
+  await userEvent.selectOptions(select, "Off");
   expect(commands.setDisplayOptions).toHaveBeenCalledWith(defaults);
   expect(commands.setStartFullscreen).toHaveBeenCalledWith(false);
 });

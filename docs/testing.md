@@ -137,13 +137,13 @@ BLOOGBASE_E2E_GAME=<folder with a Keen game> \
 
 Downloads the managed DOSBox Staging, imports the game into a data folder
 with a non-ASCII path, starts it in a window for eight seconds, with fullscreen
-off ("Start in fullscreen: Nothing"), and checks the play time was recorded.
+off ("Start in fullscreen: Off"), and checks the play time was recorded.
 
 ### Mods in DOSBox
 
 Launches every mod in DOSBox on every game version it fits, keeps it running
 for a few seconds and saves a screenshot of the DOSBox window. The games open
-in a window, with fullscreen off ("Start in fullscreen: Nothing"). Windows only for now.
+in a window, with fullscreen off ("Start in fullscreen: Off"). Windows only for now.
 
 It imports the game folders in `.local/games` (`platforms`, `disks`, `test`,
 `versions`; folders with several episodes in subfolders work too) and takes the mod archives from `.local/mods`, the corpus

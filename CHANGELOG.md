@@ -5,7 +5,7 @@
 ### Features
 
 - Sound, music, the sound device, the score box and keys can be set once for all games and mods in the settings.
-- BloogBase can go fullscreen, without the taskbar, from a button in the sidebar or with F11, and can start in fullscreen; while it is in fullscreen, games start in fullscreen too, whatever their settings say. Settings has one choice for what starts in fullscreen: nothing, games only (the default), or BloogBase and games.
+- BloogBase can go fullscreen, without the taskbar, from a button in the sidebar or with F11, and can start in fullscreen; while it is in fullscreen, games start in fullscreen too, whatever their settings say. Settings has one choice for what starts in fullscreen: off, games only (the default), or BloogBase and games.
 - A "Quit BloogBase" button at the bottom of the sidebar closes the app, also in fullscreen, and asks first while games run, as the window's close button does.
 - BloogBase knows 50 releases now, eight more: Keen 2 and 3 v1.1 and v1.32, the Keen 6 Apogee demo and id Anthology release, and Keen Dreams v1.05 and v1.20; mods get placed on them by the same ranking as on the others.
 - Mods that bring their whole game with them (source mods such as Foray in the Forest) can be marked standalone in the mod list: they play without a copy of the game they're built on, show up under "No game needed" in Discover and in the library, and the setup wizard suggests them even without any Keen; installed ones leave their copy of the game at the next check of the mod list, saves included. `pnpm index:add` marks source mods standalone.
