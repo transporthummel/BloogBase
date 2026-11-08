@@ -42,7 +42,8 @@ const highlight = syntaxHighlighting(
     { tag: tags.comment, color: "var(--bb-muted)", fontStyle: "italic" },
     { tag: tags.heading, color: "var(--bb-accent)", fontWeight: "bold" },
     { tag: tags.definition(tags.variableName), color: "var(--bb-ink)" },
-    { tag: tags.quote, color: "var(--bb-galaxy)" },
+    // Galaxy blue alone is too faint on Vintage Beige (3.7:1); towards the ink it reads in both themes.
+    { tag: tags.quote, color: "color-mix(in oklab, var(--bb-galaxy) 65%, var(--bb-ink))" },
   ]),
 );
 
