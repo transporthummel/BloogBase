@@ -66,6 +66,8 @@ export function Settings() {
   return (
     <>
       <PageHeader title={t("settings.title")} />
+      {/* Once for the page instead of under each card of game settings. */}
+      <p className="-mt-3 mb-6 text-sm text-muted">{t("settings.nextStart")}</p>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,42rem)_11rem] lg:items-start">
         <SectionNav titles={titles} />
         <div className="grid min-w-0 gap-4 lg:order-first">
@@ -109,21 +111,17 @@ export function Settings() {
               }}
             />
           </Section>
-          <Section id="picture" title={titles.picture} intro={t("settings.nextStart")}>
+          <Section id="picture" title={titles.picture}>
             <DisplaySection>
               <ScoreBoxField />
             </DisplaySection>
           </Section>
-          <Section
-            id="soundBackground"
-            title={titles.soundBackground}
-            intro={t("settings.nextStart")}
-          >
+          <Section id="soundBackground" title={titles.soundBackground}>
             <SoundSection />
             <InactiveSection />
             <LegacyPcSection />
           </Section>
-          <Section id="controls" title={titles.controls} intro={t("settings.nextStart")}>
+          <Section id="controls" title={titles.controls}>
             <ControlsSection />
           </Section>
           <Section id="saves" title={titles.saves}>
@@ -719,28 +717,16 @@ function GlobalConfigSection() {
 }
 
 /** A card of related settings, split into groups. */
-function Section({
-  id,
-  title,
-  intro,
-  children,
-}: {
-  id: SectionId;
-  title: string;
-  /** Said once for the whole card instead of under each setting. */
-  intro?: string;
-  children: ReactNode;
-}) {
+function Section({ id, title, children }: { id: SectionId; title: string; children: ReactNode }) {
   return (
     <Card id={`settings-${id}`} className="scroll-mt-20 p-5 lg:scroll-mt-6">
       {/* Focused after a jump from the keyboard; the app's ring shows where. */}
       <h2
         tabIndex={-1}
-        className={`rounded-sm font-semibold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${intro ? "mb-1" : "mb-4"}`}
+        className={`rounded-sm font-semibold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus mb-4`}
       >
         {title}
       </h2>
-      {intro && <p className="mb-5 text-sm text-muted">{intro}</p>}
       <div className="grid gap-5">{children}</div>
     </Card>
   );
