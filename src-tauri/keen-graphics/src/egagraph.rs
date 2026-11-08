@@ -209,7 +209,7 @@ impl<'a> EgaGraph<'a> {
     /// The title screen: the known title picture of Keen 4-6, else the
     /// full-screen picture the unpacked `exe` draws at the top left right
     /// after loading it (see [`drawn_pictures`]), else the full-screen
-    /// (320x200) picture with the most colors. In the original games that's
+    /// (320x200) picture with the most colors, the first of equals. In the original games that's
     /// the only one using all 16 (in CGA all 4); the others are the menu
     /// frame, the story backdrop and, in Keen 5, the ending's galaxy. Source
     /// mods may have colorful cutscenes, as Atroxian Realm does.
@@ -242,11 +242,13 @@ impl<'a> EgaGraph<'a> {
         {
             return self.picture(index);
         }
+        // On a tie the first: Keen Dreams Gold Edition's story screen uses as
+        // many colors as its title, which comes before it.
         let mut best: Option<(usize, Image)> = None;
         for index in full_screen {
             let image = self.picture(index)?;
             let colors = image.color_count();
-            if best.as_ref().is_none_or(|(c, _)| colors >= *c) {
+            if best.as_ref().is_none_or(|(c, _)| colors > *c) {
                 best = Some((colors, image));
             }
         }

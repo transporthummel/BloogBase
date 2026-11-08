@@ -311,3 +311,81 @@ fn return_to_the_shadowlands() {
     odd[0x7F] = 9; // difficulty
     assert_ne!(parse(Episode::Keen4, &odd).unwrap().score, Some(800));
 }
+
+/// Keen Dreams Gold Edition: Easy games, one saved on the map a new game
+/// starts on (22), one later with two flower powers.
+#[test]
+fn keen_dreams_gold_edition() {
+    assert_eq!(
+        parse(Episode::Keen4, &fixture("KDGOLD0.SAV")).unwrap(),
+        SaveInfo {
+            name: Some("save 1".into()),
+            score: Some(0),
+            lives: Some(3),
+            ammo: Some(0),
+            levels_done: Some(0),
+            difficulty: Some(Difficulty::Easy),
+            on_world_map: None,
+            ship_parts: None,
+        }
+    );
+    let data = fixture("KDGOLD2.SAV");
+    assert_eq!(
+        parse(Episode::Keen4, &data).unwrap(),
+        SaveInfo {
+            name: Some("ssave 3".into()),
+            score: Some(200),
+            lives: Some(3),
+            ammo: Some(2),
+            levels_done: Some(0),
+            difficulty: Some(Difficulty::Easy),
+            on_world_map: None,
+            ship_parts: None,
+        }
+    );
+
+    let (levels, map, difficulty) = (54, 109, 111);
+    // A level done counts, the start maps don't.
+    let mut later = data.clone();
+    later[levels + 3] = 1;
+    later[levels + 22] = 1;
+    assert_eq!(parse(Episode::Keen4, &later).unwrap().levels_done, Some(1));
+    // On the maps 23-46 the score box shows the ammo instead.
+    let mut night = data.clone();
+    night[map] = 30;
+    night[103] = 7;
+    assert_eq!(parse(Episode::Keen4, &night).unwrap().ammo, Some(7));
+    // Its own Keen and Grand.
+    let mut own = data.clone();
+    own[difficulty] = 4;
+    assert_eq!(
+        parse(Episode::Keen4, &own).unwrap().difficulty,
+        Some(Difficulty::Keen)
+    );
+    own[difficulty] = 5;
+    assert_eq!(
+        parse(Episode::Keen4, &own).unwrap().difficulty,
+        Some(Difficulty::Grand)
+    );
+
+    // Anything the game can't have written is refused.
+    let mut odd = data.clone();
+    odd[difficulty] = 9;
+    assert_eq!(
+        parse(Episode::Keen4, &odd),
+        Err(ParseError::Implausible("difficulty"))
+    );
+    let mut odd = data.clone();
+    odd[map] = 48;
+    assert_eq!(
+        parse(Episode::Keen4, &odd),
+        Err(ParseError::Implausible("map"))
+    );
+    let mut odd = data.clone();
+    odd[levels] = 2;
+    assert_eq!(
+        parse(Episode::Keen4, &odd),
+        Err(ParseError::Implausible("levels"))
+    );
+    assert_eq!(parse(Episode::Keen5, &data), Err(ParseError::BadSignature));
+}

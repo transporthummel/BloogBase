@@ -91,7 +91,9 @@ table of where they sit in each version, they're searched for:
      mod's own executables name an `EGAGRAPH` with another extension than
      the game's (`EGAGRAPH.CKS`), that file is tried first, with the
      `EGAHEAD` and `EGADICT` of the same executable if they're files, else
-     the ones built in.
+     the ones built in. Without such a name, a `*.EGA` file it names counts,
+     with the `.EHD` and `.EDT` of the same name: Keen Dreams Gold Edition
+     opens `KDGOLD.EGA`, as Keen Dreams 1.13 opens `KDREAMS.EGA`.
 2. **Header.** A separate file if the mod ships one (or names one with
    `%egahead`). Otherwise the header in the executable: a run of 3-byte
    offsets (4 in the Keen 4 special demo) ending in the size of the graphics
@@ -107,8 +109,9 @@ table of where they sit in each version, they're searched for:
 5. **Title.** The original title picture's number, if the picture count says
    which game it is and that picture is still full-screen: mods change
    pictures, not their numbers. Otherwise the full-screen (320×200) picture
-   with the most colors. In the original games the title is the only one
-   using all 16.
+   with the most colors, the first of equals (Keen Dreams Gold Edition's
+   story screen has as many as its title). In the original games the title
+   is the only one using all 16.
 6. **Other graphics files.** Renamed graphics files named in the patch go
    before `EGAGRAPH.CKn`.
 

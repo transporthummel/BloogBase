@@ -28,7 +28,9 @@
       "The settings page is split into clear parts you can jump to.",
       "Reporting a problem says what to do step by step.",
       "Discover says \"Released on\" before a mod's date.",
-      "Mods from Dropbox links install on Windows."
+      "Mods from Dropbox links install on Windows.",
+      "Keen Dreams Gold Edition shows its title screen as cover.",
+      "Keen Dreams Gold Edition saves show up with their details."
     ],
     "de": [
       "Sound, Musik, Scorebox und Tasten lassen sich einmal für alle Spiele und Mods festlegen.",
@@ -58,7 +60,9 @@
       "Die Einstellungsseite ist in klare Bereiche geteilt, zu denen du springen kannst.",
       "Beim Melden eines Problems steht Schritt für Schritt, was zu tun ist.",
       "Discover schreibt „Erschienen am“ vor das Datum einer Mod.",
-      "Mods von Dropbox-Links lassen sich unter Windows installieren."
+      "Mods von Dropbox-Links lassen sich unter Windows installieren.",
+      "Keen Dreams Gold Edition zeigt ihren Titelbildschirm als Cover.",
+      "Spielstände von Keen Dreams Gold Edition werden mit ihren Details angezeigt."
     ]
   },
   "releases": [

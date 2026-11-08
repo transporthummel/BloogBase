@@ -363,7 +363,11 @@ export type CustomStatus = "applied" |
 
 export type Difficulty = "easy" | "normal" | "hard" | 
 /**  Foray in the Forest's fourth level. */
-"expert";
+"expert" | 
+/**  Keen Dreams Gold Edition's fourth level. */
+"keen" | 
+/**  Keen Dreams Gold Edition's fifth, played as Mortimer. */
+"grand";
 
 /**
  *  The simple options on the settings page, for all games. Written as their

@@ -46,6 +46,8 @@
 - Source mods whose cutscenes are as colorful as their title, like Atroxian Realm, get the title screen as cover: BloogBase takes the full-screen picture the mod's program draws right after loading it.
 - Switching a running game to fullscreen with Alt+Enter no longer garbles the picture or breaks the game: DOSBox now uses borderless fullscreen by default (`fullscreen_mode = forced-borderless`).
 - Mods downloaded from a link with a query, such as Dropbox's `…/KDGOLD.ZIP?rlkey=…&dl=1`, install on Windows instead of failing with an invalid file name: the archive is kept under the name before the `?`.
+- Keen Dreams Gold Edition gets its title screen as cover instead of the placeholder: source mods' graphics are also found under the program's own name (`KDGOLD.EGA`), and of full-screen pictures with equally many colors the first counts, not the last (here the story screen).
+- Keen Dreams Gold Edition's saves (`KDGOLD0.SAV` …) show up in the save list, with name, score, lives, flower powers or ammo, levels done and difficulty (also its own Keen and Grand): save names a mod's program puts together from a stem and an extension are found too.
 
 ### Misc
 

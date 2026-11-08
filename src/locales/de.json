@@ -634,7 +634,9 @@
       "easy": "Leicht",
       "normal": "Normal",
       "hard": "Schwer",
-      "expert": "Experte"
+      "expert": "Experte",
+      "keen": "Keen",
+      "grand": "Grand"
     },
     "savedAt": "Gespeichert {{date}}",
     "backup": "Sichern",

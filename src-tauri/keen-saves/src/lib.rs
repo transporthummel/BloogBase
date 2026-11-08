@@ -19,6 +19,10 @@
 //!   Keen 4: the header with `CKD`, its file extension, and Keen 5's game
 //!   state with 26 levels, from its source (`KD_DEF.H`). Checked against
 //!   real saves of v1.4.
+//! - Keen Dreams Gold Edition, a source mod on the Keen Dreams source played
+//!   as Keen 4: the header with `KDG` and a byte-packed game state of its
+//!   own, from its source (`KDG_DEF.H`). Checked against real saves of the
+//!   2026-05-31 release.
 //! - Return to the Shadowlands 1.8, a Keen 4 source mod: the header with
 //!   `CK4`, but the game state packed without the padding byte and with
 //!   three more item words. Checked against real saves of v1.8.
@@ -59,6 +63,10 @@ pub enum Difficulty {
     Hard,
     /// Foray in the Forest's fourth level.
     Expert,
+    /// Keen Dreams Gold Edition's fourth level.
+    Keen,
+    /// Keen Dreams Gold Edition's fifth, played as Mortimer.
+    Grand,
 }
 
 /// Everything known about one save. Fields a format doesn't have are `None`.
@@ -116,6 +124,7 @@ pub fn parse(episode: Episode, data: &[u8]) -> Result<SaveInfo, ParseError> {
         Episode::Keen4 => match data.get(..4) {
             Some(b"CKS\0" | b"CKC\0") => foray(data),
             Some(b"CKD\0") => atroxian(data),
+            Some(b"KDG\0") => gold_edition(data),
             Some(b"CK4\0") if !galaxy_levels_plausible(data) => {
                 shadowlands(data).or_else(|_| galaxy(b"CK4\0", 2, data))
             }
@@ -334,6 +343,67 @@ fn foray(data: &[u8]) -> Result<SaveInfo, ParseError> {
         on_world_map: Some(map == 0),
         lives: Some(lives),
         difficulty: Some(difficulty),
+        ship_parts: None,
+    })
+}
+
+const GOLD_LEVELS: usize = 47;
+
+/// Keen Dreams Gold Edition, built on the Keen Dreams source: the header
+/// with `KDG`, then `gametype` from its `KDG_DEF.H`: world position, score,
+/// `nextextra`, a done byte for each of 47 maps, then bytes for damage time,
+/// flower powers, ammo, bombs, bombs this level, keys, keycard, keycard
+/// text, `mapon`, `lives` and `difficulty` (Easy 1 to Hard 3, then its own
+/// Keen 4 and Grand 5). Maps 21 and 22 are where a new game starts and don't
+/// count, as in its own count. The score box shows the ammo on maps 23-46
+/// and the flower powers elsewhere. Values the game can't have written are
+/// refused. Checked against real saves of the 2026-05-31 release.
+fn gold_edition(data: &[u8]) -> Result<SaveInfo, ParseError> {
+    let r = Reader(data);
+    let name = r.name(8, NAME_LEN)?;
+    let state = (8 + NAME_LEN).next_multiple_of(2);
+    let score = state + 4;
+    let levels = score + 8;
+    let items = r.bytes(levels + GOLD_LEVELS, 11)?;
+    let (flower_powers, ammo, map) = (items[1], items[2], items[8]);
+    let lives = items[9] as i8;
+    let difficulty = match items[10] {
+        word @ 1..=3 => difficulty(word.into()),
+        4 => Some(Difficulty::Keen),
+        5 => Some(Difficulty::Grand),
+        _ => return Err(ParseError::Implausible("difficulty")),
+    };
+    if map as usize > GOLD_LEVELS {
+        return Err(ParseError::Implausible("map"));
+    }
+    if !(0..=99).contains(&lives) {
+        return Err(ParseError::Implausible("lives"));
+    }
+    let done = r.bytes(levels, GOLD_LEVELS)?;
+    if done.iter().any(|&d| d > 1) {
+        return Err(ParseError::Implausible("levels"));
+    }
+    let score = u32::from_le_bytes(r.bytes(score, 4)?.try_into().unwrap());
+    Ok(SaveInfo {
+        name,
+        score: Some(score.min(i32::MAX as u32) as i32),
+        lives: Some(lives.into()),
+        ammo: Some(
+            if (23..=46).contains(&map) {
+                ammo
+            } else {
+                flower_powers
+            }
+            .into(),
+        ),
+        levels_done: Some(
+            done.iter()
+                .enumerate()
+                .filter(|&(i, &d)| d == 1 && i != 21 && i != 22)
+                .count() as u16,
+        ),
+        difficulty,
+        on_world_map: None,
         ship_parts: None,
     })
 }

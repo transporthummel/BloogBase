@@ -42,6 +42,10 @@ pub enum Difficulty {
     Hard,
     /// Foray in the Forest's fourth level.
     Expert,
+    /// Keen Dreams Gold Edition's fourth level.
+    Keen,
+    /// Keen Dreams Gold Edition's fifth, played as Mortimer.
+    Grand,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]
@@ -70,6 +74,8 @@ impl From<keen_saves::SaveInfo> for SaveDetails {
                 keen_saves::Difficulty::Normal => Difficulty::Normal,
                 keen_saves::Difficulty::Hard => Difficulty::Hard,
                 keen_saves::Difficulty::Expert => Difficulty::Expert,
+                keen_saves::Difficulty::Keen => Difficulty::Keen,
+                keen_saves::Difficulty::Grand => Difficulty::Grand,
             }),
             on_world_map: i.on_world_map,
             ship_parts: i.ship_parts,
@@ -156,9 +162,15 @@ pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Ga
         }
         out
     };
+    let mut saves = rename(&game.saves);
+    for p in images.iter().flat_map(|i| pieced_save_names(i)) {
+        if !saves.contains(&p) {
+            saves.push(p);
+        }
+    }
     let names = SaveNames {
         game_id: game_id.to_string(),
-        saves: rename(&game.saves),
+        saves,
         state_files: rename(&game.state_files),
     };
     if names.saves != game.saves || names.state_files != game.state_files {
@@ -190,7 +202,7 @@ struct SaveNames {
 
 /// Raise when `profile_game` finds names differently, so a start doesn't
 /// keep what the old code found.
-const NAMES_VERSION: u32 = 1;
+const NAMES_VERSION: u32 = 2;
 
 #[derive(Serialize, Deserialize)]
 struct StoredNames {
@@ -372,6 +384,41 @@ fn other_extensions(image: &[u8], patterns: &[String]) -> Vec<String> {
                     out.push(new);
                 }
             }
+        }
+    }
+    out
+}
+
+/// Save names a program puts together from a stem, the slot digit and an
+/// extension, as id's `USL_GiveSaveName` does in Keen Dreams with `"SAVEGM"`
+/// and `"."EXTENSION`: the two strings sit next to each other in its data,
+/// `\0SAVEGM\0.KDR\0`. Keen Dreams Gold Edition saves as `KDGOLD0.SAV`.
+/// The C library's `PATH` and `.COM` look alike; programs aren't saves.
+/// `image` is in capitals.
+fn pieced_save_names(image: &[u8]) -> Vec<String> {
+    let in_name = |b: &u8| b.is_ascii_alphanumeric() || *b == b'_';
+    let mut out = Vec::new();
+    for at in memchr::memmem::find_iter(image, b"\0.") {
+        let Some(ext) = image.get(at + 2..at + 5) else {
+            break;
+        };
+        if !ext.iter().all(in_name)
+            || image.get(at + 5) != Some(&0)
+            || [b"COM", b"EXE", b"BAT"].iter().any(|e| ext == *e)
+        {
+            continue;
+        }
+        let start = image[..at]
+            .iter()
+            .rposition(|b| !in_name(b))
+            .map_or(0, |i| i + 1);
+        if !(1..=7).contains(&(at - start)) || start == 0 || image[start - 1] != 0 {
+            continue;
+        }
+        let stem = String::from_utf8_lossy(&image[start..at]);
+        let name = format!("{stem}?.{}", String::from_utf8_lossy(ext));
+        if !out.contains(&name) {
+            out.push(name);
         }
     }
     out
@@ -761,6 +808,37 @@ pub(crate) mod tests {
         let d = describe(game, "SAVEGAM0.CKS", real, None).details.unwrap();
         assert_eq!(d.name.as_deref(), Some("test"));
         assert_eq!((d.lives, d.difficulty), (Some(3), Some(Difficulty::Expert)));
+    }
+
+    #[test]
+    fn a_source_mods_programs_piece_their_save_names_together() {
+        let kdg = b"BOOT...\n\0KDGOLD\0.SAV\0KDGOLD.CFG\0KDG\0";
+        assert_eq!(pieced_save_names(kdg), ["KDGOLD?.SAV"]);
+        assert_eq!(pieced_save_names(b"x\0SAVEGM\0.KDR\0"), ["SAVEGM?.KDR"]);
+        // Programs, stems too long or not a string of their own don't count.
+        let not = b"\0PATH\0.COM\0.EXE\0\0SAVEGAME\0.SAV\0A.B\0.SAV\0X\0.SAVE\0";
+        assert!(pieced_save_names(not).is_empty());
+
+        use crate::recipe::Recipe;
+        let tmp = tempfile::tempdir().unwrap();
+        let files = tmp.path().join("mod");
+        let exe = [b"MZ".as_slice(), &[0; 6], &[2, 0], &[0; 0x16], kdg].concat();
+        write_folder(&files, &[("KDGOLD.EXE", &exe)]);
+        let layers = Layers {
+            lower: None,
+            upper: tmp.path().join("state"),
+            mod_layer: Some(profiles::ModLayer {
+                files,
+                base: None,
+                recipe: Recipe::Program {
+                    program: "KDGOLD.EXE".into(),
+                    args: Vec::new(),
+                },
+            }),
+        };
+        let game = profile_game("keen4", &layers).unwrap();
+        assert_eq!(game.saves, ["SAVEGAM?.CK4", "KDGOLD?.SAV"]);
+        assert_eq!(slot(game, "KDGOLD0.SAV"), Some(1));
     }
 
     #[test]

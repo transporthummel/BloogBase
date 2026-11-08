@@ -22,7 +22,7 @@ use crate::profiles;
 use crate::recipe::{self, Recipe, has_ext};
 
 /// Bump to extract all covers again, e.g. after an extraction fix.
-const VERSION: &str = "covers v20";
+const VERSION: &str = "covers v21";
 
 /// A profile's cover.
 #[derive(Debug, PartialEq, Eq)]
@@ -452,19 +452,34 @@ struct OwnGraphics<'a> {
 /// The graphics files among `names` that a source mod's executable (its
 /// unpacked `image`) opens instead of the game's `EGAGRAPH.<ext>`: Foray in
 /// the Forest's FITF-X.EXE opens EGAGRAPH.CKS and EGAHEAD.CKS and has the
-/// dictionary built in.
+/// dictionary built in. Keen Dreams Gold Edition names them after itself, as
+/// Keen Dreams 1.13 does: `KDGOLD.EGA`, with `.EHD` and `.EDT`.
 fn own_graphics<'a>(image: &[u8], names: &[&'a str], ext: &str) -> Option<OwnGraphics<'a>> {
     let opened = recipe::files_named_in(image, names.iter().copied());
-    let own = |stem: &str| {
+    let find = |stem: Option<&str>, file_ext: Option<&str>| {
         opened.iter().copied().find(|n| {
-            n.rsplit_once('.')
-                .is_some_and(|(s, e)| s.eq_ignore_ascii_case(stem) && !e.eq_ignore_ascii_case(ext))
+            n.rsplit_once('.').is_some_and(|(s, e)| {
+                stem.is_none_or(|stem| s.eq_ignore_ascii_case(stem))
+                    && match file_ext {
+                        Some(file_ext) => e.eq_ignore_ascii_case(file_ext),
+                        None => !e.eq_ignore_ascii_case(ext),
+                    }
+            })
         })
     };
+    if let Some(graph) = find(Some("EGAGRAPH"), None) {
+        return Some(OwnGraphics {
+            graph,
+            head: find(Some("EGAHEAD"), None),
+            dict: find(Some("EGADICT"), None),
+        });
+    }
+    let graph = find(None, Some("EGA"))?;
+    let stem = graph.rsplit_once('.').map(|(s, _)| s);
     Some(OwnGraphics {
-        graph: own("EGAGRAPH")?,
-        head: own("EGAHEAD"),
-        dict: own("EGADICT"),
+        graph,
+        head: find(stem, Some("EHD")),
+        dict: find(stem, Some("EDT")),
     })
 }
 
@@ -1099,6 +1114,18 @@ mod tests {
         assert_eq!(own_graphics(b"EGAGRAPH.CK4\0", &names, "CK4"), None);
         // A name it opens that the mod doesn't have doesn't count.
         assert_eq!(own_graphics(b"EGAGRAPH.CKX\0", &names, "CK4"), None);
+        // Keen Dreams Gold Edition names its graphics after itself; its
+        // header is built in.
+        let names = ["KDGOLD.EXE", "KDGOLD.EGA", "KDGOLD.MAP", "KDGOLD.AUD"];
+        let kdg = b"KDGOLD.EDT\0KDGOLD.EHD\0KDGOLD.EGA\0KDGOLD.MAP\0KDGOLD.AUD";
+        assert_eq!(
+            own_graphics(kdg, &names, "CK4"),
+            Some(OwnGraphics {
+                graph: "KDGOLD.EGA",
+                head: None,
+                dict: None,
+            })
+        );
     }
 
     #[test]

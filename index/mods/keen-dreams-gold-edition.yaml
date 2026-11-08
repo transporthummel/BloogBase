@@ -1,0 +1,28 @@
+id: keen-dreams-gold-edition
+name: "Keen Dreams Gold Edition"
+# Its files should be handled like Keen 4
+game: keen4
+authors: ["Szemigi"]
+authorLinks:
+  "Szemigi": https://keenwiki.shikadi.net/wiki/User:Szemigi
+released: 2024-05-10
+updated: 2026-05-31
+added: 2026-11-08
+type: episode
+description: "Keen Dreams Gold Edition significantly expands the original game with 46 levels, new enemies, bosses, difficulty settings, gameplay mechanics like the pogo stick, and additional music and graphics. The newly updated version uses a completely new control panel interface, involving many features as well from Keen 4-6."
+translations:
+  de:
+    description: "Die Keen Dreams Gold Edition erweitert das Originalspiel erheblich und bietet 46 Level, neue Gegner und Bosse, zusätzliche Schwierigkeitsgrade, neue Gameplay-Mechaniken wie den Pogo-Stick sowie zusätzliche Musik und Grafiken. Die neu aktualisierte Version verfügt über eine komplett neue Einstellungsoberfläche, die zudem zahlreiche Funktionen aus Keen 4–6 integriert."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_Dreams_Gold_Edition
+  pckf: https://pckf.com/viewtopic.php?t=16072
+downloads:
+  - url: https://www.dropbox.com/scl/fi/9w5jqcilcxozsk4eackkq/KDGOLD.ZIP?rlkey=2fjkqeoovi52fp8blxsj5bwye&dl=1
+    sha256: 349d430301a975905ca3ec4af9bd35a38ec5c0fc7b0c0581bc1a6edcfdf2399e
+    size: 906222
+# A source mod: it ships its whole game and plays without a copy of it.
+standalone: true
+recipe:
+  type: program
+  program: KDGOLD.EXE
+minAppVersion: 1.2.0
