@@ -97,6 +97,14 @@ error, never a panic, and the save is listed without details.
   (an unknown difficulty or map, lives over 99, level flags other than done
   and perfect) make the save show without details rather than wrong ones.
   Checked against a real v2.0a save.
+- **Atroxian Realm 1.4** (a source mod on the Keen Dreams source, played as
+  Keen 4): the header with `CKD�`, its file extension, on a Keen 4 profile.
+  Its game state is Keen 5's, from its source (`KD_DEF.H`): a level word for
+  each of its 26 maps, score, `nextKeenAt`, ammo, six item words, map, lives
+  and difficulty. A new game starts on map 25, the crash site, which is
+  marked done after it, so it isn't counted. Earlier versions saved in
+  another layout; values the game can't have written make the save show
+  without details, as for Foray. Checked against real v1.4 saves.
 - **Keen Dreams:** the same idea with `KDR\0`, 17 level slots (slot 0 is the
   world map, which the game marks as done on entering a level, so it isn't
   counted) and flower power seeds as ammo. Normal difficulty is stored as 0.

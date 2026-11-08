@@ -15,6 +15,10 @@
 //!   file extension as signature (`CKS`, `CKC` for the classic build) and a
 //!   `gametype` of its own, from its source (`CK_DEF.H`). Checked against a
 //!   real save of v2.0a.
+//! - Atroxian Realm 1.4, a source mod on the Keen Dreams source played as
+//!   Keen 4: the header with `CKD`, its file extension, and Keen 5's game
+//!   state with 26 levels, from its source (`KD_DEF.H`). Checked against
+//!   real saves of v1.4.
 
 use std::fmt;
 
@@ -108,6 +112,7 @@ pub fn parse(episode: Episode, data: &[u8]) -> Result<SaveInfo, ParseError> {
         Episode::Keen1 | Episode::Keen2 | Episode::Keen3 => vorticons(episode, data),
         Episode::Keen4 => match data.get(..4) {
             Some(b"CKS\0" | b"CKC\0") => foray(data),
+            Some(b"CKD\0") => atroxian(data),
             _ => galaxy(b"CK4\0", 2, data),
         },
         Episode::Keen5 => galaxy(b"CK5\0", 3, data),
@@ -312,6 +317,48 @@ fn foray(data: &[u8]) -> Result<SaveInfo, ParseError> {
         score: Some(r.i32(score)?),
         ammo: Some(r.i16(ammo)?),
         levels_done: Some(r.count_words(levels + 4, FORAY_LEVELS - 2)?),
+        on_world_map: Some(map == 0),
+        lives: Some(lives),
+        difficulty: Some(difficulty),
+        ship_parts: None,
+    })
+}
+
+const ATROXIAN_LEVELS: usize = 26;
+
+/// Atroxian Realm 1.4, built on the Keen Dreams source with Keen 5's game
+/// state (`CK_GameState` in its `KD_DEF.H`): a level word for each of its 26
+/// maps, then `keenScore`, `nextKeenAt`, `numShots`, vitalin, security card,
+/// vines, fuses, four key gems, `currentLevel`, `numLives` and `difficulty`.
+/// A new game starts on map 25, the crash site, which is marked done after
+/// it, so it doesn't count. Older versions saved in another layout; values
+/// the game can't have written are refused.
+fn atroxian(data: &[u8]) -> Result<SaveInfo, ParseError> {
+    let r = Reader(data);
+    let name = r.name(8, NAME_LEN)?;
+    let state = (8 + NAME_LEN).next_multiple_of(2);
+    let levels = state + 4;
+    let score = levels + 2 * ATROXIAN_LEVELS;
+    let ammo = score + 8;
+    let mapon = ammo + 18;
+    let (map, lives) = (r.u16(mapon)?, r.i16(mapon + 2)?);
+    let difficulty = difficulty(r.u16(mapon + 4)?).ok_or(ParseError::Implausible("difficulty"))?;
+    if map as usize >= ATROXIAN_LEVELS {
+        return Err(ParseError::Implausible("map"));
+    }
+    if !(0..=99).contains(&lives) {
+        return Err(ParseError::Implausible("lives"));
+    }
+    for i in 0..ATROXIAN_LEVELS {
+        if r.u16(levels + 2 * i)? > 1 {
+            return Err(ParseError::Implausible("levels"));
+        }
+    }
+    Ok(SaveInfo {
+        name,
+        score: Some(r.i32(score)?),
+        ammo: Some(r.i16(ammo)?),
+        levels_done: Some(r.count_words(levels, ATROXIAN_LEVELS - 1)?),
         on_world_map: Some(map == 0),
         lives: Some(lives),
         difficulty: Some(difficulty),

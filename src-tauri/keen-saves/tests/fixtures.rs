@@ -208,3 +208,64 @@ fn foray_in_the_forest() {
     // Only Keen 4 knows the signature.
     assert_eq!(parse(Episode::Keen5, &data), Err(ParseError::BadSignature));
 }
+
+/// Atroxian Realm 1.4: a Normal game saved on the world map after the crash
+/// site, and a Hard one saved inside the crash site (map 25).
+#[test]
+fn atroxian_realm() {
+    let data = fixture("SAVEGAM4.CKD");
+    assert_eq!(
+        parse(Episode::Keen4, &data).unwrap(),
+        SaveInfo {
+            name: Some("map".into()),
+            score: Some(700),
+            lives: Some(4),
+            ammo: Some(5),
+            levels_done: Some(0),
+            difficulty: Some(Difficulty::Normal),
+            on_world_map: Some(true),
+            ship_parts: None,
+        }
+    );
+    assert_eq!(
+        parse(Episode::Keen4, &fixture("SAVEGAM1.CKD")).unwrap(),
+        SaveInfo {
+            name: Some("crash hard".into()),
+            score: Some(0),
+            lives: Some(5),
+            ammo: Some(5),
+            levels_done: Some(0),
+            difficulty: Some(Difficulty::Hard),
+            on_world_map: Some(false),
+            ship_parts: None,
+        }
+    );
+
+    // A level done counts; the crash site, marked done in this save, doesn't.
+    let levels = 42 + 4;
+    assert_eq!(data[levels + 2 * 25], 1);
+    let mut later = data.clone();
+    later[levels + 2 * 3] = 1;
+    assert_eq!(parse(Episode::Keen4, &later).unwrap().levels_done, Some(1));
+
+    // Anything the game can't have written is refused.
+    let mut odd = data.clone();
+    odd[0x80] = 9; // difficulty
+    assert_eq!(
+        parse(Episode::Keen4, &odd),
+        Err(ParseError::Implausible("difficulty"))
+    );
+    let mut odd = data.clone();
+    odd[levels] = 7;
+    assert_eq!(
+        parse(Episode::Keen4, &odd),
+        Err(ParseError::Implausible("levels"))
+    );
+    let mut odd = data.clone();
+    odd[0x7C] = 26; // map
+    assert_eq!(
+        parse(Episode::Keen4, &odd),
+        Err(ParseError::Implausible("map"))
+    );
+    assert_eq!(parse(Episode::Keen5, &data), Err(ParseError::BadSignature));
+}

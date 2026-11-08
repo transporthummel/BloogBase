@@ -1,5 +1,7 @@
 id: atroxian-realm
 name: "Atroxian Realm"
+# Its files should be handled like Keen 4
+game: keen4
 authors: ["Gridlock"]
 authorLinks:
   "Gridlock": https://keenwiki.shikadi.net/wiki/User:Gridlock
@@ -26,4 +28,4 @@ recipe:
   program: arealm.exe
 featured: true
 # Older apps find no mod in it, as it has no Keen files.
-minAppVersion: 1.1.0
+minAppVersion: 1.2.0
