@@ -57,6 +57,20 @@ test("covers the start until the window is up", async () => {
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
 });
 
+test("a source mod shows its own placeholder, not its game's episode", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue({
+    status: "ok",
+    data: [
+      { id: "pak-een", label: "Pak Een", gameId: "kdreams", installId: "kd-1", standalone: true },
+    ],
+  } as never);
+  renderOverlay();
+  launch("starting");
+  const status = await screen.findByRole("status");
+  expect(status.querySelector(".bg-source")).toHaveTextContent("+");
+  expect(status).not.toHaveTextContent(/^D/);
+});
+
 test("goes when the game fails or ends before, or on a click", async () => {
   renderOverlay();
   launch("starting");
