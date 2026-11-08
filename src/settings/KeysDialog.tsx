@@ -114,7 +114,11 @@ export function KeysDialog({ onClose }: { onClose: () => void }) {
                       {t("settings.keysPress")}
                     </span>
                   ) : key === null ? (
-                    <span className="text-muted">{t("settings.setByGame")}</span>
+                    // A dash on screen; the intro says what it means.
+                    <span className="text-muted">
+                      <span aria-hidden>—</span>
+                      <span className="sr-only">{t("settings.keysAsInGame")}</span>
+                    </span>
                   ) : (
                     <Keycap id={keyId(key)} changed />
                   )}
