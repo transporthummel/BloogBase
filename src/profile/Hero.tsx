@@ -132,7 +132,7 @@ function Credits({
         {profile.missingGame !== null && (
           <span>{t("mods.waitsFor", { game: profile.missingGame })}</span>
         )}
-        {profile.standalone && game && <span>{t("mods.builtOn", { game: game.title })}</span>}
+        {profile.standalone && <span>{t("mods.standalone")}</span>}
         {profile.modId !== null && profile.missingGame === null && !profile.standalone && game && (
           <span>
             <RunsOn
@@ -142,7 +142,8 @@ function Credits({
             />
           </span>
         )}
-        {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
+        {profile.modId !== null && !profile.standalone && <Badge>{t("mods.badge")}</Badge>}
+        {profile.standalone && <Badge>{t("mods.sourceMod")}</Badge>}
         {profile.modId === null && <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>}
         {profile.modId === null && version?.shareware && <Badge>{t("profile.shareware")}</Badge>}
         {mod?.version && (

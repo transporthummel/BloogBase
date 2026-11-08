@@ -266,7 +266,8 @@ test("standalone mods are under no game and install on none", async () => {
   await screen.findByRole("heading", { name: "Foray" });
 
   const foray = within(card("Foray"));
-  expect(foray.getByText("Standalone. Built on Keen 4")).toBeInTheDocument();
+  expect(foray.getByText("Standalone")).toBeInTheDocument();
+  expect(foray.getByText("Source mod")).toBeInTheDocument();
   const heading = () => screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
   await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
   expect(heading()).toEqual(["Foray"]);

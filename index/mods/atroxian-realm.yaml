@@ -1,0 +1,29 @@
+id: atroxian-realm
+name: "Atroxian Realm"
+authors: ["Gridlock"]
+authorLinks:
+  "Gridlock": https://keenwiki.shikadi.net/wiki/User:Gridlock
+version: "1.4"
+released: 2016-01-16
+updated: 2020-05-08
+added: 2026-11-07
+type: episode
+description: "Keen helps the Kriles defend their planet, Krisle, against an invasion by the robot-like Atroxians and their sinister terraforming plans. The development of this extensive source mod took five years to complete."
+translations:
+  de:
+    description: "Keen hilft den Kriles dabei, ihren Planeten Krisle gegen eine Invasion der roboterartigen Atroxianer und deren düstere Terraforming-Pläne zu verteidigen. Die Entwicklung dieser umfangreichen Source-Mod nahm insgesamt fünf Jahre in Anspruch."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Atroxian_Realm
+  pckf: https://pckf.com/viewtopic.php?t=1812
+downloads:
+  - version: "1.4"
+    url: https://files.shikadi.net/keenwiki/mods/SourceCode/m.gridlock.atroxian_realm_v.1.4.sc.2020-05-08.zip
+    sha256: b806be54748e8719b4e81ec34e4118dd5215659445cc5170cbeff5690300d5c0
+    size: 1268268
+standalone: true
+recipe:
+  type: program
+  program: arealm.exe
+featured: true
+# Older apps find no mod in it, as it has no Keen files.
+minAppVersion: 1.1.0

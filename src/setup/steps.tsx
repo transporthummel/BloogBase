@@ -4,7 +4,7 @@ import { CircleCheck, CircleDashed, FileArchive, FileCog, FolderOpen } from "luc
 import { useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type FreeGame, type Install, type Job } from "../bindings";
-import { gameTitle, shortGameTitle, useGames } from "../catalog";
+import { gameTitle, useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatDownloadSize, formatNumber } from "../format";
 import { unwrap } from "../ipc";
@@ -478,11 +478,10 @@ export function ModsStep({ next, back }: StepProps) {
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{entry.name}</span>
                     <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
+                    {entry.standalone && <Badge>{t("mods.sourceMod")}</Badge>}
                   </span>
                   <span className="text-xs text-muted">
-                    {entry.standalone
-                      ? t("mods.builtOn", { game: shortGameTitle(games, entry.game) })
-                      : gameTitle(games, entry.game)}
+                    {entry.standalone ? t("mods.standalone") : gameTitle(games, entry.game)}
                     {entry.authors.length > 0 &&
                       ` · ${t("mods.by", { authors: entry.authors.join(", ") })}`}
                   </span>

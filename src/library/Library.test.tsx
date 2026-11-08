@@ -191,6 +191,22 @@ test("a mod played over another one names it with its game", async () => {
   expect(link.parentElement).toHaveTextContent(/^Runs on Keen 5 v1\.4 EGA and Galactic$/);
 });
 
+test("a standalone mod is a source mod, not a mod on its game", async () => {
+  const foray: Profile = {
+    ...profile,
+    id: "foray",
+    installId: null,
+    modId: "foray",
+    label: "Foray",
+    standalone: true,
+  };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [foray] });
+  renderLibrary();
+  expect(await screen.findByText("Standalone")).toBeInTheDocument();
+  expect(screen.getByText("Source mod")).toBeInTheDocument();
+  expect(screen.queryByText("Mod")).not.toBeInTheDocument();
+});
+
 test("coming back from a details page keeps the place and shows the card", async () => {
   const other = { ...profile, id: "other", label: "Other Game" };
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile, other] });

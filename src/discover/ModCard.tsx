@@ -66,9 +66,7 @@ export function ModCard({
           <div className="grid min-w-0 content-start gap-1">
             <h2 className="leading-tight font-semibold">{entry.name}</h2>
             <p className="text-xs text-muted">
-              {entry.standalone
-                ? t("mods.builtOn", { game: shortGameTitle(games, entry.game) })
-                : gameTitle(games, entry.game)}
+              {entry.standalone ? t("mods.standalone") : gameTitle(games, entry.game)}
             </p>
             {base && (
               <p className="text-xs text-muted">
@@ -84,6 +82,7 @@ export function ModCard({
           {mod.modId && <Badge tone="status">{t("discover.installed")}</Badge>}
           {mod.updateAvailable && <Badge tone="status">{t("discover.updateBadge")}</Badge>}
           <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
+          {entry.standalone && <Badge>{t("mods.sourceMod")}</Badge>}
           {mod.new && <Badge>{t("mods.new")}</Badge>}
           {entry.featured && <Badge>{t("discover.featured")}</Badge>}
         </div>

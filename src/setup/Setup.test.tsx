@@ -389,7 +389,8 @@ test("suggests standalone mods without any game", async () => {
   renderSetup();
 
   const choice = await screen.findByRole("checkbox", { name: /foray/ });
-  expect(choice.closest("label")).toHaveTextContent("Standalone. Built on");
+  expect(choice.closest("label")).toHaveTextContent("Standalone");
+  expect(choice.closest("label")).toHaveTextContent("Source mod");
   expect(screen.queryByText("for-keen4")).not.toBeInTheDocument();
 });
 

@@ -397,7 +397,7 @@ const ProfileCard = memo(function ProfileCard({
             game && (
               <p className="text-xs text-muted">
                 {profile.standalone ? (
-                  t("mods.builtOn", { game: game.shortTitle })
+                  t("mods.standalone")
                 ) : (
                   <RunsOn profile={profile} game={game.shortTitle} version={versionLabel} />
                 )}
@@ -406,7 +406,8 @@ const ProfileCard = memo(function ProfileCard({
           )}
         </div>
         <div className="flex flex-wrap gap-1">
-          {profile.modId !== null && <Badge>{t("mods.badge")}</Badge>}
+          {profile.modId !== null && !profile.standalone && <Badge>{t("mods.badge")}</Badge>}
+          {profile.standalone && <Badge>{t("mods.sourceMod")}</Badge>}
           {profile.modId === null && <Badge>{versionLabel}</Badge>}
         </div>
         <dl className="grid gap-0.5 text-xs text-muted">

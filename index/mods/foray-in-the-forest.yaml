@@ -1,5 +1,6 @@
 id: foray-in-the-forest
 name: "Foray in the Forest"
+# Its files should be handled like Keen 4
 game: keen4
 authors: ["Nisaba", "K1n9_Duk3"]
 authorLinks:
