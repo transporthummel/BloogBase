@@ -723,7 +723,7 @@ function Section({ id, title, children }: { id: SectionId; title: string; childr
       {/* Focused after a jump from the keyboard; the app's ring shows where. */}
       <h2
         tabIndex={-1}
-        className={`rounded-sm font-semibold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus mb-4`}
+        className="-mx-1 mb-4 w-fit rounded-sm px-1 font-semibold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
       >
         {title}
       </h2>
