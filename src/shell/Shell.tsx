@@ -26,6 +26,7 @@ import { QuitGuard } from "./QuitGuard";
 import { scroller } from "../library/scroll";
 import { Snow } from "./Snow";
 import { buttonClass } from "../ui/buttonClass";
+import { Wordmark } from "../ui/Wordmark";
 
 /**
  * App frame (PLAN.md §8.2): full sidebar from 1200px, icon rail below. The
@@ -95,7 +96,8 @@ export function Shell() {
           className="mb-4 flex h-12 items-center justify-center gap-3 rounded-lg xl:justify-start xl:px-1"
         >
           <img src={icon} alt="" className="size-10 shrink-0" />
-          <span className="sr-only font-pixel text-xs text-accent xl:not-sr-only">BloogBase</span>
+          <Wordmark className="hidden h-5 w-auto xl:block" />
+          <span className="sr-only">BloogBase</span>
         </Link>
         <NavItem to="/" icon={LibraryBig} label={t("nav.library")} />
         <NavItem to="/discover" icon={Compass} label={t("nav.discover")} />
