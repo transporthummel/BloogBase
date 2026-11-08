@@ -55,7 +55,6 @@ export function SoundSection() {
               disabled={pending}
               onChange={(sound) => update({ sound })}
             />
-            <Hint>{t("settings.soundHint")}</Hint>
           </div>
           <div className="grid gap-1">
             <OnOffField

@@ -105,7 +105,7 @@ export function Settings() {
               <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.showTriviaHint")}</p>
             </div>
           </Section>
-          <Section id="pictureSound" title={titles.pictureSound}>
+          <Section id="pictureSound" title={titles.pictureSound} intro={t("settings.nextStart")}>
             <DisplaySection>
               <ScoreBoxField />
             </DisplaySection>
@@ -113,7 +113,7 @@ export function Settings() {
             <InactiveSection />
             <LegacyPcSection />
           </Section>
-          <Section id="controls" title={titles.controls}>
+          <Section id="controls" title={titles.controls} intro={t("settings.nextStart")}>
             <ControlsSection />
           </Section>
           <Section id="saves" title={titles.saves}>
@@ -376,8 +376,8 @@ export function DisplaySection({ children }: { children?: ReactNode }) {
             </div>
           );
         })}
-      {children}
       {v && <p className="max-w-prose text-xs text-muted">{t("settings.displayHint.all")}</p>}
+      {children}
       {(view.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
       )}
@@ -673,12 +673,24 @@ function GlobalConfigSection() {
 }
 
 /** A card of related settings, split into groups. */
-function Section({ id, title, children }: { id: SectionId; title: string; children: ReactNode }) {
+function Section({
+  id,
+  title,
+  intro,
+  children,
+}: {
+  id: SectionId;
+  title: string;
+  /** Said once for the whole card instead of under each setting. */
+  intro?: string;
+  children: ReactNode;
+}) {
   return (
     <Card id={`settings-${id}`} className="scroll-mt-6 p-5">
-      <h2 tabIndex={-1} className="mb-4 font-semibold">
+      <h2 tabIndex={-1} className={`font-semibold ${intro ? "mb-1" : "mb-4"}`}>
         {title}
       </h2>
+      {intro && <p className="mb-5 text-sm text-muted">{intro}</p>}
       <div className="grid gap-5">{children}</div>
     </Card>
   );
