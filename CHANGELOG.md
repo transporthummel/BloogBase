@@ -37,6 +37,7 @@
 
 ### Bug Fixes
 
+- Pixel-font headings no longer join "fi" into one glyph without the i's dot, which made "inoffizielles" on the About page read "inoffzielles".
 - A comma after a download on a KeenWiki page no longer shows up as the version's note, as in "v0.2 (demo) (,)".
 - Versions a KeenWiki page lists inside a paragraph show up in the download choice too; Atroxian Realm's v1.3, v1.1 and v1.0 were missing.
 - Source mods whose cutscenes are as colorful as their title, like Atroxian Realm, get the title screen as cover: BloogBase takes the full-screen picture the mod's program draws right after loading it.

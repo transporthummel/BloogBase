@@ -137,6 +137,8 @@
   --font-sans: "Inter Variable", system-ui, sans-serif;
   /* Pixel font: headings, badges and numbers only. */
   --font-pixel: "Press Start 2P", monospace;
+  /* Its "fi" ligature drops the i's dot: "inoffizielles" read "inoffzielles". */
+  --font-pixel--font-feature-settings: "liga" 0;
 }
 
 /* Like a desktop app, the interface itself isn't selectable: a double click
