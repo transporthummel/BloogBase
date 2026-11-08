@@ -123,7 +123,7 @@
     "clearKeenwikiCache": "Delete saved pages",
     "keenwikiCacheCleared": "Deleted.",
     "app": "BloogBase",
-    "pictureSound": "Picture and sound",
+    "soundBackground": "Sound and background",
     "nextStart": "Applies to all games and mods from their next start.",
     "dosbox": "DOSBox Staging",
     "aboutMore": "Licenses and credits",
@@ -143,7 +143,7 @@
     "displayHint": {
       "crt": "Shows the games as on a monitor of the time, with scanlines and soft pixels. Turned off, pixels stay sharp.",
       "vsync": "Helps if the picture tears horizontally while moving. Controls then react a tiny bit later; not needed on FreeSync or G-Sync monitors.",
-      "all": "Single games can differ on their page under “DOSBox & patches”."
+      "all": "Fullscreen, the CRT effect and VSync can differ for individual games, on their page under “DOSBox & patches”."
     },
     "displayOverridden": "Set by your DOSBox settings for all games (below).",
     "inactive": "In the background",

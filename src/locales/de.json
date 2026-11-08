@@ -123,7 +123,7 @@
     "clearKeenwikiCache": "Gespeicherte Seiten löschen",
     "keenwikiCacheCleared": "Gelöscht.",
     "app": "BloogBase",
-    "pictureSound": "Bild und Ton",
+    "soundBackground": "Ton und Hintergrund",
     "nextStart": "Gilt für alle Spiele und Mods ab ihrem nächsten Start.",
     "dosbox": "DOSBox Staging",
     "aboutMore": "Lizenzen und Danksagungen",
@@ -143,7 +143,7 @@
     "displayHint": {
       "crt": "Zeigt die Spiele wie auf einem Monitor von damals, mit Zeilen und weichen Pixeln. Ausgeschaltet bleiben die Pixel scharf.",
       "vsync": "Hilft, wenn das Bild beim Laufen horizontal zerreißt. Die Steuerung reagiert dann minimal verzögert; bei Monitoren mit FreeSync oder G-Sync nicht nötig.",
-      "all": "Einzelne Spiele kannst du auf ihrer Seite unter „DOSBox & Patches“ abweichend einstellen."
+      "all": "Vollbild, Röhrenmonitor-Effekt und VSync kannst du für einzelne Spiele auf ihrer Seite unter „DOSBox & Patches“ abweichend einstellen."
     },
     "displayOverridden": "Wird von deinen DOSBox-Einstellungen für alle Spiele (unten) festgelegt.",
     "inactive": "Im Hintergrund",

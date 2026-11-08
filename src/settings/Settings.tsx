@@ -35,7 +35,15 @@ import { Check, Field, Group, selectClass } from "./parts";
 import { useGameSettings } from "./queries";
 
 /** The cards of the page, in order, for the list that jumps to them. */
-const sectionIds = ["appearance", "pictureSound", "controls", "saves", "dosbox", "app"] as const;
+const sectionIds = [
+  "appearance",
+  "picture",
+  "soundBackground",
+  "controls",
+  "saves",
+  "dosbox",
+  "app",
+] as const;
 type SectionId = (typeof sectionIds)[number];
 
 export function Settings() {
@@ -47,7 +55,8 @@ export function Settings() {
   const info = useQuery({ queryKey: ["appInfo"], queryFn: () => unwrap(commands.appInfo()) });
   const titles: Record<SectionId, string> = {
     appearance: t("settings.appearance"),
-    pictureSound: t("settings.pictureSound"),
+    picture: t("settings.display"),
+    soundBackground: t("settings.soundBackground"),
     controls: t("settings.controls"),
     saves: t("settings.backups"),
     dosbox: t("runtime.title"),
@@ -57,7 +66,7 @@ export function Settings() {
   return (
     <>
       <PageHeader title={t("settings.title")} />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,42rem)_11rem] lg:items-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,42rem)_11rem] lg:items-start">
         <SectionNav titles={titles} />
         <div className="grid min-w-0 gap-4 lg:order-first">
           <Section id="appearance" title={titles.appearance}>
@@ -100,10 +109,16 @@ export function Settings() {
               }}
             />
           </Section>
-          <Section id="pictureSound" title={titles.pictureSound} intro={t("settings.nextStart")}>
+          <Section id="picture" title={titles.picture} intro={t("settings.nextStart")}>
             <DisplaySection>
               <ScoreBoxField />
             </DisplaySection>
+          </Section>
+          <Section
+            id="soundBackground"
+            title={titles.soundBackground}
+            intro={t("settings.nextStart")}
+          >
             <SoundSection />
             <InactiveSection />
             <LegacyPcSection />
@@ -176,7 +191,7 @@ function SectionNav({ titles }: { titles: Record<SectionId, string> }) {
       let at: SectionId = sectionIds[0];
       for (const id of sectionIds) {
         const el = document.getElementById(`settings-${id}`);
-        if (el && el.getBoundingClientRect().top - top <= 96) at = id;
+        if (el && el.getBoundingClientRect().top - top <= main.clientHeight * 0.4) at = id;
       }
       // At the bottom the last card can't reach the top: it counts anyway.
       const atEnd =
@@ -204,15 +219,19 @@ function SectionNav({ titles }: { titles: Record<SectionId, string> }) {
   }
 
   return (
-    <nav ref={nav} aria-label={t("settings.sections")} className="lg:sticky lg:top-6">
-      <ul className="flex flex-wrap gap-1 lg:grid lg:gap-0.5">
+    <nav
+      ref={nav}
+      aria-label={t("settings.sections")}
+      className="sticky top-0 z-10 -mx-6 border-b border-border bg-bg px-6 py-2 lg:top-6 lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0"
+    >
+      <ul className="flex gap-1 overflow-x-auto lg:grid lg:gap-0.5 lg:overflow-visible">
         {sectionIds.map((id) => (
           <li key={id}>
             <button
               type="button"
               onClick={(e) => jump(id, e.detail === 0)}
               aria-current={current === id ? "location" : undefined}
-              className={`flex h-9 w-full items-center rounded-lg px-3 text-left text-sm transition hover:bg-surface-raised hover:text-ink ${
+              className={`flex h-9 w-full items-center rounded-lg px-2.5 text-left text-sm whitespace-nowrap lg:px-3 transition hover:bg-surface-raised hover:text-ink ${
                 current === id ? "bg-surface-raised text-ink" : "text-muted"
               }`}
             >
@@ -349,7 +368,7 @@ export function DisplaySection({ children }: { children?: ReactNode }) {
   const options = ["crt", "vsync"] as const;
 
   return (
-    <Group title={t("settings.display")}>
+    <>
       <FullscreenField />
       {v &&
         options.map((name) => {
@@ -367,12 +386,12 @@ export function DisplaySection({ children }: { children?: ReactNode }) {
             />
           );
         })}
-      {v && <p className="max-w-prose text-xs text-muted">{t("settings.displayHint.all")}</p>}
       {children}
+      {v && <p className="max-w-prose text-xs text-muted">{t("settings.displayHint.all")}</p>}
       {(view.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
       )}
-    </Group>
+    </>
   );
 }
 
@@ -663,7 +682,7 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <Card id={`settings-${id}`} className="scroll-mt-6 p-5">
+    <Card id={`settings-${id}`} className="scroll-mt-20 p-5 lg:scroll-mt-6">
       <h2 tabIndex={-1} className={`font-semibold ${intro ? "mb-1" : "mb-4"}`}>
         {title}
       </h2>
