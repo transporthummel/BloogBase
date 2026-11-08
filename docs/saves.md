@@ -98,13 +98,21 @@ error, never a panic, and the save is listed without details.
   and perfect) make the save show without details rather than wrong ones.
   Checked against a real v2.0a save.
 - **Atroxian Realm 1.4** (a source mod on the Keen Dreams source, played as
-  Keen 4): the header with `CKD�`, its file extension, on a Keen 4 profile.
+  Keen 4): the header with `CKD\0`, its file extension, on a Keen 4 profile.
   Its game state is Keen 5's, from its source (`KD_DEF.H`): a level word for
   each of its 26 maps, score, `nextKeenAt`, ammo, six item words, map, lives
   and difficulty. A new game starts on map 25, the crash site, which is
   marked done after it, so it isn't counted. Earlier versions saved in
   another layout; values the game can't have written make the save show
   without details, as for Foray. Checked against real v1.4 saves.
+- **Return to the Shadowlands 1.8** (a Keen 4 source mod): the header with
+  `CK4\0`, like Keen 4, but the game state follows the name without the
+  padding byte, and has ten words between `nextKeenAt` and the map where
+  Keen 4 has eight (ammo, drops, two items, four keys); the ammo is the
+  third of the ten. Read in Keen 4's layout its level words come out as
+  0x0100 and the like, which tells the two apart. Map 20, the rocket the
+  game starts on, is marked done from the start and map 19 holds the high
+  scores; only maps 0-18 count. Checked against real v1.8 saves.
 - **Keen Dreams:** the same idea with `KDR\0`, 17 level slots (slot 0 is the
   world map, which the game marks as done on entering a level, so it isn't
   counted) and flower power seeds as ammo. Normal difficulty is stored as 0.

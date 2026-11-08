@@ -19,6 +19,9 @@
 //!   Keen 4: the header with `CKD`, its file extension, and Keen 5's game
 //!   state with 26 levels, from its source (`KD_DEF.H`). Checked against
 //!   real saves of v1.4.
+//! - Return to the Shadowlands 1.8, a Keen 4 source mod: the header with
+//!   `CK4`, but the game state packed without the padding byte and with
+//!   three more item words. Checked against real saves of v1.8.
 
 use std::fmt;
 
@@ -113,6 +116,9 @@ pub fn parse(episode: Episode, data: &[u8]) -> Result<SaveInfo, ParseError> {
         Episode::Keen4 => match data.get(..4) {
             Some(b"CKS\0" | b"CKC\0") => foray(data),
             Some(b"CKD\0") => atroxian(data),
+            Some(b"CK4\0") if !galaxy_levels_plausible(data) => {
+                shadowlands(data).or_else(|_| galaxy(b"CK4\0", 2, data))
+            }
             _ => galaxy(b"CK4\0", 2, data),
         },
         Episode::Keen5 => galaxy(b"CK5\0", 3, data),
@@ -219,6 +225,14 @@ fn difficulty(word: u16) -> Option<Difficulty> {
         3 => Some(Difficulty::Hard),
         _ => None,
     }
+}
+
+/// Keen 4-6 store each level as 0 or 1. A game state packed without the
+/// padding byte after the name reads as words like 0x0100 here.
+fn galaxy_levels_plausible(data: &[u8]) -> bool {
+    let r = Reader(data);
+    let levels = (8 + NAME_LEN).next_multiple_of(2) + 4;
+    (0..GALAXY_LEVELS).all(|i| r.u16(levels + 2 * i).is_ok_and(|v| v <= 1))
 }
 
 /// `extra_words`: the episode's own items between `drops` and `keys`
@@ -359,6 +373,45 @@ fn atroxian(data: &[u8]) -> Result<SaveInfo, ParseError> {
         score: Some(r.i32(score)?),
         ammo: Some(r.i16(ammo)?),
         levels_done: Some(r.count_words(levels, ATROXIAN_LEVELS - 1)?),
+        on_world_map: Some(map == 0),
+        lives: Some(lives),
+        difficulty: Some(difficulty),
+        ship_parts: None,
+    })
+}
+
+/// Return to the Shadowlands 1.8 saves as `CK4`, but its game state follows
+/// the name without a padding byte: world position, 25 level words, score,
+/// `nextKeenAt`, ten words (the third is the ammo, the rest its items), map,
+/// lives and difficulty. Map 20, the rocket the game starts on, is marked
+/// done from the start and map 19 holds the high scores, so only maps 0-18
+/// count. Values the game can't have written are refused.
+fn shadowlands(data: &[u8]) -> Result<SaveInfo, ParseError> {
+    let r = Reader(data);
+    let name = r.name(8, NAME_LEN)?;
+    let state = 8 + NAME_LEN;
+    let levels = state + 4;
+    let score = levels + 2 * GALAXY_LEVELS;
+    let ammo = score + 8 + 4;
+    let mapon = score + 8 + 2 * 10;
+    let (map, lives) = (r.u16(mapon)?, r.i16(mapon + 2)?);
+    let difficulty = difficulty(r.u16(mapon + 4)?).ok_or(ParseError::Implausible("difficulty"))?;
+    if map > 20 {
+        return Err(ParseError::Implausible("map"));
+    }
+    if !(0..=99).contains(&lives) {
+        return Err(ParseError::Implausible("lives"));
+    }
+    for i in 0..GALAXY_LEVELS {
+        if r.u16(levels + 2 * i)? > 1 {
+            return Err(ParseError::Implausible("levels"));
+        }
+    }
+    Ok(SaveInfo {
+        name,
+        score: Some(r.i32(score)?),
+        ammo: Some(r.i16(ammo)?),
+        levels_done: Some(r.count_words(levels, 19)?),
         on_world_map: Some(map == 0),
         lives: Some(lives),
         difficulty: Some(difficulty),

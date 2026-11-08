@@ -269,3 +269,45 @@ fn atroxian_realm() {
     );
     assert_eq!(parse(Episode::Keen5, &data), Err(ParseError::BadSignature));
 }
+
+/// Return to the Shadowlands 1.8: a Normal game saved inside Dunesville
+/// (map 1), and one saved on the world map after finishing it.
+#[test]
+fn return_to_the_shadowlands() {
+    let data = fixture("rtts/SAVEGAM1.CK4");
+    assert_eq!(
+        parse(Episode::Keen4, &data).unwrap(),
+        SaveInfo {
+            name: Some("test22".into()),
+            score: Some(800),
+            lives: Some(3),
+            ammo: Some(0),
+            levels_done: Some(1),
+            difficulty: Some(Difficulty::Normal),
+            on_world_map: Some(true),
+            ship_parts: None,
+        }
+    );
+    assert_eq!(
+        parse(Episode::Keen4, &fixture("rtts/SAVEGAM0.CK4")).unwrap(),
+        SaveInfo {
+            name: Some("test1".into()),
+            score: Some(600),
+            lives: Some(3),
+            ammo: Some(4),
+            levels_done: Some(0),
+            difficulty: Some(Difficulty::Normal),
+            on_world_map: Some(false),
+            ship_parts: None,
+        }
+    );
+
+    // The rocket the game starts on, marked done, doesn't count.
+    let levels = 41 + 4;
+    assert_eq!(data[levels + 2 * 20], 1);
+
+    // Anything the game can't have written falls back to Keen 4's layout.
+    let mut odd = data.clone();
+    odd[0x7F] = 9; // difficulty
+    assert_ne!(parse(Episode::Keen4, &odd).unwrap().score, Some(800));
+}

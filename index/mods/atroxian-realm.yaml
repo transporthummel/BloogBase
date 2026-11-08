@@ -27,5 +27,4 @@ recipe:
   type: program
   program: arealm.exe
 featured: true
-# Older apps find no mod in it, as it has no Keen files.
 minAppVersion: 1.2.0

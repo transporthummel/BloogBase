@@ -23,7 +23,8 @@
       "KeenWiki links no longer miss versions some mod pages list.",
       "Source mods like Atroxian Realm show their title screen as cover instead of a cutscene.",
       "Alt+Enter to fullscreen no longer garbles the picture of a running game.",
-      "Atroxian Realm saves show their score, lives and difficulty."
+      "Atroxian Realm saves show their score, lives and difficulty.",
+      "Return to the Shadowlands saves show the right score."
     ],
     "de": [
       "Sound, Musik, Scorebox und Tasten lassen sich einmal für alle Spiele und Mods festlegen.",
@@ -48,7 +49,8 @@
       "KeenWiki-Links übersehen keine Versionen mehr, die manche Mod-Seiten aufführen.",
       "Source-Mods wie Atroxian Realm zeigen ihren Titelbildschirm als Cover statt einer Zwischensequenz.",
       "Alt+Enter in den Vollbildmodus stört das Bild eines laufenden Spiels nicht mehr.",
-      "Spielstände von Atroxian Realm zeigen Punkte, Leben und Schwierigkeit."
+      "Spielstände von Atroxian Realm zeigen Punkte, Leben und Schwierigkeit.",
+      "Spielstände von Return to the Shadowlands zeigen die richtigen Punkte."
     ]
   },
   "releases": [

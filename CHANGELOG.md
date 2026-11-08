@@ -29,6 +29,7 @@
 - The library keeps its search when you switch to another page and back, until the app closes or a new game or mod is added.
 - Discover's mods tab keeps its search, filters and sort when you switch to another page and back, until the app closes; the news dialog's link to the new mods starts without filters.
 - The save list shows the details of Atroxian Realm saves (name, score, lives, ammo, difficulty, where it was saved).
+- Return to the Shadowlands saves show their real score, lives, ammo, difficulty and levels done instead of numbers read from the wrong place.
 
 ### Bug Fixes
 
