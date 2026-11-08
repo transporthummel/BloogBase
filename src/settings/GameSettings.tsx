@@ -93,12 +93,13 @@ export function SoundSection() {
   );
 }
 
-export function ScoreBoxSection() {
+/** Whether Keen 4–6 show their score box; sits with the picture options. */
+export function ScoreBoxField() {
   const { t } = useTranslation();
   const { settings: s, update, pending, error } = useGameSettings();
 
   return (
-    <Group title={t("settings.other")}>
+    <>
       {s && (
         <div className="grid gap-1">
           <OnOffField
@@ -111,6 +112,6 @@ export function ScoreBoxSection() {
         </div>
       )}
       {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
-    </Group>
+    </>
   );
 }

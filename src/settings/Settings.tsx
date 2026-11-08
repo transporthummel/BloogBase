@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Eraser, FileCog, Keyboard, RefreshCw, Wand } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type BackupSettings, type DisplayOptions, type WhenInactive } from "../bindings";
 import { ConfigEditor } from "../config/LazyConfigEditor";
@@ -29,10 +29,14 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
-import { ScoreBoxSection, SoundSection } from "./GameSettings";
+import { ScoreBoxField, SoundSection } from "./GameSettings";
 import { KeysDialog } from "./KeysDialog";
 import { Field, Group, selectClass } from "./parts";
 import { useGameSettings } from "./queries";
+
+/** The cards of the page, in order, for the list that jumps to them. */
+const sectionIds = ["appearance", "pictureSound", "controls", "saves", "dosbox", "app"] as const;
+type SectionId = (typeof sectionIds)[number];
 
 export function Settings() {
   const { t, i18n } = useTranslation();
@@ -41,105 +45,189 @@ export function Settings() {
   const [theme, setThemeState] = useState(getTheme);
   const [showTrivia, setShowTriviaState] = useState(getShowTrivia);
   const info = useQuery({ queryKey: ["appInfo"], queryFn: () => unwrap(commands.appInfo()) });
+  const titles: Record<SectionId, string> = {
+    appearance: t("settings.appearance"),
+    pictureSound: t("settings.pictureSound"),
+    controls: t("settings.controls"),
+    saves: t("settings.backups"),
+    dosbox: t("runtime.title"),
+    app: t("settings.app"),
+  };
 
   return (
     <>
       <PageHeader title={t("settings.title")} />
-      <div className="grid max-w-2xl gap-4">
-        <Section title={t("settings.appearance")}>
-          <Field label={t("settings.language")}>
-            <select
-              className={`${selectClass} w-44`}
-              value={i18n.language}
-              onChange={(e) => {
-                const lng = e.target.value as Language;
-                setLanguage(lng);
-                i18n.changeLanguage(lng);
-              }}
-            >
-              <option value="en">English</option>
-              <option value="de">Deutsch</option>
-            </select>
-          </Field>
-          <Field label={t("settings.theme")}>
-            <select
-              className={`${selectClass} w-44`}
-              value={theme}
-              onChange={(e) => {
-                const value = e.target.value as Theme;
-                setTheme(value);
-                setThemeState(value);
-              }}
-            >
-              <option value="dark">{t("settings.themeDark")}</option>
-              <option value="light">{t("settings.themeLight")}</option>
-              <option value="system">{t("settings.themeSystem")}</option>
-            </select>
-          </Field>
-          <div className="grid gap-1">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={showTrivia}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,42rem)_11rem] lg:items-start">
+        <SectionNav titles={titles} />
+        <div className="grid min-w-0 gap-4 lg:order-first">
+          <Section id="appearance" title={titles.appearance}>
+            <Field label={t("settings.language")}>
+              <select
+                className={`${selectClass} w-44`}
+                value={i18n.language}
                 onChange={(e) => {
-                  setShowTrivia(e.target.checked);
-                  setShowTriviaState(e.target.checked);
-                }}
-              />
-              {t("settings.showTrivia")}
-            </label>
-            <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.showTriviaHint")}</p>
-          </div>
-          <StartFullscreenOption />
-        </Section>
-        <Section title={t("settings.games")}>
-          <DisplaySection />
-          <SoundSection />
-          <InactiveSection />
-          <LegacyPcSection />
-          <ControlsSection />
-          <ScoreBoxSection />
-          <BackupSection />
-        </Section>
-        <Section title={t("runtime.title")}>
-          <RuntimeSection />
-          <GlobalConfigSection />
-        </Section>
-        <Section title={t("settings.app")}>
-          <UpdateSection />
-          <KeenwikiCacheSection />
-          <Group title={t("settings.setup")}>
-            <p className="text-sm text-muted">{t("settings.rerunHint")}</p>
-            <div>
-              <Button
-                variant="secondary"
-                onClick={async () => {
-                  await commands.setSetupStep("welcome");
-                  await queryClient.invalidateQueries({ queryKey: setupStatusKey });
-                  navigate({ to: "/setup" });
+                  const lng = e.target.value as Language;
+                  setLanguage(lng);
+                  i18n.changeLanguage(lng);
                 }}
               >
-                <Wand className="size-4" aria-hidden />
-                {t("settings.rerunSetup")}
-              </Button>
+                <option value="en">English</option>
+                <option value="de">Deutsch</option>
+              </select>
+            </Field>
+            <Field label={t("settings.theme")}>
+              <select
+                className={`${selectClass} w-44`}
+                value={theme}
+                onChange={(e) => {
+                  const value = e.target.value as Theme;
+                  setTheme(value);
+                  setThemeState(value);
+                }}
+              >
+                <option value="dark">{t("settings.themeDark")}</option>
+                <option value="light">{t("settings.themeLight")}</option>
+                <option value="system">{t("settings.themeSystem")}</option>
+              </select>
+            </Field>
+            <div className="grid gap-1">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={showTrivia}
+                  onChange={(e) => {
+                    setShowTrivia(e.target.checked);
+                    setShowTriviaState(e.target.checked);
+                  }}
+                />
+                {t("settings.showTrivia")}
+              </label>
+              <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.showTriviaHint")}</p>
             </div>
-          </Group>
-        </Section>
-        <Section title={t("settings.about")}>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
-            <dt className="text-muted">{t("settings.version")}</dt>
-            <dd className="font-pixel text-xs leading-5">{info.data?.version}</dd>
-            <dt className="text-muted">{t("settings.dataDir")}</dt>
-            <dd className="break-all select-text">{info.data?.dataDir}</dd>
-          </dl>
-          <p className="text-sm">
-            <Link to="/about" className="underline underline-offset-2">
-              {t("settings.aboutMore")}
-            </Link>
-          </p>
-        </Section>
+            <StartFullscreenOption />
+          </Section>
+          <Section id="pictureSound" title={titles.pictureSound}>
+            <DisplaySection>
+              <ScoreBoxField />
+            </DisplaySection>
+            <SoundSection />
+            <InactiveSection />
+            <LegacyPcSection />
+          </Section>
+          <Section id="controls" title={titles.controls}>
+            <ControlsSection />
+          </Section>
+          <Section id="saves" title={titles.saves}>
+            <BackupSection />
+          </Section>
+          <Section id="dosbox" title={titles.dosbox}>
+            <RuntimeSection />
+            <GlobalConfigSection />
+          </Section>
+          <Section id="app" title={titles.app}>
+            <UpdateSection />
+            <KeenwikiCacheSection />
+            <Group title={t("settings.setup")}>
+              <p className="text-sm text-muted">{t("settings.rerunHint")}</p>
+              <div>
+                <Button
+                  variant="secondary"
+                  onClick={async () => {
+                    await commands.setSetupStep("welcome");
+                    await queryClient.invalidateQueries({ queryKey: setupStatusKey });
+                    navigate({ to: "/setup" });
+                  }}
+                >
+                  <Wand className="size-4" aria-hidden />
+                  {t("settings.rerunSetup")}
+                </Button>
+              </div>
+            </Group>
+            <Group title={t("settings.about")}>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-sm">
+                <dt className="text-muted">{t("settings.version")}</dt>
+                <dd className="font-pixel text-xs leading-5">{info.data?.version}</dd>
+                <dt className="text-muted">{t("settings.dataDir")}</dt>
+                <dd className="break-all select-text">{info.data?.dataDir}</dd>
+              </dl>
+              <p className="text-sm">
+                <Link to="/about" className="underline underline-offset-2">
+                  {t("settings.aboutMore")}
+                </Link>
+              </p>
+            </Group>
+          </Section>
+        </div>
       </div>
     </>
+  );
+}
+
+/**
+ * Jumps to the cards: beside them from 1024px, where it stays in view and
+ * marks the card being read, above them on narrower windows.
+ */
+function SectionNav({ titles }: { titles: Record<SectionId, string> }) {
+  const { t } = useTranslation();
+  const nav = useRef<HTMLElement>(null);
+  const [current, setCurrent] = useState<SectionId>(sectionIds[0]);
+
+  useEffect(() => {
+    const main = nav.current?.closest("main");
+    if (!main) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const top = main.getBoundingClientRect().top;
+      let at: SectionId = sectionIds[0];
+      for (const id of sectionIds) {
+        const el = document.getElementById(`settings-${id}`);
+        if (el && el.getBoundingClientRect().top - top <= 96) at = id;
+      }
+      // At the bottom the last card can't reach the top: it counts anyway.
+      const atEnd =
+        main.scrollTop > 0 && main.scrollTop + main.clientHeight >= main.scrollHeight - 2;
+      setCurrent(atEnd ? sectionIds[sectionIds.length - 1] : at);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    main.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      main.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  function jump(id: SectionId, byKeyboard: boolean) {
+    const section = document.getElementById(`settings-${id}`);
+    if (!section) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    section.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" });
+    // Keyboard users go on reading from there.
+    if (byKeyboard) section.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
+  }
+
+  return (
+    <nav ref={nav} aria-label={t("settings.sections")} className="lg:sticky lg:top-6">
+      <ul className="flex flex-wrap gap-1 lg:grid lg:gap-0.5">
+        {sectionIds.map((id) => (
+          <li key={id}>
+            <button
+              type="button"
+              onClick={(e) => jump(id, e.detail === 0)}
+              aria-current={current === id ? "location" : undefined}
+              className={`flex h-9 w-full items-center rounded-lg px-3 text-left text-sm transition hover:bg-surface-raised hover:text-ink ${
+                current === id ? "bg-surface-raised text-ink" : "text-muted"
+              }`}
+            >
+              {titles[id]}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -260,7 +348,7 @@ function useDisplayOptions() {
 }
 
 /** Simple DOSBox options for all games, so nobody needs to know DOSBox. */
-export function DisplaySection() {
+export function DisplaySection({ children }: { children?: ReactNode }) {
   const { t } = useTranslation();
   const { view, update } = useDisplayOptions();
   const v = view.data;
@@ -288,6 +376,7 @@ export function DisplaySection() {
             </div>
           );
         })}
+      {children}
       {v && <p className="max-w-prose text-xs text-muted">{t("settings.displayHint.all")}</p>}
       {(view.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, view.error ?? update.error)}</Notice>
@@ -422,7 +511,19 @@ function ControlsSection() {
   });
 
   return (
-    <Group title={t("settings.controls")}>
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="grid gap-0.5 text-sm">
+          <span>{t("settings.keysTitle")}</span>
+          <span className="text-xs text-muted">
+            {keysSet > 0 ? t("settings.keysSet", { count: keysSet }) : t("settings.keysNone")}
+          </span>
+        </div>
+        <Button variant="secondary" onClick={() => setChoosingKeys(true)}>
+          <Keyboard className="size-4" aria-hidden />
+          {t("settings.keysOpen")}
+        </Button>
+      </div>
       {firing.data !== undefined && (
         <div className="grid gap-1">
           <label className="flex items-center gap-2 text-sm">
@@ -437,20 +538,11 @@ function ControlsSection() {
           <p className="ml-6 max-w-prose text-xs text-muted">{t("settings.oneButtonFiringHint")}</p>
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant="secondary" onClick={() => setChoosingKeys(true)}>
-          <Keyboard className="size-4" aria-hidden />
-          {t("settings.keysOpen")}
-        </Button>
-        {keysSet > 0 && (
-          <span className="text-sm text-muted">{t("settings.keysSet", { count: keysSet })}</span>
-        )}
-      </div>
       {choosingKeys && <KeysDialog onClose={() => setChoosingKeys(false)} />}
       {(firing.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, firing.error ?? update.error)}</Notice>
       )}
-    </Group>
+    </>
   );
 }
 
@@ -470,7 +562,7 @@ function BackupSection() {
   const s = settings.data;
 
   return (
-    <Group title={t("settings.backups")}>
+    <>
       {s && (
         <>
           <label className="flex items-start gap-2 text-sm">
@@ -506,7 +598,7 @@ function BackupSection() {
       {(settings.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, settings.error ?? update.error)}</Notice>
       )}
-    </Group>
+    </>
   );
 }
 
@@ -556,10 +648,12 @@ function GlobalConfigSection() {
 }
 
 /** A card of related settings, split into groups. */
-function Section({ title, children }: { title: string; children: ReactNode }) {
+function Section({ id, title, children }: { id: SectionId; title: string; children: ReactNode }) {
   return (
-    <Card className="p-5">
-      <h2 className="mb-4 font-semibold">{title}</h2>
+    <Card id={`settings-${id}`} className="scroll-mt-6 p-5">
+      <h2 tabIndex={-1} className="mb-4 font-semibold">
+        {title}
+      </h2>
       <div className="grid gap-5">{children}</div>
     </Card>
   );

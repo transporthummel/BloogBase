@@ -98,6 +98,7 @@
   },
   "settings": {
     "title": "Settings",
+    "sections": "Settings sections",
     "appearance": "Appearance",
     "language": "Language",
     "theme": "Theme",
@@ -123,8 +124,8 @@
     "keenwikiCacheHint": "BloogBase keeps the KeenWiki pages it reads for a day. If a page has changed since, for example a fixed download link, delete them so it reads it again.",
     "clearKeenwikiCache": "Delete saved pages",
     "keenwikiCacheCleared": "Deleted.",
-    "games": "Games",
     "app": "BloogBase",
+    "pictureSound": "Picture and sound",
     "dosbox": "DOSBox Staging",
     "aboutMore": "Licenses and credits",
     "display": "Display",
@@ -164,7 +165,6 @@
     "musicHint": "For games with music, also Keen 1–3 mods with their own.",
     "deviceHint": "For Keen 4–6 and Keen Dreams.",
     "gameSettingsHint": "What you set here applies from the next start, and then also replaces what was set in the game.",
-    "other": "Other",
     "scoreBox": "Show score box",
     "scoreBoxHint": "For Keen 4–6.",
     "controls": "Controls",
@@ -184,6 +184,7 @@
     "keysHint": "Fire in Keen 1–3 needs “one-button firing”; without it, Keen fires with Jump and Pogo together. Keen Dreams has no pogo stick: Fire throws. Keys apply from the next start and replace what was set in the game.",
     "keysSet_one": "{{count}} key set",
     "keysSet_other": "{{count}} keys set",
+    "keysNone": "As set in each game",
     "keyAction": {
       "up": "Up",
       "down": "Down",
