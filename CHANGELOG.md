@@ -5,49 +5,46 @@
 ### Features
 
 - Sound, music, the sound device, the score box and keys can be set once for all games and mods in the settings.
-- BloogBase can go fullscreen, without the taskbar, from a button in the sidebar or with F11, and can start in fullscreen; while it is in fullscreen, games start in fullscreen too, whatever their settings say. Settings has one choice for what starts in fullscreen: off, games only (the default), or BloogBase and games.
+- BloogBase can go fullscreen, without the taskbar, from a button in the sidebar or with F11, and can start in fullscreen; while it is in fullscreen, games start in fullscreen too, whatever their settings say.
 - A "Quit BloogBase" button at the bottom of the sidebar closes the app, also in fullscreen, and asks first while games run, as the window's close button does.
-- BloogBase knows 50 releases now, eight more: Keen 2 and 3 v1.1 and v1.32, the Keen 6 Apogee demo and id Anthology release, and Keen Dreams v1.05 and v1.20; mods get placed on them by the same ranking as on the others.
-- Mods that bring their whole game with them (source mods such as Foray in the Forest) can be marked standalone in the mod list: they play without a copy of the game they're built on, show up under "No game needed" in Discover and in the library, and the setup wizard suggests them even without any Keen; installed ones leave their copy of the game at the next check of the mod list, saves included. `pnpm index:add` marks source mods standalone. Source mods that carry the game's own graphics or sounds also get `requiresGame`: they still play from their own files alone, but are listed, installed and kept like any other mod of that game and need a copy of it.
-- Custom patches: patch file lines for a game copy, entered with line numbers in the new "DOSBox & patches" tab of its page, folded away below the DOSBox settings until there are some, go into the game and every mod played on that copy at each start, after the mod's own lines; a mod's tab says whether it gets them.
 - A new setting for all games says what a game does while another window is active: keep running (as before), mute, or pause (DOSBox's `mute_when_inactive` and `pause_when_inactive`).
 - A "Legacy PC mode" setting for all games (off by default) makes the hard disk slow and audible, as on a PC of the time (DOSBox's `hard_disk_speed = slow` and `hard_disk_noise = on`).
+- BloogBase knows 50 releases now, eight more: Keen 2 and 3 v1.1 and v1.32, the Keen 6 Apogee demo and id Anthology release, and Keen Dreams v1.05 and v1.20.
+- Custom patches: patch file lines for a game copy, entered in the new "DOSBox & patches" tab of its page, go into the game and every mod played on that copy at each start, after the mod's own lines; a mod's tab says whether it gets them. Can be used to add or remove features.
+- Mods that bring their whole game with them (source mods such as Foray in the Forest) can be marked standalone in the mod list: they play without a copy of the game they're built on, show up under "No game needed" in Discover and in the library, and the setup wizard suggests them even without any Keen; installed ones leave their copy of the game at the next check of the mod list, saves included. Source mods that carry the game's own graphics or sounds also get `requiresGame`: they still play from their own files alone, but are listed, installed and kept like any other mod of that game and need a copy of it.
+- Added support for Atroxian Realm, Keen Dreams Gold Edition and Return to the Shadowlands.
 
 ### Improvements
 
 - The Windows installer updates an older BloogBase in place, as the in-app updater does, instead of offering to uninstall it first.
 - Download sizes under 1 MB are shown in KB instead of as 0.4 MB.
 - Download sizes use the decimal comma in German (2,0 MB).
-- The Windows uninstaller has the BloogBase icon instead of the NSIS default.
-- An older mod list from the server gets its own message instead of the one for a damaged download.
-- The library shows its games sooner after a start: looking for the names a mod's programs save under no longer scans them byte by byte.
-- The library remembers over restarts which names a mod saves under, so its games show right away after a start.
-- The library shows a hopping Bloog with "Loading your library…" until its games are there, instead of an empty page.
 - On Windows the title bar wears BloogBase's theme (Midnight Galaxy or Vintage Beige) instead of following Windows' light or dark mode and accent colour; Windows 10 gets light or dark only.
-- A player's own DOSBox Staging has to be 0.82.0 or newer, since older versions don't know the setting for the game speed; 0.82.x gets a notice that the CRT switch has no effect there.
-- Keen Dreams v1.0 and v1.05 get their title screen as cover instead of the placeholder; these releases draw it from a map rather than keep a picture.
-- The library keeps its search when you switch to another page and back, until the app closes or a new game or mod is added.
-- Discover's mods tab keeps its search, filters and sort when you switch to another page and back, until the app closes; the news dialog's link to the new mods starts without filters.
-- The save list shows the details of Atroxian Realm saves (name, score, lives, ammo, difficulty, where it was saved).
-- Return to the Shadowlands saves show their real score, lives, ammo, difficulty and levels done instead of numbers read from the wrong place.
 - The settings page is split into Appearance, Display, Sound and background, Controls, Backups, DOSBox and BloogBase, with a list that jumps to each and marks the one in view, beside the cards on wide windows and as a bar above them on narrow ones; keys come first under Controls, with how many are set, and "applies from the next start" is said once under the page title instead of under each setting.
-- "What DOSBox gets" on a game's page names the settings page as the source of what it sets ("Settings page") instead of "Display options", since it sets sound, keys and more now.
-- The sidebar shows the logo's "BloogBase" lettering, in the theme's colours, instead of the name in pixel type.
+- Discover's mods tab keeps its search, filters and sort when you switch to another page and back, until the app closes; the news dialog's link to the new mods starts without filters.
 - Source mods get a tile of their own in Discover, and as placeholder cover, a "+" on EGA dark cyan instead of the blue number of the game they're built on.
+- The library keeps its search when you switch to another page and back, until the app closes or a new game or mod is added.
+- The library shows its games sooner after a start: looking for the names a mod's programs save under no longer scans them byte by byte.
+- The library shows a hopping Bloog with "Loading your library…" until its games are there, instead of an empty page.
+- Keen Dreams v1.0 and v1.05 get their title screen as cover instead of the placeholder; these releases draw it from a map rather than keep a picture.
+- "What DOSBox gets" on a game's page names the settings page as the source of what it sets ("Settings page") instead of "Display options", since it sets sound, keys and more now.
 - Discover and a mod's page say "Released on …" before a mod's date; dates known only to the month or year read "in July 2017" or "2017".
 - On a game's "DOSBox & patches" tab, "What DOSBox gets", BloogBase's defaults and custom patches fold away the same way under their headings; the first two start folded.
 - The "Mod won't start?" and bug report dialogs say in two steps what to do, including that GitHub needs a free account, and fold the report away behind "Show the report".
+- The sidebar shows the logo's "BloogBase" lettering, in the theme's colours, instead of the name in pixel type.
+- An older mod list from the server gets its own message instead of the one for a damaged download.
+- The library remembers over restarts which names a mod saves under, so its games show right away after a start.
+- A player's own DOSBox Staging has to be 0.82.0 or newer, since older versions don't know the setting for the game speed; 0.82.x gets a notice that the CRT switch has no effect there.
+- The Windows uninstaller has the BloogBase icon instead of the NSIS default.
 
 ### Bug Fixes
 
+- Switching a running game to fullscreen with Alt+Enter no longer garbles the picture or breaks the game: DOSBox now uses borderless fullscreen by default (`fullscreen_mode = forced-borderless`).
 - Pixel-font headings no longer join "fi" into one glyph without the i's dot, which made "inoffizielles" on the About page read "inoffzielles".
 - A comma after a download on a KeenWiki page no longer shows up as the version's note, as in "v0.2 (demo) (,)".
 - Versions a KeenWiki page lists inside a paragraph show up in the download choice too; Atroxian Realm's v1.3, v1.1 and v1.0 were missing.
 - Source mods whose cutscenes are as colorful as their title, like Atroxian Realm, get the title screen as cover: BloogBase takes the full-screen picture the mod's program draws right after loading it.
-- Switching a running game to fullscreen with Alt+Enter no longer garbles the picture or breaks the game: DOSBox now uses borderless fullscreen by default (`fullscreen_mode = forced-borderless`).
 - Mods downloaded from a link with a query, such as Dropbox's `…/KDGOLD.ZIP?rlkey=…&dl=1`, install on Windows instead of failing with an invalid file name: the archive is kept under the name before the `?`.
-- Keen Dreams Gold Edition gets its title screen as cover instead of the placeholder: source mods' graphics are also found under the program's own name (`KDGOLD.EGA`), and of full-screen pictures with equally many colors the first counts, not the last (here the story screen).
-- Keen Dreams Gold Edition's saves (`KDGOLD0.SAV` …) show up in the save list, with name, score, lives, flower powers or ammo, levels done and difficulty (also its own Keen and Grand): save names a mod's program puts together from a stem and an extension are found too.
 
 ### Misc
 
