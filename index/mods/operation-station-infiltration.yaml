@@ -22,6 +22,8 @@ downloads:
     sha256: 0a9ea1216d956a5d9c547fd06a4f7632837378a113eee66b50d8a2d09e6620d4
     size: 3232443
 standalone: true
+# Carries much of Keen 5's own graphics.
+requiresGame: true
 recipe:
   type: program
   program: OSI.EXE
