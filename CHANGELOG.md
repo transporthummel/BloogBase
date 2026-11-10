@@ -4,6 +4,8 @@
 
 ### Features
 
+- Xbox controllers play every game without setup: the controller presses Keen's keys, and with View held the keys of the menus, save slots in Keen 1–3 and letters for save names in Keen 4–6 and Keen Dreams.
+
 ### Improvements
 
 - "What's new" shows the newest version's changes and folds away the versions skipped in between, with a link to all changes.

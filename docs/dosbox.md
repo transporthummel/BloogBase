@@ -78,7 +78,7 @@ one wins for every setting it sets:
   else `sharp`), vsync, what a game does in the background
   (`mute_when_inactive`, `pause_when_inactive`) and the legacy PC mode
   (`[dosbox] hard_disk_speed = slow` and `[disknoise] hard_disk_noise = on`,
-  else `maximum` and `off`), plus the keyboard mapper file if there is one.
+  else `maximum` and `off`), plus the engine's mapper file (below).
   If the global override sets the same setting, the settings page says so
   and disables the switch.
 - **Global and profile overrides** are the player's own DOSBox settings,
@@ -106,17 +106,35 @@ the OPL channel with `mixer opl 0`, before secure mode locks the session.
 still calls its interrupt. Keen 4-6 and Dreams play effects over OPL too, and
 get the setting through their settings file ([saves.md](saves.md)).
 
-### The keyboard
+### The keyboard and controller
 
 Keen and most DOS games read raw scancodes, so DOSBox's `keyboard_layout`
 doesn't reach them: on a German keyboard the key labeled Y arrives as Z. On
-Windows, BloogBase asks for the active layout's key for each letter. If any
-letter moves, it writes `configs/keyboard.map`, a mapper file that binds
-each emulated letter to the host key that types it. A mapper file replaces
-all of DOSBox's default bindings, so it repeats Staging 0.83's
-(`CreateDefaultBinds` in `gui/mapper.cpp`) and moves only the letters. On
-US layouts, and outside Windows, there is no mapper file and DOSBox keeps
-its own defaults.
+Windows, BloogBase asks for the active layout's key for each letter and
+writes a mapper file that binds each emulated letter to the host key that
+types it. A mapper file replaces all of DOSBox's default bindings, so it
+repeats Staging 0.83's (`CreateDefaultBinds` in `gui/mapper.cpp`) and moves
+only the letters.
+
+The same file puts an Xbox controller on Keen's keys, so games need no
+joystick setup or calibration: A jumps, B, LB and RB pogo, X, LT and RT
+fire, Y opens the status window, Menu is Esc, and the left stick and D-pad
+move. The file drops DOSBox's bindings of the controller to its emulated
+joystick, so games only see keys (Keen Dreams' menus take joystick
+buttons too). Holding View (DOSBox's third modifier) switches to the menu
+keys.
+Those differ between Keen 1-3 and the later games, so each engine has a
+file of its own: `configs/keyboard-vorticons.map`,
+`configs/keyboard-galaxy.map` and `configs/keyboard-dreams.map` (as Keen
+4-6, but A presses 5, then Ctrl, there is no pogo, X, LT and RT throw
+with Alt and Y opens the status window with Space). Each menu key
+has a button of its own: Keen takes the last of several keys pressed
+together. In Keen 4-6 and Dreams, the D-pad, sticks and stick
+clicks type letters for a save's name with View held, A-N, and O-Z, space
+and backspace with View and LB (DOSBox's first modifier). DOSBox only sees a controller
+that is connected when the game starts, and it presses a key for a stick
+only above 76 % of an axis, so diagonals work on the D-pad only
+([dosbox-staging#5162](https://github.com/dosbox-staging/dosbox-staging/issues/5162)).
 
 ## What DOSBox runs
 
