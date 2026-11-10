@@ -262,13 +262,18 @@ function AddFrom({
   );
 }
 
-/** A file that is an index download installs as that entry, unless the player sets it up. */
+/**
+ * A file that is an index download installs as that entry, unless the player sets it up;
+ * a source mod only as the entry, as set up by hand it would play on its game.
+ */
 function Confirm(props: SetUpProps) {
   const { t } = useTranslation();
   const [myself, setMyself] = useState(false);
   const { info, path, replacing, queued, onCancel } = props;
   const installed = useIndexInstalled(info.indexId);
-  if (!info.indexId || replacing || myself) return <SetUp {...props} />;
+  const entry = useIndexMods().data?.find((m) => m.entry.id === info.indexId)?.entry;
+  const sourceMod = info.indexFiles || entry?.standalone === true;
+  if (!info.indexId || replacing || (myself && !sourceMod)) return <SetUp {...props} />;
   return (
     <div className="grid gap-4">
       <IndexHit
@@ -279,9 +284,11 @@ function Confirm(props: SetUpProps) {
         version={info.indexVersion}
       />
       <div className="flex justify-end gap-3">
-        <Button variant="ghost" onClick={() => setMyself(true)}>
-          {t("mods.setUpMyself")}
-        </Button>
+        {!sourceMod && (
+          <Button variant="ghost" onClick={() => setMyself(true)}>
+            {t("mods.setUpMyself")}
+          </Button>
+        )}
         {queued ? (
           <Button variant={installed ? "primary" : "ghost"} onClick={onCancel}>
             {t("drop.continue")}
