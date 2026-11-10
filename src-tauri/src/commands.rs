@@ -818,8 +818,10 @@ pub fn reset_config(
 #[specta::specta]
 pub async fn inspect_mod(app: AppHandle, path: String) -> CommandResult<ModInfo> {
     blocking(move || {
-        let mut info = mods::inspect(Path::new(&path), None)?;
-        info.index_id = index_match(&app, &path, &info);
+        let known = source_mod_match(&app, &path);
+        let hint = known.as_ref().map(|(e, _)| e.game.as_str());
+        let mut info = mods::inspect(Path::new(&path), hint)?;
+        index_match(&app, &path, &mut info, known);
         find_base_mods(&app, &mut info);
         find_bundled_game(&app, &path, &mut info);
         Ok(info)
@@ -827,11 +829,31 @@ pub async fn inspect_mod(app: AppHandle, path: String) -> CommandResult<ModInfo>
     .await
 }
 
-/// The index entry whose download `path` is, for `info` found in it.
-fn index_match(app: &AppHandle, path: &str, info: &ModInfo) -> Option<String> {
-    app.state::<ModIndex>()
+/// The standalone index entry and download whose programs are in `path`, a
+/// source mod the player has on disk.
+fn source_mod_match(app: &AppHandle, path: &str) -> Option<(mod_index::IndexEntry, usize)> {
+    let source = crate::source::Source::open(Path::new(path)).ok()?;
+    app.state::<ModIndex>().entry_for_files(&source)
+}
+
+/// Ties `info`, found in `path`, to the index entry whose download it is,
+/// else to `known`, the source mod whose programs it has.
+fn index_match(
+    app: &AppHandle,
+    path: &str,
+    info: &mut ModInfo,
+    known: Option<(mod_index::IndexEntry, usize)>,
+) {
+    if let Some(e) = app
+        .state::<ModIndex>()
         .entry_for_archive(Path::new(path), &info.game_id)
-        .map(|e| e.id)
+    {
+        info.index_id = Some(e.id);
+    } else if let Some((e, i)) = known.filter(|(e, _)| e.game == info.game_id) {
+        info.index_version = Curated::new(&e, i).version;
+        info.index_id = Some(e.id);
+        info.index_files = true;
+    }
 }
 
 /// For each way to start `info` that lacks files, the mod it's made to be
@@ -889,9 +911,16 @@ fn find_base_mods(app: &AppHandle, info: &mut ModInfo) {
 #[specta::specta]
 pub async fn inspect_dropped(app: AppHandle, path: String) -> CommandResult<Dropped> {
     blocking(move || {
-        let mut dropped = mods::classify(Path::new(&path))?;
+        let known = source_mod_match(&app, &path);
+        let mut dropped = match &known {
+            // Its own programs and data, which may not look like a mod.
+            Some((e, _)) => Dropped::Mod {
+                info: Box::new(mods::inspect(Path::new(&path), Some(&e.game))?),
+            },
+            None => mods::classify(Path::new(&path))?,
+        };
         if let Dropped::Mod { info } = &mut dropped {
-            info.index_id = index_match(&app, &path, info);
+            index_match(&app, &path, info, known);
             find_base_mods(&app, info);
             find_bundled_game(&app, &path, info);
         }
@@ -1154,9 +1183,12 @@ pub async fn download_keenwiki_mod(
     let p = path.clone();
     let a = app.clone();
     let info = blocking(move || {
-        let mut info = mods::inspect(&p, game_id.as_deref())?;
+        let path = p.display().to_string();
+        let known = source_mod_match(&a, &path);
+        let hint = known.as_ref().map(|(e, _)| e.game.clone()).or(game_id);
+        let mut info = mods::inspect(&p, hint.as_deref())?;
         // The page may not be the one the index links, the download may be.
-        info.index_id = index_match(&a, &p.display().to_string(), &info);
+        index_match(&a, &path, &mut info, known);
         find_base_mods(&a, &mut info);
         Ok(info)
     })
@@ -1245,8 +1277,10 @@ pub fn install_index_mod(
     })
 }
 
-/// Downloads (unless `archive` is the player's copy) and installs one index
-/// mod for [`install_index_mod`].
+/// Downloads (unless `own` is the player's copy) and installs one index
+/// mod for [`install_index_mod`]. `own` may also be the player's own folder
+/// or ZIP of a standalone mod, known by its programs: then its files are
+/// installed as they are, with the entry's recipe for that version.
 async fn install_entry(
     a: &AppHandle,
     report: &jobs::Reporter,
@@ -1255,14 +1289,27 @@ async fn install_entry(
     install_id: Option<String>,
     without_game: bool,
 ) -> Result<()> {
-    let archive = mod_index::archive(
-        &a.state::<AppPaths>().cache,
-        &entry,
-        own.map(PathBuf::from),
-        &|r, t| report.progress(JobPhase::Downloading, r, t),
-    )
-    .await?;
-    report.progress(JobPhase::Installing, archive.size, archive.size);
+    let players = own
+        .as_deref()
+        .and_then(|p| mod_index::players_download(&entry, Path::new(p)));
+    // Kept until installed: a download goes when it's dropped.
+    let (file, _archive) = match (players, own) {
+        (Some(_), Some(own)) => {
+            report.progress(JobPhase::Installing, 1, 1);
+            (PathBuf::from(own), None)
+        }
+        (_, own) => {
+            let archive = mod_index::archive(
+                &a.state::<AppPaths>().cache,
+                &entry,
+                own.map(PathBuf::from),
+                &|r, t| report.progress(JobPhase::Downloading, r, t),
+            )
+            .await?;
+            report.progress(JobPhase::Installing, archive.size, archive.size);
+            (archive.path.clone(), Some(archive))
+        }
+    };
     // Right after the setup wizard the game may still be on its way.
     while !entry.needs_no_game()
         && a.state::<Jobs>().is_running(JobKind::FreeGame, |v| {
@@ -1272,18 +1319,22 @@ async fn install_entry(
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
     }
 
-    let curated = Curated::new(&entry, 0);
+    let curated = Curated::new(&entry, players.unwrap_or(0));
     let b = a.clone();
-    let file = archive.path.clone();
+    let path = file.clone();
     let result = tauri::async_runtime::spawn_blocking(move || {
         let (paths, db) = (b.state::<AppPaths>(), b.state::<Db>());
         // An update must not swap files under a running game.
         let existing = mods::find_by_index(&db, &curated.index_id)?;
         let _claim = b.state::<Running>().claim_all(existing)?;
-        mods::install_curated(
+        let install = match players {
+            Some(_) => mods::install_players_files,
+            None => mods::install_curated,
+        };
+        install(
             &paths,
             &db,
-            &file,
+            &path,
             &curated,
             install_id.as_deref(),
             without_game,
@@ -1293,7 +1344,7 @@ async fn install_entry(
     .map_err(Error::from)
     .and_then(|r| r);
     if let Ok(m) = &result {
-        warn_if_damaged(a, &archive.path, &m.name);
+        warn_if_damaged(a, &file, &m.name);
     }
     result.map(drop)
 }

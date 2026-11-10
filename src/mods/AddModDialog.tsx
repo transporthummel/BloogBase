@@ -271,7 +271,13 @@ function Confirm(props: SetUpProps) {
   if (!info.indexId || replacing || myself) return <SetUp {...props} />;
   return (
     <div className="grid gap-4">
-      <IndexHit id={info.indexId} archive={path} notice="mods.inIndex" />
+      <IndexHit
+        id={info.indexId}
+        // An installed mod updates from the index, not to the player's files.
+        archive={info.indexFiles && installed ? undefined : path}
+        notice={info.indexFiles ? "mods.inIndexFiles" : "mods.inIndex"}
+        version={info.indexVersion}
+      />
       <div className="flex justify-end gap-3">
         <Button variant="ghost" onClick={() => setMyself(true)}>
           {t("mods.setUpMyself")}

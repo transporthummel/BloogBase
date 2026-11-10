@@ -53,6 +53,8 @@ struct Stored<'a> {
     source_url: &'a str,
     /// Name for the kept copy of the archive; default: its own.
     archive_name: Option<&'a str>,
+    /// The download the files are; default: the hash of the picked ZIP.
+    archive_sha256: Option<&'a str>,
 }
 
 impl<'a> Stored<'a> {
@@ -81,6 +83,7 @@ impl<'a> Stored<'a> {
             keenmodding: None,
             source_url: &c.url,
             archive_name: Some(crate::downloads::url_file_name(&c.url)).filter(|n| !n.is_empty()),
+            archive_sha256: Some(&c.sha256),
         }
     }
 
@@ -127,6 +130,7 @@ impl<'a> Stored<'a> {
             keenmodding: page.and_then(|o| o.keenmodding.clone()),
             source_url: page.map_or(&req.path, |o| &o.download_url),
             archive_name: None,
+            archive_sha256: None,
         }
     }
 
@@ -286,6 +290,8 @@ pub struct Curated {
     pub own_files: bool,
     pub keenwiki_url: Option<String>,
     pub url: String,
+    /// The download's SHA-256.
+    pub sha256: String,
 }
 
 impl Curated {
@@ -305,8 +311,12 @@ impl Curated {
                 .or_else(|| entry.version.clone().filter(|_| download == 0)),
             description: entry.description.clone(),
             released: entry.released.clone(),
-            recipe: entry.recipe.clone(),
-            version_recipes: entry.version_recipes.clone(),
+            // An older download may start unlike the newest.
+            recipe: d.recipe.clone().unwrap_or_else(|| entry.recipe.clone()),
+            version_recipes: match d.recipe {
+                Some(_) => VersionRecipes::new(),
+                None => entry.version_recipes.clone(),
+            },
             copy_to_root: entry.copy_to_root.clone(),
             extends: entry.extends.clone(),
             cover: entry.cover.clone(),
@@ -315,6 +325,7 @@ impl Curated {
             requires: entry.requires.clone(),
             keenwiki_url: entry.links.keenwiki.clone(),
             url: d.url.clone(),
+            sha256: d.sha256.clone(),
         }
     }
 }
@@ -348,6 +359,7 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
         keenmodding,
         source_url: _,
         archive_name: _,
+        archive_sha256: _,
     } = Stored::curated(c, None);
     db.conn().execute(
         "UPDATE mods SET name = ?2, authors = ?3, author_links = ?4,
@@ -438,6 +450,59 @@ pub fn install_curated(
         },
     };
     store(paths, db, &source, &analysis, &stored, target.as_ref())
+}
+
+/// Installs a standalone index mod from the player's own folder or ZIP,
+/// whose programs are those of the entry's download `c` (see
+/// [`crate::mod_index::ModIndex::entry_for_files`]): the entry's recipe and
+/// details, the player's files. Their saves and settings go to the
+/// profile's state, where the game writes them, so an update keeps them.
+pub fn install_players_files(
+    paths: &AppPaths,
+    db: &Db,
+    path: &Path,
+    c: &Curated,
+    install_id: Option<&str>,
+    without_game: bool,
+) -> Result<Mod> {
+    let m = install_curated(paths, db, path, c, install_id, without_game)?;
+    keep_players_state(paths, db, &m)?;
+    Ok(m)
+}
+
+/// Moves the files the game writes (saves, settings) from the mod's root to
+/// its profile's state, unless the state has one of that name already.
+fn keep_players_state(paths: &AppPaths, db: &Db, m: &Mod) -> Result<()> {
+    let (_, layers) = crate::profiles::get(db, &m.profile_id)?;
+    let game = crate::saves::profile_game(&m.game_id, &layers)?;
+    let files = paths.mods.join(&m.id).join("files");
+    let kept: Vec<String> = fs::read_dir(&layers.upper)?
+        .filter_map(|e| Some(e.ok()?.file_name().to_string_lossy().into_owned()))
+        .collect();
+    let mut moved = 0;
+    for entry in fs::read_dir(&files)? {
+        let entry = entry?;
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if !entry.file_type()?.is_file()
+            || !game.is_state_file(&name)
+            || kept.iter().any(|k| k.eq_ignore_ascii_case(&name))
+        {
+            continue;
+        }
+        fs::rename(entry.path(), layers.upper.join(&name))?;
+        moved += 1;
+    }
+    if moved > 0 {
+        tracing::info!(
+            "kept {moved} saves and settings of mod {} in its state",
+            m.id
+        );
+        db.conn().execute(
+            "UPDATE profiles SET composed_hash = NULL WHERE id = ?1",
+            [&m.profile_id],
+        )?;
+    }
+    Ok(())
 }
 
 /// Checks that the files the index recipes run are in the mod's root, or in
@@ -576,6 +641,13 @@ fn stage(
     Ok(())
 }
 
+fn stored_sha256(s: &Stored, source: &Source) -> Result<Option<String>> {
+    match s.archive_sha256 {
+        Some(h) => Ok(Some(h.to_string())),
+        None => archive_sha256(source),
+    }
+}
+
 fn archive_sha256(source: &Source) -> Result<Option<String>> {
     Ok(match source {
         Source::Zip(zip, _) => Some(sha256_hex(&fs::read(zip)?)),
@@ -685,7 +757,7 @@ fn store(
                 db.store(&mod_dir),
                 m.source.as_str(),
                 s.source_url,
-                archive_sha256(source)?,
+                stored_sha256(s, source)?,
                 m.added_at,
                 m.description,
                 m.released,
@@ -782,7 +854,7 @@ fn update(
                 serde_json::to_string(&s.recipe).expect("recipes serialize"),
                 s.keenwiki_url,
                 s.source_url,
-                archive_sha256(source)?,
+                stored_sha256(s, source)?,
                 s.description,
                 s.released,
                 serde_json::to_string(&s.author_links).expect("strings serialize"),
@@ -961,6 +1033,8 @@ mod tests {
             confident: true,
             file_count: 3,
             index_id: None,
+            index_version: None,
+            index_files: false,
             made_for: None,
             bundled_game: None,
         }

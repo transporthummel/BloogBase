@@ -2,10 +2,12 @@
   "unreleased": {
     "en": [
       "A folder with a game and a mod for it can add both at once.",
+      "Source mods you already have, older versions too, are recognised and keep their saves.",
       "Mods no longer lose their cover when their game is uninstalled and installed again."
     ],
     "de": [
       "Liegen ein Spiel und eine Mod dafür in einem Ordner, kannst du beides auf einmal hinzufügen.",
+      "Source-Mods, die du schon hast, auch ältere Versionen, werden erkannt und behalten ihre Spielstände.",
       "Mods verlieren ihr Cover nicht mehr, wenn ihr Spiel deinstalliert und wieder installiert wird."
     ]
   },

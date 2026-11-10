@@ -403,6 +403,13 @@ export type Download = {
 	sha256: string,
 	/**  Bytes. */
 	size: number,
+	/**  How an older download starts, when unlike the newest (`recipe`). */
+	recipe?: Recipe | null,
+	/**
+	 *  File name → SHA-256 of the programs it runs, by which a standalone
+	 *  mod is known in the player's own folder ([`download_for_files`]).
+	 */
+	programs?: { [key in string]: string },
 };
 
 /**  What a folder or ZIP dropped on the window holds. */
@@ -821,8 +828,19 @@ export type ModInfo = {
 	/**  False when the user should pick from `recipes`. */
 	confident: boolean,
 	fileCount: number,
-	/**  The index entry whose download this is, byte for byte. */
+	/**
+	 *  The index entry whose download this is, byte for byte, or whose
+	 *  programs it has.
+	 */
 	indexId: string | null,
+	/**
+	 *  Set when `index_id` is a source mod known by its programs, not as
+	 *  the download: the version they are, if the entry names it. It then
+	 *  installs with the entry's recipe and these files, saves included.
+	 */
+	indexVersion: string | null,
+	/**  Known by its programs (see `index_version`). */
+	indexFiles: boolean,
 	/**
 	 *  A release of the game lying next to the mod that the library doesn't
 	 *  have yet, to import along with it.

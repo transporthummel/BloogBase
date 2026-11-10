@@ -128,6 +128,15 @@ pub struct Download {
     pub sha256: String,
     /// Bytes.
     pub size: u64,
+    /// How this download starts, when it's an older one that starts unlike
+    /// the newest (`recipe`); only for standalone mods.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recipe: Option<Recipe>,
+    /// File name → SHA-256 of the programs it runs (its recipe's files and
+    /// the cover), by which the app knows the mod in a player's own folder;
+    /// every download of a standalone mod lists them.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub programs: BTreeMap<String, String>,
 }
 
 /// How the app starts the mod; same shape as the app's `Recipe`.
@@ -155,6 +164,31 @@ impl Entry {
     /// `recipe` and the ones for particular game versions.
     pub fn recipes(&self) -> impl Iterator<Item = &Recipe> {
         std::iter::once(&self.recipe).chain(self.version_recipes.values())
+    }
+
+    /// The recipes `download` starts with: its own, else the entry's.
+    pub fn recipes_of<'a>(&'a self, download: &'a Download) -> Vec<&'a Recipe> {
+        match &download.recipe {
+            Some(r) => vec![r],
+            None => self.recipes().collect(),
+        }
+    }
+
+    /// The programs `download` lists in `programs`: its recipe's files and
+    /// the cover.
+    pub fn programs_of<'a>(&'a self, download: &'a Download) -> Vec<&'a str> {
+        let mut out: Vec<&str> = Vec::new();
+        let files = self
+            .recipes_of(download)
+            .into_iter()
+            .flat_map(Recipe::files)
+            .chain(self.cover.as_deref());
+        for f in files {
+            if !out.iter().any(|o| o.eq_ignore_ascii_case(f)) {
+                out.push(f);
+            }
+        }
+        out
     }
 }
 
@@ -310,6 +344,7 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
         if d.size == 0 {
             fail(format!("size of {} is missing", d.url));
         }
+        download_problems(entry, d, std::ptr::eq(d, &entry.downloads[0]), &mut fail);
     }
 
     for file in entry.recipes().flat_map(Recipe::files) {
@@ -366,6 +401,67 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
         }
     }
     out
+}
+
+/// What's wrong with a download's own `recipe` and its `programs`.
+fn download_problems(entry: &Entry, d: &Download, newest: bool, fail: &mut impl FnMut(String)) {
+    if let Some(r) = &d.recipe {
+        if newest {
+            fail(format!(
+                "{}: the newest download starts with `recipe`",
+                d.url
+            ));
+        }
+        if !entry.standalone {
+            fail(format!(
+                "{}: only standalone mods' downloads have a recipe",
+                d.url
+            ));
+        }
+        if !matches!(r, Recipe::Program { .. } | Recipe::Batch { .. }) {
+            fail(format!(
+                "{}: its recipe has to run a program or batch file",
+                d.url
+            ));
+        }
+        for file in r.files() {
+            if !is_plain_name(file) {
+                fail(format!(
+                    "recipe file `{file}` must be a plain DOS file name"
+                ));
+            }
+        }
+    }
+    if !entry.standalone {
+        if !d.programs.is_empty() {
+            fail(format!(
+                "{}: only standalone mods' downloads list programs",
+                d.url
+            ));
+        }
+        return;
+    }
+    let wanted = entry.programs_of(d);
+    let listed: Vec<&str> = d.programs.keys().map(String::as_str).collect();
+    let same = wanted.len() == listed.len()
+        && wanted
+            .iter()
+            .all(|w| listed.iter().any(|l| l.eq_ignore_ascii_case(w)));
+    if !same {
+        fail(format!(
+            "{}: programs must list exactly {}",
+            d.url,
+            wanted.join(", ")
+        ));
+    }
+    for (file, hash) in &d.programs {
+        if hash.len() != 64 || !hash.bytes().all(|b| b.is_ascii_hexdigit()) {
+            fail(format!(
+                "{}: sha256 of `{file}` must be 64 hex digits",
+                d.url
+            ));
+        }
+    }
 }
 
 /// What's wrong with the `extends` of `entries` among each other: the entry
@@ -646,6 +742,9 @@ recipe:
             program: "FITF.EXE".into(),
             args: vec![],
         };
+        e.downloads[0]
+            .programs
+            .insert("FITF.EXE".into(), "ab".repeat(32));
         assert_eq!(
             problems(&e, "aurora-bliss", &catalog()),
             Vec::<String>::new()
@@ -659,7 +758,57 @@ recipe:
         e.recipe = Recipe::Episode;
         e.requires = vec!["keen4-1.4-ega".into()];
         e.extends = Some("x".into());
-        assert_eq!(problems(&e, "aurora-bliss", &catalog()).len(), 4);
+        // The programs no longer fit the recipe either.
+        assert_eq!(problems(&e, "aurora-bliss", &catalog()).len(), 5);
+    }
+
+    #[test]
+    fn standalone_downloads_name_their_programs_and_may_start_otherwise() {
+        let mut e = parse(AURORA).unwrap();
+        e.standalone = true;
+        e.requires.clear();
+        e.recipe = Recipe::Program {
+            program: "OSI.EXE".into(),
+            args: vec![],
+        };
+        e.cover = Some("TITLE.EXE".into());
+        let mut old = e.downloads[0].clone();
+        old.url = "https://files.shikadi.net/keenwiki/old.zip".into();
+        old.recipe = Some(Recipe::Program {
+            program: "osidos32.exe".into(),
+            args: vec![],
+        });
+        let hash = "ab".repeat(32);
+        e.downloads[0].programs = [("OSI.EXE", &hash), ("title.exe", &hash)]
+            .map(|(n, h)| (n.to_string(), h.clone()))
+            .into();
+        old.programs = [("OSIDOS32.EXE", &hash), ("TITLE.EXE", &hash)]
+            .map(|(n, h)| (n.to_string(), h.clone()))
+            .into();
+        e.downloads.push(old);
+        assert_eq!(
+            problems(&e, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+
+        // Missing and extra programs, a bad hash.
+        let mut bad = e.clone();
+        bad.downloads[0].programs.remove("title.exe");
+        bad.downloads[1]
+            .programs
+            .insert("OSI.EXE".into(), "x".into());
+        assert_eq!(problems(&bad, "aurora-bliss", &catalog()).len(), 3);
+
+        // The newest download starts with `recipe`; levels alone don't run.
+        let mut bad = e.clone();
+        bad.downloads[0].recipe = Some(Recipe::Episode);
+        assert_eq!(problems(&bad, "aurora-bliss", &catalog()).len(), 3);
+
+        // Only standalone mods.
+        let mut bad = e.clone();
+        bad.standalone = false;
+        bad.requires = vec!["keen4-1.4-ega".into()];
+        assert_eq!(problems(&bad, "aurora-bliss", &catalog()).len(), 3);
     }
 
     #[test]

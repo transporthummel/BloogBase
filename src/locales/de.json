@@ -382,6 +382,8 @@
     "startAdvanced": "Wie sie startet (für Fortgeschrittene)",
     "helpTitle": "Wir brauchen deine Hilfe",
     "inIndex": "Diese Datei kennt die BloogBase-Modliste: Die Mod wird so installiert, wie sie dort getestet ist.",
+    "inIndexFiles": "BloogBase kennt diese Source-Mod aus der Modliste. Sie wird mit deinen Dateien und Spielständen installiert und so gestartet, wie sie dort getestet ist.",
+    "inIndexFiles_version": "BloogBase kennt diese Source-Mod aus der Modliste: Es ist Version {{version}}. Sie wird mit deinen Dateien und Spielständen installiert und so gestartet, wie sie dort getestet ist.",
     "inIndexInstalled": "Diese Mod aus der BloogBase-Modliste ist schon installiert:",
     "inIndexInstalledUpdate": "Diese Mod aus der BloogBase-Modliste ist schon installiert. Dort gibt es eine neuere Version:",
     "setUpMyself": "Lieber selbst einrichten",

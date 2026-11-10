@@ -5,6 +5,7 @@ game: keen4
 authors: ["Szemigi"]
 authorLinks:
   "Szemigi": https://keenwiki.shikadi.net/wiki/User:Szemigi
+version: "2026-05-31"
 released: 2024-05-10
 updated: 2026-05-31
 added: 2026-11-08
@@ -17,9 +18,30 @@ links:
   keenwiki: https://keenwiki.shikadi.net/wiki/Keen_Dreams_Gold_Edition
   pckf: https://pckf.com/viewtopic.php?t=16072
 downloads:
-  - url: https://www.dropbox.com/scl/fi/9w5jqcilcxozsk4eackkq/KDGOLD.ZIP?rlkey=2fjkqeoovi52fp8blxsj5bwye&dl=1
+  - version: "2026-05-31"
+    url: https://www.dropbox.com/scl/fi/9w5jqcilcxozsk4eackkq/KDGOLD.ZIP?rlkey=2fjkqeoovi52fp8blxsj5bwye&dl=1
     sha256: 349d430301a975905ca3ec4af9bd35a38ec5c0fc7b0c0581bc1a6edcfdf2399e
     size: 906222
+    programs:
+      KDGOLD.EXE: d680f533799831dfa7428b8aa22d706c158ab2a0815f51cc35e7ed0c91286498
+  - version: "2025-12-24"
+    url: https://www.dropbox.com/scl/fi/169lz82epop2wq9h18fhq/KDGOLDXMASEVE2025-12-24.ZIP?rlkey=d0u2hsm7krwvk35b972ozps73&dl=1
+    sha256: 671ad8cbfae38ebb389c30ad93cd9808e830aed9eff5ecd36e599fd6b87342fe
+    size: 766559
+    programs:
+      KDGOLD.EXE: cfa42371e96cb681df6504eb8405dfe1b8fd286f8fe66347578cb02f24c5444f
+  - version: "2025-05-16"
+    url: https://files.shikadi.net/keenwiki/mods/SourceCode/m.szemigi.keen_dreams_gold_edition.sc.2025-05-16.zip
+    sha256: d62c9449a3b0a2f253e50534297e2f38719ca47fc802e1f6fa29d8e6e5beeb6b
+    size: 826606
+    programs:
+      KDGOLD.EXE: 86e6985418a87ad19162c15c9dacb161e17eea5320a2398320701233d04a3576
+  - version: "2025-01-18"
+    url: https://files.shikadi.net/keenwiki/mods/SourceCode/m.szemigi.keen_dreams_gold_edition.sc.2025-01-18.zip
+    sha256: 2eafc44759b026a101b57a69edbcbe70ce308aae8ee37a02cfe96b0689e0c290
+    size: 790343
+    programs:
+      KDGOLD.EXE: cc664732ca4fd65ee5dd6f5f97e4b03b3618a0f4f3335a9892917870c6680d51
 # A source mod: it ships its whole game and plays without a copy of it.
 standalone: true
 recipe:

@@ -198,6 +198,8 @@ test("downloads a newer version and replaces the installed one", async () => {
         fileCount: 3,
         bundledGame: null,
         indexId: null,
+        indexVersion: null,
+        indexFiles: false,
       },
     }),
   );

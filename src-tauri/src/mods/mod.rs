@@ -54,8 +54,15 @@ pub struct ModInfo {
     /// False when the user should pick from `recipes`.
     pub confident: bool,
     pub file_count: u32,
-    /// The index entry whose download this is, byte for byte.
+    /// The index entry whose download this is, byte for byte, or whose
+    /// programs it has.
     pub index_id: Option<String>,
+    /// Set when `index_id` is a source mod known by its programs, not as
+    /// the download: the version they are, if the entry names it. It then
+    /// installs with the entry's recipe and these files, saves included.
+    pub index_version: Option<String>,
+    /// Known by its programs (see `index_version`).
+    pub index_files: bool,
     /// The mod a level pack's archive name says its levels are for
     /// (`l.keen_community.episode_smile`), for [`named_mod`].
     #[serde(skip)]

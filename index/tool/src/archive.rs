@@ -110,7 +110,8 @@ pub fn problems(
         }
     };
     let wanted: Vec<&str> = entry
-        .recipes()
+        .recipes_of(download)
+        .into_iter()
         .flat_map(Recipe::files)
         .chain(entry.cover.as_deref())
         .filter(|w| !inherited.iter().any(|n| n.eq_ignore_ascii_case(w)))
@@ -134,7 +135,28 @@ pub fn problems(
             })
         })
     };
-    let found = names.iter().map(|n| dir_of(n)).any(holds_all);
+    let root = names.iter().map(|n| dir_of(n)).find(|d| holds_all(d));
+    let found = root.is_some();
+    for (file, hash) in &download.programs {
+        let path = root.and_then(|dir| {
+            names
+                .iter()
+                .find(|n| dir_of(n) == dir && file_of(n).eq_ignore_ascii_case(file))
+        });
+        let Some(path) = path else {
+            out.push(format!("{}: lacks program `{file}`", download.url));
+            continue;
+        };
+        match zip_read(data, path) {
+            Ok(bytes) if sha256_hex(&bytes).eq_ignore_ascii_case(hash) => {}
+            Ok(bytes) => out.push(format!(
+                "{}: sha256 of `{file}` is {}",
+                download.url,
+                sha256_hex(&bytes)
+            )),
+            Err(e) => out.push(format!("{}: {path}: {e}", download.url)),
+        }
+    }
     if !(wanted.is_empty() && entry.copy_to_root.is_empty()) && !found {
         let all: Vec<String> = wanted
             .iter()
@@ -173,6 +195,22 @@ fn zip_files(data: &[u8]) -> Result<Vec<String>, zip::result::ZipError> {
         }
     }
     Ok(names)
+}
+
+fn zip_read(data: &[u8], name: &str) -> Result<Vec<u8>, zip::result::ZipError> {
+    let mut zip = zip::ZipArchive::new(std::io::Cursor::new(data))?;
+    for i in 0..zip.len() {
+        let mut file = zip.by_index(i)?;
+        let same = file
+            .enclosed_name()
+            .is_some_and(|n| n.to_string_lossy().replace('\\', "/") == name);
+        if same {
+            let mut out = Vec::new();
+            file.read_to_end(&mut out)?;
+            return Ok(out);
+        }
+    }
+    Err(zip::result::ZipError::FileNotFound)
 }
 
 fn dir_of(path: &str) -> &str {
@@ -285,6 +323,39 @@ mod tests {
         );
         e.cover = Some("MENU.EXE".into());
         assert_eq!(problems(&e, &e.downloads[0], &data, &[]).len(), 1);
+    }
+
+    #[test]
+    fn programs_are_checked_in_the_mod_root() {
+        let data = zip(&[("v1/OSIDOS32.EXE", b"old"), ("v1/TITLE.EXE", b"t")]);
+        let mut e = entry_for(&data);
+        e.standalone = true;
+        e.requires.clear();
+        e.recipe = Recipe::Program {
+            program: "OSI.EXE".into(),
+            args: vec![],
+        };
+        e.cover = Some("title.exe".into());
+        let d = &mut e.downloads[0];
+        d.recipe = Some(Recipe::Program {
+            program: "osidos32.exe".into(),
+            args: vec![],
+        });
+        d.programs = [
+            ("osidos32.exe", sha256_hex(b"old")),
+            ("TITLE.EXE", sha256_hex(b"t")),
+        ]
+        .map(|(n, h)| (n.to_string(), h))
+        .into();
+        let d = e.downloads[0].clone();
+        assert_eq!(problems(&e, &d, &data, &[]), Vec::<String>::new());
+
+        let mut wrong = d.clone();
+        wrong
+            .programs
+            .insert("TITLE.EXE".into(), sha256_hex(b"other"));
+        let p = problems(&e, &wrong, &data, &[]);
+        assert!(p.len() == 1 && p[0].contains(&sha256_hex(b"t")), "{p:?}");
     }
 
     #[test]

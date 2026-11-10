@@ -22,6 +22,26 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/SourceCode/m.gridlock.atroxian_realm_v.1.4.sc.2020-05-08.zip
     sha256: b806be54748e8719b4e81ec34e4118dd5215659445cc5170cbeff5690300d5c0
     size: 1268268
+    programs:
+      arealm.exe: 285d67cb789fbaf424aad2503a1778c17ad94f7723996acc63b3b21231452d79
+  - version: "1.3"
+    url: https://files.shikadi.net/keenwiki/mods/SourceCode/m.gridlock.atroxian_realm_v.1.3.sc.2019-11-15.zip
+    sha256: fcf895965e8ecabe46624ff87ee5465fa43498f3158509b5b3d4b30f334f9b1c
+    size: 1268796
+    programs:
+      arealm.exe: 97408ef7c45d1786ce87847e573e9382ac75dd31daafafe3391086bbea6cb35a
+  - version: "1.1"
+    url: https://files.shikadi.net/keenwiki/mods/SourceCode/m.gridlock.atroxian_realm_v.1.1.sc.2019-03-14.zip
+    sha256: 3d716dbd2e4ff221f3665113eaca1d6c0d8c6c0d536b2cf45c896a76f54ddd87
+    size: 1374054
+    programs:
+      arealm.exe: 3844533ef6ed7e2437b57cdf614af7219bee40f8158def759d19585bed24132e
+  - version: "1.0"
+    url: https://files.shikadi.net/keenwiki/mods/SourceCode/m.gridlock.atroxian_realm_v.1.0.sc.2016-01-16.zip
+    sha256: 8fa19a9d01e15262e97467fca191e0ce739950c88010b0ec5fba2bd38bd4dff8
+    size: 1307677
+    programs:
+      arealm.exe: 06ca5f3ab0d1e826e4772ce81d20963d625de9bd8e60a921fbad92f545bf7a5e
 standalone: true
 recipe:
   type: program

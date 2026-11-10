@@ -324,8 +324,23 @@ fn draft(facts: &Facts, path: &Path) -> crate::error::Result<Draft> {
     // It has nothing of the game's, so only the page's game makes it a mod.
     let source_mod = analyze(&source, path, None).is_err();
     let readmes = readme::find(&source).unwrap_or_default();
+    // A source mod is known by them in a player's own folder.
+    let hashes = start
+        .recipe
+        .files()
+        .into_iter()
+        .filter_map(|f| {
+            let rel = if root.is_empty() {
+                f.to_string()
+            } else {
+                format!("{root}/{f}")
+            };
+            Some((f.to_string(), sha256_hex(&source.read(&rel).ok()?)))
+        })
+        .collect();
 
     let found = Found {
+        hashes,
         info,
         named,
         requires,
@@ -358,6 +373,9 @@ struct Found<'a> {
     programs: Vec<String>,
     names: Vec<String>,
     source_mod: bool,
+    /// The recipe's files with their SHA-256, for a standalone mod's
+    /// `programs`.
+    hashes: Vec<(String, String)>,
 }
 
 impl Found<'_> {
@@ -561,6 +579,12 @@ fn yaml(facts: &Facts, found: &Found) -> String {
         facts.sha256,
         facts.size
     );
+    if found.standalone() {
+        y += "    programs:\n";
+        for (name, hash) in &found.hashes {
+            y += &format!("      {}: {hash}\n", scalar(name));
+        }
+    }
     if found.standalone() {
         y += "# A source mod: it ships its whole game and plays without a copy of it.\n";
         y += "standalone: true\n";
@@ -1049,6 +1073,8 @@ recipe:
         let d = draft_of(&page(), "foray.zip", files);
         assert!(d.yaml.contains("minAppVersion: 1.1.0\n"), "{}", d.yaml);
         assert!(d.yaml.contains("standalone: true\nrecipe:"), "{}", d.yaml);
+        let programs = format!("    programs:\n      FITF-C.EXE: {}\n", sha256_hex(b"game"));
+        assert!(d.yaml.contains(&programs), "{}", d.yaml);
         assert!(
             d.check.iter().any(|n| n.starts_with("standalone: ")),
             "{:?}",

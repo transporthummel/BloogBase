@@ -297,6 +297,8 @@ pub(super) fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> 
             confident: guess.confident,
             file_count: files.len() as u32,
             index_id: None,
+            index_version: None,
+            index_files: false,
             made_for: meta.made_for,
             bundled_game: None,
         },

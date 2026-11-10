@@ -570,6 +570,7 @@ fn curated(recipe: Recipe) -> Curated {
         requires: vec!["keen4-1.4-ega".into()],
         keenwiki_url: Some("https://keenwiki.shikadi.net/wiki/Aurora_Bliss".into()),
         url: "https://example.com/m.dave216.aurora.zip".into(),
+        sha256: "ab".repeat(32),
     }
 }
 
@@ -615,6 +616,7 @@ fn curated_install_uses_the_index_recipe_and_updates_in_place() {
     v2[3] = ("Aurora/GAMEMAPS.CK4", b"better maps");
     write_zip(&zip, &v2);
     let c2 = Curated {
+        sha256: sha256_hex(&fs::read(&zip).unwrap()),
         version: Some("1.3".into()),
         cover: Some("AURORA.EXE".into()),
         ..c.clone()
@@ -640,7 +642,7 @@ fn curated_install_uses_the_index_recipe_and_updates_in_place() {
             |r| Ok((r.get(0)?, r.get(1)?)),
         )
         .unwrap();
-    assert_eq!(sha, sha256_hex(&fs::read(&zip).unwrap()));
+    assert_eq!(sha, c2.sha256);
     assert_eq!(composed, None);
     assert!(!paths.cache.join("mod-aurora-bliss-update").exists());
 }
@@ -704,6 +706,61 @@ fn standalone_mods_play_without_their_game_and_follow_their_entry() {
     let (p, _) = profiles::get(&db, &m.profile_id).unwrap();
     assert_eq!((p.install_id, p.standalone), (None, true));
     assert_eq!(fs::read(&save).unwrap(), b"save");
+}
+
+#[test]
+fn a_players_source_mod_keeps_its_files_and_saves() {
+    let (tmp, paths, db) = setup();
+    let folder = tmp.path().join("My Games/OSI");
+    write_folder(
+        &folder,
+        &[
+            ("osidos32.exe", b"old build"),
+            ("GAMEMAPS.CK5", b"maps"),
+            ("SAVEGAM0.CK5", b"my save"),
+            ("CONFIG.CK5", b"my settings"),
+        ],
+    );
+    let c = Curated {
+        index_id: "operation-station-infiltration".into(),
+        game_id: "keen5".into(),
+        name: "Operation Station Infiltration".into(),
+        version: Some("1.0".into()),
+        requires: Vec::new(),
+        standalone: true,
+        own_files: true,
+        ..curated(Recipe::Program {
+            program: "osidos32.exe".into(),
+            args: Vec::new(),
+        })
+    };
+    let m = install_players_files(&paths, &db, &folder, &c, None, false).unwrap();
+    assert_eq!(m.recipe, c.recipe);
+    assert_eq!(m.version.as_deref(), Some("1.0"));
+    assert_eq!(
+        m.index_id.as_deref(),
+        Some("operation-station-infiltration")
+    );
+    let files = paths.mods.join(&m.id).join("files");
+    let state = paths.profiles.join(&m.profile_id).join("state");
+    assert_eq!(fs::read(files.join("GAMEMAPS.CK5")).unwrap(), b"maps");
+    assert!(!files.join("SAVEGAM0.CK5").exists());
+    assert_eq!(fs::read(state.join("SAVEGAM0.CK5")).unwrap(), b"my save");
+    assert_eq!(fs::read(state.join("CONFIG.CK5")).unwrap(), b"my settings");
+    // The player's folder stays as it was.
+    assert!(folder.join("SAVEGAM0.CK5").is_file());
+    // It counts as that download, so the newest one is an update.
+    let sha: String = db
+        .conn()
+        .query_row("SELECT archive_sha256 FROM mods", [], |r| r.get(0))
+        .unwrap();
+    assert_eq!(sha, c.sha256);
+
+    // Installed again over it: the saves played since win.
+    fs::write(state.join("SAVEGAM0.CK5"), b"played on").unwrap();
+    install_players_files(&paths, &db, &folder, &c, None, false).unwrap();
+    assert_eq!(fs::read(state.join("SAVEGAM0.CK5")).unwrap(), b"played on");
+    assert_eq!(list(&db).unwrap().len(), 1);
 }
 
 #[test]

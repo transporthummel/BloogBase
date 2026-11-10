@@ -21,6 +21,18 @@ downloads:
     url: https://files.shikadi.net/keenwiki/Packs/SourceCode/l.ceilick.operation_station_infiltration_v1.4.sc.2022-03-15.zip
     sha256: 0a9ea1216d956a5d9c547fd06a4f7632837378a113eee66b50d8a2d09e6620d4
     size: 3232443
+    programs:
+      OSI.EXE: 0c04c21b55b9dedf2ed1c2694c55736835437d57e5b746506605429a100bbb44
+  - version: "1.0"
+    url: https://files.shikadi.net/keenwiki/Packs/SourceCode/l.ceilick.operation_station_infiltration_v1.0.sc.2022-12-25.zip
+    sha256: 4c8494155b36a53f2eb81952a9cd13c6eacc91406cfaacd7f5174418885da850
+    size: 4862807
+    # Only the Omnispeak build for DOS; OSI.EXE came with 1.4.
+    recipe:
+      type: program
+      program: osidos32.exe
+    programs:
+      osidos32.exe: f8b4d7f7992c358e4361cba81c487cb2a2d189871591d0c866e2c6132c7b8de6
 standalone: true
 # Carries much of Keen 5's own graphics.
 requiresGame: true

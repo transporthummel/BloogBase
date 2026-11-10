@@ -53,6 +53,8 @@ const info = (extra: Partial<ModInfo> = {}): ModInfo => ({
   fileCount: 3,
   bundledGame: null,
   indexId: null,
+  indexVersion: null,
+  indexFiles: false,
   ...extra,
 });
 

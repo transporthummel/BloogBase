@@ -193,10 +193,13 @@ export function IndexHit({
   id,
   archive,
   notice = "keenwiki.inIndex",
+  version,
 }: {
   id: string;
   archive?: string;
-  notice?: "keenwiki.inIndex" | "mods.inIndex";
+  notice?: "keenwiki.inIndex" | "mods.inIndex" | "mods.inIndexFiles";
+  /** For `mods.inIndexFiles`: the version the player's files are. */
+  version?: string | null;
 }) {
   const { t } = useTranslation();
   const mods = useIndexMods();
@@ -207,13 +210,9 @@ export function IndexHit({
   return (
     <div className="grid gap-2">
       <Notice>
-        {t(
-          !mod.modId
-            ? notice
-            : mod.updateAvailable
-              ? "mods.inIndexInstalledUpdate"
-              : "mods.inIndexInstalled",
-        )}
+        {!mod.modId
+          ? t(notice, version ? { context: "version", version } : {})
+          : t(mod.updateAvailable ? "mods.inIndexInstalledUpdate" : "mods.inIndexInstalled")}
       </Notice>
       <ModCard
         mod={mod}

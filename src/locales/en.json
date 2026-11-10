@@ -382,6 +382,8 @@
     "startAdvanced": "How it starts (advanced)",
     "helpTitle": "We need your help",
     "inIndex": "The BloogBase mod list knows this file: the mod is installed the way it was tested there.",
+    "inIndexFiles": "BloogBase knows this source mod from its mod list. It's installed with your files and saves and starts the way it was tested there.",
+    "inIndexFiles_version": "BloogBase knows this source mod from its mod list: it's version {{version}}. It's installed with your files and saves and starts the way it was tested there.",
     "inIndexInstalled": "This mod from the BloogBase mod list is installed already:",
     "inIndexInstalledUpdate": "This mod from the BloogBase mod list is installed already, and the list has a newer version:",
     "setUpMyself": "Set it up myself instead",

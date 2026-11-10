@@ -4,7 +4,7 @@
 //! The index decides what gets downloaded and run, so anything that isn't
 //! signed by one of [`PUBLIC_KEYS`] is ignored and the cached copy stays.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -23,6 +23,7 @@ use crate::library::now;
 use crate::mods::{self, Curated};
 use crate::paths::AppPaths;
 use crate::recipe::{Recipe, VersionRecipes};
+use crate::source::{Source, split_dir};
 
 /// Where the published index lives (`index/` in the repository, built and
 /// signed by `.github/workflows/index.yml`).
@@ -151,6 +152,13 @@ pub struct Download {
     pub sha256: String,
     /// Bytes.
     pub size: u32,
+    /// How an older download starts, when unlike the newest (`recipe`).
+    #[serde(default)]
+    pub recipe: Option<Recipe>,
+    /// File name → SHA-256 of the programs it runs, by which a standalone
+    /// mod is known in the player's own folder ([`download_for_files`]).
+    #[serde(default)]
+    pub programs: BTreeMap<String, String>,
 }
 
 #[derive(Deserialize)]
@@ -347,6 +355,26 @@ impl ModIndex {
                 && e.downloads
                     .first()
                     .is_some_and(|d| d.sha256.eq_ignore_ascii_case(&hash))
+        })
+    }
+
+    /// The standalone entry with the download whose programs are in
+    /// `source`, byte for byte: a source mod the player has on disk, maybe
+    /// an older version and with saves. Newest download first.
+    pub fn entry_for_files(&self, source: &Source) -> Option<(IndexEntry, usize)> {
+        let entries: Vec<IndexEntry> = self
+            .entries()
+            .into_iter()
+            .filter(|e| e.standalone && e.downloads.iter().any(|d| !d.programs.is_empty()))
+            .collect();
+        if entries.is_empty() {
+            return None;
+        }
+        let files = source.files().ok()?;
+        let mut hashes = HashMap::new();
+        entries.into_iter().find_map(|e| {
+            let i = download_for_files(&e, source, &files, &mut hashes)?;
+            Some((e, i))
         })
     }
 
@@ -576,6 +604,62 @@ fn version_at_least(version: &str, min: &str) -> bool {
     a.resize(len, 0);
     b.resize(len, 0);
     a >= b
+}
+
+/// The download of standalone `entry` whose programs the player's own
+/// folder or ZIP at `path` has, unless it's the newest download itself,
+/// which installs as that.
+pub fn players_download(entry: &IndexEntry, path: &Path) -> Option<usize> {
+    if !entry.standalone {
+        return None;
+    }
+    if path.is_file()
+        && let (Some(d), Ok(data)) = (entry.downloads.first(), std::fs::read(path))
+        && sha256_hex(&data).eq_ignore_ascii_case(&d.sha256)
+    {
+        return None;
+    }
+    let source = Source::open(path).ok()?;
+    let files = source.files().ok()?;
+    download_for_files(entry, &source, &files, &mut HashMap::new())
+}
+
+/// The download of `entry` whose `programs` all sit in one folder of
+/// `source` (`files`), byte for byte. `hashes` keeps what was read, by path.
+fn download_for_files(
+    entry: &IndexEntry,
+    source: &Source,
+    files: &[String],
+    hashes: &mut HashMap<String, Option<String>>,
+) -> Option<usize> {
+    let mut hash = |rel: &str| -> Option<String> {
+        hashes
+            .entry(rel.to_string())
+            .or_insert_with(|| source.read(rel).ok().map(|d| sha256_hex(&d)))
+            .clone()
+    };
+    entry.downloads.iter().position(|d| {
+        let Some(first) = d.programs.keys().next() else {
+            return false;
+        };
+        // The folders holding the first program are the candidates.
+        files
+            .iter()
+            .filter(|f| split_dir(f).1.eq_ignore_ascii_case(first))
+            .any(|f| {
+                let dir = split_dir(f).0;
+                d.programs.iter().all(|(name, sha)| {
+                    files
+                        .iter()
+                        .find(|g| {
+                            let (gd, gn) = split_dir(g);
+                            gd == dir && gn.eq_ignore_ascii_case(name)
+                        })
+                        .and_then(|g| hash(g))
+                        .is_some_and(|h| h.eq_ignore_ascii_case(sha))
+                })
+            })
+    })
 }
 
 /// Ties installed mods that aren't tied to an entry to the one whose
@@ -824,6 +908,56 @@ mod tests {
         std::fs::write(tmp.path().join("other.zip"), b"other").unwrap();
         assert_eq!(found(&tmp.path().join("other.zip"), "keen4"), None);
         assert_eq!(found(tmp.path(), "keen4"), None);
+    }
+
+    #[test]
+    fn knows_a_source_mod_by_its_programs() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut entry = sample_entry(&sha256_hex(b"the newest zip"));
+        entry.standalone = true;
+        let mut old = entry.downloads[0].clone();
+        old.version = Some("1.0".into());
+        old.sha256 = "ab".repeat(32);
+        old.recipe = Some(Recipe::Program {
+            program: "OLD.EXE".into(),
+            args: Vec::new(),
+        });
+        old.programs = [("OLD.EXE".to_string(), sha256_hex(b"old"))].into();
+        entry.downloads[0].programs = [
+            ("GAME.EXE".to_string(), sha256_hex(b"new")),
+            ("MENU.EXE".to_string(), sha256_hex(b"menu")),
+        ]
+        .into();
+        entry.downloads.push(old);
+
+        let folder = |name: &str, files: &[(&str, &[u8])]| {
+            let dir = tmp.path().join(name);
+            crate::source::testutil::write_folder(&dir, files);
+            dir
+        };
+        let found = |path: &Path| players_download(&entry, path);
+        // In a subfolder, any case, with saves next to it.
+        let new = folder(
+            "new",
+            &[
+                ("Mod/game.exe", b"new"),
+                ("Mod/MENU.EXE", b"menu"),
+                ("Mod/SAVEGAM0.CK4", b"s"),
+            ],
+        );
+        assert_eq!(found(&new), Some(0));
+        assert_eq!(found(&folder("old", &[("old.exe", b"old")])), Some(1));
+        // Both programs in one folder, byte for byte.
+        let split = folder("split", &[("a/GAME.EXE", b"new"), ("b/MENU.EXE", b"menu")]);
+        assert_eq!(found(&split), None);
+        assert_eq!(found(&folder("changed", &[("OLD.EXE", b"patched")])), None);
+        // The newest download itself installs as that.
+        let zip = tmp.path().join("newest.zip");
+        std::fs::write(&zip, b"the newest zip").unwrap();
+        assert_eq!(found(&zip), None);
+        // Only standalone mods.
+        entry.standalone = false;
+        assert_eq!(players_download(&entry, &new), None);
     }
 
     #[tokio::test]

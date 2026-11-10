@@ -84,6 +84,8 @@ const info: ModInfo = {
   fileCount: 3,
   bundledGame: null,
   indexId: null,
+  indexVersion: null,
+  indexFiles: false,
 };
 
 const aurora = { id: "aurora-bliss", name: "Aurora Bliss", profileId: "aurora-bliss" } as Mod;

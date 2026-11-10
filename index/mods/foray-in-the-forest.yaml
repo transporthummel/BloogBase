@@ -23,6 +23,16 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/SourceCode/m.nisaba_k1n9_duk3.foray_in_the_forest_v2.0a.sc.2025-04-30.zip
     sha256: f3b22297d1723a27f357e0e27dbf7de4cff851723aaf42ae94a88ac634dc9649
     size: 5181575
+    programs:
+      FITF.EXE: 4283090fe049ad2ba05fa17ad2327cc7bcf7f6b6b58ac03470303a551a44ae46
+      FITF-X.EXE: 709c832780c62590d0449efa8c1fa0683b79ad102741dedcf756abaa4dec21fb
+  - version: "2.0"
+    url: https://files.shikadi.net/keenwiki/mods/SourceCode/m.nisaba_k1n9_duk3.foray_in_the_forest_v2.0.sc.2025-03-14.zip
+    sha256: 8b494d04881768e984eace5439a65d945eb0dc7bb2428b01442622ca8092a27d
+    size: 5171069
+    programs:
+      FITF.EXE: 4283090fe049ad2ba05fa17ad2327cc7bcf7f6b6b58ac03470303a551a44ae46
+      FITF-X.EXE: 7a553985a8c8b9373e7458d46919991ee15cca20696a0ba602079cfa00833b7c
 # A source mod: FITF.EXE is its own menu, which starts FITF-C.EXE (classic
 # Keen) or FITF-X.EXE (Xky's Keen), and the game data is all in its own
 # *.CKS files. It needs nothing from Keen 4, so it's standalone (apps before

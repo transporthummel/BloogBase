@@ -94,6 +94,8 @@ const info: ModInfo = {
   fileCount: 18,
   bundledGame: null,
   indexId: null,
+  indexVersion: null,
+  indexFiles: false,
 };
 
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
@@ -170,6 +172,8 @@ test("inspects the picked ZIP and installs the mod on the matching game", async 
       recipe: patch.recipe,
       source: "manual",
       indexId: null,
+      indexVersion: null,
+      indexFiles: false,
       extends: null,
       keenwikiUrl: null,
       homepage: null,
@@ -812,6 +816,8 @@ test("installs a mod from a KeenWiki page with the page's details", async () => 
       recipe: patch.recipe,
       source: "keenwiki",
       indexId: null,
+      indexVersion: null,
+      indexFiles: false,
       extends: null,
       keenwikiUrl: page.pageUrl,
       homepage: null,
@@ -1067,6 +1073,62 @@ test("installs a picked copy of an index download as that entry", async () => {
     false,
     "/downloads/aurora.zip",
   );
+});
+
+test("installs a known source mod with the player's own files", async () => {
+  vi.mocked(commands.listJobs).mockResolvedValue([]);
+  vi.mocked(commands.inspectMod).mockReturnValue(
+    ok({ ...info, indexId: "aurora-bliss", indexFiles: true, indexVersion: "1.0" }),
+  );
+  vi.mocked(commands.indexMods).mockReturnValue(ok([auroraInIndex]));
+  vi.mocked(commands.installIndexMod).mockResolvedValue({
+    id: 1,
+    kind: "mod",
+    subject: "aurora-bliss",
+    phase: "installing",
+    received: 0,
+    total: 0,
+    error: null,
+  });
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  expect(
+    await screen.findByText(/knows this source mod from its mod list: it's version 1.0\./),
+  ).toBeInTheDocument();
+  await user.keyboard("{Enter}");
+  expect(commands.installIndexMod).toHaveBeenCalledWith(
+    "aurora-bliss",
+    "keen4-1",
+    false,
+    "/downloads/aurora.zip",
+  );
+});
+
+test("updates an installed source mod from the list, not to the player's files", async () => {
+  vi.mocked(commands.listJobs).mockResolvedValue([]);
+  vi.mocked(commands.inspectMod).mockReturnValue(
+    ok({ ...info, indexId: "aurora-bliss", indexFiles: true, indexVersion: "1.0" }),
+  );
+  vi.mocked(commands.indexMods).mockReturnValue(
+    ok([{ ...auroraInIndex, modId: "aurora", updateAvailable: true }]),
+  );
+  vi.mocked(commands.installIndexMod).mockResolvedValue({
+    id: 1,
+    kind: "mod",
+    subject: "aurora-bliss",
+    phase: "installing",
+    received: 0,
+    total: 0,
+    error: null,
+  });
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+  await user.click(await screen.findByRole("button", { name: /Update/ }));
+
+  expect(commands.installIndexMod).toHaveBeenCalledWith("aurora-bliss", null, true, null);
 });
 
 test("lets the player set up an index download themselves", async () => {

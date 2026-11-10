@@ -44,7 +44,7 @@ By hand:
    | `description`    | One or two sentences in your own words, in English                                           |
    | `translations`   | Language: texts in it; for now `de` with `description` (see below)                           |
    | `links`          | `keenwiki`, `pckf`, `keenmodding` (Keen: Modding forum), `homepage`                          |
-   | `downloads`      | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`              |
+   | `downloads`      | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`; see below   |
    | `recipe`         | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode`  |
    | `versionRecipes` | Version id: recipe, for game versions the mod starts differently on (one patch per version)  |
    | `copyToRoot`     | Folders in the mod's root whose files the readme says to copy into the root                  |
@@ -98,10 +98,38 @@ By hand:
    and DOSBox defaults are that game's. The recipe has to run a `program` or
    `batch` file of the mod, without `requires`, `versionRecipes` or
    `extends`, and no other entry can extend it. Only entries can make a mod
-   standalone: added by hand, the same files play on a copy of `game`. Apps
+   standalone: added by hand, the same files play on a copy of `game`,
+   unless the app knows them by their `programs` (below). Apps
    before 1.2.0 ignore the field and play the mod on that game, so an entry
    can take it up without a `minAppVersion`; mods installed from it leave
    their copy of the game at the next index check, with their saves.
+
+   Every download of a standalone mod lists `programs`: the SHA-256 of each
+   file its recipe runs and of the `cover`. By them the app knows the mod
+   in a folder or ZIP the player already has, maybe an older version with
+   saves, and installs those files with the entry's recipe; saves and
+   settings go to the mod's profile, so updates keep them. Older releases
+   are worth listing as further downloads for that. One that starts unlike
+   the newest gets its own `recipe` (Operation Station Infiltration 1.0
+   runs `osidos32.exe`). `pnpm index:add` fills in `programs`; the check
+   says the right hash when one is wrong. Older apps ignore both fields.
+
+   ```yaml
+   downloads:
+     - version: "1.4"
+       url: https://files.shikadi.net/…/osi_v1.4.sc.2022-03-15.zip
+       sha256: 0a9e…
+       size: 3232443
+       programs:
+         OSI.EXE: 0c04…
+     - version: "1.0"
+       url: https://files.shikadi.net/…/osi_v1.0.sc.2022-12-25.zip
+       sha256: 4c84…
+       size: 4862807
+       recipe: { type: program, program: osidos32.exe }
+       programs:
+         osidos32.exe: f8b4…
+   ```
 
    A source mod that ships the graphics or sounds of a game with no free
    shareware (Keen 2, 3, 5 and 6; DarkAle's New Keen 5 Levelpack) also gets
