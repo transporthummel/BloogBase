@@ -113,18 +113,26 @@ export function setLastVersion(version: string) {
 }
 
 const CONTROLS_SHOWN_KEY = "bloogbase.controlsShown";
+const CONTROLLER_CONTROLS_SHOWN_KEY = "bloogbase.controllerControlsShown";
 
-/** The game series (engines) whose controls the first start has shown and needn't again. */
-export function getControlsShown(): string[] {
+/** Where the first start's sheet of a view was shown: for the keyboard, or for a controller. */
+const shownKey = (view: "keyboard" | "controller") =>
+  view === "keyboard" ? CONTROLS_SHOWN_KEY : CONTROLLER_CONTROLS_SHOWN_KEY;
+
+/**
+ * The game series (engines) whose controls the first start has shown and
+ * needn't again: the keys, or with a controller connected, its layout.
+ */
+export function getControlsShown(view: "keyboard" | "controller" = "keyboard"): string[] {
   try {
-    const value: unknown = JSON.parse(read(CONTROLS_SHOWN_KEY) ?? "[]");
+    const value: unknown = JSON.parse(read(shownKey(view)) ?? "[]");
     return Array.isArray(value) ? value.filter((v) => typeof v === "string") : [];
   } catch {
     return [];
   }
 }
 
-export function setControlsShown(engine: string) {
-  const shown = getControlsShown();
-  if (!shown.includes(engine)) write(CONTROLS_SHOWN_KEY, JSON.stringify([...shown, engine]));
+export function setControlsShown(engine: string, view: "keyboard" | "controller" = "keyboard") {
+  const shown = getControlsShown(view);
+  if (!shown.includes(engine)) write(shownKey(view), JSON.stringify([...shown, engine]));
 }

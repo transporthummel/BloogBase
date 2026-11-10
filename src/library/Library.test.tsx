@@ -66,6 +66,11 @@ vi.mock("../bindings", () => {
       setupStatus: vi.fn(),
       storageUsage: vi.fn(),
       profileCover: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
+      controllerConnected: vi.fn(() => Promise.resolve(false)),
+      // The controls sheet in the first start's dialog.
+      oneButtonFiring: vi.fn(() => Promise.resolve({ status: "ok", data: false })),
+      profileFiring: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
+      gameSettings: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
     },
     events: { playSessionEnded: event, jobUpdated: event },
   };
@@ -128,6 +133,8 @@ beforeEach(() => {
   navigate.mockClear();
   vi.mocked(commands.launchProfile).mockClear();
   localStorage.removeItem("bloogbase.controlsShown");
+  localStorage.removeItem("bloogbase.controllerControlsShown");
+  vi.mocked(commands.controllerConnected).mockResolvedValue(false);
   vi.mocked(commands.storageUsage).mockResolvedValue({
     status: "ok",
     data: {
@@ -246,7 +253,11 @@ test("play launches the profile", async () => {
   await vi.waitFor(() => expect(play).toBeEnabled());
   await userEvent.click(play);
   // The series' first start shows its keys first.
-  const dialog = screen.getByRole("dialog", { name: "How to play Keen 4–6" });
+  const dialog = await screen.findByRole("dialog", { name: "How to play Keen 4–6" });
+  expect(within(dialog).getByRole("button", { name: "Keyboard" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   expect(within(dialog).getByRole("checkbox", { name: "Don't show this again" })).toBeChecked();
   expect(commands.launchProfile).not.toHaveBeenCalled();
   await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));
@@ -254,9 +265,51 @@ test("play launches the profile", async () => {
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   // Remembered: the next start goes straight ahead.
   await userEvent.click(play);
-  expect(commands.launchProfile).toHaveBeenCalledTimes(2);
+  await vi.waitFor(() => expect(commands.launchProfile).toHaveBeenCalledTimes(2));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  localStorage.removeItem("bloogbase.controlsShown");
+  expect(localStorage.getItem("bloogbase.controllerControlsShown")).toBeNull();
+});
+
+test("with a controller, the first start shows the controller once, apart from the keys", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
+  vi.mocked(commands.launchProfile).mockResolvedValue({ status: "ok", data: null });
+  vi.mocked(commands.controllerConnected).mockResolvedValue(true);
+  renderLibrary();
+  const play = await screen.findByRole("button", { name: `Play ${keen5.title}` });
+  await vi.waitFor(() => expect(play).toBeEnabled());
+  await userEvent.click(play);
+  const dialog = await screen.findByRole("dialog", { name: "How to play Keen 4–6" });
+  expect(within(dialog).getByRole("button", { name: "Controller" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  // Looking at the keys doesn't change what's remembered.
+  await userEvent.click(within(dialog).getByRole("button", { name: "Keyboard" }));
+  await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));
+  expect(localStorage.getItem("bloogbase.controllerControlsShown")).toBe('["galaxy"]');
+  expect(localStorage.getItem("bloogbase.controlsShown")).toBeNull();
+  await userEvent.click(play);
+  await vi.waitFor(() => expect(commands.launchProfile).toHaveBeenCalledTimes(2));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+  // Without the controller, the keys come once more.
+  vi.mocked(commands.controllerConnected).mockResolvedValue(false);
+  await userEvent.click(play);
+  expect(await screen.findByRole("dialog", { name: "How to play Keen 4–6" })).toBeInTheDocument();
+});
+
+test("a controller check that takes too long counts as none", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
+  vi.mocked(commands.controllerConnected).mockReturnValue(new Promise(() => {}));
+  renderLibrary();
+  const play = await screen.findByRole("button", { name: `Play ${keen5.title}` });
+  await vi.waitFor(() => expect(play).toBeEnabled());
+  await userEvent.click(play);
+  const dialog = await screen.findByRole("dialog", { name: "How to play Keen 4–6" });
+  expect(within(dialog).getByRole("button", { name: "Keyboard" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
 });
 
 test("the controls come again on the next start when the box is cleared, and cancel starts nothing", async () => {
@@ -266,14 +319,14 @@ test("the controls come again on the next start when the box is cleared, and can
   const play = await screen.findByRole("button", { name: `Play ${keen5.title}` });
   await vi.waitFor(() => expect(play).toBeEnabled());
   await userEvent.click(play);
-  await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
   expect(commands.launchProfile).not.toHaveBeenCalled();
   await userEvent.click(play);
-  await userEvent.click(screen.getByRole("checkbox", { name: "Don't show this again" }));
+  await userEvent.click(await screen.findByRole("checkbox", { name: "Don't show this again" }));
   await userEvent.click(screen.getByRole("button", { name: "Play" }));
   expect(commands.launchProfile).toHaveBeenCalledTimes(1);
   await userEvent.click(play);
-  expect(screen.getByRole("dialog", { name: "How to play Keen 4–6" })).toBeInTheDocument();
+  expect(await screen.findByRole("dialog", { name: "How to play Keen 4–6" })).toBeInTheDocument();
   expect(localStorage.getItem("bloogbase.controlsShown")).toBeNull();
 });
 
