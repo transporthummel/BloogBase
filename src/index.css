@@ -44,6 +44,12 @@
   --bb-dreams: var(--bb-ega-brown);
   /* Source mods: no episode of their own, so not an engine's colour. */
   --bb-source: var(--bb-ega-cyan);
+  /* The face buttons of the controller drawing, in their usual colours. */
+  --bb-pad-a: var(--bb-ega-bright-green);
+  --bb-pad-b: var(--bb-ega-bright-red);
+  --bb-pad-x: #7373ff;
+  --bb-pad-y: var(--bb-ega-yellow);
+  --bb-pad-letter: #0d0c1d;
   --bb-bloog: var(--bb-ega-bright-green);
   --bb-star: var(--bb-ink);
   --bb-star-dim: var(--bb-muted);
@@ -83,6 +89,11 @@
   --bb-key-down: inset 0 1px 0 rgb(255 255 255 / 0.25), inset 0 -1px 0 rgb(70 55 25 / 0.2);
   /* EGA green darkened until the Bloog stays visible on beige (3:1). */
   --bb-bloog: #007a00;
+  --bb-pad-a: #3fbf45;
+  --bb-pad-b: #e2493f;
+  --bb-pad-x: #6a6ff0;
+  --bb-pad-y: #f0d23a;
+  --bb-pad-letter: #1a1714;
   /* Light specks on the plastic: dark dots read as dust. */
   --bb-star: #f4efe2;
   --bb-star-dim: #e8e1cf;
@@ -130,6 +141,11 @@
   --color-galaxy: var(--bb-galaxy);
   --color-dreams: var(--bb-dreams);
   --color-source: var(--bb-source);
+  --color-pad-a: var(--bb-pad-a);
+  --color-pad-b: var(--bb-pad-b);
+  --color-pad-x: var(--bb-pad-x);
+  --color-pad-y: var(--bb-pad-y);
+  --color-pad-letter: var(--bb-pad-letter);
   --color-sidebar: var(--bb-sidebar);
   --shadow-card: var(--bb-shadow);
   --shadow-key: var(--bb-key);

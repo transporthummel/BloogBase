@@ -9,41 +9,55 @@ export interface Callout {
 /**
  * Where each callout sits: its side, the height of its first line, and the
  * leader line's points from the label to the input. Laid out so no line
- * crosses another input.
+ * crosses another input or line.
  */
 const anchors: Record<PadInput, { side: "left" | "right"; y: number; line: string }> = {
-  lt: { side: "left", y: 38, line: "233,38 312,39" },
-  lb: { side: "left", y: 64, line: "233,64 305,62" },
-  view: { side: "left", y: 96, line: "233,96 380,96 409,132" },
-  ls: { side: "left", y: 140, line: "233,140 307,140" },
-  dpad: { side: "left", y: 215, line: "233,215 371,215" },
-  rt: { side: "right", y: 38, line: "667,38 588,39" },
-  rb: { side: "right", y: 64, line: "667,64 595,62" },
-  menu: { side: "right", y: 90, line: "667,90 520,90 491,132" },
-  y: { side: "right", y: 114, line: "667,114 578,112" },
-  b: { side: "right", y: 140, line: "667,140 606,140" },
-  a: { side: "right", y: 166, line: "667,166 578,168" },
-  x: { side: "right", y: 192, line: "667,192 537,192 537,153" },
-  rs: { side: "right", y: 218, line: "667,218 533,215" },
+  lt: { side: "left", y: 38, line: "233,38 286,38 303,47" },
+  lb: { side: "left", y: 66, line: "233,66 270,90" },
+  view: { side: "left", y: 96, line: "233,96 395,96 409,124" },
+  ls: { side: "left", y: 140, line: "233,140 294,140" },
+  dpad: { side: "left", y: 215, line: "233,215 372,215" },
+  rt: { side: "right", y: 38, line: "667,38 614,38 597,47" },
+  rb: { side: "right", y: 66, line: "667,66 630,90" },
+  menu: { side: "right", y: 96, line: "667,96 505,96 491,124" },
+  y: { side: "right", y: 118, line: "667,118 588,113" },
+  b: { side: "right", y: 142, line: "667,142 615,140" },
+  a: { side: "right", y: 166, line: "667,166 588,167" },
+  x: { side: "right", y: 190, line: "667,190 541,190 541,157" },
+  rs: { side: "right", y: 215, line: "667,215 538,215" },
 };
 
-const face: { input: PadInput; x: number; y: number; letter: string }[] = [
-  { input: "y", x: 565, y: 112, letter: "Y" },
-  { input: "x", x: 537, y: 140, letter: "X" },
-  { input: "b", x: 593, y: 140, letter: "B" },
-  { input: "a", x: 565, y: 168, letter: "A" },
+const face: { input: PadInput; x: number; y: number; letter: string; fill: string }[] = [
+  { input: "y", x: 570, y: 113, letter: "Y", fill: "fill-pad-y" },
+  { input: "x", x: 541, y: 140, letter: "X", fill: "fill-pad-x" },
+  { input: "b", x: 599, y: 140, letter: "B", fill: "fill-pad-b" },
+  { input: "a", x: 570, y: 167, letter: "A", fill: "fill-pad-a" },
 ];
+
+/** The body's outline: shoulders, grips and the curve between them. */
+const BODY =
+  "M450 82 C500 80 545 73 580 78 C615 84 636 106 646 140 C659 185 672 250 676 285 " +
+  "C680 320 655 338 628 334 C605 330 590 312 575 292 C560 272 540 263 500 263 L400 263 " +
+  "C360 263 340 272 325 292 C310 312 295 330 272 334 C245 338 220 320 224 285 " +
+  "C228 250 241 185 254 140 C264 106 285 84 320 78 C355 73 400 80 450 82 Z";
+
+/** The left bumper; the body hides all but its outer edge. Mirrored for RB. */
+const BUMPER =
+  "M266 150 L257 128 C262 98 284 70 322 62 C352 56 384 58 404 64 C412 67 416 74 418 92 Z";
+/** The left trigger's top, behind the bumper. */
+const TRIGGER = "M296 70 C298 44 312 32 334 32 C356 32 370 44 372 66 L372 90 L296 90 Z";
+const mirror = "translate(900 0) scale(-1 1)";
 
 /**
  * A generic controller in the Xbox layout (an own drawing, no maker's
- * artwork), with callouts to what each input does. Inputs without one are
- * drawn faintly. Decorative for screen readers: the callouts are listed
- * beside it for them.
+ * artwork or logo), with callouts to what each input does. Inputs without
+ * one are drawn faintly. Decorative for screen readers: the callouts are
+ * listed beside it for them.
  */
 export function PadDrawing({ callouts }: { callouts: Callout[] }) {
   const used = new Set(callouts.map((c) => c.input));
-  const part = (input: PadInput) =>
-    `transition-opacity ${used.has(input) ? "" : "opacity-35"} [&_.cap]:fill-surface [&_.cap]:stroke-muted`;
+  const part = (input: PadInput) => (used.has(input) ? "" : "opacity-35");
+  const cap = "fill-surface stroke-muted";
   return (
     <svg
       viewBox="0 0 900 350"
@@ -51,62 +65,67 @@ export function PadDrawing({ callouts }: { callouts: Callout[] }) {
       aria-hidden
       focusable="false"
       fontFamily="inherit"
+      strokeWidth={1.5}
     >
-      {/* Triggers and bumpers, behind the body. */}
-      <g className={part("lt")}>
-        <rect className="cap" x={312} y={26} width={56} height={30} rx={10} />
-        <PadLabel x={340} y={39} text="LT" />
-      </g>
-      <g className={part("rt")}>
-        <rect className="cap" x={532} y={26} width={56} height={30} rx={10} />
-        <PadLabel x={560} y={39} text="RT" />
-      </g>
-      <g className={part("lb")}>
-        <rect className="cap" x={305} y={54} width={82} height={16} rx={7} />
-        <PadLabel x={346} y={62} text="LB" />
-      </g>
-      <g className={part("rb")}>
-        <rect className="cap" x={513} y={54} width={82} height={16} rx={7} />
-        <PadLabel x={554} y={62} text="RB" />
-      </g>
+      {/* Triggers, then bumpers, behind the body. */}
+      <path className={`${cap} ${part("lt")}`} d={TRIGGER} />
+      <path className={`${cap} ${part("rt")}`} d={TRIGGER} transform={mirror} />
+      <path className={`${cap} ${part("lb")}`} d={BUMPER} />
+      <path className={`${cap} ${part("rb")}`} d={BUMPER} transform={mirror} />
+      <path className="fill-surface-raised stroke-border" d={BODY} strokeLinejoin="round" />
+      <Label x={334} y={50} text="LT" className={part("lt")} />
+      <Label x={566} y={50} text="RT" className={part("rt")} />
+      <Label x={312} y={71} text="LB" size={9} className={part("lb")} />
+      <Label x={588} y={71} text="RB" size={9} className={part("rb")} />
 
-      <path
-        className="fill-surface-raised stroke-border"
-        strokeWidth={1.5}
-        d="M350 72 C390 62 510 62 550 72 C610 84 640 150 650 230 C660 300 640 340 605 340 C575 340 555 310 535 285 C520 268 380 268 365 285 C345 310 325 340 295 340 C260 340 240 300 250 230 C260 150 290 84 350 72 Z"
-      />
-
-      <g className={part("ls")}>
-        <circle className="cap" cx={335} cy={140} r={28} />
-        <circle className="fill-surface-raised stroke-border" cx={335} cy={140} r={17} />
-      </g>
-      <g className={part("rs")}>
-        <circle className="cap" cx={505} cy={215} r={28} />
-        <circle className="fill-surface-raised stroke-border" cx={505} cy={215} r={17} />
-      </g>
+      {/* Sticks and D-pad sit in wells. */}
+      <Stick x={330} y={140} className={part("ls")} />
+      <Stick x={505} y={215} className={part("rs")} />
       <g className={part("dpad")}>
+        <circle className="fill-surface stroke-border" cx={395} cy={215} r={31} />
         <path
-          className="cap"
-          d="M387 191 h16 v16 h16 v16 h-16 v16 h-16 v-16 h-16 v-16 h16 Z"
+          className="fill-surface-raised stroke-muted"
           strokeLinejoin="round"
+          d="M386 192 h18 v14 h14 v18 h-14 v14 h-18 v-14 h-14 v-18 h14 Z"
         />
       </g>
+
+      {/* The guide button between them, plain. */}
+      <circle className="fill-surface stroke-border" cx={450} cy={104} r={12} />
       <g className={part("view")}>
-        <circle className="cap" cx={415} cy={140} r={9} />
-        <rect className="fill-muted" x={411} y={137} width={8} height={6} rx={1} />
+        <circle className={cap} cx={412} cy={134} r={9} />
+        <rect
+          className="fill-none stroke-muted"
+          strokeWidth={1.2}
+          x={408}
+          y={131}
+          width={8}
+          height={6}
+          rx={1}
+        />
       </g>
       <g className={part("menu")}>
-        <circle className="cap" cx={485} cy={140} r={9} />
+        <circle className={cap} cx={488} cy={134} r={9} />
         <path
           className="stroke-muted"
-          strokeWidth={1.5}
-          d="M480 137 h10 M480 140 h10 M480 143 h10"
+          strokeWidth={1.2}
+          d="M484 131.5 h8 M484 134 h8 M484 136.5 h8"
         />
       </g>
       {face.map((f) => (
         <g key={f.input} className={part(f.input)}>
-          <circle className="cap" cx={f.x} cy={f.y} r={13} />
-          <PadLabel x={f.x} y={f.y} text={f.letter} />
+          <circle className={`${f.fill} stroke-pad-letter/30`} cx={f.x} cy={f.y} r={13} />
+          <text
+            x={f.x}
+            y={f.y}
+            textAnchor="middle"
+            dominantBaseline="central"
+            className="fill-pad-letter"
+            fontSize={12}
+            fontWeight={700}
+          >
+            {f.letter}
+          </text>
         </g>
       ))}
 
@@ -151,15 +170,38 @@ export function PadDrawing({ callouts }: { callouts: Callout[] }) {
   );
 }
 
-function PadLabel({ x, y, text }: { x: number; y: number; text: string }) {
+/** A thumbstick in its well: a cap with a dished top. */
+function Stick({ x, y, className }: { x: number; y: number; className: string }) {
+  return (
+    <g className={className}>
+      <circle className="fill-surface stroke-border" cx={x} cy={y} r={33} />
+      <circle className="fill-surface-raised stroke-muted" cx={x} cy={y} r={23} />
+      <circle className="fill-none stroke-border" cx={x} cy={y} r={15} />
+    </g>
+  );
+}
+
+function Label({
+  x,
+  y,
+  text,
+  size = 10,
+  className,
+}: {
+  x: number;
+  y: number;
+  text: string;
+  size?: number;
+  className: string;
+}) {
   return (
     <text
       x={x}
       y={y}
       textAnchor="middle"
       dominantBaseline="central"
-      className="fill-ink"
-      fontSize={10}
+      className={`fill-muted ${className}`}
+      fontSize={size}
       fontWeight={600}
     >
       {text}
