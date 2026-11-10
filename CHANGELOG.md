@@ -10,6 +10,8 @@
 
 ### Bug Fixes
 
+- A mod kept while its game was uninstalled showed an empty cover once the game was installed again.
+
 ### Misc
 
 ## 1.2.0 (2026-11-08)

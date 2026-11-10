@@ -1,8 +1,12 @@
 {
   "unreleased": {
-    "en": ["A folder with a game and a mod for it can add both at once."],
+    "en": [
+      "A folder with a game and a mod for it can add both at once.",
+      "Mods no longer lose their cover when their game is uninstalled and installed again."
+    ],
     "de": [
-      "Liegen ein Spiel und eine Mod dafür in einem Ordner, kannst du beides auf einmal hinzufügen."
+      "Liegen ein Spiel und eine Mod dafür in einem Ordner, kannst du beides auf einmal hinzufügen.",
+      "Mods verlieren ihr Cover nicht mehr, wenn ihr Spiel deinstalliert und wieder installiert wird."
     ]
   },
   "releases": [

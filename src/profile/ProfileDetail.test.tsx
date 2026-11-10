@@ -335,7 +335,10 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   });
   const client = new QueryClient();
   client.setQueryData(["cover", "keen4-1", null], { src: "old.png", scrambled: false });
-  client.setQueryData(["cover", "keen5-1", null], { src: "keen5.png", scrambled: false });
+  client.setQueryData(["cover", "keen5-1", profile.installId], {
+    src: "keen5.png",
+    scrambled: false,
+  });
   renderDetail(client);
   await pick("Remove");
   const dialog = screen.getByRole("dialog");
@@ -346,7 +349,7 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   // Installed again, it and the mods played over it, removed with it, get
   // the same ids and must not show the old covers; the others stay.
   await vi.waitFor(() => expect(client.getQueryData(["cover", "keen4-1", null])).toBeUndefined());
-  expect(client.getQueryData(["cover", "keen5-1", null])).toBeDefined();
+  expect(client.getQueryData(["cover", "keen5-1", profile.installId])).toBeDefined();
 });
 
 test("without saves, removing asks only about backups that would go", async () => {
@@ -464,8 +467,12 @@ test("a game is removed from its page, with its mods if asked", async () => {
     return { status: "ok", data: null };
   });
   const client = new QueryClient();
-  for (const id of ["keen4-1", "aurora-bliss", "other"]) {
-    client.setQueryData(["cover", id, "keen4-1"], { src: `${id}.png`, scrambled: false });
+  for (const [id, installId] of [
+    ["keen4-1", "keen4-1"],
+    ["aurora-bliss", "keen4-1"],
+    ["other", "keen4-2"],
+  ]) {
+    client.setQueryData(["cover", id, installId], { src: `${id}.png`, scrambled: false });
   }
   renderDetail(client);
   const user = userEvent.setup();
@@ -488,7 +495,7 @@ test("a game is removed from its page, with its mods if asked", async () => {
     expect(client.getQueryData(["cover", "keen4-1", "keen4-1"])).toBeUndefined(),
   );
   expect(client.getQueryData(["cover", "aurora-bliss", "keen4-1"])).toBeUndefined();
-  expect(client.getQueryData(["cover", "other", "keen4-1"])).toBeDefined();
+  expect(client.getQueryData(["cover", "other", "keen4-2"])).toBeDefined();
 });
 
 test("a mod waiting for its game says which one and can't be played", async () => {

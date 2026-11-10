@@ -14,16 +14,21 @@ export const coverKey = (profileId: string) => [...coverKeys, profileId] as cons
 
 /**
  * Reloads the profiles after some were removed and drops the covers of the
- * ones gone: a profile added later may get the same id. Mods moved to another
- * copy of their game get another try anyway (`useCover`).
+ * ones gone, and those of mods for a copy of their game they're no longer
+ * on: a profile or copy added later may get the same id, and a mod that
+ * waited for its game has lost its cover meanwhile. Other moves to another
+ * copy get another try anyway (`useCover`).
  */
 export async function forgetRemovedCovers(client: QueryClient) {
   try {
     const profiles = await client.fetchQuery({ ...profilesQuery, staleTime: 0 });
-    const ids = new Set(profiles.map((p) => p.id));
+    const installs = new Map(profiles.map((p) => [p.id, p.installId]));
     client.removeQueries({
       queryKey: coverKeys,
-      predicate: (q) => !ids.has(String(q.queryKey[1])),
+      predicate: (q) => {
+        const [, id, installId] = q.queryKey;
+        return !installs.has(String(id)) || installs.get(String(id)) !== installId;
+      },
     });
   } catch {
     // Without the list, none can be trusted.
