@@ -94,6 +94,11 @@ export const commands = {
 	 */
 	profileFiring: (profileId: string) => typedError<Firing | null, CommandError>(__TAURI_INVOKE("profile_firing", { profileId })),
 	/**
+	 *  Whether a game controller is connected, for the controls the frontend
+	 *  shows first. False where that can't be told.
+	 */
+	controllerConnected: () => __TAURI_INVOKE<boolean>("controller_connected"),
+	/**
 	 *  The custom patches a profile's page shows: a game's to edit, or how a
 	 *  mod takes those of the game copy it's played on.
 	 */
