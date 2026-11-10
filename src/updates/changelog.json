@@ -2,11 +2,13 @@
   "unreleased": {
     "en": [
       "What's new folds away older versions after a long break.",
-      "Xbox controllers work in every game, with your own keys and in the menus."
+      "Xbox controllers work in every game, with your own keys and in the menus.",
+      "The Controls tab shows the controller's buttons too."
     ],
     "de": [
       "Nach längerer Pause klappen die Neuigkeiten ältere Versionen ein.",
-      "Xbox-Controller funktionieren in jedem Spiel, mit deinen eigenen Tasten und in den Menüs."
+      "Xbox-Controller funktionieren in jedem Spiel, mit deinen eigenen Tasten und in den Menüs.",
+      "Der Tab Steuerung zeigt auch die Knöpfe des Controllers."
     ]
   },
   "releases": [

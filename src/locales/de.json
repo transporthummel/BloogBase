@@ -989,6 +989,57 @@
     },
     "dialogTitle": "So spielst du {{series}}",
     "dialogIntro": "Hier sind die Tasten. Du findest sie jederzeit wieder auf der Seite des Spiels unter „Steuerung“.",
-    "dontShow": "Beim nächsten Start nicht mehr anzeigen"
+    "dontShow": "Beim nächsten Start nicht mehr anzeigen",
+    "view": {
+      "label": "Ansicht",
+      "keyboard": "Tastatur",
+      "controller": "Controller"
+    },
+    "pad": {
+      "layer": {
+        "label": "Belegung",
+        "play": "Spielen",
+        "menu": "Menüs (View halten)"
+      },
+      "move": "Bewegen",
+      "diagonal": "auch schräg",
+      "menuKeys": "Halten: Menütasten",
+      "fireBoth": "Schießen (Springen + Pogo)",
+      "confirm": "Bestätigen (Enter)",
+      "no": "Nein (N)",
+      "yes": "Ja (Y)",
+      "title": "Zum Titelbild (T)",
+      "dos": "Zu DOS beenden (D)",
+      "save": "Speichern (F5)",
+      "sound": "Sound an und aus (F2)",
+      "slots": "Spielstand {{from}}–{{to}}",
+      "slot9": "drücken: Spielstand 9",
+      "back": "Zurück (Esc)",
+      "moreLetters": "Halten: weitere Buchstaben",
+      "letters": "Buchstaben {{from}}–{{to}}",
+      "withLb": "mit LB: {{lb}}",
+      "withLbSpace": "mit LB: {{lb}}, Leertaste, Rücktaste",
+      "hold": "Gedrückt halten",
+      "typed": "Mit gehaltenem View tippst du:",
+      "press": "drücken",
+      "direction": {
+        "up": "hoch",
+        "right": "rechts",
+        "down": "runter",
+        "left": "links"
+      },
+      "input": {
+        "label": "Eingabe",
+        "ls": "Linker Stick",
+        "rs": "Rechter Stick",
+        "dpad": "Steuerkreuz",
+        "view": "View",
+        "menu": "Menü"
+      },
+      "notes": "Gut zu wissen",
+      "plugIn": "Schließ den Controller an, bevor du das Spiel startest. Später findet DOSBox ihn nicht mehr.",
+      "ownKeys": "Die Knöpfe drücken die Tasten, die im Spiel eingestellt sind. Änderst du sie im Spiel, folgt der Controller beim nächsten Start.",
+      "diagonals": "Schräg geht es nur mit dem Steuerkreuz, nicht mit dem Stick."
+    }
   }
 }

@@ -4,12 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { commands, type Firing, type Game, type Profile } from "../bindings";
 import { ControlsSheet } from "./Controls";
+import type { ControlsView } from "./controller";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 vi.mock("../bindings", () => ({
-  commands: { oneButtonFiring: vi.fn(), profileFiring: vi.fn() },
+  commands: { oneButtonFiring: vi.fn(), profileFiring: vi.fn(), controllerConnected: vi.fn() },
 }));
 
 const ok = <T,>(data: T) => ({ status: "ok" as const, data });
@@ -31,13 +32,15 @@ function game(id: string, engine: Game["engine"]): Game {
 const profile = (modId: string | null = null) =>
   ({ id: "p", modId, gameId: "keen1", label: "Keen" }) as Profile;
 
-function renderSheet(g: Game, p = profile()) {
+/** Once it knows whether a controller is connected. */
+async function renderSheet(g: Game, p = profile(), view?: ControlsView) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
-      <ControlsSheet profile={p} game={g} />
+      <ControlsSheet profile={p} game={g} view={view} />
     </QueryClientProvider>,
   );
+  await screen.findByText("Window and recordings");
 }
 
 function setFiring(enabled: boolean, firing: Firing | null) {
@@ -51,11 +54,14 @@ function keysFor(action: string) {
   return [...row.querySelectorAll("kbd")].map((k) => k.textContent).join("+");
 }
 
-beforeEach(() => setFiring(false, null));
+beforeEach(() => {
+  setFiring(false, null);
+  vi.mocked(commands.controllerConnected).mockResolvedValue(false);
+});
 
 test("Keen 1-3 shoot with Ctrl and Alt, Space opens the status window", async () => {
   setFiring(false, "patchable");
-  renderSheet(game("keen1", "vorticons"));
+  await renderSheet(game("keen1", "vorticons"));
   expect(keysFor("Pogo on and off, once you've found it")).toBe("Alt");
   expect(keysFor("Shoot")).toBe("Ctrl+Alt");
   expect(keysFor("Status window")).toBe("Space");
@@ -67,7 +73,7 @@ test("Keen 1-3 shoot with Ctrl and Alt, Space opens the status window", async ()
 
 test("with one-button firing on, Space shoots and Enter opens the status window", async () => {
   setFiring(true, "patchable");
-  renderSheet(game("keen2", "vorticons"));
+  await renderSheet(game("keen2", "vorticons"));
   await vi.waitFor(() => expect(keysFor("Shoot")).toBe("Space"));
   expect(keysFor("Status window")).toBe("Enter");
   expect(keysFor("Pogo on and off")).toBe("Alt");
@@ -76,13 +82,13 @@ test("with one-button firing on, Space shoots and Enter opens the status window"
 
 test("a mod that shoots with Space shows it with the setting off", async () => {
   setFiring(false, "builtIn");
-  renderSheet(game("keen3", "vorticons"), profile("mod"));
+  await renderSheet(game("keen3", "vorticons"), profile("mod"));
   await vi.waitFor(() => expect(keysFor("Shoot")).toBe("Space"));
   expect(screen.getByText(/Mods may change keys and cheats/)).toBeInTheDocument();
 });
 
 test("cheats are folded away, and Keen 4-6 list the debug mode's", async () => {
-  renderSheet(game("keen4", "galaxy"));
+  await renderSheet(game("keen4", "galaxy"));
   expect(keysFor("Shoot")).toBe("Space");
   expect(keysFor("Status window")).toBe("Enter");
   const cheats = screen.getByText("Cheat codes").closest("details")!;
@@ -94,11 +100,60 @@ test("cheats are folded away, and Keen 4-6 list the debug mode's", async () => {
   expect(keysFor("God mode: nothing can hurt Keen")).toBe("F10+G");
 });
 
-test("Keen Dreams throws Flower Power and has F10 cheats without a debug mode", () => {
-  renderSheet(game("kdreams", "dreams"));
+test("Keen Dreams throws Flower Power and has F10 cheats without a debug mode", async () => {
+  await renderSheet(game("kdreams", "dreams"));
   expect(keysFor("Throw Flower Power")).toBe("Alt");
   expect(keysFor("Status window")).toBe("Space");
   expect(screen.queryByText("Shoot")).not.toBeInTheDocument();
   expect(screen.getByText("Hold F10 and press:")).toBeInTheDocument();
   expect(commands.profileFiring).not.toHaveBeenCalled();
+});
+
+/** What the drawing says an input does, from the list for screen readers. */
+const padSays = (input: string) =>
+  screen
+    .getAllByRole("listitem")
+    .map((li) => li.textContent ?? "")
+    .filter((text) => text.startsWith(`${input}: `));
+
+test("a connected controller opens the controller view", async () => {
+  vi.mocked(commands.controllerConnected).mockResolvedValue(true);
+  await renderSheet(game("keen4", "galaxy"));
+  expect(screen.getByRole("button", { name: "Controller" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(padSays("A")).toEqual(["A: Jump"]);
+  expect(padSays("LB")).toEqual(["LB: Pogo on and off"]);
+  expect(padSays("RT")).toEqual(["RT: Shoot"]);
+  // The window keys are the keyboard's in both views; no cheats here.
+  expect(keysFor("Window or full screen")).toBe("Alt+Enter");
+  expect(screen.queryByText("Cheat codes")).not.toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: "Keyboard" }));
+  expect(keysFor("Shoot")).toBe("Space");
+});
+
+test("without a controller, the keyboard comes first", async () => {
+  await renderSheet(game("keen4", "galaxy"));
+  expect(screen.getByRole("button", { name: "Keyboard" })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("the menu layout of Keen 1-3 has the save slots", async () => {
+  await renderSheet(game("keen1", "vorticons"), profile(), "controller");
+  expect(commands.controllerConnected).not.toHaveBeenCalled();
+  expect(padSays("X")).toEqual(["X: Shoot (Jump + Pogo)"]);
+  await userEvent.click(screen.getByRole("button", { name: "Menus (hold View)" }));
+  expect(padSays("Right stick")).toEqual(["Right stick: Save slot 1–4, press: save slot 9"]);
+  expect(padSays("Menu")).toEqual(["Menu: Quit to DOS (D)"]);
+});
+
+test("the menus of Keen 4-6 type letters", async () => {
+  await renderSheet(game("keen5", "galaxy"), profile(), "controller");
+  await userEvent.click(screen.getByRole("button", { name: "Menus (hold View)" }));
+  expect(padSays("D-pad")).toEqual(["D-pad: Letters A–D, with LB: O–R"]);
+  const typed = screen.getByRole("table");
+  expect(within(typed).getByRole("row", { name: /Left stick \+ LB/ })).toHaveTextContent(
+    "Left stick + LBXYZSpaceBackspace",
+  );
 });

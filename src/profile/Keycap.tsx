@@ -1,28 +1,5 @@
 import { useTranslation } from "react-i18next";
-
-const arrows: Record<string, string> = { left: "←", right: "→", up: "↑", down: "↓" };
-// Keys whose name is a word; the rest (letters, digits, F-keys) show as they are printed.
-const named = new Set([
-  "ctrl",
-  "alt",
-  "space",
-  "enter",
-  "esc",
-  "tab",
-  "shiftLeft",
-  "shiftRight",
-  "cmd",
-  "backspace",
-  "capsLock",
-  "numLock",
-  "scrollLock",
-  "home",
-  "end",
-  "pageUp",
-  "pageDown",
-  "insert",
-  "delete",
-]);
+import { arrows, keyLabel } from "./keyLabel";
 
 /** One key, drawn as a keycap. */
 export function Keycap({
@@ -37,7 +14,7 @@ export function Keycap({
 }) {
   const { t } = useTranslation();
   const arrow = arrows[id];
-  const label = arrow ?? (named.has(id) ? t(`controls.key.${id}`) : id.toUpperCase());
+  const label = keyLabel(id, t);
   return (
     <kbd
       aria-label={arrow ? t(`controls.key.${id}`) : undefined}

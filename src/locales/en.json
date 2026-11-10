@@ -989,6 +989,57 @@
     },
     "dialogTitle": "How to play {{series}}",
     "dialogIntro": "Here are the keys. You'll find them again on the game's page under Controls.",
-    "dontShow": "Don't show this again"
+    "dontShow": "Don't show this again",
+    "view": {
+      "label": "View",
+      "keyboard": "Keyboard",
+      "controller": "Controller"
+    },
+    "pad": {
+      "layer": {
+        "label": "Layout",
+        "play": "Playing",
+        "menu": "Menus (hold View)"
+      },
+      "move": "Move",
+      "diagonal": "diagonals too",
+      "menuKeys": "Hold: menu keys",
+      "fireBoth": "Shoot (Jump + Pogo)",
+      "confirm": "Confirm (Enter)",
+      "no": "No (N)",
+      "yes": "Yes (Y)",
+      "title": "To the title screen (T)",
+      "dos": "Quit to DOS (D)",
+      "save": "Save (F5)",
+      "sound": "Sound on and off (F2)",
+      "slots": "Save slot {{from}}–{{to}}",
+      "slot9": "press: save slot 9",
+      "back": "Back (Esc)",
+      "moreLetters": "Hold: more letters",
+      "letters": "Letters {{from}}–{{to}}",
+      "withLb": "with LB: {{lb}}",
+      "withLbSpace": "with LB: {{lb}}, space, backspace",
+      "hold": "Hold down",
+      "typed": "With View held, you type:",
+      "press": "press",
+      "direction": {
+        "up": "up",
+        "right": "right",
+        "down": "down",
+        "left": "left"
+      },
+      "input": {
+        "label": "Input",
+        "ls": "Left stick",
+        "rs": "Right stick",
+        "dpad": "D-pad",
+        "view": "View",
+        "menu": "Menu"
+      },
+      "notes": "Good to know",
+      "plugIn": "Connect the controller before you start the game. DOSBox won't find it later.",
+      "ownKeys": "The buttons press the keys the game is set to. Change them in the game, and the controller follows at the next start.",
+      "diagonals": "Diagonals only work on the D-pad, not on the stick."
+    }
   }
 }

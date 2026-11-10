@@ -14,12 +14,19 @@ import {
   type Binding,
   type Chord,
   keysInEffect,
+  type PadInput,
+  type PadKeys,
+  type PadSheet,
+  padFor,
   type Sheet,
   sheetFor,
   spaceFires,
 } from "./controlSheet";
+import { controllerConnected, controllerConnectedKey, type ControlsView } from "./controller";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { Keycap } from "./Keycap";
+import { keyLabel } from "./keyLabel";
+import { type Callout, PadDrawing } from "./PadDrawing";
 
 const mac = () => /Mac/.test(navigator.userAgent);
 
@@ -114,21 +121,62 @@ const engineDot: Record<Engine, string> = {
   dreams: "bg-dreams",
 };
 
+/** Two or more choices, one of them on. */
+function Choice<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap gap-1">
+      {options.map((o) => (
+        <Button
+          key={o.value}
+          variant={o.value === value ? "secondary" : "ghost"}
+          aria-pressed={o.value === value}
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
 /**
- * The keys of a game or mod and, folded away, its cheats. With one-button
- * firing on (or a mod that has it), Keen 1-3 shoot with Space here too.
+ * The keys of a game or mod and, folded away, its cheats, or its controller
+ * layout. With one-button firing on (or a mod that has it), Keen 1-3 shoot
+ * with Space here too.
  */
 export function ControlsSheet({
   profile,
   game,
   heading = "h2",
+  view: initialView,
 }: {
   profile: Profile;
   game: Game;
   /** Its groups' headings: under the page title, or under a dialog's (h2). */
   heading?: HeadingTag;
+  /** The view it opens on; else the controller's if one is connected. */
+  view?: ControlsView;
 }) {
   const { t } = useTranslation();
+  const connected = useQuery({
+    queryKey: controllerConnectedKey,
+    queryFn: controllerConnected,
+    enabled: initialView === undefined,
+    staleTime: 0,
+  });
+  // Kept for this visit only.
+  const [chosen, setChosen] = useState<ControlsView | undefined>(initialView);
+  const view = chosen ?? (connected.data ? "controller" : "keyboard");
   const enabled = useQuery({
     queryKey: oneButtonFiringKey,
     queryFn: () => unwrap(commands.oneButtonFiring()),
@@ -149,6 +197,14 @@ export function ControlsSheet({
   // A copy the patch fits, with the setting off: worth a pointer.
   const offerSpace = firing.data === "patchable" && enabled.data === false;
 
+  // Waits for the answer (at most a moment), so the view doesn't switch.
+  const ready = chosen !== undefined || !connected.isPending;
+  const windowGroup = (
+    <Group title={t("controls.window")} heading={heading}>
+      <Bindings items={sheet.window} prefix="action" />
+    </Group>
+  );
+
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -157,6 +213,17 @@ export function ControlsSheet({
           {t(`controls.series.${sheet.engine}`)}
         </span>
         <span className="text-sm text-muted">{t(`controls.remap.${sheet.engine}`)}</span>
+        <span className="ml-auto">
+          <Choice
+            label={t("controls.view.label")}
+            value={view}
+            onChange={setChosen}
+            options={[
+              { value: "keyboard", label: t("controls.view.keyboard") },
+              { value: "controller", label: t("controls.view.controller") },
+            ]}
+          />
+        </span>
       </div>
       {profile.modId !== null && (
         <p className="flex items-start gap-2 text-sm text-muted">
@@ -165,6 +232,35 @@ export function ControlsSheet({
         </p>
       )}
 
+      {ready && view === "controller" && (
+        <ControllerSheet pad={padFor(game.engine, space)} heading={heading}>
+          {windowGroup}
+        </ControllerSheet>
+      )}
+      {ready && view === "keyboard" && (
+        <KeyboardSheet sheet={sheet} heading={heading} offerSpace={offerSpace}>
+          {windowGroup}
+        </KeyboardSheet>
+      )}
+    </div>
+  );
+}
+
+function KeyboardSheet({
+  sheet,
+  heading,
+  offerSpace,
+  children,
+}: {
+  sheet: Sheet;
+  heading: HeadingTag;
+  offerSpace: boolean;
+  /** The window keys. */
+  children: ReactNode;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
       <div className="grid gap-4 sm:grid-cols-2">
         <Group title={t("controls.moving")} heading={heading}>
           <div className="flex flex-wrap items-center gap-4">
@@ -186,13 +282,139 @@ export function ControlsSheet({
         <Group title={t("controls.inGame")} heading={heading}>
           <Bindings items={sheet.game} prefix="action" />
         </Group>
-        <Group title={t("controls.window")} heading={heading}>
-          <Bindings items={sheet.window} prefix="action" />
-        </Group>
+        {children}
       </div>
 
       <Cheats sheet={sheet} />
-    </div>
+    </>
+  );
+}
+
+const inputNames: Partial<Record<PadInput, string>> = {
+  ls: "pad.input.ls",
+  rs: "pad.input.rs",
+  dpad: "pad.input.dpad",
+  view: "pad.input.view",
+  menu: "pad.input.menu",
+};
+
+/** The controller drawn with what its inputs do, playing or with View held. */
+function ControllerSheet({
+  pad,
+  heading: Heading,
+  children,
+}: {
+  pad: PadSheet;
+  heading: HeadingTag;
+  /** The window keys, on the keyboard only. */
+  children: ReactNode;
+}) {
+  const { t } = useTranslation();
+  const [layer, setLayer] = useState<"play" | "menu">("play");
+  const callouts: Callout[] = pad[layer].map((b) => ({
+    input: b.input,
+    lines: [
+      t(`controls.${b.label}`, b.values),
+      ...(b.more ? [t(`controls.pad.${b.more}`, b.values)] : []),
+    ],
+  }));
+  const inputName = (input: PadInput) => {
+    const name = inputNames[input];
+    return name ? t(`controls.${name}`) : input.toUpperCase();
+  };
+  return (
+    <>
+      <section className="grid gap-3 rounded-xl border border-border bg-surface p-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <Heading className="text-xs font-semibold tracking-wide text-muted uppercase">
+            {t("controls.view.controller")}
+          </Heading>
+          <Choice
+            label={t("controls.pad.layer.label")}
+            value={layer}
+            onChange={setLayer}
+            options={[
+              { value: "play", label: t("controls.pad.layer.play") },
+              { value: "menu", label: t("controls.pad.layer.menu") },
+            ]}
+          />
+        </div>
+        <PadDrawing callouts={callouts} />
+        <ul className="sr-only">
+          {callouts.map((c) => (
+            <li key={c.input}>
+              {inputName(c.input)}: {c.lines.join(", ")}
+            </li>
+          ))}
+        </ul>
+        {layer === "menu" && <MenuKeys keys={pad.menuKeys} inputName={inputName} />}
+      </section>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <section className="grid content-start gap-2 rounded-xl border border-border bg-surface p-4">
+          <Heading className="text-xs font-semibold tracking-wide text-muted uppercase">
+            {t("controls.pad.notes")}
+          </Heading>
+          <ul className="grid list-disc gap-1.5 pl-4 text-sm">
+            <li>{t("controls.pad.plugIn")}</li>
+            <li>{t("controls.pad.ownKeys")}</li>
+            <li>{t("controls.pad.diagonals")}</li>
+          </ul>
+        </section>
+        {children}
+      </div>
+    </>
+  );
+}
+
+const directions = ["up", "right", "down", "left"] as const;
+
+/** Which direction types which key with View (and LB) held. */
+function MenuKeys({
+  keys,
+  inputName,
+}: {
+  keys: PadKeys[];
+  inputName: (input: PadInput) => string;
+}) {
+  const { t } = useTranslation();
+  const rows = keys.flatMap((k) => [
+    { name: inputName(k.input), keys: k.keys },
+    ...(k.lb ? [{ name: `${inputName(k.input)} + LB`, keys: k.lb }] : []),
+  ]);
+  return (
+    <table className="w-max max-w-full text-sm">
+      <caption className="mb-2 text-left text-xs text-muted">{t("controls.pad.typed")}</caption>
+      <thead>
+        <tr className="text-xs text-muted">
+          <th scope="col" className="sr-only">
+            {t("controls.pad.input.label")}
+          </th>
+          {directions.map((d) => (
+            <th key={d} scope="col" className="px-2 font-semibold">
+              <span aria-hidden>{keyLabel(d, t)}</span>
+              <span className="sr-only">{t(`controls.pad.direction.${d}`)}</span>
+            </th>
+          ))}
+          <th scope="col" className="px-2 font-semibold">
+            {t("controls.pad.press")}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.name}>
+            <th scope="row" className="py-1 pr-3 text-left font-normal text-muted">
+              {r.name}
+            </th>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <td key={i} className="px-2 py-1 text-center">
+                {r.keys[i] !== undefined ? <Keycap id={r.keys[i]} /> : null}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -231,15 +453,18 @@ function Cheats({ sheet }: { sheet: ReturnType<typeof sheetFor> }) {
   );
 }
 
-/** Shown before a series' first start: the keys, then Play. */
+/** Shown before a series' first start: the keys or the controller, then Play. */
 export function ControlsDialog({
   profile,
   game,
+  view,
   onStart,
   onClose,
 }: {
   profile: Profile;
   game: Game;
+  /** The view it opens on. */
+  view: ControlsView;
   /** `remember`: don't show it again for this series. */
   onStart: (remember: boolean) => void;
   onClose: () => void;
@@ -253,7 +478,7 @@ export function ControlsDialog({
       wide
     >
       <p className="text-sm text-muted">{t("controls.dialogIntro")}</p>
-      <ControlsSheet profile={profile} game={game} heading="h3" />
+      <ControlsSheet profile={profile} game={game} heading="h3" view={view} />
       <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-3">
         <label className="mr-auto flex items-center gap-2 text-sm">
           <input

@@ -5,6 +5,7 @@
 ### Features
 
 - Xbox controllers play every game without setup: the controller presses the keys the game is set to, the player's own ones too, and with View held the keys of the menus, save slots in Keen 1–3 and letters for save names in Keen 4–6 and Keen Dreams. Without one-button firing in Keen 1–3, the fire buttons press Jump and Pogo together.
+- The Controls tab shows the controller too: a drawing of an Xbox-layout controller with what each button does while playing and, with View held, in the menus. It opens on the controller when one is connected.
 
 ### Improvements
 

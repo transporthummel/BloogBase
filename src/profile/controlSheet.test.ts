@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import type { GameKeys } from "../bindings";
-import { keysInEffect, sheetFor } from "./controlSheet";
+import { keysInEffect, padFor, sheetFor } from "./controlSheet";
 
 const noKeys: GameKeys = {
   up: null,
@@ -77,4 +77,25 @@ test("the Fire key only shows where it's applied", () => {
   expect(keysInEffect(keys, keen4, "keen4-demo", false)).toEqual({ ...keys, fire: null });
   expect(keysInEffect(keys, keen4, "keen4-1.4-ega", false)).toEqual(keys);
   expect(keysInEffect(keys, dreams, "kdreams-1.13", false)).toEqual(keys);
+});
+
+const pad = (sheet: ReturnType<typeof padFor>["play"], input: string) =>
+  sheet.filter((b) => b.input === input).map((b) => b.label);
+
+test("the controller fires where the keyboard does", () => {
+  expect(pad(padFor("galaxy", false).play, "x")).toEqual(["action.fire"]);
+  expect(pad(padFor("vorticons", true).play, "rt")).toEqual(["action.fire"]);
+  expect(pad(padFor("vorticons", false).play, "lt")).toEqual(["pad.fireBoth"]);
+  const dreams = padFor("dreams", false).play;
+  expect(pad(dreams, "x")).toEqual(["action.throw"]);
+  expect(pad(dreams, "b")).toEqual([]);
+});
+
+test("each input has one job per layout", () => {
+  for (const engine of ["vorticons", "galaxy", "dreams"] as const) {
+    for (const layer of [padFor(engine, true).play, padFor(engine, true).menu]) {
+      const inputs = layer.map((b) => b.input);
+      expect(new Set(inputs).size).toBe(inputs.length);
+    }
+  }
 });

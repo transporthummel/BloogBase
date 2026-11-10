@@ -18,6 +18,7 @@ export function useControlsGate(start: (profileId: string) => void) {
     <ControlsDialog
       profile={pending.profile}
       game={pending.game}
+      view="keyboard"
       onClose={() => setPending(null)}
       onStart={(remember) => {
         if (remember) setControlsShown(pending.game.engine);
