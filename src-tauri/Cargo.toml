@@ -1,6 +1,6 @@
 [package]
 name = "bloogbase"
-version = "1.2.0"
+version = "1.2.1"
 description = "A cross-platform desktop launcher for the Commander Keen games"
 authors = ["transporthummel"]
 license = "MIT"

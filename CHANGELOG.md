@@ -6,6 +6,14 @@
 
 ### Improvements
 
+### Bug Fixes
+
+### Misc
+
+## 1.2.1 (2026-11-10)
+
+### Improvements
+
 - A folder or ZIP holding a mod and its game, in a release the library doesn't have yet, asks whether to add only the game, only the mod or both; with both, the game comes first and the mod is set up on it.
 - Source mods from the mod list are recognised in a folder or ZIP the player already has, older versions too, by the SHA-256 of their programs: they install with the player's files and saves and start the way the list tested them; Discover then offers the newest version as an update.
 
@@ -14,8 +22,6 @@
 - A mod's page showed its old version after an update from the mod list until it was opened again.
 - The add dialog no longer offers to set up a source mod from the mod list by hand, which would have played it on a copy of its game, where it doesn't run.
 - A mod kept while its game was uninstalled showed an empty cover once the game was installed again.
-
-### Misc
 
 ## 1.2.0 (2026-11-08)
 
