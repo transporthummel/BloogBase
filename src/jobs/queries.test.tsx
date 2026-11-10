@@ -53,6 +53,8 @@ test("an updated index mod gets its cover and README read again", () => {
   emit(done);
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["cover", "aurora"] });
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["readme", "aurora"] });
+  // Its page shows the new version.
+  expect(invalidate).toHaveBeenCalledWith({ queryKey: ["mods"] });
 
   // A first install has no cover to refresh.
   invalidate.mockClear();

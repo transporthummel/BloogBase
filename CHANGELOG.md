@@ -11,6 +11,7 @@
 
 ### Bug Fixes
 
+- A mod's page showed its old version after an update from the mod list until it was opened again.
 - The add dialog no longer offers to set up a source mod from the mod list by hand, which would have played it on a copy of its game, where it doesn't run.
 - A mod kept while its game was uninstalled showed an empty cover once the game was installed again.
 

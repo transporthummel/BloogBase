@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { commands, events, type IndexMod, type Job, type JobKind } from "../bindings";
 import { freeGamesKey, indexModsKey } from "../discover/queries";
 import { coverKey, coverKeys } from "../library/covers";
-import { installsKey, profilesKey } from "../library/queries";
+import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { readmeKey, readmeKeys } from "../profile/readme";
 import { runtimeKey } from "../runtime/queries";
 
@@ -57,6 +57,8 @@ export function useJobEvents() {
           client.invalidateQueries({ queryKey: coverKey(updated) });
           client.invalidateQueries({ queryKey: readmeKey(updated) });
         }
+        // Its details (version, description) as the mod's page shows them.
+        client.invalidateQueries({ queryKey: modsKey });
         client.invalidateQueries({ queryKey: profilesKey });
         client.invalidateQueries({ queryKey: indexModsKey });
       }
