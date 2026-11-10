@@ -208,7 +208,7 @@ function Releases({ releases, lang }: { releases: Release[]; lang: string }) {
       )}
       <Button
         variant="ghost"
-        className="justify-self-start px-3 py-1.5"
+        className="-ml-3 justify-self-start px-3 py-1.5"
         onClick={() => openUrl(`${REPO_URL}/releases`)}
       >
         <ExternalLink className="size-4" aria-hidden />
