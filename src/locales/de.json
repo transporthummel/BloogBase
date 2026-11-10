@@ -864,7 +864,10 @@
     "mods_other": "{{count}} neue Mods sind dazugekommen",
     "toDiscover": "In Entdecken ansehen",
     "updates_one": "Für eine deiner Mods gibt es ein Update",
-    "updates_other": "Für {{count}} deiner Mods gibt es Updates"
+    "updates_other": "Für {{count}} deiner Mods gibt es Updates",
+    "older_one": "Eine weitere Version seit deinem letzten Start",
+    "older_other": "{{count}} weitere Versionen seit deinem letzten Start",
+    "allChanges": "Alle Änderungen"
   },
   "launch": {
     "starting": "{{name}} startet…"

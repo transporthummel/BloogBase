@@ -1,7 +1,7 @@
 {
   "unreleased": {
-    "en": [],
-    "de": []
+    "en": ["What's new folds away older versions after a long break."],
+    "de": ["Nach längerer Pause klappen die Neuigkeiten ältere Versionen ein."]
   },
   "releases": [
     {

@@ -6,6 +6,8 @@
 
 ### Improvements
 
+- "What's new" shows the newest version's changes and folds away the versions skipped in between, with a link to all changes.
+
 ### Bug Fixes
 
 ### Misc

@@ -1,3 +1,4 @@
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -9,10 +10,12 @@ import { WhatsNew } from "./WhatsNew";
 vi.mock("@tanstack/react-router", () => ({
   Link: (props: { to: string }) => <a href={props.to} {...props} />,
 }));
+vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 vi.mock("./changelog", () => ({
   changelog: [
     { version: "0.3.0", en: ["Snow at Christmas."], de: ["Schnee zu Weihnachten."] },
     { version: "0.2.0", en: ["A news dialog."], de: ["Ein Neuigkeiten-Fenster."] },
+    { version: "0.1.1", en: ["Fewer crashes."], de: ["Weniger Abstürze."] },
   ],
 }));
 vi.mock("../bindings", () => ({
@@ -89,14 +92,27 @@ test("shows nothing on the first start and remembers what's there", async () => 
 });
 
 test("lists the changes since the version run before", async () => {
-  setLastVersion("0.1.0");
+  setLastVersion("0.2.0");
   const user = renderNews();
   expect(await screen.findByText("What's new in BloogBase 0.3.0")).toBeInTheDocument();
   expect(screen.getByText("Snow at Christmas.")).toBeInTheDocument();
-  expect(screen.getByText("A news dialog.")).toBeInTheDocument();
+  expect(screen.queryByText("A news dialog.")).toBeNull();
   await user.click(screen.getByRole("button", { name: "Close" }));
   expect(screen.queryByRole("dialog")).toBeNull();
   expect(getLastVersion()).toBe("0.3.0");
+});
+
+test("folds away the versions skipped in between", async () => {
+  setLastVersion("0.1.0");
+  const user = renderNews();
+  expect(await screen.findByText("Snow at Christmas.")).toBeVisible();
+  expect(screen.getByText("A news dialog.")).not.toBeVisible();
+  expect(screen.getByText("Fewer crashes.")).not.toBeVisible();
+  await user.click(screen.getByText("2 more versions since your last start"));
+  expect(screen.getByText("A news dialog.")).toBeVisible();
+  expect(screen.getByText("Fewer crashes.")).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "All changes" }));
+  expect(openUrl).toHaveBeenCalledWith("https://github.com/transporthummel/BloogBase/releases");
 });
 
 test("lists mods new in the mod list", async () => {

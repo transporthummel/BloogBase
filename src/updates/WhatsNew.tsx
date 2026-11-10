@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, RefreshCw, Sparkles } from "lucide-react";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { ArrowRight, ExternalLink, RefreshCw, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { REPO_URL } from "../about/About";
 import { commands, type IndexMod, type IndexNews } from "../bindings";
 import { shortGameTitle, useGames } from "../catalog";
 import { useIndexMods, useIndexStatus } from "../discover/queries";
@@ -170,17 +172,49 @@ export function WhatsNew() {
           </ul>
         </section>
       )}
-      {news.releases.map((r) => (
-        <section key={r.version} className="grid gap-2">
-          <h3 className="font-semibold">{t("news.release", { version: r.version })}</h3>
-          <ul className="list-disc pl-6 text-sm select-text">
-            {(i18n.language === "de" ? r.de : r.en).map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      {news.releases.length > 0 && <Releases releases={news.releases} lang={i18n.language} />}
     </Dialog>
+  );
+}
+
+/**
+ * The changes of the new version. After a long gap there are many, so the
+ * versions skipped in between start folded away, and the full list is online.
+ */
+function Releases({ releases, lang }: { releases: Release[]; lang: string }) {
+  const { t } = useTranslation();
+  const [latest, ...older] = releases;
+  const lines = (r: Release) => (lang === "de" ? r.de : r.en);
+  const release = (r: Release) => (
+    <section key={r.version} className="grid gap-2">
+      <h3 className="font-semibold">{t("news.release", { version: r.version })}</h3>
+      <ul className="list-disc pl-6 text-sm select-text">
+        {lines(r).map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+    </section>
+  );
+  return (
+    <>
+      {release(latest)}
+      {older.length > 0 && (
+        <details>
+          <summary className="w-fit cursor-pointer text-sm font-medium">
+            {t("news.older", { count: older.length })}
+          </summary>
+          <div className="mt-3 grid gap-4">{older.map(release)}</div>
+        </details>
+      )}
+      <Button
+        variant="ghost"
+        className="justify-self-start px-3 py-1.5"
+        onClick={() => openUrl(`${REPO_URL}/releases`)}
+      >
+        <ExternalLink className="size-4" aria-hidden />
+        {t("news.allChanges")}
+      </Button>
+    </>
   );
 }
 

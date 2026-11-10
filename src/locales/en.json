@@ -864,7 +864,10 @@
     "mods_other": "{{count}} new mods have arrived",
     "toDiscover": "Show in Discover",
     "updates_one": "There's an update for one of your mods",
-    "updates_other": "There are updates for {{count}} of your mods"
+    "updates_other": "There are updates for {{count}} of your mods",
+    "older_one": "One more version since your last start",
+    "older_other": "{{count}} more versions since your last start",
+    "allChanges": "All changes"
   },
   "launch": {
     "starting": "Starting {{name}}…"
