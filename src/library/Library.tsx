@@ -9,6 +9,7 @@ import { errorMessage } from "../errors";
 import { formatPlayTime } from "../format";
 import { unwrap } from "../ipc";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
+import { AddedDialog, type Outcome } from "./AddedDialog";
 import { FindOwnedDialog } from "./FindOwnedDialog";
 import { AddModDialog } from "../mods/AddModDialog";
 import { RunsOn } from "../mods/RunsOn";
@@ -54,6 +55,8 @@ export function Library() {
   const [adding, setAdding] = useState(false);
   const [finding, setFinding] = useState(false);
   const [imported, setImported] = useState<number | null>(null);
+  // A mod added with its game: both listed, as when several are dropped.
+  const [added, setAdded] = useState<Outcome | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
   const [query, setQuery] = useState(lastQuery);
   // Games and mods arrive from many places; an old search shouldn't hide a new one.
@@ -166,10 +169,11 @@ export function Library() {
       {adding && (
         <AddModDialog
           onClose={() => setAdding(false)}
-          onInstalled={(mod) => {
+          onInstalled={(mod, games) => {
             setAdding(false);
             queryClient.invalidateQueries({ queryKey: profilesKey });
-            navigate({ to: "/profiles/$profileId", params: { profileId: mod.profileId } });
+            if (games.length > 0) setAdded({ games, mods: [mod], failed: [] });
+            else navigate({ to: "/profiles/$profileId", params: { profileId: mod.profileId } });
           }}
           onGamesImported={(installs) => {
             setAdding(false);
@@ -185,6 +189,7 @@ export function Library() {
           }
         />
       )}
+      {added && <AddedDialog outcome={added} onClose={() => setAdded(null)} />}
       {finding && (
         <FindOwnedDialog
           onClose={() => setFinding(false)}

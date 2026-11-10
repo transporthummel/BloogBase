@@ -25,13 +25,22 @@ vi.mock("@tanstack/react-router", () => ({
 // Stands in for picking: one button per outcome.
 vi.mock("../mods/AddModDialog", () => ({
   AddModDialog: (props: {
-    onInstalled: (mod: Mod) => void;
+    onInstalled: (mod: Mod, games: Install[]) => void;
     onGamesImported: (installs: Install[]) => void;
     onFindOwned?: () => void;
   }) => (
     <>
       {props.onFindOwned && <p>offers the store search</p>}
-      <button onClick={() => props.onInstalled({ profileId: "aurora" } as Mod)}>mod</button>
+      <button onClick={() => props.onInstalled({ profileId: "aurora" } as Mod, [])}>mod</button>
+      <button
+        onClick={() =>
+          props.onInstalled({ id: "aurora", name: "Aurora", profileId: "aurora" } as Mod, [
+            { id: "keen5-1" } as Install,
+          ])
+        }
+      >
+        mod and game
+      </button>
       <button onClick={() => props.onGamesImported([{ id: "keen5-1" } as Install])}>
         one game
       </button>
@@ -442,6 +451,19 @@ test("the status bar sums up the library and its disk space", async () => {
     "title",
     expect.stringContaining("DOSBox: 40 MB"),
   );
+});
+
+test("adding a mod with its game stays in the library and lists both", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
+  renderLibrary();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Add game or mod" }));
+  await user.click(screen.getByRole("button", { name: "mod and game" }));
+
+  const added = await screen.findByRole("dialog", { name: "Added to your library" });
+  expect(within(added).getByText("Imported 1 game.")).toBeInTheDocument();
+  expect(within(added).getByText("Aurora is ready to play.")).toBeInTheDocument();
+  expect(navigate).not.toHaveBeenCalled();
 });
 
 test.each([

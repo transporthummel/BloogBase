@@ -5,21 +5,12 @@ import { FolderInput } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Install, type Mod, type ModInfo } from "../bindings";
+import { AddedDialog, type Outcome } from "./AddedDialog";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { AddModDialog } from "../mods/AddModDialog";
-import { Button } from "../ui/Button";
-import { Dialog } from "../ui/Dialog";
-import { Notice } from "../ui/Notice";
 import { onImportPaths } from "./importPaths";
 import { installsKey, profilesKey, profilesQuery } from "./queries";
-
-type Outcome = {
-  games: Install[];
-  mods: Mod[];
-  /** File name → what went wrong. */
-  failed: [string, string][];
-};
 
 const fileName = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 
@@ -80,17 +71,16 @@ export function DropImport() {
     };
   }, [t, queryClient]);
 
-  const nextMod = (installed?: Mod) => {
+  const nextMod = (installed?: Mod, games: Install[] = []) => {
     if (installed) {
       queryClient.invalidateQueries({ queryKey: profilesKey });
-      setOutcome((o) => o && { ...o, mods: [...o.mods, installed] });
+      setOutcome((o) => o && { ...o, games: [...o.games, ...games], mods: [...o.mods, installed] });
     }
     setMods((m) => m.slice(1));
   };
   const done = outcome && mods.length === 0;
   const anything =
     outcome && (outcome.games.length || outcome.mods.length || outcome.failed.length);
-  const single = outcome && outcome.games.length + outcome.mods.length === 1;
 
   async function openSingle({ games, mods }: Outcome) {
     setOutcome(null);
@@ -130,31 +120,11 @@ export function DropImport() {
         />
       )}
       {done && anything ? (
-        <Dialog title={t("drop.title")} onClose={() => setOutcome(null)}>
-          <div className="grid gap-2">
-            {outcome.games.length > 0 && (
-              <Notice>{t("library.imported", { count: outcome.games.length })}</Notice>
-            )}
-            {outcome.mods.map((mod) => (
-              <Notice key={mod.id}>{t("mods.installed", { name: mod.name })}</Notice>
-            ))}
-            {outcome.failed.map(([name, message]) => (
-              <Notice key={name} tone="error">
-                <span className="font-semibold">{name}:</span> {message}
-              </Notice>
-            ))}
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant={single ? "secondary" : "primary"} onClick={() => setOutcome(null)}>
-              {t("common.close")}
-            </Button>
-            {single && (
-              <Button data-autofocus onClick={() => openSingle(outcome)}>
-                {t("discover.openDetails")}
-              </Button>
-            )}
-          </div>
-        </Dialog>
+        <AddedDialog
+          outcome={outcome}
+          onClose={() => setOutcome(null)}
+          onOpenSingle={() => openSingle(outcome)}
+        />
       ) : null}
     </>
   );

@@ -671,7 +671,8 @@ test("asks first whether to add the game lying next to the mod, both without a c
     vi.mocked(commands.listInstalls).mockReturnValue(ok([install]));
     return ok([install]);
   });
-  renderDialog();
+  vi.mocked(commands.installMod).mockReturnValue(ok({ id: "aurora" } as never));
+  const onInstalled = renderDialog();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Choose folder…" }));
 
@@ -685,6 +686,12 @@ test("asks first whether to add the game lying next to the mod, both without a c
   // Then the mod is set up as before, on the game just added.
   expect(await screen.findByRole("textbox", { name: "Name" })).toHaveValue("Aurora Bliss");
   expect(screen.queryByText(/isn’t in your library/)).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Install" }));
+  expect(commands.installMod).toHaveBeenCalledWith(
+    expect.objectContaining({ installId: "keen4-1" }),
+  );
+  // Told about the game too, so the library can list both.
+  await vi.waitFor(() => expect(onInstalled).toHaveBeenCalledWith({ id: "aurora" }, [install]));
 });
 
 test("picks the mod alone when the library has a copy of the game", async () => {

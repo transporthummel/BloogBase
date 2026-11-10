@@ -51,7 +51,8 @@ export function AddModDialog({
   /** The installed mod it updates or replaces. */
   replacing?: string;
   onClose: () => void;
-  onInstalled: (mod: Mod) => void;
+  /** With the games added along with it ("Mod and game"). */
+  onInstalled: (mod: Mod, games: Install[]) => void;
   /** Games were picked instead of a mod and imported. */
   onGamesImported?: (installs: Install[]) => void;
   /** Offers to look for games from Steam and GOG instead. */
@@ -68,8 +69,11 @@ export function AddModDialog({
     !!index.data?.length && index.data.every((m) => m.modId !== null && !m.updateAvailable);
   // A mod lying next to a game the library lacks: which to add, asked first.
   const [asked, setAsked] = useState(false);
+  const [addedGames, setAddedGames] = useState<Install[]>([]);
   const ask = (info: ModInfo) => !replacing && !asked && !!info.bundledGame;
+  const installed = (mod: Mod) => onInstalled(mod, addedGames);
   const picked = (pick: Pick, games: Install[]) => {
+    if (pick === "both") setAddedGames(games);
     if (pick !== "game") setAsked(true);
     else if (onGamesImported) onGamesImported(games);
     else onClose();
@@ -135,7 +139,7 @@ export function AddModDialog({
           replacing={replacing}
           queued={!!queue}
           onCancel={onClose}
-          onInstalled={onInstalled}
+          onInstalled={installed}
         />
       ) : fromWiki ? (
         <Confirm
@@ -144,7 +148,7 @@ export function AddModDialog({
           origin={fromWiki.origin}
           replacing={replacing}
           onCancel={onClose}
-          onInstalled={onInstalled}
+          onInstalled={installed}
         />
       ) : path && inspect.data?.kind === "mod" && ask(inspect.data.info) ? (
         <GameAndMod path={path} info={inspect.data.info} onCancel={onClose} onPicked={picked} />
@@ -154,7 +158,7 @@ export function AddModDialog({
           info={inspect.data.info}
           replacing={replacing}
           onCancel={onClose}
-          onInstalled={onInstalled}
+          onInstalled={installed}
         />
       ) : (
         <AddFrom

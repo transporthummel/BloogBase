@@ -261,10 +261,12 @@ function MissingGame({
       {adding && (
         <AddModDialog
           onClose={() => setAdding(false)}
-          onInstalled={(mod) => {
+          onInstalled={(mod, games) => {
             setAdding(false);
             queryClient.invalidateQueries({ queryKey: profilesKey });
-            navigate({ to: "/profiles/$profileId", params: { profileId: mod.profileId } });
+            // Added with its game, like several at once: the library shows both.
+            if (games.length > 0) navigate({ to: "/" });
+            else navigate({ to: "/profiles/$profileId", params: { profileId: mod.profileId } });
           }}
           // The mod's profile takes the game as soon as the list is fetched again.
           onGamesImported={() => setAdding(false)}
