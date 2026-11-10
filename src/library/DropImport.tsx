@@ -123,6 +123,10 @@ export function DropImport() {
           queue={queued > 1 ? { at: queued - mods.length + 1, of: queued } : undefined}
           onClose={() => nextMod()}
           onInstalled={nextMod}
+          onGamesImported={(games) => {
+            setOutcome((o) => o && { ...o, games: [...o.games, ...games] });
+            nextMod();
+          }}
         />
       )}
       {done && anything ? (

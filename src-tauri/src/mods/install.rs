@@ -1021,7 +1021,6 @@ mod tests {
             keenwiki,
             extends: Some("lego".into()),
             replace: None,
-            with_game: None,
         }
     }
 

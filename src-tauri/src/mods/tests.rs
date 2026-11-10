@@ -55,7 +55,6 @@ fn request(path: &Path, recipe: Recipe) -> InstallModRequest {
         keenwiki: None,
         extends: None,
         replace: None,
-        with_game: None,
     }
 }
 

@@ -4,7 +4,7 @@
 
 ### Features
 
-- A mod whose folder or ZIP also holds its game, in a release the library doesn't have yet, offers to add the game too; it is imported first and the mod is played on it.
+- A folder or ZIP holding a mod and its game, in a release the library doesn't have yet, asks whether to add only the game, only the mod or both; with both, the game comes first and the mod is set up on it.
 
 ### Improvements
 

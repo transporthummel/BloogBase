@@ -117,6 +117,11 @@ export const commands = {
 	inspectMod: (path: string) => typedError<ModInfo, CommandError>(__TAURI_INVOKE("inspect_mod", { path })),
 	/**  Whether a folder or ZIP dropped on the window holds games or a mod. */
 	inspectDropped: (path: string) => typedError<Dropped, CommandError>(__TAURI_INVOKE("inspect_dropped", { path })),
+	/**
+	 *  Imports the `bundled_game` found next to a mod; empty when the library
+	 *  has that release by now.
+	 */
+	importBundledGame: (path: string, versionId: string) => typedError<Install[], CommandError>(__TAURI_INVOKE("import_bundled_game", { path, versionId })),
 	/**  Installs a mod inspected with `inspect_mod` and creates its play profile. */
 	installMod: (request: InstallModRequest) => typedError<Mod, CommandError>(__TAURI_INVOKE("install_mod", { request })),
 	listMods: () => typedError<Mod[], CommandError>(__TAURI_INVOKE("list_mods")),
@@ -672,11 +677,6 @@ export type InstallModRequest = {
 	 *  version. Its id and saves stay; `None` installs alongside.
 	 */
 	replace?: string | null,
-	/**
-	 *  The `bundled_game` of [`inspect`] to import first. The mod goes on it
-	 *  when `install_id` is `None`.
-	 */
-	withGame?: string | null,
 };
 
 export type InstallSource = "folder" | "zip" | "download" | "steam" | "gog";

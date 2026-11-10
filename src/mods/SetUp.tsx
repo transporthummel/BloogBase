@@ -18,15 +18,7 @@ import { unwrap } from "../ipc";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob, waitForJob } from "../jobs/queries";
 import { coverKey } from "../library/covers";
-import {
-  installsKey,
-  modsKey,
-  modsQuery,
-  profilesKey,
-  useInstalls,
-  useMods,
-  useProfiles,
-} from "../library/queries";
+import { modsKey, modsQuery, useInstalls, useMods, useProfiles } from "../library/queries";
 import { ReadmePanel } from "../profile/ReadmePanel";
 import { readmeKey, useReadmesAt } from "../profile/readme";
 import { Button } from "../ui/Button";
@@ -49,9 +41,6 @@ export type SetUpProps = {
   onCancel: () => void;
   onInstalled: (mod: Mod) => void;
 };
-
-/** Stands for the copy of the game in the mod's folder, until it's added. */
-const FROM_FOLDER = "";
 
 /** What was detected, the choices left to the player, and Install. */
 export function SetUp({
@@ -77,26 +66,7 @@ export function SetUp({
 
   const game = games.data?.find((g) => g.id === info.gameId);
   const option = info.recipes[recipeIndex];
-  // The game lying in the folder too: added first, unless the library has a copy already.
-  const bundled = game?.versions.find((v) => v.id === info.bundledGame);
-  const [withGame, setWithGame] = useState<boolean | null>(null);
-  const takeGame = !!bundled && (withGame ?? !installs.data?.some((i) => i.gameId === info.gameId));
-  const fromFolder: Install[] =
-    takeGame && bundled
-      ? [
-          {
-            id: FROM_FOLDER,
-            gameId: info.gameId,
-            versionId: bundled.id,
-            label: game?.title ?? info.gameId,
-            source: "folder",
-            path,
-            addedAt: 0,
-          },
-        ]
-      : [];
-  const candidates =
-    installs.data && [...installs.data, ...fromFolder].filter((i) => fits(info, option, i));
+  const candidates = installs.data?.filter((i) => fits(info, option, i));
   const others = otherVersions(mods.data ?? [], info, name, origin, replacing);
   // Picked to replace it, but for another game.
   const wrongGame = mods.data?.find((m) => m.id === replacing && m.gameId !== info.gameId);
@@ -134,9 +104,7 @@ export function SetUp({
           name,
           recipe: option.recipe,
           // Without a fitting game, the player agreed to install anyway.
-          // The game from the folder isn't one yet: the mod moves to it once added.
-          installId: target && target.id !== FROM_FOLDER ? target.id : null,
-          withGame: takeGame ? (bundled?.id ?? null) : null,
+          installId: target?.id ?? null,
           keenwiki: origin,
           extends: below,
           // Renaming may have made it no longer match.
@@ -146,10 +114,6 @@ export function SetUp({
     },
     onSuccess: (mod) => {
       queryClient.invalidateQueries({ queryKey: modsKey });
-      if (takeGame) {
-        queryClient.invalidateQueries({ queryKey: installsKey });
-        queryClient.invalidateQueries({ queryKey: profilesKey });
-      }
       // The new version may have another title screen and README.
       if (replaced) {
         queryClient.invalidateQueries({ queryKey: coverKey(mod.profileId) });
@@ -160,8 +124,7 @@ export function SetUp({
   });
 
   // Enter installs, unless there's a warning to read or a choice to make.
-  const choose =
-    (info.recipes.length > 1 && !info.confident) || (others.length > 0 && !replacing) || !!bundled;
+  const choose = (info.recipes.length > 1 && !info.confident) || (others.length > 0 && !replacing);
   const careful =
     choose ||
     warnings.otherGame ||
@@ -211,21 +174,6 @@ export function SetUp({
       </label>
 
       <Facts info={info} option={option} origin={origin} game={game} />
-
-      {bundled && (
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="mt-1"
-            checked={takeGame}
-            onChange={(e) => setWithGame(e.target.checked)}
-          />
-          <span>
-            {t("mods.bundledGame", { game: game?.title, version: bundled.label })}
-            <span className="block text-muted">{t("mods.bundledGameHint")}</span>
-          </span>
-        </label>
-      )}
 
       {info.recipes.length > 1 &&
         (info.confident ? (
@@ -280,12 +228,7 @@ export function SetUp({
           >
             {candidates.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.id === FROM_FOLDER
-                  ? t("mods.bundledGameOption", {
-                      game: shortGameTitle(games.data, i.gameId),
-                      version: versionLabel(i),
-                    })
-                  : `${shortGameTitle(games.data, i.gameId)} (${versionLabel(i)})`}
+                {shortGameTitle(games.data, i.gameId)} ({versionLabel(i)})
               </option>
             ))}
           </select>

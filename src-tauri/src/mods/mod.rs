@@ -133,10 +133,6 @@ pub struct InstallModRequest {
     /// version. Its id and saves stay; `None` installs alongside.
     #[serde(default)]
     pub replace: Option<String>,
-    /// The `bundled_game` of [`inspect`] to import first. With `install_id`
-    /// `None`, the mod goes on it if it fits.
-    #[serde(default)]
-    pub with_game: Option<String>,
 }
 
 /// Where a KeenWiki mod came from, and what its page says.

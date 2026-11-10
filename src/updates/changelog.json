@@ -1,8 +1,8 @@
 {
   "unreleased": {
-    "en": ["A mod in the same folder as its game can bring the game into the library too."],
+    "en": ["A folder with a game and a mod for it can add both at once."],
     "de": [
-      "Liegt eine Mod mit ihrem Spiel in einem Ordner, kommt das Spiel auf Wunsch mit in die Bibliothek."
+      "Liegen ein Spiel und eine Mod dafür in einem Ordner, kannst du beides auf einmal hinzufügen."
     ]
   },
   "releases": [

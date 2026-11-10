@@ -22,6 +22,7 @@ import { Button } from "../ui/Button";
 import { buttonClass } from "../ui/buttonClass";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
+import { GameAndMod, type Pick } from "./GameAndMod";
 import { IndexHit, KeenwikiImport, OkButton } from "./KeenwikiImport";
 import type { Downloaded } from "./wikiDownload";
 import { SetUp, type SetUpProps } from "./SetUp";
@@ -65,6 +66,14 @@ export function AddModDialog({
   const index = useIndexMods();
   const haveAll =
     !!index.data?.length && index.data.every((m) => m.modId !== null && !m.updateAvailable);
+  // A mod lying next to a game the library lacks: which to add, asked first.
+  const [asked, setAsked] = useState(false);
+  const ask = (info: ModInfo) => !replacing && !asked && !!info.bundledGame;
+  const picked = (pick: Pick, games: Install[]) => {
+    if (pick !== "game") setAsked(true);
+    else if (onGamesImported) onGamesImported(games);
+    else onClose();
+  };
 
   // A pick may also hold games, which are imported right away; only a replacement must be a mod.
   const inspect = useMutation({
@@ -111,7 +120,15 @@ export function AddModDialog({
       icon={<TitleIcon className="size-6 shrink-0 text-accent" aria-hidden />}
       onClose={onClose}
     >
-      {dropped ? (
+      {dropped && ask(dropped.info) ? (
+        <GameAndMod
+          path={dropped.path}
+          info={dropped.info}
+          queued={!!queue}
+          onCancel={onClose}
+          onPicked={picked}
+        />
+      ) : dropped ? (
         <Confirm
           path={dropped.path}
           info={dropped.info}
@@ -129,6 +146,8 @@ export function AddModDialog({
           onCancel={onClose}
           onInstalled={onInstalled}
         />
+      ) : path && inspect.data?.kind === "mod" && ask(inspect.data.info) ? (
+        <GameAndMod path={path} info={inspect.data.info} onCancel={onClose} onPicked={picked} />
       ) : path && inspect.data?.kind === "mod" ? (
         <Confirm
           path={path}

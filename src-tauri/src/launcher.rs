@@ -848,7 +848,6 @@ mod tests {
                 keenwiki: None,
                 extends: None,
                 replace: None,
-                with_game: None,
             },
         )
         .unwrap();
@@ -953,7 +952,6 @@ mod tests {
                 keenwiki: None,
                 extends: None,
                 replace: None,
-                with_game: None,
             },
         )
         .unwrap();
@@ -1416,7 +1414,6 @@ $bmp.Save($env:SHOT_PATH)
                     keenwiki: None,
                     extends: None,
                     replace: None,
-                    with_game: None,
                 };
                 let m = match mods::install(&paths, &db, &request) {
                     Ok(m) => m,

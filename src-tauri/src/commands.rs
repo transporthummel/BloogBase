@@ -910,27 +910,36 @@ fn find_bundled_game(app: &AppHandle, path: &str, info: &mut ModInfo) {
         });
 }
 
+/// Imports the `bundled_game` found next to a mod; empty when the library
+/// has that release by now.
+#[tauri::command]
+#[specta::specta]
+pub async fn import_bundled_game(
+    app: AppHandle,
+    path: String,
+    version_id: String,
+) -> CommandResult<Vec<Install>> {
+    blocking(move || {
+        let (paths, db) = (app.state::<AppPaths>(), app.state::<Db>());
+        let path = Path::new(&path);
+        let install = library::import_bundled(&paths, &db, path, &version_id)?;
+        let name = path.file_name().unwrap_or_default().to_string_lossy();
+        warn_if_damaged(&app, path, &name);
+        Ok(install.into_iter().collect())
+    })
+    .await
+}
+
 /// Installs a mod inspected with `inspect_mod` and creates its play profile.
 #[tauri::command]
 #[specta::specta]
-pub async fn install_mod(app: AppHandle, mut request: InstallModRequest) -> CommandResult<Mod> {
+pub async fn install_mod(app: AppHandle, request: InstallModRequest) -> CommandResult<Mod> {
     blocking(move || {
         let paths = app.state::<AppPaths>();
-        // The game from the same folder first; a mod without a copy to go on
-        // then moves to it if it fits, like any waiting mod.
-        let mut with_game = false;
-        if let Some(version) = request.with_game.take() {
-            let db = app.state::<Db>();
-            with_game =
-                library::import_bundled(&paths, &db, Path::new(&request.path), &version)?.is_some();
-        }
         // Replacing must not swap files under a running game.
         let claim = app.state::<Running>().claim_all(&request.replace)?;
         let m = mods::install(&paths, &app.state::<Db>(), &request)?;
         drop(claim);
-        if with_game && request.install_id.is_none() {
-            mods::rehome(&app.state::<Db>(), None)?;
-        }
         warn_if_damaged(&app, Path::new(&request.path), &m.name);
         // Installed by hand from an index download.
         link_installed(&app);

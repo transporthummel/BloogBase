@@ -116,6 +116,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::reset_config,
             commands::inspect_mod,
             commands::inspect_dropped,
+            commands::import_bundled_game,
             commands::install_mod,
             commands::list_mods,
             commands::mod_readmes,
