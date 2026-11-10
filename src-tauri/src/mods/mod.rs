@@ -60,6 +60,9 @@ pub struct ModInfo {
     /// (`l.keen_community.episode_smile`), for [`named_mod`].
     #[serde(skip)]
     pub made_for: Option<String>,
+    /// A release of the game lying next to the mod that the library doesn't
+    /// have yet, to import along with it.
+    pub bundled_game: Option<String>,
 }
 
 /// A mod another one is made to be copied over, installed or in the index.
@@ -130,6 +133,10 @@ pub struct InstallModRequest {
     /// version. Its id and saves stay; `None` installs alongside.
     #[serde(default)]
     pub replace: Option<String>,
+    /// The `bundled_game` of [`inspect`] to import first. With `install_id`
+    /// `None`, the mod goes on it if it fits.
+    #[serde(default)]
+    pub with_game: Option<String>,
 }
 
 /// Where a KeenWiki mod came from, and what its page says.

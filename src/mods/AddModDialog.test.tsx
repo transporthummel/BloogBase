@@ -91,6 +91,7 @@ const info: ModInfo = {
   recipes: [patch],
   confident: true,
   fileCount: 18,
+  bundledGame: null,
   indexId: null,
 };
 
@@ -199,6 +200,7 @@ test("inspects the picked ZIP and installs the mod on the matching game", async 
     keenwiki: null,
     extends: null,
     replace: null,
+    withGame: null,
   });
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
 });
@@ -662,6 +664,45 @@ test("asks before installing a mod without its game", async () => {
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
 });
 
+test("adds the game lying next to the mod first and plays the mod on it", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, bundledGame: "keen4-1.4-ega" }));
+  vi.mocked(commands.listInstalls).mockReturnValue(ok([]));
+  vi.mocked(commands.installMod).mockReturnValue(ok({ id: "aurora" } as never));
+  const onInstalled = renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose folder…" }));
+
+  const take = await screen.findByRole("checkbox", {
+    name: /Also add Commander Keen 4: Secret of the Oracle \(v1.4 EGA\) from this folder/,
+  });
+  // No other copy: ticked, and the mod has a game to go on.
+  expect(take).toBeChecked();
+  expect(screen.queryByText(/isn’t in your library/)).toBeNull();
+  // A choice to see: Enter doesn't install.
+  await user.keyboard("{Enter}");
+  expect(commands.installMod).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Install" }));
+  expect(commands.installMod).toHaveBeenCalledWith(
+    expect.objectContaining({ installId: null, withGame: "keen4-1.4-ega" }),
+  );
+  await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
+});
+
+test("offers the game next to the mod unticked when the library has a copy", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, bundledGame: "keen4-1.4-ega" }));
+  vi.mocked(commands.listInstalls).mockReturnValue(ok([{ ...install, versionId: null }]));
+  vi.mocked(commands.installMod).mockReturnValue(ok({ id: "aurora" } as never));
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose folder…" }));
+
+  expect(await screen.findByRole("checkbox", { name: /from this folder/ })).not.toBeChecked();
+  await user.click(screen.getByRole("button", { name: "Install" }));
+  expect(commands.installMod).toHaveBeenCalledWith(
+    expect.objectContaining({ installId: "keen4-1", withGame: null }),
+  );
+});
+
 test("warns that patch mods may not fit a modified game", async () => {
   const cracked = {
     id: "keen4-x",
@@ -802,6 +843,7 @@ test("installs a mod from a KeenWiki page with the page's details", async () => 
     },
     extends: null,
     replace: null,
+    withGame: null,
   });
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
 });

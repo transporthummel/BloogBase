@@ -82,6 +82,7 @@ const info: ModInfo = {
   ],
   confident: true,
   fileCount: 3,
+  bundledGame: null,
   indexId: null,
 };
 

@@ -821,6 +821,7 @@ pub async fn inspect_mod(app: AppHandle, path: String) -> CommandResult<ModInfo>
         let mut info = mods::inspect(Path::new(&path), None)?;
         info.index_id = index_match(&app, &path, &info);
         find_base_mods(&app, &mut info);
+        find_bundled_game(&app, &path, &mut info);
         Ok(info)
     })
     .await
@@ -892,22 +893,44 @@ pub async fn inspect_dropped(app: AppHandle, path: String) -> CommandResult<Drop
         if let Dropped::Mod { info } = &mut dropped {
             info.index_id = index_match(&app, &path, info);
             find_base_mods(&app, info);
+            find_bundled_game(&app, &path, info);
         }
         Ok(dropped)
     })
     .await
 }
 
+/// The game lying next to the mod, when the library doesn't have it yet.
+fn find_bundled_game(app: &AppHandle, path: &str, info: &mut ModInfo) {
+    let (paths, db) = (app.state::<AppPaths>(), app.state::<Db>());
+    info.bundled_game = library::bundled_game(&paths, &db, Path::new(path), &info.game_id)
+        .unwrap_or_else(|e| {
+            tracing::warn!("could not look for the game next to the mod: {e}");
+            None
+        });
+}
+
 /// Installs a mod inspected with `inspect_mod` and creates its play profile.
 #[tauri::command]
 #[specta::specta]
-pub async fn install_mod(app: AppHandle, request: InstallModRequest) -> CommandResult<Mod> {
+pub async fn install_mod(app: AppHandle, mut request: InstallModRequest) -> CommandResult<Mod> {
     blocking(move || {
         let paths = app.state::<AppPaths>();
+        // The game from the same folder first; a mod without a copy to go on
+        // then moves to it if it fits, like any waiting mod.
+        let mut with_game = false;
+        if let Some(version) = request.with_game.take() {
+            let db = app.state::<Db>();
+            with_game =
+                library::import_bundled(&paths, &db, Path::new(&request.path), &version)?.is_some();
+        }
         // Replacing must not swap files under a running game.
         let claim = app.state::<Running>().claim_all(&request.replace)?;
         let m = mods::install(&paths, &app.state::<Db>(), &request)?;
         drop(claim);
+        if with_game && request.install_id.is_none() {
+            mods::rehome(&app.state::<Db>(), None)?;
+        }
         warn_if_damaged(&app, Path::new(&request.path), &m.name);
         // Installed by hand from an index download.
         link_installed(&app);

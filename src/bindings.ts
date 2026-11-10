@@ -672,6 +672,11 @@ export type InstallModRequest = {
 	 *  version. Its id and saves stay; `None` installs alongside.
 	 */
 	replace?: string | null,
+	/**
+	 *  The `bundled_game` of [`inspect`] to import first. The mod goes on it
+	 *  when `install_id` is `None`.
+	 */
+	withGame?: string | null,
 };
 
 export type InstallSource = "folder" | "zip" | "download" | "steam" | "gog";
@@ -818,6 +823,11 @@ export type ModInfo = {
 	fileCount: number,
 	/**  The index entry whose download this is, byte for byte. */
 	indexId: string | null,
+	/**
+	 *  A release of the game lying next to the mod that the library doesn't
+	 *  have yet, to import along with it.
+	 */
+	bundledGame: string | null,
 };
 
 export type ModKind = "episode" | "levelpack" | "conversion";

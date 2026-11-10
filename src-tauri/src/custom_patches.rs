@@ -559,6 +559,7 @@ mod tests {
                 keenwiki: None,
                 extends: None,
                 replace: None,
+                with_game: None,
             },
         )
         .unwrap();

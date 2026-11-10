@@ -4,6 +4,8 @@
 
 ### Features
 
+- A mod whose folder or ZIP also holds its game, in a release the library doesn't have yet, offers to add the game too; it is imported first and the mod is played on it.
+
 ### Improvements
 
 ### Bug Fixes

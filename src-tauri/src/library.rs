@@ -133,6 +133,58 @@ pub fn import_from(
     Ok(installs)
 }
 
+/// The release of `game_id` in `path` the library lacks: a mod's folder
+/// that holds the game too. Only a known release counts; an executable the
+/// catalog doesn't know may be the mod's own.
+pub fn bundled_game(
+    paths: &AppPaths,
+    db: &Db,
+    path: &Path,
+    game_id: &str,
+) -> Result<Option<String>> {
+    let source = Source::open(path)?;
+    let have = release_keys(paths, db)?;
+    for d in detect(&source)? {
+        if d.game_id == game_id && d.version_id.is_some() && !has_release(&source, &d, &have)? {
+            return Ok(d.version_id);
+        }
+    }
+    Ok(None)
+}
+
+/// Imports the release [`bundled_game`] found in `path`. `None` when the
+/// library has it by now.
+pub fn import_bundled(
+    paths: &AppPaths,
+    db: &Db,
+    path: &Path,
+    version_id: &str,
+) -> Result<Option<Install>> {
+    let game = catalog::games()
+        .iter()
+        .find(|g| g.versions.iter().any(|v| v.id == version_id))
+        .ok_or_else(|| Error::NotFound(format!("game version {version_id}")))?;
+    let kind = match Source::open(path)? {
+        Source::Folder(_) => InstallSource::Folder,
+        Source::Zip(..) => InstallSource::Zip,
+    };
+    let origin = path.display().to_string();
+    match import_from(
+        paths,
+        db,
+        path,
+        kind,
+        &origin,
+        Some(std::slice::from_ref(&game.id)),
+    ) {
+        Ok(installs) => Ok(installs
+            .into_iter()
+            .find(|i| i.version_id.as_deref() == Some(version_id))),
+        Err(Error::AlreadyInLibrary(_)) => Ok(None),
+        Err(e) => Err(e),
+    }
+}
+
 /// What tells releases apart: the catalog version, else the executable.
 fn release_key(
     game: &Game,
@@ -633,6 +685,7 @@ mod tests {
                 keenwiki: None,
                 extends: None,
                 replace: None,
+                with_game: None,
             },
         )
         .unwrap();
@@ -679,5 +732,15 @@ mod tests {
         fs::create_dir_all(paths.profiles.join("keen4-1/state")).unwrap();
         assert_eq!(import(&paths, &db, &src).unwrap()[0].id, "keen4-2");
         assert!(paths.profiles.join("keen4-1/state").exists());
+    }
+
+    #[test]
+    fn a_game_next_to_a_mod_is_offered_only_as_a_known_release() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("Keen 4 with a mod");
+        write_folder(&src, KEEN4);
+        // An executable the catalog doesn't know may be the mod's own.
+        assert_eq!(bundled_game(&paths, &db, &src, "keen4").unwrap(), None);
+        assert_eq!(bundled_game(&paths, &db, &src, "keen5").unwrap(), None);
     }
 }

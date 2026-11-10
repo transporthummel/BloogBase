@@ -407,6 +407,7 @@ mod tests {
                 keenwiki: None,
                 extends: None,
                 replace: None,
+                with_game: None,
             },
         )
         .unwrap();
@@ -642,6 +643,7 @@ mod tests {
                     keenwiki: None,
                     extends,
                     replace: None,
+                    with_game: None,
                 },
             )
             .unwrap()

@@ -962,6 +962,7 @@ mod tests {
             file_count: 3,
             index_id: None,
             made_for: None,
+            bundled_game: None,
         }
     }
 
@@ -1020,6 +1021,7 @@ mod tests {
             keenwiki,
             extends: Some("lego".into()),
             replace: None,
+            with_game: None,
         }
     }
 
