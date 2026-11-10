@@ -9,7 +9,8 @@ use crate::db::Db;
 use crate::error::Result;
 use crate::exit_screen;
 use crate::game_settings;
-use crate::launcher;
+use crate::keymap;
+use crate::launcher::{self, LaunchSpec};
 use crate::paths::AppPaths;
 use crate::runtime::Runtime;
 
@@ -38,6 +39,10 @@ pub fn start(
     if let Err(e) = game_settings::apply(paths, db, profile_id) {
         tracing::warn!("could not apply global settings to {profile_id}: {e}");
     }
+    if let Err(e) = write_mapper(paths, db, profile_id, &spec) {
+        merge_settings(paths, db, profile_id);
+        return Err(e);
+    }
     let (child, session) = match launcher::spawn(runtime, &spec, db, profile_id, shown) {
         Ok(started) => started,
         Err(e) => {
@@ -50,6 +55,19 @@ pub fn start(
         session,
         backup,
     })
+}
+
+/// Puts the controller on the keys the game plays with this session: those
+/// in its settings file, with the global ones just written.
+fn write_mapper(paths: &AppPaths, db: &Db, profile_id: &str, spec: &LaunchSpec) -> Result<()> {
+    let keys = game_settings::effective_keys(db, profile_id).unwrap_or_else(|e| {
+        tracing::warn!(
+            "could not read the keys of {profile_id}, the controller gets the defaults: {e}"
+        );
+        game_settings::ActionKeys::defaults(spec.engine)
+    });
+    let controls = keymap::controls(spec.engine, &keys, spec.one_button);
+    keymap::ensure(paths, profile_id, spec.engine, &controls)
 }
 
 /// Puts the player's values back; the next start tries again if this fails.

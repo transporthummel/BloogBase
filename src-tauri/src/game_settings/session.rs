@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
+use super::ActionKeys;
 use super::format::{self, Edit, Format};
 use super::template;
 use crate::catalog::Game;
@@ -115,6 +116,27 @@ pub fn apply(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> {
         return Err(e);
     }
     Ok(())
+}
+
+/// The keys the profile's game will play with: those in its settings file,
+/// with the global settings [`apply`] wrote; the game's defaults if it has
+/// none yet or one we don't know.
+pub fn effective_keys(db: &Db, profile_id: &str) -> Result<ActionKeys> {
+    let (profile, layers) = profiles::get(db, profile_id)?;
+    let game = saves::profile_game(&profile.game_id, &layers)?;
+    let defaults = ActionKeys::defaults(game.engine);
+    let names = settings_names(
+        &profile.game_id,
+        profile.version_id.as_deref(),
+        &game.state_files,
+    );
+    let Some((_, path)) = find_file(&layers, &names)? else {
+        return Ok(defaults);
+    };
+    let data = fs::read(path)?;
+    Ok(format::recognize(&profile.game_id, &data)
+        .and_then(|f| format::keys(f, &data))
+        .unwrap_or(defaults))
 }
 
 /// Takes the global settings out of the file again, if a session left any:
@@ -732,5 +754,45 @@ mod tests {
         merge_pending(&paths, &db, "keen4-1").unwrap();
         assert_eq!(fs::read(&file).unwrap(), original);
         assert!(!tmp.exists());
+    }
+
+    #[test]
+    fn effective_keys_include_the_global_ones() {
+        let (_tmp, paths, db) = setup();
+        config(&db);
+        let settings = GameSettings {
+            keys: game_settings::GameKeys {
+                jump: Some(0x1E),
+                ..Default::default()
+            },
+            ..GameSettings::default()
+        };
+        game_settings::set(&db, &settings).unwrap();
+        apply(&paths, &db, "keen4-1").unwrap();
+
+        let keys = effective_keys(&db, "keen4-1").unwrap();
+        assert_eq!(keys.jump, 0x1E);
+        assert_eq!(keys.pogo, Some(0x38));
+        assert_eq!(keys.fire, Some(0x39));
+    }
+
+    #[test]
+    fn keys_changed_in_the_game_count() {
+        let (_tmp, _paths, db) = setup();
+        let (file, mut data) = config(&db);
+        data[0x222] = 0x2D;
+        fs::write(&file, &data).unwrap();
+        assert_eq!(effective_keys(&db, "keen4-1").unwrap().fire, Some(0x2D));
+    }
+
+    #[test]
+    fn unknown_or_missing_file_gives_the_defaults() {
+        let (_tmp, _paths, db) = setup();
+        // The import's own config.ck4 is no real one.
+        let defaults = ActionKeys::defaults(crate::catalog::Engine::Galaxy);
+        assert_eq!(effective_keys(&db, "keen4-1").unwrap(), defaults);
+        let file = upper(&db, "keen4-1").join("config.ck4");
+        let _ = fs::remove_file(file);
+        assert_eq!(effective_keys(&db, "keen4-1").unwrap(), defaults);
     }
 }

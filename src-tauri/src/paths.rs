@@ -98,6 +98,8 @@ pub struct ProfileDirs {
     pub launch_conf: PathBuf,
     /// The defaults layer of a mod that needs more than its engine's.
     pub defaults_conf: PathBuf,
+    /// DOSBox's key and controller bindings, named in the launch layer.
+    pub mapper: PathBuf,
     /// What the global settings changed for the session under way.
     pub settings_session: PathBuf,
     /// Mounted as drive X: where the screen is saved after the game.
@@ -146,6 +148,7 @@ impl AppPaths {
             override_conf: config.join("override.conf"),
             launch_conf: root.join("generated").join("launch.conf"),
             defaults_conf: root.join("generated").join("defaults.conf"),
+            mapper: root.join("generated").join(crate::keymap::FILE),
             settings_session: root.join("generated").join("settings-session.json"),
             exit_screen: root.join("generated").join("exit"),
             capture: root.join("capture"),

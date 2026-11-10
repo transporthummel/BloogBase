@@ -7,16 +7,17 @@
 //! them (DOSBox Staging 0.83, `CreateDefaultBinds` in `gui/mapper.cpp`) and
 //! only moves the letters.
 //!
-//! It also puts an Xbox controller on the keys Keen plays with, so games
+//! It also puts an Xbox controller on the keys the game plays with, so games
 //! need no joystick setup or calibration, and on its menu keys while View
-//! is held. The menu keys differ between Keen 1-3 and the later games, so
-//! each engine has a mapper file of its own.
-
-use std::path::Path;
+//! is held. Those keys are the game's own (its settings file, with the
+//! global settings), so each profile has a mapper file of its own, written
+//! at every start.
 
 use crate::catalog::Engine;
 use crate::dosconf::write_if_changed;
 use crate::error::Result;
+use crate::game_settings::ActionKeys;
+use crate::paths::AppPaths;
 
 /// DOSBox's emulated keys and their default host key (SDL scancode).
 #[rustfmt::skip]
@@ -109,23 +110,6 @@ jhat_0_0_3 \"stick_0 hat 0 8\"
 /// last key pressed, so a button pressing two keys only gives the second.
 type Pad = &'static [(&'static str, &'static [&'static str])];
 
-/// Playing, in every game; each engine adds its own.
-const PLAY: Pad = &[
-    // A: jump.
-    ("key_lctrl", &["stick_0 button 0"]),
-    // Menu: main menu.
-    ("key_esc", &["stick_0 button 7"]),
-    // Left stick and D-pad: move.
-    ("key_up", &["stick_0 hat 0 1", "stick_0 axis 1 0"]),
-    ("key_right", &["stick_0 hat 0 2", "stick_0 axis 0 1"]),
-    ("key_down", &["stick_0 hat 0 4", "stick_0 axis 1 1"]),
-    ("key_left", &["stick_0 hat 0 8", "stick_0 axis 0 0"]),
-    // View held is DOSBox's third modifier and switches to the menu keys. A
-    // binding with the modifier wins over the same input without it, so the
-    // game doesn't see both.
-    ("mod_3", &["stick_0 button 6"]),
-];
-
 /// Menus in Keen 1-3, with View held.
 const MENU_VORTICONS: Pad = &[
     // View+A: confirm; View+B: the title screen.
@@ -197,63 +181,161 @@ const MENU_GALAXY: Pad = &[
     ("key_bspace", &["stick_0 button 8 mod1 mod3"]),
 ];
 
-/// Playing in Keen 1-6.
-const PLAY_KEEN: Pad = &[
+/// The emulated key of each DOS scancode a game can be set to. The arrows
+/// are the gray ones, the other keys of the number pad its own.
+#[rustfmt::skip]
+const SCANCODES: &[(u8, &str)] = &[
+    (0x01, "esc"), (0x02, "1"), (0x03, "2"), (0x04, "3"), (0x05, "4"),
+    (0x06, "5"), (0x07, "6"), (0x08, "7"), (0x09, "8"), (0x0A, "9"),
+    (0x0B, "0"), (0x0C, "minus"), (0x0D, "equals"), (0x0E, "bspace"),
+    (0x0F, "tab"), (0x10, "q"), (0x11, "w"), (0x12, "e"), (0x13, "r"),
+    (0x14, "t"), (0x15, "y"), (0x16, "u"), (0x17, "i"), (0x18, "o"),
+    (0x19, "p"), (0x1A, "lbracket"), (0x1B, "rbracket"), (0x1C, "enter"),
+    (0x1D, "lctrl"), (0x1E, "a"), (0x1F, "s"), (0x20, "d"), (0x21, "f"),
+    (0x22, "g"), (0x23, "h"), (0x24, "j"), (0x25, "k"), (0x26, "l"),
+    (0x27, "semicolon"), (0x28, "quote"), (0x29, "grave"), (0x2A, "lshift"),
+    (0x2B, "backslash"), (0x2C, "z"), (0x2D, "x"), (0x2E, "c"), (0x2F, "v"),
+    (0x30, "b"), (0x31, "n"), (0x32, "m"), (0x33, "comma"), (0x34, "period"),
+    (0x35, "slash"), (0x36, "rshift"), (0x37, "kp_multiply"), (0x38, "lalt"),
+    (0x39, "space"), (0x3A, "capslock"), (0x3B, "f1"), (0x3C, "f2"),
+    (0x3D, "f3"), (0x3E, "f4"), (0x3F, "f5"), (0x40, "f6"), (0x41, "f7"),
+    (0x42, "f8"), (0x43, "f9"), (0x44, "f10"), (0x45, "numlock"),
+    (0x46, "scrolllock"), (0x47, "kp_7"), (0x48, "up"), (0x49, "kp_9"),
+    (0x4A, "kp_minus"), (0x4B, "left"), (0x4C, "kp_5"), (0x4D, "right"),
+    (0x4E, "kp_plus"), (0x4F, "kp_1"), (0x50, "down"), (0x51, "kp_3"),
+    (0x52, "kp_0"), (0x53, "kp_period"), (0x56, "oem102"), (0x57, "f11"),
+    (0x58, "f12"),
+];
+
+/// DOSBox's event for the emulated key of a DOS scancode.
+fn event(scancode: u8) -> Option<String> {
+    SCANCODES
+        .iter()
+        .find(|(code, _)| *code == scancode)
+        .map(|(_, name)| format!("key_{name}"))
+}
+
+const SPACE: u8 = 0x39;
+const ENTER: u8 = 0x1C;
+
+/// What the controller presses while playing, as DOS scancodes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Controls {
+    pub up: u8,
+    pub down: u8,
+    pub left: u8,
+    pub right: u8,
+    pub jump: u8,
+    pub pogo: Option<u8>,
+    /// Pressed in this order.
+    pub fire: Vec<u8>,
+    pub status: u8,
+}
+
+/// The controls of a game playing with `keys`. `firing`: Keen 1-3's fire
+/// key, where one-button firing is on or built in.
+pub fn controls(engine: Engine, keys: &ActionKeys, firing: Option<u8>) -> Controls {
+    let (fire, status) = match engine {
+        // Without one-button firing, Jump and Pogo together shoot, and Space
+        // opens the status window.
+        Engine::Vorticons => match firing {
+            Some(key) => (vec![key], ENTER),
+            None => ([keys.jump].into_iter().chain(keys.pogo).collect(), SPACE),
+        },
+        // Keen 4's special demo has no fire key and fires with Space.
+        Engine::Galaxy => (vec![keys.fire.unwrap_or(SPACE)], ENTER),
+        Engine::Dreams => (vec![keys.fire.unwrap_or(0x38)], SPACE),
+    };
+    Controls {
+        up: keys.up,
+        down: keys.down,
+        left: keys.left,
+        right: keys.right,
+        jump: keys.jump,
+        pogo: keys.pogo,
+        fire,
+        status,
+    }
+}
+
+/// A key's event, or that of its default where DOSBox has no key for it.
+fn key(scancode: u8, default: u8) -> String {
+    event(scancode)
+        .or_else(|| event(default))
+        .expect("defaults have keys")
+}
+
+/// The lines for playing, in file order: the order an input bound to several
+/// keys presses them.
+fn play(engine: Engine, c: &Controls) -> Vec<(String, Vec<&'static str>)> {
+    let defaults = ActionKeys::defaults(engine);
+    let mut lines = Vec::new();
+    if engine == Engine::Dreams {
+        // A: 5, then the jump key.
+        lines.push(("key_5".to_string(), vec!["stick_0 button 0"]));
+    }
+    // A: jump.
+    lines.push((key(c.jump, defaults.jump), vec!["stick_0 button 0"]));
+    // Menu: main menu.
+    lines.push(("key_esc".to_string(), vec!["stick_0 button 7"]));
+    // Left stick and D-pad: move.
+    for (code, default, binds) in [
+        (c.up, defaults.up, ["stick_0 hat 0 1", "stick_0 axis 1 0"]),
+        (
+            c.right,
+            defaults.right,
+            ["stick_0 hat 0 2", "stick_0 axis 0 1"],
+        ),
+        (
+            c.down,
+            defaults.down,
+            ["stick_0 hat 0 4", "stick_0 axis 1 1"],
+        ),
+        (
+            c.left,
+            defaults.left,
+            ["stick_0 hat 0 8", "stick_0 axis 0 0"],
+        ),
+    ] {
+        lines.push((key(code, default), binds.to_vec()));
+    }
+    // View held is DOSBox's third modifier and switches to the menu keys. A
+    // binding with the modifier wins over the same input without it, so the
+    // game doesn't see both.
+    lines.push(("mod_3".to_string(), vec!["stick_0 button 6"]));
     // B, LB, RB: pogo.
-    (
-        "key_lalt",
-        &["stick_0 button 1", "stick_0 button 4", "stick_0 button 5"],
-    ),
-    // X, LT, RT: fire (Keen 4-6, and Keen 1-3 with one-button firing).
-    (
-        "key_space",
-        &["stick_0 button 2", "stick_0 axis 4 1", "stick_0 axis 5 1"],
-    ),
+    if let Some(pogo) = c.pogo {
+        let default = defaults.pogo.unwrap_or(0x38);
+        lines.push((
+            key(pogo, default),
+            vec!["stick_0 button 1", "stick_0 button 4", "stick_0 button 5"],
+        ));
+    }
+    // X, LT, RT: fire, throw in Keen Dreams.
+    for &fire in &c.fire {
+        lines.push((
+            key(fire, SPACE),
+            vec!["stick_0 button 2", "stick_0 axis 4 1", "stick_0 axis 5 1"],
+        ));
+    }
     // Y: status window.
-    ("key_enter", &["stick_0 button 3"]),
-];
+    lines.push((key(c.status, ENTER), vec!["stick_0 button 3"]));
+    lines
+}
 
-/// Playing in Keen Dreams, before [`PLAY`].
-const PLAY_DREAMS_FIRST: Pad = &[
-    // A: 5, then Ctrl for jumping.
-    ("key_5", &["stick_0 button 0"]),
-];
-
-/// Playing in Keen Dreams, which has no pogo stick.
-const PLAY_DREAMS: Pad = &[
-    // X, LT, RT: throw Flower Power.
-    (
-        "key_lalt",
-        &["stick_0 button 2", "stick_0 axis 4 1", "stick_0 axis 5 1"],
-    ),
-    // Y: status window.
-    ("key_space", &["stick_0 button 3"]),
-];
-
-/// An engine's mapper file name, next to the options layer that names it.
-pub fn file(engine: Engine) -> &'static str {
+/// The menu keys of an engine, with View held.
+fn menu(engine: Engine) -> Pad {
     match engine {
-        Engine::Vorticons => "keyboard-vorticons.map",
-        Engine::Galaxy => "keyboard-galaxy.map",
-        Engine::Dreams => "keyboard-dreams.map",
+        Engine::Vorticons => MENU_VORTICONS,
+        Engine::Galaxy | Engine::Dreams => MENU_GALAXY,
     }
 }
 
-/// An engine's bindings in file order, which is the order an input bound
-/// to several keys presses them.
-fn pad(engine: Engine) -> [Pad; 4] {
-    match engine {
-        Engine::Vorticons => [&[], PLAY, PLAY_KEEN, MENU_VORTICONS],
-        Engine::Galaxy => [&[], PLAY, PLAY_KEEN, MENU_GALAXY],
-        Engine::Dreams => [PLAY_DREAMS_FIRST, PLAY, PLAY_DREAMS, MENU_GALAXY],
-    }
-}
-
-/// The mapper file for a layout and engine, given the host key (SDL
-/// scancode) of each letter that has one. Each letter is swapped onto its
+/// The mapper file for a layout, engine and the game's controls, given the
+/// host key (SDL scancode) of each letter that has one. Each letter is swapped onto its
 /// host key, so the key it pushes out takes the letter's old place and every
 /// host key still sends exactly one emulated key.
-pub fn mapper(letters: &[(char, u16)], engine: Engine) -> String {
+pub fn mapper(letters: &[(char, u16)], engine: Engine, controls: &Controls) -> String {
     let mut keys: Vec<(&str, u16)> = KEYS.to_vec();
     for &(letter, host) in letters {
         let name = letter.to_ascii_lowercase().to_string();
@@ -280,9 +362,12 @@ pub fn mapper(letters: &[(char, u16)], engine: Engine) -> String {
         out.push('\n');
     }
     // A line for an event that already has one adds to its bindings.
-    for (event, binds) in pad(engine).into_iter().flatten() {
-        out.push_str(event);
-        for bind in *binds {
+    let menu = menu(engine)
+        .iter()
+        .map(|(event, binds)| (event.to_string(), binds.to_vec()));
+    for (event, binds) in play(engine, controls).into_iter().chain(menu) {
+        out.push_str(&event);
+        for bind in binds {
             out.push_str(&format!(" \"{bind}\""));
         }
         out.push('\n');
@@ -290,15 +375,31 @@ pub fn mapper(letters: &[(char, u16)], engine: Engine) -> String {
     out
 }
 
-/// Writes the engine's mapper file for the host's keyboard layout into
-/// `dir` and returns its name.
-pub fn ensure(dir: &Path, engine: Engine) -> Result<&'static str> {
-    // Earlier versions wrote one file for all engines.
-    let _ = std::fs::remove_file(dir.join("keyboard.map"));
+/// The mapper file's name, next to the launch layer that names it.
+pub const FILE: &str = "keyboard.map";
+
+/// Writes a profile's mapper file for the host's keyboard layout and the
+/// game's `controls`.
+pub fn ensure(
+    paths: &AppPaths,
+    profile_id: &str,
+    engine: Engine,
+    controls: &Controls,
+) -> Result<()> {
+    // Earlier versions wrote one file for all profiles, then one per engine.
+    for old in [
+        "keyboard.map",
+        "keyboard-vorticons.map",
+        "keyboard-galaxy.map",
+        "keyboard-dreams.map",
+    ] {
+        let _ = std::fs::remove_file(paths.configs.join(old));
+    }
     let letters = host_letters().unwrap_or_default();
-    let name = file(engine);
-    write_if_changed(&dir.join(name), mapper(&letters, engine))?;
-    Ok(name)
+    write_if_changed(
+        &paths.profile(profile_id).mapper,
+        mapper(&letters, engine, controls),
+    )
 }
 
 /// The host key of each letter on the active keyboard layout.
@@ -352,6 +453,13 @@ fn sdl_scancode(pc: u32) -> Option<u16> {
 mod tests {
     use super::*;
 
+    /// The controls with the game's default keys, Keen 1-3 with one-button
+    /// firing.
+    fn default(engine: Engine) -> Controls {
+        let firing = (engine == Engine::Vorticons).then_some(SPACE);
+        controls(engine, &ActionKeys::defaults(engine), firing)
+    }
+
     /// An event's first binding, its host key.
     fn binding<'a>(map: &'a str, event: &str) -> &'a str {
         let rest = map
@@ -365,14 +473,18 @@ mod tests {
     #[test]
     fn us_layout_keeps_letters() {
         let us: Vec<(char, u16)> = ('a'..='z').zip(4..).collect();
-        let map = mapper(&us, Engine::Galaxy);
+        let map = mapper(&us, Engine::Galaxy, &default(Engine::Galaxy));
         assert_eq!(binding(&map, "key_y"), "\"key 28\"");
         assert_eq!(binding(&map, "key_z"), "\"key 29\"");
     }
 
     #[test]
     fn german_layout_swaps_y_and_z() {
-        let map = mapper(&[('Y', 29), ('Z', 28), ('A', 4)], Engine::Galaxy);
+        let map = mapper(
+            &[('Y', 29), ('Z', 28), ('A', 4)],
+            Engine::Galaxy,
+            &default(Engine::Galaxy),
+        );
         assert_eq!(binding(&map, "key_y"), "\"key 29\"");
         assert_eq!(binding(&map, "key_z"), "\"key 28\"");
         assert_eq!(binding(&map, "key_a"), "\"key 4\"");
@@ -385,6 +497,7 @@ mod tests {
         let map = mapper(
             &[('A', 20), ('Q', 4), ('Z', 26), ('W', 29), ('M', 51)],
             Engine::Vorticons,
+            &default(Engine::Vorticons),
         );
         assert_eq!(binding(&map, "key_m"), "\"key 51\"");
         assert_eq!(binding(&map, "key_semicolon"), "\"key 16\"");
@@ -407,5 +520,114 @@ mod tests {
         assert_eq!(sdl_scancode(0x27), Some(51)); // semicolon
         assert_eq!(sdl_scancode(0x29), Some(53)); // grave
         assert_eq!(sdl_scancode(0x01), None);
+    }
+
+    /// The lines for playing: those without View.
+    fn playing(engine: Engine, controls: &Controls) -> Vec<String> {
+        mapper(&[], engine, controls)
+            .lines()
+            .filter(|l| l.contains("\"stick_0 ") && !l.contains("mod3"))
+            .map(str::to_string)
+            .collect()
+    }
+
+    const MOVE: [&str; 6] = [
+        "key_esc \"stick_0 button 7\"",
+        "key_up \"stick_0 hat 0 1\" \"stick_0 axis 1 0\"",
+        "key_right \"stick_0 hat 0 2\" \"stick_0 axis 0 1\"",
+        "key_down \"stick_0 hat 0 4\" \"stick_0 axis 1 1\"",
+        "key_left \"stick_0 hat 0 8\" \"stick_0 axis 0 0\"",
+        "mod_3 \"stick_0 button 6\"",
+    ];
+    const POGO: &str = "key_lalt \"stick_0 button 1\" \"stick_0 button 4\" \"stick_0 button 5\"";
+    const FIRE: &str = "\"stick_0 button 2\" \"stick_0 axis 4 1\" \"stick_0 axis 5 1\"";
+
+    #[test]
+    fn default_keys_give_the_shipped_bindings() {
+        let keen = |status: &str| {
+            let mut lines = vec!["key_lctrl \"stick_0 button 0\"".to_string()];
+            lines.extend(MOVE.map(String::from));
+            lines.push(POGO.to_string());
+            lines.push(format!("key_space {FIRE}"));
+            lines.push(format!("{status} \"stick_0 button 3\""));
+            lines
+        };
+        assert_eq!(
+            playing(Engine::Galaxy, &default(Engine::Galaxy)),
+            keen("key_enter")
+        );
+        assert_eq!(
+            playing(Engine::Vorticons, &default(Engine::Vorticons)),
+            keen("key_enter")
+        );
+        let mut dreams = vec![
+            "key_5 \"stick_0 button 0\"".to_string(),
+            "key_lctrl \"stick_0 button 0\"".to_string(),
+        ];
+        dreams.extend(MOVE.map(String::from));
+        dreams.push(format!("key_lalt {FIRE}"));
+        dreams.push("key_space \"stick_0 button 3\"".to_string());
+        assert_eq!(playing(Engine::Dreams, &default(Engine::Dreams)), dreams);
+    }
+
+    #[test]
+    fn buttons_follow_the_games_keys() {
+        let keys = ActionKeys {
+            jump: 0x1E,
+            fire: Some(0x2D),
+            up: 0x11,
+            ..ActionKeys::defaults(Engine::Galaxy)
+        };
+        let lines = playing(Engine::Galaxy, &controls(Engine::Galaxy, &keys, None));
+        assert_eq!(lines[0], "key_a \"stick_0 button 0\"");
+        assert_eq!(lines[2], "key_w \"stick_0 hat 0 1\" \"stick_0 axis 1 0\"");
+        assert!(lines.contains(&format!("key_x {FIRE}")));
+        assert!(!lines.iter().any(|l| l.starts_with("key_lctrl ")));
+    }
+
+    #[test]
+    fn keen_1_3_without_firing_shoots_with_jump_and_pogo() {
+        let keys = ActionKeys {
+            pogo: Some(0x1F),
+            ..ActionKeys::defaults(Engine::Vorticons)
+        };
+        let c = controls(Engine::Vorticons, &keys, None);
+        assert_eq!(c.fire, [0x1D, 0x1F]);
+        let lines = playing(Engine::Vorticons, &c);
+        let fire: Vec<&String> = lines.iter().filter(|l| l.ends_with(FIRE)).collect();
+        assert_eq!(
+            fire,
+            [&format!("key_lctrl {FIRE}"), &format!("key_s {FIRE}")]
+        );
+        assert_eq!(lines.last().unwrap(), "key_space \"stick_0 button 3\"");
+    }
+
+    #[test]
+    fn keen_1_3_fires_with_the_one_button_key() {
+        let keys = ActionKeys::defaults(Engine::Vorticons);
+        let c = controls(Engine::Vorticons, &keys, Some(0x2D));
+        assert_eq!((c.fire, c.status), (vec![0x2D], ENTER));
+    }
+
+    #[test]
+    fn keys_dosbox_has_no_event_for_fall_back() {
+        let keys = ActionKeys {
+            jump: 0x00,
+            fire: None,
+            ..ActionKeys::defaults(Engine::Galaxy)
+        };
+        let lines = playing(Engine::Galaxy, &controls(Engine::Galaxy, &keys, None));
+        assert_eq!(lines[0], "key_lctrl \"stick_0 button 0\"");
+        assert!(
+            lines.contains(&format!("key_space {FIRE}")),
+            "the special demo"
+        );
+    }
+
+    #[test]
+    fn every_scancode_names_an_emulated_key() {
+        for (code, name) in SCANCODES {
+            assert!(KEYS.iter().any(|(n, _)| n == name), "{code:#x} {name}");
+        }
     }
 }

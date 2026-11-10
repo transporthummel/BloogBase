@@ -5,11 +5,12 @@ pub(crate) mod format;
 mod session;
 mod template;
 
-pub use session::{apply, merge_pending};
+pub use session::{apply, effective_keys, merge_pending};
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+use crate::catalog::Engine;
 use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::settings;
@@ -50,6 +51,50 @@ impl GameKeys {
         [
             self.up, self.down, self.left, self.right, self.jump, self.pogo, self.fire,
         ]
+    }
+}
+
+/// The keys a game plays with, as DOS scancodes: what its settings file
+/// holds, or the game's defaults.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ActionKeys {
+    pub up: u8,
+    pub down: u8,
+    pub left: u8,
+    pub right: u8,
+    pub jump: u8,
+    /// Keen Dreams has no pogo stick.
+    pub pogo: Option<u8>,
+    /// Keen 4-6's fire key, Keen Dreams' throw key; Keen 1-3 and Keen 4's
+    /// special demo have no setting for it.
+    pub fire: Option<u8>,
+}
+
+impl ActionKeys {
+    /// The keys a game starts with: Ctrl, Alt, the arrows and, in Keen 4-6,
+    /// Space; Keen Dreams throws with Alt.
+    pub fn defaults(engine: Engine) -> Self {
+        let keen = ActionKeys {
+            up: 0x48,
+            down: 0x50,
+            left: 0x4B,
+            right: 0x4D,
+            jump: 0x1D,
+            pogo: Some(0x38),
+            fire: None,
+        };
+        match engine {
+            Engine::Dreams => ActionKeys {
+                pogo: None,
+                fire: Some(0x38),
+                ..keen
+            },
+            Engine::Galaxy => ActionKeys {
+                fire: Some(0x39),
+                ..keen
+            },
+            Engine::Vorticons => keen,
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 //! The games' settings files: which bytes hold what. Read from the real files
 //! of all versions; [`recognize`] leaves everything else alone.
 
-use super::{GameKeys, GameSettings, SoundDevice};
+use super::{ActionKeys, GameKeys, GameSettings, SoundDevice};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Format {
@@ -191,6 +191,29 @@ pub fn edits(format: Format, settings: &GameSettings, data: &[u8]) -> Vec<Edit> 
             value,
         })
         .collect()
+}
+
+/// The keys a file of `format` holds. A key the game has no setting for
+/// (pogo in Keen Dreams, fire in Keen 1-3 and Keen 4's special demo) is
+/// `None`.
+pub fn keys(format: Format, data: &[u8]) -> Option<ActionKeys> {
+    let l = layout(format);
+    let key = |at: usize| data.get(at).copied();
+    Some(ActionKeys {
+        up: key(l.up)?,
+        down: key(l.down)?,
+        left: key(l.left)?,
+        right: key(l.right)?,
+        jump: key(l.jump)?,
+        pogo: match l.pogo {
+            Some(at) => Some(key(at)?),
+            None => None,
+        },
+        fire: match l.fire.first() {
+            Some(at) => Some(key(*at)?),
+            None => None,
+        },
+    })
 }
 
 /// The sound value `settings` asks for, given the file's `current` one.

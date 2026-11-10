@@ -190,6 +190,10 @@ pub struct LaunchSpec {
     pub log: PathBuf,
     /// What a mod runs with, see [`mod_setup`]; `None` for games.
     pub setup: Option<String>,
+    pub engine: catalog::Engine,
+    /// Keen 1-3's fire key where one-button firing is on and fits, or is
+    /// built in; for the controller, see [`one_button_key`].
+    pub one_button: Option<u8>,
 }
 
 /// Ensures all directories and config layers exist and builds the command line.
@@ -270,6 +274,7 @@ pub fn prepare(
         None => profiles::find_executable(game, profile.version_id.as_deref(), &lower)?,
     };
     let command = runnable(command, &lower, &dirs.exit_screen)?;
+    let one_button = one_button_key(game, &layers, base.is_some(), firing);
 
     let confs = dosconf::ensure(
         paths,
@@ -305,7 +310,33 @@ pub fn prepare(
         cwd: paths.root.clone(),
         log: paths.logs.join(format!("dosbox-{profile_id}.log")),
         setup,
+        engine: game.engine,
+        one_button,
     })
+}
+
+/// The key Keen 1-3 fire with in a profile, if one-button firing is on
+/// (`firing`, its key) and fits what the profile runs, or is built in.
+/// `with_base`: the profile runs over its game's files.
+fn one_button_key(
+    game: &catalog::Game,
+    layers: &profiles::Layers,
+    with_base: bool,
+    firing: Option<u8>,
+) -> Option<u8> {
+    let recipe = layers
+        .mod_layer
+        .as_ref()
+        .map_or(&Recipe::Episode, |m| &m.recipe);
+    let mut dirs = layers.sources();
+    if !with_base && let Some(lower) = layers.lower.as_deref() {
+        dirs.retain(|d| *d != lower);
+    }
+    match firing::status(game, recipe, &dirs)? {
+        firing::Firing::BuiltIn => Some(firing.unwrap_or(firing::SPACE)),
+        firing::Firing::Patchable => firing,
+        firing::Firing::Unavailable | firing::Firing::OtherVersion => None,
+    }
 }
 
 /// What a mod profile runs with: the copy of the game, the mod's files (and
@@ -792,6 +823,29 @@ mod tests {
 
         firing::set_enabled(&db, false).unwrap();
         assert!(mount("keen1-1").contains(&relative(&paths.root, &paths.library)));
+    }
+
+    #[test]
+    fn the_controller_fires_with_the_one_button_key() {
+        let (tmp, paths, db) = setup();
+        let id = keen1(tmp.path(), &paths, &db);
+        let one_button = |db: &Db| prepare(&paths, db, &id, false).unwrap().one_button;
+        assert_eq!(one_button(&db), Some(firing::SPACE));
+        let settings = game_settings::GameSettings {
+            keys: game_settings::GameKeys {
+                fire: Some(0x2D),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        game_settings::set(&db, &settings).unwrap();
+        assert_eq!(one_button(&db), Some(0x2D));
+        firing::set_enabled(&db, false).unwrap();
+        assert_eq!(one_button(&db), None, "fires with Jump and Pogo");
+        assert_eq!(
+            prepare(&paths, &db, "keen4-1", false).unwrap().one_button,
+            None
+        );
     }
 
     #[test]

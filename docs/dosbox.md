@@ -78,7 +78,7 @@ one wins for every setting it sets:
   else `sharp`), vsync, what a game does in the background
   (`mute_when_inactive`, `pause_when_inactive`) and the legacy PC mode
   (`[dosbox] hard_disk_speed = slow` and `[disknoise] hard_disk_noise = on`,
-  else `maximum` and `off`), plus the engine's mapper file (below).
+  else `maximum` and `off`).
   If the global override sets the same setting, the settings page says so
   and disables the switch.
 - **Global and profile overrides** are the player's own DOSBox settings,
@@ -90,8 +90,9 @@ one wins for every setting it sets:
 - **Launch** settings belong to the launch itself and come last so they
   can't be broken by accident: `automount = off`, `startup_verbosity =
 quiet`, the window title ("<game or mod> – BloogBase", without cycles and
-  mouse hints) and `capture_dir`. DOSBox resolves a relative `capture_dir`
-  against the config file's folder, so it's `../capture`. While BloogBase's
+  mouse hints), `capture_dir` and the profile's mapper file (below). DOSBox
+  resolves a relative `capture_dir` and `mapperfile` against the config
+  file's folder, so they are `../capture` and `keyboard.map`. While BloogBase's
   own window is in fullscreen, the launch also sets `fullscreen = on`, over
   every other layer.
 
@@ -116,18 +117,27 @@ types it. A mapper file replaces all of DOSBox's default bindings, so it
 repeats Staging 0.83's (`CreateDefaultBinds` in `gui/mapper.cpp`) and moves
 only the letters.
 
-The same file puts an Xbox controller on Keen's keys, so games need no
-joystick setup or calibration: A jumps, B, LB and RB pogo, X, LT and RT
-fire, Y opens the status window, Menu is Esc, and the left stick and D-pad
-move. The file drops DOSBox's bindings of the controller to its emulated
-joystick, so games only see keys (Keen Dreams' menus take joystick
-buttons too). Holding View (DOSBox's third modifier) switches to the menu
-keys.
-Those differ between Keen 1-3 and the later games, so each engine has a
-file of its own: `configs/keyboard-vorticons.map`,
-`configs/keyboard-galaxy.map` and `configs/keyboard-dreams.map` (as Keen
-4-6, but A presses 5, then Ctrl, there is no pogo, X, LT and RT throw
-with Alt and Y opens the status window with Space). Each menu key
+The same file puts an Xbox controller on the keys the game plays with, so
+games need no joystick setup or calibration: A jumps, B, LB and RB pogo,
+X, LT and RT fire, Y opens the status window, Menu is Esc, and the left
+stick and D-pad move. The buttons press the keys in the game's settings
+file (`CTLPANEL.CKx`, `CONFIG.CKx`, `KDREAMS.CFG`) as it is after the
+global settings went in, or the game's defaults where there is none yet,
+so keys the player changed work on the keyboard and the controller alike.
+Keys changed in the game's own menu reach the controller at the next
+start. Emulated keys are bound, so the host's keyboard layout doesn't
+matter. Fire is Keen 4-6's fire key and Keen Dreams' throw key (A presses
+5 before its jump key, there is no pogo, and Y opens the status window
+with Space). In Keen 1-3 it is the one-button firing key where that
+patch is on and fits, or is built in (Space then), and Y presses Enter;
+without it, the fire buttons press Jump and Pogo together, in that
+order, and Y presses Space. The file drops DOSBox's bindings of the
+controller to its emulated joystick, so games only see keys (Keen Dreams'
+menus take joystick buttons too). Holding View (DOSBox's third modifier)
+switches to the menu keys, which differ between Keen 1-3 and the later
+games. So each profile has a file of its own,
+`profiles/<id>/generated/keyboard.map`, written at every start after the
+global settings (only when it changed) and named in the launch layer. Each menu key
 has a button of its own: Keen takes the last of several keys pressed
 together. In Keen 4-6 and Dreams, the D-pad, sticks and stick
 clicks type letters for a save's name with View held, A-N, and O-Z, space
