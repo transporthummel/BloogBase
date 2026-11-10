@@ -4,10 +4,10 @@
 
 ### Features
 
+### Improvements
+
 - A folder or ZIP holding a mod and its game, in a release the library doesn't have yet, asks whether to add only the game, only the mod or both; with both, the game comes first and the mod is set up on it.
 - Source mods from the mod list are recognised in a folder or ZIP the player already has, older versions too, by the SHA-256 of their programs: they install with the player's files and saves and start the way the list tested them; Discover then offers the newest version as an update.
-
-### Improvements
 
 ### Bug Fixes
 
