@@ -1,6 +1,18 @@
 {
   "pad": {
-    "pressButton": "Drück einen Knopf am Controller, um BloogBase damit zu bedienen."
+    "pressButton": "Drück einen Knopf am Controller, um BloogBase damit zu bedienen.",
+    "keyboard": {
+      "label": "Bildschirmtastatur",
+      "type": "Tippen",
+      "shift": "Umschalt",
+      "symbols": "Symbole",
+      "letters": "Buchstaben",
+      "space": "Leertaste",
+      "backspace": "Löschen",
+      "caret": "Cursor",
+      "done": "Fertig",
+      "close": "Schließen"
+    }
   },
   "nav": {
     "skip": "Zum Inhalt springen",

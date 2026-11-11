@@ -1,4 +1,5 @@
 import type { Direction } from "./pad";
+import { openKeyboard, takesKeyboard } from "./keyboard/store";
 import { candidates, isCandidate, nextFocus, padScope } from "./spatial";
 
 /**
@@ -24,7 +25,8 @@ export function isPadKey(e: Event) {
   return padKeys.has(e);
 }
 
-function sendKey(target: Element, key: string): boolean {
+/** Sends a key, marked as the controller's; true if a handler took it. */
+export function sendKey(target: Element, key: string): boolean {
   const e = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
   padKeys.add(e);
   target.dispatchEvent(e);
@@ -100,7 +102,8 @@ export function stepSelect(select: HTMLSelectElement) {
 }
 
 /**
- * A: clicks the focused element, steps a `<select>`. With nothing in
+ * A: clicks the focused element, steps a `<select>`, opens the on-screen
+ * keyboard for a text field. With nothing in
  * particular focused (the page, a dialog), Enter, for a page's default
  * action (`useEnterAction`).
  */
@@ -108,6 +111,7 @@ export function activate(doc: Document = document) {
   markPadInput(doc);
   const el = doc.activeElement;
   if (el instanceof HTMLSelectElement) return stepSelect(el);
+  if (el && takesKeyboard(el)) return openKeyboard(el);
   if (
     el instanceof HTMLElement &&
     el !== doc.body &&

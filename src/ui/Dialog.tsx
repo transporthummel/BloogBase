@@ -71,6 +71,8 @@ export function Dialog({
     <div
       className="bb-scrim-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      // Above the controller's on-screen keyboard while it's open.
+      style={{ paddingBottom: "calc(1rem + var(--bb-pad-keyboard, 0px))" }}
     >
       <div
         ref={panel}

@@ -1,6 +1,18 @@
 {
   "pad": {
-    "pressButton": "Press a button on the controller to use it in BloogBase."
+    "pressButton": "Press a button on the controller to use it in BloogBase.",
+    "keyboard": {
+      "label": "On-screen keyboard",
+      "type": "Type",
+      "shift": "Shift",
+      "symbols": "Symbols",
+      "letters": "Letters",
+      "space": "Space",
+      "backspace": "Backspace",
+      "caret": "Cursor",
+      "done": "Done",
+      "close": "Close"
+    }
   },
   "nav": {
     "skip": "Skip to content",

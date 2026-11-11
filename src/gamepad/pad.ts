@@ -6,7 +6,13 @@
 
 export type Direction = "up" | "down" | "left" | "right";
 
-export type PadAction = Direction | "activate" | "back";
+/**
+ * The face, shoulder and menu buttons beyond A and B are named after the
+ * button: what they do depends on what is open (the on-screen keyboard).
+ */
+export type PadButton = "x" | "y" | "lb" | "rb" | "lt" | "l3" | "menu";
+
+export type PadAction = Direction | "activate" | "back" | PadButton;
 
 /** What the loop needs of a `Gamepad`. */
 export type PadState = {
@@ -23,6 +29,17 @@ export type PadFrame = {
 // Standard mapping (w3.org/TR/gamepad/#remapping).
 const A = 0;
 const B = 1;
+const BUTTONS: [number, PadButton][] = [
+  [2, "x"],
+  [3, "y"],
+  [4, "lb"],
+  [5, "rb"],
+  [6, "lt"],
+  [9, "menu"],
+  [10, "l3"],
+];
+/** Held, these repeat like a direction (Backspace, caret). */
+const REPEATING = new Set<PadButton>(["x", "lb", "rb"]);
 const DPAD: [number, Direction][] = [
   [12, "up"],
   [13, "down"],
@@ -68,12 +85,14 @@ function scrollAxis(v: number) {
 export function padReader() {
   let before: PadState | null = null;
   let held: { dir: Direction; next: number } | null = null;
+  const heldButtons = new Map<number, number>();
 
   return (pad: PadState | null, now: number): PadFrame => {
     const actions: PadAction[] = [];
     if (!pad) {
       before = null;
       held = null;
+      heldButtons.clear();
       return { actions, scroll: { x: 0, y: 0 } };
     }
 
@@ -91,6 +110,20 @@ export function padReader() {
     }
     if (went(A)) actions.push("activate");
     if (went(B)) actions.push("back");
+    for (const [i, name] of BUTTONS) {
+      if (!pressed(pad, i)) {
+        heldButtons.delete(i);
+      } else if (went(i)) {
+        actions.push(name);
+        if (REPEATING.has(name)) heldButtons.set(i, now + REPEAT_DELAY);
+      } else {
+        const next = heldButtons.get(i);
+        if (next !== undefined && now >= next) {
+          heldButtons.set(i, now + REPEAT_EVERY);
+          actions.push(name);
+        }
+      }
+    }
 
     before = { buttons: pad.buttons.map((b) => ({ pressed: b.pressed })), axes: [...pad.axes] };
     return {

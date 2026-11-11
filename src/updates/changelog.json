@@ -5,14 +5,16 @@
       "Xbox controllers work in every game, with your own keys and in the menus.",
       "The Controls tab shows the controller's buttons too.",
       "The first start with a controller shows its buttons.",
-      "BloogBase itself can be used with a controller."
+      "BloogBase itself can be used with a controller.",
+      "Text fields can be typed in with the controller."
     ],
     "de": [
       "Nach längerer Pause klappen die Neuigkeiten ältere Versionen ein.",
       "Xbox-Controller funktionieren in jedem Spiel, mit deinen eigenen Tasten und in den Menüs.",
       "Der Tab Steuerung zeigt auch die Knöpfe des Controllers.",
       "Beim ersten Start mit Controller siehst du seine Knöpfe.",
-      "BloogBase lässt sich selbst mit dem Controller bedienen."
+      "BloogBase lässt sich selbst mit dem Controller bedienen.",
+      "Textfelder lassen sich mit dem Controller ausfüllen."
     ]
   },
   "releases": [

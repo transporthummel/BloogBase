@@ -73,4 +73,28 @@ describe("padReader", () => {
     expect(read(pad([], [0, 0, 0.1, -0.6]), 0).scroll).toEqual({ x: 0, y: -0.6 });
     expect(read(pad([], [0, 0, 0, 0]), 16).scroll).toEqual({ x: 0, y: 0 });
   });
+
+  it("names the other buttons, once per press", () => {
+    const read = padReader();
+    expect(read(pad([2, 3, 4, 5, 6, 9, 10]), 0).actions).toEqual([
+      "x",
+      "y",
+      "lb",
+      "rb",
+      "lt",
+      "menu",
+      "l3",
+    ]);
+    expect(read(pad([3, 6, 9, 10]), REPEAT_DELAY).actions).toEqual([]);
+  });
+
+  it("repeats Backspace (X) and the shoulders while held, not the rest", () => {
+    const read = padReader();
+    read(pad([2, 3]), 0);
+    expect(read(pad([2, 3]), REPEAT_DELAY).actions).toEqual(["x"]);
+    expect(read(pad([2, 3]), REPEAT_DELAY + REPEAT_EVERY).actions).toEqual(["x"]);
+    read(pad(), 1000);
+    expect(read(pad([5]), 1016).actions).toEqual(["rb"]);
+    expect(read(pad([5]), 1016 + REPEAT_DELAY).actions).toEqual(["rb"]);
+  });
 });

@@ -16,6 +16,7 @@ import { navItemClass } from "./navItemClass";
 import { QuitButton } from "./QuitButton";
 import { LaunchOverlay } from "./LaunchOverlay";
 import { useJobEvents } from "../jobs/queries";
+import { PadKeyboard } from "../gamepad/keyboard/PadKeyboard";
 import { PadHint } from "../gamepad/PadHint";
 import { usePad } from "../gamepad/usePad";
 import { hideSplash } from "../splash";
@@ -68,6 +69,7 @@ export function Shell() {
         <EarlierBackupPrompt />
         <ArchiveWarning />
         <PadHint />
+        <PadKeyboard />
         <Outlet />
       </main>
     );
@@ -81,6 +83,7 @@ export function Shell() {
       <EarlierBackupPrompt />
       <ArchiveWarning />
       <PadHint />
+      <PadKeyboard />
       <LaunchOverlay />
       <ExitMessage />
       <WhatsNew />

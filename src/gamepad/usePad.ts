@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { activate, back, move } from "./actions";
+import { keyboardAction } from "./keyboard/store";
 import { padReader, type PadState } from "./pad";
 
 /** Pixels per second at full deflection of the right stick. */
@@ -49,9 +50,12 @@ export function usePad(goBack: () => void) {
       const pad = document.hasFocus() ? standardPad() : null;
       const { actions, scroll } = read(pad, now);
       for (const a of actions) {
+        // The on-screen keyboard, while open, takes every button.
+        if (keyboardAction(a)) continue;
         if (a === "activate") activate();
         else if (a === "back") back(() => back$.current());
-        else move(a);
+        else if (a === "up" || a === "down" || a === "left" || a === "right") move(a);
+        // The other buttons only mean something on the keyboard so far.
       }
       const dt = Math.min(now - last, 50) / 1000;
       last = now;

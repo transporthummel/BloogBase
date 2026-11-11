@@ -210,6 +210,15 @@ a {
   outline-offset: 2px;
 }
 
+/* Room at the end of the page for the controller's on-screen keyboard, so
+   a field low down can scroll above it (PadKeyboard sets the height). */
+main::after {
+  content: "";
+  display: block;
+  flex-shrink: 0;
+  height: var(--bb-pad-keyboard, 0px);
+}
+
 /* Dropdowns draw their own chevron: the native arrow sits flush against the
    right border and ignores padding. Unlayered, so the padding beats px-*. */
 select {
@@ -404,6 +413,17 @@ select {
 
 .bb-dialog-in {
   animation: bb-rise 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* The controller's on-screen keyboard slides up from the window's edge. */
+@keyframes bb-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+.bb-keyboard-in {
+  animation: bb-slide-up 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .bb-menu-in {
