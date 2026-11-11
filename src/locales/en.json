@@ -1,4 +1,7 @@
 {
+  "pad": {
+    "pressButton": "Press a button on the controller to use it in BloogBase."
+  },
   "nav": {
     "skip": "Skip to content",
     "label": "Main navigation",

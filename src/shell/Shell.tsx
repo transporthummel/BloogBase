@@ -16,6 +16,7 @@ import { navItemClass } from "./navItemClass";
 import { QuitButton } from "./QuitButton";
 import { LaunchOverlay } from "./LaunchOverlay";
 import { useJobEvents } from "../jobs/queries";
+import { PadHint } from "../gamepad/PadHint";
 import { usePad } from "../gamepad/usePad";
 import { hideSplash } from "../splash";
 import { useAppUpdate } from "../updates/queries";
@@ -66,6 +67,7 @@ export function Shell() {
         <Snow />
         <EarlierBackupPrompt />
         <ArchiveWarning />
+        <PadHint />
         <Outlet />
       </main>
     );
@@ -78,6 +80,7 @@ export function Shell() {
       {/* After DropImport, so it's above the drop's summary. */}
       <EarlierBackupPrompt />
       <ArchiveWarning />
+      <PadHint />
       <LaunchOverlay />
       <ExitMessage />
       <WhatsNew />

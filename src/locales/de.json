@@ -1,4 +1,7 @@
 {
+  "pad": {
+    "pressButton": "Drück einen Knopf am Controller, um BloogBase damit zu bedienen."
+  },
   "nav": {
     "skip": "Zum Inhalt springen",
     "label": "Hauptnavigation",
