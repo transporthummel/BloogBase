@@ -6,6 +6,8 @@
 
 /* `light:` styles apply in the light theme (Vintage Beige). */
 @custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+/* Focused by the controller, which `:focus-visible` misses once the mouse was used. */
+@custom-variant pad-focus (&:where([data-input="pad"] *):focus);
 
 /*
  * Design tokens (PLAN.md §8.1). Dark is the default theme; `data-theme` on
@@ -202,7 +204,8 @@ a {
 }
 
 /* Keyboard and controller focus, visible on every interactive element. */
-:focus-visible:not([tabindex="-1"]) {
+:focus-visible:not([tabindex="-1"]),
+[data-input="pad"] :focus:not([tabindex="-1"]) {
   outline: 3px solid var(--bb-focus);
   outline-offset: 2px;
 }

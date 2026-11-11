@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { GameKeys } from "../bindings";
 import { errorMessage } from "../errors";
+import { isPadKey } from "../gamepad/actions";
 import { Keycap } from "../profile/Keycap";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
@@ -36,6 +37,9 @@ export function KeysDialog({ onClose }: { onClose: () => void }) {
     const action = waiting;
     function press(e: KeyboardEvent) {
       if (!keys) return;
+      // The controller's keys (arrows from the D-pad) aren't keys to give;
+      // its Escape (B) cancels.
+      if (isPadKey(e) && e.key !== "Escape") return;
       // Before the dialog's own Esc, and before the webview does anything with it.
       e.preventDefault();
       e.stopImmediatePropagation();

@@ -1,0 +1,76 @@
+import { describe, expect, it } from "vitest";
+import { padReader, REPEAT_DELAY, REPEAT_EVERY, stickDirection, type PadState } from "./pad";
+
+function pad(down: number[] = [], axes: number[] = [0, 0, 0, 0]): PadState {
+  return {
+    buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: down.includes(i) })),
+    axes,
+  };
+}
+
+describe("stickDirection", () => {
+  it("ignores small deflections", () => {
+    expect(stickDirection(0.4, -0.3)).toBeNull();
+  });
+
+  it("takes the larger axis, up being negative", () => {
+    expect(stickDirection(0.6, -0.9)).toBe("up");
+    expect(stickDirection(-0.9, 0.6)).toBe("left");
+    expect(stickDirection(0.2, 1)).toBe("down");
+    expect(stickDirection(0.7, 0.1)).toBe("right");
+  });
+});
+
+describe("padReader", () => {
+  it("counts a button once, on the frame it goes down", () => {
+    const read = padReader();
+    expect(read(pad(), 0).actions).toEqual([]);
+    expect(read(pad([0]), 16).actions).toEqual(["activate"]);
+    expect(read(pad([0]), 32).actions).toEqual([]);
+    expect(read(pad(), 48).actions).toEqual([]);
+    expect(read(pad([0, 1]), 64).actions).toEqual(["activate", "back"]);
+  });
+
+  it("keeps the press that made the pad show up", () => {
+    const read = padReader();
+    expect(read(pad([0]), 0).actions).toEqual(["activate"]);
+  });
+
+  it("forgets the pad while it's gone", () => {
+    const read = padReader();
+    read(pad([1]), 0);
+    expect(read(null, 16).actions).toEqual([]);
+    expect(read(pad([1]), 32).actions).toEqual(["back"]);
+  });
+
+  it("repeats a held direction after a pause", () => {
+    const read = padReader();
+    expect(read(pad([13]), 0).actions).toEqual(["down"]);
+    expect(read(pad([13]), REPEAT_DELAY - 1).actions).toEqual([]);
+    expect(read(pad([13]), REPEAT_DELAY).actions).toEqual(["down"]);
+    expect(read(pad([13]), REPEAT_DELAY + REPEAT_EVERY - 1).actions).toEqual([]);
+    expect(read(pad([13]), REPEAT_DELAY + REPEAT_EVERY).actions).toEqual(["down"]);
+  });
+
+  it("starts over when the direction changes or is let go", () => {
+    const read = padReader();
+    read(pad([13]), 0);
+    expect(read(pad([15]), 100).actions).toEqual(["right"]);
+    expect(read(pad([15]), 100 + REPEAT_DELAY - 1).actions).toEqual([]);
+    read(pad(), 600);
+    expect(read(pad([15]), 616).actions).toEqual(["right"]);
+  });
+
+  it("reads the left stick like the D-pad, the D-pad first", () => {
+    const read = padReader();
+    expect(read(pad([], [0, -1, 0, 0]), 0).actions).toEqual(["up"]);
+    expect(read(pad([], [0, -1, 0, 0]), 16).actions).toEqual([]);
+    expect(read(pad([14], [0, -1, 0, 0]), 32).actions).toEqual(["left"]);
+  });
+
+  it("passes the right stick on as scrolling, outside its dead zone", () => {
+    const read = padReader();
+    expect(read(pad([], [0, 0, 0.1, -0.6]), 0).scroll).toEqual({ x: 0, y: -0.6 });
+    expect(read(pad([], [0, 0, 0, 0]), 16).scroll).toEqual({ x: 0, y: 0 });
+  });
+});

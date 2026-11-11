@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
 import { commands, type GameKeys, type GameSettings } from "../bindings";
+import { back, move } from "../gamepad/actions";
 import { KeysDialog } from "./KeysDialog";
 
 vi.mock("../bindings", () => ({
@@ -62,6 +63,19 @@ test("Esc cancels waiting for a key and leaves the dialog open", async () => {
   expect(commands.setGameSettings).not.toHaveBeenCalled();
   expect(onClose).not.toHaveBeenCalled();
   expect(screen.getByRole("button", { name: "Change Jump" })).toBeInTheDocument();
+});
+
+test("the controller's D-pad gives no key, its B cancels", async () => {
+  await open();
+  await userEvent.click(screen.getByRole("button", { name: "Change Jump" }));
+  move("down");
+  expect(commands.setGameSettings).not.toHaveBeenCalled();
+  back(vi.fn());
+  expect(onClose).not.toHaveBeenCalled();
+  expect(await screen.findByRole("button", { name: "Change Jump" })).toBeInTheDocument();
+  // Waiting has ended: a key now gives nothing.
+  fireEvent.keyDown(document, { key: "w", code: "KeyW" });
+  expect(commands.setGameSettings).not.toHaveBeenCalled();
 });
 
 test("a reserved key says so", async () => {

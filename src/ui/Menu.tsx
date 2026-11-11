@@ -140,7 +140,7 @@ export function Menu({
                   close();
                   item.onSelect();
                 }}
-                className={`flex items-center gap-3 px-3 py-2 text-left text-sm outline-none hover:bg-surface-raised focus-visible:bg-surface-raised disabled:pointer-events-none disabled:opacity-50 ${
+                className={`flex items-center gap-3 px-3 py-2 text-left text-sm outline-none hover:bg-surface-raised focus-visible:bg-surface-raised pad-focus:bg-surface-raised disabled:pointer-events-none disabled:opacity-50 ${
                   item.danger ? "text-danger" : "text-ink"
                 }`}
               >

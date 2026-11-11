@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Compass, Info, LibraryBig, Settings, type LucideIcon } from "lucide-react";
 import icon from "../assets/icon.svg";
@@ -16,6 +16,7 @@ import { navItemClass } from "./navItemClass";
 import { QuitButton } from "./QuitButton";
 import { LaunchOverlay } from "./LaunchOverlay";
 import { useJobEvents } from "../jobs/queries";
+import { usePad } from "../gamepad/usePad";
 import { hideSplash } from "../splash";
 import { useAppUpdate } from "../updates/queries";
 import { UpdateCard } from "../updates/UpdateCard";
@@ -37,6 +38,13 @@ export function Shell() {
   const inSetup = useRouterState({ select: (s) => s.location.pathname === "/setup" });
   useJobEvents();
   useIndexEvents();
+  const router = useRouter();
+  // B goes a page back, but not from the library (the home page) or the
+  // setup, which has steps of its own.
+  usePad(() => {
+    const path = router.state.location.pathname;
+    if (path !== "/" && path !== "/setup" && router.history.canGoBack()) router.history.back();
+  });
   // Release builds look for a new version once per start, unless a package
   // manager brings the updates.
   const info = useQuery({ queryKey: ["appInfo"], queryFn: () => unwrap(commands.appInfo()) });
@@ -74,8 +82,10 @@ export function Shell() {
       <ExitMessage />
       <WhatsNew />
       {/* First stop for keyboards: past the navigation to the page. */}
+      {/* Not for the controller: it moves by position, and this hides off-screen. */}
       <button
         type="button"
+        data-pad-ignore
         className={buttonClass(
           "secondary",
           "sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50",
