@@ -134,3 +134,115 @@ export function back(goBack: () => void, doc: Document = document) {
     goBack();
   }
 }
+
+function canScroll(el: Element) {
+  const { overflowY } = getComputedStyle(el);
+  return (overflowY === "auto" || overflowY === "scroll") && el.scrollHeight > el.clientHeight;
+}
+
+/**
+ * What the right stick and the triggers scroll: the scroll container around
+ * the focus, else the open dialog's, else the page's (`<main>`).
+ */
+export function scroller(doc: Document = document): HTMLElement | null {
+  const scope = padScope(doc);
+  for (let el = doc.activeElement; el && el !== doc.body; el = el.parentElement) {
+    if (el instanceof HTMLElement && canScroll(el) && scope.contains(el)) return el;
+  }
+  if (scope !== doc.body) {
+    const inner = [scope, ...scope.querySelectorAll<HTMLElement>("*")].find(canScroll);
+    if (inner) return inner;
+  }
+  return doc.querySelector("main");
+}
+
+/** The tab list LB/RB switch: in the scope, the one holding the focus first. */
+function tabList(doc: Document): HTMLElement | null {
+  const scope = padScope(doc);
+  const lists = [...scope.querySelectorAll<HTMLElement>('[role="tablist"]')];
+  const active = doc.activeElement;
+  return lists.find((l) => active && l.contains(active)) ?? lists[0] ?? null;
+}
+
+/**
+ * LB/RB: the previous or next tab, wrapping, as the tab list's own arrow
+ * keys do (`Tabs`). The focus follows into the new tab only if it was in
+ * the tab list or the panel going away; elsewhere (the Play button) it stays.
+ */
+export function switchTab(dir: -1 | 1, doc: Document = document) {
+  markPadInput(doc);
+  const list = tabList(doc);
+  const tab = list?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+  if (!list || !tab) return;
+  const active = doc.activeElement;
+  const panel = doc.getElementById(tab.getAttribute("aria-controls") ?? "");
+  const follows = !!active && (list.contains(active) || !!panel?.contains(active));
+  sendKey(tab, dir < 0 ? "ArrowLeft" : "ArrowRight");
+  if (!follows && active instanceof HTMLElement && active !== doc.body) {
+    active.focus({ preventScroll: true });
+  }
+  list.scrollIntoView?.({ block: "nearest" });
+}
+
+/** How much of a page scrolls on LT/RT: a little stays in sight. */
+export const PAGE_SHARE = 0.9;
+
+/**
+ * LT/RT: scrolls a page up or down. If the focus leaves the view, it moves
+ * to the first element in view in that direction (the top one going down),
+ * so the D-pad carries on from what's on screen.
+ */
+export function scrollPage(dir: -1 | 1, doc: Document = document) {
+  markPadInput(doc);
+  const box = scroller(doc);
+  if (!box) return;
+  const before = box.scrollTop;
+  const max = box.scrollHeight - box.clientHeight;
+  const top = Math.min(max, Math.max(0, before + dir * box.clientHeight * PAGE_SHARE));
+  const by = top - before;
+  if (by === 0) return;
+  box.scrollTo({ top, behavior: "smooth" });
+
+  // Where things will be once it has scrolled.
+  const view = box.getBoundingClientRect();
+  const inView = (el: Element) => {
+    const r = el.getBoundingClientRect();
+    return r.top - by >= view.top && r.bottom - by <= view.bottom;
+  };
+  const active = doc.activeElement;
+  if (active && active !== doc.body && box.contains(active) && inView(active)) return;
+  const shown = candidates(box).filter(inView);
+  const rect = (el: Element) => el.getBoundingClientRect();
+  const next =
+    dir > 0
+      ? shown.sort((a, b) => rect(a).top - rect(b).top || rect(a).left - rect(b).left)[0]
+      : shown.sort((a, b) => rect(b).bottom - rect(a).bottom || rect(a).left - rect(b).left)[0];
+  next?.focus({ preventScroll: true });
+}
+
+/** Where View/Menu came from, to go back there. */
+let beforeNav: HTMLElement | null = null;
+
+/**
+ * View/Menu: to the sidebar's item for the current page; pressed again
+ * there, back where the focus was. Nothing while a dialog or menu is open
+ * (the sidebar is behind it) or without a sidebar (the setup).
+ */
+export function toggleNav(doc: Document = document) {
+  markPadInput(doc);
+  if (padScope(doc) !== doc.body) return;
+  const nav = doc.querySelector<HTMLElement>("nav");
+  if (!nav) return;
+  const active = doc.activeElement;
+  if (active && nav.contains(active)) {
+    const back = beforeNav;
+    const target = back?.isConnected && isCandidate(back) ? back : firstIn(doc.body);
+    if (target) focusForPad(target);
+    return;
+  }
+  beforeNav = active instanceof HTMLElement && active !== doc.body ? active : null;
+  const items = candidates(nav);
+  const current = items.find((el) => el.getAttribute("aria-current") === "page");
+  const target = current ?? items[0];
+  if (target) focusForPad(target);
+}

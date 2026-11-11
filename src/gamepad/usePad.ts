@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { activate, back, move } from "./actions";
+import { activate, back, move, scroller, scrollPage, switchTab, toggleNav } from "./actions";
 import { keyboardAction } from "./keyboard/store";
 import { padReader, type PadState } from "./pad";
 
@@ -13,19 +13,6 @@ export function standardPad(): PadState | null {
   } catch {
     return null;
   }
-}
-
-function canScroll(el: Element) {
-  const { overflowY } = getComputedStyle(el);
-  return (overflowY === "auto" || overflowY === "scroll") && el.scrollHeight > el.clientHeight;
-}
-
-/** The scroll container around the focus, else the page's. */
-function scroller(): Element | null {
-  for (let el = document.activeElement; el && el !== document.body; el = el.parentElement) {
-    if (canScroll(el)) return el;
-  }
-  return document.querySelector("main");
 }
 
 /**
@@ -55,7 +42,10 @@ export function usePad(goBack: () => void) {
         if (a === "activate") activate();
         else if (a === "back") back(() => back$.current());
         else if (a === "up" || a === "down" || a === "left" || a === "right") move(a);
-        // The other buttons only mean something on the keyboard so far.
+        else if (a === "lb" || a === "rb") switchTab(a === "lb" ? -1 : 1);
+        else if (a === "lt" || a === "rt") scrollPage(a === "lt" ? -1 : 1);
+        else if (a === "view" || a === "menu") toggleNav();
+        // X, Y and L3 only mean something on the keyboard so far.
       }
       const dt = Math.min(now - last, 50) / 1000;
       last = now;

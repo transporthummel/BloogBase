@@ -7,16 +7,17 @@
 export type Direction = "up" | "down" | "left" | "right";
 
 /**
- * The face, shoulder and menu buttons beyond A and B are named after the
- * button: what they do depends on what is open (the on-screen keyboard).
+ * The buttons beyond A and B are named after the button: what they do
+ * depends on what is open (the on-screen keyboard, else the shortcuts).
  */
-export type PadButton = "x" | "y" | "lb" | "rb" | "lt" | "l3" | "menu";
+export type PadButton = "x" | "y" | "lb" | "rb" | "lt" | "rt" | "view" | "menu" | "l3";
 
 export type PadAction = Direction | "activate" | "back" | PadButton;
 
 /** What the loop needs of a `Gamepad`. */
 export type PadState = {
-  buttons: readonly { pressed: boolean }[];
+  /** `value` for the analog triggers, 0 to 1. */
+  buttons: readonly { pressed: boolean; value?: number }[];
   axes: readonly number[];
 };
 
@@ -35,11 +36,14 @@ const BUTTONS: [number, PadButton][] = [
   [4, "lb"],
   [5, "rb"],
   [6, "lt"],
+  [7, "rt"],
+  [8, "view"],
   [9, "menu"],
   [10, "l3"],
 ];
-/** Held, these repeat like a direction (Backspace, caret). */
-const REPEATING = new Set<PadButton>(["x", "lb", "rb"]);
+/** The triggers count as pressed from half way. */
+const TRIGGERS = new Set([6, 7]);
+export const TRIGGER_THRESHOLD = 0.5;
 const DPAD: [number, Direction][] = [
   [12, "up"],
   [13, "down"],
@@ -51,6 +55,15 @@ const DPAD: [number, Direction][] = [
 export const REPEAT_DELAY = 400;
 /** …then this often. */
 export const REPEAT_EVERY = 80;
+/** Held, these repeat too, Backspace as fast as a direction; tabs, caret and pages slower. */
+export const REPEAT_SLOW = 250;
+const REPEATING = new Map<PadButton, number>([
+  ["x", REPEAT_EVERY],
+  ["lb", REPEAT_SLOW],
+  ["rb", REPEAT_SLOW],
+  ["lt", REPEAT_SLOW],
+  ["rt", REPEAT_SLOW],
+]);
 export const STICK_DEAD_ZONE = 0.5;
 export const SCROLL_DEAD_ZONE = 0.2;
 
@@ -62,7 +75,9 @@ export function stickDirection(x: number, y: number): Direction | null {
 }
 
 function pressed(pad: PadState, i: number) {
-  return pad.buttons[i]?.pressed ?? false;
+  const b = pad.buttons[i];
+  if (!b) return false;
+  return TRIGGERS.has(i) && b.value !== undefined ? b.value >= TRIGGER_THRESHOLD : b.pressed;
 }
 
 /** The D-pad before the stick; with two D-pad directions, the first held. */
@@ -119,13 +134,13 @@ export function padReader() {
       } else {
         const next = heldButtons.get(i);
         if (next !== undefined && now >= next) {
-          heldButtons.set(i, now + REPEAT_EVERY);
+          heldButtons.set(i, now + (REPEATING.get(name) ?? REPEAT_EVERY));
           actions.push(name);
         }
       }
     }
 
-    before = { buttons: pad.buttons.map((b) => ({ pressed: b.pressed })), axes: [...pad.axes] };
+    before = { buttons: pad.buttons.map((_, i) => ({ pressed: pressed(pad, i) })), axes: [] };
     return {
       actions,
       scroll: { x: scrollAxis(pad.axes[2] ?? 0), y: scrollAxis(pad.axes[3] ?? 0) },

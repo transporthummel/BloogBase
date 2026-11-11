@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { padReader, REPEAT_DELAY, REPEAT_EVERY, stickDirection, type PadState } from "./pad";
+import {
+  padReader,
+  REPEAT_DELAY,
+  REPEAT_EVERY,
+  REPEAT_SLOW,
+  stickDirection,
+  type PadState,
+} from "./pad";
 
 function pad(down: number[] = [], axes: number[] = [0, 0, 0, 0]): PadState {
   return {
@@ -76,25 +83,45 @@ describe("padReader", () => {
 
   it("names the other buttons, once per press", () => {
     const read = padReader();
-    expect(read(pad([2, 3, 4, 5, 6, 9, 10]), 0).actions).toEqual([
+    expect(read(pad([2, 3, 4, 5, 6, 7, 8, 9, 10]), 0).actions).toEqual([
       "x",
       "y",
       "lb",
       "rb",
       "lt",
+      "rt",
+      "view",
       "menu",
       "l3",
     ]);
-    expect(read(pad([3, 6, 9, 10]), REPEAT_DELAY).actions).toEqual([]);
+    expect(read(pad([3, 8, 9, 10]), REPEAT_DELAY).actions).toEqual([]);
   });
 
-  it("repeats Backspace (X) and the shoulders while held, not the rest", () => {
+  it("counts a trigger from half way", () => {
+    const read = padReader();
+    const trigger = (value: number) => {
+      const p = pad();
+      return {
+        ...p,
+        buttons: p.buttons.map((b, i) => (i === 7 ? { pressed: value > 0, value } : b)),
+      };
+    };
+    expect(read(trigger(0.3), 0).actions).toEqual([]);
+    expect(read(trigger(0.6), 16).actions).toEqual(["rt"]);
+    expect(read(trigger(0.9), 32).actions).toEqual([]);
+    read(trigger(0.4), 48);
+    expect(read(trigger(0.7), 64).actions).toEqual(["rt"]);
+  });
+
+  it("repeats Backspace (X) fast, shoulders and triggers slower, not the rest", () => {
     const read = padReader();
     read(pad([2, 3]), 0);
     expect(read(pad([2, 3]), REPEAT_DELAY).actions).toEqual(["x"]);
     expect(read(pad([2, 3]), REPEAT_DELAY + REPEAT_EVERY).actions).toEqual(["x"]);
     read(pad(), 1000);
-    expect(read(pad([5]), 1016).actions).toEqual(["rb"]);
-    expect(read(pad([5]), 1016 + REPEAT_DELAY).actions).toEqual(["rb"]);
+    expect(read(pad([5, 7]), 1016).actions).toEqual(["rb", "rt"]);
+    expect(read(pad([5, 7]), 1016 + REPEAT_DELAY).actions).toEqual(["rb", "rt"]);
+    expect(read(pad([5, 7]), 1016 + REPEAT_DELAY + REPEAT_EVERY).actions).toEqual([]);
+    expect(read(pad([5, 7]), 1016 + REPEAT_DELAY + REPEAT_SLOW).actions).toEqual(["rb", "rt"]);
   });
 });

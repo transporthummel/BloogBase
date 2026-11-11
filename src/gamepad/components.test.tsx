@@ -5,7 +5,7 @@ import { expect, test, vi } from "vitest";
 import { Dialog } from "../ui/Dialog";
 import { Menu } from "../ui/Menu";
 import { Tabs } from "../ui/Tabs";
-import { activate, back, move } from "./actions";
+import { activate, back, move, switchTab } from "./actions";
 
 function at(el: Element, x: number, y: number) {
   el.getBoundingClientRect = () => new DOMRect(x, y, 100, 30);
@@ -88,4 +88,52 @@ test("B closes a dialog instead of going back", () => {
   act(() => back(goBack));
   expect(close).toHaveBeenCalledOnce();
   expect(goBack).not.toHaveBeenCalled();
+});
+
+function PlayAndTabs() {
+  return (
+    <>
+      <button type="button">Play</button>
+      <TwoTabs />
+    </>
+  );
+}
+
+test("LB/RB switch tabs, wrapping; the focus stays on Play", () => {
+  render(<PlayAndTabs />);
+  const play = screen.getByRole("button", { name: "Play" });
+  act(() => play.focus());
+  act(() => switchTab(1));
+  expect(screen.getByRole("tab", { name: "B" })).toHaveAttribute("aria-selected", "true");
+  expect(play).toHaveFocus();
+  act(() => switchTab(1));
+  expect(screen.getByRole("tab", { name: "A" })).toHaveAttribute("aria-selected", "true");
+  expect(play).toHaveFocus();
+});
+
+test("LB/RB take the focus along from the tab list or the panel", () => {
+  render(<TwoTabs />);
+  act(() => screen.getByRole("button", { name: "In a" }).focus());
+  act(() => switchTab(-1));
+  const b = screen.getByRole("tab", { name: "B" });
+  expect(b).toHaveAttribute("aria-selected", "true");
+  expect(b).toHaveFocus();
+  act(() => switchTab(1));
+  expect(screen.getByRole("tab", { name: "A" })).toHaveFocus();
+});
+
+test("LB/RB leave the page's tabs alone while a dialog is open", () => {
+  render(
+    <>
+      <TwoTabs />
+      <Dialog title="Sure?" onClose={() => {}}>
+        <button type="button">OK</button>
+      </Dialog>
+    </>,
+  );
+  act(() => switchTab(1));
+  expect(screen.getByRole("tab", { name: "A", hidden: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
 });

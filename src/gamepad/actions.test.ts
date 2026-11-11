@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { activate, back, move, stepSelect } from "./actions";
+import { activate, back, move, PAGE_SHARE, scrollPage, stepSelect, toggleNav } from "./actions";
 import { nextFocus, padScope } from "./spatial";
 
 /** Places `el` at x/y with size w/h; jsdom lays nothing out. */
@@ -214,5 +214,119 @@ describe("back", () => {
     const goBack = vi.fn();
     back(goBack);
     expect(goBack).toHaveBeenCalledOnce();
+  });
+});
+
+/** A scroll box at the top of the window, `height` tall, holding `content`. */
+function scrollBox(box: HTMLElement, height: number, content: number, top = 0) {
+  Object.defineProperties(box, {
+    clientHeight: { value: height, configurable: true },
+    scrollHeight: { value: content, configurable: true },
+    scrollTop: { value: top, configurable: true, writable: true },
+  });
+  box.style.overflowY = "auto";
+  at(box, 0, 0, 800, height);
+  box.scrollTo = vi.fn() as typeof box.scrollTo;
+  return box;
+}
+
+describe("scrollPage", () => {
+  it("scrolls the page by most of its height, not past its end", () => {
+    const get = page('<main id="m"><button id="a">A</button></main>');
+    const main = scrollBox(get("m"), 500, 1200);
+    at(get("a"), 0, 10);
+    scrollPage(1);
+    expect(main.scrollTo).toHaveBeenCalledWith({ top: 500 * PAGE_SHARE, behavior: "smooth" });
+    main.scrollTop = 600;
+    scrollPage(1);
+    expect(main.scrollTo).toHaveBeenLastCalledWith({ top: 700, behavior: "smooth" });
+    vi.mocked(main.scrollTo).mockClear();
+    main.scrollTop = 700;
+    scrollPage(1);
+    expect(main.scrollTo).not.toHaveBeenCalled();
+  });
+
+  it("moves the focus to the first element in view when it scrolls out", () => {
+    const get = page(
+      '<main id="m"><button id="a">A</button><button id="b">B</button><button id="c">C</button><button id="d">D</button></main>',
+    );
+    scrollBox(get("m"), 500, 2000);
+    at(get("a"), 0, 10);
+    at(get("b"), 0, 440);
+    at(get("c"), 200, 520);
+    at(get("d"), 0, 600);
+    get("a").focus();
+    scrollPage(1);
+    // 450 down: B (then at -10) is cut off at the top, C (at 70) comes first.
+    expect(get("c")).toHaveFocus();
+  });
+
+  it("going up, takes the bottom one; a focus still in view stays", () => {
+    const get = page(
+      '<main id="m"><button id="a">A</button><button id="b">B</button><button id="c">C</button></main>',
+    );
+    scrollBox(get("m"), 500, 2000, 900);
+    at(get("a"), 0, -400);
+    at(get("b"), 0, -100);
+    at(get("c"), 0, 400);
+    get("c").focus();
+    scrollPage(-1);
+    expect(get("b")).toHaveFocus();
+
+    at(get("b"), 0, 10);
+    scrollPage(1);
+    expect(get("b")).toHaveFocus();
+  });
+});
+
+describe("toggleNav", () => {
+  const html = `
+    <nav><a id="lib" href="/">Library</a><a id="set" href="/settings" aria-current="page">Settings</a></nav>
+    <main><button id="x">X</button><button id="y">Y</button></main>`;
+
+  it("goes to the current page's item and back where it came from", () => {
+    const get = page(html);
+    for (const [id, y] of [
+      ["lib", 0],
+      ["set", 50],
+      ["x", 0],
+      ["y", 50],
+    ] as const)
+      at(get(id), 0, y);
+    get("y").focus();
+    toggleNav();
+    expect(get("set")).toHaveFocus();
+    toggleNav();
+    expect(get("y")).toHaveFocus();
+  });
+
+  it("goes back to the page's first element when where it was is gone", () => {
+    const get = page(html);
+    for (const [id, y] of [
+      ["lib", 0],
+      ["set", 50],
+      ["x", 0],
+      ["y", 50],
+    ] as const)
+      at(get(id), 0, y);
+    get("y").focus();
+    toggleNav();
+    get("y").remove();
+    toggleNav();
+    expect(get("x")).toHaveFocus();
+  });
+
+  it("does nothing with a dialog open or without a sidebar", () => {
+    const get = page(html + '<div role="dialog"><button id="ok">OK</button></div>');
+    at(get("ok"), 0, 0);
+    get("ok").focus();
+    toggleNav();
+    expect(get("ok")).toHaveFocus();
+
+    const none = page('<main><button id="next">Next</button></main>');
+    at(none("next"), 0, 0);
+    none("next").focus();
+    toggleNav();
+    expect(none("next")).toHaveFocus();
   });
 });
