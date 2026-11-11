@@ -331,6 +331,10 @@ fn menu(engine: Engine) -> Pad {
     }
 }
 
+/// DOSBox's own hotkeys on the controller, with View held, in every engine.
+/// View+RT: window or full screen (Alt+Enter).
+const WINDOW: Pad = &[("hand_fullscr", &["stick_0 axis 5 1 mod3"])];
+
 /// The mapper file for a layout, engine and the game's controls, given the
 /// host key (SDL scancode) of each letter that has one. Each letter is swapped onto its
 /// host key, so the key it pushes out takes the letter's old place and every
@@ -364,6 +368,7 @@ pub fn mapper(letters: &[(char, u16)], engine: Engine, controls: &Controls) -> S
     // A line for an event that already has one adds to its bindings.
     let menu = menu(engine)
         .iter()
+        .chain(WINDOW)
         .map(|(event, binds)| (event.to_string(), binds.to_vec()));
     for (event, binds) in play(engine, controls).into_iter().chain(menu) {
         out.push_str(&event);
@@ -607,6 +612,31 @@ mod tests {
         let keys = ActionKeys::defaults(Engine::Vorticons);
         let c = controls(Engine::Vorticons, &keys, Some(0x2D));
         assert_eq!((c.fire, c.status), (vec![0x2D], ENTER));
+    }
+
+    #[test]
+    fn view_and_rt_toggle_full_screen_in_every_engine() {
+        for engine in [Engine::Vorticons, Engine::Galaxy, Engine::Dreams] {
+            let map = mapper(&[], engine, &default(engine));
+            let lines: Vec<&str> = map
+                .lines()
+                .filter(|l| l.starts_with("hand_fullscr "))
+                .collect();
+            // DOSBox's Alt+Enter stays, the controller adds to it.
+            assert_eq!(
+                lines,
+                [
+                    "hand_fullscr \"key 40 mod2\"",
+                    "hand_fullscr \"stick_0 axis 5 1 mod3\""
+                ]
+            );
+            // Nothing else uses RT with View held.
+            assert_eq!(
+                map.matches("\"stick_0 axis 5 1 mod3\"").count(),
+                1,
+                "{engine:?}"
+            );
+        }
     }
 
     #[test]

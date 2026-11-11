@@ -1027,6 +1027,7 @@
       "dos": "Quit to DOS (D)",
       "save": "Save (F5)",
       "sound": "Sound on and off (F2)",
+      "fullscreen": "Window or full screen (Alt+Enter)",
       "slots": "Save slot {{from}}–{{to}}",
       "slot9": "press: save slot 9",
       "back": "Back (Esc)",

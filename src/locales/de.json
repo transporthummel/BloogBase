@@ -1027,6 +1027,7 @@
       "dos": "Zu DOS beenden (D)",
       "save": "Speichern (F5)",
       "sound": "Sound an und aus (F2)",
+      "fullscreen": "Fenster oder Vollbild (Alt+Enter)",
       "slots": "Spielstand {{from}}–{{to}}",
       "slot9": "drücken: Spielstand 9",
       "back": "Zurück (Esc)",

@@ -5,6 +5,7 @@
 ### Features
 
 - Xbox controllers play every game without setup: the controller presses the keys the game is set to, the player's own ones too, and with View held the keys of the menus, save slots in Keen 1–3 and letters for save names in Keen 4–6 and Keen Dreams. Without one-button firing in Keen 1–3, the fire buttons press Jump and Pogo together.
+- In a game, View+RT switches between window and full screen, like Alt+Enter.
 - The Controls tab shows the controller too: a drawing of an Xbox-layout controller with what each button does while playing and, with View held, in the menus. It opens on the controller when one is connected.
 - The first start of a series with a controller connected shows the controller's buttons once, apart from the keyboard's, which come again on a start without it.
 - BloogBase itself can be used with a controller: the D-pad or left stick moves to the nearest element in that direction, A activates it, B closes a dialog or goes back, the right stick scrolls.
