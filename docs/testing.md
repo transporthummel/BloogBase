@@ -208,7 +208,9 @@ up in players' diagnostics reports too.
   so the `asset:` sources are only checked on Windows; macOS and Linux differ
   from Windows in the URL schemes (`ipc://localhost`, `asset://localhost`
   instead of `http://ipc.localhost`, `http://asset.localhost`), which the
-  policy lists both of.
+  policy lists both of. The run's summary also says whether each webview
+  offers the Gamepad API ("Gamepad API available/missing/fails" from the log),
+  which controller control of the app needs; no pad is connected there.
 
 Change the policy after a new kind of source in the frontend (a remote
 picture, a worker, a frame), and run both checks before the release.

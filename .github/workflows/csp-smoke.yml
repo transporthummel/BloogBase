@@ -8,6 +8,9 @@ name: CSP smoke test
 # folder and fails when the interface doesn't come up ("Interface started"
 # missing from the log) or the log names something the policy blocked. The
 # log, and on Linux a screenshot, come back as the "csp-smoke-<os>" artifact.
+# It also reports whether the webview offers the Gamepad API (controller
+# control of the app), as a notice and in the run's summary; that doesn't fail
+# the run.
 on:
   workflow_dispatch:
 
@@ -83,6 +86,9 @@ jobs:
             echo "::error::The interface didn't start (scripts or commands blocked?)"
             exit 1
           fi
+          gamepad=$(grep -o "Gamepad API.*" "$log" | head -n 1)
+          echo "::notice::$RUNNER_OS: ${gamepad:-no Gamepad API line in the log}"
+          echo "- $RUNNER_OS: ${gamepad:-no Gamepad API line in the log}" >> "$GITHUB_STEP_SUMMARY"
           if grep "CSP blocked" "$log"; then
             echo "::error::The Content Security Policy blocked something"
             exit 1
