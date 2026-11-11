@@ -1,6 +1,7 @@
 {
   "pad": {
     "pressButton": "Drück einen Knopf am Controller, um BloogBase damit zu bedienen.",
+    "dismiss": "Hinweis schließen",
     "keyboard": {
       "label": "Bildschirmtastatur",
       "type": "Tippen",
