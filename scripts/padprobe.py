@@ -10,7 +10,7 @@ Windows; on Linux it's built in, so take pysdl2-dll of the same version:
     python scripts/padprobe.py --sdl <dosbox dir>/SDL2.dll
     python3 -m venv venv && venv/bin/pip install pysdl2-dll==2.32.10
     venv/bin/python scripts/padprobe.py --sdl "$(venv/bin/python -c \\
-        'import sdl2dll, glob; print(glob.glob(sdl2dll.get_dllpath() + "/libSDL2*")[0])')"
+        'import sdl2dll, glob; print(glob.glob(sdl2dll.get_dllpath() + "/libSDL2-2.0.so*")[0])')"
 
 Plain Python otherwise (ctypes, no other packages). SDL2 and SDL3 both
 work. Options:
