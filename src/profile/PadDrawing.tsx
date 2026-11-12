@@ -1,3 +1,6 @@
+import type { Controller } from "../bindings";
+import { buttonName } from "../gamepad/buttons";
+import { PsSymbol } from "../gamepad/FaceButton";
 import type { PadInput } from "./controlSheet";
 
 /** One input's callout: its label's lines, beside the drawing. */
@@ -27,11 +30,11 @@ const anchors: Record<PadInput, { side: "left" | "right"; y: number; line: strin
   rs: { side: "right", y: 215, line: "667,215 538,215" },
 };
 
-const face: { input: PadInput; x: number; y: number; letter: string; fill: string }[] = [
-  { input: "y", x: 570, y: 113, letter: "Y", fill: "fill-pad-y" },
-  { input: "x", x: 541, y: 140, letter: "X", fill: "fill-pad-x" },
-  { input: "b", x: 599, y: 140, letter: "B", fill: "fill-pad-b" },
-  { input: "a", x: 570, y: 167, letter: "A", fill: "fill-pad-a" },
+const face: { input: "a" | "b" | "x" | "y"; x: number; y: number; fill: string }[] = [
+  { input: "y", x: 570, y: 113, fill: "fill-pad-y" },
+  { input: "x", x: 541, y: 140, fill: "fill-pad-x" },
+  { input: "b", x: 599, y: 140, fill: "fill-pad-b" },
+  { input: "a", x: 570, y: 167, fill: "fill-pad-a" },
 ];
 
 /** The body's outline: shoulders, grips and the curve between them. */
@@ -51,10 +54,18 @@ const mirror = "translate(900 0) scale(-1 1)";
 /**
  * A generic controller in the Xbox layout (an own drawing, no maker's
  * artwork or logo), with callouts to what each input does. Inputs without
- * one are drawn faintly. Decorative for screen readers: the callouts are
- * listed beside it for them.
+ * one are drawn faintly. For a PlayStation controller, the buttons carry
+ * its symbols and names at the same places. Decorative for screen readers:
+ * the callouts are listed beside it for them.
  */
-export function PadDrawing({ callouts }: { callouts: Callout[] }) {
+export function PadDrawing({
+  callouts,
+  layout = "xbox",
+}: {
+  callouts: Callout[];
+  layout?: Controller;
+}) {
+  const ps = layout === "playstation";
   const used = new Set(callouts.map((c) => c.input));
   const part = (input: PadInput) => (used.has(input) ? "" : "opacity-35");
   const cap = "fill-surface stroke-muted";
@@ -73,10 +84,10 @@ export function PadDrawing({ callouts }: { callouts: Callout[] }) {
       <path className={`${cap} ${part("lb")}`} d={BUMPER} />
       <path className={`${cap} ${part("rb")}`} d={BUMPER} transform={mirror} />
       <path className="fill-surface-raised stroke-border" d={BODY} strokeLinejoin="round" />
-      <Label x={334} y={50} text="LT" className={part("lt")} />
-      <Label x={566} y={50} text="RT" className={part("rt")} />
-      <Label x={312} y={71} text="LB" size={9} className={part("lb")} />
-      <Label x={588} y={71} text="RB" size={9} className={part("rb")} />
+      <Label x={334} y={50} text={buttonName(layout, "lt")} className={part("lt")} />
+      <Label x={566} y={50} text={buttonName(layout, "rt")} className={part("rt")} />
+      <Label x={312} y={71} text={buttonName(layout, "lb")} size={9} className={part("lb")} />
+      <Label x={588} y={71} text={buttonName(layout, "rb")} size={9} className={part("rb")} />
 
       {/* Sticks and D-pad sit in wells. */}
       <Stick x={330} y={140} className={part("ls")} />
@@ -92,42 +103,59 @@ export function PadDrawing({ callouts }: { callouts: Callout[] }) {
 
       {/* The guide button between them, plain. */}
       <circle className="fill-surface stroke-border" cx={450} cy={104} r={12} />
-      <g className={part("view")}>
-        <circle className={cap} cx={412} cy={134} r={9} />
-        <rect
-          className="fill-none stroke-muted"
-          strokeWidth={1.2}
-          x={408}
-          y={131}
-          width={8}
-          height={6}
-          rx={1}
-        />
-      </g>
-      <g className={part("menu")}>
-        <circle className={cap} cx={488} cy={134} r={9} />
-        <path
-          className="stroke-muted"
-          strokeWidth={1.2}
-          d="M484 131.5 h8 M484 134 h8 M484 136.5 h8"
-        />
-      </g>
-      {face.map((f) => (
-        <g key={f.input} className={part(f.input)}>
-          <circle className={`${f.fill} stroke-pad-letter/30`} cx={f.x} cy={f.y} r={13} />
-          <text
-            x={f.x}
-            y={f.y}
-            textAnchor="middle"
-            dominantBaseline="central"
-            className="fill-pad-letter"
-            fontSize={12}
-            fontWeight={700}
-          >
-            {f.letter}
-          </text>
-        </g>
-      ))}
+      {ps ? (
+        <>
+          {/* Share and Options: slim upright buttons. */}
+          <rect className={`${cap} ${part("view")}`} x={408} y={126} width={8} height={16} rx={4} />
+          <rect className={`${cap} ${part("menu")}`} x={484} y={126} width={8} height={16} rx={4} />
+        </>
+      ) : (
+        <>
+          <g className={part("view")}>
+            <circle className={cap} cx={412} cy={134} r={9} />
+            <rect
+              className="fill-none stroke-muted"
+              strokeWidth={1.2}
+              x={408}
+              y={131}
+              width={8}
+              height={6}
+              rx={1}
+            />
+          </g>
+          <g className={part("menu")}>
+            <circle className={cap} cx={488} cy={134} r={9} />
+            <path
+              className="stroke-muted"
+              strokeWidth={1.2}
+              d="M484 131.5 h8 M484 134 h8 M484 136.5 h8"
+            />
+          </g>
+        </>
+      )}
+      {face.map((f) =>
+        ps ? (
+          <g key={f.input} className={part(f.input)} transform={`translate(${f.x} ${f.y})`}>
+            <circle className="fill-pad-letter stroke-pad-letter/30" r={13} />
+            <PsSymbol button={f.input} r={6} />
+          </g>
+        ) : (
+          <g key={f.input} className={part(f.input)}>
+            <circle className={`${f.fill} stroke-pad-letter/30`} cx={f.x} cy={f.y} r={13} />
+            <text
+              x={f.x}
+              y={f.y}
+              textAnchor="middle"
+              dominantBaseline="central"
+              className="fill-pad-letter"
+              fontSize={12}
+              fontWeight={700}
+            >
+              {f.input.toUpperCase()}
+            </text>
+          </g>
+        ),
+      )}
 
       {callouts.map((c) => {
         const a = anchors[c.input];

@@ -1015,7 +1015,7 @@
       "layer": {
         "label": "Belegung",
         "play": "Spielen",
-        "menu": "Menüs (View halten)"
+        "menu": "Menüs ({{view}} halten)"
       },
       "move": "Bewegen",
       "diagonal": "auch schräg",
@@ -1034,10 +1034,10 @@
       "back": "Zurück (Esc)",
       "moreLetters": "Halten: weitere Buchstaben",
       "letters": "Buchstaben {{from}}–{{to}}",
-      "withLb": "mit LB: {{lb}}",
-      "withLbSpace": "mit LB: {{lb}}, Leertaste, Rücktaste",
+      "withLb": "mit {{lbName}}: {{lb}}",
+      "withLbSpace": "mit {{lbName}}: {{lb}}, Leertaste, Rücktaste",
       "hold": "Gedrückt halten",
-      "typed": "Mit gehaltenem View tippst du:",
+      "typed": "Mit gehaltenem {{view}} tippst du:",
       "press": "drücken",
       "direction": {
         "up": "hoch",
@@ -1051,7 +1051,11 @@
         "rs": "Rechter Stick",
         "dpad": "Steuerkreuz",
         "view": "View",
-        "menu": "Menü"
+        "menu": "Menü",
+        "cross": "Kreuz",
+        "circle": "Kreis",
+        "square": "Quadrat",
+        "triangle": "Dreieck"
       },
       "notes": "Gut zu wissen",
       "plugIn": "Schließ den Controller an, bevor du das Spiel startest. Später findet DOSBox ihn nicht mehr.",

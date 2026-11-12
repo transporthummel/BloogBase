@@ -3,7 +3,15 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight, Info } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Engine, type Game, type GameKeys, type Profile } from "../bindings";
+import {
+  commands,
+  type Controller,
+  type Engine,
+  type Game,
+  type GameKeys,
+  type Profile,
+} from "../bindings";
+import { buttonName, padLayout } from "../gamepad/buttons";
 import { unwrap } from "../ipc";
 import { gameSettingsKey } from "../settings/queries";
 import { Badge } from "../ui/Badge";
@@ -22,7 +30,7 @@ import {
   sheetFor,
   spaceFires,
 } from "./controlSheet";
-import { controllerConnected, controllerConnectedKey, type ControlsView } from "./controller";
+import { connectedController, controllerConnectedKey, type ControlsView } from "./controller";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { Keycap } from "./Keycap";
 import { keyLabel } from "./keyLabel";
@@ -170,13 +178,15 @@ export function ControlsSheet({
   const { t } = useTranslation();
   const connected = useQuery({
     queryKey: controllerConnectedKey,
-    queryFn: controllerConnected,
+    queryFn: connectedController,
     enabled: initialView === undefined,
     staleTime: 0,
   });
   // Kept for this visit only.
   const [chosen, setChosen] = useState<ControlsView | undefined>(initialView);
   const view = chosen ?? (connected.data ? "controller" : "keyboard");
+  // Where Rust can't tell (or wasn't asked), the pad the app sees.
+  const layout = connected.data ?? padLayout();
   const enabled = useQuery({
     queryKey: oneButtonFiringKey,
     queryFn: () => unwrap(commands.oneButtonFiring()),
@@ -233,7 +243,7 @@ export function ControlsSheet({
       )}
 
       {ready && view === "controller" && (
-        <ControllerSheet pad={padFor(game.engine, space)} heading={heading}>
+        <ControllerSheet pad={padFor(game.engine, space)} layout={layout} heading={heading}>
           {windowGroup}
         </ControllerSheet>
       )}
@@ -290,37 +300,55 @@ function KeyboardSheet({
   );
 }
 
-const inputNames: Partial<Record<PadInput, string>> = {
-  ls: "pad.input.ls",
-  rs: "pad.input.rs",
-  dpad: "pad.input.dpad",
-  view: "pad.input.view",
-  menu: "pad.input.menu",
+/** Inputs named in words, under `controls.pad.input`; the rest by their label. */
+const inputNames: Record<Controller, Partial<Record<PadInput, string>>> = {
+  xbox: { ls: "ls", rs: "rs", dpad: "dpad", view: "view", menu: "menu" },
+  playstation: {
+    ls: "ls",
+    rs: "rs",
+    dpad: "dpad",
+    a: "cross",
+    b: "circle",
+    x: "square",
+    y: "triangle",
+  },
 };
 
 /** The controller drawn with what its inputs do, playing or with View held. */
 function ControllerSheet({
   pad,
+  layout,
   heading: Heading,
   children,
 }: {
   pad: PadSheet;
+  layout: Controller;
   heading: HeadingTag;
   /** The window keys, on the keyboard only. */
   children: ReactNode;
 }) {
   const { t } = useTranslation();
   const [layer, setLayer] = useState<"play" | "menu">("play");
+  /** The button names the texts mention. */
+  const names = { view: buttonName(layout, "view"), lbName: buttonName(layout, "lb") };
   const callouts: Callout[] = pad[layer].map((b) => ({
     input: b.input,
     lines: [
-      t(`controls.${b.label}`, b.values),
-      ...(b.more ? [t(`controls.pad.${b.more}`, b.values)] : []),
+      t(`controls.${b.label}`, { ...names, ...b.values }),
+      ...(b.more ? [t(`controls.pad.${b.more}`, { ...names, ...b.values })] : []),
     ],
   }));
   const inputName = (input: PadInput) => {
-    const name = inputNames[input];
-    return name ? t(`controls.${name}`) : input.toUpperCase();
+    const name = inputNames[layout][input];
+    if (name) return t(`controls.pad.input.${name}`);
+    return input === "lt" ||
+      input === "rt" ||
+      input === "lb" ||
+      input === "rb" ||
+      input === "view" ||
+      input === "menu"
+      ? buttonName(layout, input)
+      : input.toUpperCase();
   };
   return (
     <>
@@ -335,11 +363,11 @@ function ControllerSheet({
             onChange={setLayer}
             options={[
               { value: "play", label: t("controls.pad.layer.play") },
-              { value: "menu", label: t("controls.pad.layer.menu") },
+              { value: "menu", label: t("controls.pad.layer.menu", names) },
             ]}
           />
         </div>
-        <PadDrawing callouts={callouts} />
+        <PadDrawing callouts={callouts} layout={layout} />
         <ul className="sr-only">
           {callouts.map((c) => (
             <li key={c.input}>
@@ -347,7 +375,7 @@ function ControllerSheet({
             </li>
           ))}
         </ul>
-        {layer === "menu" && <MenuKeys keys={pad.menuKeys} inputName={inputName} />}
+        {layer === "menu" && <MenuKeys keys={pad.menuKeys} inputName={inputName} names={names} />}
       </section>
       <div className="grid gap-4 sm:grid-cols-2">
         <section className="grid content-start gap-2 rounded-xl border border-border bg-surface p-4">
@@ -372,18 +400,23 @@ const directions = ["up", "right", "down", "left"] as const;
 function MenuKeys({
   keys,
   inputName,
+  names,
 }: {
   keys: PadKeys[];
   inputName: (input: PadInput) => string;
+  /** The button names the texts mention. */
+  names: { view: string; lbName: string };
 }) {
   const { t } = useTranslation();
   const rows = keys.flatMap((k) => [
     { name: inputName(k.input), keys: k.keys },
-    ...(k.lb ? [{ name: `${inputName(k.input)} + LB`, keys: k.lb }] : []),
+    ...(k.lb ? [{ name: `${inputName(k.input)} + ${names.lbName}`, keys: k.lb }] : []),
   ]);
   return (
     <table className="w-max max-w-full text-sm">
-      <caption className="mb-2 text-left text-xs text-muted">{t("controls.pad.typed")}</caption>
+      <caption className="mb-2 text-left text-xs text-muted">
+        {t("controls.pad.typed", names)}
+      </caption>
       <thead>
         <tr className="text-xs text-muted">
           <th scope="col" className="sr-only">

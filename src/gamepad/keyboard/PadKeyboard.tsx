@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { isPadKey, sendKey } from "../actions";
+import { buttonName, padLayout, type NamedButton } from "../buttons";
+import { Face } from "../FaceButton";
 import type { PadAction } from "../pad";
 import { backspace, insert, moveCaret, readField, writeField, type Field, type Text } from "./edit";
 import {
@@ -261,25 +263,6 @@ function Board({ field }: { field: Field }) {
   );
 }
 
-/** The face buttons in the colours of the Controls tab's drawing. */
-const FACE = {
-  a: "bg-pad-a",
-  b: "bg-pad-b",
-  x: "bg-pad-x",
-  y: "bg-pad-y",
-} as const;
-
-function Face({ button }: { button: keyof typeof FACE }) {
-  return (
-    <span
-      aria-hidden
-      className={`inline-flex size-5 items-center justify-center rounded-full text-[0.7rem] font-bold text-pad-letter ${FACE[button]}`}
-    >
-      {button.toUpperCase()}
-    </span>
-  );
-}
-
 function Named({ children }: { children: ReactNode }) {
   return (
     <span
@@ -294,27 +277,29 @@ function Named({ children }: { children: ReactNode }) {
 /** What the controller's buttons do here: the only button hints in the app. */
 function Hints({ page }: { page: Page }) {
   const { t } = useTranslation();
+  const layout = padLayout();
+  const name = (b: NamedButton) => <Named>{buttonName(layout, b)}</Named>;
   const hints: [ReactNode, string][] = [
-    [<Face button="a" />, t("pad.keyboard.type")],
-    [<Face button="x" />, t("pad.keyboard.backspace")],
+    [<Face button="a" layout={layout} />, t("pad.keyboard.type")],
+    [<Face button="x" layout={layout} />, t("pad.keyboard.backspace")],
     ...(page === "digits"
       ? []
       : ([
-          [<Face button="y" />, t("pad.keyboard.space")],
-          [<Named>LT</Named>, t("pad.keyboard.symbols")],
+          [<Face button="y" layout={layout} />, t("pad.keyboard.space")],
+          [name("lt"), t("pad.keyboard.symbols")],
         ] as [ReactNode, string][])),
     ...(page === "letters"
-      ? ([[<Named>L3</Named>, t("pad.keyboard.shift")]] as [ReactNode, string][])
+      ? ([[name("l3"), t("pad.keyboard.shift")]] as [ReactNode, string][])
       : []),
     [
       <>
-        <Named>LB</Named>
-        <Named>RB</Named>
+        {name("lb")}
+        {name("rb")}
       </>,
       t("pad.keyboard.caret"),
     ],
-    [<Named>Menu</Named>, t("pad.keyboard.done")],
-    [<Face button="b" />, t("pad.keyboard.close")],
+    [name("menu"), t("pad.keyboard.done")],
+    [<Face button="b" layout={layout} />, t("pad.keyboard.close")],
   ];
   return (
     <ul className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-muted">

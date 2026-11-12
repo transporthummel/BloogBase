@@ -1,10 +1,10 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { controllerConnected } from "../profile/controller";
+import { connectedController } from "../profile/controller";
 import { PadHint } from "./PadHint";
 
-vi.mock("../profile/controller", () => ({ controllerConnected: vi.fn() }));
+vi.mock("../profile/controller", () => ({ connectedController: vi.fn() }));
 
 let pads: unknown[] = [];
 
@@ -19,7 +19,7 @@ afterEach(() => {
 });
 
 test("asks for a press while only XInput sees the controller", async () => {
-  vi.mocked(controllerConnected).mockResolvedValue(true);
+  vi.mocked(connectedController).mockResolvedValue("xbox");
   render(<PadHint />);
   expect(await screen.findByRole("status")).toHaveTextContent("Press a button on the controller");
 
@@ -31,15 +31,15 @@ test("asks for a press while only XInput sees the controller", async () => {
 });
 
 test("says nothing without a controller", async () => {
-  vi.mocked(controllerConnected).mockResolvedValue(false);
+  vi.mocked(connectedController).mockResolvedValue(null);
   render(<PadHint />);
   await act(async () => {});
-  expect(controllerConnected).toHaveBeenCalled();
+  expect(connectedController).toHaveBeenCalled();
   expect(screen.queryByRole("status")).toBeNull();
 });
 
 test("goes softly: kept until its leaving animation ends", async () => {
-  vi.mocked(controllerConnected).mockResolvedValue(true);
+  vi.mocked(connectedController).mockResolvedValue("xbox");
   render(<PadHint />);
   const hint = await screen.findByRole("status");
   pads = [{ connected: true, mapping: "standard", buttons: [], axes: [] }];
@@ -55,7 +55,7 @@ test("goes softly: kept until its leaving animation ends", async () => {
 
 // Last: closing it holds for the rest of the app's run, so for this file too.
 test("the cross closes it until the app starts anew", async () => {
-  vi.mocked(controllerConnected).mockResolvedValue(true);
+  vi.mocked(connectedController).mockResolvedValue("xbox");
   const { unmount } = render(<PadHint />);
   await userEvent.click(await screen.findByRole("button", { name: "Close hint" }));
   expect(screen.queryByRole("status")).toBeNull();

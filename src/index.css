@@ -51,6 +51,8 @@
   --bb-pad-b: var(--bb-ega-bright-red);
   --bb-pad-x: #7373ff;
   --bb-pad-y: var(--bb-ega-yellow);
+  /* PlayStation's Square; Cross, Circle and Triangle take X, B and A's. */
+  --bb-pad-square: #ff55ff;
   --bb-pad-letter: #0d0c1d;
   --bb-bloog: var(--bb-ega-bright-green);
   --bb-star: var(--bb-ink);
@@ -95,6 +97,7 @@
   --bb-pad-b: #e2493f;
   --bb-pad-x: #6a6ff0;
   --bb-pad-y: #f0d23a;
+  --bb-pad-square: #e86ad0;
   --bb-pad-letter: #1a1714;
   /* Light specks on the plastic: dark dots read as dust. */
   --bb-star: #f4efe2;
@@ -147,6 +150,7 @@
   --color-pad-b: var(--bb-pad-b);
   --color-pad-x: var(--bb-pad-x);
   --color-pad-y: var(--bb-pad-y);
+  --color-pad-square: var(--bb-pad-square);
   --color-pad-letter: var(--bb-pad-letter);
   --color-sidebar: var(--bb-sidebar);
   --shadow-card: var(--bb-shadow);

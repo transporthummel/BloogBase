@@ -1015,7 +1015,7 @@
       "layer": {
         "label": "Layout",
         "play": "Playing",
-        "menu": "Menus (hold View)"
+        "menu": "Menus (hold {{view}})"
       },
       "move": "Move",
       "diagonal": "diagonals too",
@@ -1034,10 +1034,10 @@
       "back": "Back (Esc)",
       "moreLetters": "Hold: more letters",
       "letters": "Letters {{from}}–{{to}}",
-      "withLb": "with LB: {{lb}}",
-      "withLbSpace": "with LB: {{lb}}, space, backspace",
+      "withLb": "with {{lbName}}: {{lb}}",
+      "withLbSpace": "with {{lbName}}: {{lb}}, space, backspace",
       "hold": "Hold down",
-      "typed": "With View held, you type:",
+      "typed": "With {{view}} held, you type:",
       "press": "press",
       "direction": {
         "up": "up",
@@ -1051,7 +1051,11 @@
         "rs": "Right stick",
         "dpad": "D-pad",
         "view": "View",
-        "menu": "Menu"
+        "menu": "Menu",
+        "cross": "Cross",
+        "circle": "Circle",
+        "square": "Square",
+        "triangle": "Triangle"
       },
       "notes": "Good to know",
       "plugIn": "Connect the controller before you start the game. DOSBox won't find it later.",

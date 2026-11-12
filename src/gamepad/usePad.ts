@@ -1,18 +1,23 @@
 import { useEffect, useRef } from "react";
 import { activate, back, move, scroller, scrollPage, switchTab, toggleNav } from "./actions";
 import { keyboardAction } from "./keyboard/store";
-import { padReader, type PadState } from "./pad";
+import { padReader } from "./pad";
 
 /** Pixels per second at full deflection of the right stick. */
 const SCROLL_SPEED = 1500;
 
 /** The first pad with the standard layout; others we can't read reliably. */
-export function standardPad(): PadState | null {
+export function standardPad(): Gamepad | null {
   try {
     return navigator.getGamepads?.().find((p) => p?.connected && p.mapping === "standard") ?? null;
   } catch {
     return null;
   }
+}
+
+/** The Gamepad API's id of that pad, which names its maker. */
+export function padId(): string | null {
+  return standardPad()?.id ?? null;
 }
 
 /**

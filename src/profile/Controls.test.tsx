@@ -134,6 +134,18 @@ test("a connected controller opens the controller view", async () => {
   expect(keysFor("Shoot")).toBe("Space");
 });
 
+test("a PlayStation controller gets its own names", async () => {
+  vi.mocked(commands.controllerConnected).mockResolvedValue("playstation");
+  await renderSheet(game("keen5", "galaxy"));
+  expect(padSays("Cross")).toEqual(["Cross: Jump"]);
+  expect(padSays("L1")).toEqual(["L1: Pogo on and off"]);
+  expect(padSays("R2")).toEqual(["R2: Shoot"]);
+  expect(padSays("Share")).toEqual(["Share: Hold: menu keys"]);
+  await userEvent.click(screen.getByRole("button", { name: "Menus (hold Share)" }));
+  expect(padSays("D-pad")).toEqual(["D-pad: Letters A–D, with L1: O–R"]);
+  expect(screen.getByText("With Share held, you type:")).toBeInTheDocument();
+});
+
 test("without a controller, the keyboard comes first", async () => {
   await renderSheet(game("keen4", "galaxy"));
   expect(screen.getByRole("button", { name: "Keyboard" })).toHaveAttribute("aria-pressed", "true");
