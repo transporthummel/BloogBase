@@ -17,6 +17,20 @@ Supported layouts are Xbox controllers (and pads that act as one) and
 PlayStation controllers (DualShock 4, DualSense). The Windows numbers are
 measured with both; on Linux the DualShock 4's are.
 
+## At a glance
+
+|             | Xbox controller                                                                          | PlayStation controller                                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Keen 1-3    | [![Keen 1-3, Xbox](controller/keen1-3-xbox.svg)](controller/keen1-3-xbox.svg)            | [![Keen 1-3, PlayStation](controller/keen1-3-playstation.svg)](controller/keen1-3-playstation.svg)            |
+| Keen 4-6    | [![Keen 4-6, Xbox](controller/keen4-6-xbox.svg)](controller/keen4-6-xbox.svg)            | [![Keen 4-6, PlayStation](controller/keen4-6-playstation.svg)](controller/keen4-6-playstation.svg)            |
+| Keen Dreams | [![Keen Dreams, Xbox](controller/keen-dreams-xbox.svg)](controller/keen-dreams-xbox.svg) | [![Keen Dreams, PlayStation](controller/keen-dreams-playstation.svg)](controller/keen-dreams-playstation.svg) |
+| The app     | [![The app, Xbox](controller/app-xbox.svg)](controller/app-xbox.svg)                     | [![The app, PlayStation](controller/app-playstation.svg)](controller/app-playstation.svg)                     |
+
+`scripts/controller-charts.mjs` draws them (`node scripts/controller-charts.mjs`,
+`… <dir> de` for German). They repeat the bindings below and the drawing
+of the Controls tab (`PadDrawing.tsx`), so redo them when `keymap.rs`,
+`src/gamepad/` or the drawing changes.
+
 ## In the games
 
 ### Keys, not a joystick
