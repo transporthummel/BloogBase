@@ -25,6 +25,10 @@ work. Options:
                     controller's IDs, as controller.rs decides)
     --live          print each input as it's used, until Ctrl+C
 
+--check and --live open a small window "padprobe" that shows the step in
+its title and must have the focus, as DOSBox's window has: SDL's Raw
+Input backend (Xbox controllers on Windows) delivers nothing otherwise.
+
 After a DOSBox update: connect each controller alone and run
 `--sdl <new DOSBox's SDL> --check`. Connect the controllers before
 starting it. Paste the whole output into the plan: it has what keymap.rs
@@ -127,7 +131,18 @@ COMMON = [
     ("SDL_GetError", ctypes.c_char_p, []),
     ("SDL_PumpEvents", None, []),
     ("SDL_Quit", None, []),
+    ("SDL_FlushEvents", None, [ctypes.c_uint32, ctypes.c_uint32]),
+    ("SDL_SetWindowTitle", None, [ctypes.c_void_p, ctypes.c_char_p]),
+    ("SDL_RaiseWindow", None, [ctypes.c_void_p]),
 ]
+
+INIT_VIDEO = 0x20
+
+# DOSBox reads the controller while its own window has the focus, and
+# SDL's Raw Input backend (Xbox controllers on Windows) delivers nothing to
+# a program without one, so --check and --live open a small window that
+# shows the current step in its title.
+WINDOW_W, WINDOW_H = 640, 120
 
 
 class Sdl2:
@@ -155,6 +170,8 @@ class Sdl2:
             ("SDL_JoystickGetDeviceGUID", GUID, [ctypes.c_int]),
             ("SDL_JoystickGetGUIDString", None, [GUID, ctypes.c_char_p, ctypes.c_int]),
             ("SDL_GameControllerMappingForGUID", ctypes.c_char_p, [GUID]),
+            ("SDL_CreateWindow", P, [ctypes.c_char_p] + [ctypes.c_int] * 4 + [ctypes.c_uint32]),
+            ("SDL_GetWindowFlags", ctypes.c_uint32, [P]),
         ])
 
     def version(self):
@@ -163,7 +180,11 @@ class Sdl2:
         return (v.major, v.minor, v.patch)
 
     def init(self):
-        return self.lib.SDL_Init(INIT_JOYSTICK | INIT_GAMEPAD) == 0
+        return self.lib.SDL_Init(INIT_VIDEO | INIT_JOYSTICK | INIT_GAMEPAD) == 0
+
+    def create_window(self, title):
+        centred, shown = 0x2FFF0000, 0x4
+        return self.lib.SDL_CreateWindow(title, centred, centred, WINDOW_W, WINDOW_H, shown)
 
     def ids(self):
         return list(range(self.lib.SDL_NumJoysticks()))
@@ -232,6 +253,8 @@ class Sdl3(Sdl2):
             ("SDL_GetJoystickGUIDForID", GUID, [u32]),
             ("SDL_GUIDToString", None, [GUID, ctypes.c_char_p, ctypes.c_int]),
             ("SDL_GetGamepadMappingForID", P, [u32]),
+            ("SDL_CreateWindow", P, [ctypes.c_char_p, ctypes.c_int, ctypes.c_int, ctypes.c_uint64]),
+            ("SDL_GetWindowFlags", ctypes.c_uint64, [P]),
         ])
 
     def version(self):
@@ -239,7 +262,10 @@ class Sdl3(Sdl2):
         return (v // 1000000, v // 1000 % 1000, v % 1000)
 
     def init(self):
-        return bool(self.lib.SDL_Init(INIT_JOYSTICK | INIT_GAMEPAD))
+        return bool(self.lib.SDL_Init(INIT_VIDEO | INIT_JOYSTICK | INIT_GAMEPAD))
+
+    def create_window(self, title):
+        return self.lib.SDL_CreateWindow(title, WINDOW_W, WINDOW_H, 0)
 
     def ids(self):
         n = ctypes.c_int(0)
@@ -391,11 +417,45 @@ def playstation_ids():
     return sony, {int(p.strip(), 16) for p in products.split(",") if p.strip()}
 
 
+def pump(sdl):
+    """Lets SDL read the window's messages (Raw Input arrives there) and
+    drops the events, which this script reads as states instead."""
+    sdl.lib.SDL_PumpEvents()
+    sdl.lib.SDL_FlushEvents(0, 0xFFFFFFFF)
+    sdl.update()
+
+
+def open_window(sdl):
+    win = sdl.create_window(b"padprobe")
+    if not win:
+        sys.exit(f"Could not open a window: {sdl.lib.SDL_GetError().decode()}")
+    sdl.lib.SDL_RaiseWindow(win)
+    print("\nA window \"padprobe\" opened: click it so it has the focus, as DOSBox's would.")
+    return win
+
+
+def title(sdl, win, text):
+    sdl.lib.SDL_SetWindowTitle(win, f"padprobe: {text}".encode())
+
+
+def wait_for_focus(sdl, win):
+    """Waits until the window has the focus (SDL_WINDOW_INPUT_FOCUS)."""
+    told = False
+    while True:
+        pump(sdl)
+        if sdl.lib.SDL_GetWindowFlags(win) & 0x200:
+            return
+        if not told:
+            title(sdl, win, "click here")
+            print("  (waiting for the window \"padprobe\" to have the focus: click it)", flush=True)
+            told = True
+        time.sleep(0.05)
+
+
 def active(sdl, js):
     """Every input of the stick DOSBox's mapper would see as pressed, in
     its binding names."""
-    sdl.lib.SDL_PumpEvents()
-    sdl.update()
+    pump(sdl)
     buttons, axes, hats = sdl.counts(js)
     out = set()
     for b in range(buttons):
@@ -422,7 +482,7 @@ def settle(sdl, js):
         time.sleep(0.02)
 
 
-def check(sdl, js, version, layout, timeout):
+def check(sdl, win, js, version, layout, timeout):
     """Asks for each input and compares what arrives with keymap.rs."""
     want_all = expected_bindings()
     if not layout:
@@ -437,6 +497,8 @@ def check(sdl, js, version, layout, timeout):
     for name, value in want.items():
         by_bind.setdefault(value, []).append(name)
 
+    wait_for_focus(sdl, win)
+    title(sdl, win, "keep the controller still")
     settle(sdl, js)
     rest = active(sdl, js)
     problems = []
@@ -452,6 +514,8 @@ def check(sdl, js, version, layout, timeout):
     for name, xbox_text, ps_text in PROMPTS:
         text = ps_text if layout == "playstation" else xbox_text
         expect = want[name]
+        wait_for_focus(sdl, win)
+        title(sdl, win, text)
         print(f"  {text} ... ", end="", flush=True)
         got = set()
         start = time.time()
@@ -479,6 +543,7 @@ def check(sdl, js, version, layout, timeout):
             problems.append(f"{name}: got {seen}, keymap.rs expects {expect}")
         time.sleep(0.2)
 
+    title(sdl, win, "done")
     print(f"\n{version}, {layout} layout: {ok} of {len(PROMPTS)} inputs as keymap.rs binds them.")
     if problems:
         print("Differences:")
@@ -487,15 +552,17 @@ def check(sdl, js, version, layout, timeout):
     return not problems
 
 
-def live(sdl, sticks):
+def live(sdl, win, sticks):
     """Prints each button, hat and axis (past half way) as it changes."""
-    print("\nPress buttons and move sticks and triggers; Ctrl+C ends.")
+    wait_for_focus(sdl, win)
+    title(sdl, win, "press buttons, move sticks; Ctrl+C in the console ends")
+    print("\nPress buttons and move sticks and triggers (window focused); Ctrl+C ends.")
     for _, js in sticks:
         settle(sdl, js)
     before = {}
     try:
         while True:
-            sdl.update()
+            pump(sdl)
             for i, js in sticks:
                 buttons, axes, hats = sdl.counts(js)
                 for b in range(buttons):
@@ -560,6 +627,7 @@ def main():
         from_dosbox(args.dosbox)
 
     passed = True
+    win = open_window(sdl) if sticks and (args.check or args.live) else None
     if args.check:
         if not sticks or sticks[0][0] != 0:
             sys.exit("\n--check: no first controller to check.")
@@ -567,12 +635,12 @@ def main():
             print("\n--check: checks stick_0, the one DOSBox plays with; connect one controller at a time.")
         js = sticks[0][1]
         try:
-            passed = check(sdl, js, version, args.layout, args.timeout)
+            passed = check(sdl, win, js, version, args.layout, args.timeout)
         except KeyboardInterrupt:
             print("\nStopped.")
             passed = False
     if args.live and sticks:
-        live(sdl, sticks)
+        live(sdl, win, sticks)
     sdl.lib.SDL_Quit()
     sys.exit(0 if passed else 1)
 

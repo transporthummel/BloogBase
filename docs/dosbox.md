@@ -170,7 +170,10 @@ version. `--check` asks for each input in turn (A, B, ..., the D-pad,
 both sticks, the triggers) and reports any that arrive differently from what `keymap.rs` binds for
 the controller's layout, or that are pressed at rest; it reads the
 expected bindings from `keymap.rs` and the PlayStation IDs from
-`controller.rs`. Run it with each controller after a DOSBox update
+`controller.rs`. `--check` and `--live` open a small window that must have
+the focus, as DOSBox's has: SDL2 reads an Xbox controller through Raw
+Input, which delivers nothing to a program without a focused window. Run
+it with each controller after a DOSBox update
 ([dependencies.md](dependencies.md)): SDL3, which Staging's `main` uses,
 numbers an Xbox controller differently from SDL2.
 
