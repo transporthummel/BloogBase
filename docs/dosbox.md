@@ -161,6 +161,12 @@ HIDAPI pad first, and that is the one DOSBox plays with. The settings can
 set the layout instead (`controller.layout`), for pads found wrongly or not
 at all; it then also names the buttons in BloogBase.
 
+`scripts/padprobe.py` prints how SDL2 2.32.10 (`pysdl2-dll`, the version
+DOSBox 0.83 has built in) numbers a controller's inputs, with the binding
+`keymap.rs` needs for each, and what DOSBox's mapper logs about it; `--live`
+prints each input as it's used. It's for finding the layouts on other
+systems and controllers.
+
 ## What DOSBox runs
 
 ### Drive C
