@@ -163,11 +163,11 @@ at all; it then also names the buttons in BloogBase.
 
 `scripts/padprobe.py` prints how SDL numbers a controller's inputs, with
 the binding `keymap.rs` needs for each, and what DOSBox's mapper logs about
-it; `--live` prints each input as it's used. With `--dosbox <dosbox.exe>`
-it loads the SDL2 or SDL3 library next to that DOSBox (on Linux, where SDL
-is built in, `pysdl2-dll` or `--sdl` of the same version). `--check` asks
-for each input in turn (A, B, ..., the D-pad, both sticks, the triggers)
-and reports any that arrive differently from what `keymap.rs` binds for
+it; `--live` prints each input as it's used. It tests exactly the SDL2 or
+SDL3 library given with `--sdl` (required): on Windows the DLL next to
+`dosbox.exe`, on Linux, where SDL is built in, `pysdl2-dll` of the same
+version. `--check` asks for each input in turn (A, B, ..., the D-pad,
+both sticks, the triggers) and reports any that arrive differently from what `keymap.rs` binds for
 the controller's layout, or that are pressed at rest; it reads the
 expected bindings from `keymap.rs` and the PlayStation IDs from
 `controller.rs`. Run it with each controller after a DOSBox update

@@ -3,20 +3,21 @@
 mapper file (src-tauri/src/keymap.rs), which binds raw joystick numbers,
 and checks them against keymap.rs.
 
-DOSBox Staging 0.83 has SDL2 2.32.10 (a DLL next to dosbox.exe on Windows,
-built in on Linux). Take the same SDL:
+It tests exactly one SDL library, which must be given: the one DOSBox
+uses. DOSBox Staging 0.83 has SDL2 2.32.10, a DLL next to dosbox.exe on
+Windows; on Linux it's built in, so take pysdl2-dll of the same version:
 
-    python scripts/padprobe.py --dosbox <dir>/dosbox.exe   # loads its SDL2.dll
+    python scripts/padprobe.py --sdl <dosbox dir>/SDL2.dll
     python3 -m venv venv && venv/bin/pip install pysdl2-dll==2.32.10
-    venv/bin/python scripts/padprobe.py
+    venv/bin/python scripts/padprobe.py --sdl "$(venv/bin/python -c \\
+        'import sdl2dll, glob; print(glob.glob(sdl2dll.get_dllpath() + "/libSDL2*")[0])')"
 
 Plain Python otherwise (ctypes, no other packages). SDL2 and SDL3 both
 work. Options:
 
-    --sdl PATH      an SDL2 or SDL3 library to load (else the one next to
-                    --dosbox, else pysdl2-dll, else the system's libSDL2)
-    --dosbox PATH   take the SDL next to that dosbox.exe, and print what
-                    its mapper logs about the controller, to compare
+    --sdl PATH      the SDL2 or SDL3 library to test (required)
+    --dosbox PATH   also start that DOSBox briefly and print what its
+                    mapper logs about the controller, to compare
     --check         ask for each input in turn and check that it arrives as
                     keymap.rs binds it, for the first controller (the one
                     DOSBox plays with); exit code 1 on a difference
@@ -25,14 +26,13 @@ work. Options:
     --live          print each input as it's used, until Ctrl+C
 
 After a DOSBox update: connect each controller alone and run
-`--dosbox <new dosbox.exe> --check`. Connect the controllers before
+`--sdl <new DOSBox's SDL> --check`. Connect the controllers before
 starting it. Paste the whole output into the plan: it has what keymap.rs
 needs.
 """
 
 import argparse
 import ctypes
-import ctypes.util
 import os
 import platform
 import re
@@ -295,42 +295,15 @@ class Sdl3(Sdl2):
         return self.lib.SDL_GetJoystickHat(js, n)
 
 
-SDL_NAMES = ("SDL3.dll", "SDL2.dll", "libSDL3.so.0", "libSDL2-2.0.so.0", "libSDL3.0.dylib", "libSDL2-2.0.0.dylib")
-
-
-def find_sdl(path, dosbox):
-    """The SDL library: the given one, the one next to DOSBox, pysdl2-dll's,
-    or the system's."""
-    if path:
-        return path, "--sdl"
-    if dosbox:
-        folder = os.path.dirname(os.path.abspath(dosbox))
-        for name in SDL_NAMES:
-            if os.path.isfile(os.path.join(folder, name)):
-                return os.path.join(folder, name), "next to DOSBox"
-        sys.exit(
-            f"No SDL library next to {dosbox}: this DOSBox has SDL built in. "
-            "Pass --sdl with a library of the same version (its log names it)."
-        )
-    try:
-        import sdl2dll  # noqa: F401  (pysdl2-dll)
-
-        folder = sdl2dll.get_dllpath()
-        for name in sorted(os.listdir(folder)):
-            if name.startswith(("libSDL2-2.0.so", "libSDL2.so", "SDL2.dll", "libSDL2.dylib", "libSDL2-2.0.dylib")):
-                return os.path.join(folder, name), "pysdl2-dll"
-    except ImportError:
-        pass
-    found = ctypes.util.find_library("SDL2") or ctypes.util.find_library("SDL2-2.0")
-    if found:
-        return found, "system"
-    sys.exit("No SDL found: pass --dosbox or --sdl PATH, or install pysdl2-dll==2.32.10.")
-
-
 def load(path):
+    """The given SDL library and nothing else: a file, not a name the
+    system would look up."""
+    if not os.path.isfile(path):
+        sys.exit(f"--sdl: no file {path}")
+    path = os.path.abspath(path)
     # Windows looks for an SDL DLL's own dependencies next to it.
-    if hasattr(os, "add_dll_directory") and os.path.dirname(path):
-        os.add_dll_directory(os.path.dirname(os.path.abspath(path)))
+    if hasattr(os, "add_dll_directory"):
+        os.add_dll_directory(os.path.dirname(path))
     lib = ctypes.CDLL(path)
     return Sdl3(lib) if hasattr(lib, "SDL_GetJoysticks") else Sdl2(lib)
 
@@ -449,12 +422,13 @@ def settle(sdl, js):
         time.sleep(0.02)
 
 
-def check(sdl, js, vendor, product, layout, timeout):
+def check(sdl, js, version, layout, timeout):
     """Asks for each input and compares what arrives with keymap.rs."""
     want_all = expected_bindings()
     if not layout:
         sony, products = playstation_ids()
-        layout = "playstation" if vendor == sony and product in products else "xbox"
+        is_ps = sdl.vendor(js) == sony and sdl.product(js) in products
+        layout = "playstation" if is_ps else "xbox"
         print(f"\nLayout: {layout} (from the controller's IDs; --layout to choose)")
     else:
         print(f"\nLayout: {layout} (--layout)")
@@ -505,7 +479,7 @@ def check(sdl, js, vendor, product, layout, timeout):
             problems.append(f"{name}: got {seen}, keymap.rs expects {expect}")
         time.sleep(0.2)
 
-    print(f"\n{ok} of {len(PROMPTS)} inputs as keymap.rs binds them.")
+    print(f"\n{version}, {layout} layout: {ok} of {len(PROMPTS)} inputs as keymap.rs binds them.")
     if problems:
         print("Differences:")
         for p in problems:
@@ -553,7 +527,7 @@ def live(sdl, sticks):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    p.add_argument("--sdl")
+    p.add_argument("--sdl", required=True, help="the SDL2 or SDL3 library to test")
     p.add_argument("--dosbox")
     p.add_argument("--check", action="store_true")
     p.add_argument("--layout", choices=["xbox", "playstation"])
@@ -561,13 +535,10 @@ def main():
     p.add_argument("--live", action="store_true")
     args = p.parse_args()
 
-    path, source = find_sdl(args.sdl, args.dosbox)
-    sdl = load(path)
-    v = sdl.version()
+    sdl = load(args.sdl)
+    version = "SDL " + ".".join(map(str, sdl.version()))
     print(f"{platform.platform()}, Python {platform.python_version()}")
-    print(f"SDL {'.'.join(map(str, v))} ({source}: {path})")
-    if not args.dosbox and v != (2, 32, 10):
-        print("  note: DOSBox Staging 0.83 has SDL 2.32.10; numbers may differ in others")
+    print(f"{version} ({os.path.abspath(args.sdl)})")
     hints = {k: os.environ[k] for k in os.environ if k.startswith("SDL_")}
     if hints:
         print(f"  SDL environment: {hints}")
@@ -596,7 +567,7 @@ def main():
             print("\n--check: checks stick_0, the one DOSBox plays with; connect one controller at a time.")
         js = sticks[0][1]
         try:
-            passed = check(sdl, js, sdl.vendor(js), sdl.product(js), args.layout, args.timeout)
+            passed = check(sdl, js, version, args.layout, args.timeout)
         except KeyboardInterrupt:
             print("\nStopped.")
             passed = False
