@@ -67,7 +67,8 @@ fn write_mapper(paths: &AppPaths, db: &Db, profile_id: &str, spec: &LaunchSpec) 
         game_settings::ActionKeys::defaults(spec.engine)
     });
     let controls = keymap::controls(spec.engine, &keys, spec.one_button);
-    keymap::ensure(paths, profile_id, spec.engine, &controls)
+    let pad = crate::controller::for_game(db);
+    keymap::ensure(paths, profile_id, spec.engine, &controls, pad)
 }
 
 /// Puts the player's values back; the next start tries again if this fails.

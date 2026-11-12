@@ -464,13 +464,13 @@ pub fn mapper(
 pub const FILE: &str = "keyboard.map";
 
 /// Writes a profile's mapper file for the host's keyboard layout, the
-/// connected controller (an Xbox controller's layout if none) and the
-/// game's `controls`.
+/// controller's layout (`controller::for_game`) and the game's `controls`.
 pub fn ensure(
     paths: &AppPaths,
     profile_id: &str,
     engine: Engine,
     controls: &Controls,
+    pad: Controller,
 ) -> Result<()> {
     // Earlier versions wrote one file for all profiles, then one per engine.
     for old in [
@@ -482,7 +482,6 @@ pub fn ensure(
         let _ = std::fs::remove_file(paths.configs.join(old));
     }
     let letters = host_letters().unwrap_or_default();
-    let pad = crate::controller::connected().unwrap_or(Controller::Xbox);
     write_if_changed(
         &paths.profile(profile_id).mapper,
         mapper(&letters, engine, controls, pad),

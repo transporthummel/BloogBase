@@ -4,8 +4,15 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Eraser, FileCog, Keyboard, RefreshCw, Wand } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type BackupSettings, type DisplayOptions, type WhenInactive } from "../bindings";
+import {
+  commands,
+  type BackupSettings,
+  type Controller,
+  type DisplayOptions,
+  type WhenInactive,
+} from "../bindings";
 import { ConfigEditor } from "../config/LazyConfigEditor";
+import { controllerConnectedKey, controllerLayoutKey } from "../profile/controller";
 import { oneButtonFiringKey } from "../profile/firing";
 import { configKey } from "../config/queries";
 import { errorMessage } from "../errors";
@@ -616,10 +623,48 @@ function ControlsSection() {
           onChange={(e) => update.mutate(e.target.checked)}
         />
       )}
+      <ControllerLayoutField />
       {choosingKeys && <KeysDialog onClose={() => setChoosingKeys(false)} />}
       {(firing.error ?? update.error) && (
         <Notice tone="error">{errorMessage(t, firing.error ?? update.error)}</Notice>
       )}
+    </>
+  );
+}
+
+/** Which buttons the controller's layout has, for pads found wrongly or not at all. */
+function ControllerLayoutField() {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const layout = useQuery({
+    queryKey: controllerLayoutKey,
+    queryFn: () => unwrap(commands.controllerLayout()),
+  });
+  const update = useMutation({
+    mutationFn: (value: Controller | null) => unwrap(commands.setControllerLayout(value)),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: controllerLayoutKey });
+      void queryClient.invalidateQueries({ queryKey: controllerConnectedKey });
+    },
+  });
+  if (layout.data === undefined) return null;
+  return (
+    <>
+      <Field label={t("settings.controllerLayout")} hint={t("settings.controllerLayoutHint")}>
+        <select
+          className={`${selectClass} w-44`}
+          value={layout.data ?? "auto"}
+          disabled={update.isPending}
+          onChange={(e) =>
+            update.mutate(e.target.value === "auto" ? null : (e.target.value as Controller))
+          }
+        >
+          <option value="auto">{t("settings.controllerLayoutAuto")}</option>
+          <option value="xbox">{t("settings.controllerLayoutXbox")}</option>
+          <option value="playstation">{t("settings.controllerLayoutPlaystation")}</option>
+        </select>
+      </Field>
+      {update.error && <Notice tone="error">{errorMessage(t, update.error)}</Notice>}
     </>
   );
 }

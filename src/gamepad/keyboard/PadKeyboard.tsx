@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { isPadKey, sendKey } from "../actions";
+import type { Controller } from "../../bindings";
 import { buttonName, padLayout, type NamedButton } from "../buttons";
 import { Face } from "../FaceButton";
 import type { PadAction } from "../pad";
@@ -39,9 +40,9 @@ function firstKey(page: Page): At {
  * and a `Dialog` around it keeps the keys; this keeps its own place on the
  * keys and takes the controller's buttons first (`keyboardAction`).
  */
-export function PadKeyboard() {
+export function PadKeyboard({ chosen = null }: { chosen?: Controller | null } = {}) {
   const field = useSyncExternalStore(subscribe, keyboardField);
-  return field ? <Board key={keyId(field)} field={field} /> : null;
+  return field ? <Board key={keyId(field)} field={field} chosen={chosen} /> : null;
 }
 
 // A new field starts the keyboard afresh.
@@ -52,7 +53,7 @@ function keyId(field: Field) {
   return ids.get(field);
 }
 
-function Board({ field }: { field: Field }) {
+function Board({ field, chosen }: { field: Field; chosen: Controller | null }) {
   const { t, i18n } = useTranslation();
   const [page, setPage] = useState<Page>(() => firstPage(field));
   const [shift, setShift] = useState<Shift>("off");
@@ -256,7 +257,7 @@ function Board({ field }: { field: Field }) {
             })}
           </div>
         ))}
-        <Hints page={page} />
+        <Hints page={page} layout={chosen ?? padLayout()} />
       </div>
     </div>,
     document.body,
@@ -275,9 +276,8 @@ function Named({ children }: { children: ReactNode }) {
 }
 
 /** What the controller's buttons do here: the only button hints in the app. */
-function Hints({ page }: { page: Page }) {
+function Hints({ page, layout }: { page: Page; layout: Controller }) {
   const { t } = useTranslation();
-  const layout = padLayout();
   const name = (b: NamedButton) => <Named>{buttonName(layout, b)}</Named>;
   const hints: [ReactNode, string][] = [
     [<Face button="a" layout={layout} />, t("pad.keyboard.type")],

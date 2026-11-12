@@ -10,6 +10,7 @@ import { unwrap } from "../ipc";
 import { JobsPanel } from "../jobs/JobsPanel";
 import { DropImport } from "../library/DropImport";
 import { EarlierBackupPrompt } from "../profile/EarlierBackup";
+import { controllerLayoutKey } from "../profile/controller";
 import { ExitMessage } from "./ExitMessage";
 import { FullscreenButton } from "./FullscreenButton";
 import { navItemClass } from "./navItemClass";
@@ -53,6 +54,11 @@ export function Shell() {
   const update = useAppUpdate({
     enabled: import.meta.env.PROD && info.data?.updatesByPackageManager === false,
   });
+  // The controller layout chosen in the settings, for the keyboard's hints.
+  const chosenLayout = useQuery({
+    queryKey: controllerLayoutKey,
+    queryFn: () => unwrap(commands.controllerLayout()),
+  }).data;
   const [updateLater, setUpdateLater] = useState(false);
   const [footer, setFooter] = useState<HTMLElement | null>(null);
   const main = useRef<HTMLElement>(null);
@@ -69,7 +75,7 @@ export function Shell() {
         <EarlierBackupPrompt />
         <ArchiveWarning />
         <PadHint />
-        <PadKeyboard />
+        <PadKeyboard chosen={chosenLayout} />
         <Outlet />
       </main>
     );
@@ -83,7 +89,7 @@ export function Shell() {
       <EarlierBackupPrompt />
       <ArchiveWarning />
       <PadHint />
-      <PadKeyboard />
+      <PadKeyboard chosen={chosenLayout} />
       <LaunchOverlay />
       <ExitMessage />
       <WhatsNew />

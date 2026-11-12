@@ -110,6 +110,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::set_game_settings,
             commands::profile_firing,
             commands::controller_connected,
+            commands::controller_layout,
+            commands::set_controller_layout,
             commands::profile_custom_patches,
             commands::set_custom_patches,
             commands::profile_machine,

@@ -95,9 +95,13 @@ export const commands = {
 	profileFiring: (profileId: string) => typedError<Firing | null, CommandError>(__TAURI_INVOKE("profile_firing", { profileId })),
 	/**
 	 *  Which game controller is connected, for the controls the frontend shows
-	 *  first and their labels. None where that can't be told.
+	 *  first and their labels: its layout as the player chose it or as found.
+	 *  None where that can't be told.
 	 */
 	controllerConnected: () => __TAURI_INVOKE<Controller | null>("controller_connected"),
+	/**  The controller layout the player chose in the settings; none to find it. */
+	controllerLayout: () => typedError<Controller | null, CommandError>(__TAURI_INVOKE("controller_layout")),
+	setControllerLayout: (layout: Controller | null) => typedError<null, CommandError>(__TAURI_INVOKE("set_controller_layout", { layout })),
 	/**
 	 *  The custom patches a profile's page shows: a game's to edit, or how a
 	 *  mod takes those of the game copy it's played on.

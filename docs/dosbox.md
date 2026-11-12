@@ -155,7 +155,9 @@ same. So at every start BloogBase writes the file for the controller
 connected (`controller.rs`): a PlayStation controller found through Raw
 Input by Sony's vendor and product IDs, else an Xbox layout. Share takes
 View's place and Options Menu's. With both connected, SDL2 lists the
-HIDAPI pad first, and that is the one DOSBox plays with.
+HIDAPI pad first, and that is the one DOSBox plays with. The settings can
+set the layout instead (`controller.layout`), for pads found wrongly or not
+at all; it then also names the buttons in BloogBase.
 
 ## What DOSBox runs
 

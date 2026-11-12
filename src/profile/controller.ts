@@ -4,6 +4,8 @@ import { commands, type Controller } from "../bindings";
 export type ControlsView = "keyboard" | "controller";
 
 export const controllerConnectedKey = ["controllerConnected"] as const;
+/** The layout chosen in the settings; null: found by itself. */
+export const controllerLayoutKey = ["controllerLayout"] as const;
 
 /** Longer than this, and the answer is taken as no. */
 const patience = 300;

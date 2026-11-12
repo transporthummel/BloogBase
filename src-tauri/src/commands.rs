@@ -749,13 +749,34 @@ pub fn profile_firing(db: State<'_, Db>, profile_id: String) -> CommandResult<Op
 }
 
 /// Which game controller is connected, for the controls the frontend shows
-/// first and their labels. None where that can't be told.
+/// first and their labels: its layout as the player chose it or as found.
+/// None where that can't be told.
 #[tauri::command]
 #[specta::specta]
-pub async fn controller_connected() -> Option<crate::controller::Controller> {
-    tauri::async_runtime::spawn_blocking(crate::controller::connected)
-        .await
-        .unwrap_or(None)
+pub async fn controller_connected(app: AppHandle) -> Option<crate::controller::Controller> {
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::controller::connected_as_chosen(&app.state::<Db>())
+    })
+    .await
+    .unwrap_or(None)
+}
+
+/// The controller layout the player chose in the settings; none to find it.
+#[tauri::command]
+#[specta::specta]
+pub fn controller_layout(
+    db: State<'_, Db>,
+) -> CommandResult<Option<crate::controller::Controller>> {
+    Ok(crate::controller::chosen(&db)?)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn set_controller_layout(
+    db: State<'_, Db>,
+    layout: Option<crate::controller::Controller>,
+) -> CommandResult<()> {
+    Ok(crate::controller::set_chosen(&db, layout)?)
 }
 
 /// The custom patches a profile's page shows: a game's to edit, or how a

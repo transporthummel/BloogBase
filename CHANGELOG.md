@@ -6,6 +6,7 @@
 
 - Xbox controllers play every game without setup: the controller presses the keys the game is set to, the player's own ones too, and with View held the keys of the menus, save slots in Keen 1–3 and letters for save names in Keen 4–6 and Keen Dreams. Without one-button firing in Keen 1–3, the fire buttons press Jump and Pogo together.
 - PlayStation controllers (DualShock 4, DualSense) play the games too, with the same layout: Share takes View's place and Options Menu's. The Controls tab, the press hint and the on-screen keyboard show its buttons and names.
+- The settings can set the controller's layout (Xbox or PlayStation) for controllers found wrongly or not at all.
 - In a game, View+RT switches between window and full screen, like Alt+Enter.
 - The Controls tab shows the controller too: a drawing of an Xbox-layout controller with what each button does while playing and, with View held, in the menus. It opens on the controller when one is connected.
 - The first start of a series with a controller connected shows the controller's buttons once, apart from the keyboard's, which come again on a start without it.

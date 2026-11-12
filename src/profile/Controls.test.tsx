@@ -10,7 +10,12 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 vi.mock("../bindings", () => ({
-  commands: { oneButtonFiring: vi.fn(), profileFiring: vi.fn(), controllerConnected: vi.fn() },
+  commands: {
+    oneButtonFiring: vi.fn(),
+    profileFiring: vi.fn(),
+    controllerConnected: vi.fn(),
+    controllerLayout: vi.fn(),
+  },
 }));
 
 const ok = <T,>(data: T) => ({ status: "ok" as const, data });
@@ -57,6 +62,7 @@ function keysFor(action: string) {
 beforeEach(() => {
   setFiring(false, null);
   vi.mocked(commands.controllerConnected).mockResolvedValue(null);
+  vi.mocked(commands.controllerLayout).mockResolvedValue(ok(null));
 });
 
 test("Keen 1-3 shoot with Ctrl and Alt, Space opens the status window", async () => {
@@ -144,6 +150,12 @@ test("a PlayStation controller gets its own names", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Menus (hold Share)" }));
   expect(padSays("D-pad")).toEqual(["D-pad: Letters A–D, with L1: O–R"]);
   expect(screen.getByText("With Share held, you type:")).toBeInTheDocument();
+});
+
+test("the layout chosen in the settings names the buttons", async () => {
+  vi.mocked(commands.controllerLayout).mockResolvedValue(ok("playstation"));
+  await renderSheet(game("keen4", "galaxy"), profile(), "controller");
+  expect(padSays("Cross")).toEqual(["Cross: Jump"]);
 });
 
 test("without a controller, the keyboard comes first", async () => {

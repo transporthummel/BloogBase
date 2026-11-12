@@ -30,7 +30,12 @@ import {
   sheetFor,
   spaceFires,
 } from "./controlSheet";
-import { connectedController, controllerConnectedKey, type ControlsView } from "./controller";
+import {
+  connectedController,
+  controllerConnectedKey,
+  controllerLayoutKey,
+  type ControlsView,
+} from "./controller";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { Keycap } from "./Keycap";
 import { keyLabel } from "./keyLabel";
@@ -185,8 +190,13 @@ export function ControlsSheet({
   // Kept for this visit only.
   const [chosen, setChosen] = useState<ControlsView | undefined>(initialView);
   const view = chosen ?? (connected.data ? "controller" : "keyboard");
-  // Where Rust can't tell (or wasn't asked), the pad the app sees.
-  const layout = connected.data ?? padLayout();
+  const chosenLayout = useQuery({
+    queryKey: controllerLayoutKey,
+    queryFn: () => unwrap(commands.controllerLayout()),
+  });
+  // The chosen layout; else the found one; where Rust can't tell (or
+  // wasn't asked), the pad the app sees.
+  const layout = chosenLayout.data ?? connected.data ?? padLayout();
   const enabled = useQuery({
     queryKey: oneButtonFiringKey,
     queryFn: () => unwrap(commands.oneButtonFiring()),
@@ -208,7 +218,7 @@ export function ControlsSheet({
   const offerSpace = firing.data === "patchable" && enabled.data === false;
 
   // Waits for the answer (at most a moment), so the view doesn't switch.
-  const ready = chosen !== undefined || !connected.isPending;
+  const ready = (chosen !== undefined || !connected.isPending) && !chosenLayout.isPending;
   const windowGroup = (
     <Group title={t("controls.window")} heading={heading}>
       <Bindings items={sheet.window} prefix="action" />

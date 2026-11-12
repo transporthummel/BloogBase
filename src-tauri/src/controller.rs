@@ -7,17 +7,60 @@
 //! controllers and others that act as one. PlayStation controllers are found
 //! by their HID vendor and product IDs through Raw Input. Other pads count
 //! as none. Elsewhere, there's no answer yet.
+//!
+//! The player can set the layout in the settings, for pads found wrongly or
+//! not at all; it then counts for every connected controller.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+
+use crate::db::Db;
+use crate::error::Result;
+use crate::settings;
 
 /// A controller's button layout, as DOSBox's SDL2 numbers its inputs.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum Controller {
     /// Xbox controllers and pads that act as one (XInput).
     Xbox,
     /// DualShock 4 and DualSense, which SDL2 reads itself (HIDAPI).
     Playstation,
+}
+
+/// The layout the player chose; unset means found by itself.
+const CHOSEN: &str = "controller.layout";
+
+/// The layout the player chose, or none to find it.
+pub fn chosen(db: &Db) -> Result<Option<Controller>> {
+    Ok(match settings::get(db, CHOSEN)?.as_deref() {
+        Some("xbox") => Some(Controller::Xbox),
+        Some("playstation") => Some(Controller::Playstation),
+        _ => None,
+    })
+}
+
+pub fn set_chosen(db: &Db, layout: Option<Controller>) -> Result<()> {
+    match layout {
+        Some(Controller::Xbox) => settings::set(db, CHOSEN, "xbox"),
+        Some(Controller::Playstation) => settings::set(db, CHOSEN, "playstation"),
+        None => settings::delete(db, CHOSEN),
+    }
+}
+
+/// The connected controller's layout as the player chose it or as found;
+/// none without a controller (as far as can be told).
+pub fn connected_as_chosen(db: &Db) -> Option<Controller> {
+    let found = connected()?;
+    Some(chosen(db).ok().flatten().unwrap_or(found))
+}
+
+/// The layout a game's mapper file binds: the chosen one, else the found
+/// one, else an Xbox controller's (where nothing can be found).
+pub fn for_game(db: &Db) -> Controller {
+    match chosen(db) {
+        Ok(Some(layout)) => layout,
+        _ => connected().unwrap_or(Controller::Xbox),
+    }
 }
 
 /// Sony's USB vendor ID.
@@ -111,6 +154,19 @@ fn playstation() -> bool {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn the_chosen_layout_is_kept_and_cleared() {
+        let db = Db::open_in_memory().unwrap();
+        assert_eq!(chosen(&db).unwrap(), None);
+        set_chosen(&db, Some(Controller::Playstation)).unwrap();
+        assert_eq!(chosen(&db).unwrap(), Some(Controller::Playstation));
+        assert_eq!(for_game(&db), Controller::Playstation);
+        set_chosen(&db, None).unwrap();
+        assert_eq!(chosen(&db).unwrap(), None);
+    }
+
     /// Run with a controller connected: prints what `connected` finds.
     #[test]
     #[ignore]
