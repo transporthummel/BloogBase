@@ -109,6 +109,8 @@ get the setting through their settings file ([saves.md](saves.md)).
 
 ### The keyboard and controller
 
+All about controllers, in the games and in the app: [controller.md](controller.md).
+
 Keen and most DOS games read raw scancodes, so DOSBox's `keyboard_layout`
 doesn't reach them: on a German keyboard the key labeled Y arrives as Z. On
 Windows, BloogBase asks for the active layout's key for each letter and

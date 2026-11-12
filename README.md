@@ -311,6 +311,8 @@ How BloogBase works inside:
 - [docs/dosbox.md](docs/dosbox.md): setting up and running DOSBox Staging
 - [docs/captures.md](docs/captures.md): reading and playing DOSBox's screenshots
   and videos
+- [docs/controller.md](docs/controller.md): controllers in the games and in
+  the app
 - [docs/security.md](docs/security.md): how BloogBase handles untrusted mods,
   downloads and archives, and how to report a vulnerability
 - [docs/dependencies.md](docs/dependencies.md): what BloogBase pulls in and
