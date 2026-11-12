@@ -176,7 +176,7 @@ All commands from the repository root unless noted.
      version.
    - With an Xbox controller and a PlayStation controller, one at a time:
      `python scripts/padprobe.py --sdl <new DOSBox's SDL library> --check`
-     ([dosbox.md](dosbox.md)). Any difference means the controller layouts in
+     ([controller.md](controller.md#tools-and-tests)). Any difference means the controller layouts in
      `keymap.rs` need redoing.
    - Run the local DOSBox tests
      ([testing.md](testing.md#4-local-tests-with-dosbox-and-downloads-before-a-release)).

@@ -109,8 +109,6 @@ get the setting through their settings file ([saves.md](saves.md)).
 
 ### The keyboard and controller
 
-All about controllers, in the games and in the app: [controller.md](controller.md).
-
 Keen and most DOS games read raw scancodes, so DOSBox's `keyboard_layout`
 doesn't reach them: on a German keyboard the key labeled Y arrives as Z. On
 Windows, BloogBase asks for the active layout's key for each letter and
@@ -119,78 +117,13 @@ types it. A mapper file replaces all of DOSBox's default bindings, so it
 repeats Staging 0.83's (`CreateDefaultBinds` in `gui/mapper.cpp`) and moves
 only the letters.
 
-The same file puts an Xbox controller on the keys the game plays with, so
-games need no joystick setup or calibration: A jumps, B, LB and RB pogo,
-X, LT and RT fire, Y opens the status window, Menu is Esc, and the left
-stick and D-pad move. The buttons press the keys in the game's settings
-file (`CTLPANEL.CKx`, `CONFIG.CKx`, `KDREAMS.CFG`) as it is after the
-global settings went in, or the game's defaults where there is none yet,
-so keys the player changed work on the keyboard and the controller alike.
-Keys changed in the game's own menu reach the controller at the next
-start. Emulated keys are bound, so the host's keyboard layout doesn't
-matter. Fire is Keen 4-6's fire key and Keen Dreams' throw key (A presses
-5 before its jump key, there is no pogo, and Y opens the status window
-with Space). In Keen 1-3 it is the one-button firing key where that
-patch is on and fits, or is built in (Space then), and Y presses Enter;
-without it, the fire buttons press Jump and Pogo together, in that
-order, and Y presses Space. The file drops DOSBox's bindings of the
-controller to its emulated joystick, so games only see keys (Keen Dreams'
-menus take joystick buttons too). Holding View (DOSBox's third modifier)
-switches to the menu keys, which differ between Keen 1-3 and the later
-games. So each profile has a file of its own,
+The same file puts the controller on the keys the game plays with, for the
+controller's layout (Xbox or PlayStation) and the system's SDL2 numbering.
+Those keys are the game's own, so each profile has a file of its own,
 `profiles/<id>/generated/keyboard.map`, written at every start after the
-global settings (only when it changed) and named in the launch layer. Each menu key
-has a button of its own: Keen takes the last of several keys pressed
-together. In Keen 4-6 and Dreams, the D-pad, sticks and stick
-clicks type letters for a save's name with View held, A-N, and O-Z, space
-and backspace with View and LB (DOSBox's first modifier). DOSBox only sees a controller
-that is connected when the game starts (when it logs `MAPPER: No joysticks
-found`, BloogBase looks for one every two seconds while the game runs and,
-at the first, asks the player to start it again), and it presses a key for a stick
-only above 76 % of an axis, so diagonals work on the D-pad only
-([dosbox-staging#5162](https://github.com/dosbox-staging/dosbox-staging/issues/5162)).
-
-DOSBox 0.83 binds raw SDL2 joystick inputs, whose numbers depend on the
-controller. An Xbox controller (XInput or Raw Input) has its D-pad as a
-hat and View and Menu as buttons 6 and 7; a DualShock 4 or DualSense,
-which SDL2 reads itself (HIDAPI), has no hat, the D-pad as buttons 11-14,
-Share and Options as 4 and 6 and L1/R1 as 9 and 10; the axes are the
-same. So at every start BloogBase writes the file for the controller
-connected (`controller.rs`): a PlayStation controller found through Raw
-Input by Sony's vendor and product IDs, else an Xbox layout. Share takes
-View's place and Options Menu's. With both connected, SDL2 lists the
-HIDAPI pad first, and that is the one DOSBox plays with. The settings can
-set the layout instead (`controller.layout`), for pads found wrongly or not
-at all; it then also names the buttons in BloogBase.
-
-On Linux, SDL2 reads every controller through the kernel (evdev), which
-numbers buttons and axes in the order of its own codes, so both layouts
-differ from Windows (`keymap::Numbering`, `fn sdl_linux`): the D-pad is a
-hat on both, the left trigger is axis 2 and the right stick axes 3 and 4;
-an Xbox controller (xpad) has View and Menu as buttons 6 and 7, a DualShock
-4 (hid-playstation) has Triangle 2, Square 3, L1/R1 4 and 5, Share and
-Options 8 and 9. BloogBase finds the controller in
-`/proc/bus/input/devices`: a joystick with Sony's IDs is a PlayStation
-controller, any other an Xbox controller. The DualShock 4's numbers are
-measured, the Xbox controller's follow the same rule (not measured yet:
-VirtualBox's USB passthrough delivered no input from it).
-
-`scripts/padprobe.py` prints how SDL numbers a controller's inputs, with
-the binding `keymap.rs` needs for each, and what DOSBox's mapper logs about
-it; `--live` prints each input as it's used. It tests exactly the SDL2 or
-SDL3 library given with `--sdl` (required): on Windows the DLL next to
-`dosbox.exe`, on Linux, where SDL is built in, `pysdl2-dll` of the same
-version. `--check` asks for each input in turn (A, B, ..., the D-pad,
-both sticks, the triggers) and reports any that arrive differently from what `keymap.rs` binds for
-the controller's layout, or that are pressed at rest; it reads the
-expected bindings for the system it runs on from `keymap.rs` (`fn sdl`,
-on Linux `fn sdl_linux`) and the PlayStation IDs from
-`controller.rs`. `--check` and `--live` open a small window that must have
-the focus, as DOSBox's has: SDL2 reads an Xbox controller through Raw
-Input, which delivers nothing to a program without a focused window. Run
-it with each controller after a DOSBox update
-([dependencies.md](dependencies.md)): SDL3, which Staging's `main` uses,
-numbers an Xbox controller differently from SDL2.
+global settings (only when it changed) and named in the launch layer.
+Buttons, layouts, detection and DOSBox's limits with controllers are in
+[controller.md](controller.md).
 
 ## What DOSBox runs
 
