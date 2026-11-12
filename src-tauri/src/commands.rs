@@ -267,9 +267,9 @@ const LATE_CONTROLLER_EVERY: std::time::Duration = std::time::Duration::from_sec
 
 /// While the game runs, looks for a controller now and then; at the first,
 /// tells the frontend that DOSBox only finds it after a restart. Only where
-/// a controller can be found (Windows).
+/// a controller can be found (Windows and Linux).
 fn watch_for_late_controller(app: AppHandle, profile_id: String) {
-    if !cfg!(windows) {
+    if !cfg!(any(windows, target_os = "linux")) {
         return;
     }
     tauri::async_runtime::spawn(async move {

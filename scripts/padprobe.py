@@ -388,13 +388,22 @@ def from_dosbox(path):
         print(f"  {line.strip()}")
 
 
+def numbering_fn():
+    """keymap.rs's function for how this system's SDL2 numbers the inputs:
+    Linux reads controllers through evdev, the others as Windows does."""
+    return "sdl_linux" if sys.platform.startswith("linux") else "sdl"
+
+
 def expected_bindings():
-    """keymap.rs's binding of each input on each layout, read from its
-    `fn sdl`, so this script can't drift from it."""
-    src = open(KEYMAP, encoding="utf-8").read()
-    body = re.search(r"fn sdl\(pad: Controller, input: Input\)[^{]*\{(.*?)\n\}", src, re.S)
+    """keymap.rs's binding of each input on each layout for this system,
+    read from its `fn sdl` (Windows) or `fn sdl_linux`, so this script
+    can't drift from it."""
+    src = open(KEYMAP, encoding="utf-8").read().replace("\r\n", "\n")
+    fn = numbering_fn()
+    pattern = r"fn " + fn + r"\(pad: Controller, input: Input\)[^{]*\{(.*?)\n\}"
+    body = re.search(pattern, src, re.S)
     if not body:
-        sys.exit(f"`fn sdl` not found in {KEYMAP}: update padprobe.py")
+        sys.exit(f"`fn {fn}` not found in {KEYMAP}: update padprobe.py")
     xbox, ps = {}, {}
     for name, guard, value in re.findall(r"(\w+)( if ps)?\s*=>\s*\"([^\"]+)\"", body.group(1)):
         if guard:
@@ -404,7 +413,7 @@ def expected_bindings():
     ps = {**xbox, **ps}
     missing = [n for n, *_ in PROMPTS if n not in xbox]
     if missing:
-        sys.exit(f"keymap.rs's `fn sdl` lacks {missing}: update padprobe.py")
+        sys.exit(f"keymap.rs's `fn {fn}` lacks {missing}: update padprobe.py")
     return {"xbox": xbox, "playstation": ps}
 
 
@@ -492,6 +501,7 @@ def check(sdl, win, js, version, layout, timeout):
         print(f"\nLayout: {layout} (from the controller's IDs; --layout to choose)")
     else:
         print(f"\nLayout: {layout} (--layout)")
+    print(f"Bindings: keymap.rs's `fn {numbering_fn()}` (this system's numbering)")
     want = want_all[layout]
     by_bind = {}
     for name, value in want.items():

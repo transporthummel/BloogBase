@@ -6,6 +6,7 @@
 
 - Xbox controllers play every game without setup: the controller presses the keys the game is set to, the player's own ones too, and with View held the keys of the menus, save slots in Keen 1–3 and letters for save names in Keen 4–6 and Keen Dreams. Without one-button firing in Keen 1–3, the fire buttons press Jump and Pogo together.
 - PlayStation controllers (DualShock 4, DualSense) play the games too, with the same layout: Share takes View's place and Options Menu's. The Controls tab, the press hint and the on-screen keyboard show its buttons and names.
+- Controllers work on Linux too, with the button numbers Linux gives them.
 - The settings can set the controller's layout (Xbox or PlayStation) for controllers found wrongly or not at all.
 - A controller connected while a game runs that started without one brings a hint to start the game again, as DOSBox only looks for controllers at its start.
 - In a game, View+RT switches between window and full screen, like Alt+Enter.

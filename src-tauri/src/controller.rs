@@ -6,7 +6,9 @@
 //! (through gilrs, empty until its events arrived) don't. It sees Xbox
 //! controllers and others that act as one. PlayStation controllers are found
 //! by their HID vendor and product IDs through Raw Input. Other pads count
-//! as none. Elsewhere, there's no answer yet.
+//! as none. On Linux, the kernel lists every joystick with its IDs in
+//! `/proc/bus/input/devices`; any but a PlayStation controller counts as an
+//! Xbox controller. On macOS, there's no answer yet.
 //!
 //! The player can set the layout in the settings, for pads found wrongly or
 //! not at all; it then counts for every connected controller.
@@ -17,13 +19,15 @@ use crate::db::Db;
 use crate::error::Result;
 use crate::settings;
 
-/// A controller's button layout, as DOSBox's SDL2 numbers its inputs.
+/// A controller's button layout, as DOSBox's SDL2 numbers its inputs (which
+/// also depends on the system, see `keymap::Numbering`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum Controller {
-    /// Xbox controllers and pads that act as one (XInput).
+    /// Xbox controllers and pads that act as one (XInput; xpad on Linux).
     Xbox,
-    /// DualShock 4 and DualSense, which SDL2 reads itself (HIDAPI).
+    /// DualShock 4 and DualSense, which SDL2 reads itself (HIDAPI) on
+    /// Windows.
     Playstation,
 }
 
@@ -64,12 +68,12 @@ pub fn for_game(db: &Db) -> Controller {
 }
 
 /// Sony's USB vendor ID.
-#[cfg_attr(not(windows), allow(dead_code))]
+#[cfg_attr(not(any(windows, target_os = "linux")), allow(dead_code))]
 const SONY: u32 = 0x054C;
 
 /// DualShock 4 (both versions and the wireless adapter), DualSense and
 /// DualSense Edge: the pads SDL2's HIDAPI drivers take on by default.
-#[cfg_attr(not(windows), allow(dead_code))]
+#[cfg_attr(not(any(windows, target_os = "linux")), allow(dead_code))]
 const PLAYSTATION: &[u32] = &[0x05C4, 0x09CC, 0x0BA0, 0x0CE6, 0x0DF2];
 
 /// The connected controller DOSBox takes as its first: SDL2 lists the pads
@@ -86,9 +90,48 @@ pub fn connected() -> Option<Controller> {
     }
 }
 
-#[cfg(not(windows))]
+/// The connected controller as the kernel lists its joysticks: a
+/// PlayStation controller if there's one (as on Windows), else an Xbox
+/// controller if there's any joystick.
+#[cfg(target_os = "linux")]
+pub fn connected() -> Option<Controller> {
+    let devices = std::fs::read_to_string("/proc/bus/input/devices").ok()?;
+    from_input_devices(&devices)
+}
+
+#[cfg(not(any(windows, target_os = "linux")))]
 pub fn connected() -> Option<Controller> {
     None
+}
+
+/// The controller in a listing like Linux's `/proc/bus/input/devices`:
+/// blocks of lines, one per device, with an `I:` line of IDs and an `H:`
+/// line of handlers, `jsN` for a joystick.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+fn from_input_devices(devices: &str) -> Option<Controller> {
+    let mut found = None;
+    for block in devices.split("\n\n") {
+        let field = |line: &str, key: &str| {
+            line.split_whitespace()
+                .find_map(|w| w.strip_prefix(key))
+                .and_then(|v| u32::from_str_radix(v, 16).ok())
+        };
+        let ids = block.lines().find(|l| l.starts_with("I:"));
+        let joystick = block
+            .lines()
+            .find(|l| l.starts_with("H:"))
+            .is_some_and(|l| l.split_whitespace().any(|h| h.starts_with("js")));
+        if !joystick {
+            continue;
+        }
+        let vendor = ids.and_then(|l| field(l, "Vendor="));
+        let product = ids.and_then(|l| field(l, "Product="));
+        if vendor == Some(SONY) && product.is_some_and(|p| PLAYSTATION.contains(&p)) {
+            return Some(Controller::Playstation);
+        }
+        found = Some(Controller::Xbox);
+    }
+    found
 }
 
 #[cfg(windows)]
@@ -165,6 +208,32 @@ mod tests {
         assert_eq!(for_game(&db), Controller::Playstation);
         set_chosen(&db, None).unwrap();
         assert_eq!(chosen(&db).unwrap(), None);
+    }
+
+    #[test]
+    fn linux_lists_its_joysticks() {
+        let keyboard = "I: Bus=0011 Vendor=0001 Product=0001 Version=ab41\n\
+                        N: Name=\"AT Translated Set 2 keyboard\"\n\
+                        H: Handlers=sysrq kbd event2 leds";
+        let xbox = "I: Bus=0003 Vendor=045e Product=0b12 Version=0518\n\
+                    N: Name=\"Microsoft Xbox Series S|X Controller\"\n\
+                    H: Handlers=event7 js0";
+        let ds4 = "I: Bus=0003 Vendor=054c Product=09cc Version=8111\n\
+                   N: Name=\"Sony Interactive Entertainment Wireless Controller\"\n\
+                   H: Handlers=event9 js1";
+        // The DualShock's touchpad: Sony's IDs, but no joystick.
+        let touchpad = "I: Bus=0003 Vendor=054c Product=09cc Version=8111\n\
+                        N: Name=\"Sony Interactive Entertainment Wireless Controller Touchpad\"\n\
+                        H: Handlers=mouse2 event10";
+        let list = |blocks: &[&str]| from_input_devices(&blocks.join("\n\n"));
+        assert_eq!(list(&[keyboard]), None);
+        assert_eq!(list(&[keyboard, touchpad]), None);
+        assert_eq!(list(&[keyboard, xbox]), Some(Controller::Xbox));
+        assert_eq!(
+            list(&[keyboard, ds4, touchpad]),
+            Some(Controller::Playstation)
+        );
+        assert_eq!(list(&[xbox, ds4]), Some(Controller::Playstation));
     }
 
     /// Run with a controller connected: prints what `connected` finds.

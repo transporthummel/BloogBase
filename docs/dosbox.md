@@ -161,6 +161,18 @@ HIDAPI pad first, and that is the one DOSBox plays with. The settings can
 set the layout instead (`controller.layout`), for pads found wrongly or not
 at all; it then also names the buttons in BloogBase.
 
+On Linux, SDL2 reads every controller through the kernel (evdev), which
+numbers buttons and axes in the order of its own codes, so both layouts
+differ from Windows (`keymap::Numbering`, `fn sdl_linux`): the D-pad is a
+hat on both, the left trigger is axis 2 and the right stick axes 3 and 4;
+an Xbox controller (xpad) has View and Menu as buttons 6 and 7, a DualShock
+4 (hid-playstation) has Triangle 2, Square 3, L1/R1 4 and 5, Share and
+Options 8 and 9. BloogBase finds the controller in
+`/proc/bus/input/devices`: a joystick with Sony's IDs is a PlayStation
+controller, any other an Xbox controller. The DualShock 4's numbers are
+measured, the Xbox controller's follow the same rule (not measured yet:
+VirtualBox's USB passthrough delivered no input from it).
+
 `scripts/padprobe.py` prints how SDL numbers a controller's inputs, with
 the binding `keymap.rs` needs for each, and what DOSBox's mapper logs about
 it; `--live` prints each input as it's used. It tests exactly the SDL2 or
@@ -169,7 +181,8 @@ SDL3 library given with `--sdl` (required): on Windows the DLL next to
 version. `--check` asks for each input in turn (A, B, ..., the D-pad,
 both sticks, the triggers) and reports any that arrive differently from what `keymap.rs` binds for
 the controller's layout, or that are pressed at rest; it reads the
-expected bindings from `keymap.rs` and the PlayStation IDs from
+expected bindings for the system it runs on from `keymap.rs` (`fn sdl`,
+on Linux `fn sdl_linux`) and the PlayStation IDs from
 `controller.rs`. `--check` and `--live` open a small window that must have
 the focus, as DOSBox's has: SDL2 reads an Xbox controller through Raw
 Input, which delivers nothing to a program without a focused window. Run

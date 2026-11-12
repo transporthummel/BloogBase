@@ -131,8 +131,36 @@ enum Input {
     Rt,
 }
 
+/// How SDL2 numbers a controller's inputs, which depends on the system.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Numbering {
+    /// Windows, where SDL2 reads Xbox controllers through XInput or Raw
+    /// Input and PlayStation controllers itself (HIDAPI). macOS is taken to
+    /// number them alike (not measured).
+    Windows,
+    /// Linux, where SDL2 reads every controller through the kernel's evdev.
+    Linux,
+}
+
+impl Numbering {
+    /// The numbering of the system BloogBase runs on.
+    pub const HOST: Numbering = if cfg!(target_os = "linux") {
+        Numbering::Linux
+    } else {
+        Numbering::Windows
+    };
+}
+
+/// How DOSBox names an input of the first controller.
+fn binding(numbering: Numbering, pad: Controller, input: Input) -> &'static str {
+    match numbering {
+        Numbering::Windows => sdl(pad, input),
+        Numbering::Linux => sdl_linux(pad, input),
+    }
+}
+
 /// How DOSBox names an input of the first controller, as SDL2 numbers it
-/// on each layout. An Xbox controller (XInput or Raw Input): buttons A 0,
+/// on Windows, on each layout. An Xbox controller (XInput or Raw Input): buttons A 0,
 /// B 1, X 2, Y 3, LB 4, RB 5, View 6, Menu 7, left stick click 8, right
 /// stick click 9; the D-pad is hat 0 (up 1, right 2, down 4, left 8). A
 /// PlayStation controller (HIDAPI): Cross 0, Circle 1, Square 2, Triangle 3,
@@ -177,6 +205,52 @@ fn sdl(pad: Controller, input: Input) -> &'static str {
         RsDown => "stick_0 axis 3 1",
         RsLeft => "stick_0 axis 2 0",
         Lt => "stick_0 axis 4 1",
+        Rt => "stick_0 axis 5 1",
+    }
+}
+
+/// How DOSBox names an input of the first controller, as SDL2 numbers it
+/// on Linux (evdev), on each layout: buttons and axes in the order of the
+/// kernel's codes, so the same rule for both. An Xbox controller (xpad): A
+/// 0, B 1, X 2, Y 3, LB 4, RB 5, View 6, Menu 7, Xbox 8, left stick click
+/// 9, right stick click 10. A DualShock 4 (hid-playstation, measured
+/// 2026-11-12): Cross 0, Circle 1, Triangle 2, Square 3, L1 4, R1 5, L2 6,
+/// R2 7, Share 8, Options 9, PS 10, L3 11, R3 12. Both: the D-pad is hat 0;
+/// axes left stick 0 and 1, left trigger 2, right stick 3 and 4, right
+/// trigger 5 (triggers at rest at the negative end).
+fn sdl_linux(pad: Controller, input: Input) -> &'static str {
+    use Input::*;
+    let ps = pad == Controller::Playstation;
+    match input {
+        A => "stick_0 button 0",
+        B => "stick_0 button 1",
+        X if ps => "stick_0 button 3",
+        X => "stick_0 button 2",
+        Y if ps => "stick_0 button 2",
+        Y => "stick_0 button 3",
+        Lb => "stick_0 button 4",
+        Rb => "stick_0 button 5",
+        View if ps => "stick_0 button 8",
+        View => "stick_0 button 6",
+        Menu if ps => "stick_0 button 9",
+        Menu => "stick_0 button 7",
+        LsClick if ps => "stick_0 button 11",
+        LsClick => "stick_0 button 9",
+        RsClick if ps => "stick_0 button 12",
+        RsClick => "stick_0 button 10",
+        Up => "stick_0 hat 0 1",
+        Right => "stick_0 hat 0 2",
+        Down => "stick_0 hat 0 4",
+        Left => "stick_0 hat 0 8",
+        LsUp => "stick_0 axis 1 0",
+        LsRight => "stick_0 axis 0 1",
+        LsDown => "stick_0 axis 1 1",
+        LsLeft => "stick_0 axis 0 0",
+        RsUp => "stick_0 axis 4 0",
+        RsRight => "stick_0 axis 3 1",
+        RsDown => "stick_0 axis 4 1",
+        RsLeft => "stick_0 axis 3 0",
+        Lt => "stick_0 axis 2 1",
         Rt => "stick_0 axis 5 1",
     }
 }
@@ -410,12 +484,14 @@ const WINDOW: Pad = &[("hand_fullscr", &[(Input::Rt, V)])];
 /// host key (SDL scancode) of each letter that has one and the controller's
 /// layout. Each letter is swapped onto its host key, so the key it pushes
 /// out takes the letter's old place and every host key still sends exactly
-/// one emulated key.
+/// one emulated key. `numbering` is how the system's SDL2 numbers the
+/// controller's inputs.
 pub fn mapper(
     letters: &[(char, u16)],
     engine: Engine,
     controls: &Controls,
     pad: Controller,
+    numbering: Numbering,
 ) -> String {
     let mut keys: Vec<(&str, u16)> = KEYS.to_vec();
     for &(letter, host) in letters {
@@ -453,7 +529,7 @@ pub fn mapper(
     for (event, binds) in playing.chain(menu) {
         out.push_str(&event);
         for (input, mods) in binds {
-            out.push_str(&format!(" \"{}{mods}\"", sdl(pad, input)));
+            out.push_str(&format!(" \"{}{mods}\"", binding(numbering, pad, input)));
         }
         out.push('\n');
     }
@@ -484,7 +560,7 @@ pub fn ensure(
     let letters = host_letters().unwrap_or_default();
     write_if_changed(
         &paths.profile(profile_id).mapper,
-        mapper(&letters, engine, controls, pad),
+        mapper(&letters, engine, controls, pad, Numbering::HOST),
     )
 }
 
@@ -564,6 +640,7 @@ mod tests {
             Engine::Galaxy,
             &default(Engine::Galaxy),
             Controller::Xbox,
+            Numbering::Windows,
         );
         assert_eq!(binding(&map, "key_y"), "\"key 28\"");
         assert_eq!(binding(&map, "key_z"), "\"key 29\"");
@@ -576,6 +653,7 @@ mod tests {
             Engine::Galaxy,
             &default(Engine::Galaxy),
             Controller::Xbox,
+            Numbering::Windows,
         );
         assert_eq!(binding(&map, "key_y"), "\"key 29\"");
         assert_eq!(binding(&map, "key_z"), "\"key 28\"");
@@ -591,6 +669,7 @@ mod tests {
             Engine::Vorticons,
             &default(Engine::Vorticons),
             Controller::Xbox,
+            Numbering::Windows,
         );
         assert_eq!(binding(&map, "key_m"), "\"key 51\"");
         assert_eq!(binding(&map, "key_semicolon"), "\"key 16\"");
@@ -617,7 +696,7 @@ mod tests {
 
     /// The lines for playing: those without View.
     fn playing(engine: Engine, controls: &Controls) -> Vec<String> {
-        mapper(&[], engine, controls, Controller::Xbox)
+        mapper(&[], engine, controls, Controller::Xbox, Numbering::Windows)
             .lines()
             .filter(|l| l.contains("\"stick_0 ") && !l.contains("mod3"))
             .map(str::to_string)
@@ -705,7 +784,13 @@ mod tests {
     #[test]
     fn view_and_rt_toggle_full_screen_in_every_engine() {
         for engine in [Engine::Vorticons, Engine::Galaxy, Engine::Dreams] {
-            let map = mapper(&[], engine, &default(engine), Controller::Xbox);
+            let map = mapper(
+                &[],
+                engine,
+                &default(engine),
+                Controller::Xbox,
+                Numbering::Windows,
+            );
             let lines: Vec<&str> = map
                 .lines()
                 .filter(|l| l.starts_with("hand_fullscr "))
@@ -734,6 +819,7 @@ mod tests {
             Engine::Galaxy,
             &default(Engine::Galaxy),
             Controller::Playstation,
+            Numbering::Windows,
         );
         let line = |event: &str| {
             map.lines()
@@ -783,6 +869,59 @@ mod tests {
     fn every_scancode_names_an_emulated_key() {
         for (code, name) in SCANCODES {
             assert!(KEYS.iter().any(|(n, _)| n == name), "{code:#x} {name}");
+        }
+    }
+
+    #[test]
+    fn linux_numbers_the_controllers_its_own_way() {
+        let line = |pad, event: &str| {
+            mapper(
+                &[],
+                Engine::Galaxy,
+                &default(Engine::Galaxy),
+                pad,
+                Numbering::Linux,
+            )
+            .lines()
+            .find(|l| l.starts_with(&format!("{event} ")) && l.contains("stick_0"))
+            .unwrap()
+            .to_string()
+        };
+        // Xbox: View 6, the right stick on axes 3 and 4, LT on axis 2.
+        assert_eq!(
+            line(Controller::Xbox, "mod_3"),
+            "mod_3 \"stick_0 button 6\""
+        );
+        assert_eq!(
+            line(Controller::Xbox, "key_lctrl"),
+            "key_lctrl \"stick_0 button 0\""
+        );
+        assert!(line(Controller::Xbox, "key_lalt").contains("\"stick_0 button 4\""));
+        // PlayStation: Share 8, Options 9, the D-pad a hat as on Xbox.
+        assert_eq!(
+            line(Controller::Playstation, "mod_3"),
+            "mod_3 \"stick_0 button 8\""
+        );
+        assert_eq!(
+            line(Controller::Playstation, "key_esc"),
+            "key_esc \"stick_0 button 9\""
+        );
+        assert_eq!(
+            line(Controller::Playstation, "key_up"),
+            "key_up \"stick_0 hat 0 1\" \"stick_0 axis 1 0\""
+        );
+        // No binding on the left trigger's axis 2 at its negative end, where
+        // it rests.
+        for pad in [Controller::Xbox, Controller::Playstation] {
+            let map = mapper(
+                &[],
+                Engine::Galaxy,
+                &default(Engine::Galaxy),
+                pad,
+                Numbering::Linux,
+            );
+            assert!(!map.contains("\"stick_0 axis 2 0"), "{pad:?}");
+            assert!(map.contains("\"stick_0 axis 2 1"), "{pad:?}");
         }
     }
 }
