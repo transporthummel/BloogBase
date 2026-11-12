@@ -94,10 +94,10 @@ export const commands = {
 	 */
 	profileFiring: (profileId: string) => typedError<Firing | null, CommandError>(__TAURI_INVOKE("profile_firing", { profileId })),
 	/**
-	 *  Whether a game controller is connected, for the controls the frontend
-	 *  shows first. False where that can't be told.
+	 *  Which game controller is connected, for the controls the frontend shows
+	 *  first and their labels. None where that can't be told.
 	 */
-	controllerConnected: () => __TAURI_INVOKE<boolean>("controller_connected"),
+	controllerConnected: () => __TAURI_INVOKE<Controller | null>("controller_connected"),
 	/**
 	 *  The custom patches a profile's page shows: a game's to edit, or how a
 	 *  mod takes those of the game copy it's played on.
@@ -355,6 +355,13 @@ export type ConfigWarning = {
 	line: number,
 	kind: WarningKind,
 };
+
+/**  A controller's button layout, as DOSBox's SDL2 numbers its inputs. */
+export type Controller = 
+/**  Xbox controllers and pads that act as one (XInput). */
+"xbox" | 
+/**  DualShock 4 and DualSense, which SDL2 reads itself (HIDAPI). */
+"playstation";
 
 /**  How a profile takes the custom patches of its game copy. */
 export type CustomStatus = "applied" | 

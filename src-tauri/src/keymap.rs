@@ -14,6 +14,7 @@
 //! at every start.
 
 use crate::catalog::Engine;
+use crate::controller::Controller;
 use crate::dosconf::write_if_changed;
 use crate::error::Result;
 use crate::game_settings::ActionKeys;
@@ -100,86 +101,173 @@ jhat_0_0_2 \"stick_0 hat 0 4\"
 jhat_0_0_3 \"stick_0 hat 0 8\"
 ";
 
-/// Controller inputs added to DOSBox's events, as SDL numbers an Xbox
-/// controller over Bluetooth: buttons A 0, B 1, X 2, Y 3, LB 4, RB 5,
-/// View 6, Menu 7, left stick click 8, right stick click 9; axes left stick
-/// 0 and 1, right stick 2 and 3, triggers 4 and 5 (at rest at the negative
-/// end); the D-pad is hat 0 (up 1, right 2, down 4, left 8).
+/// A controller input, named after its place on an Xbox controller.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Input {
+    A,
+    B,
+    X,
+    Y,
+    Lb,
+    Rb,
+    View,
+    Menu,
+    /// The sticks pressed in.
+    LsClick,
+    RsClick,
+    Up,
+    Right,
+    Down,
+    Left,
+    LsUp,
+    LsRight,
+    LsDown,
+    LsLeft,
+    RsUp,
+    RsRight,
+    RsDown,
+    RsLeft,
+    Lt,
+    Rt,
+}
+
+/// How DOSBox names an input of the first controller, as SDL2 numbers it
+/// on each layout. An Xbox controller (XInput or Raw Input): buttons A 0,
+/// B 1, X 2, Y 3, LB 4, RB 5, View 6, Menu 7, left stick click 8, right
+/// stick click 9; the D-pad is hat 0 (up 1, right 2, down 4, left 8). A
+/// PlayStation controller (HIDAPI): Cross 0, Circle 1, Square 2, Triangle 3,
+/// Share 4, PS 5, Options 6, L3 7, R3 8, L1 9, R1 10, D-pad buttons up 11,
+/// down 12, left 13, right 14, touchpad 15; no hat. Both: axes left stick 0
+/// and 1, right stick 2 and 3, triggers 4 and 5 (at rest at the negative
+/// end).
+fn sdl(pad: Controller, input: Input) -> &'static str {
+    use Input::*;
+    let ps = pad == Controller::Playstation;
+    match input {
+        A => "stick_0 button 0",
+        B => "stick_0 button 1",
+        X => "stick_0 button 2",
+        Y => "stick_0 button 3",
+        Lb if ps => "stick_0 button 9",
+        Lb => "stick_0 button 4",
+        Rb if ps => "stick_0 button 10",
+        Rb => "stick_0 button 5",
+        View if ps => "stick_0 button 4",
+        View => "stick_0 button 6",
+        Menu if ps => "stick_0 button 6",
+        Menu => "stick_0 button 7",
+        LsClick if ps => "stick_0 button 7",
+        LsClick => "stick_0 button 8",
+        RsClick if ps => "stick_0 button 8",
+        RsClick => "stick_0 button 9",
+        Up if ps => "stick_0 button 11",
+        Up => "stick_0 hat 0 1",
+        Right if ps => "stick_0 button 14",
+        Right => "stick_0 hat 0 2",
+        Down if ps => "stick_0 button 12",
+        Down => "stick_0 hat 0 4",
+        Left if ps => "stick_0 button 13",
+        Left => "stick_0 hat 0 8",
+        LsUp => "stick_0 axis 1 0",
+        LsRight => "stick_0 axis 0 1",
+        LsDown => "stick_0 axis 1 1",
+        LsLeft => "stick_0 axis 0 0",
+        RsUp => "stick_0 axis 3 0",
+        RsRight => "stick_0 axis 2 1",
+        RsDown => "stick_0 axis 3 1",
+        RsLeft => "stick_0 axis 2 0",
+        Lt => "stick_0 axis 4 1",
+        Rt => "stick_0 axis 5 1",
+    }
+}
+
+/// With View held (DOSBox's third modifier).
+const V: &str = " mod3";
+/// With View and LB held (and the first modifier).
+const VL: &str = " mod1 mod3";
+
+/// Events and the inputs bound to them, each with the modifiers it needs.
 ///
 /// Each menu key has a button of its own: Keen answers a question with the
 /// last key pressed, so a button pressing two keys only gives the second.
-type Pad = &'static [(&'static str, &'static [&'static str])];
+type Pad = &'static [(&'static str, &'static [(Input, &'static str)])];
 
 /// Menus in Keen 1-3, with View held.
-const MENU_VORTICONS: Pad = &[
-    // View+A: confirm; View+B: the title screen.
-    ("key_enter", &["stick_0 button 0 mod3"]),
-    ("key_t", &["stick_0 button 1 mod3"]),
-    // View+X: no; View+Y: yes.
-    ("key_n", &["stick_0 button 2 mod3"]),
-    ("key_y", &["stick_0 button 3 mod3"]),
-    // View+Menu: quit to DOS.
-    ("key_d", &["stick_0 button 7 mod3"]),
-    // View+RB: save; View+LB: sound.
-    ("key_f5", &["stick_0 button 5 mod3"]),
-    ("key_f2", &["stick_0 button 4 mod3"]),
-    // Save slots. View+right stick up, right, down, left: 1-4; View+D-pad:
-    // 5-8; View+right stick click: 9.
-    ("key_1", &["stick_0 axis 3 0 mod3"]),
-    ("key_2", &["stick_0 axis 2 1 mod3"]),
-    ("key_3", &["stick_0 axis 3 1 mod3"]),
-    ("key_4", &["stick_0 axis 2 0 mod3"]),
-    ("key_5", &["stick_0 hat 0 1 mod3"]),
-    ("key_6", &["stick_0 hat 0 2 mod3"]),
-    ("key_7", &["stick_0 hat 0 4 mod3"]),
-    ("key_8", &["stick_0 hat 0 8 mod3"]),
-    ("key_9", &["stick_0 button 9 mod3"]),
-];
+const MENU_VORTICONS: Pad = {
+    use Input::*;
+    &[
+        // View+A: confirm; View+B: the title screen.
+        ("key_enter", &[(A, V)]),
+        ("key_t", &[(B, V)]),
+        // View+X: no; View+Y: yes.
+        ("key_n", &[(X, V)]),
+        ("key_y", &[(Y, V)]),
+        // View+Menu: quit to DOS.
+        ("key_d", &[(Menu, V)]),
+        // View+RB: save; View+LB: sound.
+        ("key_f5", &[(Rb, V)]),
+        ("key_f2", &[(Lb, V)]),
+        // Save slots. View+right stick up, right, down, left: 1-4; View+D-pad:
+        // 5-8; View+right stick click: 9.
+        ("key_1", &[(RsUp, V)]),
+        ("key_2", &[(RsRight, V)]),
+        ("key_3", &[(RsDown, V)]),
+        ("key_4", &[(RsLeft, V)]),
+        ("key_5", &[(Up, V)]),
+        ("key_6", &[(Right, V)]),
+        ("key_7", &[(Down, V)]),
+        ("key_8", &[(Left, V)]),
+        ("key_9", &[(RsClick, V)]),
+    ]
+};
 
 /// Menus in Keen 4-6 and Keen Dreams, with View held.
-const MENU_GALAXY: Pad = &[
-    // View+A: confirm; View+B: back.
-    ("key_enter", &["stick_0 button 0 mod3"]),
-    ("key_esc", &["stick_0 button 1 mod3"]),
-    // View+X: no; View+Y: yes.
-    ("key_n", &["stick_0 button 2 mod3"]),
-    ("key_y", &["stick_0 button 3 mod3"]),
-    // Letters for naming a save. View+LB is a second layer: LB pressed with
-    // View held is DOSBox's first modifier (and not pogo).
-    ("mod_1", &["stick_0 button 4 mod3"]),
-    // View+D-pad up, right, down, left: A-D; View+LB: O-R.
-    ("key_a", &["stick_0 hat 0 1 mod3"]),
-    ("key_b", &["stick_0 hat 0 2 mod3"]),
-    ("key_c", &["stick_0 hat 0 4 mod3"]),
-    ("key_d", &["stick_0 hat 0 8 mod3"]),
-    ("key_o", &["stick_0 hat 0 1 mod1 mod3"]),
-    ("key_p", &["stick_0 hat 0 2 mod1 mod3"]),
-    ("key_q", &["stick_0 hat 0 4 mod1 mod3"]),
-    ("key_r", &["stick_0 hat 0 8 mod1 mod3"]),
-    // View+right stick up, right, down, left, click: E-I; View+LB: S-W.
-    ("key_e", &["stick_0 axis 3 0 mod3"]),
-    ("key_f", &["stick_0 axis 2 1 mod3"]),
-    ("key_g", &["stick_0 axis 3 1 mod3"]),
-    ("key_h", &["stick_0 axis 2 0 mod3"]),
-    ("key_i", &["stick_0 button 9 mod3"]),
-    ("key_s", &["stick_0 axis 3 0 mod1 mod3"]),
-    ("key_t", &["stick_0 axis 2 1 mod1 mod3"]),
-    ("key_u", &["stick_0 axis 3 1 mod1 mod3"]),
-    ("key_v", &["stick_0 axis 2 0 mod1 mod3"]),
-    ("key_w", &["stick_0 button 9 mod1 mod3"]),
-    // View+left stick up, right, down, left, click: J-N; View+LB: X, Y, Z,
-    // space, backspace.
-    ("key_j", &["stick_0 axis 1 0 mod3"]),
-    ("key_k", &["stick_0 axis 0 1 mod3"]),
-    ("key_l", &["stick_0 axis 1 1 mod3"]),
-    ("key_m", &["stick_0 axis 0 0 mod3"]),
-    ("key_n", &["stick_0 button 8 mod3"]),
-    ("key_x", &["stick_0 axis 1 0 mod1 mod3"]),
-    ("key_y", &["stick_0 axis 0 1 mod1 mod3"]),
-    ("key_z", &["stick_0 axis 1 1 mod1 mod3"]),
-    ("key_space", &["stick_0 axis 0 0 mod1 mod3"]),
-    ("key_bspace", &["stick_0 button 8 mod1 mod3"]),
-];
+const MENU_GALAXY: Pad = {
+    use Input::*;
+    &[
+        // View+A: confirm; View+B: back.
+        ("key_enter", &[(A, V)]),
+        ("key_esc", &[(B, V)]),
+        // View+X: no; View+Y: yes.
+        ("key_n", &[(X, V)]),
+        ("key_y", &[(Y, V)]),
+        // Letters for naming a save. View+LB is a second layer: LB pressed with
+        // View held is DOSBox's first modifier (and not pogo).
+        ("mod_1", &[(Lb, V)]),
+        // View+D-pad up, right, down, left: A-D; View+LB: O-R.
+        ("key_a", &[(Up, V)]),
+        ("key_b", &[(Right, V)]),
+        ("key_c", &[(Down, V)]),
+        ("key_d", &[(Left, V)]),
+        ("key_o", &[(Up, VL)]),
+        ("key_p", &[(Right, VL)]),
+        ("key_q", &[(Down, VL)]),
+        ("key_r", &[(Left, VL)]),
+        // View+right stick up, right, down, left, click: E-I; View+LB: S-W.
+        ("key_e", &[(RsUp, V)]),
+        ("key_f", &[(RsRight, V)]),
+        ("key_g", &[(RsDown, V)]),
+        ("key_h", &[(RsLeft, V)]),
+        ("key_i", &[(RsClick, V)]),
+        ("key_s", &[(RsUp, VL)]),
+        ("key_t", &[(RsRight, VL)]),
+        ("key_u", &[(RsDown, VL)]),
+        ("key_v", &[(RsLeft, VL)]),
+        ("key_w", &[(RsClick, VL)]),
+        // View+left stick up, right, down, left, click: J-N; View+LB: X, Y, Z,
+        // space, backspace.
+        ("key_j", &[(LsUp, V)]),
+        ("key_k", &[(LsRight, V)]),
+        ("key_l", &[(LsDown, V)]),
+        ("key_m", &[(LsLeft, V)]),
+        ("key_n", &[(LsClick, V)]),
+        ("key_x", &[(LsUp, VL)]),
+        ("key_y", &[(LsRight, VL)]),
+        ("key_z", &[(LsDown, VL)]),
+        ("key_space", &[(LsLeft, VL)]),
+        ("key_bspace", &[(LsClick, VL)]),
+    ]
+};
 
 /// The emulated key of each DOS scancode a game can be set to. The arrows
 /// are the gray ones, the other keys of the number pad its own.
@@ -267,59 +355,42 @@ fn key(scancode: u8, default: u8) -> String {
 
 /// The lines for playing, in file order: the order an input bound to several
 /// keys presses them.
-fn play(engine: Engine, c: &Controls) -> Vec<(String, Vec<&'static str>)> {
+fn play(engine: Engine, c: &Controls) -> Vec<(String, Vec<Input>)> {
+    use Input::*;
     let defaults = ActionKeys::defaults(engine);
     let mut lines = Vec::new();
     if engine == Engine::Dreams {
         // A: 5, then the jump key.
-        lines.push(("key_5".to_string(), vec!["stick_0 button 0"]));
+        lines.push(("key_5".to_string(), vec![A]));
     }
     // A: jump.
-    lines.push((key(c.jump, defaults.jump), vec!["stick_0 button 0"]));
+    lines.push((key(c.jump, defaults.jump), vec![A]));
     // Menu: main menu.
-    lines.push(("key_esc".to_string(), vec!["stick_0 button 7"]));
+    lines.push(("key_esc".to_string(), vec![Menu]));
     // Left stick and D-pad: move.
     for (code, default, binds) in [
-        (c.up, defaults.up, ["stick_0 hat 0 1", "stick_0 axis 1 0"]),
-        (
-            c.right,
-            defaults.right,
-            ["stick_0 hat 0 2", "stick_0 axis 0 1"],
-        ),
-        (
-            c.down,
-            defaults.down,
-            ["stick_0 hat 0 4", "stick_0 axis 1 1"],
-        ),
-        (
-            c.left,
-            defaults.left,
-            ["stick_0 hat 0 8", "stick_0 axis 0 0"],
-        ),
+        (c.up, defaults.up, [Up, LsUp]),
+        (c.right, defaults.right, [Right, LsRight]),
+        (c.down, defaults.down, [Down, LsDown]),
+        (c.left, defaults.left, [Left, LsLeft]),
     ] {
         lines.push((key(code, default), binds.to_vec()));
     }
     // View held is DOSBox's third modifier and switches to the menu keys. A
     // binding with the modifier wins over the same input without it, so the
     // game doesn't see both.
-    lines.push(("mod_3".to_string(), vec!["stick_0 button 6"]));
+    lines.push(("mod_3".to_string(), vec![View]));
     // B, LB, RB: pogo.
     if let Some(pogo) = c.pogo {
         let default = defaults.pogo.unwrap_or(0x38);
-        lines.push((
-            key(pogo, default),
-            vec!["stick_0 button 1", "stick_0 button 4", "stick_0 button 5"],
-        ));
+        lines.push((key(pogo, default), vec![B, Lb, Rb]));
     }
     // X, LT, RT: fire, throw in Keen Dreams.
     for &fire in &c.fire {
-        lines.push((
-            key(fire, SPACE),
-            vec!["stick_0 button 2", "stick_0 axis 4 1", "stick_0 axis 5 1"],
-        ));
+        lines.push((key(fire, SPACE), vec![X, Lt, Rt]));
     }
     // Y: status window.
-    lines.push((key(c.status, ENTER), vec!["stick_0 button 3"]));
+    lines.push((key(c.status, ENTER), vec![Y]));
     lines
 }
 
@@ -333,13 +404,19 @@ fn menu(engine: Engine) -> Pad {
 
 /// DOSBox's own hotkeys on the controller, with View held, in every engine.
 /// View+RT: window or full screen (Alt+Enter).
-const WINDOW: Pad = &[("hand_fullscr", &["stick_0 axis 5 1 mod3"])];
+const WINDOW: Pad = &[("hand_fullscr", &[(Input::Rt, V)])];
 
 /// The mapper file for a layout, engine and the game's controls, given the
-/// host key (SDL scancode) of each letter that has one. Each letter is swapped onto its
-/// host key, so the key it pushes out takes the letter's old place and every
-/// host key still sends exactly one emulated key.
-pub fn mapper(letters: &[(char, u16)], engine: Engine, controls: &Controls) -> String {
+/// host key (SDL scancode) of each letter that has one and the controller's
+/// layout. Each letter is swapped onto its host key, so the key it pushes
+/// out takes the letter's old place and every host key still sends exactly
+/// one emulated key.
+pub fn mapper(
+    letters: &[(char, u16)],
+    engine: Engine,
+    controls: &Controls,
+    pad: Controller,
+) -> String {
     let mut keys: Vec<(&str, u16)> = KEYS.to_vec();
     for &(letter, host) in letters {
         let name = letter.to_ascii_lowercase().to_string();
@@ -366,14 +443,17 @@ pub fn mapper(letters: &[(char, u16)], engine: Engine, controls: &Controls) -> S
         out.push('\n');
     }
     // A line for an event that already has one adds to its bindings.
+    let playing = play(engine, controls)
+        .into_iter()
+        .map(|(event, inputs)| (event, inputs.into_iter().map(|i| (i, "")).collect()));
     let menu = menu(engine)
         .iter()
         .chain(WINDOW)
         .map(|(event, binds)| (event.to_string(), binds.to_vec()));
-    for (event, binds) in play(engine, controls).into_iter().chain(menu) {
+    for (event, binds) in playing.chain(menu) {
         out.push_str(&event);
-        for bind in binds {
-            out.push_str(&format!(" \"{bind}\""));
+        for (input, mods) in binds {
+            out.push_str(&format!(" \"{}{mods}\"", sdl(pad, input)));
         }
         out.push('\n');
     }
@@ -383,7 +463,8 @@ pub fn mapper(letters: &[(char, u16)], engine: Engine, controls: &Controls) -> S
 /// The mapper file's name, next to the launch layer that names it.
 pub const FILE: &str = "keyboard.map";
 
-/// Writes a profile's mapper file for the host's keyboard layout and the
+/// Writes a profile's mapper file for the host's keyboard layout, the
+/// connected controller (an Xbox controller's layout if none) and the
 /// game's `controls`.
 pub fn ensure(
     paths: &AppPaths,
@@ -401,9 +482,10 @@ pub fn ensure(
         let _ = std::fs::remove_file(paths.configs.join(old));
     }
     let letters = host_letters().unwrap_or_default();
+    let pad = crate::controller::connected().unwrap_or(Controller::Xbox);
     write_if_changed(
         &paths.profile(profile_id).mapper,
-        mapper(&letters, engine, controls),
+        mapper(&letters, engine, controls, pad),
     )
 }
 
@@ -478,7 +560,12 @@ mod tests {
     #[test]
     fn us_layout_keeps_letters() {
         let us: Vec<(char, u16)> = ('a'..='z').zip(4..).collect();
-        let map = mapper(&us, Engine::Galaxy, &default(Engine::Galaxy));
+        let map = mapper(
+            &us,
+            Engine::Galaxy,
+            &default(Engine::Galaxy),
+            Controller::Xbox,
+        );
         assert_eq!(binding(&map, "key_y"), "\"key 28\"");
         assert_eq!(binding(&map, "key_z"), "\"key 29\"");
     }
@@ -489,6 +576,7 @@ mod tests {
             &[('Y', 29), ('Z', 28), ('A', 4)],
             Engine::Galaxy,
             &default(Engine::Galaxy),
+            Controller::Xbox,
         );
         assert_eq!(binding(&map, "key_y"), "\"key 29\"");
         assert_eq!(binding(&map, "key_z"), "\"key 28\"");
@@ -503,6 +591,7 @@ mod tests {
             &[('A', 20), ('Q', 4), ('Z', 26), ('W', 29), ('M', 51)],
             Engine::Vorticons,
             &default(Engine::Vorticons),
+            Controller::Xbox,
         );
         assert_eq!(binding(&map, "key_m"), "\"key 51\"");
         assert_eq!(binding(&map, "key_semicolon"), "\"key 16\"");
@@ -529,7 +618,7 @@ mod tests {
 
     /// The lines for playing: those without View.
     fn playing(engine: Engine, controls: &Controls) -> Vec<String> {
-        mapper(&[], engine, controls)
+        mapper(&[], engine, controls, Controller::Xbox)
             .lines()
             .filter(|l| l.contains("\"stick_0 ") && !l.contains("mod3"))
             .map(str::to_string)
@@ -617,7 +706,7 @@ mod tests {
     #[test]
     fn view_and_rt_toggle_full_screen_in_every_engine() {
         for engine in [Engine::Vorticons, Engine::Galaxy, Engine::Dreams] {
-            let map = mapper(&[], engine, &default(engine));
+            let map = mapper(&[], engine, &default(engine), Controller::Xbox);
             let lines: Vec<&str> = map
                 .lines()
                 .filter(|l| l.starts_with("hand_fullscr "))
@@ -637,6 +726,43 @@ mod tests {
                 "{engine:?}"
             );
         }
+    }
+
+    #[test]
+    fn a_playstation_controller_gets_its_own_buttons() {
+        let map = mapper(
+            &[],
+            Engine::Galaxy,
+            &default(Engine::Galaxy),
+            Controller::Playstation,
+        );
+        let line = |event: &str| {
+            map.lines()
+                .filter(|l| l.starts_with(&format!("{event} ")) && l.contains("stick_0"))
+                .collect::<Vec<_>>()
+        };
+        // Options: main menu; Share held: menu keys.
+        assert_eq!(line("key_esc")[0], "key_esc \"stick_0 button 6\"");
+        assert_eq!(line("mod_3"), ["mod_3 \"stick_0 button 4\""]);
+        // The D-pad is four buttons, the sticks are the same axes.
+        assert_eq!(
+            line("key_up")[0],
+            "key_up \"stick_0 button 11\" \"stick_0 axis 1 0\""
+        );
+        assert_eq!(
+            line("key_right")[0],
+            "key_right \"stick_0 button 14\" \"stick_0 axis 0 1\""
+        );
+        // Circle, L1, R1: pogo; Square, L2, R2: fire.
+        assert_eq!(
+            line("key_lalt")[0],
+            "key_lalt \"stick_0 button 1\" \"stick_0 button 9\" \"stick_0 button 10\""
+        );
+        assert!(line("key_space").contains(&format!("key_space {FIRE}").as_str()));
+        // Share+L1 is the second layer of letters; Share+R3: I.
+        assert_eq!(line("mod_1"), ["mod_1 \"stick_0 button 9 mod3\""]);
+        assert_eq!(line("key_i"), ["key_i \"stick_0 button 8 mod3\""]);
+        assert!(!map.contains("hat"), "no hat on a PlayStation controller");
     }
 
     #[test]

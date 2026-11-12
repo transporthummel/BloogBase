@@ -66,7 +66,7 @@ vi.mock("../bindings", () => {
       setupStatus: vi.fn(),
       storageUsage: vi.fn(),
       profileCover: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
-      controllerConnected: vi.fn(() => Promise.resolve(false)),
+      controllerConnected: vi.fn(() => Promise.resolve(null)),
       // The controls sheet in the first start's dialog.
       oneButtonFiring: vi.fn(() => Promise.resolve({ status: "ok", data: false })),
       profileFiring: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
@@ -134,7 +134,7 @@ beforeEach(() => {
   vi.mocked(commands.launchProfile).mockClear();
   localStorage.removeItem("bloogbase.controlsShown");
   localStorage.removeItem("bloogbase.controllerControlsShown");
-  vi.mocked(commands.controllerConnected).mockResolvedValue(false);
+  vi.mocked(commands.controllerConnected).mockResolvedValue(null);
   vi.mocked(commands.storageUsage).mockResolvedValue({
     status: "ok",
     data: {
@@ -273,7 +273,7 @@ test("play launches the profile", async () => {
 test("with a controller, the first start shows the controller once, apart from the keys", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
   vi.mocked(commands.launchProfile).mockResolvedValue({ status: "ok", data: null });
-  vi.mocked(commands.controllerConnected).mockResolvedValue(true);
+  vi.mocked(commands.controllerConnected).mockResolvedValue("xbox");
   renderLibrary();
   const play = await screen.findByRole("button", { name: `Play ${keen5.title}` });
   await vi.waitFor(() => expect(play).toBeEnabled());
@@ -293,7 +293,7 @@ test("with a controller, the first start shows the controller once, apart from t
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
   // Without the controller, the keys come once more.
-  vi.mocked(commands.controllerConnected).mockResolvedValue(false);
+  vi.mocked(commands.controllerConnected).mockResolvedValue(null);
   await userEvent.click(play);
   expect(await screen.findByRole("dialog", { name: "How to play Keen 4–6" })).toBeInTheDocument();
 });

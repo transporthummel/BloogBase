@@ -748,14 +748,14 @@ pub fn profile_firing(db: State<'_, Db>, profile_id: String) -> CommandResult<Op
     ))
 }
 
-/// Whether a game controller is connected, for the controls the frontend
-/// shows first. False where that can't be told.
+/// Which game controller is connected, for the controls the frontend shows
+/// first and their labels. None where that can't be told.
 #[tauri::command]
 #[specta::specta]
-pub async fn controller_connected() -> bool {
+pub async fn controller_connected() -> Option<crate::controller::Controller> {
     tauri::async_runtime::spawn_blocking(crate::controller::connected)
         .await
-        .unwrap_or(false)
+        .unwrap_or(None)
 }
 
 /// The custom patches a profile's page shows: a game's to edit, or how a

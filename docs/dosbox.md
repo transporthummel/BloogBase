@@ -146,6 +146,17 @@ that is connected when the game starts, and it presses a key for a stick
 only above 76 % of an axis, so diagonals work on the D-pad only
 ([dosbox-staging#5162](https://github.com/dosbox-staging/dosbox-staging/issues/5162)).
 
+DOSBox 0.83 binds raw SDL2 joystick inputs, whose numbers depend on the
+controller. An Xbox controller (XInput or Raw Input) has its D-pad as a
+hat and View and Menu as buttons 6 and 7; a DualShock 4 or DualSense,
+which SDL2 reads itself (HIDAPI), has no hat, the D-pad as buttons 11-14,
+Share and Options as 4 and 6 and L1/R1 as 9 and 10; the axes are the
+same. So at every start BloogBase writes the file for the controller
+connected (`controller.rs`): a PlayStation controller found through Raw
+Input by Sony's vendor and product IDs, else an Xbox layout. Share takes
+View's place and Options Menu's. With both connected, SDL2 lists the
+HIDAPI pad first, and that is the one DOSBox plays with.
+
 ## What DOSBox runs
 
 ### Drive C

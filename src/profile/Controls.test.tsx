@@ -56,7 +56,7 @@ function keysFor(action: string) {
 
 beforeEach(() => {
   setFiring(false, null);
-  vi.mocked(commands.controllerConnected).mockResolvedValue(false);
+  vi.mocked(commands.controllerConnected).mockResolvedValue(null);
 });
 
 test("Keen 1-3 shoot with Ctrl and Alt, Space opens the status window", async () => {
@@ -117,7 +117,7 @@ const padSays = (input: string) =>
     .filter((text) => text.startsWith(`${input}: `));
 
 test("a connected controller opens the controller view", async () => {
-  vi.mocked(commands.controllerConnected).mockResolvedValue(true);
+  vi.mocked(commands.controllerConnected).mockResolvedValue("xbox");
   await renderSheet(game("keen4", "galaxy"));
   expect(screen.getByRole("button", { name: "Controller" })).toHaveAttribute(
     "aria-pressed",

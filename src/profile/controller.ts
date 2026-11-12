@@ -1,4 +1,4 @@
-import { commands } from "../bindings";
+import { commands, type Controller } from "../bindings";
 
 /** Which controls a sheet shows. */
 export type ControlsView = "keyboard" | "controller";
@@ -9,14 +9,19 @@ export const controllerConnectedKey = ["controllerConnected"] as const;
 const patience = 300;
 
 /**
- * Whether a controller is connected; no where that can't be told in time.
+ * Which controller is connected; none where that can't be told in time.
  * Only what BloogBase shows depends on it: the games get the controller
  * through DOSBox either way.
  */
-export async function controllerConnected(): Promise<boolean> {
-  const late = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), patience));
+export async function connectedController(): Promise<Controller | null> {
+  const late = new Promise<null>((resolve) => setTimeout(() => resolve(null), patience));
   const asked = Promise.resolve()
     .then(() => commands.controllerConnected())
-    .catch(() => false);
+    .catch(() => null);
   return Promise.race([asked, late]);
+}
+
+/** Whether a controller is connected; no where that can't be told in time. */
+export async function controllerConnected(): Promise<boolean> {
+  return (await connectedController()) !== null;
 }
