@@ -2,6 +2,7 @@
   "pad": {
     "pressButton": "Press a button on the controller to use it in BloogBase.",
     "dismiss": "Close hint",
+    "tooLate": "{{name}} started before the controller was connected. Start the game again to play with it.",
     "keyboard": {
       "label": "On-screen keyboard",
       "type": "Type",

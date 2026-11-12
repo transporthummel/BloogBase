@@ -2,6 +2,7 @@
   "pad": {
     "pressButton": "Drück einen Knopf am Controller, um BloogBase damit zu bedienen.",
     "dismiss": "Hinweis schließen",
+    "tooLate": "{{name}} lief schon, bevor der Controller angeschlossen war. Starte das Spiel neu, um damit zu spielen.",
     "keyboard": {
       "label": "Bildschirmtastatur",
       "type": "Tippen",

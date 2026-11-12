@@ -167,6 +167,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             jobs::JobUpdated,
             keenwiki::KeenwikiProgress,
             launcher::GameLaunch,
+            launcher::ControllerTooLate,
             launcher::PlaySessionEnded,
             launcher::QuitRequested,
             mod_index::IndexUpdated,

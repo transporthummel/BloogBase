@@ -18,6 +18,7 @@ import { QuitButton } from "./QuitButton";
 import { LaunchOverlay } from "./LaunchOverlay";
 import { useJobEvents } from "../jobs/queries";
 import { PadKeyboard } from "../gamepad/keyboard/PadKeyboard";
+import { LateController } from "../gamepad/LateController";
 import { PadHint } from "../gamepad/PadHint";
 import { usePad } from "../gamepad/usePad";
 import { hideSplash } from "../splash";
@@ -91,6 +92,7 @@ export function Shell() {
       <PadHint />
       <PadKeyboard chosen={chosenLayout} />
       <LaunchOverlay />
+      <LateController />
       <ExitMessage />
       <WhatsNew />
       {/* First stop for keyboards: past the navigation to the page. */}

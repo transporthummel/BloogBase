@@ -166,6 +166,14 @@ pub enum LaunchPhase {
     Failed,
 }
 
+/// A controller was connected while a game runs whose DOSBox found none at
+/// its start: it only plays with one after a restart.
+#[derive(Debug, Clone, Serialize, Deserialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct ControllerTooLate {
+    pub profile_id: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaySessionEnded {
@@ -442,15 +450,24 @@ fn dosbox_args(
     args
 }
 
-/// Starts DOSBox and records the session start; `shown` is called once its
-/// window is up. Returns the running child and the session id to pass to
+/// What DOSBox's log tells while it runs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LogEvent {
+    /// Its window is up.
+    Shown,
+    /// It found no controller at its start, and won't look again.
+    NoController,
+}
+
+/// Starts DOSBox and records the session start; `on_log` hears what its
+/// log tells. Returns the running child and the session id to pass to
 /// [`finish`].
 pub fn spawn(
     runtime: &Runtime,
     spec: &LaunchSpec,
     db: &Db,
     profile_id: &str,
-    shown: impl FnOnce() + Send + 'static,
+    on_log: impl FnMut(LogEvent) + Send + 'static,
 ) -> Result<(tokio::process::Child, i64)> {
     let log = File::create(&spec.log)?;
     let mut cmd = Command::new(&runtime.path);
@@ -464,18 +481,19 @@ pub fn spawn(
     let mut child = tokio::process::Command::from(cmd).spawn()?;
     if let Some(stderr) = child.stderr.take() {
         let pid = child.id().unwrap_or_default();
-        tokio::spawn(watch(stderr, log, pid, shown));
+        tokio::spawn(watch(stderr, log, pid, on_log));
     }
     let session = start_session(db, profile_id, spec.setup.as_deref(), now())?;
     Ok((child, session))
 }
 
-/// Copies DOSBox's log output to `log` and, at the first video mode it
-/// presents, gives its window our icon and calls `shown`. Reads to the end,
-/// so DOSBox never blocks on a full pipe.
-async fn watch(stderr: ChildStderr, mut log: File, pid: u32, shown: impl FnOnce()) {
+/// Copies DOSBox's log output to `log`. At the first video mode it
+/// presents, gives its window our icon and tells [`LogEvent::Shown`]; tells
+/// [`LogEvent::NoController`] when it finds none. Reads to the end, so
+/// DOSBox never blocks on a full pipe.
+async fn watch(stderr: ChildStderr, mut log: File, pid: u32, mut on_log: impl FnMut(LogEvent)) {
     let mut reader = BufReader::new(stderr);
-    let mut shown = Some(shown);
+    let mut shown = false;
     let mut line = Vec::new();
     loop {
         line.clear();
@@ -484,11 +502,13 @@ async fn watch(stderr: ChildStderr, mut log: File, pid: u32, shown: impl FnOnce(
             Ok(_) => {}
         }
         let _ = log.write_all(&line);
-        if shows_window(&line)
-            && let Some(shown) = shown.take()
-        {
+        if !shown && shows_window(&line) {
+            shown = true;
             set_icon(pid);
-            shown();
+            on_log(LogEvent::Shown);
+        }
+        if finds_no_controller(&line) {
+            on_log(LogEvent::NoController);
         }
     }
 }
@@ -600,6 +620,11 @@ fn set_icon(_pid: u32) {}
 fn shows_window(line: &[u8]) -> bool {
     let line = String::from_utf8_lossy(line);
     line.contains("DISPLAY: ") && line.contains(" mode ") && line.contains(" scaled to ")
+}
+
+/// `MAPPER: No joysticks found`, logged at the start.
+fn finds_no_controller(line: &[u8]) -> bool {
+    String::from_utf8_lossy(line).contains("MAPPER: No joysticks found")
 }
 
 fn start_session(db: &Db, profile_id: &str, setup: Option<&str>, at: i64) -> Result<i64> {
@@ -1104,6 +1129,16 @@ machine = svga_paradise
     }
 
     #[test]
+    fn dosbox_says_when_it_found_no_controller() {
+        assert!(finds_no_controller(
+            b"2026-11-12 09:41:16.617 | MAPPER: No joysticks found\n"
+        ));
+        assert!(!finds_no_controller(
+            b"2026-11-12 09:41:16.617 | MAPPER: Found one joystick\n"
+        ));
+    }
+
+    #[test]
     fn the_first_presented_mode_means_the_window_is_up() {
         let shows = |l: &str| shows_window(l.as_bytes());
         assert!(!shows(
@@ -1340,7 +1375,7 @@ mod e2e {
         let installs = library::import(&paths, &db, Path::new(&game)).unwrap();
         let id = &installs[0].id;
         let spec = prepare(&paths, &db, id, false).unwrap();
-        let (mut child, session) = spawn(&rt, &spec, &db, id, || {}).unwrap();
+        let (mut child, session) = spawn(&rt, &spec, &db, id, |_| {}).unwrap();
         tokio::time::sleep(Duration::from_secs(8)).await;
         assert!(
             child.try_wait().unwrap().is_none(),
@@ -1478,7 +1513,7 @@ $bmp.Save($env:SHOT_PATH)
                 };
                 tried = true;
                 let spec = prepare(&paths, &db, &m.profile_id, false).unwrap();
-                let (mut child, session) = spawn(&rt, &spec, &db, &m.profile_id, || {}).unwrap();
+                let (mut child, session) = spawn(&rt, &spec, &db, &m.profile_id, |_| {}).unwrap();
                 tokio::time::sleep(Duration::from_secs(7)).await;
                 let exited = child.try_wait().unwrap();
                 if let (None, Some(pid)) = (exited, child.id()) {

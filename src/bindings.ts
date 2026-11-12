@@ -255,6 +255,7 @@ export const commands = {
 /** Events */
 export const events = {
 	archiveDamaged: makeEvent<ArchiveDamaged, ArchiveDamaged>("archive-damaged"),
+	controllerTooLate: makeEvent<ControllerTooLate, ControllerTooLate>("controller-too-late"),
 	gameLaunch: makeEvent<GameLaunch, GameLaunch>("game-launch"),
 	indexUpdated: makeEvent<IndexUpdated, IndexUpdated>("index-updated"),
 	jobUpdated: makeEvent<JobUpdated, JobUpdated>("job-updated"),
@@ -366,6 +367,14 @@ export type Controller =
 "xbox" | 
 /**  DualShock 4 and DualSense, which SDL2 reads itself (HIDAPI). */
 "playstation";
+
+/**
+ *  A controller was connected while a game runs whose DOSBox found none at
+ *  its start: it only plays with one after a restart.
+ */
+export type ControllerTooLate = {
+	profileId: string,
+};
 
 /**  How a profile takes the custom patches of its game copy. */
 export type CustomStatus = "applied" | 

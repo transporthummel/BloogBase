@@ -142,7 +142,9 @@ has a button of its own: Keen takes the last of several keys pressed
 together. In Keen 4-6 and Dreams, the D-pad, sticks and stick
 clicks type letters for a save's name with View held, A-N, and O-Z, space
 and backspace with View and LB (DOSBox's first modifier). DOSBox only sees a controller
-that is connected when the game starts, and it presses a key for a stick
+that is connected when the game starts (when it logs `MAPPER: No joysticks
+found`, BloogBase looks for one every two seconds while the game runs and,
+at the first, asks the player to start it again), and it presses a key for a stick
 only above 76 % of an axis, so diagonals work on the D-pad only
 ([dosbox-staging#5162](https://github.com/dosbox-staging/dosbox-staging/issues/5162)).
 

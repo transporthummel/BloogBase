@@ -22,7 +22,9 @@ use crate::firing::{self, Firing};
 use crate::free_games::{self, FreeGame};
 use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
 use crate::keenwiki::{self, UpdateStatus, WikiMod};
-use crate::launcher::{GameLaunch, LaunchPhase, PlaySessionEnded, Playing, Running};
+use crate::launcher::{
+    ControllerTooLate, GameLaunch, LaunchPhase, LogEvent, PlaySessionEnded, Playing, Running,
+};
 use crate::library::{self, Install};
 use crate::mod_index::{self, IndexMod, IndexStatus, IndexUpdated, ModIndex};
 use crate::mods::{self, Curated, Dropped, InstallModRequest, Mod, ModInfo};
@@ -181,14 +183,19 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
     let a = app.clone();
     let id = profile_id.clone();
     let started = blocking(move || {
-        let shown = {
+        let on_log = {
             let (app, profile_id) = (a.clone(), id.clone());
-            move || {
-                let _ = GameLaunch {
-                    profile_id,
-                    phase: LaunchPhase::Shown,
+            move |event| match event {
+                LogEvent::Shown => {
+                    let _ = GameLaunch {
+                        profile_id: profile_id.clone(),
+                        phase: LaunchPhase::Shown,
+                    }
+                    .emit(&app);
                 }
-                .emit(&app);
+                LogEvent::NoController => {
+                    watch_for_late_controller(app.clone(), profile_id.clone());
+                }
             }
         };
         session::start(
@@ -197,7 +204,7 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
             &runtime,
             &id,
             fullscreen,
-            shown,
+            on_log,
         )
     })
     .await;
@@ -253,6 +260,35 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
         .emit(&app);
     });
     Ok(())
+}
+
+/// How often to look for a controller while a game runs without one.
+const LATE_CONTROLLER_EVERY: std::time::Duration = std::time::Duration::from_secs(2);
+
+/// While the game runs, looks for a controller now and then; at the first,
+/// tells the frontend that DOSBox only finds it after a restart. Only where
+/// a controller can be found (Windows).
+fn watch_for_late_controller(app: AppHandle, profile_id: String) {
+    if !cfg!(windows) {
+        return;
+    }
+    tauri::async_runtime::spawn(async move {
+        loop {
+            tokio::time::sleep(LATE_CONTROLLER_EVERY).await;
+            if !app.state::<Running>().contains(&profile_id) {
+                return;
+            }
+            let found = tauri::async_runtime::spawn_blocking(crate::controller::connected)
+                .await
+                .ok()
+                .flatten();
+            if found.is_some() {
+                tracing::info!("controller connected after {profile_id} started");
+                let _ = ControllerTooLate { profile_id }.emit(&app);
+                return;
+            }
+        }
+    });
 }
 
 /// Runs `f` with the profile marked as running, so the game can't start

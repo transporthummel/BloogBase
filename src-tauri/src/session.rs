@@ -22,15 +22,15 @@ pub struct Started {
     pub backup: Option<u32>,
 }
 
-/// Backs up the saves, prepares the profile and starts DOSBox; `shown` is
-/// called once its window is up.
+/// Backs up the saves, prepares the profile and starts DOSBox; `on_log`
+/// hears what its log tells.
 pub fn start(
     paths: &AppPaths,
     db: &Db,
     runtime: &Runtime,
     profile_id: &str,
     fullscreen: bool,
-    shown: impl FnOnce() + Send + 'static,
+    on_log: impl FnMut(launcher::LogEvent) + Send + 'static,
 ) -> Result<Started> {
     // Left by a session that ended without us, e.g. in a crash.
     merge_settings(paths, db, profile_id);
@@ -43,7 +43,7 @@ pub fn start(
         merge_settings(paths, db, profile_id);
         return Err(e);
     }
-    let (child, session) = match launcher::spawn(runtime, &spec, db, profile_id, shown) {
+    let (child, session) = match launcher::spawn(runtime, &spec, db, profile_id, on_log) {
         Ok(started) => started,
         Err(e) => {
             merge_settings(paths, db, profile_id);
@@ -200,7 +200,7 @@ mod tests {
             managed: false,
         };
 
-        assert!(start(&paths, &db, &runtime, "keen4-1", false, || {}).is_err());
+        assert!(start(&paths, &db, &runtime, "keen4-1", false, |_| {}).is_err());
         assert_eq!(std::fs::read(&file).unwrap(), original);
     }
 }
