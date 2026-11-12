@@ -174,6 +174,10 @@ All commands from the repository root unless noted.
      platform, `url`, `sha256` and `size` from the GitHub release assets.
    - Redo the default bindings in `src-tauri/src/keymap.rs` for the new
      version.
+   - With an Xbox controller and a PlayStation controller, one at a time:
+     `python scripts/padprobe.py --dosbox <new dosbox.exe> --check`
+     ([dosbox.md](dosbox.md)). Any difference means the controller layouts in
+     `keymap.rs` need redoing.
    - Run the local DOSBox tests
      ([testing.md](testing.md#4-local-tests-with-dosbox-and-downloads-before-a-release)).
 
