@@ -9,12 +9,14 @@ export interface Callout {
   lines: string[];
 }
 
+type Anchor = { side: "left" | "right"; y: number; line: string };
+
 /**
  * Where each callout sits: its side, the height of its first line, and the
  * leader line's points from the label to the input. Laid out so no line
  * crosses another input or line.
  */
-const anchors: Record<PadInput, { side: "left" | "right"; y: number; line: string }> = {
+const anchors: Record<PadInput, Anchor> = {
   lt: { side: "left", y: 38, line: "233,38 286,38 303,47" },
   lb: { side: "left", y: 66, line: "233,66 270,90" },
   view: { side: "left", y: 96, line: "233,96 395,96 409,124" },
@@ -28,6 +30,24 @@ const anchors: Record<PadInput, { side: "left" | "right"; y: number; line: strin
   a: { side: "right", y: 166, line: "667,166 588,167" },
   x: { side: "right", y: 190, line: "667,190 541,190 541,157" },
   rs: { side: "right", y: 215, line: "667,215 538,215" },
+};
+
+/**
+ * A PlayStation controller has the D-pad up left and both sticks below,
+ * Share and Options beside the touchpad.
+ */
+const psAnchors: Record<PadInput, Anchor> = {
+  ...anchors,
+  view: { side: "left", y: 96, line: "233,96 377,96" },
+  dpad: { side: "left", y: 140, line: "233,140 307,140" },
+  ls: { side: "left", y: 215, line: "233,215 362,215" },
+  menu: { side: "right", y: 96, line: "667,96 523,96" },
+};
+
+/** Where the sticks and the D-pad sit on each layout. */
+const places: Record<Controller, Record<"ls" | "rs" | "dpad", { x: number; y: number }>> = {
+  xbox: { ls: { x: 330, y: 140 }, rs: { x: 505, y: 215 }, dpad: { x: 395, y: 215 } },
+  playstation: { ls: { x: 395, y: 215 }, rs: { x: 505, y: 215 }, dpad: { x: 330, y: 140 } },
 };
 
 const face: { input: "a" | "b" | "x" | "y"; x: number; y: number; fill: string }[] = [
@@ -54,8 +74,9 @@ const mirror = "translate(900 0) scale(-1 1)";
 /**
  * A generic controller in the Xbox layout (an own drawing, no maker's
  * artwork or logo), with callouts to what each input does. Inputs without
- * one are drawn faintly. For a PlayStation controller, the buttons carry
- * its symbols and names at the same places. Decorative for screen readers:
+ * one are drawn faintly. A PlayStation controller gets its own
+ * arrangement (D-pad up left, sticks below, touchpad), its symbols and
+ * names. Decorative for screen readers:
  * the callouts are listed beside it for them.
  */
 export function PadDrawing({
@@ -66,6 +87,7 @@ export function PadDrawing({
   layout?: Controller;
 }) {
   const ps = layout === "playstation";
+  const at = places[layout];
   const used = new Set(callouts.map((c) => c.input));
   const part = (input: PadInput) => (used.has(input) ? "" : "opacity-35");
   const cap = "fill-surface stroke-muted";
@@ -90,27 +112,37 @@ export function PadDrawing({
       <Label x={588} y={71} text={buttonName(layout, "rb")} size={9} className={part("rb")} />
 
       {/* Sticks and D-pad sit in wells. */}
-      <Stick x={330} y={140} className={part("ls")} />
-      <Stick x={505} y={215} className={part("rs")} />
-      <g className={part("dpad")}>
-        <circle className="fill-surface stroke-border" cx={395} cy={215} r={31} />
+      <Stick x={at.ls.x} y={at.ls.y} className={part("ls")} />
+      <Stick x={at.rs.x} y={at.rs.y} className={part("rs")} />
+      <g className={part("dpad")} transform={`translate(${at.dpad.x} ${at.dpad.y})`}>
+        <circle className="fill-surface stroke-border" r={31} />
         <path
           className="fill-surface-raised stroke-muted"
           strokeLinejoin="round"
-          d="M386 192 h18 v14 h14 v18 h-14 v14 h-18 v-14 h-14 v-18 h14 Z"
+          d="M-9 -23 h18 v14 h14 v18 h-14 v14 h-18 v-14 h-14 v-18 h14 Z"
         />
       </g>
 
-      {/* The guide button between them, plain. */}
-      <circle className="fill-surface stroke-border" cx={450} cy={104} r={12} />
       {ps ? (
         <>
-          {/* Share and Options: slim upright buttons. */}
-          <rect className={`${cap} ${part("view")}`} x={408} y={126} width={8} height={16} rx={4} />
-          <rect className={`${cap} ${part("menu")}`} x={484} y={126} width={8} height={16} rx={4} />
+          {/* The touchpad, the plain PS button below it, and Share and
+              Options as slim upright buttons beside it. */}
+          <rect
+            className="fill-surface stroke-border"
+            x={400}
+            y={90}
+            width={100}
+            height={48}
+            rx={8}
+          />
+          <circle className="fill-surface stroke-border" cx={450} cy={158} r={8} />
+          <rect className={`${cap} ${part("view")}`} x={377} y={92} width={8} height={16} rx={4} />
+          <rect className={`${cap} ${part("menu")}`} x={515} y={92} width={8} height={16} rx={4} />
         </>
       ) : (
         <>
+          {/* The guide button between them, plain. */}
+          <circle className="fill-surface stroke-border" cx={450} cy={104} r={12} />
           <g className={part("view")}>
             <circle className={cap} cx={412} cy={134} r={9} />
             <rect
@@ -158,7 +190,7 @@ export function PadDrawing({
       )}
 
       {callouts.map((c) => {
-        const a = anchors[c.input];
+        const a = (ps ? psAnchors : anchors)[c.input];
         const left = a.side === "left";
         const points = a.line.split(" ");
         const end = points[points.length - 1].split(",").map(Number);
