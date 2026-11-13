@@ -1,40 +1,22 @@
 {
   "unreleased": {
     "en": [
-      "What's new folds away older versions after a long break.",
       "Xbox and PlayStation controllers work in every game, with your own keys and in the menus, on Linux too.",
       "BloogBase itself can be used with a controller, with an on-screen keyboard for text fields.",
       "The Controls tab and the first start with a controller show its buttons.",
-      "The settings can set your controller's layout.",
-      "A controller connected during a game: BloogBase tells you to restart the game.",
-      "View+RT switches a game between window and full screen.",
       "German and French keyboards type the right letters on Linux and macOS too.",
       "On a Mac, the app names keys and shortcuts as on its keyboard.",
-      "A missing cover picture is made again instead of staying empty.",
-      "The mod list comes with BloogBase, so it's there even when the server can't be reached.",
-      "Games from Steam and GOG already in your library show their version.",
       "Adding a mod shows how many saves come with it.",
-      "A mod that needs another version of your game says which one you have, and why.",
-      "Pages no longer jitter when a menu opens.",
-      "Keen 1–3's controls no longer grey out the up and down arrows."
+      "A mod that needs another version of your game says which one you have, and why."
     ],
     "de": [
-      "Nach längerer Pause klappen die Neuigkeiten ältere Versionen ein.",
       "Xbox- und PlayStation-Controller funktionieren in jedem Spiel, mit deinen eigenen Tasten und in den Menüs, auch unter Linux.",
       "BloogBase lässt sich selbst mit dem Controller bedienen, mit einer Bildschirmtastatur für Textfelder.",
       "Der Tab Steuerung und der erste Start mit Controller zeigen seine Knöpfe.",
-      "In den Einstellungen lässt sich die Belegung des Controllers wählen.",
-      "Schließt du den Controller erst während des Spiels an, sagt BloogBase, dass du es neu starten musst.",
-      "View+RT wechselt im Spiel zwischen Fenster und Vollbild.",
       "Deutsche und französische Tastaturen tippen jetzt auch unter Linux und macOS die richtigen Buchstaben.",
       "Auf dem Mac nennt die App Tasten und Kürzel wie auf seiner Tastatur.",
-      "Ein fehlendes Titelbild wird neu erzeugt, statt leer zu bleiben.",
-      "Die Mod-Liste kommt mit BloogBase, damit sie auch da ist, wenn der Server nicht erreichbar ist.",
-      "Spiele von Steam und GOG, die schon in deiner Bibliothek sind, zeigen ihre Version.",
       "Beim Hinzufügen einer Mod siehst du, wie viele Spielstände sie mitbringt.",
-      "Braucht eine Mod eine andere Version deines Spiels, sagt sie, welche du hast und warum.",
-      "Seiten wackeln nicht mehr, wenn sich ein Menü öffnet.",
-      "Die Steuerung von Keen 1–3 graut die Pfeiltasten hoch und runter nicht mehr aus."
+      "Braucht eine Mod eine andere Version deines Spiels, sagt sie, welche du hast und warum."
     ]
   },
   "releases": [
