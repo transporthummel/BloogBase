@@ -62,6 +62,7 @@
     "homepage": "https://github.com/transporthummel/BloogBase",
     "category": "Game",
     "shortDescription": "A launcher for Commander Keen and its mods",
+    "longDescription": "A cozy home for Commander Keen. Play the Keen games and the community's mods with a single click.",
     "copyright": "Copyright © 2026 transporthummel. Commander Keen is a trademark of id Software.",
     "license": "MIT",
     "licenseFile": "../LICENSE",

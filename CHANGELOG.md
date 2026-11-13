@@ -19,6 +19,7 @@
 
 - With a controller, LB/RB switch tabs, LT/RT scroll a page (the focus follows onto what's in view), and View or Menu jump to the main navigation and back.
 - "What's new" shows the newest version's changes and folds away the versions skipped in between, with a link to all changes.
+- The Linux package (deb) carries a description, which Ubuntu's App Center showed as "(none)" before.
 
 ### Bug Fixes
 
