@@ -361,11 +361,17 @@ export type ConfigWarning = {
 	kind: WarningKind,
 };
 
-/**  A controller's button layout, as DOSBox's SDL2 numbers its inputs. */
+/**
+ *  A controller's button layout, as DOSBox's SDL2 numbers its inputs (which
+ *  also depends on the system, see `keymap::Numbering`).
+ */
 export type Controller = 
-/**  Xbox controllers and pads that act as one (XInput). */
+/**  Xbox controllers and pads that act as one (XInput; xpad on Linux). */
 "xbox" | 
-/**  DualShock 4 and DualSense, which SDL2 reads itself (HIDAPI). */
+/**
+ *  DualShock 4 and DualSense, which SDL2 reads itself (HIDAPI) on
+ *  Windows.
+ */
 "playstation";
 
 /**
