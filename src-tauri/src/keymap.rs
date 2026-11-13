@@ -20,6 +20,22 @@ use crate::error::Result;
 use crate::game_settings::ActionKeys;
 use crate::paths::AppPaths;
 
+mod host;
+
+/// The host key (SDL scancode) of each letter on the active keyboard layout,
+/// empty where it can't be told. Asked on the main thread, where the
+/// systems answer.
+pub async fn host_letters<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Vec<(char, u16)> {
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    if let Err(e) = app.run_on_main_thread(move || {
+        let _ = tx.send(host::letters());
+    }) {
+        tracing::warn!("could not ask for the keyboard layout: {e}");
+        return Vec::new();
+    }
+    rx.await.unwrap_or_default()
+}
+
 /// DOSBox's emulated keys and their default host key (SDL scancode).
 #[rustfmt::skip]
 const KEYS: &[(&str, u16)] = &[
@@ -539,14 +555,16 @@ pub fn mapper(
 /// The mapper file's name, next to the launch layer that names it.
 pub const FILE: &str = "keyboard.map";
 
-/// Writes a profile's mapper file for the host's keyboard layout, the
-/// controller's layout (`controller::for_game`) and the game's `controls`.
+/// Writes a profile's mapper file for the host's keyboard layout (its
+/// `letters`, `host_letters`), the controller's layout
+/// (`controller::for_game`) and the game's `controls`.
 pub fn ensure(
     paths: &AppPaths,
     profile_id: &str,
     engine: Engine,
     controls: &Controls,
     pad: Controller,
+    letters: &[(char, u16)],
 ) -> Result<()> {
     // Earlier versions wrote one file for all profiles, then one per engine.
     for old in [
@@ -557,58 +575,10 @@ pub fn ensure(
     ] {
         let _ = std::fs::remove_file(paths.configs.join(old));
     }
-    let letters = host_letters().unwrap_or_default();
     write_if_changed(
         &paths.profile(profile_id).mapper,
-        mapper(&letters, engine, controls, pad, Numbering::HOST),
+        mapper(letters, engine, controls, pad, Numbering::HOST),
     )
-}
-
-/// The host key of each letter on the active keyboard layout.
-#[cfg(windows)]
-fn host_letters() -> Option<Vec<(char, u16)>> {
-    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-        GetKeyboardLayout, MAPVK_VK_TO_VSC, MapVirtualKeyExW,
-    };
-    use windows_sys::Win32::UI::WindowsAndMessaging::{
-        GetForegroundWindow, GetWindowThreadProcessId,
-    };
-
-    // SAFETY: plain queries without pointers we own; a null window gives
-    // thread 0, whose layout is the default one.
-    let layout = unsafe {
-        let thread = GetWindowThreadProcessId(GetForegroundWindow(), std::ptr::null_mut());
-        GetKeyboardLayout(thread)
-    };
-    let letters: Vec<(char, u16)> = ('A'..='Z')
-        .filter_map(|c| {
-            // Letter virtual keys are their uppercase ASCII codes.
-            let scan = unsafe { MapVirtualKeyExW(c as u32, MAPVK_VK_TO_VSC, layout) };
-            sdl_scancode(scan).map(|s| (c, s))
-        })
-        .collect();
-    Some(letters)
-}
-
-#[cfg(not(windows))]
-fn host_letters() -> Option<Vec<(char, u16)>> {
-    None
-}
-
-/// The SDL scancode of a PC (set 1) scancode in the typing area.
-#[cfg_attr(not(windows), allow(dead_code))]
-fn sdl_scancode(pc: u32) -> Option<u16> {
-    const ROWS: &[(u32, &[u16])] = &[
-        (0x02, &[30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 45, 46]),
-        (0x10, &[20, 26, 8, 21, 23, 28, 24, 12, 18, 19, 47, 48]),
-        (0x1E, &[4, 22, 7, 9, 10, 11, 13, 14, 15, 51, 52, 53]),
-        (0x2B, &[49, 29, 27, 6, 25, 5, 17, 16, 54, 55, 56]),
-        (0x56, &[100]),
-    ];
-    ROWS.iter().find_map(|(start, keys)| {
-        pc.checked_sub(*start)
-            .and_then(|i| keys.get(i as usize).copied())
-    })
 }
 
 #[cfg(test)]
@@ -683,15 +653,6 @@ mod tests {
         unique.sort();
         unique.dedup();
         assert_eq!(unique.len(), hosts.len());
-    }
-
-    #[test]
-    fn pc_scancodes_map_to_sdl() {
-        assert_eq!(sdl_scancode(0x15), Some(28)); // Y
-        assert_eq!(sdl_scancode(0x2C), Some(29)); // Z
-        assert_eq!(sdl_scancode(0x27), Some(51)); // semicolon
-        assert_eq!(sdl_scancode(0x29), Some(53)); // grave
-        assert_eq!(sdl_scancode(0x01), None);
     }
 
     /// The lines for playing: those without View.

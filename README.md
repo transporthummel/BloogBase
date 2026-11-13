@@ -149,7 +149,7 @@ Midnight Galaxy; above it is in Vintage Beige. In English and German.
   time.
 - Fullscreen, a CRT monitor effect and tear-free scrolling as simple
   switches; every DOSBox setting as text for all games or per game.
-- Keys follow your keyboard layout (Windows), so a German or French keyboard
+- Keys follow your keyboard layout, so a German or French keyboard
   answers "Y" with Y.
 - When a game ends with a message on the DOS screen, BloogBase shows it.
 

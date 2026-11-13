@@ -22,6 +22,7 @@ use crate::firing::{self, Firing};
 use crate::free_games::{self, FreeGame};
 use crate::jobs::{self, Job, JobKind, JobPhase, Jobs};
 use crate::keenwiki::{self, UpdateStatus, WikiMod};
+use crate::keymap;
 use crate::launcher::{
     ControllerTooLate, GameLaunch, LaunchPhase, LogEvent, PlaySessionEnded, Playing, Running,
 };
@@ -180,6 +181,7 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
     };
     launch(LaunchPhase::Starting);
     let fullscreen = app_window::is_fullscreen(&app);
+    let letters = keymap::host_letters(&app).await;
     let a = app.clone();
     let id = profile_id.clone();
     let started = blocking(move || {
@@ -204,6 +206,7 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
             &runtime,
             &id,
             fullscreen,
+            &letters,
             on_log,
         )
     })

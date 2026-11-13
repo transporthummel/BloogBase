@@ -60,6 +60,10 @@ windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Graphic
 webview2-com = "0.39.1"
 windows-core = "0.62.2"
 
+# The keyboard layout's letters (`keymap::host`); the GDK Tauri runs on.
+[target.'cfg(target_os = "linux")'.dependencies]
+gdk = "0.18"
+
 
 # Unpacking executables and searching them is slow unoptimized; debug builds
 # read every mod's programs on the first library load.

@@ -43,6 +43,8 @@ games) and `keen-graphics` (title screens for the covers). The main crates:
   else `.cast()` on WebView2 types doesn't compile; only release builds
   compile that code. Dependabot ignores `windows-core` from 0.63 on; raise it
   together with `webview2-com` and drop the rule then.
+- Linux only: `gdk`, for the keyboard layout. Keep it at the version Tauri
+  uses (`cargo tree -i gdk`), so it isn't built twice.
 
 `cargo tree` in `src-tauri/` shows the full tree, `cargo tree -d` the crates
 that are in it in more than one version.

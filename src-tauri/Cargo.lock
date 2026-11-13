@@ -369,6 +369,7 @@ version = "1.2.1"
 dependencies = [
  "cfb 0.16.0",
  "flate2",
+ "gdk",
  "keen-graphics",
  "keen-saves",
  "lzma-rs",

@@ -13,6 +13,7 @@
 - The Controls tab shows the controller too: a drawing of an Xbox-layout controller with what each button does while playing and, with View held, in the menus. It opens on the controller when one is connected.
 - The first start of a series with a controller connected shows the controller's buttons once, apart from the keyboard's, which come again on a start without it.
 - BloogBase itself can be used with a controller: the D-pad or left stick moves to the nearest element in that direction, A activates it, B closes a dialog or goes back, the right stick scrolls.
+- Keys follow the keyboard layout on Linux and macOS too, so a German keyboard answers "Y" with Y there as well.
 - Text fields can be typed in with the controller: A on a field opens an on-screen keyboard (QWERTZ in German, QWERTY in English, a symbols page, digits only for numbers) with X for Backspace, Y for Space, LB/RB to move the caret and Menu for Done.
 
 ### Improvements

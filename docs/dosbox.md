@@ -110,10 +110,12 @@ get the setting through their settings file ([saves.md](saves.md)).
 ### The keyboard and controller
 
 Keen and most DOS games read raw scancodes, so DOSBox's `keyboard_layout`
-doesn't reach them: on a German keyboard the key labeled Y arrives as Z. On
-Windows, BloogBase asks for the active layout's key for each letter and
-writes a mapper file that binds each emulated letter to the host key that
-types it. A mapper file replaces all of DOSBox's default bindings, so it
+doesn't reach them: on a German keyboard the key labeled Y arrives as Z.
+BloogBase asks the system on its main thread for the active layout's key
+for each letter (`keymap/host.rs`: Windows `MapVirtualKeyExW`, macOS
+`UCKeyTranslate` on the current keyboard layout, Linux GDK's keymap on X11
+and Wayland, taking the first of several layouts) and writes a mapper file
+that binds each emulated letter to the host key that types it. A mapper file replaces all of DOSBox's default bindings, so it
 repeats Staging 0.83's (`CreateDefaultBinds` in `gui/mapper.cpp`) and moves
 only the letters.
 

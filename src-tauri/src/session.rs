@@ -30,6 +30,7 @@ pub fn start(
     runtime: &Runtime,
     profile_id: &str,
     fullscreen: bool,
+    letters: &[(char, u16)],
     on_log: impl FnMut(launcher::LogEvent) + Send + 'static,
 ) -> Result<Started> {
     // Left by a session that ended without us, e.g. in a crash.
@@ -39,7 +40,7 @@ pub fn start(
     if let Err(e) = game_settings::apply(paths, db, profile_id) {
         tracing::warn!("could not apply global settings to {profile_id}: {e}");
     }
-    if let Err(e) = write_mapper(paths, db, profile_id, &spec) {
+    if let Err(e) = write_mapper(paths, db, profile_id, &spec, letters) {
         merge_settings(paths, db, profile_id);
         return Err(e);
     }
@@ -58,8 +59,15 @@ pub fn start(
 }
 
 /// Puts the controller on the keys the game plays with this session: those
-/// in its settings file, with the global ones just written.
-fn write_mapper(paths: &AppPaths, db: &Db, profile_id: &str, spec: &LaunchSpec) -> Result<()> {
+/// in its settings file, with the global ones just written, and the letters
+/// where the keyboard layout has them (`keymap::host_letters`).
+fn write_mapper(
+    paths: &AppPaths,
+    db: &Db,
+    profile_id: &str,
+    spec: &LaunchSpec,
+    letters: &[(char, u16)],
+) -> Result<()> {
     let keys = game_settings::effective_keys(db, profile_id).unwrap_or_else(|e| {
         tracing::warn!(
             "could not read the keys of {profile_id}, the controller gets the defaults: {e}"
@@ -68,7 +76,7 @@ fn write_mapper(paths: &AppPaths, db: &Db, profile_id: &str, spec: &LaunchSpec) 
     });
     let controls = keymap::controls(spec.engine, &keys, spec.one_button);
     let pad = crate::controller::for_game(db);
-    keymap::ensure(paths, profile_id, spec.engine, &controls, pad)
+    keymap::ensure(paths, profile_id, spec.engine, &controls, pad, letters)
 }
 
 /// Puts the player's values back; the next start tries again if this fails.
@@ -200,7 +208,7 @@ mod tests {
             managed: false,
         };
 
-        assert!(start(&paths, &db, &runtime, "keen4-1", false, |_| {}).is_err());
+        assert!(start(&paths, &db, &runtime, "keen4-1", false, &[], |_| {}).is_err());
         assert_eq!(std::fs::read(&file).unwrap(), original);
     }
 }
