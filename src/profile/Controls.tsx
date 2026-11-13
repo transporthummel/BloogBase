@@ -104,14 +104,14 @@ function Group({
 }
 
 /** The movement keys in an inverted T. */
-function ArrowCluster({ moving, upDown }: { moving: Sheet["moving"]; upDown: boolean }) {
+function ArrowCluster({ moving }: { moving: Sheet["moving"] }) {
   return (
     <div className="grid w-max grid-cols-3 gap-1">
       <span />
-      <Keycap id={moving.up.id} changed={moving.up.changed} unused={!upDown} />
+      <Keycap id={moving.up.id} changed={moving.up.changed} />
       <span />
       <Keycap id={moving.left.id} changed={moving.left.changed} />
-      <Keycap id={moving.down.id} changed={moving.down.changed} unused={!upDown} />
+      <Keycap id={moving.down.id} changed={moving.down.changed} />
       <Keycap id={moving.right.id} changed={moving.right.changed} />
     </div>
   );
@@ -289,7 +289,7 @@ function KeyboardSheet({
       <div className="grid gap-4 sm:grid-cols-2">
         <Group title={t("controls.moving")} heading={heading}>
           <div className="flex flex-wrap items-center gap-4">
-            <ArrowCluster moving={sheet.moving} upDown={sheet.engine !== "vorticons"} />
+            <ArrowCluster moving={sheet.moving} />
             <p className="max-w-56 text-sm">{t(`controls.move.${sheet.move}`)}</p>
           </div>
         </Group>

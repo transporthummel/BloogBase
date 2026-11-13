@@ -20,6 +20,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.local/dev-data/mods" />
       <excludeFolder url="file://$MODULE_DIR$/.local/dev-webview" />
       <excludeFolder url="file://$MODULE_DIR$/.local/keensource123" />
+      <excludeFolder url="file://$MODULE_DIR$/.local/target-cross" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
