@@ -38,7 +38,7 @@ import {
 } from "./controller";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { Keycap } from "./Keycap";
-import { isMac } from "../platform";
+import { isMac, keysContext } from "../platform";
 import { keyLabel } from "./keyLabel";
 import { type Callout, PadDrawing } from "./PadDrawing";
 
@@ -349,8 +349,10 @@ function ControllerSheet({
   const callouts: Callout[] = pad[layer].map((b) => ({
     input: b.input,
     lines: [
-      t(`controls.${b.label}`, { ...names, ...b.values }),
-      ...(b.more ? [t(`controls.pad.${b.more}`, { ...names, ...b.values })] : []),
+      t(`controls.${b.label}`, { ...names, ...b.values, context: keysContext() }),
+      ...(b.more
+        ? [t(`controls.pad.${b.more}`, { ...names, ...b.values, context: keysContext() })]
+        : []),
     ],
   }));
   const inputName = (input: PadInput) => {

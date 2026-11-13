@@ -152,6 +152,7 @@
       "both": "BloogBase und Spiele"
     },
     "fullscreenHint": "BloogBase im Vollbild verdeckt die Taskleiste, und jedes Spiel, das du daraus startest, kommt auch ins Vollbild. F11 wechselt für BloogBase jederzeit, Alt+Enter für ein laufendes Spiel.",
+    "fullscreenHint_mac": "BloogBase im Vollbild verdeckt Dock und Menüleiste, und jedes Spiel, das du daraus startest, kommt auch ins Vollbild. ⌃⌘F wechselt für BloogBase jederzeit, ⌥ alt+↩ Return für ein laufendes Spiel.",
     "fullscreenOverridden": "Ob Spiele im Vollbild starten, legen deine DOSBox-Einstellungen für alle Spiele (unten) fest; solange BloogBase im Vollbild ist, tun sie es trotzdem.",
     "displayOption": {
       "crt": "Röhrenmonitor-Effekt (CRT)",
@@ -191,6 +192,7 @@
     "controls": "Steuerung",
     "oneButtonFiring": "Schießen mit einer Taste in Keen 1–3",
     "oneButtonFiringHint": "Die für Schießen festgelegte Taste, sonst die Leertaste, schießt statt Strg und Alt zusammen, Enter öffnet das Statusfenster. Schießen mit dem Joystick funktioniert dann eventuell nicht mehr. Mods, die das schon so machen, bekommen nur die Taste; Mods, die die Steuerung anders ändern, werden nicht angetastet.",
+    "oneButtonFiringHint_mac": "Die für Schießen festgelegte Taste, sonst die Leertaste, schießt statt ⌃ ctrl und ⌥ alt zusammen, ↩ Return öffnet das Statusfenster. Schießen mit dem Joystick funktioniert dann eventuell nicht mehr. Mods, die das schon so machen, bekommen nur die Taste; Mods, die die Steuerung anders ändern, werden nicht angetastet.",
     "controllerLayout": "Controller-Belegung",
     "controllerLayoutHint": "Welche Knöpfe dein Controller hat, für die Spiele und die Knopfnamen in BloogBase. Automatisch unterscheidet unter Windows und Linux Xbox- und PlayStation-Controller; wähl selbst, wenn dein Controller für den falschen gehalten wird.",
     "controllerLayoutAuto": "Automatisch",
@@ -633,6 +635,7 @@
     "replaceMod": "Durch lokale Kopie ersetzen…",
     "firing": {
       "on": "Die Leertaste schießt, Enter öffnet das Statusfenster.",
+      "on_mac": "Die Leertaste schießt, ↩ Return öffnet das Statusfenster.",
       "builtIn": "Diese Mod schießt schon mit der Leertaste.",
       "unavailable": "Schießen mit einer Taste ist hier nicht verfügbar: Dieses Spiel oder diese Mod ändert die Steuerung anders.",
       "otherVersion": "Schießen mit einer Taste gibt es nur für Version 1.31 des Spiels, und diese Spielkopie ist eine andere."
@@ -1040,6 +1043,7 @@
       "menuKeys": "Halten: Menütasten",
       "fireBoth": "Schießen (Springen + Pogo)",
       "confirm": "Bestätigen (Enter)",
+      "confirm_mac": "Bestätigen (↩ Return)",
       "no": "Nein (N)",
       "yes": "Ja (Y)",
       "title": "Zum Titelbild (T)",
@@ -1047,6 +1051,7 @@
       "save": "Speichern (F5)",
       "sound": "Sound an und aus (F2)",
       "fullscreen": "Fenster oder Vollbild (Alt+Enter)",
+      "fullscreen_mac": "Fenster oder Vollbild (⌥ alt+↩ Return)",
       "slots": "Spielstand {{from}}–{{to}}",
       "slot9": "drücken: Spielstand 9",
       "back": "Zurück (Esc)",
@@ -1054,6 +1059,7 @@
       "letters": "Buchstaben {{from}}–{{to}}",
       "withLb": "mit {{lbName}}: {{lb}}",
       "withLbSpace": "mit {{lbName}}: {{lb}}, Leertaste, Rücktaste",
+      "withLbSpace_mac": "mit {{lbName}}: {{lb}}, Leertaste, ⌫ Löschen",
       "hold": "Gedrückt halten",
       "typed": "Mit gehaltenem {{view}} tippst du:",
       "press": "drücken",

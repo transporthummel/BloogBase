@@ -19,6 +19,7 @@ import { commands, type Game, type Install, type Mod, type Profile } from "../bi
 import { useFreeGames } from "../discover/queries";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
+import { keysContext } from "../platform";
 import { FindOwnedDialog } from "../library/FindOwnedDialog";
 import { forgetRemovedCovers } from "../library/covers";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
@@ -355,7 +356,7 @@ function FiringNote({ profileId }: { profileId: string }) {
   return (
     <p className="flex items-start gap-1.5 text-sm text-muted">
       <Keyboard className="mt-0.5 size-4 shrink-0" aria-hidden />
-      {t(`profile.firing.${s === "patchable" ? "on" : s}`)}
+      {t(`profile.firing.${s === "patchable" ? "on" : s}`, { context: keysContext() })}
     </p>
   );
 }

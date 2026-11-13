@@ -5,6 +5,16 @@ import { beforeEach, expect, test, vi } from "vitest";
 import { commands } from "../bindings";
 import { FullscreenButton } from "./FullscreenButton";
 
+const resized: (() => void)[] = [];
+vi.mock("@tauri-apps/api/window", () => ({
+  getCurrentWindow: () => ({
+    onResized: (f: () => void) => {
+      resized.push(f);
+      return Promise.resolve(() => {});
+    },
+  }),
+}));
+
 vi.mock("../bindings", () => ({
   commands: { windowFullscreen: vi.fn(), setWindowFullscreen: vi.fn() },
 }));
@@ -44,4 +54,16 @@ test("F11 switches fullscreen too", async () => {
   await userEvent.keyboard("{F11}");
   expect(commands.setWindowFullscreen).toHaveBeenCalledWith(true);
   await screen.findByRole("button", { name: "Leave fullscreen" });
+});
+
+test("on a Mac it names ⌃⌘F and follows fullscreen switched by macOS", async () => {
+  vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Mozilla/5.0 (Macintosh)");
+  renderButton();
+  const button = await screen.findByRole("button", { name: "Fullscreen" });
+  expect(button).toHaveAttribute("title", "Fullscreen (⌃⌘F)");
+  // The menu's ⌃⌘F or the green button, without BloogBase.
+  fullscreen = true;
+  resized.forEach((f) => f());
+  await screen.findByRole("button", { name: "Leave fullscreen" });
+  vi.restoreAllMocks();
 });

@@ -201,3 +201,12 @@ test("elsewhere there's no note about fn", async () => {
   expect(keysFor("Screenshot")).toBe("Ctrl+F5");
   expect(screen.queryByText(/press the F-keys with fn/)).not.toBeInTheDocument();
 });
+
+test("on a Mac, the controller's texts name its keys", async () => {
+  vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Mozilla/5.0 (Macintosh)");
+  await renderSheet(game("keen5", "galaxy"), profile(), "controller");
+  await userEvent.click(screen.getByRole("button", { name: "Menus (hold View)" }));
+  expect(padSays("A")).toEqual(["A: Confirm (↩ return)"]);
+  expect(padSays("Left stick").join()).toContain("space, ⌫ delete");
+  vi.restoreAllMocks();
+});

@@ -1,16 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Maximize, Minimize } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { commands } from "../bindings";
 import { unwrap } from "../ipc";
+import { isMac } from "../platform";
 import { navItemClass } from "./navItemClass";
 
 const windowFullscreenKey = ["windowFullscreen"] as const;
 
 /**
  * Puts BloogBase's window in or out of fullscreen, from the sidebar or with
- * F11. While it is in fullscreen, games start in fullscreen too.
+ * F11. While it is in fullscreen, games start in fullscreen too. On macOS,
+ * where F11 shows the desktop, the shortcut named is ⌃⌘F from Tauri's
+ * default menu (View), which like the window's green button switches
+ * without us: the button follows the window's size.
  */
 export function FullscreenButton() {
   const { t } = useTranslation();
@@ -35,12 +40,22 @@ export function FullscreenButton() {
     return () => window.removeEventListener("keydown", onKey);
   }, [on, toggle]);
 
+  useEffect(() => {
+    if (!isMac()) return;
+    const unlisten = getCurrentWindow().onResized(() => {
+      void queryClient.invalidateQueries({ queryKey: windowFullscreenKey });
+    });
+    return () => {
+      void unlisten.then((f) => f());
+    };
+  }, [queryClient]);
+
   const label = on ? t("nav.fullscreenLeave") : t("nav.fullscreen");
   const Icon = on ? Minimize : Maximize;
   return (
     <button
       type="button"
-      title={`${label} (F11)`}
+      title={`${label} (${isMac() ? "⌃⌘F" : "F11"})`}
       disabled={fullscreen.data === undefined}
       onClick={() => toggle.mutate(!on)}
       className={navItemClass}

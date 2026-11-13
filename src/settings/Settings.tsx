@@ -16,6 +16,7 @@ import { controllerConnectedKey, controllerLayoutKey } from "../profile/controll
 import { oneButtonFiringKey } from "../profile/firing";
 import { configKey } from "../config/queries";
 import { errorMessage } from "../errors";
+import { keysContext } from "../platform";
 import { useAppUpdate, useCheckForUpdate } from "../updates/queries";
 import { UpdateCard } from "../updates/UpdateCard";
 import { unwrap } from "../ipc";
@@ -565,7 +566,11 @@ function FullscreenField() {
     <div className="grid gap-1">
       <Field
         label={t("settings.fullscreen")}
-        hint={overridden ? t("settings.fullscreenOverridden") : t("settings.fullscreenHint")}
+        hint={
+          overridden
+            ? t("settings.fullscreenOverridden")
+            : t("settings.fullscreenHint", { context: keysContext() })
+        }
       >
         <select
           className={`${selectClass} w-52`}
@@ -617,7 +622,7 @@ function ControlsSection() {
       {firing.data !== undefined && (
         <Check
           label={t("settings.oneButtonFiring")}
-          hint={t("settings.oneButtonFiringHint")}
+          hint={t("settings.oneButtonFiringHint", { context: keysContext() })}
           checked={firing.data}
           disabled={update.isPending}
           onChange={(e) => update.mutate(e.target.checked)}
