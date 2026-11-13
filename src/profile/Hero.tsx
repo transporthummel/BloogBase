@@ -70,6 +70,7 @@ export function Hero({
             gameId={profile.gameId}
             game={game}
             src={cover.data?.src}
+            onError={cover.onError}
             standalone={profile.standalone}
             className={`aspect-[4/3] w-full text-7xl ${cover.data ? "" : "h-full"}`}
           />

@@ -12,7 +12,8 @@
       "The first start with a controller shows its buttons.",
       "BloogBase itself can be used with a controller.",
       "Text fields can be typed in with the controller.",
-      "LB/RB switch tabs, LT/RT scroll a page, and View or Menu jumps to the main navigation."
+      "LB/RB switch tabs, LT/RT scroll a page, and View or Menu jumps to the main navigation.",
+      "A missing cover picture is made again instead of staying empty."
     ],
     "de": [
       "Nach längerer Pause klappen die Neuigkeiten ältere Versionen ein.",
@@ -26,7 +27,8 @@
       "Beim ersten Start mit Controller siehst du seine Knöpfe.",
       "BloogBase lässt sich selbst mit dem Controller bedienen.",
       "Textfelder lassen sich mit dem Controller ausfüllen.",
-      "LB/RB wechseln Tabs, LT/RT blättern eine Seite und View oder Menu springen ins Hauptmenü."
+      "LB/RB wechseln Tabs, LT/RT blättern eine Seite und View oder Menu springen ins Hauptmenü.",
+      "Ein fehlendes Titelbild wird neu erzeugt, statt leer zu bleiben."
     ]
   },
   "releases": [

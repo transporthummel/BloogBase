@@ -17,12 +17,15 @@ export function Cover({
   src,
   standalone = false,
   className = "aspect-[4/3] text-5xl",
+  onError,
 }: {
   gameId: string;
   game?: Game;
   src?: string | null;
   standalone?: boolean;
   className?: string;
+  /** Called with `src` when it can't be shown. */
+  onError?: (src: string) => void;
 }) {
   if (src) {
     // 320x200 pixels shown at 4:3, as on a CRT.
@@ -32,6 +35,7 @@ export function Cover({
         alt=""
         loading="lazy"
         decoding="async"
+        onError={() => onError?.(src)}
         className={`object-fill [image-rendering:pixelated] ${className}`}
       />
     );

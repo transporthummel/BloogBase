@@ -58,6 +58,7 @@ function Starting({ profile, onClose }: { profile: Profile; onClose: () => void 
           gameId={profile.gameId}
           game={game}
           src={cover.data?.src}
+          onError={cover.onError}
           standalone={profile.standalone}
           className="block aspect-[4/3] w-full text-6xl"
         />

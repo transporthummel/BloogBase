@@ -380,6 +380,7 @@ const ProfileCard = memo(function ProfileCard({
           gameId={profile.gameId}
           game={game}
           src={cover.data?.src}
+          onError={cover.onError}
           standalone={profile.standalone}
         />
       </Link>

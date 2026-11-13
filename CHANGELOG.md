@@ -22,6 +22,8 @@
 
 ### Bug Fixes
 
+- A cover whose image file has gone missing is extracted again when it fails to show, instead of leaving an empty picture; if that fails too, the placeholder shows.
+
 ### Misc
 
 ## 1.2.1 (2026-11-10)
