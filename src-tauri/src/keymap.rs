@@ -65,7 +65,10 @@ const KEYS: &[(&str, u16)] = &[
 ];
 
 /// Everything after the keys, as DOSBox Staging 0.83 binds it on Windows and
-/// Linux. Hotkeys of machines BloogBase doesn't emulate are left out.
+/// Linux. Hotkeys of machines BloogBase doesn't emulate are left out. macOS
+/// gets the same, so its hotkeys are on Ctrl instead of Staging's ⌘ there
+/// (⌘+F5 also turns on VoiceOver); the Controls, Screenshots and Videos tabs
+/// say so.
 const REST: &str = "\
 mod_1 \"key 228\" \"key 224\"
 mod_2 \"key 230\" \"key 226\"

@@ -41,8 +41,6 @@ import { Keycap } from "./Keycap";
 import { keyLabel } from "./keyLabel";
 import { type Callout, PadDrawing } from "./PadDrawing";
 
-const mac = () => /Mac/.test(navigator.userAgent);
-
 /** Keys pressed together. */
 function ChordKeys({ keys, changed }: { keys: Chord; changed?: boolean }) {
   return (
@@ -213,7 +211,7 @@ export function ControlsSheet({
   });
   const space = spaceFires(enabled.data, firing.data);
   const keys = keysInEffect(settings.data?.keys ?? noKeys, game, profile.versionId, enabled.data);
-  const sheet = sheetFor(game, space, mac(), keys);
+  const sheet = sheetFor(game, space, keys);
   // A copy the patch fits, with the setting off: worth a pointer.
   const offerSpace = firing.data === "patchable" && enabled.data === false;
 

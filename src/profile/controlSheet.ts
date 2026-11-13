@@ -54,13 +54,7 @@ export function keysInEffect(
  * Keen Dreams' source), the cheats from KeenWiki. Cheats that need a start
  * parameter are left out, as BloogBase can't set one.
  */
-export function sheetFor(
-  game: Pick<Game, "id" | "engine">,
-  space: boolean,
-  mac: boolean,
-  keys: GameKeys,
-): Sheet {
-  const ctrl = mac ? "cmd" : "ctrl";
+export function sheetFor(game: Pick<Game, "id" | "engine">, space: boolean, keys: GameKeys): Sheet {
   const moved = (key: number | null, id: string) => ({
     id: key === null ? id : keyId(key),
     changed: key !== null,
@@ -75,10 +69,12 @@ export function sheetFor(
   const binding = (key: number | null, id: string, action: string): Binding =>
     key === null ? { keys: [id], action } : { keys: [keyId(key)], action, changed: true };
   const jump = binding(keys.jump, "ctrl", "jump");
+  // On macOS too: BloogBase's mapper file binds DOSBox's hotkeys to Ctrl
+  // everywhere (keymap.rs), not to Staging's ⌘ there.
   const window: Binding[] = [
     { keys: ["alt", "enter"], action: "fullscreen" },
-    { keys: [ctrl, "f5"], action: "screenshot" },
-    { keys: [ctrl, "f7"], action: "video" },
+    { keys: ["ctrl", "f5"], action: "screenshot" },
+    { keys: ["ctrl", "f7"], action: "video" },
   ];
   switch (game.engine) {
     case "vorticons":

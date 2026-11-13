@@ -4,9 +4,9 @@ import { unwrap } from "../ipc";
 import { CapturesPanel } from "./CapturesPanel";
 import { screenshotSrc, screenshotsKey, useScreenshots } from "./captures";
 
-/** DOSBox Staging's screenshot hotkey. */
+/** DOSBox's screenshot hotkey, as BloogBase's mapper file binds it on every system. */
 function hotkey(): string {
-  return /Mac/.test(navigator.userAgent) ? "⌘ + F5" : "Ctrl + F5";
+  return "Ctrl + F5";
 }
 
 /** Screenshots the player took in DOSBox, with a viewer (§8.3). */

@@ -6,9 +6,9 @@ import { CapturesPanel } from "./CapturesPanel";
 import { formatDuration, useVideos, videosKey } from "./captures";
 import { VideoPlayer } from "./VideoPlayer";
 
-/** DOSBox Staging's video recording hotkey. */
+/** DOSBox's video recording hotkey, as BloogBase's mapper file binds it on every system. */
 function hotkey(): string {
-  return /Mac/.test(navigator.userAgent) ? "⌘ + F7" : "Ctrl + F7";
+  return "Ctrl + F7";
 }
 
 /** The first frame, stretched to 4:3 like DOSBox shows it. */

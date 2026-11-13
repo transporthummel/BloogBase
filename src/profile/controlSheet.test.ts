@@ -19,7 +19,7 @@ const action = (sheet: ReturnType<typeof sheetFor>, name: string) =>
   sheet.actions.find((b) => b.action === name);
 
 test("set keys replace the defaults and are marked", () => {
-  const sheet = sheetFor(keen4, false, false, { ...noKeys, jump: 0x11, left: 0x1e });
+  const sheet = sheetFor(keen4, false, { ...noKeys, jump: 0x11, left: 0x1e });
   expect(action(sheet, "jump")).toEqual({ keys: ["w"], action: "jump", changed: true });
   expect(action(sheet, "pogo")).toEqual({ keys: ["alt"], action: "pogo" });
   expect(sheet.moving.left).toEqual({ id: "a", changed: true });
@@ -27,17 +27,17 @@ test("set keys replace the defaults and are marked", () => {
 });
 
 test("Keen 1 shoots with the Fire key where the patch fits", () => {
-  const sheet = sheetFor(keen1, true, false, { ...noKeys, fire: 0x25 });
+  const sheet = sheetFor(keen1, true, { ...noKeys, fire: 0x25 });
   expect(action(sheet, "fire")).toEqual({ keys: ["k"], action: "fire", changed: true });
 });
 
 test("without the patch, Keen 1 shoots with Jump and Pogo together", () => {
-  const sheet = sheetFor(keen1, false, false, { ...noKeys, jump: 0x11, pogo: 0x12, fire: 0x25 });
+  const sheet = sheetFor(keen1, false, { ...noKeys, jump: 0x11, pogo: 0x12, fire: 0x25 });
   expect(action(sheet, "fire")).toEqual({ keys: ["w", "e"], action: "fire", changed: true });
 });
 
 test("Keen Dreams throws with the Fire key and has no pogo", () => {
-  const sheet = sheetFor(dreams, false, false, { ...noKeys, pogo: 0x12, fire: 0x25 });
+  const sheet = sheetFor(dreams, false, { ...noKeys, pogo: 0x12, fire: 0x25 });
   expect(action(sheet, "throw")).toEqual({ keys: ["k"], action: "throw", changed: true });
   expect(action(sheet, "pogo")).toBeUndefined();
 });
@@ -49,19 +49,19 @@ test("nothing set shows the games' defaults", () => {
     left: { id: "left", changed: false },
     right: { id: "right", changed: false },
   };
-  const galaxy = sheetFor(keen4, false, false, noKeys);
+  const galaxy = sheetFor(keen4, false, noKeys);
   expect(galaxy.moving).toEqual(moving);
   expect(galaxy.actions).toEqual([
     { keys: ["ctrl"], action: "jump" },
     { keys: ["alt"], action: "pogo" },
     { keys: ["space"], action: "fire" },
   ]);
-  expect(action(sheetFor(keen1, true, false, noKeys), "fire")).toEqual({
+  expect(action(sheetFor(keen1, true, noKeys), "fire")).toEqual({
     keys: ["space"],
     action: "fire",
     changed: true,
   });
-  expect(action(sheetFor(keen1, false, false, noKeys), "fire")).toEqual({
+  expect(action(sheetFor(keen1, false, noKeys), "fire")).toEqual({
     keys: ["ctrl", "alt"],
     action: "fire",
   });
@@ -81,6 +81,15 @@ test("the Fire key only shows where it's applied", () => {
 
 const pad = (sheet: ReturnType<typeof padFor>["play"], input: string) =>
   sheet.filter((b) => b.input === input).map((b) => b.label);
+
+test("the window keys are those of BloogBase's mapper file, Ctrl on macOS too", () => {
+  // keymap.rs: hand_scrshot "key 62 mod1", hand_video "key 64 mod1".
+  expect(sheetFor(keen4, false, noKeys).window.map((b) => b.keys)).toEqual([
+    ["alt", "enter"],
+    ["ctrl", "f5"],
+    ["ctrl", "f7"],
+  ]);
+});
 
 test("the controller fires where the keyboard does", () => {
   expect(pad(padFor("galaxy", false).play, "x")).toEqual(["action.fire"]);
