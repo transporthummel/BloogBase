@@ -1,4 +1,5 @@
 fn main() {
+    seed_index();
     // tauri-build embeds icons/icon.ico in the Windows binary but only asks
     // to rerun when tauri.conf.json or the capabilities change, so a new icon
     // would never reach an existing build.
@@ -19,4 +20,17 @@ fn main() {
     }
     tauri_build::try_build(tauri_build::Attributes::new().windows_attributes(windows))
         .expect("failed to run tauri-build");
+}
+
+/// Embeds the published mod index that `release.yml` puts into `seed/`
+/// (`mod_index::SEED`); without it, empty files, so the app starts with no
+/// index until its first check, as before.
+fn seed_index() {
+    let out = std::path::PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR is set"));
+    for name in ["index.json", "index.json.minisig"] {
+        let src = std::path::Path::new("seed").join(name);
+        println!("cargo:rerun-if-changed={}", src.display());
+        let data = std::fs::read(&src).unwrap_or_default();
+        std::fs::write(out.join(format!("seed-{name}")), data).expect("OUT_DIR is writable");
+    }
 }

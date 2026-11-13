@@ -81,8 +81,9 @@ export function WhatsNew() {
     s.index ??= known.data ?? null;
     let fresh: IndexMod[] = [];
     let updates: IndexMod[] = [];
-    // An empty list hasn't loaded yet.
-    if (s.index && mods && mods.length > 0) {
+    // An empty list hasn't loaded yet. The first start waits for the start's
+    // check, so what it brings over the bundled list isn't new either.
+    if (s.index && mods && mods.length > 0 && (s.index.seen !== null || checked)) {
       if (s.index.seen === null) {
         // The first start: nothing is new yet.
         s.index = save({ ...s.index, seen: mods.map((m) => m.entry.id) });

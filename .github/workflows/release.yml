@@ -163,6 +163,16 @@ jobs:
       - name: Collect third-party licenses
         run: pnpm licenses:generate
 
+      # The published mod index goes into the app (`mod_index::SEED`), so it
+      # finds mods before it reaches GitHub Pages.
+      - name: Bundle the mod index
+        shell: bash
+        run: |
+          mkdir -p src-tauri/seed
+          url=https://transporthummel.github.io/BloogBase/index/index.json
+          curl --fail --silent --show-error --location --retry 3 -o src-tauri/seed/index.json "$url"
+          curl --fail --silent --show-error --location --retry 3 -o src-tauri/seed/index.json.minisig "$url.minisig"
+
       - uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

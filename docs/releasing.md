@@ -43,7 +43,11 @@ The version follows that:
   change without automatic migration, a feature or a game dropped. A big
   milestone (like Commander Genius as a second runtime) may get one too.
 
-New mods need no app release; they come with the index. A change to the
+New mods need no app release; they come with the index. The release workflow
+also puts the index published at that moment into the app
+(`src-tauri/seed/`, embedded by `build.rs`), so a new install finds mods
+without reaching GitHub Pages; the app takes whichever of it and its cached
+download is newer. A change to the
 index format (`SCHEMA_VERSION` in `src-tauri/src/mod_index.rs`) makes older
 apps refuse the new index and miss mod updates, so it goes in two steps: first
 an app release that reads the new `schemaVersion`, then the index switches

@@ -91,6 +91,15 @@ test("shows nothing on the first start and remembers what's there", async () => 
   expect(screen.queryByRole("dialog")).toBeNull();
 });
 
+test("waits for the start's check before remembering the bundled mod list", async () => {
+  vi.mocked(commands.indexStatus).mockResolvedValue({ checkedAt: null, error: null } as never);
+  vi.mocked(commands.indexMods).mockReturnValue(ok([indexMod("a", "Alpha", null)]));
+  renderNews();
+  await vi.waitFor(() => expect(commands.indexMods).toHaveBeenCalled());
+  await new Promise((r) => setTimeout(r, 50));
+  expect(stored.seen).toBeNull();
+});
+
 test("lists the changes since the version run before", async () => {
   setLastVersion("0.2.0");
   const user = renderNews();

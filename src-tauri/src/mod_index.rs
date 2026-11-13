@@ -1,5 +1,7 @@
 //! The curated mod index (PLAN.md §10.2): fetched from GitHub Pages, checked
-//! against the embedded minisign keys, cached for offline use.
+//! against the embedded minisign keys, cached for offline use. Release builds
+//! carry the index published when they were built ([`SEED`]), so mods can be
+//! found before the first check succeeds.
 //!
 //! The index decides what gets downloaded and run, so anything that isn't
 //! signed by one of [`PUBLIC_KEYS`] is ignored and the cached copy stays.
@@ -32,6 +34,13 @@ pub const DEFAULT_URL: &str = "https://transporthummel.github.io/BloogBase/index
 /// Keys whose signatures are accepted. Keep the old key here for a while
 /// when rotating.
 const PUBLIC_KEYS: &[&str] = &["RWSsNItW8utvDkwyXBRJitGgakWA1N2Lozafd+JqhOQ+SvdlMsmFNedJ"];
+
+/// The index at [`DEFAULT_URL`] when this build was made, with its signature:
+/// `src-tauri/seed/`, filled by `release.yml` (`build.rs`). Empty in builds
+/// without it. Checked like a download; used while the cache has nothing
+/// newer.
+const SEED: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/seed-index.json"));
+const SEED_SIG: &str = include_str!(concat!(env!("OUT_DIR"), "/seed-index.json.minisig"));
 
 /// The newest `schemaVersion` this app understands.
 const SCHEMA_VERSION: u32 = 1;
@@ -230,6 +239,8 @@ struct CacheMeta {
 #[derive(Default)]
 struct State {
     index: Option<Parsed>,
+    /// `index` is [`SEED`], not the cached download.
+    from_seed: bool,
     meta: CacheMeta,
     error: Option<CommandError>,
     /// Last attempt in this run, successful or not.
@@ -268,10 +279,22 @@ impl ModIndex {
     /// Uses the cached index, if any; call [`refresh`](Self::refresh) to check
     /// for a new one.
     pub fn open(paths: &AppPaths, url: String) -> Self {
-        Self::with_keys(paths, url, PUBLIC_KEYS)
+        let seed = (url == DEFAULT_URL && !SEED.is_empty()).then_some((SEED, SEED_SIG));
+        Self::with_seed(paths, url, PUBLIC_KEYS, seed)
     }
 
+    #[cfg(test)]
     fn with_keys(paths: &AppPaths, url: String, keys: &[&str]) -> Self {
+        Self::with_seed(paths, url, keys, None)
+    }
+
+    /// `seed`: an index from `url`, used when the cache has none as new.
+    fn with_seed(
+        paths: &AppPaths,
+        url: String,
+        keys: &[&str],
+        seed: Option<(&[u8], &str)>,
+    ) -> Self {
         let keys = keys
             .iter()
             .map(|k| PublicKey::from_base64(k).expect("embedded public key is valid"))
@@ -294,19 +317,45 @@ impl ModIndex {
             Ok((data, sig)) => index.verify(&data, &sig),
             Err(e) => Err(e.into()),
         };
-        match parsed {
-            Ok(p) => {
+        let cached = match parsed {
+            Ok(p) => Some(p),
+            Err(Error::Io(e)) if e.kind() == std::io::ErrorKind::NotFound => None,
+            Err(e) => {
+                tracing::warn!("ignoring the cached mod index: {e}");
+                None
+            }
+        };
+        let seed = seed.and_then(|(data, sig)| match index.verify(data, sig) {
+            Ok(p) => Some(p),
+            Err(e) => {
+                tracing::warn!("ignoring the bundled mod index: {e}");
+                None
+            }
+        });
+        let use_seed = match (&cached, &seed) {
+            (_, None) => false,
+            (None, Some(_)) => true,
+            // A cache from another place (a debug build's local index) says
+            // nothing about this one.
+            (Some(c), Some(s)) => meta.url != index.url || s.generated_at > c.generated_at,
+        };
+        {
+            let mut st = index.lock();
+            if use_seed {
+                let s = seed.expect("checked above");
+                tracing::info!("bundled mod index: {} mods", s.entries.len());
+                st.index = Some(s);
+                st.from_seed = true;
+            } else if let Some(c) = cached {
                 tracing::info!(
                     "cached mod index from {}: {} mods",
                     meta.url,
-                    p.entries.len()
+                    c.entries.len()
                 );
-                index.lock().index = Some(p);
+                st.index = Some(c);
             }
-            Err(Error::Io(e)) if e.kind() == std::io::ErrorKind::NotFound => {}
-            Err(e) => tracing::warn!("ignoring the cached mod index: {e}"),
+            st.meta = meta;
         }
-        index.lock().meta = meta;
         index
     }
 
@@ -413,7 +462,7 @@ impl ModIndex {
             st.meta
                 .etag
                 .clone()
-                .filter(|_| st.meta.url == self.url && st.index.is_some())
+                .filter(|_| st.meta.url == self.url && st.index.is_some() && !st.from_seed)
         };
         let Some((data, sig, etag)) = download(&self.url, etag.as_deref()).await? else {
             self.store_meta(None, false)?;
@@ -425,7 +474,7 @@ impl ModIndex {
             // Only against an index from the same place: switching to another
             // one (a debug build's local index) may well go back in time.
             if let Some(current) = &st.index
-                && st.meta.url == self.url
+                && (st.meta.url == self.url || st.from_seed)
                 && parsed.generated_at < current.generated_at
             {
                 // A replayed old (but validly signed) index.
@@ -439,11 +488,14 @@ impl ModIndex {
         {
             let mut st = self.lock();
             let t = now();
-            // Not on the first download: with nothing before, all would be new.
+            // Not on the first download: with nothing before, all would be
+            // new. The bundled index alone doesn't count either, as the
+            // player hasn't seen it before.
+            let first = st.from_seed && st.meta.checked_at.is_none();
             let before: Option<Vec<String>> = st
                 .index
                 .as_ref()
-                .filter(|i| !i.entries.is_empty())
+                .filter(|i| !i.entries.is_empty() && !first)
                 .map(|i| i.entries.iter().map(|e| e.id.clone()).collect());
             if let Some(before) = before {
                 for e in &parsed.entries {
@@ -456,6 +508,7 @@ impl ModIndex {
                 .appeared
                 .retain(|id, at| t - *at < NEW_FOR && parsed.entries.iter().any(|e| &e.id == id));
             st.index = Some(parsed);
+            st.from_seed = false;
         }
         self.store_meta(etag, true)?;
         Ok(changed)
@@ -828,6 +881,16 @@ mod tests {
     }
 
     #[test]
+    fn bundled_index_is_signed() {
+        // Only in builds that have one (release.yml).
+        if !SEED.is_empty() {
+            let (_tmp, paths) = setup();
+            let index = ModIndex::open(&paths, DEFAULT_URL.into());
+            assert!(index.status().mod_count > 0);
+        }
+    }
+
+    #[test]
     fn embedded_keys_are_valid() {
         for k in PUBLIC_KEYS {
             PublicKey::from_base64(k).unwrap();
@@ -1073,6 +1136,59 @@ mod tests {
         assert!(st.error.is_none(), "{:?}", st.error);
         assert_eq!(full.load(Ordering::SeqCst), 1);
         assert_eq!(st.mod_count, 1);
+    }
+
+    #[tokio::test]
+    async fn starts_with_the_bundled_index() {
+        let (tmp, paths) = setup();
+        let k = keys();
+        let more = SAMPLE.replace(r#""minAppVersion": "9.0.0""#, r#""minAppVersion": "0.0.1""#);
+        let seed_sig = sign(&k, &more);
+        let seed = Some((more.as_bytes(), seed_sig.as_str()));
+        let url = tmp.path().join("missing.json").display().to_string();
+
+        // No cache, server unreachable: the bundled index.
+        let index = ModIndex::with_seed(&paths, url.clone(), &[&k.pk], seed);
+        let st = index.refresh(true).await;
+        assert!(st.error.is_some());
+        assert_eq!(st.mod_count, 2);
+
+        // A tampered one is ignored.
+        let bad = ModIndex::with_seed(&paths, url, &[&k.pk], Some((b"{}", seed_sig.as_str())));
+        assert_eq!(bad.status().mod_count, 0);
+
+        // The first download replaces it without marking anything new.
+        let newer = more.replace("1760000000", "1760000001");
+        let url = publish(tmp.path(), &k, &newer);
+        let index = ModIndex::with_seed(&paths, url.clone(), &[&k.pk], seed);
+        let st = index.refresh(true).await;
+        assert!(st.error.is_none(), "{:?}", st.error);
+        assert_eq!(st.generated_at, Some(1_760_000_001));
+        let db = Db::open_in_memory().unwrap();
+        assert!(list(&index, &db).unwrap().iter().all(|m| !m.new));
+
+        // The newer cache wins over the bundled index on the next start.
+        let again = ModIndex::with_seed(&paths, url, &[&k.pk], seed);
+        assert_eq!(again.status().generated_at, Some(1_760_000_001));
+    }
+
+    #[tokio::test]
+    async fn a_newer_bundled_index_replaces_an_older_cache() {
+        let (tmp, paths) = setup();
+        let k = keys();
+        let old = SAMPLE.replace("1760000000", "1700000000");
+        let url = publish(tmp.path(), &k, &old);
+        let index = ModIndex::with_keys(&paths, url.clone(), &[&k.pk]);
+        assert!(index.refresh(true).await.error.is_none());
+
+        let sig = sign(&k, SAMPLE);
+        let seed = Some((SAMPLE.as_bytes(), sig.as_str()));
+        let updated = ModIndex::with_seed(&paths, url, &[&k.pk], seed);
+        assert_eq!(updated.status().generated_at, Some(1_760_000_000));
+        // The server still serving the old one is a replay, not news.
+        let st = updated.refresh(true).await;
+        assert_eq!(st.error.unwrap().kind, crate::error::ErrorKind::OlderIndex);
+        assert_eq!(st.generated_at, Some(1_760_000_000));
     }
 
     #[tokio::test]
