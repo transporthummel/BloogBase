@@ -176,7 +176,8 @@ body {
 }
 
 /* A desktop app's views don't bounce past their ends on a touchpad. Only on
-   the scrolling areas themselves (here and `overscroll-none` on the views):
+   the scrolling areas themselves (here, the shell's `<main>` hands its
+   overscroll on to it, and `overscroll-none` on dialogs):
    `overflow-hidden` makes an element a scroll container too, and with this on
    it, a card would swallow the scroll instead of handing it to the page. */
 html,

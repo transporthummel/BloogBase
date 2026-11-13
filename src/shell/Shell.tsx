@@ -133,10 +133,14 @@ export function Shell() {
           <QuitButton />
         </div>
       </nav>
+      {/* No `overscroll-none` here: at fractional scaling (150 %) WebView2
+          then draws the page half a pixel off now and then, and it jumps by a
+          pixel whenever a menu or dialog opens. The page doesn't bounce
+          without it: the overscroll goes on to html, which doesn't. */}
       <main
         ref={main}
         tabIndex={-1}
-        className="relative flex min-w-0 flex-1 flex-col overflow-y-auto overscroll-none outline-none [scrollbar-gutter:stable]"
+        className="relative flex min-w-0 flex-1 flex-col overflow-y-auto outline-none [scrollbar-gutter:stable]"
       >
         <div className="mx-auto w-full max-w-7xl flex-1 p-6 xl:p-8">
           {update.data && !updateLater && (

@@ -28,6 +28,7 @@
 
 ### Bug Fixes
 
+- At 150 % display scaling, pages no longer jump by a pixel when a menu or dialog opens or closes, after scrolling the library.
 - On macOS, the Controls, Screenshots and Videos tabs name Ctrl+F5 and Ctrl+F7 for screenshots and videos, the keys DOSBox has there with BloogBase, instead of ⌘+F5 (which turns on VoiceOver) and ⌘+F7.
 - A cover whose image file has gone missing is extracted again when it fails to show, instead of leaving an empty picture; if that fails too, the placeholder shows.
 
