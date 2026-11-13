@@ -117,6 +117,17 @@
   "details.safe.li3": "Archives can't write outside their folder, and oversized downloads are stopped.",
   "details.safe.li4": "Readmes are shown as plain text; links open in your browser. <a href=\"https://github.com/transporthummel/BloogBase/blob/main/docs/security.md\">More about security</a>.",
 
+  "reel1.title": "More than a hundred adventures",
+  "reel1.text": "New levels, new graphics, whole new games: a few of the mods in the list, each a click away in BloogBase.",
+  "reel2.title": "Made by fans, for every game",
+  "reel2.text": "From Keen 1 to Keen Dreams, there are mods for every episode. Each name leads to the mod's page on KeenWiki.",
+  "reel.pause": "Pause",
+  "reel.play": "Play",
+  "reel.by": "by {authors}",
+  "reel.and": " and ",
+  "reel.alt": "A scene from {name}",
+  "reel.standalone": "Standalone",
+
   "games.title": "Seven games, one home",
   "games.text": "Three of them are free. For the others, BloogBase finds your copy from Steam or GOG, or takes it from a folder or ZIP.",
   "games.free": "Free, installed by BloogBase",
@@ -145,7 +156,7 @@
   "community.bug.title": "Found a bug?",
   "community.bug.text": "<em>About → Diagnostics</em> in BloogBase collects what helps, with personal paths taken out, and opens a <a href=\"https://github.com/transporthummel/BloogBase/issues/new\">new issue</a>. For a mod that won't start, <em>Mod won't start?</em> in its <em>More</em> menu does the same, and BloogBase offers it when a mod quits right away the first time. Nothing is sent by itself. Security problems please <a href=\"https://github.com/transporthummel/BloogBase/security/advisories/new\">report privately</a>.",
   "community.authors.title": "You made a mod?",
-  "community.authors.text": "Thank you! BloogBase never hosts mods: it downloads them from where you published them and credits you on every page. Tell us if your entry needs fixing, or if you'd rather not have it listed.",
+  "community.authors.text": "Thank you! BloogBase never hosts mods: it downloads them from where you published them and credits you on every page. Tell us if your entry needs fixing, or if you'd rather not have it listed or shown here.",
   "community.thanks": "Thanks to the mod authors, <a href=\"https://keenwiki.shikadi.net/\">KeenWiki</a>, the <a href=\"https://moddingwiki.shikadi.net/\">Shikadi ModdingWiki</a>, the <a href=\"https://pckf.com/\">PCKF</a> and Keen: Modding forums, and the <a href=\"https://www.dosbox-staging.org/\">DOSBox Staging</a> team.",
 
   "footer.source": "Source code on GitHub",

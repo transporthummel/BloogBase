@@ -1,6 +1,7 @@
 // The website's motion: the drifting sky, screenshots switching on, the
-// Bloog hopping along the trail, the theme comparison and the download
-// button for the visitor's system. Everything works without it.
+// Bloog hopping along the trail, the theme comparison, the mod reels' Pause
+// buttons and the download button for the visitor's system. Everything works
+// without it.
 
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const root = document.documentElement;
@@ -164,6 +165,23 @@ reduceMotion.addEventListener("change", () => {
 const compare = document.querySelector(".compare");
 const range = compare.querySelector("input");
 range.addEventListener("input", () => compare.style.setProperty("--split", `${range.value}%`));
+
+// --- Mod reels ----------------------------------------------------------------
+
+// The reels drift by themselves (style.css); this is their Pause button, which
+// reduced motion doesn't need, since the reels stand still then.
+for (const button of document.querySelectorAll(".reel-toggle")) {
+  const reel = document.getElementById(button.getAttribute("aria-controls"));
+  const label = button.querySelector("span");
+  const showButton = () => (button.hidden = reduceMotion.matches);
+  showButton();
+  reduceMotion.addEventListener("change", showButton);
+  button.addEventListener("click", () => {
+    const paused = reel.classList.toggle("paused");
+    button.classList.toggle("paused", paused);
+    label.textContent = paused ? button.dataset.play : button.dataset.pause;
+  });
+}
 
 // --- Download for this system -------------------------------------------------
 

@@ -117,6 +117,17 @@
   "details.safe.li3": "Archive können nicht außerhalb ihres Ordners schreiben, und zu große Downloads werden abgebrochen.",
   "details.safe.li4": "Readmes erscheinen als reiner Text, Links öffnen sich in deinem Browser. <a href=\"https://github.com/transporthummel/BloogBase/blob/main/docs/security.md\">Mehr zur Sicherheit</a> (auf Englisch).",
 
+  "reel1.title": "Mehr als hundert Abenteuer",
+  "reel1.text": "Neue Level, neue Grafik, ganze neue Spiele: ein paar der Mods aus der Liste, in BloogBase jede nur einen Klick entfernt.",
+  "reel2.title": "Von Fans, für jedes Spiel",
+  "reel2.text": "Von Keen 1 bis Keen Dreams gibt es Mods für jede Episode. Jeder Name führt zur Seite der Mod auf KeenWiki.",
+  "reel.pause": "Anhalten",
+  "reel.play": "Weiter",
+  "reel.by": "von {authors}",
+  "reel.and": " und ",
+  "reel.alt": "Eine Szene aus {name}",
+  "reel.standalone": "Allein lauffähig",
+
   "games.title": "Sieben Spiele, ein Zuhause",
   "games.text": "Drei davon sind kostenlos. Für die anderen findet BloogBase deine Kopie von Steam oder GOG oder übernimmt sie aus einem Ordner oder einer ZIP-Datei.",
   "games.free": "Kostenlos, installiert von BloogBase",
@@ -145,7 +156,7 @@
   "community.bug.title": "Einen Fehler gefunden?",
   "community.bug.text": "<em>Über → Diagnose</em> in BloogBase sammelt, was hilft, ohne persönliche Pfade, und öffnet ein <a href=\"https://github.com/transporthummel/BloogBase/issues/new\">neues Issue</a>. Für eine Mod, die nicht startet, macht <em>Mod startet nicht?</em> in ihrem Menü <em>Mehr</em> dasselbe, und BloogBase bietet es an, wenn eine Mod beim ersten Mal sofort endet. Von selbst wird nichts gesendet. Sicherheitsprobleme bitte <a href=\"https://github.com/transporthummel/BloogBase/security/advisories/new\">vertraulich melden</a>.",
   "community.authors.title": "Du hast eine Mod gemacht?",
-  "community.authors.text": "Danke! BloogBase hostet nie Mods: Es lädt sie von dort, wo du sie veröffentlicht hast, und nennt dich auf jeder Seite. Sag Bescheid, wenn dein Eintrag eine Korrektur braucht oder du ihn lieber nicht in der Liste hättest.",
+  "community.authors.text": "Danke! BloogBase hostet nie Mods: Es lädt sie von dort, wo du sie veröffentlicht hast, und nennt dich auf jeder Seite. Sag Bescheid, wenn dein Eintrag eine Korrektur braucht oder du ihn lieber nicht in der Liste oder hier auf der Seite hättest.",
   "community.thanks": "Danke an die Mod-Autoren, <a href=\"https://keenwiki.shikadi.net/\">KeenWiki</a>, das <a href=\"https://moddingwiki.shikadi.net/\">Shikadi ModdingWiki</a>, die Foren <a href=\"https://pckf.com/\">PCKF</a> und Keen: Modding sowie das Team von <a href=\"https://www.dosbox-staging.org/\">DOSBox Staging</a>.",
 
   "footer.source": "Quellcode auf GitHub",

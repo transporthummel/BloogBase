@@ -79,6 +79,86 @@ for (const lang of others) {
   }
 }
 
+// The mod screenshots in the reels: site/mods/<mod id>.png, in the order of
+// mods/reels.json. Name, authors, game and KeenWiki page come from the mod's
+// entry in the mod list.
+const modsDir = path.join(site, "mods");
+const reels = JSON.parse(fs.readFileSync(path.join(modsDir, "reels.json"), "utf8"));
+const GAMES = {
+  keen1: { engine: "vorticons", glyph: "1", label: "Keen 1" },
+  keen2: { engine: "vorticons", glyph: "2", label: "Keen 2" },
+  keen3: { engine: "vorticons", glyph: "3", label: "Keen 3" },
+  keen4: { engine: "galaxy", glyph: "4", label: "Keen 4" },
+  keen5: { engine: "galaxy", glyph: "5", label: "Keen 5" },
+  keen6: { engine: "galaxy", glyph: "6", label: "Keen 6" },
+  kdreams: { engine: "dreams", glyph: "D", label: "Keen Dreams" },
+};
+
+/** What a reel shows of a mod, read from its index entry (one-line fields). */
+function modEntry(id) {
+  const text = fs.readFileSync(path.join(root, "index", "mods", `${id}.yaml`), "utf8");
+  const field = (key) => text.match(new RegExp(`^${key}: (.+)$`, "m"))?.[1].trim();
+  const unquote = (s) => (s.startsWith('"') ? JSON.parse(s) : s);
+  const name = field("name");
+  const authors = field("authors");
+  const keenwiki = text.match(/^\s+keenwiki: (\S+)$/m)?.[1];
+  const game = GAMES[field("game")];
+  if (!name || !authors || !keenwiki || !game)
+    throw new Error(`index/mods/${id}.yaml: missing fields`);
+  if (!fs.existsSync(path.join(modsDir, `${id}.png`)))
+    throw new Error(`site/mods/${id}.png missing`);
+  return {
+    id,
+    name: unquote(name),
+    authors: authors
+      .replace(/^\[|\]$/g, "")
+      .split(/,\s*/)
+      .map(unquote),
+    keenwiki,
+    game,
+    standalone: /^standalone: true$/m.test(text),
+  };
+}
+
+const escapeHtml = (s) =>
+  s
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+
+/**
+ * A reel of mod screenshots, twice in a row so it can drift without a seam;
+ * the second copy is hidden from screen readers and the keyboard.
+ */
+function reel(number, t, prefix) {
+  const mods = reels[number];
+  if (!mods) throw new Error(`No reel ${number} in mods/reels.json`);
+  const joinNames = (names) =>
+    names.length < 2
+      ? names.join("")
+      : `${names.slice(0, -1).join(", ")}${t["reel.and"]}${names.at(-1)}`;
+  const cards = mods.map(modEntry).map((mod) => {
+    const tile = mod.standalone
+      ? `<span class="tile source" role="img" aria-label="${escapeHtml(t["reel.standalone"])}">+</span>`
+      : `<span class="tile ${mod.game.engine}" role="img" aria-label="${mod.game.label}">${mod.game.glyph}</span>`;
+    const name = escapeHtml(mod.name);
+    return `<li>
+              <figure class="reel-card">
+                <img src="${prefix}img/mods/${mod.id}.png" width="1600" height="1200" alt="${escapeHtml(t["reel.alt"].replace("{name}", mod.name))}" loading="lazy" decoding="async" />
+                <figcaption>${tile}<span><a href="${mod.keenwiki}">${name}</a><span class="reel-by">${escapeHtml(t["reel.by"].replace("{authors}", joinNames(mod.authors)))}</span></span></figcaption>
+              </figure>
+            </li>`;
+  });
+  const set = cards.join("\n            ");
+  return `<ul class="reel-set">
+            ${set}
+          </ul>
+          <ul class="reel-set" aria-hidden="true" inert>
+            ${set}
+          </ul>`;
+}
+
 /** Width and height of a PNG, from its IHDR chunk. */
 function pngSize(file) {
   const buf = fs.readFileSync(file);
@@ -188,6 +268,8 @@ function render(page, lang) {
       const { width, height } = pngSize(file);
       return `PNG · ${width} × ${height} · ${fileSize(fs.statSync(file).size, lang)}`;
     }
+    if (kind === "reel") return reel(arg, t, prefix);
+    if (kind === "reelCount") return String(reels[arg].length);
     if (kind === "json") return JSON.stringify(t[arg]).replaceAll("<", "\\u003c");
     throw new Error(`Unknown placeholder ${match}`);
   });
@@ -293,6 +375,10 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(path.join(out, "img"), { recursive: true });
 for (const file of fs.readdirSync(shotsDir).filter((f) => f.endsWith(".png"))) {
   fs.copyFileSync(path.join(shotsDir, file), path.join(out, "img", file));
+}
+fs.mkdirSync(path.join(out, "img", "mods"));
+for (const file of fs.readdirSync(modsDir).filter((f) => f.endsWith(".png"))) {
+  fs.copyFileSync(path.join(modsDir, file), path.join(out, "img", "mods", file));
 }
 for (const file of ["logo.svg", "logo-light.svg", "icon.svg"])
   fs.copyFileSync(path.join(root, "src", "assets", file), path.join(out, "img", file));

@@ -29,6 +29,7 @@
   --magenta: #aa00aa;
   --blue: #5555ff;
   --brown: #aa5500;
+  --cyan: #00aaaa;
   --scrollbar: #625d99;
   --shadow: 0 4px 16px rgb(0 0 0 / 0.35);
   --shadow-down: 0 2px 8px rgb(0 0 0 / 0.35);
@@ -836,6 +837,142 @@ html:not(.js) .walker,
   margin-top: 1rem;
 }
 
+/* Mod reels: screenshots of mods drift past under the night sky, the full
+   width of the window, one reel each way. They stop while the pointer or the
+   keyboard is on them, or with the Pause button; with reduced motion they are
+   a row to scroll through. The screenshots are 5× the games' 320×200, so they
+   are scaled down smoothly rather than pixelated, which would shimmer. */
+.reel-section {
+  margin-top: clamp(7rem, 16vh, 10rem);
+}
+
+.reel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem 2rem;
+}
+
+.reel-toggle {
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border-color: var(--border);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.reel-toggle[hidden] {
+  display: none;
+}
+
+.reel-toggle .icon-play,
+.reel-toggle.paused .icon-pause {
+  display: none;
+}
+
+.reel-toggle.paused .icon-play {
+  display: inline;
+}
+
+.reel {
+  --gap: clamp(1rem, 2vw, 1.75rem);
+  --card: clamp(15rem, 24vw, 21rem);
+  --fade: min(10vw, 7rem);
+  width: 100vw;
+  margin: 2.5rem 0 0 calc(50% - 50vw);
+  padding-block: 0.25rem 1.5rem;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 var(--fade),
+    #000 calc(100% - var(--fade)),
+    transparent
+  );
+}
+
+.reel-track {
+  display: flex;
+  width: max-content;
+  animation: reel calc(var(--count) * 7s) linear infinite;
+}
+
+.reverse .reel-track {
+  animation-direction: reverse;
+}
+
+.reel:hover .reel-track,
+.reel:focus-within .reel-track,
+.reel.paused .reel-track {
+  animation-play-state: paused;
+}
+
+@keyframes reel {
+  to {
+    translate: -50% 0;
+  }
+}
+
+.reel-set {
+  display: flex;
+  gap: var(--gap);
+  margin: 0;
+  padding: 0 var(--gap) 0 0;
+  list-style: none;
+}
+
+.reel-card {
+  width: var(--card);
+  margin: 0;
+}
+
+.reel-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+}
+
+.reel-card figcaption {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  line-height: 1.35;
+}
+
+.reel-card .tile {
+  width: 2rem;
+  height: 2rem;
+  font-size: 0.7rem;
+}
+
+.tile.source {
+  background: var(--cyan);
+}
+
+.reel-card a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.reel-card a:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--green);
+}
+
+.reel-by {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 /* Details: five groups in flowing columns, the densest passage of the page. */
 .details {
   margin-top: clamp(8rem, 18vh, 12rem);
@@ -1453,5 +1590,28 @@ html:not(.js) .walker,
 
   .js .screen.on {
     animation: none;
+  }
+
+  .reel {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    mask-image: none;
+  }
+
+  .reel-track {
+    animation: none;
+  }
+
+  .reel-set {
+    padding-inline: var(--gutter);
+  }
+
+  .reel-set[aria-hidden] {
+    display: none;
+  }
+
+  .reel-card {
+    scroll-snap-align: start;
   }
 }

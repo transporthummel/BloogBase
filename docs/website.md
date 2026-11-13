@@ -14,7 +14,8 @@ The project website lives in `site/` and is published to GitHub Pages at
   screenshots, logo, icon or mod list (the build time without git history), in UTC,
   shown in the footer as "Last updated", `{{shot:<name>}}` is a
   screenshot from `docs/screenshots/` (`<name>.<lang>.png` where it exists)
-  and `{{size:<name>}}` its `width`/`height`.
+  and `{{size:<name>}}` its `width`/`height`. `{{reel:<n>}}` is a reel of mod
+  screenshots and `{{reelCount:<n>}}` the number of mods in it (see `mods/`).
 - `press.html`: the press kit, with the same placeholders, plus `{{@home}}`
   (the main page), `{{@base}}` (the site's address), `{{@modCount}}` (the
   files in `index/mods/`), `{{@zipSize}}` and `{{png:<name>}}`, a picture's
@@ -26,7 +27,7 @@ The project website lives in `site/` and is published to GitHub Pages at
 - `style.css`: the app's Midnight Galaxy colours, type and components
   (`.local/DESIGN.md`).
 - `main.js`: the drifting sky, screenshots switching on, the Bloog hopping
-  along the trail, the theme comparison, the download button for the
+  along the trail, the theme comparison, the reels' Pause buttons, the download button for the
   visitor's system (the one in the download section; the hero's only names
   the system and leads there, so visitors see the install hints) and the file
   names under each system, which link straight
@@ -36,6 +37,13 @@ The project website lives in `site/` and is published to GitHub Pages at
   reduced motion turns the movement off.
 - `press.js`: the press kit's drifting sky and Copy buttons (hidden without
   it).
+- `mods/`: the screenshots of mods in the two reels, `<mod id>.png` (1600×1200,
+  taken in DOSBox), and `reels.json`, which mods go in which reel and in
+  what order. Name, authors, game and KeenWiki link come from the mod's entry
+  in `index/mods/`; the build stops if one is missing. Each reel is rendered
+  twice in a row (the copy hidden from screen readers and the keyboard), so
+  it can drift without a seam; it stops on hover or focus, with its Pause
+  button, and stands still as a row to scroll with reduced motion.
 - `fonts/`: Inter and Press Start 2P (latin), with their OFL licences.
 - `build.mjs`: writes `site/dist/` (ignored): `index.html`, `de/index.html`,
   `press/index.html`, `de/press/index.html`, the screenshots, logo and icon

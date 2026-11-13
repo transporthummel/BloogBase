@@ -250,6 +250,34 @@
         </section>
       </div>
 
+      <section class="reel-section" aria-labelledby="reel1-title">
+        <div class="reel-head">
+          <div>
+            <h2 id="reel1-title">{{reel1.title}}</h2>
+            <p class="lead">{{reel1.text}}</p>
+          </div>
+          <!-- Moving pictures need a way to stop them; hovering or focusing
+               one stops them too. Shown by main.js, not with reduced motion. -->
+          <button
+            class="button ghost reel-toggle"
+            type="button"
+            aria-controls="reel1"
+            data-pause="{{reel.pause}}"
+            data-play="{{reel.play}}"
+            hidden
+          >
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="icon-pause" d="M9 5v14M15 5v14" />
+              <path class="icon-play" d="M7 4.5v15L19 12z" />
+            </svg>
+            <span>{{reel.pause}}</span>
+          </button>
+        </div>
+        <div class="reel" id="reel1" style="--count: {{reelCount:1}}">
+          <div class="reel-track">{{reel:1}}</div>
+        </div>
+      </section>
+
       <section class="details" id="details" aria-labelledby="details-title">
         <h2 id="details-title">{{details.title}}</h2>
         <p class="lead">{{details.text}}</p>
@@ -358,6 +386,34 @@
           </li>
         </ul>
         <p class="note">{{games.note}}</p>
+      </section>
+
+      <section class="reel-section reverse" aria-labelledby="reel2-title">
+        <div class="reel-head">
+          <div>
+            <h2 id="reel2-title">{{reel2.title}}</h2>
+            <p class="lead">{{reel2.text}}</p>
+          </div>
+          <!-- Moving pictures need a way to stop them; hovering or focusing
+               one stops them too. Shown by main.js, not with reduced motion. -->
+          <button
+            class="button ghost reel-toggle"
+            type="button"
+            aria-controls="reel2"
+            data-pause="{{reel.pause}}"
+            data-play="{{reel.play}}"
+            hidden
+          >
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path class="icon-pause" d="M9 5v14M15 5v14" />
+              <path class="icon-play" d="M7 4.5v15L19 12z" />
+            </svg>
+            <span>{{reel.pause}}</span>
+          </button>
+        </div>
+        <div class="reel" id="reel2" style="--count: {{reelCount:2}}">
+          <div class="reel-track">{{reel:2}}</div>
+        </div>
       </section>
 
       <section class="download" id="download" aria-labelledby="download-title">
