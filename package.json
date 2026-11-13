@@ -36,7 +36,7 @@
     "@uiw/react-codemirror": "4.25.12",
     "i18next": "26.7.2",
     "lucide-react": "1.70.0",
-    "motion": "14.9.1",
+    "motion": "14.10.0",
     "pako": "3.0.3",
     "react": "19.3.1",
     "react-dom": "19.3.1",
