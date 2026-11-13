@@ -398,6 +398,7 @@
     "madeFor": "Gemacht für",
     "details": "Details",
     "files": "Dateien",
+    "saves": "Spielstände",
     "by": "von {{authors}}",
     "version": "Version {{version}}",
     "releasedOn_day": "Erschienen am {{date}}",

@@ -859,6 +859,8 @@ export type ModInfo = {
 	/**  False when the user should pick from `recipes`. */
 	confident: boolean,
 	fileCount: number,
+	/**  Saves among the files, which the mod's profile starts with. */
+	saveCount: number,
 	/**
 	 *  The index entry whose download this is, byte for byte, or whose
 	 *  programs it has.

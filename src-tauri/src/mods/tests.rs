@@ -73,6 +73,7 @@ fn inspects_zip_with_folder_and_metadata_from_name() {
     assert_eq!(info.game_id, "keen4");
     assert!(info.confident);
     assert_eq!(info.file_count, 5);
+    assert_eq!(info.save_count, 0);
     assert_eq!(
         info.recipes[0],
         RecipeOption {
@@ -1733,4 +1734,18 @@ fn slugs() {
     );
     assert_eq!(slug("  ***  "), "mod");
     assert_eq!(slug("Ünïcode"), "n-code");
+}
+
+#[test]
+fn counts_the_saves_in_the_mods_folder() {
+    let tmp = tempfile::tempdir().unwrap();
+    let zip = tmp.path().join("aurora.zip");
+    let mut files = AURORA.to_vec();
+    files.push(("Aurora/SAVEGAM0.CK4", b"save"));
+    files.push(("Aurora/SAVEGAM3.CK4", b"save"));
+    files.push(("Aurora/old/SAVEGAM1.CK4", b"not where the game looks"));
+    write_zip(&zip, &files);
+    let info = inspect(&zip, None).unwrap();
+    assert_eq!(info.file_count, 8);
+    assert_eq!(info.save_count, 2);
 }

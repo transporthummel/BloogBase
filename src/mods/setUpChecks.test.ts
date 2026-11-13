@@ -51,6 +51,7 @@ const info = (extra: Partial<ModInfo> = {}): ModInfo => ({
   recipes: [patch],
   confident: true,
   fileCount: 3,
+  saveCount: 0,
   bundledGame: null,
   indexId: null,
   indexVersion: null,

@@ -296,6 +296,13 @@ pub(super) fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> 
             recipes,
             confident: guess.confident,
             file_count: files.len() as u32,
+            save_count: files
+                .iter()
+                .filter(|f| {
+                    let (dir, name) = split_dir(f);
+                    dir == root && crate::saves::is_save(game, name)
+                })
+                .count() as u32,
             index_id: None,
             index_version: None,
             index_files: false,

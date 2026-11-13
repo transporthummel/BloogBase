@@ -279,7 +279,7 @@ export function SetUp({
   );
 }
 
-/** Game, versions it's made for, authors, version, release and file count. */
+/** Game, versions it's made for, authors, version, release, file and save count. */
 function Facts({
   info,
   option,
@@ -318,6 +318,12 @@ function Facts({
       )}
       <dt className="text-muted">{t("mods.files")}</dt>
       <dd>{info.fileCount}</dd>
+      {info.saveCount > 0 && (
+        <>
+          <dt className="text-muted">{t("mods.saves")}</dt>
+          <dd>{info.saveCount}</dd>
+        </>
+      )}
     </dl>
   );
 }

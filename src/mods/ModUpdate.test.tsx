@@ -196,6 +196,7 @@ test("downloads a newer version and replaces the installed one", async () => {
         ],
         confident: true,
         fileCount: 3,
+        saveCount: 0,
         bundledGame: null,
         indexId: null,
         indexVersion: null,

@@ -398,6 +398,7 @@
     "madeFor": "Made for",
     "details": "Details",
     "files": "Files",
+    "saves": "Saves",
     "by": "by {{authors}}",
     "version": "version {{version}}",
     "releasedOn_day": "Released on {{date}}",

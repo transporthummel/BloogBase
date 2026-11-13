@@ -1032,6 +1032,7 @@ mod tests {
             recipes,
             confident: true,
             file_count: 3,
+            save_count: 0,
             index_id: None,
             index_version: None,
             index_files: false,

@@ -19,6 +19,7 @@
 ### Improvements
 
 - Steam and GOG games already in the library show their version when importing.
+- Adding a mod shows how many saves come with it, besides the number of files.
 - On macOS, keys are named as on Mac keyboards (⌃ control, ⌥ option, ↩ return, ⌫ delete, fn with the arrows for Home/End/Page Up/Page Down), and the Controls tab notes that F-keys may need fn.
 - On macOS, the settings' hints, the one-button firing note and the controller's texts name Mac keys too, and fullscreen is named ⌃⌘F (the View menu's shortcut; F11 shows the desktop there). The fullscreen button follows when the window switches through the menu or its green button.
 - With a controller, LB/RB switch tabs, LT/RT scroll a page (the focus follows onto what's in view), and View or Menu jump to the main navigation and back.

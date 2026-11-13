@@ -54,6 +54,8 @@ pub struct ModInfo {
     /// False when the user should pick from `recipes`.
     pub confident: bool,
     pub file_count: u32,
+    /// Saves among the files, which the mod's profile starts with.
+    pub save_count: u32,
     /// The index entry whose download this is, byte for byte, or whose
     /// programs it has.
     pub index_id: Option<String>,

@@ -92,6 +92,7 @@ const info: ModInfo = {
   recipes: [patch],
   confident: true,
   fileCount: 18,
+  saveCount: 0,
   bundledGame: null,
   indexId: null,
   indexVersion: null,
@@ -155,6 +156,25 @@ test("says so when a pick holds neither a game nor a mod", async () => {
   expect(
     await screen.findByText("Neither a Commander Keen game nor a mod was found there."),
   ).toBeInTheDocument();
+});
+
+test("shows the saves that come with the mod beside its files", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, saveCount: 2 }));
+  renderDialog();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  const saves = await screen.findByText("Saves");
+  expect(saves.nextElementSibling).toHaveTextContent("2");
+  expect(screen.getByText("Files").nextElementSibling).toHaveTextContent("18");
+});
+
+test("leaves out the saves when the mod has none", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(ok(info));
+  renderDialog();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  await screen.findByText("Files");
+  expect(screen.queryByText("Saves")).not.toBeInTheDocument();
 });
 
 test("inspects the picked ZIP and installs the mod on the matching game", async () => {
