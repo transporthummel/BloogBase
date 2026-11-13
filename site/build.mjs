@@ -169,6 +169,12 @@ function pngSize(file) {
   return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
 }
 
+/** A controller chart in this language, falling back to the English one. */
+function chartFile(name, lang) {
+  const localized = `${name}.${lang}.svg`;
+  return fs.existsSync(path.join(chartsDir, localized)) ? localized : `${name}.svg`;
+}
+
 /** A screenshot in this language, falling back to the English one. */
 function shotFile(name, lang) {
   const localized = `${name}.${lang}.png`;
@@ -274,6 +280,16 @@ function render(page, lang) {
       const { width, height } = pngSize(file);
       return `PNG · ${width} × ${height} · ${fileSize(fs.statSync(file).size, lang)}`;
     }
+    if (kind === "chart") return `${prefix}img/controller/${chartFile(arg, lang)}`;
+    // A chart's download line, "SVG · 1200 × 1304 · 114 KB".
+    if (kind === "svg") {
+      const file = path.join(chartsDir, chartFile(arg, lang));
+      const [, , width, height] = fs
+        .readFileSync(file, "utf8")
+        .match(/viewBox="([^"]+)"/)[1]
+        .split(" ");
+      return `SVG · ${width} × ${height} · ${fileSize(fs.statSync(file).size, lang)}`;
+    }
     if (kind === "reel") return reel(arg, t, prefix);
     if (kind === "reelCount") return String(reels[arg].length);
     if (kind === "json") return JSON.stringify(t[arg]).replaceAll("<", "\\u003c");
@@ -361,6 +377,18 @@ function pressKit() {
     { name: "icon.png", data: fs.readFileSync(path.join(root, "src-tauri", "icons", "icon.png")) },
     { name: "icon.svg", data: fs.readFileSync(path.join(root, "src", "assets", "icon.svg")) },
   ];
+  // The controller charts, by language like the screenshots.
+  for (const file of fs
+    .readdirSync(chartsDir)
+    .filter((f) => f.endsWith(".svg"))
+    .sort()) {
+    const [name, ...rest] = file.split(".");
+    const lang = rest.length > 1 ? rest[0] : first;
+    files.push({
+      name: `controller/${lang}/${name}.svg`,
+      data: fs.readFileSync(path.join(chartsDir, file)),
+    });
+  }
   // The macOS warnings are help for the README, not pictures of BloogBase.
   const shots = fs
     .readdirSync(shotsDir)

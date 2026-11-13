@@ -21,7 +21,9 @@ The project website lives in `site/` and is published to GitHub Pages at
   (the main page), `{{@base}}` (the site's address), `{{@modCount}}` (the
   files in `index/mods/`), `{{@zipSize}}` and `{{png:<name>}}`, a picture's
   type, size and file size ("PNG · 2560 × 1600 · 398 KB") for a screenshot's
-  name or a file in `img/`. Its facts, texts to copy and story are in the
+  name or a file in `img/`; `{{chart:<name>}}` is a controller chart in the
+  page's language and `{{svg:<name>}}` its line ("SVG · 1200 × 1304 · 114 KB").
+  Its facts, texts to copy and story are in the
   `press.*` texts; the story is the owner's, from the PCKF introduction.
 - `i18n/en.json`, `i18n/de.json`: every text, the same keys in both; the
   build stops when one is missing. Texts may hold inline HTML.
@@ -55,7 +57,7 @@ The project website lives in `site/` and is published to GitHub Pages at
   `docs/logo-light.png` and the 512px app icon), fonts, styles, scripts and
   `bloogbase-press-kit.zip` (logo for dark and light backgrounds as PNG and
   SVG, icon as PNG and SVG, every screenshot but the
-  macOS help, by language, and a README from the `press.*` texts). Node only,
+  macOS help and every controller chart, by language, and a README from the `press.*` texts). Node only,
   no dependencies. `{{@languageScript}}`, inline in each page's head, picks
   the language: a click on a language link (`a[hreflang]`) remembers it in
   `localStorage` (`bloogbase-lang`), and the English pages send visitors on

@@ -125,6 +125,10 @@
             <dd>{{press.facts.gamesValue}}</dd>
           </div>
           <div>
+            <dt>{{press.facts.controllers}}</dt>
+            <dd>{{press.facts.controllersValue}}</dd>
+          </div>
+          <div>
             <dt>{{press.facts.mods}}</dt>
             <dd><span class="count">{{@modCount}}</span> {{press.facts.modsValue}}</dd>
           </div>
@@ -229,6 +233,10 @@
           <div class="detail-group">
             <h3>{{press.angles.open.title}}</h3>
             <p>{{press.angles.open.text}}</p>
+          </div>
+          <div class="detail-group">
+            <h3>{{press.angles.couch.title}}</h3>
+            <p>{{press.angles.couch.text}}</p>
           </div>
         </div>
       </section>
@@ -384,6 +392,40 @@
               <span>{{press.pictures.discoverLight}}</span>
               <a class="asset" href="{{shot:discover-light}}" download
                 ><code>{{png:discover-light}}</code></a
+              >
+            </figcaption>
+          </figure>
+          <figure class="picture picture-chart">
+            <a class="frame" href="{{chart:keen4-6-xbox}}" download>
+              <img
+                src="{{chart:keen4-6-xbox}}"
+                width="1200"
+                height="1304"
+                alt="{{pad.alt}}"
+                loading="lazy"
+              />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.padXbox}}</span>
+              <a class="asset" href="{{chart:keen4-6-xbox}}" download
+                ><code>{{svg:keen4-6-xbox}}</code></a
+              >
+            </figcaption>
+          </figure>
+          <figure class="picture picture-chart">
+            <a class="frame" href="{{chart:keen4-6-playstation}}" download>
+              <img
+                src="{{chart:keen4-6-playstation}}"
+                width="1200"
+                height="1304"
+                alt="{{press.pictures.padPlayStationAlt}}"
+                loading="lazy"
+              />
+            </a>
+            <figcaption>
+              <span>{{press.pictures.padPlayStation}}</span>
+              <a class="asset" href="{{chart:keen4-6-playstation}}" download
+                ><code>{{svg:keen4-6-playstation}}</code></a
               >
             </figcaption>
           </figure>
