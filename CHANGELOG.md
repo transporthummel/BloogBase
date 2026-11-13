@@ -32,6 +32,8 @@
 
 ### Misc
 
+- Updated dependencies.
+
 ## 1.2.1 (2026-11-10)
 
 ### Improvements
