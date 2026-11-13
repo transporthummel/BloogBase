@@ -32,7 +32,7 @@
 
 ### Misc
 
-- Updated dependencies.
+- Updated dependencies, among them the built-in SQLite for a security fix (RUSTSEC-2026-0459).
 
 ## 1.2.1 (2026-11-10)
 
