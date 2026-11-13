@@ -85,6 +85,19 @@ from its original source, checks it, puts it on the right copy of the game
 and works out how it starts. The list updates itself, so new mods show up
 without an app update.
 
+### Play with a controller
+
+<a href="docs/controller.md"><img src="docs/controller/keen4-6-xbox.svg" alt="What each button of an Xbox controller does in Keen 4–6, while playing and, with View held, in the menus" width="560"></a>
+
+Xbox and PlayStation controllers (DualShock 4) work in every game and in
+BloogBase itself, without any setup. In the games, the controller presses
+the keys the game is set to, your own ones too; with View or Share held it
+presses the keys of the menus, picks save slots and types the name of a
+save. In BloogBase, the stick or D-pad moves between buttons and cards, A
+opens, B goes back, and an on-screen keyboard types into text fields. The
+Controls tab on every page draws the controller with what each button does;
+[docs/controller.md](docs/controller.md) has the charts for every series.
+
 ### Any mod from KeenWiki
 
 <img src="docs/screenshots/keenwiki.png" alt="Adding a mod by pasting its KeenWiki link" width="560">
@@ -140,8 +153,9 @@ Midnight Galaxy; above it is in Vintage Beige. In English and German.
 
 - One-button firing in Keen 1-3, on unless switched off: Space shoots
   instead of Ctrl+Alt, also in mods.
-- A controls cheat sheet for each series on every game's page, shown before
-  its first start, with the known cheat codes folded away.
+- A controls cheat sheet for each series on every game's page, for the
+  keyboard and the controller, shown before its first start, with the known
+  cheat codes folded away.
 - BloogBase itself in fullscreen (F11), with games following it.
 - Sound, music, the score box and keys set once for all games; while you're
   in another window, a game keeps running, goes quiet or pauses.
@@ -185,7 +199,8 @@ Midnight Galaxy; above it is in Vintage Beige. In English and German.
 - "What's new" on start: changes in BloogBase, new mods, updates for yours.
 - Library searchable, sorted or grouped your way, with play time, saves and disk space at
   a glance.
-- Keyboard friendly, with screen reader labels, and respects reduced motion.
+- Keyboard and controller friendly, with screen reader labels, and respects
+  reduced motion.
 - No telemetry. You copy diagnostics for bug reports yourself, with personal
   paths taken out.
 
