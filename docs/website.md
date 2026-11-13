@@ -9,7 +9,8 @@ The project website lives in `site/` and is published to GitHub Pages at
 
 - `page.html`: the main page, one template for both languages. `{{key}}` is a text
   from `i18n/<lang>.json`, `{{@root}}`, `{{@lang}}`, `{{@url}}` and
-  `{{@otherUrl}}` are filled in per language, `{{@updated}}` (and
+  `{{@otherUrl}}` are filled in per language, `{{@chartSuffix}}` is `.de` on
+  German pages for the German controller charts, `{{@updated}}` (and
   `{{@updatedIso}}`) is the time of the last commit to the site, its
   screenshots, logo, icon or mod list (the build time without git history), in UTC,
   shown in the footer as "Last updated", `{{shot:<name>}}` is a
@@ -27,7 +28,9 @@ The project website lives in `site/` and is published to GitHub Pages at
 - `style.css`: the app's Midnight Galaxy colours, type and components
   (`.local/DESIGN.md`).
 - `main.js`: the drifting sky, screenshots switching on, the Bloog hopping
-  along the trail, the theme comparison, the reels' Pause buttons, the download button for the
+  along the trail, the theme comparison, the reels' Pause buttons, the controller layouts
+  dialog (controller and series to pick; without the script the links open
+  one chart), the download button for the
   visitor's system (the one in the download section; the hero's only names
   the system and leads there, so visitors see the install hints) and the file
   names under each system, which link straight
@@ -46,7 +49,8 @@ The project website lives in `site/` and is published to GitHub Pages at
   button, and stands still as a row to scroll with reduced motion.
 - `fonts/`: Inter and Press Start 2P (latin), with their OFL licences.
 - `build.mjs`: writes `site/dist/` (ignored): `index.html`, `de/index.html`,
-  `press/index.html`, `de/press/index.html`, the screenshots, logo and icon
+  `press/index.html`, `de/press/index.html`, the screenshots, the controller charts
+  of `docs/controller/` (in `img/controller/`), logo and icon
   (SVGs from `src/assets/`, also full size: `docs/logo.png` and
   `docs/logo-light.png` and the 512px app icon), fonts, styles, scripts and
   `bloogbase-press-kit.zip` (logo for dark and light backgrounds as PNG and

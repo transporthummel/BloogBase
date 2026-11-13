@@ -1,7 +1,7 @@
 // The website's motion: the drifting sky, screenshots switching on, the
 // Bloog hopping along the trail, the theme comparison, the mod reels' Pause
-// buttons and the download button for the visitor's system. Everything works
-// without it.
+// buttons, the controller layouts dialog and the download button for the
+// visitor's system. Everything works without it.
 
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const root = document.documentElement;
@@ -180,6 +180,52 @@ for (const button of document.querySelectorAll(".reel-toggle")) {
     const paused = reel.classList.toggle("paused");
     button.classList.toggle("paused", paused);
     label.textContent = paused ? button.dataset.play : button.dataset.pause;
+  });
+}
+
+// --- Controller layouts -------------------------------------------------------
+
+// The controller's links open the charts in a dialog, with a choice of
+// controller and series; without this script they open one chart.
+const padDialog = document.querySelector(".pad-dialog");
+if (padDialog?.showModal) {
+  const image = padDialog.querySelector(".pad-chart");
+  const full = padDialog.querySelector(".pad-full a");
+  const choices = {};
+  for (const group of padDialog.querySelectorAll("[data-choice]")) {
+    const buttons = [...group.querySelectorAll("button")];
+    choices[group.dataset.choice] = buttons;
+    for (const button of buttons) {
+      button.addEventListener("click", () => {
+        for (const other of buttons) other.setAttribute("aria-pressed", String(other === button));
+        showChart();
+      });
+    }
+  }
+  const chosen = (name) => choices[name].find((b) => b.getAttribute("aria-pressed") === "true");
+  function showChart() {
+    const layout = chosen("layout");
+    const chart = chosen("chart");
+    const src = `${padDialog.dataset.charts}${chart.dataset.value}-${layout.dataset.value}${padDialog.dataset.suffix}.svg`;
+    image.src = src;
+    // The app's chart is a little shorter than the games'.
+    image.height = chart.dataset.value === "app" ? 1280 : 1304;
+    image.alt = padDialog.dataset.alt
+      .replace("{chart}", chart.textContent.trim())
+      .replace("{controller}", layout.textContent.trim());
+    full.href = src;
+  }
+  showChart();
+  for (const link of document.querySelectorAll(".pad-open")) {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      padDialog.showModal();
+    });
+  }
+  padDialog.querySelector(".pad-close").addEventListener("click", () => padDialog.close());
+  // A click on the backdrop closes it, as Escape does.
+  padDialog.addEventListener("click", (event) => {
+    if (event.target === padDialog) padDialog.close();
   });
 }
 

@@ -720,8 +720,148 @@ html:not(.js) .walker,
   margin-top: 1.25rem;
 }
 
+/* The controller: its chart beside the text, all layouts in a dialog. */
+.station .screen.pad-shot {
+  width: auto;
+  max-width: 40rem;
+  justify-self: center;
+}
+
+.pad-shot a {
+  display: block;
+  cursor: zoom-in;
+}
+
+.station .pad-open.button {
+  margin-top: 1.75rem;
+  border-color: var(--border);
+}
+
+.pad-dialog {
+  width: min(56rem, 100% - 2 * var(--gutter));
+  max-height: min(92vh, 100% - 2rem);
+  padding: 0;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.pad-dialog[open] {
+  animation: rise 220ms var(--ease-out);
+}
+
+.pad-dialog::backdrop {
+  background: rgb(0 0 0 / 0.5);
+  animation: fade 150ms ease-out;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 1rem;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.pad-dialog-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.pad-dialog h2 {
+  font-size: 0.9rem;
+}
+
+.pad-close {
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border-color: var(--border);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.pad-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  padding: 1.25rem 1.5rem 0;
+}
+
+.pad-choice-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Choices as in the app's tabs: the chosen one marked by a green line. */
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.segmented button {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.9rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font: 500 0.95rem/1.2 var(--sans);
+  cursor: pointer;
+  transition:
+    background 150ms,
+    color 150ms;
+}
+
+.segmented button:hover {
+  background: var(--raised);
+  color: var(--ink);
+}
+
+.segmented button[aria-pressed="true"] {
+  color: var(--ink);
+  background: var(--raised);
+  box-shadow: inset 0 -2px 0 var(--green);
+}
+
+.pad-chart {
+  width: calc(100% - 3rem);
+  margin: 1.25rem 1.5rem 0;
+  border-radius: 12px;
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+}
+
+.pad-full {
+  margin: 0;
+  padding: 0.75rem 1.5rem 1.5rem;
+  font-size: 0.9rem;
+}
+
 /* Day and night: drag the line to see both themes. */
 .themes {
+  margin-top: clamp(7rem, 16vh, 10rem);
   text-align: center;
 }
 
@@ -1613,5 +1753,10 @@ html:not(.js) .walker,
 
   .reel-card {
     scroll-snap-align: start;
+  }
+
+  .pad-dialog[open],
+  .pad-dialog::backdrop {
+    animation: none;
   }
 }

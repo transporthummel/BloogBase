@@ -26,12 +26,16 @@ const PAGES = [
 ];
 const PRESS_ZIP = "bloogbase-press-kit.zip";
 const shotsDir = path.join(root, "docs", "screenshots");
+// The controller charts of docs/controller.md, `<name>.svg` in English and
+// `<name>.de.svg` in German.
+const chartsDir = path.join(root, "docs", "controller");
 // Shown in the footer as "Last updated", in UTC: the last commit that changed
 // what the pages are made of. Without git history (a shallow clone has only
 // the newest commit, so the Pages workflow fetches all of it), the build time.
 const SOURCES = [
   "site",
   "docs/screenshots",
+  "docs/controller",
   "docs/logo.png",
   "docs/logo-light.png",
   "src/assets/logo.svg",
@@ -232,6 +236,8 @@ function render(page, lang) {
     otherLang: other,
     urlEn: pageUrl("en"),
     urlDe: pageUrl("de"),
+    // The controller charts in this language, falling back to English.
+    chartSuffix: fs.existsSync(path.join(chartsDir, `app-xbox.${lang}.svg`)) ? `.${lang}` : "",
     modCount: String(modCount),
     zipSize: fileSize(fs.statSync(path.join(out, PRESS_ZIP)).size, lang),
     year: String(updatedAt.getUTCFullYear()),
@@ -376,6 +382,7 @@ fs.mkdirSync(path.join(out, "img"), { recursive: true });
 for (const file of fs.readdirSync(shotsDir).filter((f) => f.endsWith(".png"))) {
   fs.copyFileSync(path.join(shotsDir, file), path.join(out, "img", file));
 }
+fs.cpSync(chartsDir, path.join(out, "img", "controller"), { recursive: true });
 fs.mkdirSync(path.join(out, "img", "mods"));
 for (const file of fs.readdirSync(modsDir).filter((f) => f.endsWith(".png"))) {
   fs.copyFileSync(path.join(modsDir, file), path.join(out, "img", "mods", file));

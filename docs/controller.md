@@ -27,7 +27,8 @@ measured with both; on Linux the DualShock 4's are.
 | The app     | [![The app, Xbox](controller/app-xbox.svg)](controller/app-xbox.svg)                     | [![The app, PlayStation](controller/app-playstation.svg)](controller/app-playstation.svg)                     |
 
 `scripts/controller-charts.mjs` draws them (`node scripts/controller-charts.mjs`,
-`… <dir> de` for German). They repeat the bindings below and the drawing
+`node scripts/controller-charts.mjs docs/controller de` for the German ones,
+`<name>.de.svg`, which the German website shows). They repeat the bindings below and the drawing
 of the Controls tab (`PadDrawing.tsx`), so redo them when `keymap.rs`,
 `src/gamepad/` or the drawing changes.
 
