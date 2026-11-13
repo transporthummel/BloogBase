@@ -4,26 +4,18 @@
 
 ### Features
 
-- Xbox controllers play every game without setup: the controller presses the keys the game is set to, the player's own ones too, and with View held the keys of the menus, save slots in Keen 1–3 and letters for save names in Keen 4–6 and Keen Dreams. Without one-button firing in Keen 1–3, the fire buttons press Jump and Pogo together.
-- PlayStation controllers (DualShock 4, DualSense) play the games too, with the same layout: Share takes View's place and Options Menu's. The Controls tab, the press hint and the on-screen keyboard show its buttons and names.
-- Controllers work on Linux too, with the button numbers Linux gives them.
-- The settings can set the controller's layout (Xbox or PlayStation) for controllers found wrongly or not at all.
-- A controller connected while a game runs that started without one brings a hint to start the game again, as DOSBox only looks for controllers at its start.
-- In a game, View+RT switches between window and full screen, like Alt+Enter.
-- The Controls tab shows the controller too: a drawing of an Xbox-layout controller with what each button does while playing and, with View held, in the menus. It opens on the controller when one is connected.
-- The first start of a series with a controller connected shows the controller's buttons once, apart from the keyboard's, which come again on a start without it.
-- BloogBase itself can be used with a controller: the D-pad or left stick moves to the nearest element in that direction, A activates it, B closes a dialog or goes back, the right stick scrolls.
+- Xbox and PlayStation controllers (DualShock 4, DualSense) play every game without setup, also on Linux with the button numbers Linux gives them: the controller presses the keys the game is set to, the player's own ones too, and with View (Share) held the keys of the menus, save slots in Keen 1–3 and letters for save names in Keen 4–6 and Keen Dreams; View+RT switches between window and full screen, like Alt+Enter. Without one-button firing in Keen 1–3, the fire buttons press Jump and Pogo together.
+- The settings can set the controller's layout (Xbox or PlayStation) for controllers found wrongly or not at all, and a controller connected while a game runs that started without one brings a hint to start the game again, as DOSBox only looks for controllers at its start.
+- The Controls tab shows the controller too: a drawing with what each button does while playing and, with View held, in the menus, with the Xbox or PlayStation buttons and names (as do the press hint and the on-screen keyboard). It opens on the controller when one is connected, and the first start of a series with a controller connected shows the controller's buttons once, apart from the keyboard's, which come again on a start without it.
+- BloogBase itself can be used with a controller: the D-pad or left stick moves to the nearest element in that direction, A activates it, B closes a dialog or goes back, the right stick scrolls, LB/RB switch tabs, LT/RT scroll a page (the focus follows onto what's in view), and View or Menu jump to the main navigation and back. A on a text field opens an on-screen keyboard (QWERTZ in German, QWERTY in English, a symbols page, digits only for numbers) with X for Backspace, Y for Space, LB/RB to move the caret and Menu for Done.
 - Keys follow the keyboard layout on Linux and macOS too, so a German keyboard answers "Y" with Y there as well.
-- Text fields can be typed in with the controller: A on a field opens an on-screen keyboard (QWERTZ in German, QWERTY in English, a symbols page, digits only for numbers) with X for Backspace, Y for Space, LB/RB to move the caret and Menu for Done.
 
 ### Improvements
 
 - Steam and GOG games already in the library show their version when importing.
 - Adding a mod shows how many saves come with it, besides the number of files.
 - A mod that doesn't run on the player's copy of its game says which version that copy is, with "Learn more" explaining why patch mods need one exact release (CKPatch refuses FormGen, GT Interactive, CGA and other versions).
-- On macOS, keys are named as on Mac keyboards (⌃ control, ⌥ option, ↩ return, ⌫ delete, fn with the arrows for Home/End/Page Up/Page Down), and the Controls tab notes that F-keys may need fn.
-- On macOS, the settings' hints, the one-button firing note and the controller's texts name Mac keys too, and fullscreen is named ⌃⌘F (the View menu's shortcut; F11 shows the desktop there). The fullscreen button follows when the window switches through the menu or its green button.
-- With a controller, LB/RB switch tabs, LT/RT scroll a page (the focus follows onto what's in view), and View or Menu jump to the main navigation and back.
+- On macOS, keys are named as on Mac keyboards (⌃ control, ⌥ option, ↩ return, ⌫ delete, fn with the arrows for Home/End/Page Up/Page Down) in the Controls tab, the settings' hints, the one-button firing note and the controller's texts; the Controls tab notes that F-keys may need fn, and fullscreen is named ⌃⌘F (the View menu's shortcut; F11 shows the desktop there). The fullscreen button follows when the window switches through the menu or its green button.
 - "What's new" shows the newest version's changes and folds away the versions skipped in between, with a link to all changes.
 - The Linux package (deb) carries a description, which Ubuntu's App Center showed as "(none)" before.
 - Release builds carry the mod list published when they were built, so mods can be found and installed before BloogBase first reaches GitHub Pages; a newer list from there replaces it as before.
