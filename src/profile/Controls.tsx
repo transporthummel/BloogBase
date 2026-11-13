@@ -38,6 +38,7 @@ import {
 } from "./controller";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { Keycap } from "./Keycap";
+import { isMac } from "../platform";
 import { keyLabel } from "./keyLabel";
 import { type Callout, PadDrawing } from "./PadDrawing";
 
@@ -247,6 +248,12 @@ export function ControlsSheet({
         <p className="flex items-start gap-2 text-sm text-muted">
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
           {t("controls.mod")}
+        </p>
+      )}
+      {ready && view === "keyboard" && isMac() && (
+        <p className="flex items-start gap-2 text-sm text-muted">
+          <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+          {t("controls.macFn")}
         </p>
       )}
 

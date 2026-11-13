@@ -181,3 +181,23 @@ test("the menus of Keen 4-6 type letters", async () => {
     "Left stick + LBXYZSpaceBackspace",
   );
 });
+
+test("on a Mac, keys are named as on its keyboard and F-keys get a note about fn", async () => {
+  vi.spyOn(navigator, "userAgent", "get").mockReturnValue(
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)",
+  );
+  setFiring(false, "patchable");
+  await renderSheet(game("keen1", "vorticons"));
+  expect(keysFor("Shoot")).toBe("⌃ control+⌥ option");
+  // BloogBase's mapper file puts DOSBox's hotkeys on Ctrl on a Mac too.
+  expect(keysFor("Screenshot")).toBe("⌃ control+F5");
+  expect(keysFor("Start or stop a video")).toBe("⌃ control+F7");
+  expect(screen.getByText(/press the F-keys with fn/)).toBeInTheDocument();
+  vi.restoreAllMocks();
+});
+
+test("elsewhere there's no note about fn", async () => {
+  await renderSheet(game("keen4", "galaxy"));
+  expect(keysFor("Screenshot")).toBe("Ctrl+F5");
+  expect(screen.queryByText(/press the F-keys with fn/)).not.toBeInTheDocument();
+});

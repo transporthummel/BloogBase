@@ -934,6 +934,7 @@
       "galaxy": "You can change the keys in the game's menu.",
       "dreams": "You can change the keys in the game's menu."
     },
+    "macFn": "On a Mac keyboard, press the F-keys with fn, unless they're set as standard function keys in System Settings.",
     "mod": "Mods may change keys and cheats. If something works differently, the README usually says so.",
     "moving": "Moving",
     "actions": "Actions",
@@ -1008,6 +1009,17 @@
       "right": "Right arrow",
       "up": "Up arrow",
       "down": "Down arrow"
+    },
+    "keyMac": {
+      "ctrl": "⌃ control",
+      "alt": "⌥ option",
+      "enter": "↩ return",
+      "backspace": "⌫ delete",
+      "delete": "fn ⌫",
+      "home": "fn ←",
+      "end": "fn →",
+      "pageUp": "fn ↑",
+      "pageDown": "fn ↓"
     },
     "dialogTitle": "How to play {{series}}",
     "dialogIntro": "Here are the keys. You'll find them again on the game's page under Controls.",

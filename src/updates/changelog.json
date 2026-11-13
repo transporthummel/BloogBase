@@ -15,7 +15,8 @@
       "German and French keyboards type the right letters on Linux and macOS too.",
       "LB/RB switch tabs, LT/RT scroll a page, and View or Menu jumps to the main navigation.",
       "A missing cover picture is made again instead of staying empty.",
-      "On a Mac, screenshots and videos are Ctrl+F5 and Ctrl+F7, as the app now says.",
+      "On a Mac, screenshots and videos are control+F5 and control+F7, as the app now says.",
+      "On a Mac, keys are named as on its keyboard.",
       "The mod list comes with BloogBase, so it's there even when the server can't be reached."
     ],
     "de": [
@@ -33,7 +34,8 @@
       "Deutsche und französische Tastaturen tippen jetzt auch unter Linux und macOS die richtigen Buchstaben.",
       "LB/RB wechseln Tabs, LT/RT blättern eine Seite und View oder Menu springen ins Hauptmenü.",
       "Ein fehlendes Titelbild wird neu erzeugt, statt leer zu bleiben.",
-      "Auf dem Mac nennt die App für Screenshots und Videos jetzt die richtigen Tasten, Ctrl+F5 und Ctrl+F7.",
+      "Auf dem Mac nennt die App für Screenshots und Videos jetzt die richtigen Tasten, control+F5 und control+F7.",
+      "Auf dem Mac heißen die Tasten wie auf seiner Tastatur.",
       "Die Mod-Liste kommt mit BloogBase, damit sie auch da ist, wenn der Server nicht erreichbar ist."
     ]
   },

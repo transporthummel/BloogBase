@@ -934,6 +934,7 @@
       "galaxy": "Im Menü des Spiels kannst du die Tasten ändern.",
       "dreams": "Im Menü des Spiels kannst du die Tasten ändern."
     },
+    "macFn": "Auf Mac-Tastaturen drückst du die F-Tasten mit fn, außer sie sind in den Systemeinstellungen als Standard-Funktionstasten eingestellt.",
     "mod": "Mods können Tasten und Cheats ändern. Was anders ist, steht meist in der Liesmich.",
     "moving": "Bewegen",
     "actions": "Aktionen",
@@ -1008,6 +1009,17 @@
       "right": "Pfeil rechts",
       "up": "Pfeil hoch",
       "down": "Pfeil runter"
+    },
+    "keyMac": {
+      "ctrl": "⌃ ctrl",
+      "alt": "⌥ alt",
+      "enter": "↩ Return",
+      "backspace": "⌫ Löschen",
+      "delete": "fn ⌫",
+      "home": "fn ←",
+      "end": "fn →",
+      "pageUp": "fn ↑",
+      "pageDown": "fn ↓"
     },
     "dialogTitle": "So spielst du {{series}}",
     "dialogIntro": "Hier sind die Tasten. Du findest sie jederzeit wieder auf der Seite des Spiels unter „Steuerung“.",

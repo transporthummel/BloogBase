@@ -1,14 +1,16 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { Film } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { commands, type Profile, type Video } from "../bindings";
 import { unwrap } from "../ipc";
 import { CapturesPanel } from "./CapturesPanel";
+import { keyLabel } from "./keyLabel";
 import { formatDuration, useVideos, videosKey } from "./captures";
 import { VideoPlayer } from "./VideoPlayer";
 
 /** DOSBox's video recording hotkey, as BloogBase's mapper file binds it on every system. */
-function hotkey(): string {
-  return "Ctrl + F7";
+function hotkey(t: (key: string) => string): string {
+  return `${keyLabel("ctrl", t)} + F7`;
 }
 
 /** The first frame, stretched to 4:3 like DOSBox shows it. */
@@ -29,11 +31,12 @@ function Poster({ video }: { video: Video }) {
 
 /** Videos the player recorded in DOSBox, played in the app (§8.3). */
 export function VideosPanel({ profile }: { profile: Profile }) {
+  const { t } = useTranslation();
   return (
     <CapturesPanel
       profile={profile}
       kind="videos"
-      hotkey={hotkey()}
+      hotkey={hotkey(t)}
       captures={useVideos(profile.id)}
       queryKey={videosKey(profile.id)}
       remove={(file) => unwrap(commands.deleteVideo(profile.id, file))}

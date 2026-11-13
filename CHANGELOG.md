@@ -18,6 +18,7 @@
 
 ### Improvements
 
+- On macOS, keys are named as on Mac keyboards (⌃ control, ⌥ option, ↩ return, ⌫ delete, fn with the arrows for Home/End/Page Up/Page Down), and the Controls tab notes that F-keys may need fn.
 - With a controller, LB/RB switch tabs, LT/RT scroll a page (the focus follows onto what's in view), and View or Menu jump to the main navigation and back.
 - "What's new" shows the newest version's changes and folds away the versions skipped in between, with a link to all changes.
 - The Linux package (deb) carries a description, which Ubuntu's App Center showed as "(none)" before.
