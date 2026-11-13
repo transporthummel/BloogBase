@@ -18,7 +18,8 @@
       "On a Mac, screenshots and videos are control+F5 and control+F7, as the app now says.",
       "On a Mac, keys are named as on its keyboard.",
       "On a Mac, ⌃⌘F switches BloogBase to fullscreen, as the app now says.",
-      "The mod list comes with BloogBase, so it's there even when the server can't be reached."
+      "The mod list comes with BloogBase, so it's there even when the server can't be reached.",
+      "Games from Steam and GOG already in your library show their version."
     ],
     "de": [
       "Nach längerer Pause klappen die Neuigkeiten ältere Versionen ein.",
@@ -38,7 +39,8 @@
       "Auf dem Mac nennt die App für Screenshots und Videos jetzt die richtigen Tasten, control+F5 und control+F7.",
       "Auf dem Mac heißen die Tasten wie auf seiner Tastatur.",
       "Auf dem Mac nennt die App ⌃⌘F für den Vollbildmodus.",
-      "Die Mod-Liste kommt mit BloogBase, damit sie auch da ist, wenn der Server nicht erreichbar ist."
+      "Die Mod-Liste kommt mit BloogBase, damit sie auch da ist, wenn der Server nicht erreichbar ist.",
+      "Spiele von Steam und GOG, die schon in deiner Bibliothek sind, zeigen ihre Version."
     ]
   },
   "releases": [

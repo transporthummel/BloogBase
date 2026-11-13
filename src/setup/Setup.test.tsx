@@ -321,7 +321,7 @@ test("imports the games found in Steam and GOG folders", async () => {
         store: "steam",
         path: "C:/Steam/steamapps/common/Commander Keen",
         games: [
-          { gameId: "keen1", versionId: null, imported: true },
+          { gameId: "keen1", versionId: "keen1-1.31", imported: true },
           { gameId: "keen4", versionId: null, imported: false },
         ],
       },
@@ -331,6 +331,8 @@ test("imports the games found in Steam and GOG folders", async () => {
   renderSetup();
   const user = userEvent.setup();
 
+  // The copy already in the library names its version.
+  expect(await screen.findByText("(v1.4 EGA)")).toBeInTheDocument();
   await user.click(await screen.findByRole("button", { name: "Add 1 game" }));
   expect(commands.importStoreGames).toHaveBeenCalledWith(
     "steam",

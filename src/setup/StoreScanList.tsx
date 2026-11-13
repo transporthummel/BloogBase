@@ -11,6 +11,8 @@ export function StoreScanList({ store }: { store: ReturnType<typeof useStoreScan
   const { t } = useTranslation();
   const games = useGames();
   const { scan, selected, toggle } = store;
+  const versionLabel = (gameId: string, versionId: string | null) =>
+    games.data?.find((x) => x.id === gameId)?.versions.find((v) => v.id === versionId)?.label;
   return (
     <>
       {scan.isPending && <Notice>{t("setup.owned.scanning")}</Notice>}
@@ -31,7 +33,13 @@ export function StoreScanList({ store }: { store: ReturnType<typeof useStoreScan
                   disabled={g.imported}
                   onChange={() => toggle(key(install, g.gameId))}
                 />
-                <span className="min-w-0">{gameTitle(games.data, g.gameId)}</span>
+                <span className="min-w-0">
+                  {gameTitle(games.data, g.gameId)}
+                  {/* Which release the library has, when it's this one. */}
+                  {g.imported && versionLabel(g.gameId, g.versionId) && (
+                    <span className="text-muted"> ({versionLabel(g.gameId, g.versionId)})</span>
+                  )}
+                </span>
                 {/* The title wraps for long names, the status stays on one line. */}
                 {g.imported && (
                   <span className="ml-auto shrink-0 text-xs whitespace-nowrap text-muted">
