@@ -194,6 +194,25 @@ test("shows what each mod needs and installs on the chosen game", async () => {
   expect(commands.installIndexMod).toHaveBeenCalledWith("Aurora", "keen4-b", false, null);
 });
 
+test("names the copy of another version and explains why it won't do", async () => {
+  vi.mocked(commands.listInstalls).mockResolvedValue({
+    status: "ok",
+    data: [install("keen6-a", "keen6", "keen6-1.0")],
+  });
+  renderDiscover();
+  const user = userEvent.setup();
+
+  await screen.findByRole("heading", { name: "Fribbulus" });
+  const fribbulus = within(card("Fribbulus"));
+  expect(fribbulus.getByRole("status")).toHaveTextContent(
+    "Needs Commander Keen 6 (v1.4 EGA). You have v1.0. Learn more",
+  );
+  await user.click(fribbulus.getByRole("button", { name: "Learn more" }));
+  expect(screen.getByRole("dialog", { name: "Why this exact version?" })).toHaveTextContent(
+    "Unrecognised version",
+  );
+});
+
 test("asks before installing a mod without its game", async () => {
   vi.mocked(commands.installIndexMod).mockResolvedValue({
     id: 2,
@@ -481,6 +500,7 @@ test("offers shareware episodes and demos on their own tabs", async () => {
         saveCount: 0,
         running: false,
         missingGame: null,
+        missingVersions: [],
         standalone: false,
         playedOver: null,
       },

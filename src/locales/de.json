@@ -422,6 +422,7 @@
     "from": "vorgeschlagen von {{file}}",
     "missingGame": "{{game}} ist nicht in deiner Bibliothek. Trotzdem installieren? Spielen kannst du die Mod, sobald das Spiel da ist.",
     "missingGame_version": "{{game}} ({{versions}}) ist nicht in deiner Bibliothek. Trotzdem installieren? Spielen kannst du die Mod, sobald das Spiel da ist.",
+    "missingGame_otherVersion": "Diese Mod braucht {{game}} ({{versions}}), du hast {{yours}}. Trotzdem installieren? Spielen kannst du sie, sobald du diese Version hinzufügst.",
     "playOn": "Spielen mit",
     "gameAndMod": {
       "found": "Darin liegen ein Spiel und eine Mod dafür.",
@@ -467,6 +468,16 @@
     "waitsFor": "Braucht {{game}}",
     "gameMissing": "Spiel fehlt",
     "waitingHint": "Füge {{game}} deiner Bibliothek hinzu, um diese Mod zu spielen.",
+    "waitingHint_otherVersion": "Diese Mod braucht {{game}}, du hast {{yours}}. Füge diese Version deiner Bibliothek hinzu, um die Mod zu spielen.",
+    "yourCopy": "Du hast {{versions}}.",
+    "exactVersion": {
+      "learnMore": "Mehr erfahren",
+      "title": "Warum genau diese Version?",
+      "patches": "Die meisten Mods sind Patch-Dateien. Ein Patcher (CKPatch) lädt das Spiel und ändert sein Programm im Speicher, an festen Stellen, die nur bei genau dem Programm stimmen, für das die Mod gemacht ist.",
+      "releases": "Ausgaben mit derselben Versionsnummer haben nicht dasselbe Programm: Die Ausgaben von FormGen und GT Interactive und die CGA-Ausgaben haben jeweils ein eigenes, ebenso eine spätere Version wie Keen 6 v1.5. Der Patcher lehnt sie ab („Unrecognised version“), deshalb startet BloogBase die Mod darauf nicht.",
+      "sourceMods": "Mods, die ihr eigenes Programm mitbringen (Source-Mods), haben dieses Problem nicht.",
+      "free": "Die Version, die diese Mod braucht, gibt es kostenlos: unter Entdecken bei Spiele."
+    },
     "addGame": "Spiel hinzufügen",
     "getFreeGame": "Kostenlos herunterladen",
     "changeGameHint": "Spielstände bleiben bei der Mod, lassen sich in einer anderen Spielversion aber eventuell nicht laden.",

@@ -11,6 +11,8 @@ import { DetailsLink } from "./DetailsLink";
 import { entryDescription } from "./description";
 import { GameTile } from "./GameTile";
 import { Authors } from "../mods/Authors";
+import { WhyExactVersion } from "../mods/OtherVersion";
+import { ownedVersions } from "../mods/ownedVersions";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
@@ -212,6 +214,15 @@ function InstallAction({
   }
   if (!target) {
     const versions = requiredLabels(entry, games);
+    // A copy of another version: say which, and why it won't do.
+    const yours =
+      versions.length > 0
+        ? ownedVersions(
+            installs,
+            entry.game,
+            games.find((g) => g.id === entry.game),
+          )
+        : null;
     const game = versions.length
       ? `${gameTitle(games, entry.game)} (${versions.join(", ")})`
       : gameTitle(games, entry.game);
@@ -220,11 +231,20 @@ function InstallAction({
         {failed}
         <p role="status" className="flex items-start gap-2 text-sm text-muted">
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
-          {t("discover.needs", {
-            game: gameTitle(games, entry.game),
-            versions: versions.join(", "),
-            context: versions.length > 0 ? "version" : undefined,
-          })}
+          <span>
+            {t("discover.needs", {
+              game: gameTitle(games, entry.game),
+              versions: versions.join(", "),
+              context: versions.length > 0 ? "version" : undefined,
+            })}
+            {yours && (
+              <>
+                {" "}
+                {t("mods.yourCopy", { versions: yours })}{" "}
+                <WhyExactVersion requires={entry.requires} />
+              </>
+            )}
+          </span>
         </p>
         <Button variant="secondary" onClick={() => setConfirming(true)} disabled={start.isPending}>
           <Download className="size-4" aria-hidden />

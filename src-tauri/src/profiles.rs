@@ -36,6 +36,9 @@ pub struct Profile {
     pub running: bool,
     /// The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`.
     pub missing_game: Option<String>,
+    /// The versions in `missing_game`, as catalog ids; empty when any
+    /// version will do.
+    pub missing_versions: Vec<String>,
     /// A mod that ships its whole game and plays without a copy of
     /// `game_id`, the game it's built on.
     pub standalone: bool,
@@ -126,16 +129,20 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
     let extends: Option<String> = r.get(16)?;
     let base_path = at(r.get(17)?);
     let standalone: bool = r.get(20)?;
+    let requires = mods::parse_requires(requires.as_deref());
+    let waits_for_base = extends.is_some() && base_path.is_none();
     let missing_game = match (&install_path, catalog::game(&game_id)) {
         // Removing a mod removes the ones played over it; just in case.
-        _ if extends.is_some() && base_path.is_none() => extends,
+        _ if waits_for_base => extends,
         (Some(_), _) => None,
         _ if standalone => None,
-        (None, Some(game)) => Some(mods::needed_game(
-            game,
-            mods::parse_requires(requires.as_deref()).as_deref(),
-        )),
+        (None, Some(game)) => Some(mods::needed_game(game, requires.as_deref())),
         (None, None) => Some(game_id.clone()),
+    };
+    // Only when it waits for the game, not for the mod it's played over.
+    let missing_versions = match &missing_game {
+        Some(_) if !waits_for_base => requires.unwrap_or_default(),
+        _ => Vec::new(),
     };
     let state_path = db.resolve(&r.get::<_, String>(9)?);
     let mod_path = at(r.get(11)?);
@@ -170,6 +177,7 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             save_count: 0,
             running: false,
             missing_game,
+            missing_versions,
             standalone,
             played_over: r
                 .get::<_, Option<String>>(18)?

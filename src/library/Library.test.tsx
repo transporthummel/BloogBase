@@ -104,6 +104,7 @@ const profile: Profile = {
   saveCount: 1,
   running: false,
   missingGame: null,
+  missingVersions: [],
   standalone: false,
   playedOver: null,
 };
@@ -354,6 +355,7 @@ test("a mod waiting for its game can't be played", async () => {
     modId: "galactic",
     label: "Galactic",
     missingGame: "Commander Keen 5 (v1.4 EGA)",
+    missingVersions: [],
   };
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [waiting] });
   renderLibrary();

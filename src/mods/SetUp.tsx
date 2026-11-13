@@ -24,6 +24,8 @@ import { readmeKey, useReadmesAt } from "../profile/readme";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
+import { WhyExactVersion } from "./OtherVersion";
+import { useOwnedVersions } from "./ownedVersions";
 import { useEnterAction } from "../ui/useEnterAction";
 import { RecipeLabel } from "./RecipeLabel";
 import { fits } from "./recipes";
@@ -78,6 +80,8 @@ export function SetUp({
   // Waits for the mods, so the question about another version isn't skipped.
   const ready = !!installs.data && !!mods.data && !wrongGame;
   const warnings = setUpWarnings({ info, option, origin, game, candidates, target });
+  // Copies of another version, when it fits none.
+  const yours = useOwnedVersions(info.gameId, game);
 
   // The mod it belongs over, which it's played over unless unticked.
   const base = option.baseMod;
@@ -214,8 +218,16 @@ export function SetUp({
           {t("mods.missingGame", {
             game: game?.title ?? info.gameId,
             versions: option.gameVersions.map((v) => `v${v}`).join(", "),
-            context: option.gameVersions.length > 0 ? "version" : undefined,
+            yours,
+            context:
+              option.gameVersions.length === 0 ? undefined : yours ? "otherVersion" : "version",
           })}
+          {yours && option.versionIds.length > 0 && (
+            <>
+              {" "}
+              <WhyExactVersion requires={option.versionIds} />
+            </>
+          )}
         </Notice>
       )}
       {candidates && candidates.length > 1 && (

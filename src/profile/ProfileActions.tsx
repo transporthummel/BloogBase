@@ -28,6 +28,8 @@ import { SuggestToIndex } from "../mods/KeenwikiImport";
 import { ModReportDialog } from "../mods/ModReport";
 import { ModUpdate } from "../mods/ModUpdate";
 import { useModUpdateCheck } from "../mods/modUpdateCheck";
+import { WhyExactVersion } from "../mods/OtherVersion";
+import { useOwnedVersions } from "../mods/ownedVersions";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
 import { Button } from "../ui/Button";
 import { buttonClass } from "../ui/buttonClass";
@@ -239,6 +241,9 @@ function MissingGame({
   const free = useFreeGames();
   const [adding, setAdding] = useState(false);
   const [finding, setFinding] = useState(false);
+  // A copy of another version: say which, and why it won't do.
+  const requires = profile.missingVersions;
+  const yours = useOwnedVersions(profile.gameId, game);
   // A full shareware episode, not a demo or beta.
   const shareware = (free.data ?? []).some(
     (f) =>
@@ -247,7 +252,19 @@ function MissingGame({
   );
   return (
     <div className="grid justify-items-start gap-2">
-      <Notice>{t("mods.waitingHint", { game: missingGame })}</Notice>
+      <Notice>
+        {t("mods.waitingHint", {
+          game: missingGame,
+          yours,
+          context: yours && requires.length > 0 ? "otherVersion" : undefined,
+        })}
+        {yours && requires.length > 0 && (
+          <>
+            {" "}
+            <WhyExactVersion requires={requires} />
+          </>
+        )}
+      </Notice>
       {shareware ? (
         <Link to="/discover" search={{ tab: "games" }} className={buttonClass("secondary")}>
           <Download className="size-4" aria-hidden />

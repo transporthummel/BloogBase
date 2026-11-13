@@ -422,6 +422,7 @@
     "from": "suggested by {{file}}",
     "missingGame": "{{game}} isn’t in your library. Install the mod anyway? You can play it once the game is added.",
     "missingGame_version": "{{game}} ({{versions}}) isn’t in your library. Install the mod anyway? You can play it once the game is added.",
+    "missingGame_otherVersion": "This mod needs {{game}} ({{versions}}); you have {{yours}}. Install it anyway? You can play it once you add that version.",
     "playOn": "Play with",
     "gameAndMod": {
       "found": "This holds both a game and a mod for it.",
@@ -467,6 +468,16 @@
     "waitsFor": "Needs {{game}}",
     "gameMissing": "Game missing",
     "waitingHint": "Add {{game}} to your library to play this mod.",
+    "waitingHint_otherVersion": "This mod needs {{game}}; you have {{yours}}. Add that version to your library to play it.",
+    "yourCopy": "You have {{versions}}.",
+    "exactVersion": {
+      "learnMore": "Learn more",
+      "title": "Why this exact version?",
+      "patches": "Most mods are patch files. A patcher (CKPatch) loads the game and changes its program in memory, at fixed places that are only right for the one program the mod was made for.",
+      "releases": "Releases with the same version number don’t share a program: the FormGen, GT Interactive and CGA releases each have their own, and so does a later version such as Keen 6 v1.5. The patcher refuses them (“Unrecognised version”), so BloogBase doesn’t start the mod on them.",
+      "sourceMods": "Mods that bring their own program (source mods) don’t have this problem.",
+      "free": "The version this mod needs is free: you’ll find it in Discover under Games."
+    },
     "addGame": "Add game",
     "getFreeGame": "Download for free",
     "changeGameHint": "Saved games stay with the mod, but may not load in another version of the game.",

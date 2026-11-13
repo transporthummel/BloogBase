@@ -941,6 +941,11 @@ export type Profile = {
 	/**  The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`. */
 	missingGame: string | null,
 	/**
+	 *  The versions in `missing_game`, as catalog ids; empty when any
+	 *  version will do.
+	 */
+	missingVersions: string[],
+	/**
 	 *  A mod that ships its whole game and plays without a copy of
 	 *  `game_id`, the game it's built on.
 	 */

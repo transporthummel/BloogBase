@@ -127,6 +127,7 @@ const profile: Profile = {
   saveCount: 2,
   running: false,
   missingGame: null,
+  missingVersions: [],
   standalone: false,
   playedOver: null,
 };
@@ -507,6 +508,7 @@ test("a mod waiting for its game says which one and can't be played", async () =
         modId: "aurora-bliss",
         label: "Aurora Bliss",
         missingGame: "Commander Keen 4 (v1.4 EGA)",
+        missingVersions: [],
       },
     ]),
   );
@@ -536,6 +538,7 @@ const waiting: Profile = {
   modId: "aurora-bliss",
   label: "Aurora Bliss",
   missingGame: "Commander Keen 4 (v1.4 EGA)",
+  missingVersions: [],
 };
 
 test("a mod waiting for a shareware episode leads to the free download", async () => {
