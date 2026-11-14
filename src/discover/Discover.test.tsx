@@ -294,10 +294,10 @@ test("filters by text, type and what the library can play", async () => {
   expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(1);
   await user.selectOptions(screen.getByRole("combobox", { name: "Type" }), "");
 
-  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+  await user.click(screen.getByRole("checkbox", { name: "Playable for me" }));
   expect(screen.queryByRole("heading", { name: "Fribbulus" })).not.toBeInTheDocument();
   expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(3);
-  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+  await user.click(screen.getByRole("checkbox", { name: "Playable for me" }));
 });
 
 test("standalone mods are under no game and install on none", async () => {
@@ -341,9 +341,9 @@ test("standalone mods are under no game and install on none", async () => {
   expect(foray.getByText("Standalone")).toBeInTheDocument();
   expect(foray.getByText("Source mod")).toBeInTheDocument();
   const heading = () => screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+  await user.click(screen.getByRole("checkbox", { name: "Playable for me" }));
   expect(heading()).toEqual(["Foray"]);
-  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+  await user.click(screen.getByRole("checkbox", { name: "Playable for me" }));
   const gameFilter = screen.getByRole("combobox", { name: "Game" });
   await user.selectOptions(gameFilter, "keen4");
   expect(heading()).toEqual(["Aurora"]);
@@ -379,9 +379,9 @@ test("source mods that require their game are listed like other mods", async () 
   expect(pack.queryByText("Standalone")).not.toBeInTheDocument();
   expect(pack.queryByText("Source mod")).not.toBeInTheDocument();
   expect(screen.queryByRole("option", { name: "No game needed" })).not.toBeInTheDocument();
-  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+  await user.click(screen.getByRole("checkbox", { name: "Playable for me" }));
   expect(screen.queryByRole("heading", { name: "Pack" })).not.toBeInTheDocument();
-  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+  await user.click(screen.getByRole("checkbox", { name: "Playable for me" }));
   await user.selectOptions(screen.getByRole("combobox", { name: "Game" }), "keen4");
   expect(screen.getByRole("heading", { name: "Pack" })).toBeInTheDocument();
   await user.selectOptions(screen.getByRole("combobox", { name: "Game" }), "");
@@ -393,7 +393,7 @@ async function chooseAll(user: ReturnType<typeof userEvent.setup>) {
   await user.selectOptions(screen.getByRole("combobox", { name: "Game" }), "keen4");
   await user.selectOptions(screen.getByRole("combobox", { name: "Type" }), "episode");
   await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "name");
-  await user.click(screen.getByRole("checkbox", { name: "Works with my games" }));
+  await user.click(screen.getByRole("checkbox", { name: "Playable for me" }));
 }
 
 function expectAllChosen() {
@@ -401,7 +401,7 @@ function expectAllChosen() {
   expect(screen.getByRole("combobox", { name: "Game" })).toHaveValue("keen4");
   expect(screen.getByRole("combobox", { name: "Type" })).toHaveValue("episode");
   expect(screen.getByRole("combobox", { name: "Sort by" })).toHaveValue("name");
-  expect(screen.getByRole("checkbox", { name: "Works with my games" })).toBeChecked();
+  expect(screen.getByRole("checkbox", { name: "Playable for me" })).toBeChecked();
 }
 
 async function resetChoices(user: ReturnType<typeof userEvent.setup>) {
@@ -409,7 +409,7 @@ async function resetChoices(user: ReturnType<typeof userEvent.setup>) {
   await user.selectOptions(screen.getByRole("combobox", { name: "Game" }), "");
   await user.selectOptions(screen.getByRole("combobox", { name: "Type" }), "");
   await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "featured");
-  const playable = screen.getByRole("checkbox", { name: "Works with my games" });
+  const playable = screen.getByRole("checkbox", { name: "Playable for me" });
   if ((playable as HTMLInputElement).checked) await user.click(playable);
 }
 

@@ -545,7 +545,7 @@
       "newest": "Newest",
       "name": "Name"
     },
-    "playable": "Works with my games",
+    "playable": "Playable for me",
     "emptyTitle": "No mods yet",
     "empty": "The mod list hasn't arrived yet. BloogBase fetches it on every start; if it stays empty, check your internet connection.",
     "clearFilters": "Clear filters",
