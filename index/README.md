@@ -92,12 +92,13 @@ By hand:
    A source mod ships its own executables and all its data, nothing of the
    game's (Foray in the Forest: `FITF.EXE` and its `*.CKS` files). With
    `standalone: true` BloogBase plays it without a copy of `game`, lists it
-   under "No game needed" and suggests it in the setup wizard even to players
+   under "Standalone" and suggests it in the setup wizard even to players
    without any Keen. `game` stays the game it's built on: its saves, settings
    and DOSBox defaults are that game's. The recipe has to run a `program` or
    `batch` file of the mod, without `requires`, `versionRecipes` or
    `extends`, and no other entry can extend it (that goes for every
-   standalone mod). Only entries can make a source mod standalone: added
+   standalone mod). Mods added by hand can go over it, through its
+   `provides` (Episode X for xky1rooms), and then need no copy either. Only entries can make a source mod standalone: added
    by hand, the same files play on a copy of `game`, unless the app knows
    them by their `programs` (below). Apps
    before 1.2.0 ignore the field and play the mod on that game, so an entry
