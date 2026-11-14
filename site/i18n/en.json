@@ -109,6 +109,7 @@
   "details.games.li1": "Knows <strong>50 releases</strong> of the seven games by their files: v1.0 to v1.93, EGA and CGA, FormGen, GT Interactive and id Anthology releases.",
   "details.games.li2": "Even the <strong>betas and demos</strong> of 1990 and 1991, installed from public archives.",
   "details.games.li3": "Several versions of a game side by side; mods go on the copy they fit best, and you can switch.",
+  "details.games.li4": "A mod for Keen 1, Keen 4 or Keen Dreams brings the <strong>free shareware episode</strong> along when you don't have it.",
   "details.mods.title": "Mods that just work",
   "details.mods.li1": "Finds how a mod starts, even with renamed patchers and batch files that only shuffle files around.",
   "details.mods.li2": "Brings what mods leave out: <strong>CKPatch</strong>, <strong>KDrPatch</strong> and a DPMI host, unmodified, with their licences.",
@@ -233,7 +234,7 @@
   "press.texts.short": "BloogBase brings Commander Keen to today's computers. The free, open-source launcher sets up the DOS emulator DOSBox Staging, installs the three free shareware episodes and finds copies bought on Steam or GOG. Players pick one of more than a hundred fan-made mods, click Install and Play, and BloogBase takes care of ZIP files, patchers and DOS settings. Xbox and PlayStation controllers work in every game and in the launcher itself. Every game and mod keeps its own saves.",
   "press.texts.longTitle": "A little longer",
   "press.texts.long1": "For more than thirty years, fans have been making new levels and whole new episodes for Commander Keen, id Software's platformer series from 1990. Playing them has meant unpacking ZIP files, finding the right version of the game, starting patchers and setting up DOSBox. BloogBase, a free and open-source launcher for Windows, macOS and Linux, does all of that with one click.",
-  "press.texts.long2": "On its first start, BloogBase downloads DOSBox Staging and the three episodes that were released as free shareware: Keen 1, Keen 4 and Keen Dreams. Copies bought on Steam or GOG are found automatically. A curated list of more than a hundred mods, each downloaded from where its author published it, is a click away; any other mod installs from its KeenWiki page or a ZIP file.",
+  "press.texts.long2": "On its first start, BloogBase downloads DOSBox Staging and offers the three episodes that were released as free shareware: Keen 1, Keen 4 and Keen Dreams; when a mod needs one of them later, it comes along. Copies bought on Steam or GOG are found automatically. A curated list of more than a hundred mods, each downloaded from where its author published it, is a click away; any other mod installs from its KeenWiki page or a ZIP file.",
   "press.texts.long3": "Every game and mod gets its own saves, which BloogBase backs up and can restore; the original game files are never changed. Xbox and PlayStation controllers (DualShock 4, DualSense) work without any setup, in the games as in the launcher, which brings an on-screen keyboard for its text fields. The covers in the library are drawn from each game's own title screen. BloogBase is an unofficial fan project, available in English and German.",
 
   "press.story.title": "Why BloogBase exists",
