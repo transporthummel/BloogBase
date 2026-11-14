@@ -4,6 +4,16 @@
 
 ### Features
 
+### Improvements
+
+### Bug Fixes
+
+### Misc
+
+## 1.3.0 (2026-11-14)
+
+### Features
+
 - Xbox and PlayStation controllers (DualShock 4, DualSense) play every game without setup, also on Linux with the button numbers Linux gives them: the controller presses the keys the game is set to, and with View (Share) held the keys of the menus, save slots in Keen 1–3 and letters for save names in Keen 4–6 and Keen Dreams; View+RT switches between window and full screen, like Alt+Enter. Without one-button firing in Keen 1–3, the fire buttons press Jump and Pogo together.
 - The settings can set the controller's layout (Xbox or PlayStation) for controllers found wrongly or not at all, and a controller connected while a game runs that started without one brings a hint to start the game again, as DOSBox only looks for controllers at its start.
 - The Controls tab shows the controller too: a drawing with what each button does while playing and, with View held, in the menus, with the Xbox or PlayStation buttons and names (as do the press hint and the on-screen keyboard). It opens on the controller when one is connected, and the first start of a series with a controller connected shows the controller's buttons once, apart from the keyboard's, which come again on a start without it.

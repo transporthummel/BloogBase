@@ -1,29 +1,34 @@
 {
   "unreleased": {
-    "en": [
-      "Xbox and PlayStation controllers work in every game, with your own keys and in the menus, on Linux too.",
-      "BloogBase itself can be used with a controller, with an on-screen keyboard for text fields.",
-      "The Controls tab and the first start with a controller show its buttons.",
-      "German and French keyboards type the right letters on Linux and macOS too.",
-      "On a Mac, the app names keys and shortcuts as on its keyboard.",
-      "Adding a mod shows how many saves come with it.",
-      "A mod that needs another version of your game says which one you have, and why.",
-      "Mods that bring their whole game play on any version of it, or without it where its shareware is free.",
-      "A mod made for a free shareware episode you don't have installs it along with the mod."
-    ],
-    "de": [
-      "Xbox- und PlayStation-Controller funktionieren in jedem Spiel, mit deinen eigenen Tasten und in den Menüs, auch unter Linux.",
-      "BloogBase lässt sich selbst mit dem Controller bedienen, mit einer Bildschirmtastatur für Textfelder.",
-      "Der Tab Steuerung und der erste Start mit Controller zeigen seine Knöpfe.",
-      "Deutsche und französische Tastaturen tippen jetzt auch unter Linux und macOS die richtigen Buchstaben.",
-      "Auf dem Mac nennt die App Tasten und Kürzel wie auf seiner Tastatur.",
-      "Beim Hinzufügen einer Mod siehst du, wie viele Spielstände sie mitbringt.",
-      "Braucht eine Mod eine andere Version deines Spiels, sagt sie, welche du hast und warum.",
-      "Mods, die ihr ganzes Spiel mitbringen, laufen auf jeder Version davon, oder ganz ohne, wo seine Shareware kostenlos ist.",
-      "Eine Mod für eine kostenlose Shareware-Episode, die dir fehlt, installiert diese gleich mit."
-    ]
+    "en": [],
+    "de": []
   },
   "releases": [
+    {
+      "version": "1.3.0",
+      "en": [
+        "Xbox and PlayStation controllers work in every game, with your own keys and in the menus, on Linux too.",
+        "BloogBase itself can be used with a controller, with an on-screen keyboard for text fields.",
+        "The Controls tab and the first start with a controller show its buttons.",
+        "German and French keyboards type the right letters on Linux and macOS too.",
+        "On a Mac, the app names keys and shortcuts as on its keyboard.",
+        "Adding a mod shows how many saves come with it.",
+        "A mod that needs another version of your game says which one you have, and why.",
+        "Mods that bring their whole game play on any version of it, or without it where its shareware is free.",
+        "A mod made for a free shareware episode you don't have installs it along with the mod."
+      ],
+      "de": [
+        "Xbox- und PlayStation-Controller funktionieren in jedem Spiel, mit deinen eigenen Tasten und in den Menüs, auch unter Linux.",
+        "BloogBase lässt sich selbst mit dem Controller bedienen, mit einer Bildschirmtastatur für Textfelder.",
+        "Der Tab Steuerung und der erste Start mit Controller zeigen seine Knöpfe.",
+        "Deutsche und französische Tastaturen tippen jetzt auch unter Linux und macOS die richtigen Buchstaben.",
+        "Auf dem Mac nennt die App Tasten und Kürzel wie auf seiner Tastatur.",
+        "Beim Hinzufügen einer Mod siehst du, wie viele Spielstände sie mitbringt.",
+        "Braucht eine Mod eine andere Version deines Spiels, sagt sie, welche du hast und warum.",
+        "Mods, die ihr ganzes Spiel mitbringen, laufen auf jeder Version davon, oder ganz ohne, wo seine Shareware kostenlos ist.",
+        "Eine Mod für eine kostenlose Shareware-Episode, die dir fehlt, installiert diese gleich mit."
+      ]
+    },
     {
       "version": "1.2.1",
       "en": [
