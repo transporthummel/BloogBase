@@ -157,7 +157,17 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
           <p className="text-xs text-muted">
             {st.checkedAt ? (
               <RelativeTime at={st.checkedAt}>
-                {(date) => t("discover.status", { count: st.modCount, date })}
+                {(date) =>
+                  // Filtered: how many of them are shown.
+                  shown.length < all.length
+                    ? t("discover.status", {
+                        context: "filtered",
+                        shown: shown.length,
+                        count: all.length,
+                        date,
+                      })
+                    : t("discover.status", { count: st.modCount, date })
+                }
               </RelativeTime>
             ) : (
               t("discover.neverChecked")

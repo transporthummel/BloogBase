@@ -298,7 +298,10 @@ test("filters by text, type and what the library can play", async () => {
   expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
     "Aurora",
   ]);
+  // The count says how many of them are shown.
+  expect(screen.getByText(/^1 of 4 mods · checked /)).toBeInTheDocument();
   await user.clear(screen.getByRole("searchbox"));
+  expect(screen.getByText(/^4 mods · checked /)).toBeInTheDocument();
 
   await user.selectOptions(screen.getByRole("combobox", { name: "Type" }), "levelpack");
   expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(1);

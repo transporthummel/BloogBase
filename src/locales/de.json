@@ -527,6 +527,8 @@
     },
     "status_one": "{{count}} Mod · geprüft {{date}}",
     "status_other": "{{count}} Mods · geprüft {{date}}",
+    "status_filtered_one": "{{shown}} von {{count}} Mod · geprüft {{date}}",
+    "status_filtered_other": "{{shown}} von {{count}} Mods · geprüft {{date}}",
     "neverChecked": "Die Mod-Liste wurde noch nicht geladen.",
     "hidden_one": "Aktualisiere BloogBase, um {{count}} weitere Mod zu sehen.",
     "hidden_other": "Aktualisiere BloogBase, um {{count}} weitere Mods zu sehen.",
