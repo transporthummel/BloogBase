@@ -19,6 +19,8 @@ downloads:
     sha256: ec8894501812adbd7d08351472236d645ff5079f67806cd5b28bd3e5b64257a2
     size: 135164
 # Ships KEEN1.EXE 1.31 unpacked, so it runs on any version of the game.
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

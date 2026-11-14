@@ -1,7 +1,6 @@
 id: the-sunnylands
 name: "The Sunnylands"
 game: keen4
-requires: [keen4-1.4-ega]
 authors: ["Quillax"]
 authorLinks:
   "Quillax": https://keenwiki.shikadi.net/wiki/User:Quillax
@@ -20,6 +19,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.quillax.sunnylands.k4.2018-03-14.zip
     sha256: 2fa8dc5521d4c20d8af95c6a9d16665af61a71c22f8b7b31b68de593e1161405
     size: 596047
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK4PATCH.EXE

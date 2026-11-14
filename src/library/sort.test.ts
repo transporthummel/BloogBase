@@ -9,6 +9,7 @@ const game = (id: string): Game => ({
   engine: "galaxy",
   executables: [],
   requiredFiles: [],
+  dataFiles: [],
   saves: [],
   stateFiles: [],
   versions: [],
@@ -80,7 +81,11 @@ test("copies of one game keep their order whichever was played last", () => {
 });
 
 test("standalone mods get their own group after the games", () => {
-  const foray = { ...profile("foray", "keen4", "Foray", 50, true), standalone: true } as Profile;
+  const foray = {
+    ...profile("foray", "keen4", "Foray", 50, true),
+    standalone: true,
+    sourceMod: true,
+  } as Profile;
   const grouped = arrange([foray, ...profiles], "game", games, "en");
   expect(grouped.map((g) => g.key)).toEqual(["keen1", "keen4", "kdreams", "standalone"]);
   expect(grouped[3].profiles.map((p) => p.id)).toEqual(["foray"]);

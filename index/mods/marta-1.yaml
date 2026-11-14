@@ -21,6 +21,8 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen1/m.vikingboybill_paramultart.lunar_quest.k1.2013-11-21.zip
     sha256: 32d8892cb21238e72dbec8d0c7c334312d68dd36934acdbb1ec216799242cef6
     size: 373426
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: batch
   file: MARTA1.bat

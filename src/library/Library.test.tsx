@@ -83,6 +83,7 @@ const keen5: Game = {
   engine: "galaxy",
   executables: ["KEEN5E.EXE"],
   requiredFiles: [],
+  dataFiles: [],
   saves: [],
   stateFiles: [],
   versions: [
@@ -106,6 +107,7 @@ const profile: Profile = {
   missingGame: null,
   missingVersions: [],
   standalone: false,
+  sourceMod: false,
   playedOver: null,
 };
 
@@ -216,6 +218,7 @@ test("a standalone mod is a source mod, not a mod on its game", async () => {
     modId: "foray",
     label: "Foray",
     standalone: true,
+    sourceMod: true,
   };
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [foray] });
   renderLibrary();

@@ -17,6 +17,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.genius314.clones_of_evil_1.k1.2005-07-19.zip
     sha256: 90b6da825d511e121ec4ca497f4cb72d3a04b8ce9e3d48388efa32734deb5de0
     size: 161883
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

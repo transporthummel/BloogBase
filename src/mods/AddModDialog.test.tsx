@@ -56,6 +56,7 @@ const keen4: Game = {
   engine: "galaxy",
   executables: ["KEEN4E.EXE"],
   requiredFiles: [],
+  dataFiles: [],
   saves: [],
   stateFiles: [],
   versions: [
@@ -97,6 +98,8 @@ const info: ModInfo = {
   indexId: null,
   indexVersion: null,
   indexFiles: false,
+  complete: false,
+  standalone: false,
 };
 
 const ok = <T,>(data: T) => Promise.resolve({ status: "ok" as const, data });
@@ -194,6 +197,8 @@ test("inspects the picked ZIP and installs the mod on the matching game", async 
       indexId: null,
       indexVersion: null,
       indexFiles: false,
+      complete: false,
+      standalone: false,
       extends: null,
       keenwikiUrl: null,
       homepage: null,
@@ -838,6 +843,8 @@ test("installs a mod from a KeenWiki page with the page's details", async () => 
       indexId: null,
       indexVersion: null,
       indexFiles: false,
+      complete: false,
+      standalone: false,
       extends: null,
       keenwikiUrl: page.pageUrl,
       homepage: null,

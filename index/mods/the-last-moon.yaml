@@ -17,6 +17,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.allstories.the_last_moon.k1.2004-07-25.zip
     sha256: b3f7d5d9892aed29dedffd6dd314dae1f2d1bc87626b25245f45a820de0df3ed
     size: 179648
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

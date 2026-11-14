@@ -73,6 +73,15 @@ pub fn list(db: &Db) -> Result<Vec<FreeGame>> {
         .collect()
 }
 
+/// Whether a shareware episode of the game is free to download, so a mod
+/// that brings all of its files needs no copy of it (decided 2026-11-14).
+pub fn has_shareware(game_id: &str) -> bool {
+    MANIFEST
+        .games
+        .iter()
+        .any(|e| e.setup && e.game_id == game_id)
+}
+
 /// The game a free version belongs to.
 pub fn game_of(version_id: &str) -> Option<&'static str> {
     MANIFEST

@@ -19,6 +19,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/keend/m.szemigi.the_grand_intelligence_gold.kd.2015-11-02.zip
     sha256: 06a9520b8dd96c1179b977b340a99ac5e64b722b4de17a93b1326cd923c90c4b
     size: 240674
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: KDRPATCH.EXE

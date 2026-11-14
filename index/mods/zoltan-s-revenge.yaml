@@ -1,7 +1,6 @@
 id: zoltan-s-revenge
 name: "Zoltan's Revenge"
 game: keen4
-requires: [keen4-1.4-ega]
 authors: ["Levellass"]
 authorLinks:
   "Levellass": https://keenwiki.shikadi.net/wiki/User:Levellass
@@ -19,6 +18,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.levellass.zoltans_revenge.k4.2012-10-20.zip
     sha256: 68d6e13d10604c751c5f17c240efd3ec8255e125bf22eaee8e51c0b74665e8ce
     size: 531582
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK4PATCH.EXE

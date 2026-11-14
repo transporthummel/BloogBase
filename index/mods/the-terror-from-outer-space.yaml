@@ -1,7 +1,6 @@
 id: the-terror-from-outer-space
 name: "The Terror from Outer Space"
 game: keen4
-requires: [keen4-1.4-ega]
 authors: ["Dr. Colossus"]
 authorLinks:
   "Dr. Colossus": https://keenwiki.shikadi.net/wiki/User:DrColossus
@@ -22,6 +21,8 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen4/m.dr_colossus.the_terror_from_outer_space_v1.0.k4.2013-09-29.zip
     sha256: 5744316fcbf803a110f033a54f11d135280f81c921ab7427d2ce59fbfd507b86
     size: 977272
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK4PATCH.EXE

@@ -22,6 +22,8 @@ downloads:
     version: "1.1"
 # lego.bat runs `ck1patch lego.pat`. The mod brings its own unpacked
 # KEEN1.EXE, so it plays on any copy of Keen 1.
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

@@ -17,6 +17,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/keend/m.ceilick.keen_dreams_plus.kd.2011-02-15.zip
     sha256: 465301d026e345dba80eeb63f67f2c49a34fb4213810741e1040a7599fbc86fc
     size: 355163
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: KDRPATCH.EXE

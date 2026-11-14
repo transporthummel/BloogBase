@@ -28,6 +28,15 @@ export function needsNoGame(entry: IndexEntry): boolean {
   return !!entry.standalone && !entry.requiresGame;
 }
 
+/** A standalone mod that shares nothing with its game but the engine, known
+ * by the programs its downloads list; one with all of Keen 4's files is a
+ * Keen 4 mod that needs no copy of it. */
+export function isSourceMod(entry: IndexEntry): boolean {
+  return (
+    needsNoGame(entry) && entry.downloads.some((d) => Object.keys(d.programs ?? {}).length > 0)
+  );
+}
+
 /** Whether `entry` can be played with `owned`: on a copy it fits, or on none
  * at all for a standalone mod. */
 export function playable(entry: IndexEntry, owned: Owned[], games: Game[] = []): boolean {
@@ -35,9 +44,10 @@ export function playable(entry: IndexEntry, owned: Owned[], games: Game[] = []):
 }
 
 /** Whether `entry` is listed under `game`, a game id or {@link NO_GAME};
- * standalone mods are under no game, not the one they're built on. */
+ * source mods are under no game, not the one they're built on, and mods
+ * with all of their game's files under both. */
 export function listedUnder(entry: IndexEntry, game: string): boolean {
-  return game === NO_GAME ? needsNoGame(entry) : !needsNoGame(entry) && entry.game === game;
+  return game === NO_GAME ? needsNoGame(entry) : !isSourceMod(entry) && entry.game === game;
 }
 
 export function fitting<T extends Owned>(entry: IndexEntry, owned: T[], games: Game[] = []): T[] {

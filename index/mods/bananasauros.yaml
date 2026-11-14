@@ -18,6 +18,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.vikingboybilly.bananasauros.k1.2016-08-19.zip
     sha256: fafd16cf70e1dcf1576a53d63c8bcac5e5caf94ee4e724ee9f536bf1e5a6ae11
     size: 1688180
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: batch
   file: BANANA.bat

@@ -1,7 +1,6 @@
 id: keen-meets-the-meats
 name: "Keen Meets the Meats"
 game: kdreams
-requires: [kdreams-1.13]
 authors: ["DoomJedi", "Szemigi", "Levellass", "troublesomekeen", "VikingBoyBilly"]
 authorLinks:
   "DoomJedi": https://keenwiki.shikadi.net/wiki/User:DoomJedi
@@ -23,6 +22,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/keend/m.doomjedi_szemigi_levellass_et_al_.keen_meets_the_meats_unofficial.kd.2020-10-03.zip
     sha256: 80d22784f8046efb1c1e1dde2a03cfab902ac7311d027c83257263609ac1dd06
     size: 432797
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: KDRPATCH.EXE

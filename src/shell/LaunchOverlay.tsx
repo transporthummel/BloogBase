@@ -59,7 +59,7 @@ function Starting({ profile, onClose }: { profile: Profile; onClose: () => void 
           game={game}
           src={cover.data?.src}
           onError={cover.onError}
-          standalone={profile.standalone}
+          standalone={profile.sourceMod}
           className="block aspect-[4/3] w-full text-6xl"
         />
         <div className="h-0.5 overflow-hidden bg-surface-raised">

@@ -64,6 +64,7 @@ const games: Game[] = [
     engine: "galaxy",
     executables: [],
     requiredFiles: [],
+    dataFiles: [],
     saves: [],
     stateFiles: [],
     versions: [
@@ -79,6 +80,7 @@ const games: Game[] = [
     engine: "galaxy",
     executables: [],
     requiredFiles: [],
+    dataFiles: [],
     saves: [],
     stateFiles: [],
     versions: [
@@ -267,6 +269,15 @@ test("standalone mods are under no game and install on none", async () => {
           requires: [],
           recipe: { type: "program", program: "FITF.EXE", args: [] },
           standalone: true,
+          // A source mod's downloads list its programs.
+          downloads: [
+            {
+              url: "https://x/y.zip",
+              sha256: "00",
+              size: 2 * 1024 * 1024,
+              programs: { "FITF.EXE": "ab" },
+            },
+          ],
         }),
       ),
     ],
@@ -502,6 +513,7 @@ test("offers shareware episodes and demos on their own tabs", async () => {
         missingGame: null,
         missingVersions: [],
         standalone: false,
+        sourceMod: false,
         playedOver: null,
       },
     ],

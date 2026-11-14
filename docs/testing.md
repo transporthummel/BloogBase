@@ -167,7 +167,12 @@ The index (`index/`, see `index/README.md`) has its own checks:
 pnpm index:check                       # entries + downloads (cached in .local/mods/index-cache)
 pnpm index:check --only <id>           # all entries, but only that one's download
 cd index/tool && cargo test            # the tool itself
+cd src-tauri && cargo test --lib index_entries_say -- --ignored
+                                       # standalone where the download has all of the game's files
 ```
+
+The last one reads `index/dist/index.json` (`pnpm index:build`) and the
+downloads `pnpm index:check` cached.
 
 CI (`.github/workflows/index.yml`) runs both on every change to `index/` and
 weekly, then also asking the servers whether each download still exists. The

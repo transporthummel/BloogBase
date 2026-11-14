@@ -19,6 +19,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.keenrush_tulip.yorphius_ii_deluxe.k1.2014-03-14.zip
     sha256: e9b92d8bda456c478080b0525d95ca774c27bf69e04cf8e4be9252f949cd44a8
     size: 212313
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: batch
   file: Yorphius.BAT

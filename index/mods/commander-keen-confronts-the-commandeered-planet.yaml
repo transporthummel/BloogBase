@@ -15,6 +15,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.8bit-herpetology.the_commandeered_planet.k1.2018-06-23.zip
     sha256: b5c7dfda402095cbb1a8a1a90a37c587d9f7d3bd0e2ac7048e3d538c5ffff745
     size: 160892
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

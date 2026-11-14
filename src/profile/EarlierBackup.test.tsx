@@ -24,6 +24,7 @@ const keen4: Game = {
   engine: "galaxy",
   executables: ["KEEN4E.EXE"],
   requiredFiles: [],
+  dataFiles: [],
   saves: [],
   stateFiles: [],
   versions: [
@@ -48,6 +49,7 @@ const old: Profile = {
   missingGame: null,
   missingVersions: [],
   standalone: false,
+  sourceMod: false,
   playedOver: null,
 };
 

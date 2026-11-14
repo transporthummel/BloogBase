@@ -71,7 +71,7 @@ export function Hero({
             game={game}
             src={cover.data?.src}
             onError={cover.onError}
-            standalone={profile.standalone}
+            standalone={profile.sourceMod}
             className={`aspect-[4/3] w-full text-7xl ${cover.data ? "" : "h-full"}`}
           />
         ) : (
@@ -134,7 +134,13 @@ function Credits({
         {profile.missingGame !== null && (
           <span>{t("mods.waitsFor", { game: profile.missingGame })}</span>
         )}
-        {profile.standalone && <span>{t("mods.standalone")}</span>}
+        {profile.standalone && (
+          <span>
+            {profile.sourceMod || !game
+              ? t("mods.standalone")
+              : `${game.title} · ${t("mods.standalone")}`}
+          </span>
+        )}
         {profile.modId !== null && profile.missingGame === null && !profile.standalone && game && (
           <span>
             <RunsOn
@@ -144,8 +150,8 @@ function Credits({
             />
           </span>
         )}
-        {profile.modId !== null && !profile.standalone && <Badge>{t("mods.badge")}</Badge>}
-        {profile.standalone && <Badge>{t("mods.sourceMod")}</Badge>}
+        {profile.modId !== null && !profile.sourceMod && <Badge>{t("mods.badge")}</Badge>}
+        {profile.sourceMod && <Badge>{t("mods.sourceMod")}</Badge>}
         {profile.modId === null && <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>}
         {profile.modId === null && version?.shareware && <Badge>{t("profile.shareware")}</Badge>}
         {mod?.version && (

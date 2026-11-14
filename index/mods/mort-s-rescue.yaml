@@ -1,7 +1,6 @@
 id: mort-s-rescue
 name: "Revenge of Mortimer Episode One: Mort's Rescue"
 game: keen1
-requires: [keen1-1.31]
 authors: ["Quinton"]
 authorLinks:
   "Quinton": https://keenwiki.shikadi.net/wiki/User:Quillax
@@ -18,6 +17,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.quinton.morts_rescue.k1.2014-03-14.zip
     sha256: a2b6a91f69d7c202b04c966bc35b1646f33e357d46748386c7d34a04f06a0690
     size: 126882
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

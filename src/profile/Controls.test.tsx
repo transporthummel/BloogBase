@@ -28,6 +28,7 @@ function game(id: string, engine: Game["engine"]): Game {
     engine,
     executables: [],
     requiredFiles: [],
+    dataFiles: [],
     saves: [],
     stateFiles: [],
     versions: [],

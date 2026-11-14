@@ -3,7 +3,7 @@ import type { Game, Profile } from "../bindings";
 export const librarySorts = ["recent", "name", "added", "game", "type"] as const;
 export type LibrarySort = (typeof librarySorts)[number];
 
-/** The heading of standalone mods when grouped by game: they need none. */
+/** The heading of source mods when grouped by game: they need none. */
 export const STANDALONE = "standalone";
 
 /** Profiles under one heading; `key` is a game id or {@link STANDALONE},
@@ -35,9 +35,9 @@ export function arrange(
     versionIndex(a) - versionIndex(b) ||
     a.addedAt - b.addedAt ||
     a.id.localeCompare(b.id);
-  // Standalone mods after all games.
+  // Source mods after all games.
   const gameIndex = (p: Profile) => {
-    if (p.standalone) return games.length + 1;
+    if (p.sourceMod) return games.length + 1;
     const i = games.findIndex((g) => g.id === p.gameId);
     return i === -1 ? games.length : i;
   };
@@ -64,7 +64,7 @@ export function arrange(
       const groups: Group[] = [];
       for (const p of sorted) {
         const last = groups[groups.length - 1];
-        const key = p.standalone ? STANDALONE : p.gameId;
+        const key = p.sourceMod ? STANDALONE : p.gameId;
         if (last?.key === key) last.profiles.push(p);
         else groups.push({ key, profiles: [p] });
       }

@@ -18,7 +18,7 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Dialog } from "../ui/Dialog";
 import { useEnterAction } from "../ui/useEnterAction";
-import { fitting, needsNoGame, requiredLabels } from "./fit";
+import { fitting, isSourceMod, needsNoGame, requiredLabels } from "./fit";
 import { useIndexMods } from "./queries";
 
 /** A mod from the index with everything needed to install it. */
@@ -66,11 +66,15 @@ export function ModCard({
     <Card className="flex h-full flex-col">
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex gap-3">
-          <GameTile gameId={entry.game} game={game} standalone={needsNoGame(entry)} />
+          <GameTile gameId={entry.game} game={game} standalone={isSourceMod(entry)} />
           <div className="grid min-w-0 content-start gap-1">
             <h2 className="leading-tight font-semibold">{entry.name}</h2>
             <p className="text-xs text-muted">
-              {needsNoGame(entry) ? t("mods.standalone") : gameTitle(games, entry.game)}
+              {isSourceMod(entry)
+                ? t("mods.standalone")
+                : needsNoGame(entry)
+                  ? `${gameTitle(games, entry.game)} · ${t("mods.standalone")}`
+                  : gameTitle(games, entry.game)}
             </p>
             {base && (
               <p className="text-xs text-muted">
@@ -86,7 +90,7 @@ export function ModCard({
           {mod.modId && <Badge tone="status">{t("discover.installed")}</Badge>}
           {mod.updateAvailable && <Badge tone="status">{t("discover.updateBadge")}</Badge>}
           <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
-          {needsNoGame(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
+          {isSourceMod(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
           {mod.new && <Badge>{t("mods.new")}</Badge>}
           {entry.featured && <Badge>{t("discover.featured")}</Badge>}
         </div>

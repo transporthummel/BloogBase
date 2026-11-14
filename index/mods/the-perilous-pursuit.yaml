@@ -18,6 +18,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.ceilick_commander_spleen.the_perilous_pursuit.k1.2005-01-24.zip
     sha256: b56a1987bce400f846785224f8b028e56b28a5001476656784afce172930a3c7
     size: 177413
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: batch
   file: pursuit.bat

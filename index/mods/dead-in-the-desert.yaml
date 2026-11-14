@@ -20,6 +20,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen6/m.ceilick.dead_in_the_desert_v3.2.k6.2011-11-23.zip
     sha256: 23c2cbfeb7ea9c1e4ae5423ca2047a7c8cd4e2d1cdc83476f36f7c417a93b48e
     size: 908958
+# Brings an executable and all of the game's files: plays on any copy of it.
+standalone: true
+requiresGame: true
 recipe:
   type: patch
   patcher: CK6PATCH.EXE

@@ -1749,3 +1749,64 @@ fn counts_the_saves_in_the_mods_folder() {
     assert_eq!(info.file_count, 8);
     assert_eq!(info.save_count, 2);
 }
+
+#[test]
+fn mods_with_all_of_the_games_files_need_no_copy_or_version() {
+    let (tmp, paths, db) = setup();
+    let k4: &[(&str, &[u8])] = &[
+        ("KEEN4E.EXE", b"unpacked 1.4"),
+        ("CK4PATCH.EXE", b"patcher"),
+        ("MOD.PAT", b"%ext ck4\n%version 1.4\n"),
+        ("EGAGRAPH.CK4", b"graphics"),
+        ("GAMEMAPS.CK4", b"maps"),
+        ("AUDIO.CK4", b"sounds"),
+    ];
+    let src = tmp.path().join("complete");
+    write_folder(&src, k4);
+    let info = inspect(&src, None).unwrap();
+    assert!(info.complete && info.standalone);
+    // The version the patch is for comes along.
+    assert!(info.recipes[0].game_versions.is_empty());
+    assert!(info.recipes[0].version_ids.is_empty());
+    let mut req = request(&src, info.recipes[0].recipe.clone());
+    req.install_id = None;
+    let m = install(&paths, &db, &req).unwrap();
+    let (p, _) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!((p.install_id, p.standalone), (None, true));
+    assert!(p.missing_game.is_none());
+    assert!(own_files(&db, &m.id).unwrap());
+
+    // Without its sounds it reads the copy's, of the version it's made for.
+    let src = tmp.path().join("partial");
+    write_folder(&src, &k4[..5]);
+    let info = inspect(&src, None).unwrap();
+    assert!(!info.complete && !info.standalone);
+    assert!(
+        info.recipes[0]
+            .version_ids
+            .contains(&"keen4-1.4-ega".to_string())
+    );
+
+    // Keen 5 has no free shareware: any copy of it, but one.
+    let src = tmp.path().join("k5");
+    write_folder(
+        &src,
+        &[
+            ("KEEN5E.EXE", b"unpacked 1.4"),
+            ("CK5PATCH.EXE", b"patcher"),
+            ("MOD.PAT", b"%ext ck5\n%version 1.4\n"),
+            ("EGAGRAPH.CK5", b"graphics"),
+            ("GAMEMAPS.CK5", b"maps"),
+            ("AUDIO.CK5", b"sounds"),
+        ],
+    );
+    let info = inspect(&src, None).unwrap();
+    assert!(info.complete && !info.standalone);
+    let mut req = request(&src, info.recipes[0].recipe.clone());
+    req.install_id = None;
+    let m = install(&paths, &db, &req).unwrap();
+    let (p, _) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!((p.install_id, p.standalone), (None, false));
+    assert!(p.missing_game.is_some());
+    assert!(own_files(&db, &m.id).unwrap());
+}

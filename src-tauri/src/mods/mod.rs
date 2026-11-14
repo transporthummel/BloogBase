@@ -72,6 +72,12 @@ pub struct ModInfo {
     /// A release of the game lying next to the mod that the library doesn't
     /// have yet, to import along with it.
     pub bundled_game: Option<String>,
+    /// Brings an executable and all of the game's files: plays from them
+    /// alone, on any version of its game, as nothing below it is read.
+    pub complete: bool,
+    /// Complete, and for a game whose shareware is free: plays without a
+    /// copy of it (decided 2026-11-14).
+    pub standalone: bool,
 }
 
 /// A mod another one is made to be copied over, installed or in the index.

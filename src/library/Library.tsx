@@ -381,7 +381,7 @@ const ProfileCard = memo(function ProfileCard({
           game={game}
           src={cover.data?.src}
           onError={cover.onError}
-          standalone={profile.standalone}
+          standalone={profile.sourceMod}
         />
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-3">
@@ -407,8 +407,10 @@ const ProfileCard = memo(function ProfileCard({
             profile.modId !== null &&
             game && (
               <p className="text-xs text-muted">
-                {profile.standalone ? (
+                {profile.sourceMod ? (
                   t("mods.standalone")
+                ) : profile.standalone ? (
+                  `${game.shortTitle} · ${t("mods.standalone")}`
                 ) : (
                   <RunsOn profile={profile} game={game.shortTitle} version={versionLabel} />
                 )}
@@ -417,8 +419,8 @@ const ProfileCard = memo(function ProfileCard({
           )}
         </div>
         <div className="flex flex-wrap gap-1">
-          {profile.modId !== null && !profile.standalone && <Badge>{t("mods.badge")}</Badge>}
-          {profile.standalone && <Badge>{t("mods.sourceMod")}</Badge>}
+          {profile.modId !== null && !profile.sourceMod && <Badge>{t("mods.badge")}</Badge>}
+          {profile.sourceMod && <Badge>{t("mods.sourceMod")}</Badge>}
           {profile.modId === null && <Badge>{versionLabel}</Badge>}
         </div>
         <dl className="grid gap-0.5 text-xs text-muted">

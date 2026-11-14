@@ -21,6 +21,8 @@ downloads:
     size: 147143
 # XkyKeen1.bat runs `ck1patch xkykeen.pat`. The mod brings its own
 # KEEN1.EXE, so it plays on any copy of Keen 1.
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

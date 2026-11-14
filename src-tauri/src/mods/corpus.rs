@@ -39,6 +39,9 @@ struct Expected {
     recipe: Recipe,
     version_ids: Vec<String>,
     confident: bool,
+    /// Brings an executable and all of the game's files.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    complete: bool,
 }
 
 impl From<&ModInfo> for Expected {
@@ -49,6 +52,7 @@ impl From<&ModInfo> for Expected {
             recipe: info.recipes[0].recipe.clone(),
             version_ids: info.recipes[0].version_ids.clone(),
             confident: info.confident,
+            complete: info.complete,
         }
     }
 }
@@ -128,4 +132,56 @@ async fn corpus_matches_expectations() {
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
     eprintln!("{} mods as expected", manifest.mods.len());
+}
+
+/// Index entries whose download brings all of its game's files say so:
+/// `standalone` (with `requiresGame` where the game has no free shareware),
+/// and the others don't. Reads `index/dist/index.json` (`pnpm index:build`)
+/// and the archives `pnpm index:check` cached.
+///
+/// `cargo test index_entries_say -- --ignored --nocapture`
+#[test]
+#[ignore = "needs the index's cached downloads"]
+fn index_entries_say_whether_they_bring_their_game() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+    let index: serde_json::Value =
+        serde_json::from_slice(&fs::read(root.join("index/dist/index.json")).unwrap()).unwrap();
+    let cache = root.join(".local/mods/index-cache");
+    let mut wrong = Vec::new();
+    let mut checked = 0;
+    for e in index["mods"].as_array().unwrap() {
+        let entry: crate::mod_index::IndexEntry = serde_json::from_value(e.clone()).unwrap();
+        // Source mods are standalone without the game's files; mods played
+        // over another one have only part of them.
+        let source_mod = entry.standalone && entry.downloads.iter().any(|d| !d.programs.is_empty());
+        if source_mod || entry.extends.is_some() {
+            continue;
+        }
+        // Older downloads too: installed ones follow the entry.
+        for d in &entry.downloads {
+            let path = cache.join(format!("{}.zip", d.sha256.to_ascii_lowercase()));
+            if !path.is_file() {
+                wrong.push(format!("{}: {} not cached", entry.id, d.url));
+                continue;
+            }
+            checked += 1;
+            let info = match inspect(&path, Some(&entry.game)) {
+                Ok(i) => i,
+                Err(err) => {
+                    wrong.push(format!("{}: {err}", entry.id));
+                    continue;
+                }
+            };
+            let says = (entry.standalone, entry.requires_game);
+            let is = (info.complete, info.complete && !info.standalone);
+            if says != is {
+                wrong.push(format!(
+                    "{}: standalone/requiresGame {says:?}, {} {is:?}",
+                    entry.id, d.url
+                ));
+            }
+        }
+    }
+    assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+    eprintln!("{checked} downloads as expected");
 }

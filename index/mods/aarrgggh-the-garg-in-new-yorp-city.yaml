@@ -17,6 +17,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.benvolio.aarrgggh_the_garg_in_new_yorp_city.k1.2021-01-21.zip
     sha256: e30a316b27c076d13f578b27b9d50075d3b7d509d2bc4471da21cf52023c890b
     size: 136489
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

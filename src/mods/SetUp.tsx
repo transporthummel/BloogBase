@@ -68,7 +68,8 @@ export function SetUp({
 
   const game = games.data?.find((g) => g.id === info.gameId);
   const option = info.recipes[recipeIndex];
-  const candidates = installs.data?.filter((i) => fits(info, option, i));
+  // A mod with all of a free game's files goes on none.
+  const candidates = info.standalone ? [] : installs.data?.filter((i) => fits(info, option, i));
   const others = otherVersions(mods.data ?? [], info, name, origin, replacing);
   // Picked to replace it, but for another game.
   const wrongGame = mods.data?.find((m) => m.id === replacing && m.gameId !== info.gameId);
@@ -315,7 +316,10 @@ function Facts({
   return (
     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
       <dt className="text-muted">{t("mods.forGame")}</dt>
-      <dd>{game?.title ?? info.gameId}</dd>
+      <dd>
+        {game?.title ?? info.gameId}
+        {info.standalone && ` · ${t("mods.standalone")}`}
+      </dd>
       {option.gameVersions.length > 0 && (
         <>
           <dt className="text-muted">{t("mods.madeFor")}</dt>

@@ -16,6 +16,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.grelphy.episode_y.k1.2003-06-19.zip
     sha256: eef8a06525ecc1795f78801e40aebc1dc21e6dd65dbc59ffffa05c51efb43df6
     size: 126825
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: Ck1patch.exe

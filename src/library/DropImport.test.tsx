@@ -48,6 +48,7 @@ const keen4: Game = {
   engine: "galaxy",
   executables: ["KEEN4E.EXE"],
   requiredFiles: [],
+  dataFiles: [],
   saves: [],
   stateFiles: [],
   versions: [],
@@ -87,6 +88,8 @@ const info: ModInfo = {
   indexId: null,
   indexVersion: null,
   indexFiles: false,
+  complete: false,
+  standalone: false,
 };
 
 const aurora = { id: "aurora-bliss", name: "Aurora Bliss", profileId: "aurora-bliss" } as Mod;

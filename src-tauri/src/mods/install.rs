@@ -41,9 +41,11 @@ struct Stored<'a> {
     extends: Option<String>,
     /// The program whose title screen is the cover; default: the recipe's.
     cover: Option<String>,
-    /// Plays without a copy of its game; only index entries say so.
+    /// Plays without a copy of its game: index entries say so, or the mod
+    /// brings all of a game whose shareware is free.
     standalone: bool,
-    /// Composed from its own files alone; only index entries say so.
+    /// Composed from its own files alone: index entries say so, or the mod
+    /// brings all of the game's files.
     own_files: bool,
     keenwiki_url: Option<&'a str>,
     homepage: Option<String>,
@@ -163,13 +165,16 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
     };
     let option = picked_option(&analysis.info, base.as_ref(), &req.recipe)?;
     // Like `check_install`: a patch that names versions plays on those only;
-    // else where the mod below plays.
-    let requires = if option.game_versions.is_empty() {
+    // else where the mod below plays. A complete mod plays anywhere.
+    let requires = if analysis.info.complete && base.is_none() {
+        None
+    } else if option.game_versions.is_empty() {
         base.as_ref().and_then(|b| b.requires.clone())
     } else {
         Some(option.version_ids.clone())
     };
     let target = match &req.install_id {
+        _ if analysis.info.standalone && base.is_none() => None,
         Some(id) => Some(picked_install(
             db,
             id,
@@ -187,7 +192,11 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
         "" => analysis.info.name.clone(),
         n => n.to_string(),
     };
-    let stored = Stored::picked(req, &analysis.info, name, option.recipe, requires);
+    let mut stored = Stored::picked(req, &analysis.info, name, option.recipe, requires);
+    if base.is_none() {
+        stored.standalone = analysis.info.standalone;
+        stored.own_files = analysis.info.complete;
+    }
     match &replaced {
         None => store(paths, db, &source, &analysis, &stored, target.as_ref()),
         Some(old) => update(
@@ -1038,6 +1047,8 @@ mod tests {
             index_files: false,
             made_for: None,
             bundled_game: None,
+            complete: false,
+            standalone: false,
         }
     }
 

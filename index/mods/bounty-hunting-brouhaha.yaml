@@ -1,7 +1,6 @@
 id: bounty-hunting-brouhaha
 name: "Bounty Hunting Brouhaha"
 game: keen4
-requires: [keen4-1.4-ega]
 authors: ["Kohntarkosz_"]
 version: "1.2"
 released: 2019-11-26
@@ -19,8 +18,12 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen4/m.kohntarkosz_.bounty_hunting_brouhaha_v1.2_unofficial.k4.2024-08-15.zip
     sha256: 40bd0549135abb9072ab3d296b99d146b6eeaeb75aab5f127f263ea5bfbd1c36
     size: 522153
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK4PATCH.EXE
   patch: KEEN4a.PAT
   args: ["-nowait"]
+# Older apps drop its unchanged executable and would play it without one.
+minAppVersion: 1.3.0

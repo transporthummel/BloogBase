@@ -302,7 +302,8 @@ fn draft(facts: &Facts, path: &Path) -> crate::error::Result<Draft> {
     named.dedup();
     let game = catalog::game(&info.game_id);
     // Third-party builds fit through the version they're made from.
-    let requires: Vec<String> = game.map_or(Vec::new(), |g| {
+    // A mod with all of the game's files brings its version along.
+    let requires: Vec<String> = game.filter(|_| !info.complete).map_or(Vec::new(), |g| {
         let ids = version_ids(g, &named);
         g.versions
             .iter()
@@ -379,6 +380,12 @@ struct Found<'a> {
 }
 
 impl Found<'_> {
+    /// Brings an executable and all of the game's files: plays from them
+    /// alone, on any copy or none (decided 2026-11-14).
+    fn complete(&self) -> bool {
+        self.info.complete && !self.source_mod
+    }
+
     /// A source mod that runs a program of its own plays without its game.
     fn standalone(&self) -> bool {
         self.source_mod
@@ -589,6 +596,13 @@ fn yaml(facts: &Facts, found: &Found) -> String {
         y += "# A source mod: it ships its whole game and plays without a copy of it.\n";
         y += "standalone: true\n";
     }
+    if found.complete() {
+        y += "# Brings an executable and all of the game's files: plays ";
+        y += match info.standalone {
+            true => "without a copy of it.\nstandalone: true\n",
+            false => "on any copy of it.\nstandalone: true\nrequiresGame: true\n",
+        };
+    }
     y += &recipe_yaml(&info.recipes[0].recipe);
     if found.source_mod {
         y += "# Older apps find no mod in it, as it has no Keen files.\n";
@@ -712,6 +726,11 @@ fn notes(facts: &Facts, found: &Found) -> (Vec<String>, Vec<String>) {
     }
 
     match (found.named.is_empty(), found.requires.is_empty()) {
+        _ if found.complete() => check.push(format!(
+            "standalone: set, as the archive has an executable and all of {}'s files; take it \
+             out if the readme says to copy them over a copy of the game",
+            info.game_id
+        )),
         (true, _) => check.push(
             "requires: left out (any version), as no patch names one; add it if the readme \
              names one"

@@ -1,7 +1,6 @@
 id: episode-z
 name: "Episode Z"
 game: keen1
-requires: [keen1-1.1, keen1-1.31]
 authors: ["Ceilick"]
 authorLinks:
   "Ceilick": https://keenwiki.shikadi.net/wiki/User:Ceilick
@@ -18,6 +17,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.ceilick_keenrush.episode_z.k1.2009-01-30.zip
     sha256: 36b0a9a029341a2cbf56083bb7456feede7d1a68db10942cf5281753f6e4bc99
     size: 142694
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

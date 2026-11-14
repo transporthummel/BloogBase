@@ -1,7 +1,6 @@
 id: venture-to-vorti-peaks
 name: "Venture to Vorti Peaks"
 game: keen1
-requires: [keen1-1.31]
 authors: ["Excuses"]
 authorLinks:
   "Excuses": https://keenwiki.shikadi.net/wiki/User:Excuses
@@ -21,6 +20,8 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen1/m.excuses.venture-to-vorti-peaks.v1.0.1.k1.2022-01-01.zip
     sha256: 58d49e9e3d2f8202091fcdbf5eddcc7039899785df932b995b0c3929b18803ac
     size: 144938
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

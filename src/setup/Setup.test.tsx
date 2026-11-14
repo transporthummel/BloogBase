@@ -54,6 +54,7 @@ const game = (id: string, title: string, versionId: string): Game => ({
   engine: "galaxy",
   executables: [],
   requiredFiles: [],
+  dataFiles: [],
   saves: [],
   stateFiles: [],
   versions: [{ id: versionId, label: "v1.4 EGA", files: {}, shareware: true, start: null }],
@@ -385,7 +386,14 @@ test("suggests standalone mods without any game", async () => {
     status: "ok",
     data: [
       indexMod("for-keen4", "keen4", []),
-      { ...foray, entry: { ...foray.entry, standalone: true } },
+      {
+        ...foray,
+        entry: {
+          ...foray.entry,
+          standalone: true,
+          downloads: foray.entry.downloads.map((d) => ({ ...d, programs: { "FITF.EXE": "ab" } })),
+        },
+      },
     ],
   });
   renderSetup();

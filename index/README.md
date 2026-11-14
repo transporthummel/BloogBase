@@ -30,31 +30,31 @@ By hand:
    it.
 2. Fill it in:
 
-   | Field            | Meaning                                                                                      |
-   | ---------------- | -------------------------------------------------------------------------------------------- |
-   | `name`           | As the authors call it                                                                       |
-   | `game`           | `keen1` … `keen6`, `kdreams`; for a standalone mod, the game it's built on                   |
-   | `requires`       | Game versions it works with (ids from `src-tauri/catalog/games.json`); leave out for any     |
-   | `authors`        | Names as on KeenWiki                                                                         |
-   | `authorLinks`    | Name: page for authors whose name KeenWiki links (their `User:` page); leave out red links   |
-   | `version`        | The mod's version, in quotes                                                                 |
-   | `released`       | First release, `YYYY-MM-DD`; `updated` for the latest one                                    |
-   | `added`          | Today: when the entry joined the index (sorts "Newest" first)                                |
-   | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (plays unlike Keen, "Offbeat")      |
-   | `description`    | One or two sentences in your own words, in English                                           |
-   | `translations`   | Language: texts in it; for now `de` with `description` (see below)                           |
-   | `links`          | `keenwiki`, `pckf`, `keenmodding` (Keen: Modding forum), `homepage`                          |
-   | `downloads`      | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`; see below   |
-   | `recipe`         | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode`  |
-   | `versionRecipes` | Version id: recipe, for game versions the mod starts differently on (one patch per version)  |
-   | `copyToRoot`     | Folders in the mod's root whose files the readme says to copy into the root                  |
-   | `extends`        | Id of the entry this mod is copied over, e.g. a level pack for a mod; installed with it      |
-   | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)            |
-   | `cover`          | The program whose title screen is the cover, when the recipe runs a menu (see below)         |
-   | `standalone`     | `true` for a source mod that ships its whole game and plays without a copy of it (see below) |
-   | `requiresGame`   | with `standalone`, for a source mod that carries the game's own graphics or sounds           |
-   | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                     |
-   | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                              |
+   | Field            | Meaning                                                                                     |
+   | ---------------- | ------------------------------------------------------------------------------------------- |
+   | `name`           | As the authors call it                                                                      |
+   | `game`           | `keen1` … `keen6`, `kdreams`; for a standalone mod, the game it's built on                  |
+   | `requires`       | Game versions it works with (ids from `src-tauri/catalog/games.json`); leave out for any    |
+   | `authors`        | Names as on KeenWiki                                                                        |
+   | `authorLinks`    | Name: page for authors whose name KeenWiki links (their `User:` page); leave out red links  |
+   | `version`        | The mod's version, in quotes                                                                |
+   | `released`       | First release, `YYYY-MM-DD`; `updated` for the latest one                                   |
+   | `added`          | Today: when the entry joined the index (sorts "Newest" first)                               |
+   | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (plays unlike Keen, "Offbeat")     |
+   | `description`    | One or two sentences in your own words, in English                                          |
+   | `translations`   | Language: texts in it; for now `de` with `description` (see below)                          |
+   | `links`          | `keenwiki`, `pckf`, `keenmodding` (Keen: Modding forum), `homepage`                         |
+   | `downloads`      | Newest first: `url` (the original source), `sha256`, `size` in bytes, `version`; see below  |
+   | `recipe`         | How it starts: `patch` (`patcher`, `patch`, `args`), `program`, `batch` (`file`), `episode` |
+   | `versionRecipes` | Version id: recipe, for game versions the mod starts differently on (one patch per version) |
+   | `copyToRoot`     | Folders in the mod's root whose files the readme says to copy into the root                 |
+   | `extends`        | Id of the entry this mod is copied over, e.g. a level pack for a mod; installed with it     |
+   | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)           |
+   | `cover`          | The program whose title screen is the cover, when the recipe runs a menu (see below)        |
+   | `standalone`     | `true` for a mod that ships its whole game and plays without a copy of it (see below)       |
+   | `requiresGame`   | with `standalone`, for a mod that carries the graphics or sounds of Keen 2, 3, 5 or 6       |
+   | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
+   | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
 
    The app shows the description in the player's language when the entry
    has it, otherwise the English one:
@@ -97,9 +97,10 @@ By hand:
    without any Keen. `game` stays the game it's built on: its saves, settings
    and DOSBox defaults are that game's. The recipe has to run a `program` or
    `batch` file of the mod, without `requires`, `versionRecipes` or
-   `extends`, and no other entry can extend it. Only entries can make a mod
-   standalone: added by hand, the same files play on a copy of `game`,
-   unless the app knows them by their `programs` (below). Apps
+   `extends`, and no other entry can extend it (that goes for every
+   standalone mod). Only entries can make a source mod standalone: added
+   by hand, the same files play on a copy of `game`, unless the app knows
+   them by their `programs` (below). Apps
    before 1.2.0 ignore the field and play the mod on that game, so an entry
    can take it up without a `minAppVersion`; mods installed from it leave
    their copy of the game at the next index check, with their saves.
@@ -130,6 +131,21 @@ By hand:
        programs:
          osidos32.exe: f8b4…
    ```
+
+   A mod that brings an executable and all the files of its game
+   (`dataFiles` in `src-tauri/catalog/games.json`) reads nothing of the copy
+   below it, so it plays on any version (decided 2026-11-14). It gets
+   `standalone: true` too, but stays under its game in Discover, with its
+   episode's cover and no "Source mod" badge, and lists no `programs`: it's
+   known by its download. Its recipe may patch (Aurora Bliss), and it has no
+   `requires`. Keen 1, Keen 4 and Keen Dreams mods like that then play
+   without a copy of the game, as their shareware is free; those of Keen 2,
+   3, 5 and 6 get `requiresGame: true` below and play on any copy. `pnpm
+index:add` drafts both, and
+   `cargo test --lib index_entries_say -- --ignored` (in `src-tauri`, after
+   `pnpm index:build` and `pnpm index:check`) checks that every entry says
+   what its downloads are. One that ships the game's own executable
+   unchanged needs `minAppVersion: 1.3.0`: older apps leave that out.
 
    A source mod that ships the graphics or sounds of a game with no free
    shareware (Keen 2, 3, 5 and 6; DarkAle's New Keen 5 Levelpack) also gets

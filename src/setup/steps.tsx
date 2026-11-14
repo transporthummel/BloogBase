@@ -12,7 +12,7 @@ import { JobList, JobRow } from "../jobs/JobList";
 import { useJobLabel } from "../jobs/label";
 import { isFinished, useJobs, useStartJob } from "../jobs/queries";
 import { entryDescription } from "../discover/description";
-import { compare, fitting, needsNoGame, type Owned } from "../discover/fit";
+import { compare, fitting, isSourceMod, needsNoGame, type Owned } from "../discover/fit";
 import { IndexError } from "../discover/IndexError";
 import { useFreeGames, useIndexMods, useIndexStatus } from "../discover/queries";
 import { useInstalls, useProfiles } from "../library/queries";
@@ -426,12 +426,19 @@ export function ModsStep({ next, back }: StepProps) {
   const featured = (mods.data ?? [])
     .filter((m) => m.entry.featured && !m.modId)
     .sort((a, b) => compare("featured")(a.entry, b.entry));
-  // Mods that need no game are a choice of their own, also without any Keen.
+  // Mods for the player's games, also those that need no copy of them;
+  // source mods are a choice of their own, also without any Keen.
+  const forOwned = featured
+    .filter(
+      (m) =>
+        !isSourceMod(m.entry) &&
+        (fitting(m.entry, owned, games).length > 0 ||
+          (needsNoGame(m.entry) && owned.some((o) => o.gameId === m.entry.game))),
+    )
+    .slice(0, 6);
   const suggestions = [
-    ...featured
-      .filter((m) => !needsNoGame(m.entry) && fitting(m.entry, owned, games).length > 0)
-      .slice(0, 6),
-    ...featured.filter((m) => needsNoGame(m.entry)).slice(0, 3),
+    ...forOwned,
+    ...featured.filter((m) => needsNoGame(m.entry) && !forOwned.includes(m)).slice(0, 3),
   ];
   const toStart = suggestions.filter((m) => picked.has(m.entry.id) && !queued(m.entry.id));
   const loading = status && status.checkedAt === null && !status.error && status.modCount === 0;
@@ -478,10 +485,10 @@ export function ModsStep({ next, back }: StepProps) {
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{entry.name}</span>
                     <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
-                    {needsNoGame(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
+                    {isSourceMod(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
                   </span>
                   <span className="text-xs text-muted">
-                    {needsNoGame(entry) ? t("mods.standalone") : gameTitle(games, entry.game)}
+                    {isSourceMod(entry) ? t("mods.standalone") : gameTitle(games, entry.game)}
                     {entry.authors.length > 0 &&
                       ` · ${t("mods.by", { authors: entry.authors.join(", ") })}`}
                   </span>

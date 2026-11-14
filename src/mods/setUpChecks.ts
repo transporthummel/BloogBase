@@ -92,8 +92,9 @@ export function setUpWarnings({
 }): SetUpWarnings {
   const versionOf = (i: Install) => game?.versions.find((v) => v.id === i.versionId);
   // A patch that names no version is most likely made for the version most mods use.
+  // A complete mod brings the version it's made for along.
   const assumed =
-    option.recipe.type === "patch" && option.gameVersions.length === 0
+    option.recipe.type === "patch" && option.gameVersions.length === 0 && !info.complete
       ? game?.versions.find((v) => v.id === game.moddingVersion)
       : undefined;
   const targetVersion = target && versionOf(target);
@@ -105,9 +106,10 @@ export function setUpWarnings({
   const incomplete = option.missingFiles.length > 0;
   return {
     otherGame: !!origin?.gameId && origin.gameId !== info.gameId,
-    missingGame: candidates !== undefined && candidates.length === 0,
+    missingGame: !info.standalone && candidates !== undefined && candidates.length === 0,
     assumedInstead,
-    modifiedGame: !!target && option.recipe.type === "patch" && isModified(targetVersion),
+    modifiedGame:
+      !!target && !info.complete && option.recipe.type === "patch" && isModified(targetVersion),
     versionUnchecked: !!target && target.versionId === null && option.gameVersions.length > 0,
     incomplete,
     levelsFor: !!option.baseMod && !incomplete,

@@ -1,7 +1,6 @@
 id: onward-silcar-4-the-civilization-inside
 name: "Onward: Silcar 4: The Civilization Inside"
 game: keen1
-requires: [keen1-1.31]
 authors: ["Tulip"]
 authorLinks:
   "Tulip": https://keenwiki.shikadi.net/wiki/User:Tulip
@@ -18,6 +17,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.tulip.silcar_4.k1.2009-03-14.zip
     sha256: d1091a1a864587423cedbad59aa683b5dfe2c777586103c03b4a31b69f1a3bbb
     size: 156214
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

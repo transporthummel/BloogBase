@@ -61,7 +61,14 @@ test("a source mod shows its own placeholder, not its game's episode", async () 
   vi.mocked(commands.listProfiles).mockResolvedValue({
     status: "ok",
     data: [
-      { id: "pak-een", label: "Pak Een", gameId: "kdreams", installId: "kd-1", standalone: true },
+      {
+        id: "pak-een",
+        label: "Pak Een",
+        gameId: "kdreams",
+        installId: "kd-1",
+        standalone: true,
+        sourceMod: true,
+      },
     ],
   } as never);
   renderOverlay();

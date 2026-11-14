@@ -1,7 +1,6 @@
 id: skater-squirrel
 name: "Skater Squirrel's Cherry Cake Caper"
 game: keen4
-requires: [keen4-1.4-ega]
 authors: ["Ziblink", "Levellass"]
 authorLinks:
   "Levellass": https://keenwiki.shikadi.net/wiki/User:Levellass
@@ -19,6 +18,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.levellass.skater_squirrel.k4.2017-10-19.zip
     sha256: c309a1f0279996f07d31736d5d6dca4caa3b66c09c7530f6eecc5286ad96b038
     size: 735851
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK4PATCH.EXE

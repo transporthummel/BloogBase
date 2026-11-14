@@ -189,9 +189,13 @@ pub(super) fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> 
     let game = find_game(&names, &read, by_patcher, meta.episode.or(game_hint))
         .ok_or(Error::NoModFound)?;
 
-    // Pristine game executables would hide the install's own version.
+    // With all of the game's files, the mod reads nothing of the copy below
+    // it, so any version will do, and none where the shareware is free.
+    let complete = game.all_in(&names);
+    // Pristine game executables would hide the install's own version; a
+    // complete mod keeps them, as it's played from its own files alone.
     let mut pristine = Vec::new();
-    for name in &names {
+    for name in names.iter().filter(|_| !complete) {
         if game
             .executables
             .iter()
@@ -251,6 +255,8 @@ pub(super) fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> 
                 .and_then(read)
                 .map(|t| recipe::patch_versions(&t))
                 .unwrap_or_default();
+            // What the patch is made for comes along in the mod.
+            let game_versions = if complete { Vec::new() } else { game_versions };
             RecipeOption {
                 version_ids: version_ids(game, &game_versions),
                 game_versions,
@@ -308,6 +314,8 @@ pub(super) fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> 
             index_files: false,
             made_for: meta.made_for,
             bundled_game: None,
+            complete,
+            standalone: complete && crate::free_games::has_shareware(&game.id),
         },
         root,
         files,

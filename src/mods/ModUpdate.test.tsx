@@ -201,6 +201,8 @@ test("downloads a newer version and replaces the installed one", async () => {
         indexId: null,
         indexVersion: null,
         indexFiles: false,
+        complete: false,
+        standalone: false,
       },
     }),
   );

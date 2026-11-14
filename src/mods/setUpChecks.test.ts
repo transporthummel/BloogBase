@@ -56,6 +56,8 @@ const info = (extra: Partial<ModInfo> = {}): ModInfo => ({
   indexId: null,
   indexVersion: null,
   indexFiles: false,
+  complete: false,
+  standalone: false,
   ...extra,
 });
 
@@ -115,6 +117,24 @@ describe("setUpWarnings", () => {
     const named = { gameVersions: ["1.0"], versionIds: ["keen4-1.0"] };
     expect(warnings(copy("a", "keen4-1.0"), named).assumedInstead).toBeUndefined();
     expect(warnings(copy("a", null), named).versionUnchecked).toBe(true);
+  });
+
+  it("asks nothing of the copy for a mod with all of its game's files", () => {
+    const complete = (extra: Partial<ModInfo>, target: Install | undefined) =>
+      setUpWarnings({
+        info: info({ complete: true, ...extra }),
+        option: patch,
+        origin: null,
+        game: keen4,
+        candidates: target ? [target] : [],
+        target,
+      });
+    const nocp = complete({}, copy("a", "keen4-1.4-nocp"));
+    expect([nocp.assumedInstead, nocp.modifiedGame]).toEqual([undefined, false]);
+    expect(complete({}, copy("a", "keen4-1.0")).assumedInstead).toBeUndefined();
+    // Keen 4's shareware is free, so it needs no copy at all.
+    expect(complete({ standalone: true }, undefined).missingGame).toBe(false);
+    expect(complete({}, undefined).missingGame).toBe(true);
   });
 
   it("tells a missing game only once the library is known", () => {

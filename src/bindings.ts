@@ -509,6 +509,11 @@ export type Game = {
 	executables: string[],
 	/**  All of these must be present; `A|B` means either. */
 	requiredFiles: string[],
+	/**
+	 *  Everything a full copy reads, `A|B` for either: a mod that brings
+	 *  them all and an executable doesn't need the game's own files.
+	 */
+	dataFiles: string[],
 	/**  Patterns for save games. */
 	saves: string[],
 	/**  Patterns for other files the game writes (config, high scores). */
@@ -879,6 +884,16 @@ export type ModInfo = {
 	 *  have yet, to import along with it.
 	 */
 	bundledGame: string | null,
+	/**
+	 *  Brings an executable and all of the game's files: plays from them
+	 *  alone, on any version of its game, as nothing below it is read.
+	 */
+	complete: boolean,
+	/**
+	 *  Complete, and for a game whose shareware is free: plays without a
+	 *  copy of it (decided 2026-11-14).
+	 */
+	standalone: boolean,
 };
 
 export type ModKind = "episode" | "levelpack" | "conversion";
@@ -950,6 +965,12 @@ export type Profile = {
 	 *  `game_id`, the game it's built on.
 	 */
 	standalone: boolean,
+	/**
+	 *  Standalone, and with nothing of the game's own files but its
+	 *  engine: shown apart from the episode (a mod with all of Keen 4's
+	 *  files is still a Keen 4 mod).
+	 */
+	sourceMod: boolean,
 	/**  The mod a mod is played over, e.g. Lego Keen. */
 	playedOver: PlayedOver | null,
 };

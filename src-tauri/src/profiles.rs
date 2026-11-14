@@ -42,6 +42,10 @@ pub struct Profile {
     /// A mod that ships its whole game and plays without a copy of
     /// `game_id`, the game it's built on.
     pub standalone: bool,
+    /// Standalone, and with nothing of the game's own files but its
+    /// engine: shown apart from the episode (a mod with all of Keen 4's
+    /// files is still a Keen 4 mod).
+    pub source_mod: bool,
     /// The mod a mod is played over, e.g. Lego Keen.
     pub played_over: Option<PlayedOver>,
 }
@@ -162,6 +166,11 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
                 .clone(),
         }
     });
+    let source_mod = standalone
+        && !mod_layer
+            .as_ref()
+            .zip(catalog::game(&game_id))
+            .is_some_and(|(m, game)| game.all_in(&file_names(&m.files)));
     Ok(ProfileRow {
         profile: Profile {
             id: r.get(0)?,
@@ -179,6 +188,7 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             missing_game,
             missing_versions,
             standalone,
+            source_mod,
             played_over: r
                 .get::<_, Option<String>>(18)?
                 .zip(r.get::<_, Option<String>>(19)?)
@@ -190,6 +200,16 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             mod_layer,
         },
     })
+}
+
+/// The names of the files right in `dir`.
+fn file_names(dir: &Path) -> Vec<String> {
+    fs::read_dir(dir)
+        .map(|d| {
+            d.filter_map(|e| Some(e.ok()?.file_name().to_string_lossy().into_owned()))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// All profiles, most recently played first. `is_running` marks the ones that

@@ -1,7 +1,6 @@
 id: aurora-bliss
 name: Aurora Bliss
 game: keen4
-requires: [keen4-1.4-ega]
 authors: [Dave216]
 authorLinks:
   Dave216: https://keenwiki.shikadi.net/wiki/User:Dave216
@@ -22,6 +21,8 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen4/m.dave216.aurora_bliss_v.1.2.k4.2023-08-23.zip
     sha256: 0140e4531f2f9953ad7deac3e2dee24eb3d67b270781a753c3ab753a4d02b271
     size: 4822659
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK4PATCH.EXE

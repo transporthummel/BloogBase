@@ -1,7 +1,6 @@
 id: keenball
 name: Keenball
 game: keen4
-requires: [keen4-1.4-ega]
 authors: [Levellass]
 authorLinks:
   Levellass: https://keenwiki.shikadi.net/wiki/User:Levellass
@@ -19,6 +18,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.levellass.keenball.k4.2019-03-14.zip
     sha256: 5f251f3809dc3de144e1f783066a9120d8fc75c6a24f2c21c72df21df61bdca6
     size: 246586
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK4PATCH.EXE

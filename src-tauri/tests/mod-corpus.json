@@ -42,10 +42,9 @@
         "patch": "pat.pat",
         "args": []
       },
-      "versionIds": [
-        "keen4-1.4-ega"
-      ],
-      "confident": true
+      "versionIds": [],
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/Packs/Keen1/l.shikadi.k1.2008-02-14.zip",
@@ -108,10 +107,9 @@
         "patch": "KEEN7.pat",
         "args": []
       },
-      "versionIds": [
-        "keen4-1.4-ega"
-      ],
-      "confident": true
+      "versionIds": [],
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/mods/Keen4/m.dave216.aurora_bliss_v.1.2.k4.2023-08-23.zip",
@@ -124,10 +122,9 @@
         "patch": "abiathar.pat",
         "args": []
       },
-      "versionIds": [
-        "keen4-1.4-ega"
-      ],
-      "confident": true
+      "versionIds": [],
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/mods/Keen5/m.dave216.canmores_redemption_v.1.0.2.k5.2023-07-30.zip",
@@ -176,7 +173,8 @@
         ]
       },
       "versionIds": [],
-      "confident": true
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/mods/Keen4/m.levellass.keenball.k4.2019-03-14.zip",
@@ -190,7 +188,8 @@
         "args": []
       },
       "versionIds": [],
-      "confident": true
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/mods/Keen3/m.levellass.ye_olde_pirate_modde.k3.2013-07-15.zip",
@@ -202,7 +201,8 @@
         "file": "Pirates.bat"
       },
       "versionIds": [],
-      "confident": true
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/mods/Keen6/m.ny00123.aliens_ate_my_babysitter_again_v1.5.k6.2024-12-30.zip",
@@ -317,7 +317,8 @@
         "args": []
       },
       "versionIds": [],
-      "confident": true
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/mods/Keen2/m.troublesomekeen.the_electromagnet.k2.2015-03-14.zip",
@@ -395,10 +396,9 @@
         "patch": "xky4mm.PAT",
         "args": []
       },
-      "versionIds": [
-        "keen4-1.4-ega"
-      ],
-      "confident": true
+      "versionIds": [],
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/mods/Keen2/m.joriz_.keen_q.k2.2007-11-09.zip",
@@ -466,7 +466,8 @@
         "args": []
       },
       "versionIds": [],
-      "confident": true
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/mods/Keen4/m.dave216.revival_of_bliss_v.1.1.k4.2024-06-08.zip",
@@ -480,7 +481,8 @@
         "args": []
       },
       "versionIds": [],
-      "confident": true
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/mods/Keen4/m.viler.keen4c16.k4.2016-05-22.zip",
@@ -509,10 +511,9 @@
         "patch": "v2-12H.pat",
         "args": []
       },
-      "versionIds": [
-        "keen1-1.31"
-      ],
-      "confident": true
+      "versionIds": [],
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.ilsoap.lego_keen_v1.1.k1.2003-12-18.zip",
@@ -526,7 +527,8 @@
         "args": []
       },
       "versionIds": [],
-      "confident": true
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/Packs/ModPacks/l.keen_community.lego_keen.2012-02-10.zip",
@@ -565,7 +567,8 @@
         "args": []
       },
       "versionIds": [],
-      "confident": false
+      "confident": false,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/Packs/Keen1/l.eazyjay.k1.2003-11-09.zip",
@@ -589,10 +592,9 @@
         "patch": "TBMEM.pat",
         "args": []
       },
-      "versionIds": [
-        "keen2-1.31"
-      ],
-      "confident": true
+      "versionIds": [],
+      "confident": true,
+      "complete": true
     },
     {
       "url": "https://files.shikadi.net/keenwiki/mods/Keen1/m.multimania.robot_rebellion.k1.2004-03-14.zip",
@@ -632,10 +634,9 @@
         "patch": "XKYKEEN4.PAT",
         "args": []
       },
-      "versionIds": [
-        "keen4-1.4-ega"
-      ],
-      "confident": false
+      "versionIds": [],
+      "confident": false,
+      "complete": true
     }
   ]
 }

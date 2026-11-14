@@ -1,7 +1,6 @@
 id: operation-ocflore
 name: "Operation Ocflore"
 game: keen4
-requires: [keen4-1.4-ega]
 authors: ["Bubbatom"]
 authorLinks:
   "Bubbatom": https://keenwiki.shikadi.net/wiki/User:Bubbatom
@@ -22,6 +21,8 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen4/m.bubbatom.operation_ocflore_v1.3.k4.2020-02-18.zip
     sha256: ae5d7d2c3823524dd2777c3866d6e50581fe95caa8bf93b169ed21c0f8cbcced
     size: 914993
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: CK4PATCH.EXE

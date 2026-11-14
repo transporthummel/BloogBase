@@ -17,6 +17,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.levellord.shadow_keen_2.k2.2004-07-17.zip
     sha256: 776affa234062ddc8bcfc30849efdfb6d1ef83625064a3ec8be7fd3db3331f71
     size: 440313
+# Brings an executable and all of the game's files: plays on any copy of it.
+standalone: true
+requiresGame: true
 recipe:
   type: batch
   file: duk3.bat

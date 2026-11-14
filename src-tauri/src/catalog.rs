@@ -27,6 +27,9 @@ pub struct Game {
     pub executables: Vec<String>,
     /// All of these must be present; `A|B` means either.
     pub required_files: Vec<String>,
+    /// Everything a full copy reads, `A|B` for either: a mod that brings
+    /// them all and an executable doesn't need the game's own files.
+    pub data_files: Vec<String>,
     /// Patterns for save games.
     pub saves: Vec<String>,
     /// Patterns for other files the game writes (config, high scores).
@@ -110,6 +113,16 @@ pub fn game(id: &str) -> Option<&'static Game> {
 }
 
 impl Game {
+    /// Whether the bare file names `names` hold an executable of the game
+    /// and all its [`Game::data_files`]: then nothing of the game's own
+    /// files is read.
+    pub fn all_in(&self, names: &[String]) -> bool {
+        let has = |n: &str| names.iter().any(|m| m.eq_ignore_ascii_case(n));
+        !self.data_files.is_empty()
+            && self.executables.iter().any(|e| has(e))
+            && self.data_files.iter().all(|d| d.split('|').any(has))
+    }
+
     /// Whether `name` (a bare file name) is something the game writes at runtime.
     pub fn is_state_file(&self, name: &str) -> bool {
         self.saves

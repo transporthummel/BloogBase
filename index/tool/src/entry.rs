@@ -62,14 +62,16 @@ pub struct Entry {
     /// a menu starting several (Foray in the Forest's `FITF-X.EXE`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cover: Option<String>,
-    /// Ships its whole game (a source mod) and plays without a copy of
-    /// `game`, the game it's built on. Apps before 1.2.0 ignore it and play
-    /// it on that game.
+    /// Ships its whole game and plays from its own files alone, without a
+    /// copy of `game`: a source mod, or a mod with an executable and all of
+    /// the game's files (decided 2026-11-14). Apps before 1.2.0 ignore it
+    /// and play it on that game.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub standalone: bool,
-    /// With `standalone`: still plays from its own files alone, but only for
-    /// players who own `game`, as it carries the game's own graphics or
-    /// sounds (from an episode with no free shareware).
+    /// With `standalone`: still plays from its own files alone, on any
+    /// version, but only for players who own `game`, as it carries the
+    /// game's own graphics or sounds (from an episode with no free
+    /// shareware).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub requires_game: bool,
     #[serde(default)]
@@ -134,7 +136,7 @@ pub struct Download {
     pub recipe: Option<Recipe>,
     /// File name → SHA-256 of the programs it runs (its recipe's files and
     /// the cover), by which the app knows the mod in a player's own folder;
-    /// every download of a standalone mod lists them.
+    /// every download of a source mod lists them.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub programs: BTreeMap<String, String>,
 }
@@ -382,8 +384,18 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
         fail("extends names the entry itself".into());
     }
     if entry.standalone {
-        if !matches!(entry.recipe, Recipe::Program { .. } | Recipe::Batch { .. }) {
-            fail("standalone: the recipe has to run a program or batch file of the mod".into());
+        // A source mod runs a program of its own, known by `programs`; one
+        // with all of Keen's files is known by its download.
+        let listed = entry
+            .downloads
+            .iter()
+            .filter(|d| !d.programs.is_empty())
+            .count();
+        if listed > 0 && listed < entry.downloads.len() {
+            fail("standalone: every download lists its programs, or none does".into());
+        }
+        if listed > 0 && !matches!(entry.recipe, Recipe::Program { .. } | Recipe::Batch { .. }) {
+            fail("standalone: a source mod's recipe runs a program or batch file of it".into());
         }
         if !entry.requires.is_empty() || !entry.version_recipes.is_empty() {
             fail("standalone: plays on no game version, so no requires or versionRecipes".into());
@@ -439,6 +451,9 @@ fn download_problems(entry: &Entry, d: &Download, newest: bool, fail: &mut impl 
                 d.url
             ));
         }
+        return;
+    }
+    if d.programs.is_empty() {
         return;
     }
     let wanted = entry.programs_of(d);
@@ -809,6 +824,27 @@ recipe:
         bad.standalone = false;
         bad.requires = vec!["keen4-1.4-ega".into()];
         assert_eq!(problems(&bad, "aurora-bliss", &catalog()).len(), 3);
+    }
+
+    #[test]
+    fn mods_with_all_of_keens_files_are_standalone_on_their_patch() {
+        let mut e = parse(AURORA).unwrap();
+        e.standalone = true;
+        e.requires.clear();
+        assert_eq!(
+            problems(&e, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+        e.requires_game = true;
+        assert_eq!(
+            problems(&e, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+        // Programs are for source mods.
+        e.downloads[0]
+            .programs
+            .insert("CK4PATCH.EXE".into(), "ab".repeat(32));
+        assert_eq!(problems(&e, "aurora-bliss", &catalog()).len(), 2);
     }
 
     #[test]

@@ -17,6 +17,8 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.keenrush.fall_up.k1.2010-11-23.zip
     sha256: a87eea8ce22727babe56b29ae8c6398ab393b82d1040436fe2ff8812c38f98b0
     size: 144108
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
 recipe:
   type: patch
   patcher: ck1patch.exe
