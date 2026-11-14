@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { LibraryBig, Puzzle } from "lucide-react";
+import { LibraryBig, Puzzle, TriangleAlert } from "lucide-react";
 import { type ReactElement, type ReactNode, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -262,21 +262,24 @@ export function SetUp({
         </p>
       )}
       {missingGame && (
-        <Notice>
-          {t("mods.missingGame", {
-            game: game?.title ?? info.gameId,
-            versions: option.gameVersions.map((v) => `v${v}`).join(", "),
-            yours,
-            context:
-              option.gameVersions.length === 0 ? undefined : yours ? "otherVersion" : "version",
-          })}
-          {yours && option.versionIds.length > 0 && (
-            <>
-              {" "}
-              <WhyExactVersion requires={option.versionIds} />
-            </>
-          )}
-        </Notice>
+        <p role="status" className="flex items-start gap-2 text-sm">
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+          <span>
+            {t("mods.missingGame", {
+              game: game?.title ?? info.gameId,
+              versions: option.gameVersions.map((v) => `v${v}`).join(", "),
+              yours,
+              context:
+                option.gameVersions.length === 0 ? undefined : yours ? "otherVersion" : "version",
+            })}
+            {yours && option.versionIds.length > 0 && (
+              <>
+                {" "}
+                <WhyExactVersion requires={option.versionIds} />
+              </>
+            )}
+          </span>
+        </p>
       )}
       {candidates && candidates.length > 1 && (
         <label className="grid gap-1 text-sm">
