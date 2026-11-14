@@ -26,7 +26,7 @@ import { FreeGames } from "./FreeGames";
 import { IndexError } from "./IndexError";
 import { ModCard } from "./ModCard";
 import { TABS, type DiscoverTab } from "./tabs";
-import { useIndexMods, useIndexStatus, useRefreshIndex } from "./queries";
+import { useFreeGames, useIndexMods, useIndexStatus, useRefreshIndex } from "./queries";
 
 const KINDS: ModKind[] = ["episode", "levelpack", "conversion"];
 
@@ -100,6 +100,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
   const status = useIndexStatus();
   const mods = useIndexMods();
   const installs = useInstalls();
+  const freeGames = useFreeGames();
 
   // A link, e.g. to the news dialog's new mods, shows what it promises:
   // remembered filters could hide them.
@@ -138,7 +139,8 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
     .filter(({ entry: e }) => {
       if (game && !listedUnder(e, game)) return false;
       if (kind && e.type !== kind) return false;
-      if (playable && !isPlayable(e, owned, games)) return false;
+      // A mod made for a free version is playable: it comes along.
+      if (playable && !isPlayable(e, owned, games, freeGames.data)) return false;
       if (!needle) return true;
       const description = entryDescription(e, i18n.language) ?? "";
       return [e.name, description, ...e.authors, ...(e.tags ?? [])].some((s) =>

@@ -545,7 +545,7 @@
       "newest": "Neueste",
       "name": "Name"
     },
-    "playable": "Für mich spielbar",
+    "playable": "Mods ausblenden, die ich nicht spielen kann",
     "emptyTitle": "Noch keine Mods",
     "empty": "Die Mod-Liste ist noch nicht da. BloogBase holt sie bei jedem Start; bleibt sie leer, prüfe deine Internetverbindung.",
     "clearFilters": "Filter zurücksetzen",

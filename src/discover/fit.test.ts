@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FreeGame, Game, IndexEntry } from "../bindings";
-import { NO_GAME, freeFit, isSourceMod, listedUnder, needsNoGame } from "./fit";
+import { NO_GAME, freeFit, isSourceMod, listedUnder, needsNoGame, playable } from "./fit";
 
 const entry = (extra: Partial<IndexEntry>, programs: Record<string, string> = {}) =>
   ({
@@ -56,6 +56,13 @@ describe("freeFit", () => {
     // Any version: the setup wizard's shareware, never a demo.
     expect(freeFit([], keen4, all)?.versionId).toBe("keen4-1.4-ega");
     expect(freeFit([], keen4, [free("keen4-demo")])).toBeUndefined();
+  });
+
+  it("makes a mod playable without a copy when it comes along", () => {
+    const aurora = entry({ requires: ["keen4-1.4-ega"] });
+    expect(playable(aurora, [], [keen4], all)).toBe(true);
+    expect(playable(aurora, [], [keen4], [])).toBe(false);
+    expect(playable({ ...aurora, requires: ["keen4-1.1-ega"] }, [], [keen4], all)).toBe(false);
   });
 
   it("has none for versions that aren't free, or one already there", () => {

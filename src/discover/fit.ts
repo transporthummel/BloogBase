@@ -38,10 +38,20 @@ export function isSourceMod(entry: IndexEntry): boolean {
   );
 }
 
-/** Whether `entry` can be played with `owned`: on a copy it fits, or on none
- * at all for a standalone mod. */
-export function playable(entry: IndexEntry, owned: Owned[], games: Game[] = []): boolean {
-  return needsNoGame(entry) || fitting(entry, owned, games).length > 0;
+/** Whether `entry` can be played with `owned`: on a copy it fits, on none
+ * at all for a standalone mod, or on a free version that comes along. */
+export function playable(
+  entry: IndexEntry,
+  owned: Owned[],
+  games: Game[] = [],
+  free: FreeGame[] = [],
+): boolean {
+  const game = games.find((g) => g.id === entry.game);
+  return (
+    needsNoGame(entry) ||
+    fitting(entry, owned, games).length > 0 ||
+    freeFit(entry.requires, game, free) !== undefined
+  );
 }
 
 /** Whether `entry` is listed under `game`, a game id or {@link NO_GAME};
