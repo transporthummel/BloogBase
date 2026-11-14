@@ -13,19 +13,18 @@
 
 - Keys follow the keyboard layout on Linux and macOS too, so a German keyboard answers "Y" with Y there as well.
 - On macOS, keys are named as on Mac keyboards (⌃ control, ⌥ option, ↩ return, ⌫ delete, fn with the arrows for Home/End/Page Up/Page Down) in the Controls tab, the settings' hints, the one-button firing note and the controller's texts; the Controls tab notes that F-keys may need fn, and fullscreen is named ⌃⌘F (the View menu's shortcut; F11 shows the desktop there). The fullscreen button follows when the window switches through the menu or its green button.
-- "Add game or mod" puts the cursor in the KeenWiki link's field, ready to paste a link; "Browse mods" stays the green button.
+- With a search or filter set, Discover's count says how many of the mods are shown ("12 of 96 mods").
 - Adding a mod shows how many saves come with it, besides the number of files.
 - A game whose executable was renamed (KEEN5.EXE for KEEN5E.EXE) is recognised by the executable's hash, as long as the extension is the same, and gets its usual name back in the library; the player's folder stays as it is.
 - A mod that doesn't run on the player's copy of its game says which version that copy is, with "Learn more" explaining why patch mods need one exact release (CKPatch refuses FormGen, GT Interactive, CGA and other versions).
 - Steam and GOG games already in the library show their version when importing.
 - A mod that brings its own executable and all of its game's files plays on any version of the game, as the KeenWiki download does, and for Keen 1, Keen 4 and Keen Dreams without a copy of the game at all (their shareware is free). It stays with its game in Discover and the library, unlike source mods. Levels played over such a mod (xky1rooms over Episode X) need no copy either.
-- With a search or filter set, Discover's count says how many of the mods are shown ("12 of 96 mods").
 - Discover's "Works with my games" filter is now "Hide mods I can't play", as it keeps mods that need no game and those a free shareware version comes along with. Its game choice "No game needed" is now "Standalone", and so is the library's group for source mods.
 - A mod made for a free shareware version the library lacks (Keen 1 v1.31, Keen 4 v1.4 EGA or CGA, Keen Dreams v1.13) installs it along with the mod, in Discover and when adding a mod: the button says "Install" with both sizes added up and "With Keen 4 v1.4 EGA (shareware)" instead of "Needs …".
 - "What's new" shows the newest version's changes and folds away the versions skipped in between, with a link to all changes.
 - Without DOSBox, a game's or mod's page turns Play red as "DOSBox missing" and says below it why, with the download (or the way to the settings); a mod whose game is missing gets the red button too, and both notes an icon.
-- The Linux package (deb) carries a description, which Ubuntu's App Center showed as "(none)" before.
 - Release builds carry the mod list published when they were built, so mods can be found and installed before BloogBase first reaches GitHub Pages; a newer list from there replaces it as before.
+- "Add game or mod" puts the cursor in the KeenWiki link's field, ready to paste a link.
 
 ### Bug Fixes
 
@@ -36,6 +35,7 @@
 
 ### Misc
 
+- The Linux package (deb) carries a description, which Ubuntu's App Center showed as "(none)" before.
 - Updated dependencies, among them the built-in SQLite for a security fix (RUSTSEC-2026-0459).
 
 ## 1.2.1 (2026-11-10)
