@@ -69,7 +69,7 @@
     "group": {
       "games": "Games",
       "mods": "Mods",
-      "standalone": "No game needed"
+      "standalone": "Standalone"
     },
     "status": {
       "games_one": "{{n}} game",
