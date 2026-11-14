@@ -42,4 +42,4 @@ jobs:
 
       - name: Corpus test
         working-directory: src-tauri
-        run: cargo test --lib corpus -- --ignored --nocapture
+        run: cargo test --lib corpus_matches_expectations -- --ignored --nocapture

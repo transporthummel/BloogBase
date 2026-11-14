@@ -53,10 +53,12 @@ cache and compares.
 
 ```sh
 cd src-tauri
-cargo test --lib corpus -- --ignored --nocapture
+cargo test --lib corpus_matches_expectations -- --ignored --nocapture
 ```
 
-(`--lib` keeps the `keen-graphics` corpus test below out of the run.)
+(The full name keeps the `keen-graphics` corpus test below and the index
+check `index_entries_say_whether_they_bring_their_game`, which needs the
+index's cached downloads, out of the run.)
 
 - Cache: `BLOOGBASE_MOD_CACHE`, default `.local/mods`.
 - Adding a mod: append `{ "url": "…" }` to the manifest, put the archive into
