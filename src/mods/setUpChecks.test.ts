@@ -151,7 +151,7 @@ describe("setUpWarnings", () => {
   });
 
   it("tells what a mod that doesn't run on its own needs", () => {
-    const base = { name: "Lego Keen", modId: "lego", indexId: null };
+    const base = { name: "Lego Keen", modId: "lego", indexId: null, standalone: false };
     expect(warnings(undefined, { missingFiles: ["LEGO.CK4"], baseMod: base })).toMatchObject({
       incomplete: true,
       levelsFor: false,

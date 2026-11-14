@@ -90,6 +90,7 @@ impl BaseCandidate {
             name: self.name.clone(),
             mod_id: self.mod_id.clone(),
             index_id: self.index_id.clone(),
+            standalone: self.standalone,
         }
     }
 }

@@ -77,8 +77,13 @@ export function SetUp({
 
   const game = games.data?.find((g) => g.id === info.gameId);
   const option = info.recipes[recipeIndex];
-  // A mod with all of a free game's files goes on none.
-  const candidates = info.standalone ? [] : installs.data?.filter((i) => fits(info, option, i));
+  // The mod it belongs over, which it's played over unless unticked.
+  const base = option.baseMod;
+  const [playOver, setPlayOver] = useState(true);
+  const overBase = !!base && playOver;
+  // A mod with all of a free game's files goes on none, and so does one over it.
+  const standalone = overBase ? base.standalone : info.standalone;
+  const candidates = standalone ? [] : installs.data?.filter((i) => fits(info, option, i));
   const others = otherVersions(mods.data ?? [], info, name, origin, replacing);
   // Picked to replace it, but for another game.
   const wrongGame = mods.data?.find((m) => m.id === replacing && m.gameId !== info.gameId);
@@ -89,7 +94,15 @@ export function SetUp({
   const target = pickTarget(candidates ?? [], installId, replacedInstall, game);
   // Waits for the mods, so the question about another version isn't skipped.
   const ready = !!installs.data && !!mods.data && !wrongGame;
-  const warnings = setUpWarnings({ info, option, origin, game, candidates, target });
+  const warnings = setUpWarnings({
+    info,
+    option,
+    origin,
+    game,
+    candidates,
+    target,
+    standalone,
+  });
   // Copies of another version, when it fits none.
   const yours = useOwnedVersions(info.gameId, game);
   // Without a fitting copy, a free one comes along when there is one.
@@ -105,10 +118,6 @@ export function SetUp({
   // Warned of a missing game only when none comes along.
   const missingGame = warnings.missingGame && !free;
 
-  // The mod it belongs over, which it's played over unless unticked.
-  const base = option.baseMod;
-  const [playOver, setPlayOver] = useState(true);
-  const overBase = !!base && playOver;
   // The mod below, installed from the index first when it isn't yet.
   const startBase = useStartJob((indexId: string) =>
     commands.installIndexMod(indexId, target?.id ?? null, !target, null),

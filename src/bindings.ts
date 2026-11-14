@@ -333,6 +333,8 @@ export type BaseMod = {
 	modId: string | null,
 	/**  Its index entry, to install it from. */
 	indexId: string | null,
+	/**  It plays without a copy of the game, and so does a mod over it. */
+	standalone: boolean,
 };
 
 /**  The error shape every command returns to the frontend. */

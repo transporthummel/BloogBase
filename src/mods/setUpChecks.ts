@@ -81,6 +81,7 @@ export function setUpWarnings({
   game,
   candidates,
   target,
+  standalone = info.standalone,
 }: {
   info: ModInfo;
   option: RecipeOption;
@@ -89,6 +90,8 @@ export function setUpWarnings({
   /** Undefined while the library loads. */
   candidates: Install[] | undefined;
   target: Install | undefined;
+  /** It plays without a copy of the game; also over a mod that does. */
+  standalone?: boolean;
 }): SetUpWarnings {
   const versionOf = (i: Install) => game?.versions.find((v) => v.id === i.versionId);
   // A patch that names no version is most likely made for the version most mods use.
@@ -106,7 +109,7 @@ export function setUpWarnings({
   const incomplete = option.missingFiles.length > 0;
   return {
     otherGame: !!origin?.gameId && origin.gameId !== info.gameId,
-    missingGame: !info.standalone && candidates !== undefined && candidates.length === 0,
+    missingGame: !standalone && candidates !== undefined && candidates.length === 0,
     assumedInstead,
     modifiedGame:
       !!target && !info.complete && option.recipe.type === "patch" && isModified(targetVersion),

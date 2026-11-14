@@ -904,6 +904,7 @@ fn mods_made_to_be_copied_over_another_are_found_by_its_files() {
         index_id: Some(slug(n)),
         files: None,
         provides: provides.iter().map(|p| p.to_string()).collect(),
+        standalone: false,
     };
     let entries = [
         index("Lego Keen", &[]),
@@ -915,6 +916,7 @@ fn mods_made_to_be_copied_over_another_are_found_by_its_files() {
             name: "Bricks".into(),
             mod_id: None,
             index_id: Some("bricks".into()),
+            standalone: false,
         })
     );
     assert_eq!(needed_mod(missing, &entries[..1]), None);
@@ -930,6 +932,7 @@ fn mods_made_to_be_copied_over_another_are_found_by_its_files() {
         index_id: None,
         files: Some(files.to_path_buf()),
         provides: Vec::new(),
+        standalone: false,
     };
     let installed = [installed("Lego Levels", &lacks), installed("Blocks", &has)];
     let found = needed_mod(missing, &installed).unwrap();
@@ -969,6 +972,7 @@ fn levels_alone_are_for_the_mod_their_archive_names() {
         index_id: None,
         files: None,
         provides: Vec::new(),
+        standalone: false,
     };
     let installed = [candidate("Lego Keen"), candidate("Episode: Smile")];
     assert_eq!(
@@ -1141,6 +1145,37 @@ fn levels_added_by_hand_play_over_the_mod_they_name() {
 
     delete(&paths, &db, "aurora-bliss", false).unwrap();
     assert!(list(&db).unwrap().is_empty());
+}
+
+#[test]
+fn levels_over_a_standalone_mod_need_no_game_either() {
+    let (tmp, paths, db) = setup();
+    let base = tmp.path().join("index-aurora-bliss.zip");
+    write_zip(&base, AURORA);
+    let c = Curated {
+        standalone: true,
+        ..curated(aurora_patch(&[]))
+    };
+    install_curated(&paths, &db, &base, &c, None, false).unwrap();
+
+    // xky1rooms over Episode X: not on the player's Keen 1, like the mod below.
+    let zip = tmp.path().join("pack.zip");
+    write_zip(&zip, &[("Pack/LEVEL01.CK4", b"l")]);
+    let req = InstallModRequest {
+        name: "Pack".into(),
+        extends: Some("aurora-bliss".into()),
+        ..request(&zip, Recipe::Episode)
+    };
+    let m = install(&paths, &db, &req).unwrap();
+    assert!(standalone(&db, &m.id).unwrap());
+    let (profile, layers) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!(profile.install_id, None);
+    assert_eq!(profile.missing_game, None);
+    assert!(profile.standalone);
+    assert_eq!(
+        layers.mod_layer.unwrap().base,
+        Some(paths.mods.join("aurora-bliss/files"))
+    );
 }
 
 #[test]

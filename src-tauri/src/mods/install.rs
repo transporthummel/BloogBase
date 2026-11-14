@@ -173,8 +173,13 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
     } else {
         Some(option.version_ids.clone())
     };
+    // A mod over a standalone one plays without the game too.
+    let on_its_own = match &base {
+        Some(b) => b.standalone,
+        None => analysis.info.standalone,
+    };
     let target = match &req.install_id {
-        _ if analysis.info.standalone && base.is_none() => None,
+        _ if on_its_own => None,
         Some(id) => Some(picked_install(
             db,
             id,
@@ -193,8 +198,8 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
         n => n.to_string(),
     };
     let mut stored = Stored::picked(req, &analysis.info, name, option.recipe, requires);
+    stored.standalone = on_its_own;
     if base.is_none() {
-        stored.standalone = analysis.info.standalone;
         stored.own_files = analysis.info.complete;
     }
     match &replaced {
@@ -426,11 +431,17 @@ pub fn install_curated(
     check_recipe_files(paths, &analysis, c, base_id.as_deref())?;
     analysis.copies = copies_to_root(&analysis, &c.copy_to_root)?;
 
-    let stored = Stored::curated(c, base_id);
+    // A mod over a standalone one plays without the game too.
+    let on_its_own = match &base_id {
+        Some(id) => standalone(db, id)?,
+        None => c.standalone,
+    };
+    let mut stored = Stored::curated(c, base_id);
+    stored.standalone = on_its_own;
     let game = game(&c.game_id)?;
     let requires = stored.requires.as_deref();
     if let Some(mod_id) = find_by_index(db, &c.index_id)? {
-        let target = match c.standalone {
+        let target = match on_its_own {
             true => None,
             false => updated_install(db, &mod_id, game, requires)?,
         };
@@ -445,7 +456,7 @@ pub fn install_curated(
         );
     }
     let target = match install_id {
-        _ if c.standalone => None,
+        _ if on_its_own => None,
         Some(id) => Some(
             library_install(db, id)?
                 .filter(|i| fits(game, requires, i))
@@ -645,6 +656,15 @@ fn installed_of(db: &Db, index_id: &str) -> Result<Vec<(String, bool)>> {
 }
 
 /// Whether mod `mod_id` is composed from its own files alone.
+/// Whether the installed mod plays without a copy of its game.
+pub fn standalone(db: &Db, mod_id: &str) -> Result<bool> {
+    Ok(db.conn().query_row(
+        "SELECT COALESCE(standalone, 0) FROM mods WHERE id = ?1",
+        [mod_id],
+        |r| r.get(0),
+    )?)
+}
+
 pub fn own_files(db: &Db, mod_id: &str) -> Result<bool> {
     Ok(db
         .conn()
@@ -952,6 +972,8 @@ struct Base {
     name: String,
     recipe: Recipe,
     requires: Option<Vec<String>>,
+    /// It plays without a copy of the game, and so does the mod over it.
+    standalone: bool,
 }
 
 impl Base {
@@ -972,13 +994,23 @@ impl Base {
 /// The installed mod `mod_id` for a mod of `game_id` to be played over: same
 /// game, and not played over another one itself.
 fn base_of(db: &Db, mod_id: &str, game_id: &str) -> Result<Base> {
-    type Row = (String, String, String, Option<String>, Option<String>);
-    let (name, game, recipe, requires, extends): Row = db
+    type Row = (String, String, String, Option<String>, Option<String>, bool);
+    let (name, game, recipe, requires, extends, standalone): Row = db
         .conn()
         .query_row(
-            "SELECT name, game_id, recipe_json, requires_json, extends FROM mods WHERE id = ?1",
+            "SELECT name, game_id, recipe_json, requires_json, extends, COALESCE(standalone, 0)
+             FROM mods WHERE id = ?1",
             [mod_id],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
+            |r| {
+                Ok((
+                    r.get(0)?,
+                    r.get(1)?,
+                    r.get(2)?,
+                    r.get(3)?,
+                    r.get(4)?,
+                    r.get(5)?,
+                ))
+            },
         )
         .optional()?
         .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))?;
@@ -991,6 +1023,7 @@ fn base_of(db: &Db, mod_id: &str, game_id: &str) -> Result<Base> {
         name,
         recipe: serde_json::from_str(&recipe).unwrap_or(Recipe::Episode),
         requires: parse_requires(requires.as_deref()),
+        standalone,
     })
 }
 
@@ -1104,6 +1137,7 @@ mod tests {
             name: "Lego Keen".into(),
             recipe: batch("LEGO.BAT"),
             requires: None,
+            standalone: false,
         }
     }
 

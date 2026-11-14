@@ -127,6 +127,7 @@ function renderDialog(
 
 beforeEach(() => {
   vi.mocked(commands.listGames).mockResolvedValue([keen4]);
+  vi.mocked(commands.freeGames).mockReturnValue(ok([]));
   vi.mocked(commands.listInstalls).mockReturnValue(ok([install]));
   vi.mocked(commands.listMods).mockReturnValue(ok([]));
   vi.mocked(commands.listProfiles).mockReturnValue(ok([]));
@@ -244,7 +245,7 @@ test("plays one made to be copied over a mod from the index over it", async () =
         {
           ...patch,
           missingFiles: ["lego.tli"],
-          baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen" },
+          baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen", standalone: false },
           madeFor: null,
         },
       ],
@@ -322,7 +323,7 @@ test("doesn't install one made to be copied over a mod whose download failed", a
         {
           ...patch,
           missingFiles: ["lego.tli"],
-          baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen" },
+          baseMod: { name: "Lego Keen", modId: null, indexId: "lego-keen", standalone: false },
           madeFor: null,
         },
       ],
@@ -355,7 +356,7 @@ test("installs one made to be copied over an installed mod alone when unticked",
         {
           ...patch,
           missingFiles: ["lego.tli"],
-          baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null },
+          baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null, standalone: false },
           madeFor: null,
         },
       ],
@@ -385,7 +386,12 @@ test("plays levels alone over the mod their archive names", async () => {
           gameVersions: [],
           versionIds: [],
           missingFiles: [],
-          baseMod: { name: "Episode Smile", modId: "episode-smile", indexId: null },
+          baseMod: {
+            name: "Episode Smile",
+            modId: "episode-smile",
+            indexId: null,
+            standalone: false,
+          },
           madeFor: "Episode Smile",
         },
       ],
@@ -406,6 +412,49 @@ test("plays levels alone over the mod their archive names", async () => {
   expect(commands.installMod).toHaveBeenCalledWith(
     expect.objectContaining({ extends: "episode-smile" }),
   );
+});
+
+test("levels over a mod that needs no game need none either", async () => {
+  const levels = {
+    ...info,
+    name: "xky1rooms",
+    recipes: [
+      {
+        recipe: { type: "episode" as const },
+        origin: "",
+        gameVersions: [],
+        versionIds: [],
+        missingFiles: [],
+        baseMod: { name: "Episode X", modId: null, indexId: "episode-x", standalone: true },
+        madeFor: "Episode X",
+      },
+    ],
+  };
+  vi.mocked(commands.inspectMod).mockReturnValue(ok(levels));
+  vi.mocked(commands.listInstalls).mockReturnValue(ok([]));
+  vi.mocked(commands.freeGames).mockReturnValue(
+    ok([{ gameId: "keen4", versionId: "keen4-1.4-ega", setup: true, size: 1, installed: false }]),
+  );
+  vi.mocked(commands.installIndexMod).mockReturnValue(new Promise(() => {}));
+  renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  expect(await screen.findByRole("button", { name: "Install" })).toBeInTheDocument();
+  // No shareware comes along, and no game is missing.
+  expect(screen.queryByText(/shareware/)).toBeNull();
+  expect(screen.queryByText(/isn’t in your library/)).toBeNull();
+  // Not over it, the levels need the game.
+  await user.click(
+    screen.getByRole("checkbox", { name: "Play it over Episode X, which is installed with it" }),
+  );
+  expect(await screen.findByText("With Keen 4 v1.4 EGA (shareware)")).toBeInTheDocument();
+  await user.click(
+    screen.getByRole("checkbox", { name: "Play it over Episode X, which is installed with it" }),
+  );
+  await user.click(screen.getByRole("button", { name: "Install" }));
+  expect(commands.installIndexMod).toHaveBeenCalledWith("episode-x", null, true, null);
+  expect(commands.installFreeGame).not.toHaveBeenCalled();
 });
 
 test("says when levels alone are for a mod it doesn't know", async () => {
@@ -590,7 +639,7 @@ test("checks again for missing files when another way to start is picked", async
     recipe: { type: "patch", patcher: "CK4PATCH.EXE", patch: "tileinfo.pat", args: [] },
     origin: "tileinfo.pat",
     missingFiles: ["tileinfo.tli"],
-    baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null },
+    baseMod: { name: "Lego Keen", modId: "lego-keen", indexId: null, standalone: false },
   };
   vi.mocked(commands.inspectMod).mockReturnValue(
     ok({ ...info, confident: false, recipes: [patch, leftover] }),

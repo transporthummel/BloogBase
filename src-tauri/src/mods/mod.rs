@@ -89,6 +89,8 @@ pub struct BaseMod {
     pub mod_id: Option<String>,
     /// Its index entry, to install it from.
     pub index_id: Option<String>,
+    /// It plays without a copy of the game, and so does a mod over it.
+    pub standalone: bool,
 }
 
 /// A mod [`needed_mod`] may pick.
@@ -101,6 +103,7 @@ pub struct BaseCandidate {
     pub files: Option<PathBuf>,
     /// Files its index entry says mods copied over it lack.
     pub provides: Vec<String>,
+    pub standalone: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Type)]

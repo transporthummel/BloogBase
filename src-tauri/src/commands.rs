@@ -953,6 +953,7 @@ fn find_base_mods(app: &AppHandle, info: &mut ModInfo) {
             index_id: Some(e.id),
             files: None,
             provides: e.provides,
+            standalone: e.standalone,
         })
         .chain(
             installed
@@ -960,6 +961,7 @@ fn find_base_mods(app: &AppHandle, info: &mut ModInfo) {
                 .filter(|m| m.game_id == info.game_id && m.extends.is_none())
                 .map(|m| mods::BaseCandidate {
                     files: Some(paths.mods.join(&m.id).join("files")),
+                    standalone: mods::standalone(&db, &m.id).unwrap_or(false),
                     name: m.name,
                     mod_id: Some(m.id),
                     index_id: m.index_id,
