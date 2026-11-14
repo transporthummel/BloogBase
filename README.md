@@ -89,7 +89,7 @@ without an app update.
 
 <a href="docs/controller.md"><img src="docs/controller/keen4-6-xbox.svg" alt="What each button of an Xbox controller does in Keen 4–6, while playing and, with View held, in the menus" width="560"></a>
 
-Xbox and PlayStation controllers (DualShock 4) work in every game and in
+Xbox and PlayStation controllers (DualShock 4, DualSense) work in every game and in
 BloogBase itself, without any setup. In the games, the controller presses
 the keys the game is set to, your own ones too; with View or Share held it
 presses the keys of the menus, picks save slots and types the name of a
@@ -171,11 +171,13 @@ Midnight Galaxy; above it is in Vintage Beige. In English and German.
 
 - Knows 50 releases of the seven games by their files: every version from
   v1.0 to v1.93, EGA and CGA, FormGen, GT Interactive and id Anthology
-  releases, and even the betas and demos (also in Discover).
+  releases, and even the betas and demos (also in Discover). A renamed
+  executable doesn't fool it.
 - Several versions of a game side by side. Mods go on the copy they fit best,
   and you can switch.
-- A mod can be installed before its game; it waits and tells you where to
-  get it.
+- A mod made for Keen 1, Keen 4 or Keen Dreams brings their free shareware
+  episode along when you don't have it; any other mod can be installed
+  before its game, waits and tells you where to get it.
 - Your own patch lines for a copy of a game go into it and every mod played
   on it.
 
@@ -185,7 +187,8 @@ Midnight Galaxy; above it is in Vintage Beige. In English and German.
 - Brings what mods leave out: CKPatch, KDrPatch and a DPMI host for DJGPP
   programs, unmodified and with their licences.
 - Some mods bring their whole game along, like Foray in the Forest: they
-  play without any copy of Keen.
+  play without any copy of Keen. Mods with all of their game's files play on
+  any version of it, and for Keen 1, Keen 4 and Keen Dreams without one.
 - Level packs made for another mod are played over it, each with its own
   saves.
 - Runs DOSBox as the machine a mod needs: a composite CGA for the Composite
