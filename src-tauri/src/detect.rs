@@ -23,6 +23,27 @@ pub struct Detection {
     pub base_files: Vec<String>,
     /// Saves, config and score files found next to the game.
     pub state_files: Vec<String>,
+    /// Base files under another name than the game expects: path in the
+    /// source → the name they get in the library. An executable the
+    /// player renamed (`KEEN5.EXE` for `KEEN5E.EXE`) is known by its hash.
+    pub renamed: BTreeMap<String, String>,
+}
+
+impl Detection {
+    /// The name `rel`, one of `base_files`, gets in the library.
+    pub fn library_name<'a>(&'a self, rel: &'a str) -> &'a str {
+        self.renamed
+            .get(rel)
+            .map_or_else(|| split_dir(rel).1, String::as_str)
+    }
+
+    /// The base file the library will have as `name`.
+    pub fn base_file(&self, name: &str) -> Option<&str> {
+        self.base_files
+            .iter()
+            .find(|rel| self.library_name(rel).eq_ignore_ascii_case(name))
+            .map(String::as_str)
+    }
 }
 
 pub fn detect(source: &Source) -> Result<Vec<Detection>> {
@@ -46,12 +67,20 @@ pub fn detect(source: &Source) -> Result<Vec<Detection>> {
                 .any(|n| by_name.contains_key(&n.to_ascii_uppercase()))
         };
 
-        let games: Vec<&Game> = catalog::games()
-            .iter()
-            .filter(|g| {
-                g.executables.iter().any(|e| has(e)) && g.required_files.iter().all(|f| has(f))
-            })
-            .collect();
+        // Hashes of this directory's files, for renamed executables.
+        let mut hashes: HashMap<&str, String> = HashMap::new();
+        let mut games: Vec<(&Game, BTreeMap<String, String>)> = Vec::new();
+        for game in catalog::games() {
+            if !game.required_files.iter().all(|f| has(f)) {
+                continue;
+            }
+            if game.executables.iter().any(|e| has(e)) {
+                games.push((game, BTreeMap::new()));
+            } else if let Some((rel, name)) = renamed_executable(source, game, &files, &mut hashes)?
+            {
+                games.push((game, BTreeMap::from([(rel.to_string(), name.to_string())])));
+            }
+        }
         if games.is_empty() {
             continue;
         }
@@ -66,7 +95,11 @@ pub fn detect(source: &Source) -> Result<Vec<Detection>> {
             .filter(|r| !is_state(r))
             .map(|r| r.to_string())
             .collect();
-        for game in games {
+        for (game, renamed) in games {
+            let mut by_name = by_name.clone();
+            for (rel, name) in &renamed {
+                by_name.insert(name.to_ascii_uppercase(), rel.as_str());
+            }
             found.push(Detection {
                 game_id: game.id.clone(),
                 dir: dir.to_string(),
@@ -77,10 +110,47 @@ pub fn detect(source: &Source) -> Result<Vec<Detection>> {
                     .filter(|r| game.is_state_file(split_dir(r).1))
                     .map(|r| r.to_string())
                     .collect(),
+                renamed,
             });
         }
     }
     Ok(found)
+}
+
+/// A file among `files` (one directory) that is a known executable of
+/// `game` under another name, with that name: same extension, same hash.
+/// The first catalog version with a match wins.
+fn renamed_executable<'a>(
+    source: &Source,
+    game: &'a Game,
+    files: &[&'a str],
+    hashes: &mut HashMap<&'a str, String>,
+) -> Result<Option<(&'a str, &'a str)>> {
+    let extension = |name: &str| name.rsplit_once('.').map(|(_, e)| e.to_ascii_uppercase());
+    for version in &game.versions {
+        for (name, expected) in &version.files {
+            if !game
+                .executables
+                .iter()
+                .any(|e| e.eq_ignore_ascii_case(name))
+            {
+                continue;
+            }
+            for &rel in files {
+                let file = split_dir(rel).1;
+                if extension(file) != extension(name) || game.is_state_file(file) {
+                    continue;
+                }
+                if !hashes.contains_key(rel) {
+                    hashes.insert(rel, sha256_hex(&source.read(rel)?));
+                }
+                if hashes[rel] == *expected {
+                    return Ok(Some((rel, name.as_str())));
+                }
+            }
+        }
+    }
+    Ok(None)
 }
 
 /// The catalog version of `game` whose files lie at the root of `source`.
@@ -242,6 +312,104 @@ mod tests {
             id(&game, &by_name).as_deref(),
             Some("kdreams-1.93-anthology")
         );
+    }
+
+    #[test]
+    fn renamed_executable_is_known_by_its_hash() {
+        let mut game = catalog::game("keen5").unwrap().clone();
+        let exe: &[u8] = b"keen5";
+        game.versions[1]
+            .files
+            .insert("KEEN5E.EXE".into(), sha256_hex(exe));
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(
+            tmp.path(),
+            &[
+                ("K5/KEEN5.EXE", exe),
+                ("K5/OTHER.EXE", b"other"),
+                ("K5/KEEN5.TXT", exe),
+            ],
+        );
+        let source = Source::open(tmp.path()).unwrap();
+        let files = ["K5/KEEN5.TXT", "K5/OTHER.EXE", "K5/KEEN5.EXE"];
+        let found = |game: &Game| {
+            renamed_executable(&source, game, &files, &mut HashMap::new())
+                .unwrap()
+                .map(|(rel, name)| (rel.to_string(), name.to_string()))
+        };
+        // Only a file with the executable's extension counts.
+        assert_eq!(
+            found(&game),
+            Some(("K5/KEEN5.EXE".into(), "KEEN5E.EXE".into()))
+        );
+        assert_eq!(found(catalog::game("keen5").unwrap()), None);
+
+        let d = Detection {
+            game_id: "keen5".into(),
+            dir: "K5".into(),
+            version_id: None,
+            base_files: files.map(String::from).to_vec(),
+            state_files: Vec::new(),
+            renamed: BTreeMap::from([("K5/KEEN5.EXE".into(), "KEEN5E.EXE".into())]),
+        };
+        assert_eq!(d.library_name("K5/KEEN5.EXE"), "KEEN5E.EXE");
+        assert_eq!(d.library_name("K5/OTHER.EXE"), "OTHER.EXE");
+        assert_eq!(d.base_file("keen5e.exe"), Some("K5/KEEN5.EXE"));
+        assert_eq!(d.base_file("KEEN5.EXE"), None);
+    }
+
+    /// A real release with its executable renamed is found and identified.
+    ///
+    /// `cargo test --lib detect::tests::real_renamed_executable -- --ignored`
+    #[test]
+    #[ignore = "needs the real games"]
+    fn real_renamed_executable() {
+        let root = std::env::var_os("KEEN_GAMES")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| {
+                std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../.local/games")
+            })
+            .join("versions");
+        for (folder, exe, renamed, version) in [
+            (
+                "Commander Keen 5 v1.4",
+                "KEEN5E.EXE",
+                "KEEN5.EXE",
+                "keen5-1.4-ega",
+            ),
+            (
+                "Commander Keen 4 v1.4",
+                "KEEN4E.EXE",
+                "K4.EXE",
+                "keen4-1.4-ega",
+            ),
+            (
+                "Commander Keen 6 v1.4",
+                "KEEN6.EXE",
+                "KEEN6E1.EXE",
+                "keen6-1.4-ega",
+            ),
+        ] {
+            let tmp = tempfile::tempdir().unwrap();
+            for e in std::fs::read_dir(root.join(folder)).unwrap() {
+                let e = e.unwrap();
+                let name = e.file_name().to_string_lossy().into_owned();
+                let to = if name.eq_ignore_ascii_case(exe) {
+                    renamed
+                } else {
+                    &name
+                };
+                std::fs::copy(e.path(), tmp.path().join(to)).unwrap();
+            }
+            let found = detect(&Source::open(tmp.path()).unwrap()).unwrap();
+            assert_eq!(found.len(), 1, "{folder}");
+            assert_eq!(found[0].version_id.as_deref(), Some(version), "{folder}");
+            assert_eq!(
+                found[0].renamed,
+                BTreeMap::from([(renamed.to_string(), exe.to_string())]),
+                "{folder}"
+            );
+        }
     }
 
     #[test]

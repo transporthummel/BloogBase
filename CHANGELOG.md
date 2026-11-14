@@ -14,6 +14,7 @@
 - Keys follow the keyboard layout on Linux and macOS too, so a German keyboard answers "Y" with Y there as well.
 - On macOS, keys are named as on Mac keyboards (⌃ control, ⌥ option, ↩ return, ⌫ delete, fn with the arrows for Home/End/Page Up/Page Down) in the Controls tab, the settings' hints, the one-button firing note and the controller's texts; the Controls tab notes that F-keys may need fn, and fullscreen is named ⌃⌘F (the View menu's shortcut; F11 shows the desktop there). The fullscreen button follows when the window switches through the menu or its green button.
 - Adding a mod shows how many saves come with it, besides the number of files.
+- A game whose executable was renamed (KEEN5.EXE for KEEN5E.EXE) is recognised by the executable's hash, as long as the extension is the same, and gets its usual name back in the library; the player's folder stays as it is.
 - A mod that doesn't run on the player's copy of its game says which version that copy is, with "Learn more" explaining why patch mods need one exact release (CKPatch refuses FormGen, GT Interactive, CGA and other versions).
 - Steam and GOG games already in the library show their version when importing.
 - "What's new" shows the newest version's changes and folds away the versions skipped in between, with a link to all changes.

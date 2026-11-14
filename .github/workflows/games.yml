@@ -66,7 +66,7 @@ jobs:
 
       - name: Versions
         working-directory: src-tauri
-        run: cargo test --lib detect::tests::real_versions -- --ignored
+        run: cargo test --lib detect::tests::real_ -- --ignored
 
       - name: Title screens
         working-directory: src-tauri

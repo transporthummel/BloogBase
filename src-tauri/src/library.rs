@@ -18,7 +18,7 @@ use crate::detect::{self, Detection, detect};
 use crate::error::{Error, Result};
 use crate::mods;
 use crate::paths::AppPaths;
-use crate::source::{Source, split_dir};
+use crate::source::Source;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -103,11 +103,7 @@ pub fn import_from(
     for d in detections {
         let game = catalog::game(&d.game_id).expect("detections come from the catalog");
         let key = release_key(game, d.version_id.as_deref(), |name| {
-            d.base_files
-                .iter()
-                .find(|rel| split_dir(rel).1.eq_ignore_ascii_case(name))
-                .map(|rel| source.read(rel))
-                .transpose()
+            d.base_file(name).map(|rel| source.read(rel)).transpose()
         })?;
         if key.is_some_and(|k| !have.insert(k)) {
             skipped.push(release_name(game, &d));
@@ -208,11 +204,7 @@ fn release_key(
 pub fn has_release(source: &Source, d: &Detection, have: &HashSet<String>) -> Result<bool> {
     let game = catalog::game(&d.game_id).expect("detections come from the catalog");
     let key = release_key(game, d.version_id.as_deref(), |name| {
-        d.base_files
-            .iter()
-            .find(|rel| split_dir(rel).1.eq_ignore_ascii_case(name))
-            .map(|rel| source.read(rel))
-            .transpose()
+        d.base_file(name).map(|rel| source.read(rel)).transpose()
     })?;
     Ok(key.is_some_and(|k| have.contains(&k)))
 }
@@ -273,11 +265,15 @@ fn import_one(
     let result = (|| {
         // Copy into a staging dir first so a failed import leaves nothing half-done.
         let _ = fs::remove_dir_all(&staging);
+        // A renamed executable gets the name the game expects.
         for (files, sub) in [(&d.base_files, "base"), (&d.state_files, "state")] {
             fs::create_dir_all(staging.join(sub))?;
             for rel in files {
-                source.copy_to(rel, &staging.join(sub).join(split_dir(rel).1))?;
+                source.copy_to(rel, &staging.join(sub).join(d.library_name(rel)))?;
             }
+        }
+        for (rel, name) in &d.renamed {
+            tracing::info!("{rel} is {name} of {}, imported under that name", game.id);
         }
         fs::create_dir(&profile_dir)?;
         fs::rename(staging.join("base"), install_dir.join("base"))?;
@@ -634,6 +630,30 @@ mod tests {
         assert_eq!(second[0].id, "keen4-2");
         assert_eq!(second[0].source, InstallSource::Zip);
         assert_eq!(list(&db).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn a_renamed_executable_gets_its_name_back() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("Keen 4");
+        write_folder(&src, KEEN4);
+        fs::rename(src.join("KEEN4E.EXE"), src.join("KEEN4.BIN")).unwrap();
+        let d = Detection {
+            game_id: "keen4".into(),
+            dir: String::new(),
+            version_id: None,
+            base_files: ["AUDIO.CK4", "GAMEMAPS.CK4", "KEEN4.BIN"]
+                .map(String::from)
+                .to_vec(),
+            state_files: Vec::new(),
+            renamed: [("KEEN4.BIN".to_string(), "KEEN4E.EXE".to_string())].into(),
+        };
+        let source = Source::open(&src).unwrap();
+        let install = import_one(&paths, &db, &source, InstallSource::Folder, "x", &d).unwrap();
+        let base = paths.library.join(&install.id).join("base");
+        assert_eq!(names(&base), ["AUDIO.CK4", "GAMEMAPS.CK4", "KEEN4E.EXE"]);
+        // The player's folder keeps its name.
+        assert!(src.join("KEEN4.BIN").exists());
     }
 
     #[test]

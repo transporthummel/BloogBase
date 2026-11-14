@@ -76,7 +76,7 @@ for the version test; the others need it set, as an absolute path):
 
 ```sh
 cd src-tauri
-cargo test --lib detect::tests::real_versions -- --ignored
+cargo test --lib detect::tests::real_ -- --ignored   # versions, renamed executables
 KEEN_GAMES=… cargo test -p keen-graphics corpus -- --ignored
 KEEN_GAMES=… cargo test --lib covers::tests::dreams_map_titles -- --ignored
 KEEN_MODS=<unpacked mods, one folder each> KEEN_GAMES=… KEEN_OUT=<folder> \
