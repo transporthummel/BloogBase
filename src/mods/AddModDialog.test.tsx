@@ -1330,8 +1330,9 @@ test("leads with the mod list, or with the KeenWiki link once it's all installed
   const client = new QueryClient();
   client.setQueryData(indexModsKey, [auroraInIndex]);
   renderDialog(client);
-  const list = screen.getByRole("link", { name: "Browse mods" });
-  expect(list).toHaveFocus();
+  // The link's field takes the focus anyway, to paste into.
+  expect(screen.getByRole("textbox", { name: "Add a mod from KeenWiki" })).toHaveFocus();
+  expect(screen.getByRole("link", { name: "Browse mods" })).toHaveClass("bg-accent");
   expect(screen.getByText(/tested and installed with one click/)).toBeInTheDocument();
   cleanup();
 

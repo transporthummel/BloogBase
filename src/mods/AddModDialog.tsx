@@ -166,7 +166,7 @@ export function AddModDialog({
           disabled={inspect.isPending}
           onDownloaded={setFromWiki}
           onCancel={onClose}
-          focus={haveAll}
+          leads={haveAll}
           before={
             // The curated list first: the easy way for anyone new to mods;
             // then KeenWiki, where new mods come from.
@@ -181,7 +181,6 @@ export function AddModDialog({
                 to="/discover"
                 className={buttonClass(haveAll ? "secondary" : "primary")}
                 onClick={onClose}
-                data-autofocus={!haveAll || undefined}
               >
                 <Compass className="size-4" aria-hidden />
                 {t("mods.browseList")}
@@ -236,7 +235,7 @@ export function AddModDialog({
 function AddFrom({
   wiki,
   before,
-  focus,
+  leads,
   children,
   footer,
   ...props
@@ -246,12 +245,12 @@ function AddFrom({
   onDownloaded: (d: Downloaded) => void;
   onCancel: () => void;
   before: ReactNode;
-  focus: boolean;
+  leads: boolean;
   children: ReactNode;
   footer: ReactNode;
 }) {
   return wiki ? (
-    <KeenwikiImport before={before} focus={focus} footer={footer} {...props}>
+    <KeenwikiImport before={before} leads={leads} footer={footer} {...props}>
       {children}
     </KeenwikiImport>
   ) : (

@@ -27,7 +27,7 @@ export function KeenwikiImport({
   onDownloaded,
   onCancel,
   before,
-  focus = false,
+  leads = false,
   children,
   footer,
 }: {
@@ -36,8 +36,8 @@ export function KeenwikiImport({
   onCancel: () => void;
   /** Ways to add a mod shown above the link. */
   before?: ReactNode;
-  /** The link leads: its field takes the focus and Look up is the green button. */
-  focus?: boolean;
+  /** The link leads: Look up is the green button. Its field always takes the focus. */
+  leads?: boolean;
   /** Ways to add a mod shown below the link. */
   children: ReactNode;
   /** At the end, e.g. Cancel. */
@@ -91,7 +91,7 @@ export function KeenwikiImport({
         <div className="flex gap-2">
           <input
             id="keenwiki-url"
-            data-autofocus={focus || undefined}
+            data-autofocus
             type="text"
             inputMode="url"
             autoComplete="off"
@@ -103,7 +103,7 @@ export function KeenwikiImport({
           />
           <Button
             type="submit"
-            variant={focus ? "primary" : "secondary"}
+            variant={leads ? "primary" : "secondary"}
             disabled={disabled || lookup.isPending || !url.trim()}
           >
             <Search className="size-4" aria-hidden />
