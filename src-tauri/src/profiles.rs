@@ -166,11 +166,16 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
                 .clone(),
         }
     });
+    // With the files of the mod it's played over (xky1rooms over Episode X).
     let source_mod = standalone
         && !mod_layer
             .as_ref()
             .zip(catalog::game(&game_id))
-            .is_some_and(|(m, game)| game.all_in(&file_names(&m.files)));
+            .is_some_and(|(m, game)| {
+                let mut names = file_names(&m.files);
+                names.extend(m.base.iter().flat_map(|b| file_names(b)));
+                game.all_in(&names)
+            });
     Ok(ProfileRow {
         profile: Profile {
             id: r.get(0)?,

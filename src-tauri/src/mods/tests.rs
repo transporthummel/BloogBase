@@ -1151,7 +1151,14 @@ fn levels_added_by_hand_play_over_the_mod_they_name() {
 fn levels_over_a_standalone_mod_need_no_game_either() {
     let (tmp, paths, db) = setup();
     let base = tmp.path().join("index-aurora-bliss.zip");
-    write_zip(&base, AURORA);
+    // All of the game's files, as Episode X has Keen 1's.
+    let mut files = AURORA.to_vec();
+    files.extend([
+        ("Aurora/KEEN4E.EXE", b"MZ".as_slice()),
+        ("Aurora/EGAGRAPH.CK4", b"g"),
+        ("Aurora/AUDIO.CK4", b"a"),
+    ]);
+    write_zip(&base, &files);
     let c = Curated {
         standalone: true,
         ..curated(aurora_patch(&[]))
@@ -1172,6 +1179,8 @@ fn levels_over_a_standalone_mod_need_no_game_either() {
     assert_eq!(profile.install_id, None);
     assert_eq!(profile.missing_game, None);
     assert!(profile.standalone);
+    // A mod of its game, not a source mod.
+    assert!(!profile.source_mod);
     assert_eq!(
         layers.mod_layer.unwrap().base,
         Some(paths.mods.join("aurora-bliss/files"))
