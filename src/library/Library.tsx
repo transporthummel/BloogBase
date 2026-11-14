@@ -409,8 +409,6 @@ const ProfileCard = memo(function ProfileCard({
               <p className="text-xs text-muted">
                 {profile.sourceMod ? (
                   t("mods.standalone")
-                ) : profile.standalone ? (
-                  `${game.shortTitle} · ${t("mods.standalone")}`
                 ) : (
                   <RunsOn profile={profile} game={game.shortTitle} version={versionLabel} />
                 )}

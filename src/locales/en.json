@@ -448,6 +448,8 @@
     "sourceMod": "Source mod",
     "baseGame": "Runs on {{game}} {{version}}",
     "baseGame_over": "Runs on {{game}} {{version}} and <mod>{{mod}}</mod>",
+    "baseGame_standalone": "{{game}} · Standalone",
+    "baseGame_standaloneOver": "{{game}} and <mod>{{mod}}</mod> · Standalone",
     "new": "New",
     "remove": "Remove",
     "removeTitle": "Remove {{name}}?",

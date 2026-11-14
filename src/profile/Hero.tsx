@@ -134,14 +134,8 @@ function Credits({
         {profile.missingGame !== null && (
           <span>{t("mods.waitsFor", { game: profile.missingGame })}</span>
         )}
-        {profile.standalone && (
-          <span>
-            {profile.sourceMod || !game
-              ? t("mods.standalone")
-              : `${game.title} · ${t("mods.standalone")}`}
-          </span>
-        )}
-        {profile.modId !== null && profile.missingGame === null && !profile.standalone && game && (
+        {profile.standalone && (profile.sourceMod || !game) && <span>{t("mods.standalone")}</span>}
+        {profile.modId !== null && profile.missingGame === null && !profile.sourceMod && game && (
           <span>
             <RunsOn
               profile={profile}

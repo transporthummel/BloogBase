@@ -210,6 +210,23 @@ test("a mod played over another one names it with its game", async () => {
   expect(link.parentElement).toHaveTextContent(/^Runs on Keen 5 v1\.4 EGA and Galactic$/);
 });
 
+test("a mod over one that needs no game names it and needs none either", async () => {
+  const levels: Profile = {
+    ...profile,
+    id: "levels",
+    installId: null,
+    versionId: null,
+    modId: "levels",
+    label: "Levels",
+    standalone: true,
+    playedOver: { profileId: "galactic", name: "Galactic" },
+  };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [levels] });
+  renderLibrary();
+  const link = await screen.findByRole("link", { name: "Galactic" });
+  expect(link.parentElement).toHaveTextContent(/^Keen 5 and Galactic · Standalone$/);
+});
+
 test("a standalone mod is a source mod, not a mod on its game", async () => {
   const foray: Profile = {
     ...profile,
