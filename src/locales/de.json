@@ -449,7 +449,7 @@
     "baseGame": "Läuft mit {{game}} {{version}}",
     "baseGame_over": "Läuft mit {{game}} {{version}} und <mod>{{mod}}</mod>",
     "baseGame_standalone": "{{game}} · Allein lauffähig",
-    "baseGame_standaloneOver": "{{game}} und <mod>{{mod}}</mod> · Allein lauffähig",
+    "baseGame_standaloneOver": "{{game}} · Läuft mit <mod>{{mod}}</mod>",
     "new": "Neu",
     "remove": "Entfernen",
     "removeTitle": "{{name}} entfernen?",

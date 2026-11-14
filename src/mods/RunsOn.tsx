@@ -5,7 +5,7 @@ import type { Profile } from "../bindings";
 /**
  * "Runs on <game> <version>", for a mod played over another one "… and <that
  * mod>", linked. A mod that needs no copy of its game: "<game> · Standalone",
- * "<game> and <that mod> · Standalone" over one (Lego Levels over Lego Keen).
+ * "<game> · Runs on <that mod>" over one (Lego Levels over Lego Keen).
  */
 export function RunsOn({
   profile,

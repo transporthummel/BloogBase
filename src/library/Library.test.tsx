@@ -224,7 +224,7 @@ test("a mod over one that needs no game names it and needs none either", async (
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [levels] });
   renderLibrary();
   const link = await screen.findByRole("link", { name: "Galactic" });
-  expect(link.parentElement).toHaveTextContent(/^Keen 5 and Galactic · Standalone$/);
+  expect(link.parentElement).toHaveTextContent(/^Keen 5 · Runs on Galactic$/);
 });
 
 test("a standalone mod is a source mod, not a mod on its game", async () => {
