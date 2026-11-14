@@ -19,6 +19,7 @@
 - "What's new" shows the newest version's changes and folds away the versions skipped in between, with a link to all changes.
 - The Linux package (deb) carries a description, which Ubuntu's App Center showed as "(none)" before.
 - Release builds carry the mod list published when they were built, so mods can be found and installed before BloogBase first reaches GitHub Pages; a newer list from there replaces it as before.
+- Without DOSBox, a game's or mod's page turns Play red as "DOSBox missing" and says below it why, with the download (or the way to the settings); a mod whose game is missing gets the red button too, and both notes an icon.
 
 ### Bug Fixes
 

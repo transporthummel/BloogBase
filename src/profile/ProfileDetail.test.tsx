@@ -499,6 +499,16 @@ test("a game is removed from its page, with its mods if asked", async () => {
   expect(client.getQueryData(["cover", "other", "keen4-2"])).toBeDefined();
 });
 
+test("without DOSBox, Play is red and says why", async () => {
+  vi.mocked(commands.runtimeStatus).mockResolvedValue(ok({ ...ready, active: null }));
+  renderDetail();
+  const play = await screen.findByRole("button", { name: "DOSBox missing" });
+  expect(play).toBeDisabled();
+  expect(play.className).toContain("text-danger");
+  expect(screen.getByText("BloogBase needs DOSBox Staging to start games.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Download DOSBox Staging 0.83.0" })).toBeEnabled();
+});
+
 test("a mod waiting for its game says which one and can't be played", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue(
     ok([

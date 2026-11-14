@@ -104,7 +104,9 @@
     "useManagedFirst": "Stattdessen das DOSBox von BloogBase verwenden",
     "customHint": "Für Fortgeschrittene. Es muss DOSBox Staging 0.82 oder neuer sein. Normales DOSBox und andere Forks können Spielstände nicht getrennt von den Spieldateien speichern.",
     "crtSwitchIgnored": "BloogBase ist mit DOSBox Staging {{version}} getestet. Diese ältere Version kann sich anders verhalten, und der Röhrenmonitor-Effekt lässt sich in den Einstellungen nicht ausschalten.",
-    "chooseInSettings": "Wähle in den Einstellungen ein vorhandenes DOSBox Staging aus."
+    "chooseInSettings": "Wähle in den Einstellungen ein vorhandenes DOSBox Staging aus.",
+    "missing": "DOSBox fehlt",
+    "missingHint": "Ohne DOSBox Staging kann BloogBase keine Spiele starten."
   },
   "time": {
     "justNow": "gerade eben",

@@ -4,6 +4,7 @@ import {
   ArrowLeftRight,
   Bug,
   ChevronDown,
+  CircleAlert,
   Download,
   FileArchive,
   FolderOpen,
@@ -13,7 +14,7 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Game, type Install, type Mod, type Profile } from "../bindings";
 import { useFreeGames } from "../discover/queries";
@@ -31,6 +32,8 @@ import { useModUpdateCheck } from "../mods/modUpdateCheck";
 import { WhyExactVersion } from "../mods/OtherVersion";
 import { useOwnedVersions } from "../mods/ownedVersions";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
+import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
+import { useRuntimeStatus } from "../runtime/queries";
 import { Button } from "../ui/Button";
 import { buttonClass } from "../ui/buttonClass";
 import { Dialog } from "../ui/Dialog";
@@ -76,6 +79,10 @@ export function ProfileActions({
     queryFn: () => unwrap(commands.modInstalls(profile.modId!)),
     enabled: profile.modId !== null,
   });
+  const runtime = useRuntimeStatus();
+  // No DOSBox to start it with; until the status is known, nothing to say.
+  const noDosbox = !!runtime.data && !runtime.data.active;
+  const blocked = profile.missingGame !== null || noDosbox;
   const check = useModUpdateCheck(mod);
   // The index or the KeenWiki page may have a newer version.
   const checkable = mod && (mod.indexId || mod.keenwikiUrl);
@@ -138,14 +145,18 @@ export function ProfileActions({
       <div className="flex items-stretch gap-2">
         <PlayButton
           onClick={onPlay}
-          disabled={!canPlay || profile.running || profile.missingGame !== null}
-          className="min-w-44 px-8 py-3 text-base"
+          disabled={!canPlay || profile.running || blocked}
+          // Red while something is missing: the notice below says what.
+          variant={blocked ? "danger" : "primary"}
+          className={`min-w-44 px-8 py-3 text-base ${blocked ? "disabled:opacity-100" : ""}`}
         >
           {profile.missingGame !== null
             ? t("mods.gameMissing")
-            : profile.running
-              ? t("library.running")
-              : t("library.play")}
+            : noDosbox
+              ? t("runtime.missing")
+              : profile.running
+                ? t("library.running")
+                : t("library.play")}
         </PlayButton>
         <Menu
           label={t("profile.more")}
@@ -161,6 +172,22 @@ export function ProfileActions({
       </div>
       {profile.missingGame !== null && (
         <MissingGame profile={profile} missingGame={profile.missingGame} game={game} />
+      )}
+      {noDosbox && (
+        <div className="grid justify-items-start gap-2">
+          <Missing>{t("runtime.missingHint")}</Missing>
+          {runtime.data?.downloadAvailable ? (
+            <InstallRuntimeButton
+              label={t("runtime.install", { version: runtime.data.pinnedVersion })}
+            />
+          ) : (
+            <p className="text-sm">
+              <Link to="/settings" className="underline">
+                {t("runtime.chooseInSettings")}
+              </Link>
+            </p>
+          )}
+        </div>
       )}
       {checkable && <ModUpdate mod={mod} check={check} disabled={profile.running} />}
       {mod?.source === "keenwiki" && !mod.indexId && (
@@ -225,6 +252,16 @@ export function ProfileActions({
   );
 }
 
+/** Why Play is red: something it needs isn't there yet. */
+function Missing({ children }: { children: ReactNode }) {
+  return (
+    <p role="status" className="flex items-start gap-1.5 text-sm text-muted">
+      <CircleAlert className="mt-0.5 size-4 shrink-0 text-danger" aria-hidden />
+      <span>{children}</span>
+    </p>
+  );
+}
+
 /** What a mod waits for, and where to get it: free shareware from Discover, else the add dialog. */
 function MissingGame({
   profile,
@@ -252,7 +289,7 @@ function MissingGame({
   );
   return (
     <div className="grid justify-items-start gap-2">
-      <Notice>
+      <Missing>
         {t("mods.waitingHint", {
           game: missingGame,
           yours,
@@ -264,7 +301,7 @@ function MissingGame({
             <WhyExactVersion requires={requires} />
           </>
         )}
-      </Notice>
+      </Missing>
       {shareware ? (
         <Link to="/discover" search={{ tab: "games" }} className={buttonClass("secondary")}>
           <Download className="size-4" aria-hidden />
