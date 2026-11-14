@@ -582,7 +582,7 @@ fn updated_install(
 /// `standalone` and `requiresGame`: one that needs no game (`standalone`)
 /// leaves its copy of the game, one that does again goes on the copy that
 /// fits best, or waits for one; `own_files` says whether it's composed from
-/// its own files alone. Saves stay.
+/// its own files alone. Mods played over them follow. Saves stay.
 pub fn set_standalone(db: &Db, index_id: &str, standalone: bool, own_files: bool) -> Result<()> {
     let mut left = false;
     let mut taken_off = Vec::new();
@@ -595,17 +595,25 @@ pub fn set_standalone(db: &Db, index_id: &str, standalone: bool, own_files: bool
             "UPDATE mods SET own_files = ?2 WHERE id = ?1 AND own_files IS NOT ?2",
             params![mod_id, own_files],
         )?;
-        let changed = db.conn().execute(
-            "UPDATE mods SET standalone = ?2 WHERE id = ?1 AND standalone IS NOT ?2",
-            params![mod_id, standalone],
-        )?;
-        if changed == 0 {
-            continue;
-        }
-        tracing::info!("mod {mod_id} of index entry {index_id} now standalone: {standalone}");
-        match standalone {
-            true => taken_off.push(mod_id),
-            false => left = true,
+        // The mods played over it follow, also ones an earlier change left behind.
+        let over: Vec<String> = db
+            .conn()
+            .prepare("SELECT id FROM mods WHERE extends = ?1")?
+            .query_map([&mod_id], |r| r.get(0))?
+            .collect::<rusqlite::Result<_>>()?;
+        for id in std::iter::once(mod_id).chain(over) {
+            let changed = db.conn().execute(
+                "UPDATE mods SET standalone = ?2 WHERE id = ?1 AND standalone IS NOT ?2",
+                params![id, standalone],
+            )?;
+            if changed == 0 {
+                continue;
+            }
+            tracing::info!("mod {id} (index entry {index_id}) now standalone: {standalone}");
+            match standalone {
+                true => taken_off.push(id),
+                false => left = true,
+            }
         }
     }
     for mod_id in taken_off {

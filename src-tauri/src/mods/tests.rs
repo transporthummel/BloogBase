@@ -1188,6 +1188,42 @@ fn levels_over_a_standalone_mod_need_no_game_either() {
 }
 
 #[test]
+fn mods_played_over_one_follow_it_when_it_turns_standalone() {
+    let (tmp, paths, db) = setup();
+    let base = tmp.path().join("index-aurora-bliss.zip");
+    write_zip(&base, AURORA);
+    install_curated(&paths, &db, &base, &curated(aurora_patch(&[])), None, false).unwrap();
+    let zip = tmp.path().join("pack.zip");
+    write_zip(&zip, &[("Pack/LEVEL01.CK4", b"l")]);
+    let req = InstallModRequest {
+        name: "Pack".into(),
+        extends: Some("aurora-bliss".into()),
+        ..request(&zip, Recipe::Episode)
+    };
+    let pack = install(&paths, &db, &req).unwrap();
+    let install_of = |id: &str| profiles::get(&db, id).unwrap().0.install_id;
+    assert_eq!(install_of(&pack.profile_id).as_deref(), Some("keen4-1"));
+
+    // Lego Keen turns standalone: Lego Levels over it leaves the copy too.
+    set_standalone(&db, "aurora-bliss", true, false).unwrap();
+    assert!(standalone(&db, &pack.id).unwrap());
+    assert_eq!(install_of(&pack.profile_id), None);
+    assert_eq!(install_of("aurora-bliss"), None);
+
+    // And back onto the copy with it.
+    set_standalone(&db, "aurora-bliss", false, false).unwrap();
+    assert!(!standalone(&db, &pack.id).unwrap());
+    assert_eq!(install_of(&pack.profile_id).as_deref(), Some("keen4-1"));
+
+    // One an earlier change left behind catches up.
+    db.conn()
+        .execute("UPDATE mods SET standalone = 1 WHERE id = ?1", [&pack.id])
+        .unwrap();
+    set_standalone(&db, "aurora-bliss", false, false).unwrap();
+    assert!(!standalone(&db, &pack.id).unwrap());
+}
+
+#[test]
 fn curated_install_checks_the_download_and_the_library() {
     let (tmp, paths, db) = setup();
     let zip = tmp.path().join("index-x.zip");
