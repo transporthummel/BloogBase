@@ -36,11 +36,12 @@ mod BloogBase recognises.
 An index entry can mark such a mod `standalone` (index/README.md): it is
 composed from its own files alone, with no copy of the game below them, and
 its profile has no install. It stays a mod of the game it's built on for
-saves, settings and DOSBox defaults. With `requiresGame` as well (a source
-mod carrying the game's own graphics or sounds) it's composed from its own
-files alone too, but goes on a copy of the game like any other mod and can't
-start without one. Only the index does this; the same files added by hand
-play on a copy of the game.
+saves, settings and DOSBox defaults. For a game with no free shareware (Keen
+2, 3, 5 and 6) the app decides it needs a copy all the same
+(`IndexEntry::needs_no_game`): it's composed from its own files alone too,
+but goes on a copy of the game like any other mod and can't start without
+one. A mod with an executable and all of its game's files is standalone the
+same way when added by hand; a source mod only through the index.
 
 Before guessing:
 

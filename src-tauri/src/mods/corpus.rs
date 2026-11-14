@@ -135,7 +135,8 @@ async fn corpus_matches_expectations() {
 }
 
 /// Index entries whose download brings all of its game's files say so:
-/// `standalone` (with `requiresGame` where the game has no free shareware),
+/// `standalone` (the build adds `requiresGame` where the game has no free
+/// shareware),
 /// and the others don't. Reads `index/dist/index.json` (`pnpm index:build`)
 /// and the archives `pnpm index:check` cached.
 ///

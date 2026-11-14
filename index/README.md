@@ -52,7 +52,6 @@ By hand:
    | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)           |
    | `cover`          | The program whose title screen is the cover, when the recipe runs a menu (see below)        |
    | `standalone`     | `true` for a mod that ships its whole game and plays without a copy of it (see below)       |
-   | `requiresGame`   | with `standalone`, for a mod that carries the graphics or sounds of Keen 2, 3, 5 or 6       |
    | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
    | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
 
@@ -140,20 +139,21 @@ By hand:
    known by its download. Its recipe may patch (Aurora Bliss), and it has no
    `requires`. Keen 1, Keen 4 and Keen Dreams mods like that then play
    without a copy of the game, as their shareware is free; those of Keen 2,
-   3, 5 and 6 get `requiresGame: true` below and play on any copy. `pnpm
-index:add` drafts both, and
+   3, 5 and 6 play on any copy (below). `pnpm index:add` drafts it, and
    `cargo test --lib index_entries_say -- --ignored` (in `src-tauri`, after
    `pnpm index:build` and `pnpm index:check`) checks that every entry says
    what its downloads are. One that ships the game's own executable
    unchanged needs `minAppVersion: 1.3.0`: older apps leave that out.
 
-   A source mod that ships the graphics or sounds of a game with no free
-   shareware (Keen 2, 3, 5 and 6; DarkAle's New Keen 5 Levelpack) also gets
-   `requiresGame: true`. It still plays from its own files alone, but only
-   for players who own `game`: it's listed under that game, waits for a copy
-   of it like any other mod and shows no "Source mod" badge. Those of Keen 1,
-   Keen 4 and Keen Dreams are in their free shareware, so source mods built
-   on them stay without it (Return to the Shadowlands).
+   Whether a standalone mod needs a copy of `game` isn't up to the entry:
+   the app decides it, as a licence question (decided 2026-11-14). For a
+   game with no free shareware (Keen 2, 3, 5 and 6) it does: the mod still
+   plays from its own files alone, but only for players who own `game`; it's
+   listed under that game, waits for a copy of it like any other mod and
+   shows no "Source mod" badge (DarkAle's New Keen 5 Levelpack). Those of
+   Keen 1, Keen 4 and Keen Dreams don't (Return to the Shadowlands). Apps
+   before 1.3.0 read it from `requiresGame`, which the build adds to
+   `index.json`; the check refuses it in an entry.
 
 3. Check it, including the download:
 

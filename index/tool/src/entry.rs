@@ -69,9 +69,10 @@ pub struct Entry {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub standalone: bool,
     /// With `standalone`: still plays from its own files alone, on any
-    /// version, but only for players who own `game`, as it carries the
-    /// game's own graphics or sounds (from an episode with no free
-    /// shareware).
+    /// version, but only for players who own `game`. Never written by hand:
+    /// the build sets it on standalone mods of games without free
+    /// shareware ([`set_requires_game`]), for apps before 1.3.0, which
+    /// read it; newer apps decide it themselves (decided 2026-11-14).
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub requires_game: bool,
     #[serde(default)]
@@ -230,6 +231,38 @@ pub fn load_catalog(path: &Path) -> Result<Catalog, String> {
         .into_iter()
         .map(|g| (g.id, g.versions.into_iter().map(|v| v.id).collect()))
         .collect())
+}
+
+/// The games whose shareware the app offers for free (`setup` in the app's
+/// `free-games.json`), so standalone mods of them need no copy.
+pub fn load_shareware(path: &Path) -> Result<BTreeSet<String>, String> {
+    #[derive(Deserialize)]
+    struct File {
+        games: Vec<Free>,
+    }
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Free {
+        game_id: String,
+        #[serde(default)]
+        setup: bool,
+    }
+    let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let file: File = serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
+    Ok(file
+        .games
+        .into_iter()
+        .filter(|g| g.setup)
+        .map(|g| g.game_id)
+        .collect())
+}
+
+/// `requiresGame` for apps before 1.3.0: on standalone mods of games
+/// without free shareware, as the app since decides it.
+pub fn set_requires_game(entries: &mut [Entry], shareware: &BTreeSet<String>) {
+    for e in entries {
+        e.requires_game = e.standalone && !shareware.contains(&e.game);
+    }
 }
 
 pub fn parse(yaml: &str) -> Result<Entry, String> {
@@ -404,8 +437,11 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
             fail("standalone: can't extend another mod".into());
         }
     }
-    if entry.requires_game && !entry.standalone {
-        fail("requiresGame: only for standalone mods; the others need their game anyway".into());
+    if entry.requires_game {
+        fail(
+            "requiresGame: the app decides it, by whether the game's shareware is free; take it out"
+                .into(),
+        );
     }
     for t in &entry.tags {
         if !is_slug(t) {
@@ -835,11 +871,6 @@ recipe:
             problems(&e, "aurora-bliss", &catalog()),
             Vec::<String>::new()
         );
-        e.requires_game = true;
-        assert_eq!(
-            problems(&e, "aurora-bliss", &catalog()),
-            Vec::<String>::new()
-        );
         // Programs are for source mods.
         e.downloads[0]
             .programs
@@ -848,10 +879,20 @@ recipe:
     }
 
     #[test]
-    fn only_standalone_mods_require_their_game() {
+    fn the_build_says_which_standalone_mods_need_their_game() {
         let mut e = parse(AURORA).unwrap();
         e.requires_game = true;
         assert_eq!(problems(&e, "aurora-bliss", &catalog()).len(), 1);
+
+        let shareware: BTreeSet<String> = ["keen4".to_string()].into();
+        let mut k6 = e.clone();
+        k6.game = "keen6".into();
+        let mut entries = [e.clone(), k6.clone(), k6];
+        entries[0].standalone = true;
+        entries[1].standalone = true;
+        set_requires_game(&mut entries, &shareware);
+        let got: Vec<bool> = entries.iter().map(|e| e.requires_game).collect();
+        assert_eq!(got, [false, true, false]);
     }
 
     #[test]

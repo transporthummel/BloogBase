@@ -22,8 +22,9 @@ export function fitsEntry(entry: IndexEntry, owned: Owned, game: Game | undefine
 export const NO_GAME = "none";
 
 /** Whether `entry` plays without a copy of its game: standalone, and not
- * `requiresGame` (source mods that carry the game's own graphics or sounds
- * are listed and installed like any other mod). */
+ * `requiresGame`, which the app sets on standalone mods of games without
+ * free shareware (`IndexEntry::needs_no_game`); those are listed and
+ * installed like any other mod. */
 export function needsNoGame(entry: IndexEntry): boolean {
   return !!entry.standalone && !entry.requiresGame;
 }

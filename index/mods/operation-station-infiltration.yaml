@@ -34,8 +34,6 @@ downloads:
     programs:
       osidos32.exe: f8b4d7f7992c358e4361cba81c487cb2a2d189871591d0c866e2c6132c7b8de6
 standalone: true
-# Carries much of Keen 5's own graphics.
-requiresGame: true
 recipe:
   type: program
   program: OSI.EXE

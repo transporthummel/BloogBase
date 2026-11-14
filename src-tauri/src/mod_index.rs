@@ -106,8 +106,10 @@ pub struct IndexEntry {
     #[serde(default)]
     pub standalone: bool,
     /// With `standalone`: still plays from its own files alone, but needs
-    /// a copy of `game` like any other mod, as it carries the game's own
-    /// graphics or sounds. Apps before 1.2.0 ignore it.
+    /// a copy of `game` like any other mod. The app decides it, not the
+    /// index: every standalone mod of a game without free shareware (see
+    /// [`IndexEntry::needs_no_game`]); the index carries it for apps before
+    /// 1.3.0, and [`parse`] overwrites it. Apps before 1.2.0 ignore it.
     #[serde(default)]
     pub requires_game: bool,
     #[serde(default)]
@@ -119,9 +121,11 @@ pub struct IndexEntry {
 }
 
 impl IndexEntry {
-    /// Plays without a copy of its game: standalone, and not `requiresGame`.
+    /// Plays without a copy of its game: standalone, for a game whose
+    /// shareware is free (decided 2026-11-14: a licence question, so the
+    /// app's call, not the index's).
     pub fn needs_no_game(&self) -> bool {
-        self.standalone && !self.requires_game
+        self.standalone && crate::free_games::has_shareware(&self.game)
     }
 }
 
@@ -617,7 +621,11 @@ fn parse(data: &[u8]) -> Result<Parsed> {
                 .unwrap_or("?")
                 .to_string();
             match serde_json::from_value::<IndexEntry>(v) {
-                Ok(e) if usable(&e, app) => Some(e),
+                Ok(mut e) if usable(&e, app) => {
+                    // For the interface, which reads the field.
+                    e.requires_game = e.standalone && !e.needs_no_game();
+                    Some(e)
+                }
                 Ok(_) => None,
                 Err(err) => {
                     tracing::debug!("index entry {id} not understood: {err}");
@@ -920,6 +928,29 @@ mod tests {
         let future = SAMPLE.replace(r#""schemaVersion": 1"#, r#""schemaVersion": 2"#);
         let p = parse(future.as_bytes()).unwrap();
         assert_eq!((p.entries.len(), p.hidden), (0, 2));
+    }
+
+    #[test]
+    fn the_app_decides_which_standalone_mods_need_their_game() {
+        let parsed = |game: &str, requires_game: bool| {
+            let mut index: serde_json::Value = serde_json::from_str(SAMPLE).unwrap();
+            let mods = index["mods"].as_array_mut().unwrap();
+            let e = mods.iter_mut().find(|m| m["id"] == "sample-patch").unwrap();
+            e["game"] = game.into();
+            e["standalone"] = true.into();
+            e["requiresGame"] = requires_game.into();
+            e["requires"] = serde_json::json!([]);
+            let e = parse(index.to_string().as_bytes())
+                .unwrap()
+                .entries
+                .remove(0);
+            (e.needs_no_game(), e.requires_game)
+        };
+        // Whatever the index says: free shareware or not.
+        assert_eq!(parsed("keen4", true), (true, false));
+        assert_eq!(parsed("kdreams", false), (true, false));
+        assert_eq!(parsed("keen6", false), (false, true));
+        assert_eq!(parsed("keen2", true), (false, true));
     }
 
     #[test]

@@ -217,8 +217,12 @@ fn build(mut args: Args) -> Result<(), String> {
             .duration_since(UNIX_EPOCH)
             .map_or(0, |d| d.as_secs()),
     };
-    let entries = load(&mut args)?;
+    let shareware = entry::load_shareware(
+        &args.path("--free-games", "../../src-tauri/catalog/free-games.json")?,
+    )?;
+    let mut entries = load(&mut args)?;
     args.done()?;
+    entry::set_requires_game(&mut entries, &shareware);
 
     let json = publish::index_json(&entries, generated_at);
     std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;

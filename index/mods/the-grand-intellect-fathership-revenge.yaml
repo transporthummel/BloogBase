@@ -21,7 +21,6 @@ downloads:
     size: 276898
 # Brings an executable and all of the game's files: plays on any copy of it.
 standalone: true
-requiresGame: true
 recipe:
   type: patch
   patcher: CK2PATCH.EXE

@@ -636,8 +636,10 @@ export type IndexEntry = {
 	standalone?: boolean,
 	/**
 	 *  With `standalone`: still plays from its own files alone, but needs
-	 *  a copy of `game` like any other mod, as it carries the game's own
-	 *  graphics or sounds. Apps before 1.2.0 ignore it.
+	 *  a copy of `game` like any other mod. The app decides it, not the
+	 *  index: every standalone mod of a game without free shareware (see
+	 *  [`IndexEntry::needs_no_game`]); the index carries it for apps before
+	 *  1.3.0, and [`parse`] overwrites it. Apps before 1.2.0 ignore it.
 	 */
 	requiresGame?: boolean,
 	tags?: string[],

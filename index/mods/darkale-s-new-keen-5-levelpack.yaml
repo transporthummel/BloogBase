@@ -24,8 +24,6 @@ downloads:
     programs:
       RCK5.EXE: 000fb5d86276c0be5394608fdc95b6469ee3c81c5f0208758a8f05654114ce2e
 standalone: true
-# Carries Keen 5's own graphics and sound effects.
-requiresGame: true
 recipe:
   type: program
   program: RCK5.EXE

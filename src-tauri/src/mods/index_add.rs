@@ -600,7 +600,7 @@ fn yaml(facts: &Facts, found: &Found) -> String {
         y += "# Brings an executable and all of the game's files: plays ";
         y += match info.standalone {
             true => "without a copy of it.\nstandalone: true\n",
-            false => "on any copy of it.\nstandalone: true\nrequiresGame: true\n",
+            false => "on any copy of it.\nstandalone: true\n",
         };
     }
     y += &recipe_yaml(&info.recipes[0].recipe);
@@ -778,8 +778,7 @@ fn notes(facts: &Facts, found: &Found) -> (Vec<String>, Vec<String>) {
     if found.standalone() {
         check.push(format!(
             "standalone: set, as the archive has nothing of {}'s; take it out if the mod still \
-             loads the game's own files (a lone executable), and add requiresGame: true if its \
-             data holds the game's graphics or sounds",
+             loads the game's own files (a lone executable)",
             found.info.game_id
         ));
     }
