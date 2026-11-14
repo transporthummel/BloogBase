@@ -573,28 +573,75 @@ fn updated_install(
 /// fits best, or waits for one; `own_files` says whether it's composed from
 /// its own files alone. Saves stay.
 pub fn set_standalone(db: &Db, index_id: &str, standalone: bool, own_files: bool) -> Result<()> {
-    db.conn().execute(
-        "UPDATE mods SET own_files = ?2 WHERE index_id = ?1 AND own_files IS NOT ?2",
-        params![index_id, own_files],
-    )?;
-    let changed = db.conn().execute(
-        "UPDATE mods SET standalone = ?2 WHERE index_id = ?1 AND standalone IS NOT ?2",
-        params![index_id, standalone],
-    )?;
-    if changed == 0 {
-        return Ok(());
-    }
-    tracing::info!("mods of index entry {index_id} now standalone: {standalone}");
-    if standalone {
+    let mut left = false;
+    let mut taken_off = Vec::new();
+    for (mod_id, lacking) in installed_of(db, index_id)? {
+        // Stays on its copy until an update brings the executable along.
+        if lacking && own_files {
+            continue;
+        }
         db.conn().execute(
-            "UPDATE profiles SET install_id = NULL, composed_hash = NULL
-             WHERE mod_id IN (SELECT id FROM mods WHERE index_id = ?1)",
-            [index_id],
+            "UPDATE mods SET own_files = ?2 WHERE id = ?1 AND own_files IS NOT ?2",
+            params![mod_id, own_files],
         )?;
-    } else {
+        let changed = db.conn().execute(
+            "UPDATE mods SET standalone = ?2 WHERE id = ?1 AND standalone IS NOT ?2",
+            params![mod_id, standalone],
+        )?;
+        if changed == 0 {
+            continue;
+        }
+        tracing::info!("mod {mod_id} of index entry {index_id} now standalone: {standalone}");
+        match standalone {
+            true => taken_off.push(mod_id),
+            false => left = true,
+        }
+    }
+    for mod_id in taken_off {
+        db.conn().execute(
+            "UPDATE profiles SET install_id = NULL, composed_hash = NULL WHERE mod_id = ?1",
+            [mod_id],
+        )?;
+    }
+    if left {
         rehome(db, None)?;
     }
     Ok(())
+}
+
+/// The mods installed from index entry `index_id`, and whether each lacks
+/// its executable but has all of the game's other files: apps before 1.3.0
+/// left out the game's own executable, unchanged, as the copy below brings
+/// it (Bounty Hunting Brouhaha), so it can't play from its own files.
+/// Source mods run a program of their own instead.
+fn installed_of(db: &Db, index_id: &str) -> Result<Vec<(String, bool)>> {
+    let rows: Vec<(String, String, String, String)> = db
+        .conn()
+        .prepare("SELECT id, game_id, path, recipe_json FROM mods WHERE index_id = ?1")?
+        .query_map([index_id], |r| {
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))
+        })?
+        .collect::<rusqlite::Result<_>>()?;
+    Ok(rows
+        .into_iter()
+        .map(|(id, game_id, path, recipe)| {
+            let own_program = matches!(serde_json::from_str(&recipe), Ok(Recipe::Program { .. }));
+            let names: Vec<String> = fs::read_dir(db.resolve(&path).join("files"))
+                .map(|d| {
+                    d.filter_map(|e| Some(e.ok()?.file_name().to_string_lossy().into_owned()))
+                        .collect()
+                })
+                .unwrap_or_default();
+            let lacking = !own_program
+                && catalog::game(&game_id).is_some_and(|g| {
+                    let has = |n: &str| names.iter().any(|m| m.eq_ignore_ascii_case(n));
+                    !g.data_files.is_empty()
+                        && g.data_files.iter().all(|d| d.split('|').any(has))
+                        && !g.executables.iter().any(|e| has(e))
+                });
+            (id, lacking)
+        })
+        .collect())
 }
 
 /// Whether mod `mod_id` is composed from its own files alone.

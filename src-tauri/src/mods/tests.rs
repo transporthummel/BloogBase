@@ -1810,3 +1810,46 @@ fn mods_with_all_of_the_games_files_need_no_copy_or_version() {
     assert!(p.missing_game.is_some());
     assert!(own_files(&db, &m.id).unwrap());
 }
+
+#[test]
+fn installed_mods_without_their_executable_stay_on_their_copy() {
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("bounty.zip");
+    write_zip(
+        &zip,
+        &[
+            ("KEEN4E.EXE", b"the game's own"),
+            ("CK4PATCH.EXE", b"patcher"),
+            ("ABIATHAR.PAT", b"%ext ck4\n%version 1.4\n"),
+            ("EGAGRAPH.CK4", b"graphics"),
+            ("GAMEMAPS.CK4", b"maps"),
+            ("AUDIO.CK4", b"sounds"),
+        ],
+    );
+    // As installed before the entry turned standalone; older apps left out
+    // the game's unchanged executable.
+    let c = curated(aurora_patch(&[]));
+    let m = install_curated(&paths, &db, &zip, &c, Some("keen4-1"), false).unwrap();
+    let files = paths.mods.join(&m.id).join("files");
+    fs::remove_file(files.join("KEEN4E.EXE")).unwrap();
+    set_standalone(&db, "aurora-bliss", true, true).unwrap();
+    let (p, _) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!(
+        (p.install_id.as_deref(), p.standalone),
+        (Some("keen4-1"), false)
+    );
+    assert!(!own_files(&db, &m.id).unwrap());
+
+    // An update brings it, and then the mod needs no game.
+    let c = Curated {
+        standalone: true,
+        own_files: true,
+        requires: Vec::new(),
+        ..c
+    };
+    install_curated(&paths, &db, &zip, &c, None, false).unwrap();
+    assert!(files.join("KEEN4E.EXE").is_file());
+    set_standalone(&db, "aurora-bliss", true, true).unwrap();
+    let (p, _) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!((p.install_id, p.standalone), (None, true));
+}
