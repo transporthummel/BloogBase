@@ -7,9 +7,12 @@
 //   node scripts/controller-charts.mjs [out dir] [en|de]
 //
 // English goes to docs/controller/ by default; German files get ".de".
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+// Each chart also goes to png/ as a PNG, rendered by headless Chrome or
+// Edge (CHROME=<path> picks one); without a browser the PNGs are skipped.
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const OUT = process.argv[2] ?? join(ROOT, "docs/controller");
@@ -502,3 +505,37 @@ for (const layout of ["xbox", "playstation"]) {
   }
 }
 console.log(`${Object.keys(sizes).length} charts in ${OUT}`);
+
+// PNG copies, for places that don't show SVG. Chrome waits for the embedded
+// fonts within the virtual time budget.
+const BROWSERS = [
+  process.env.CHROME,
+  "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium",
+];
+const browser = BROWSERS.find((b) => b && existsSync(b));
+if (!browser) {
+  console.warn("No Chrome or Edge found (set CHROME=<path>); PNGs not rendered.");
+} else {
+  const PNG = join(OUT, "png");
+  mkdirSync(PNG, { recursive: true });
+  for (const [name, H] of Object.entries(sizes)) {
+    execFileSync(
+      browser,
+      [
+        "--headless=new",
+        "--disable-gpu",
+        "--hide-scrollbars",
+        "--virtual-time-budget=3000",
+        `--window-size=${W},${H}`,
+        `--screenshot=${join(PNG, `${name}.png`)}`,
+        pathToFileURL(join(OUT, `${name}.svg`)).href,
+      ],
+      { stdio: "ignore" },
+    );
+  }
+  console.log(`${Object.keys(sizes).length} PNGs in ${PNG}`);
+}

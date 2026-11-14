@@ -28,7 +28,9 @@ measured with both; on Linux the DualShock 4's are.
 
 `scripts/controller-charts.mjs` draws them (`node scripts/controller-charts.mjs`,
 `node scripts/controller-charts.mjs docs/controller de` for the German ones,
-`<name>.de.svg`, which the German website shows). They repeat the bindings below and the drawing
+`<name>.de.svg`, which the German website shows), each also as a PNG in
+`controller/png/`, rendered with headless Chrome or Edge (`CHROME=<path>` picks
+one). They repeat the bindings below and the drawing
 of the Controls tab (`PadDrawing.tsx`), so redo them when `keymap.rs`,
 `src/gamepad/` or the drawing changes.
 
