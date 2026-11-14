@@ -57,12 +57,22 @@ jobs:
           workspaces: src-tauri
 
       # The mod archives the corpus workflow caches; the cover test needs them.
-      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # The cache may be gone (the repository's 10 GB fill up with Rust
+      # builds), or older than the manifest: then the corpus test fetches
+      # what is missing.
+      - id: mods
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: mod-cache
           key: mod-corpus-${{ hashFiles('src-tauri/tests/mod-corpus.json') }}
           restore-keys: mod-corpus-
-          fail-on-cache-miss: true
+
+      - name: Mods
+        if: steps.mods.outputs.cache-hit != 'true'
+        working-directory: src-tauri
+        env:
+          BLOOGBASE_MOD_CACHE: ${{ github.workspace }}/mod-cache
+        run: cargo test --lib corpus_matches_expectations -- --ignored
 
       - name: Versions
         working-directory: src-tauri

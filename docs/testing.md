@@ -106,9 +106,9 @@ To render a single title: `cargo run -p keen-graphics --example title --
 CI (`.github/workflows/games.yml`) runs all three weekly, by hand and when the
 catalog, detection or covers change, on Linux. It checks out the games repo
 with a read-only deploy key (secret `GAMES_DEPLOY_KEY`) and takes the mods
-from the corpus workflow's cache, so it fails until that has run once. The
-games must not leak: the workflow never runs for pull requests, uploads no
-artifacts and pins its actions to commits.
+from the corpus workflow's cache, or downloads them with the corpus test when
+that cache is gone. The games must not leak: the workflow never runs for pull
+requests, uploads no artifacts and pins its actions to commits.
 
 To get the games locally:
 `git clone git@github.com:transporthummel/bloogbase-games.git .local/games`.
