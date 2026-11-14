@@ -122,7 +122,9 @@ folder before; the player picks what to import.
 `src-tauri/catalog/free-games.json` lists the versions that may be passed
 around: the shareware episodes (Keen 1, Keen 4 EGA and CGA, Keen Dreams;
 the setup wizard offers one per game), the demos of Keen 4 and 6 and the
-Keen 1 betas. The Discover page offers all of them. Each has mirrors, mostly the links on KeenWiki's version pages,
+Keen 1 betas. The Discover page offers all of them, and a mod made for a
+shareware version the library lacks installs it along with the mod
+([keenwiki.md](keenwiki.md#warnings-and-waiting)). Each has mirrors, mostly the links on KeenWiki's version pages,
 each with its own archive SHA-256 and size.
 
 Installing tries the mirrors in order. A download that fails or doesn't

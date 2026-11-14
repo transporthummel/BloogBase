@@ -136,8 +136,15 @@ None of these stop the install:
   mods use (the game's modding version). If the chosen copy is a known,
   different one, the player is warned.
 - A patch going onto a modified third-party build gets a warning.
-- If no copy fits, the mod is installed anyway and waits for its game. As
-  soon as a fitting copy is added, the mod moves onto it.
+- If no copy fits but a fitting free shareware version exists (Keen 1
+  v1.31, Keen 4 v1.4 EGA or CGA, Keen Dreams v1.13; `freeFit` in
+  `src/discover/fit.ts`), it's installed along with the mod: the dialog
+  says "With Keen 4 v1.4 EGA (shareware)", Discover's button adds both
+  sizes up. A mod that needs no game ([recipes.md](recipes.md)), or is
+  played over one that needs none, gets no copy and no shareware.
+- If no copy fits and none comes along, the mod is installed anyway and
+  waits for its game. As soon as a fitting copy is added, the mod moves
+  onto it.
 
 ## Updates
 
