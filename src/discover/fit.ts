@@ -1,4 +1,4 @@
-import type { Game, IndexEntry, Install } from "../bindings";
+import type { FreeGame, Game, IndexEntry, Install } from "../bindings";
 
 /** What matters about a game in the library, or one that is on its way. */
 export type Owned = Pick<Install, "gameId" | "versionId">;
@@ -74,4 +74,27 @@ export function compare(sort: Sort) {
     if (sort === "featured" && !!a.featured !== !!b.featured) return a.featured ? -1 : 1;
     return byAdded(a, b) || byName(a, b);
   };
+}
+
+/**
+ * The free version of `game` to install along with a mod that plays on
+ * `requires` (empty: any), for a player without a copy it fits: a full
+ * shareware release, the setup wizard's one first (decided 2026-11-14).
+ */
+export function freeFit(
+  requires: string[],
+  game: Game | undefined,
+  free: FreeGame[],
+): FreeGame | undefined {
+  const fits = (f: FreeGame) => {
+    const v = game?.versions.find((v) => v.id === f.versionId);
+    if (!v || (v.kind ?? "release") !== "release") return false;
+    return (
+      requires.length === 0 ||
+      requires.includes(v.id) ||
+      (v.original != null && requires.includes(v.original))
+    );
+  };
+  const options = free.filter((f) => f.gameId === game?.id && !f.installed && fits(f));
+  return options.find((f) => f.setup) ?? options[0];
 }

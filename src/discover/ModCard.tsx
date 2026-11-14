@@ -18,8 +18,8 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { Dialog } from "../ui/Dialog";
 import { useEnterAction } from "../ui/useEnterAction";
-import { fitting, isSourceMod, needsNoGame, requiredLabels } from "./fit";
-import { useIndexMods } from "./queries";
+import { fitting, freeFit, isSourceMod, needsNoGame, requiredLabels } from "./fit";
+import { useFreeGames, useIndexMods } from "./queries";
 
 /** A mod from the index with everything needed to install it. */
 export function ModCard({
@@ -159,6 +159,17 @@ function InstallAction({
   );
   const [confirming, setConfirming] = useState(false);
   const candidates = fitting(entry, installs, games);
+  const game = games.find((g) => g.id === entry.game);
+  // Without a fitting copy, a free one comes along when there is one.
+  const freeGames = useFreeGames();
+  const free =
+    candidates.length === 0 && !needsNoGame(entry)
+      ? freeFit(entry.requires, game, freeGames.data ?? [])
+      : undefined;
+  // Remembered, as it's no longer offered once it's in the library.
+  const [withFree, setWithFree] = useState<string | null>(null);
+  const freeJob = useJob("freeGame", withFree);
+  const startFree = useStartJob((versionId: string) => commands.installFreeGame(versionId));
   const [installId, setInstallId] = useState<string | null>(null);
   const target =
     candidates.find((i) => i.id === installId) ??
@@ -183,8 +194,27 @@ function InstallAction({
     !busy && enterInstall !== undefined ? () => start.mutate(enterInstall) : null,
   );
 
-  if (job && !isFinished(job)) return <JobRow job={job} label={entry.name} />;
-  const failed = job?.phase === "failed" && <JobRow job={job} label={entry.name} />;
+  const freeLabel = (versionId: string) =>
+    `${game?.shortTitle ?? entry.game} ${game?.versions.find((v) => v.id === versionId)?.label ?? ""}`.trim();
+  const freeRow = freeJob &&
+    withFree &&
+    (freeJob.phase !== "done" || (job && !isFinished(job))) && (
+      <JobRow job={freeJob} label={freeLabel(withFree)} />
+    );
+  if (job && !isFinished(job)) {
+    return (
+      <>
+        {freeRow}
+        <JobRow job={job} label={entry.name} />
+      </>
+    );
+  }
+  const failed = (
+    <>
+      {freeJob?.phase === "failed" && freeRow}
+      {job?.phase === "failed" && <JobRow job={job} label={entry.name} />}
+    </>
+  );
 
   if (mod.modId && !mod.updateAvailable) {
     return (
@@ -212,6 +242,30 @@ function InstallAction({
         <Button variant="card" onClick={() => start.mutate(null)} disabled={start.isPending}>
           <Download className="size-4" aria-hidden />
           {installLabel}
+        </Button>
+      </>
+    );
+  }
+  if (!target && free) {
+    const installWithFree = async () => {
+      setWithFree(free.versionId);
+      // The mod's job waits for the game and then goes on it.
+      await startFree.mutateAsync(free.versionId);
+      start.mutate(null);
+    };
+    return (
+      <>
+        {failed}
+        <p className="text-xs text-muted">
+          {t("discover.withShareware", { game: freeLabel(free.versionId) })}
+        </p>
+        <Button
+          variant="card"
+          onClick={installWithFree}
+          disabled={start.isPending || startFree.isPending}
+        >
+          <Download className="size-4" aria-hidden />
+          {t("discover.install", { size: formatDownloadSize(i18n.language, size + free.size) })}
         </Button>
       </>
     );

@@ -1394,6 +1394,7 @@ mod e2e {
 /// fits, runs it in DOSBox for a few seconds and saves a screenshot to
 /// `target/e2e-mods/shots/`.
 /// `BLOOGBASE_E2E_DOSBOX=<dosbox.exe> cargo test e2e_mods -- --ignored --nocapture --test-threads=1`
+/// (`BLOOGBASE_E2E_ONLY=<part of an archive name>` for some mods only)
 #[cfg(all(test, windows))]
 mod e2e_mods {
     use std::time::Duration;
@@ -1483,9 +1484,14 @@ $bmp.Save($env:SHOT_PATH)
             }
         }
         let installs = library::list(&db).unwrap();
+        // Part of the archive name, to launch only those.
+        let only = std::env::var("BLOOGBASE_E2E_ONLY").ok();
 
         for zip in sorted_entries(&local.join("mods")) {
             let name = zip.file_stem().unwrap().to_string_lossy().into_owned();
+            if only.as_deref().is_some_and(|o| !name.contains(o)) {
+                continue;
+            }
             let info = match mods::inspect(&zip, None) {
                 Ok(i) => i,
                 Err(e) => {
@@ -1529,6 +1535,10 @@ $bmp.Save($env:SHOT_PATH)
                     "{name} on {} ({:?}): {outcome} -> shots/{}.png",
                     install.id, install.version_id, m.profile_id
                 );
+                // One that needs no game goes on none, whichever was picked.
+                if info.standalone {
+                    break;
+                }
             }
             if !tried {
                 eprintln!("{name}: no fitting install");

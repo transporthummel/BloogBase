@@ -272,7 +272,12 @@ function Confirm(props: SetUpProps) {
   const { info, path, replacing, queued, onCancel } = props;
   const installed = useIndexInstalled(info.indexId);
   const entry = useIndexMods().data?.find((m) => m.entry.id === info.indexId)?.entry;
-  const sourceMod = info.indexFiles || entry?.standalone === true;
+  // Known by the programs its downloads list: a mod with all of Keen's files
+  // is standalone too, but plays the same when set up by hand.
+  const sourceMod =
+    info.indexFiles ||
+    (entry?.standalone === true &&
+      entry.downloads.some((d) => Object.keys(d.programs ?? {}).length > 0));
   if (!info.indexId || replacing || (myself && !sourceMod)) return <SetUp {...props} />;
   return (
     <div className="grid gap-4">

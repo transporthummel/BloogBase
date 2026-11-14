@@ -38,6 +38,8 @@ vi.mock("../bindings", () => ({
     downloadKeenwikiMod: vi.fn(),
     indexMods: vi.fn(),
     installIndexMod: vi.fn(),
+    freeGames: vi.fn(),
+    installFreeGame: vi.fn(),
     listJobs: vi.fn(),
     readmesAt: vi.fn(),
     openReadmeAt: vi.fn(),
@@ -693,6 +695,41 @@ test("asks before installing a mod without its game", async () => {
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
 });
 
+test("installs the free shareware first for a mod made for it", async () => {
+  vi.mocked(commands.inspectMod).mockReturnValue(ok(info));
+  vi.mocked(commands.listInstalls).mockReturnValue(ok([]));
+  vi.mocked(commands.freeGames).mockReturnValue(
+    ok([{ gameId: "keen4", versionId: "keen4-1.4-ega", setup: true, size: 1, installed: false }]),
+  );
+  vi.mocked(commands.installFreeGame).mockImplementation(async () => {
+    vi.mocked(commands.listInstalls).mockReturnValue(ok([install]));
+    return {
+      id: 7,
+      kind: "freeGame",
+      subject: "keen4-1.4-ega",
+      phase: "done",
+      received: 1,
+      total: 1,
+      error: null,
+    };
+  });
+  vi.mocked(commands.installMod).mockReturnValue(ok({ id: "aurora" } as never));
+  const onInstalled = renderDialog();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
+
+  expect(await screen.findByText("With Keen 4 v1.4 EGA (shareware)")).toBeInTheDocument();
+  expect(screen.queryByText(/isn’t in your library/)).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Install" }));
+  expect(commands.installFreeGame).toHaveBeenCalledWith("keen4-1.4-ega");
+  await vi.waitFor(() =>
+    expect(commands.installMod).toHaveBeenCalledWith(
+      expect.objectContaining({ installId: "keen4-1" }),
+    ),
+  );
+  await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
+});
+
 test("asks first whether to add the game lying next to the mod, both without a copy", async () => {
   vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, bundledGame: "keen4-1.4-ega" }));
   vi.mocked(commands.listInstalls).mockReturnValue(ok([]));
@@ -1164,7 +1201,20 @@ test("doesn't offer to set up a source mod's download by hand", async () => {
   vi.mocked(commands.listJobs).mockResolvedValue([]);
   vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, indexId: "aurora-bliss" }));
   vi.mocked(commands.indexMods).mockReturnValue(
-    ok([{ ...auroraInIndex, entry: { ...auroraInIndex.entry, standalone: true } }]),
+    ok([
+      {
+        ...auroraInIndex,
+        entry: {
+          ...auroraInIndex.entry,
+          standalone: true,
+          // A source mod's downloads list its programs.
+          downloads: auroraInIndex.entry.downloads.map((d) => ({
+            ...d,
+            programs: { "FITF.EXE": "ab" },
+          })),
+        },
+      },
+    ]),
   );
   renderDialog();
   const user = userEvent.setup();

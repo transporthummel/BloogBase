@@ -568,6 +568,7 @@
     "needs_version": "Braucht {{game}} ({{versions}}).",
     "install": "Installieren ({{size}})",
     "installAnyway": "Trotzdem installieren",
+    "withShareware": "Mit {{game}} (Shareware)",
     "withoutGameTitle": "{{name}} ohne Spiel installieren?",
     "withoutGameHint": "{{game}} ist nicht in deiner Bibliothek. Die Mod wird jetzt installiert und lässt sich spielen, sobald du das Spiel hinzufügst.",
     "free": {

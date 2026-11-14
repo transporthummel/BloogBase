@@ -9,6 +9,7 @@
       "Adding a mod shows how many saves come with it.",
       "A mod that needs another version of your game says which one you have, and why.",
       "Mods that bring their whole game play on any version of it, or without it where its shareware is free.",
+      "A mod made for a free shareware episode you don't have installs it along with the mod.",
       "Games with a renamed program file are recognised too.",
       "Without DOSBox, a game's page says why Play doesn't work."
     ],
@@ -21,6 +22,7 @@
       "Beim Hinzufügen einer Mod siehst du, wie viele Spielstände sie mitbringt.",
       "Braucht eine Mod eine andere Version deines Spiels, sagt sie, welche du hast und warum.",
       "Mods, die ihr ganzes Spiel mitbringen, laufen auf jeder Version davon, oder ganz ohne, wo seine Shareware kostenlos ist.",
+      "Eine Mod für eine kostenlose Shareware-Episode, die dir fehlt, installiert diese gleich mit.",
       "Spiele mit umbenannter Programmdatei werden jetzt auch erkannt.",
       "Fehlt DOSBox, sagt die Seite eines Spiels, warum Spielen nicht geht."
     ]

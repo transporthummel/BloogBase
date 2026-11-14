@@ -155,6 +155,9 @@ BLOOGBASE_E2E_DOSBOX=<path to dosbox.exe> \
   cargo test e2e_mods -- --ignored --nocapture --test-threads=1
 ```
 
+`BLOOGBASE_E2E_ONLY=<part of the archive name>` launches only those mods. A
+mod that needs no game is launched once, on none.
+
 Screenshots land in `src-tauri/target/e2e-mods/shots/`. Look at them: "running"
 only means DOSBox was still open after seven seconds. A mod patched onto the
 wrong game version can still be running, just showing garbage.

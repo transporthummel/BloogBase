@@ -215,6 +215,48 @@ test("names the copy of another version and explains why it won't do", async () 
   );
 });
 
+test("installs the free shareware along with a mod made for it", async () => {
+  vi.mocked(commands.listInstalls).mockResolvedValue({ status: "ok", data: [] });
+  vi.mocked(commands.freeGames).mockResolvedValue({
+    status: "ok",
+    data: [
+      { gameId: "keen4", versionId: "keen4-1.4-ega", setup: true, size: 600000, installed: false },
+      { gameId: "keen4", versionId: "keen4-demo", setup: false, size: 538631, installed: false },
+    ],
+  });
+  vi.mocked(commands.installFreeGame).mockResolvedValue({
+    id: 4,
+    kind: "freeGame",
+    subject: "keen4-1.4-ega",
+    phase: "downloading",
+    received: 0,
+    total: 0,
+    error: null,
+  });
+  vi.mocked(commands.installIndexMod).mockResolvedValue({
+    id: 5,
+    kind: "mod",
+    subject: "Aurora",
+    phase: "downloading",
+    received: 0,
+    total: 0,
+    error: null,
+  });
+  renderDiscover();
+  const user = userEvent.setup();
+
+  await screen.findByRole("heading", { name: "Aurora" });
+  const aurora = within(card("Aurora"));
+  expect(await aurora.findByText("With Keen 4 v1.4 EGA (shareware)")).toBeInTheDocument();
+  expect(aurora.queryByRole("status")).not.toBeInTheDocument();
+  // Keen 6 has no free version.
+  expect(within(card("Fribbulus")).getByRole("status")).toHaveTextContent("Needs Commander Keen 6");
+  await user.click(aurora.getByRole("button", { name: "Install (2.6 MB)" }));
+  expect(commands.installFreeGame).toHaveBeenCalledWith("keen4-1.4-ega");
+  // Without a copy yet: the mod's job waits for the shareware and goes on it.
+  expect(commands.installIndexMod).toHaveBeenCalledWith("Aurora", null, true, null);
+});
+
 test("asks before installing a mod without its game", async () => {
   vi.mocked(commands.installIndexMod).mockResolvedValue({
     id: 2,

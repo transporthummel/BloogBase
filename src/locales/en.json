@@ -568,6 +568,7 @@
     "needs_version": "Needs {{game}} ({{versions}}).",
     "install": "Install ({{size}})",
     "installAnyway": "Install anyway",
+    "withShareware": "With {{game}} (shareware)",
     "withoutGameTitle": "Install {{name}} without its game?",
     "withoutGameHint": "{{game}} isn’t in your library. The mod is installed now and can be played once you add the game.",
     "free": {

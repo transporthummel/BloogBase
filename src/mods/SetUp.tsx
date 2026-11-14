@@ -18,7 +18,16 @@ import { unwrap } from "../ipc";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob, waitForJob } from "../jobs/queries";
 import { coverKey } from "../library/covers";
-import { modsKey, modsQuery, useInstalls, useMods, useProfiles } from "../library/queries";
+import { freeFit } from "../discover/fit";
+import { useFreeGames } from "../discover/queries";
+import {
+  installsKey,
+  modsKey,
+  modsQuery,
+  useInstalls,
+  useMods,
+  useProfiles,
+} from "../library/queries";
 import { ReadmePanel } from "../profile/ReadmePanel";
 import { readmeKey, useReadmesAt } from "../profile/readme";
 import { Button } from "../ui/Button";
@@ -83,6 +92,18 @@ export function SetUp({
   const warnings = setUpWarnings({ info, option, origin, game, candidates, target });
   // Copies of another version, when it fits none.
   const yours = useOwnedVersions(info.gameId, game);
+  // Without a fitting copy, a free one comes along when there is one.
+  const freeGames = useFreeGames();
+  const free = warnings.missingGame
+    ? freeFit(option.gameVersions.length > 0 ? option.versionIds : [], game, freeGames.data ?? [])
+    : undefined;
+  const startFree = useStartJob((versionId: string) => commands.installFreeGame(versionId));
+  const [withFree, setWithFree] = useState<string | null>(null);
+  const freeJob = useJob("freeGame", withFree);
+  const freeLabel = (versionId: string) =>
+    `${game?.shortTitle ?? info.gameId} ${game?.versions.find((v) => v.id === versionId)?.label ?? ""}`.trim();
+  // Warned of a missing game only when none comes along.
+  const missingGame = warnings.missingGame && !free;
 
   // The mod it belongs over, which it's played over unless unticked.
   const base = option.baseMod;
@@ -95,6 +116,18 @@ export function SetUp({
   const baseJob = useJob("mod", base?.indexId ?? null);
   const install = useMutation({
     mutationFn: async () => {
+      let installId = target?.id ?? null;
+      if (free) {
+        setWithFree(free.versionId);
+        const job = await waitForJob(queryClient, (await startFree.mutateAsync(free.versionId)).id);
+        if (job.phase === "failed") throw job.error;
+        const installs = await queryClient.fetchQuery({
+          queryKey: installsKey,
+          queryFn: () => unwrap(commands.listInstalls()),
+          staleTime: 0,
+        });
+        installId = installs.find((i) => i.versionId === free.versionId)?.id ?? null;
+      }
       let below = overBase ? (base?.modId ?? null) : null;
       if (overBase && base && !below && base.indexId) {
         const indexId = base.indexId;
@@ -109,7 +142,7 @@ export function SetUp({
           name,
           recipe: option.recipe,
           // Without a fitting game, the player agreed to install anyway.
-          installId: target?.id ?? null,
+          installId,
           keenwiki: origin,
           extends: below,
           // Renaming may have made it no longer match.
@@ -133,7 +166,7 @@ export function SetUp({
   const careful =
     choose ||
     warnings.otherGame ||
-    warnings.missingGame ||
+    missingGame ||
     !!warnings.assumedInstead ||
     warnings.modifiedGame ||
     warnings.versionUnchecked ||
@@ -147,7 +180,7 @@ export function SetUp({
   useEnterAction(form, careful ? null : submit);
   // Warned that it may not run as installed.
   const warned =
-    warnings.missingGame ||
+    missingGame ||
     !!warnings.assumedInstead ||
     warnings.modifiedGame ||
     (warnings.incomplete && !overBase) ||
@@ -214,7 +247,12 @@ export function SetUp({
       {others.length > 0 && (
         <ReplaceChoice others={others} replaced={replaced} onChange={setReplace} />
       )}
-      {warnings.missingGame && (
+      {free && (
+        <p className="text-sm text-muted">
+          {t("discover.withShareware", { game: freeLabel(free.versionId) })}
+        </p>
+      )}
+      {missingGame && (
         <Notice>
           {t("mods.missingGame", {
             game: game?.title ?? info.gameId,
@@ -268,6 +306,11 @@ export function SetUp({
       )}
       {warnings.versionUnchecked && <Notice>{t("mods.versionUnchecked")}</Notice>}
 
+      {install.isPending && withFree && freeJob && !isFinished(freeJob) && (
+        <div className="grid gap-1.5">
+          <JobRow job={freeJob} label={freeLabel(withFree)} />
+        </div>
+      )}
       {install.isPending && base && baseJob && !isFinished(baseJob) && (
         <div className="grid gap-1.5">
           <JobRow job={baseJob} label={base.name} />
