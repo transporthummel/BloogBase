@@ -18,7 +18,7 @@
 - A mod that doesn't run on the player's copy of its game says which version that copy is, with "Learn more" explaining why patch mods need one exact release (CKPatch refuses FormGen, GT Interactive, CGA and other versions).
 - Steam and GOG games already in the library show their version when importing.
 - A mod that brings its own executable and all of its game's files plays on any version of the game, as the KeenWiki download does, and for Keen 1, Keen 4 and Keen Dreams without a copy of the game at all (their shareware is free). It stays with its game in Discover and the library, unlike source mods. Levels played over such a mod (xky1rooms over Episode X) need no copy either.
-- Discover's "Works with my games" filter is now "Hide mods I can't play", as it keeps mods that need no game and those a free shareware version comes along with.
+- Discover's "Works with my games" filter is now "Hide mods I can't play", as it keeps mods that need no game and those a free shareware version comes along with. Its game choice "No game needed" is now "Standalone".
 - A mod made for a free shareware version the library lacks (Keen 1 v1.31, Keen 4 v1.4 EGA or CGA, Keen Dreams v1.13) installs it along with the mod, in Discover and when adding a mod: the button says "Install" with both sizes added up and "With Keen 4 v1.4 EGA (shareware)" instead of "Needs …".
 - "What's new" shows the newest version's changes and folds away the versions skipped in between, with a link to all changes.
 - Without DOSBox, a game's or mod's page turns Play red as "DOSBox missing" and says below it why, with the download (or the way to the settings); a mod whose game is missing gets the red button too, and both notes an icon.

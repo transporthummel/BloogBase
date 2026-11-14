@@ -357,7 +357,7 @@ test("standalone mods are under no game and install on none", async () => {
   const gameFilter = screen.getByRole("combobox", { name: "Game" });
   await user.selectOptions(gameFilter, "keen4");
   expect(heading()).toEqual(["Aurora"]);
-  await user.selectOptions(gameFilter, "No game needed");
+  await user.selectOptions(gameFilter, "Standalone");
   expect(heading()).toEqual(["Foray"]);
 
   await user.click(within(card("Foray")).getByRole("button", { name: "Install (2.0 MB)" }));
@@ -388,7 +388,7 @@ test("source mods that require their game are listed like other mods", async () 
   const pack = within(card("Pack"));
   expect(pack.queryByText("Standalone")).not.toBeInTheDocument();
   expect(pack.queryByText("Source mod")).not.toBeInTheDocument();
-  expect(screen.queryByRole("option", { name: "No game needed" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("option", { name: "Standalone" })).not.toBeInTheDocument();
   await user.click(screen.getByRole("checkbox", { name: "Hide mods I can’t play" }));
   expect(screen.queryByRole("heading", { name: "Pack" })).not.toBeInTheDocument();
   await user.click(screen.getByRole("checkbox", { name: "Hide mods I can’t play" }));
