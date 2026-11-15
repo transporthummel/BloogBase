@@ -550,6 +550,7 @@
       "name": "Name"
     },
     "playable": "Mods ausblenden, die ich nicht spielen kann",
+    "notInstalled": "Installierte Mods ausblenden",
     "emptyTitle": "Noch keine Mods",
     "empty": "Die Mod-Liste ist noch nicht da. BloogBase holt sie bei jedem Start; bleibt sie leer, prüfe deine Internetverbindung.",
     "clearFilters": "Filter zurücksetzen",

@@ -550,6 +550,7 @@
       "name": "Name"
     },
     "playable": "Hide mods I can’t play",
+    "notInstalled": "Hide installed mods",
     "emptyTitle": "No mods yet",
     "empty": "The mod list hasn't arrived yet. BloogBase fetches it on every start; if it stays empty, check your internet connection.",
     "clearFilters": "Clear filters",

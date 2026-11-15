@@ -132,8 +132,11 @@ const status: IndexStatus = {
   error: null,
 };
 
+// The last rendered page's queries.
+let client: QueryClient;
+
 function renderDiscover() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <Discover />
@@ -313,6 +316,37 @@ test("filters by text, type and what the library can play", async () => {
   await user.click(screen.getByRole("checkbox", { name: "Hide mods I can’t play" }));
 });
 
+test("hides the mods installed when the filter was turned on", async () => {
+  renderDiscover();
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { name: "Aurora" });
+  const filter = () => screen.getByRole("checkbox", { name: "Hide installed mods" });
+  const names = () => screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+
+  await user.click(filter());
+  expect(names()).toEqual(["Aurora", "Fribbulus"]);
+
+  // One installed meanwhile stays until the filter is turned on again.
+  vi.mocked(commands.indexMods).mockResolvedValue({
+    status: "ok",
+    data: [
+      mod(entry("Aurora", { description: "Blissful", tags: ["sequel"] }), { modId: "aurora" }),
+      mod(entry("Krodacia", { type: "levelpack" }), { modId: "krodacia" }),
+      mod(entry("Oblivion", { version: "1.4" }), { modId: "oblivion", updateAvailable: true }),
+      mod(entry("Fribbulus", { game: "keen6", requires: ["keen6-1.4-ega"] })),
+    ],
+  });
+  await client.invalidateQueries();
+  await within(card("Aurora")).findByText("Installed");
+  expect(names()).toEqual(["Aurora", "Fribbulus"]);
+
+  await user.click(filter());
+  expect(names()).toHaveLength(4);
+  await user.click(filter());
+  expect(names()).toEqual(["Fribbulus"]);
+  await user.click(filter());
+});
+
 test("standalone mods are under no game and install on none", async () => {
   vi.mocked(commands.listInstalls).mockResolvedValue({ status: "ok", data: [] });
   vi.mocked(commands.indexMods).mockResolvedValue({
@@ -407,6 +441,7 @@ async function chooseAll(user: ReturnType<typeof userEvent.setup>) {
   await user.selectOptions(screen.getByRole("combobox", { name: "Type" }), "episode");
   await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "name");
   await user.click(screen.getByRole("checkbox", { name: "Hide mods I can’t play" }));
+  await user.click(screen.getByRole("checkbox", { name: "Hide installed mods" }));
 }
 
 function expectAllChosen() {
@@ -415,6 +450,7 @@ function expectAllChosen() {
   expect(screen.getByRole("combobox", { name: "Type" })).toHaveValue("episode");
   expect(screen.getByRole("combobox", { name: "Sort by" })).toHaveValue("name");
   expect(screen.getByRole("checkbox", { name: "Hide mods I can’t play" })).toBeChecked();
+  expect(screen.getByRole("checkbox", { name: "Hide installed mods" })).toBeChecked();
 }
 
 async function resetChoices(user: ReturnType<typeof userEvent.setup>) {
@@ -424,6 +460,8 @@ async function resetChoices(user: ReturnType<typeof userEvent.setup>) {
   await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "featured");
   const playable = screen.getByRole("checkbox", { name: "Hide mods I can’t play" });
   if ((playable as HTMLInputElement).checked) await user.click(playable);
+  const installed = screen.getByRole("checkbox", { name: "Hide installed mods" });
+  if ((installed as HTMLInputElement).checked) await user.click(installed);
 }
 
 test("keeps filters and sort across other pages and tabs, but not in storage", async () => {

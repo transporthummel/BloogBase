@@ -32,7 +32,13 @@ const KINDS: ModKind[] = ["episode", "levelpack", "conversion"];
 
 const field = "rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm";
 
-const NO_FILTERS = { query: "", game: "", kind: "" as ModKind | "", playable: false };
+const NO_FILTERS = {
+  query: "",
+  game: "",
+  kind: "" as ModKind | "",
+  playable: false,
+  notInstalled: false,
+};
 
 /** The mods tab's filters and sort, kept across pages until the app closes. */
 let last = { ...NO_FILTERS, sort: "featured" as Sort };
@@ -111,6 +117,10 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
   const [game, setGame] = useState(start.game);
   const [kind, setKind] = useState(start.kind);
   const [playable, setPlayable] = useState(start.playable);
+  const [notInstalled, setNotInstalled] = useState(start.notInstalled);
+  // The mods installed when the filter was turned on or the page opened: one
+  // installed from its card meanwhile stays, so it doesn't vanish under the pointer.
+  const [hidden, setHidden] = useState<Set<string> | null>(null);
   const [sort, setSort] = useState(start.sort);
   const [linked, setLinked] = useState(linkedSort);
   function clearFilters() {
@@ -118,6 +128,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
     setGame(NO_FILTERS.game);
     setKind(NO_FILTERS.kind);
     setPlayable(NO_FILTERS.playable);
+    setNotInstalled(NO_FILTERS.notInstalled);
   }
   if (linked !== linkedSort) {
     setLinked(linkedSort);
@@ -127,12 +138,14 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
     }
   }
   useEffect(() => {
-    last = { query, game, kind, playable, sort };
+    last = { query, game, kind, playable, notInstalled, sort };
     lastLink = linkedSort;
   });
 
   const owned = installs.data ?? [];
   const all = mods.data ?? [];
+  const installedNow = () => new Set(all.filter((m) => m.modId).map((m) => m.entry.id));
+  if (notInstalled && !hidden && mods.data) setHidden(installedNow());
   const gamesInIndex = games.filter((g) => all.some((m) => listedUnder(m.entry, g.id)));
   const needle = query.trim().toLowerCase();
   const shown = all
@@ -141,6 +154,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
       if (kind && e.type !== kind) return false;
       // A mod made for a free version is playable: it comes along.
       if (playable && !isPlayable(e, owned, games, freeGames.data)) return false;
+      if (notInstalled && hidden?.has(e.id)) return false;
       if (!needle) return true;
       const description = entryDescription(e, i18n.language) ?? "";
       return [e.name, description, ...e.authors, ...(e.tags ?? [])].some((s) =>
@@ -252,6 +266,18 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
               onChange={(e) => setPlayable(e.target.checked)}
             />
             {t("discover.playable")}
+          </label>
+          <label className="flex items-center gap-2 py-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4 accent-[var(--bb-accent)]"
+              checked={notInstalled}
+              onChange={(e) => {
+                setNotInstalled(e.target.checked);
+                setHidden(e.target.checked ? installedNow() : null);
+              }}
+            />
+            {t("discover.notInstalled")}
           </label>
         </div>
       )}

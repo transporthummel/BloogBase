@@ -4,6 +4,8 @@
 
 ### Features
 
+- Discover can hide installed mods. A mod installed while the filter is on stays in the list until the filter is turned on again or the page is opened again.
+
 ### Improvements
 
 ### Bug Fixes
