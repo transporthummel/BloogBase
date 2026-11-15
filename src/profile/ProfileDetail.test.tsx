@@ -132,6 +132,7 @@ const profile: Profile = {
   standalone: false,
   sourceMod: false,
   playedOver: null,
+  gameProfileId: null,
 };
 
 const save = (file: string, slot: number, name: string | null): SaveFile => ({

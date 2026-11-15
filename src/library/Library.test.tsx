@@ -109,6 +109,7 @@ const profile: Profile = {
   standalone: false,
   sourceMod: false,
   playedOver: null,
+  gameProfileId: null,
 };
 
 const runtime = { id: "dosbox-staging-0.83.0", version: "0.83.0", path: "/x", managed: true };
@@ -208,6 +209,20 @@ test("a mod played over another one names it with its game", async () => {
   renderLibrary();
   const link = await screen.findByRole("link", { name: "Galactic" });
   expect(link.parentElement).toHaveTextContent(/^Runs on Keen 5 v1\.4 EGA and Galactic$/);
+});
+
+test("a mod links the game it runs on", async () => {
+  const aurora: Profile = {
+    ...profile,
+    id: "aurora",
+    modId: "aurora",
+    label: "Aurora",
+    gameProfileId: "keen5-1",
+  };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [aurora] });
+  renderLibrary();
+  const link = await screen.findByRole("link", { name: "Keen 5 v1.4 EGA" });
+  expect(link.parentElement).toHaveTextContent(/^Runs on Keen 5 v1\.4 EGA$/);
 });
 
 test("a mod over one that needs no game names it and needs none either", async () => {

@@ -111,6 +111,19 @@ fn installs_mod_with_profile_and_removes_it_keeping_saves() {
     assert!(paths.mods.join("aurora/source/aurora.zip").is_file());
     assert!(paths.profiles.join("aurora/state").is_dir());
     assert_eq!(list(&db).unwrap().len(), 1);
+    // Linked to the game it runs on; the game itself to nothing.
+    assert_eq!(
+        profiles::get(&db, "aurora")
+            .unwrap()
+            .0
+            .game_profile_id
+            .as_deref(),
+        Some("keen4-1")
+    );
+    assert_eq!(
+        profiles::get(&db, "keen4-1").unwrap().0.game_profile_id,
+        None
+    );
     assert_eq!(fs::read_dir(&paths.cache).unwrap().count(), 0);
 
     // Same name again gets its own id.

@@ -51,6 +51,7 @@ const old: Profile = {
   standalone: false,
   sourceMod: false,
   playedOver: null,
+  gameProfileId: null,
 };
 
 const added: Profile = {

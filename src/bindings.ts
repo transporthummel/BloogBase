@@ -977,6 +977,11 @@ export type Profile = {
 	sourceMod: boolean,
 	/**  The mod a mod is played over, e.g. Lego Keen. */
 	playedOver: PlayedOver | null,
+	/**
+	 *  For a mod, the game profile of the copy it's played on, if there's
+	 *  one.
+	 */
+	gameProfileId: string | null,
 };
 
 export type ProfileConfig = {

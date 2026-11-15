@@ -48,6 +48,9 @@ pub struct Profile {
     pub source_mod: bool,
     /// The mod a mod is played over, e.g. Lego Keen.
     pub played_over: Option<PlayedOver>,
+    /// For a mod, the game profile of the copy it's played on, if there's
+    /// one.
+    pub game_profile_id: Option<String>,
 }
 
 /// The mod another one is played over.
@@ -114,7 +117,9 @@ const SELECT: &str = "
            (SELECT b.path FROM mods b WHERE b.id = m.extends),
            (SELECT b.name FROM mods b WHERE b.id = m.extends),
            (SELECT bp.id FROM profiles bp WHERE bp.mod_id = m.extends),
-           COALESCE(m.standalone, 0)
+           COALESCE(m.standalone, 0),
+           (SELECT gp.id FROM profiles gp
+            WHERE p.mod_id IS NOT NULL AND gp.install_id = p.install_id AND gp.mod_id IS NULL)
     FROM profiles p
     LEFT JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id
@@ -198,6 +203,7 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
                 .get::<_, Option<String>>(18)?
                 .zip(r.get::<_, Option<String>>(19)?)
                 .map(|(name, profile_id)| PlayedOver { profile_id, name }),
+            game_profile_id: r.get(21)?,
         },
         layers: Layers {
             lower: install_path.map(|p| p.join("base")),

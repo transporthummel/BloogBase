@@ -2,11 +2,13 @@
   "unreleased": {
     "en": [
       "Discover can hide the mods you have installed.",
-      "Discover's filters are buttons now, the games as tiles, and can choose several games and types."
+      "Discover's filters are buttons now, the games as tiles, and can choose several games and types.",
+      "The game a mod runs on links to the game's page."
     ],
     "de": [
       "Entdecken kann installierte Mods ausblenden.",
-      "Die Filter in Entdecken sind jetzt Knöpfe, die Spiele als Kacheln, mit mehreren Spielen und Arten zugleich."
+      "Die Filter in Entdecken sind jetzt Knöpfe, die Spiele als Kacheln, mit mehreren Spielen und Arten zugleich.",
+      "Das Spiel, mit dem eine Mod läuft, verlinkt auf seine Seite."
     ]
   },
   "releases": [
