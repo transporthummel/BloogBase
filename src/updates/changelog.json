@@ -1,7 +1,13 @@
 {
   "unreleased": {
-    "en": ["Discover can hide the mods you have installed."],
-    "de": ["Entdecken kann installierte Mods ausblenden."]
+    "en": [
+      "Discover can hide the mods you have installed.",
+      "Discover's filters are buttons now, the games as tiles."
+    ],
+    "de": [
+      "Entdecken kann installierte Mods ausblenden.",
+      "Die Filter in Entdecken sind jetzt Knöpfe, die Spiele als Kacheln."
+    ]
   },
   "releases": [
     {

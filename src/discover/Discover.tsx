@@ -3,7 +3,7 @@ import { RefreshCw, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type Game, type ModKind } from "../bindings";
-import { gameTitle, useGames } from "../catalog";
+import { useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { useInstalls } from "../library/queries";
 import { Button } from "../ui/Button";
@@ -13,15 +13,8 @@ import { PageHeader } from "../ui/PageHeader";
 import { RelativeTime } from "../ui/RelativeTime";
 import { Tabs } from "../ui/Tabs";
 import { entryDescription } from "./description";
-import {
-  compare,
-  listedUnder,
-  needsNoGame,
-  NO_GAME,
-  playable as isPlayable,
-  SORTS,
-  type Sort,
-} from "./fit";
+import { compare, listedUnder, needsNoGame, playable as isPlayable, SORTS, type Sort } from "./fit";
+import { Choice, GameChoice, Toggle } from "./Filters";
 import { FreeGames } from "./FreeGames";
 import { IndexError } from "./IndexError";
 import { ModCard } from "./ModCard";
@@ -146,6 +139,11 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
   const all = mods.data ?? [];
   const installedNow = () => new Set(all.filter((m) => m.modId).map((m) => m.entry.id));
   if (notInstalled && !hidden && mods.data) setHidden(installedNow());
+  function toggleNotInstalled(on: boolean) {
+    setNotInstalled(on);
+    setHidden(on ? installedNow() : null);
+  }
+  const filtered = !!(query.trim() || game || kind || playable || notInstalled);
   const gamesInIndex = games.filter((g) => all.some((m) => listedUnder(m.entry, g.id)));
   const needle = query.trim().toLowerCase();
   const shown = all
@@ -168,25 +166,36 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
     <>
       <div className="mb-4 grid gap-2">
         {st && (
-          <p className="text-xs text-muted">
-            {st.checkedAt ? (
-              <RelativeTime at={st.checkedAt}>
-                {(date) =>
-                  // Filtered: how many of them are shown.
-                  shown.length < all.length
-                    ? t("discover.status", {
-                        context: "filtered",
-                        shown: shown.length,
-                        count: all.length,
-                        date,
-                      })
-                    : t("discover.status", { count: st.modCount, date })
-                }
-              </RelativeTime>
-            ) : (
-              t("discover.neverChecked")
+          <div className="flex min-h-7 flex-wrap items-center justify-between gap-x-3">
+            <p className="text-xs text-muted">
+              {st.checkedAt ? (
+                <RelativeTime at={st.checkedAt}>
+                  {(date) =>
+                    // Filtered: how many of them are shown.
+                    shown.length < all.length
+                      ? t("discover.status", {
+                          context: "filtered",
+                          shown: shown.length,
+                          count: all.length,
+                          date,
+                        })
+                      : t("discover.status", { count: st.modCount, date })
+                  }
+                </RelativeTime>
+              ) : (
+                t("discover.neverChecked")
+              )}
+            </p>
+            {filtered && (
+              <button
+                type="button"
+                className="rounded-md px-2 py-1 text-xs font-semibold text-muted hover:bg-surface-raised hover:text-ink"
+                onClick={clearFilters}
+              >
+                {t("discover.clearFilters")}
+              </button>
             )}
-          </p>
+          </div>
         )}
         {st && st.hiddenCount > 0 && (
           <Notice>{t("discover.hidden", { count: st.hiddenCount })}</Notice>
@@ -199,7 +208,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
       </div>
 
       {all.length > 0 && (
-        <div className="mb-6 flex flex-wrap items-end gap-3">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
           <label className="relative min-w-48 flex-1">
             <span className="sr-only">{t("discover.search")}</span>
             <Search
@@ -215,36 +224,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
-          <label className="grid gap-1 text-xs">
-            <span className="text-muted">{t("discover.game")}</span>
-            <select className={field} value={game} onChange={(e) => setGame(e.target.value)}>
-              <option value="">{t("discover.allGames")}</option>
-              {gamesInIndex.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {gameTitle(games, g.id)}
-                </option>
-              ))}
-              {all.some((m) => needsNoGame(m.entry)) && (
-                <option value={NO_GAME}>{t("discover.noGame")}</option>
-              )}
-            </select>
-          </label>
-          <label className="grid gap-1 text-xs">
-            <span className="text-muted">{t("discover.type")}</span>
-            <select
-              className={field}
-              value={kind}
-              onChange={(e) => setKind(e.target.value as ModKind | "")}
-            >
-              <option value="">{t("discover.allKinds")}</option>
-              {KINDS.map((k) => (
-                <option key={k} value={k}>
-                  {t(`discover.kind.${k}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-xs">
+          <label className="flex items-center gap-2 text-sm">
             <span className="text-muted">{t("discover.sort")}</span>
             <select
               className={field}
@@ -258,27 +238,29 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-2 py-2 text-sm">
-            <input
-              type="checkbox"
-              className="size-4 accent-[var(--bb-accent)]"
-              checked={playable}
-              onChange={(e) => setPlayable(e.target.checked)}
+          <div className="flex w-full flex-wrap items-center gap-x-6 gap-y-3">
+            <GameChoice
+              games={games}
+              ids={gamesInIndex.map((g) => g.id)}
+              noGame={all.some((m) => needsNoGame(m.entry))}
+              value={game}
+              onChange={setGame}
             />
-            {t("discover.playable")}
-          </label>
-          <label className="flex items-center gap-2 py-2 text-sm">
-            <input
-              type="checkbox"
-              className="size-4 accent-[var(--bb-accent)]"
-              checked={notInstalled}
-              onChange={(e) => {
-                setNotInstalled(e.target.checked);
-                setHidden(e.target.checked ? installedNow() : null);
-              }}
+            <Choice
+              label={t("discover.type")}
+              options={KINDS.map((k) => ({ value: k, label: t(`discover.kind.${k}`) }))}
+              value={kind}
+              onChange={setKind}
             />
-            {t("discover.notInstalled")}
-          </label>
+            <div className="flex flex-wrap gap-1.5">
+              <Toggle on={playable} onChange={setPlayable}>
+                {t("discover.playable")}
+              </Toggle>
+              <Toggle on={notInstalled} onChange={toggleNotInstalled}>
+                {t("discover.notInstalled")}
+              </Toggle>
+            </div>
+          </div>
         </div>
       )}
 
@@ -289,12 +271,8 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
         </EmptyState>
       )}
       {all.length > 0 && shown.length === 0 && (
-        <div className="flex flex-wrap items-center gap-3">
-          <Notice>{t("discover.noMatch")}</Notice>
-          <Button variant="secondary" onClick={clearFilters}>
-            {t("discover.clearFilters")}
-          </Button>
-        </div>
+        // "Clear filters" is next to them.
+        <Notice>{t("discover.noMatch")}</Notice>
       )}
 
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">

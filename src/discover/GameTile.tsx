@@ -10,18 +10,21 @@ export function GameTile({
   gameId,
   game,
   standalone = false,
+  className = "size-11 text-base",
 }: {
   gameId: string;
   game?: Game;
   /** A source mod: not the episode's number, which it shares nothing but its engine with. */
   standalone?: boolean;
+  /** Size and text size; 44px beside a card's title. */
+  className?: string;
 }) {
   return (
     <Cover
       gameId={gameId}
       game={game}
       standalone={standalone}
-      className="size-11 shrink-0 rounded-md text-base"
+      className={`shrink-0 rounded-md ${className}`}
     />
   );
 }
