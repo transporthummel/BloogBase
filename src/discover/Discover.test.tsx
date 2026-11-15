@@ -261,7 +261,7 @@ test("installs the free shareware along with a mod made for it", async () => {
   // Keen 6 has no free version.
   expect(within(card("Fribbulus")).getByRole("status")).toHaveTextContent("Needs Commander Keen 6");
   // Playable: the shareware comes along.
-  await user.click(screen.getByRole("button", { name: "Playable" }));
+  await user.click(screen.getByRole("button", { name: "I can play" }));
   expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
     "Aurora",
     "Krodacia",
@@ -272,7 +272,7 @@ test("installs the free shareware along with a mod made for it", async () => {
   // Without a copy yet: the mod's job waits for the shareware and goes on it.
   expect(commands.installIndexMod).toHaveBeenCalledWith("Aurora", null, true, null);
   // Discover keeps its filters; the next test starts without.
-  await user.click(screen.getByRole("button", { name: "Playable" }));
+  await user.click(screen.getByRole("button", { name: "I can play" }));
 });
 
 test("asks before installing a mod without its game", async () => {
@@ -311,14 +311,33 @@ test("filters by text, type and what the library can play", async () => {
   await user.clear(screen.getByRole("searchbox"));
   expect(screen.getByText(/^4 mods · checked /)).toBeInTheDocument();
 
+  const names = () => screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
   await user.click(choice("Type", "Level pack"));
-  expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(1);
+  expect(names()).toEqual(["Krodacia"]);
+  expect(choice("Type", "All")).toHaveAttribute("aria-pressed", "false");
+  // Several types and games show the mods of any of them.
+  await user.click(choice("Type", "Adventure"));
+  expect(names()).toHaveLength(4);
+  await user.click(choice("Type", "Level pack"));
+  expect(names()).toEqual(["Aurora", "Fribbulus", "Oblivion"]);
   await user.click(choice("Type", "All"));
+  expect(choice("Type", "Adventure")).toHaveAttribute("aria-pressed", "false");
 
-  await user.click(screen.getByRole("button", { name: "Playable" }));
+  await user.click(choice("Game", "Commander Keen 6"));
+  expect(names()).toEqual(["Fribbulus"]);
+  await user.click(choice("Game", "Commander Keen 4"));
+  expect(names()).toHaveLength(4);
+  await user.click(choice("Game", "Commander Keen 6"));
+  expect(names()).toEqual(["Aurora", "Krodacia", "Oblivion"]);
+  await user.click(choice("Game", "Commander Keen 4"));
+  expect(choice("Game", "All")).toHaveAttribute("aria-pressed", "true");
+
+  const playable = screen.getByRole("button", { name: "I can play" });
+  expect(playable).toHaveAccessibleDescription(/for one of your games/i);
+  await user.click(playable);
   expect(screen.queryByRole("heading", { name: "Fribbulus" })).not.toBeInTheDocument();
   expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(3);
-  await user.click(screen.getByRole("button", { name: "Playable" }));
+  await user.click(screen.getByRole("button", { name: "I can play" }));
 });
 
 test("clears the filters once one is set", async () => {
@@ -408,11 +427,12 @@ test("standalone mods are under no game and install on none", async () => {
   expect(foray.getByText("Standalone")).toBeInTheDocument();
   expect(foray.getByText("Source mod")).toBeInTheDocument();
   const heading = () => screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-  await user.click(screen.getByRole("button", { name: "Playable" }));
+  await user.click(screen.getByRole("button", { name: "I can play" }));
   expect(heading()).toEqual(["Foray"]);
-  await user.click(screen.getByRole("button", { name: "Playable" }));
+  await user.click(screen.getByRole("button", { name: "I can play" }));
   await user.click(choice("Game", "Commander Keen 4"));
   expect(heading()).toEqual(["Aurora"]);
+  await user.click(choice("Game", "Commander Keen 4"));
   await user.click(choice("Game", "Standalone"));
   expect(heading()).toEqual(["Foray"]);
 
@@ -445,9 +465,9 @@ test("source mods that require their game are listed like other mods", async () 
   expect(pack.queryByText("Standalone")).not.toBeInTheDocument();
   expect(pack.queryByText("Source mod")).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Standalone" })).not.toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Playable" }));
+  await user.click(screen.getByRole("button", { name: "I can play" }));
   expect(screen.queryByRole("heading", { name: "Pack" })).not.toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Playable" }));
+  await user.click(screen.getByRole("button", { name: "I can play" }));
   await user.click(choice("Game", "Commander Keen 4"));
   expect(screen.getByRole("heading", { name: "Pack" })).toBeInTheDocument();
   await user.click(choice("Game", "All"));
@@ -459,7 +479,7 @@ async function chooseAll(user: ReturnType<typeof userEvent.setup>) {
   await user.click(choice("Game", "Commander Keen 4"));
   await user.click(choice("Type", "Adventure"));
   await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "name");
-  await user.click(screen.getByRole("button", { name: "Playable" }));
+  await user.click(screen.getByRole("button", { name: "I can play" }));
   await user.click(screen.getByRole("button", { name: "Not installed" }));
 }
 
@@ -468,7 +488,10 @@ function expectAllChosen() {
   expect(choice("Game", "Commander Keen 4")).toHaveAttribute("aria-pressed", "true");
   expect(choice("Type", "Adventure")).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("combobox", { name: "Sort by" })).toHaveValue("name");
-  expect(screen.getByRole("button", { name: "Playable" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "I can play" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   expect(screen.getByRole("button", { name: "Not installed" })).toHaveAttribute(
     "aria-pressed",
     "true",
@@ -480,7 +503,7 @@ async function resetChoices(user: ReturnType<typeof userEvent.setup>) {
   await user.click(choice("Game", "All"));
   await user.click(choice("Type", "All"));
   await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "featured");
-  const playable = screen.getByRole("button", { name: "Playable" });
+  const playable = screen.getByRole("button", { name: "I can play" });
   if (playable.getAttribute("aria-pressed") === "true") await user.click(playable);
   const installed = screen.getByRole("button", { name: "Not installed" });
   if (installed.getAttribute("aria-pressed") === "true") await user.click(installed);

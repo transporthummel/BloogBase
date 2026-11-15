@@ -548,7 +548,8 @@
       "newest": "Newest",
       "name": "Name"
     },
-    "playable": "Playable",
+    "playable": "I can play",
+    "playableHint": "For one of your games, needing no game, or for a free shareware episode that comes along",
     "notInstalled": "Not installed",
     "emptyTitle": "No mods yet",
     "empty": "The mod list hasn't arrived yet. BloogBase fetches it on every start; if it stays empty, check your internet connection.",

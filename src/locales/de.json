@@ -548,7 +548,8 @@
       "newest": "Neueste",
       "name": "Name"
     },
-    "playable": "Spielbar",
+    "playable": "Kann ich spielen",
+    "playableHint": "Für eines deiner Spiele, ohne Spiel spielbar oder für eine kostenlose Shareware-Episode, die gleich mitkommt",
     "notInstalled": "Nicht installiert",
     "emptyTitle": "Noch keine Mods",
     "empty": "Die Mod-Liste ist noch nicht da. BloogBase holt sie bei jedem Start; bleibt sie leer, prüfe deine Internetverbindung.",

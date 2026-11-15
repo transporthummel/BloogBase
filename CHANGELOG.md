@@ -8,7 +8,7 @@
 
 ### Improvements
 
-- Discover's filters are buttons instead of drop-downs: the games as the tiles of the cards, the types and "Playable"/"Not installed" as chips, with "Clear filters" next to the count whenever a filter is set. Only the sort is still a drop-down, next to the search.
+- Discover's filters are buttons instead of drop-downs: the games as the tiles of the cards and the types as chips, several of each at once, "I can play" (with a tooltip saying what it means) and "Not installed" as toggles, with "Clear filters" next to the count whenever a filter is set. Only the sort is still a drop-down, next to the search.
 
 ### Bug Fixes
 

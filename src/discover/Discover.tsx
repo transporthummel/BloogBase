@@ -27,8 +27,8 @@ const field = "rounded-lg border border-border bg-surface-raised px-3 py-2 text-
 
 const NO_FILTERS = {
   query: "",
-  game: "",
-  kind: "" as ModKind | "",
+  games: [] as string[],
+  kinds: [] as ModKind[],
   playable: false,
   notInstalled: false,
 };
@@ -107,8 +107,8 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
     linkedSort && linkedSort !== lastLink ? { ...NO_FILTERS, sort: linkedSort } : last,
   );
   const [query, setQuery] = useState(start.query);
-  const [game, setGame] = useState(start.game);
-  const [kind, setKind] = useState(start.kind);
+  const [chosenGames, setChosenGames] = useState(start.games);
+  const [kinds, setKinds] = useState(start.kinds);
   const [playable, setPlayable] = useState(start.playable);
   const [notInstalled, setNotInstalled] = useState(start.notInstalled);
   // The mods installed when the filter was turned on or the page opened: one
@@ -118,8 +118,8 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
   const [linked, setLinked] = useState(linkedSort);
   function clearFilters() {
     setQuery(NO_FILTERS.query);
-    setGame(NO_FILTERS.game);
-    setKind(NO_FILTERS.kind);
+    setChosenGames(NO_FILTERS.games);
+    setKinds(NO_FILTERS.kinds);
     setPlayable(NO_FILTERS.playable);
     setNotInstalled(NO_FILTERS.notInstalled);
   }
@@ -131,7 +131,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
     }
   }
   useEffect(() => {
-    last = { query, game, kind, playable, notInstalled, sort };
+    last = { query, games: chosenGames, kinds, playable, notInstalled, sort };
     lastLink = linkedSort;
   });
 
@@ -143,13 +143,19 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
     setNotInstalled(on);
     setHidden(on ? installedNow() : null);
   }
-  const filtered = !!(query.trim() || game || kind || playable || notInstalled);
+  const filtered = !!(
+    query.trim() ||
+    chosenGames.length ||
+    kinds.length ||
+    playable ||
+    notInstalled
+  );
   const gamesInIndex = games.filter((g) => all.some((m) => listedUnder(m.entry, g.id)));
   const needle = query.trim().toLowerCase();
   const shown = all
     .filter(({ entry: e }) => {
-      if (game && !listedUnder(e, game)) return false;
-      if (kind && e.type !== kind) return false;
+      if (chosenGames.length && !chosenGames.some((g) => listedUnder(e, g))) return false;
+      if (kinds.length && !kinds.includes(e.type)) return false;
       // A mod made for a free version is playable: it comes along.
       if (playable && !isPlayable(e, owned, games, freeGames.data)) return false;
       if (notInstalled && hidden?.has(e.id)) return false;
@@ -243,17 +249,17 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
               games={games}
               ids={gamesInIndex.map((g) => g.id)}
               noGame={all.some((m) => needsNoGame(m.entry))}
-              value={game}
-              onChange={setGame}
+              value={chosenGames}
+              onChange={setChosenGames}
             />
             <Choice
               label={t("discover.type")}
               options={KINDS.map((k) => ({ value: k, label: t(`discover.kind.${k}`) }))}
-              value={kind}
-              onChange={setKind}
+              value={kinds}
+              onChange={setKinds}
             />
             <div className="flex flex-wrap gap-1.5">
-              <Toggle on={playable} onChange={setPlayable}>
+              <Toggle on={playable} onChange={setPlayable} hint={t("discover.playableHint")}>
                 {t("discover.playable")}
               </Toggle>
               <Toggle on={notInstalled} onChange={toggleNotInstalled}>
