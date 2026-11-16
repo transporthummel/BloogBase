@@ -1365,6 +1365,9 @@ test("the Worlds tab lists the worlds and plays, renames and deletes them", asyn
   expect(rows[0]).toHaveTextContent("Start with the pogo stick · Starting ammo: 15");
   expect(rows[0]).toHaveTextContent("2 saves");
   expect(rows[1]).toHaveTextContent("Hard one");
+  // The seed is said once: in the name, else beside it.
+  expect(rows[0]).not.toHaveTextContent("Seed: 4711");
+  expect(rows[1]).toHaveTextContent("Seed: 12");
 
   await userEvent.click(screen.getByRole("button", { name: "Play Hard one" }));
   await vi.waitFor(() =>

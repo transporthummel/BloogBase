@@ -85,6 +85,8 @@ export function WorldsPanel({
         {data?.worlds.map((w) => {
           const name = worldName(t, w);
           const options = optionsSummary(data.definition, w, i18n.language);
+          // Named after its seed, the name says it already.
+          const seed = w.name !== null ? w.seed : null;
           return (
             <li key={w.id}>
               <Card className="flex flex-wrap items-center gap-3 p-3">
@@ -105,14 +107,14 @@ export function WorldsPanel({
                     <span className="select-text">{name}</span>
                     {w.active && <Badge>{t("worlds.playing")}</Badge>}
                   </h3>
-                  {(w.seed !== null || options.length > 0) && (
+                  {(seed !== null || options.length > 0) && (
                     <p className="text-xs text-muted">
-                      {w.seed !== null && (
+                      {seed !== null && (
                         <>
-                          {t("worlds.seed")}: <span className="select-text">{w.seed}</span>
+                          {t("worlds.seed")}: <span className="select-text">{seed}</span>
                         </>
                       )}
-                      {w.seed !== null && options.length > 0 && " · "}
+                      {seed !== null && options.length > 0 && " · "}
                       {options.join(" · ")}
                     </p>
                   )}
