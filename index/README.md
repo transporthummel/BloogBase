@@ -52,6 +52,7 @@ By hand:
    | `provides`       | Files of this mod that mods copied over it lack, e.g. its start batch (see below)           |
    | `cover`          | The program whose title screen is the cover, when the recipe runs a menu (see below)        |
    | `standalone`     | `true` for a mod that ships its whole game and plays without a copy of it (see below)       |
+   | `worlds`         | For mods that generate their levels at every start: how to keep them as worlds (see below)  |
    | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
    | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
 
@@ -155,6 +156,37 @@ By hand:
    Keen 1, Keen 4 and Keen Dreams don't (Return to the Shadowlands). Apps
    before 1.3.0 read it from `requiresGame`, which the build adds to
    `index.json`; the check refuses it in an entry.
+
+   A mod that generates its levels at every start (Keen 1 Randomiser,
+   Simulator Keen) can keep each set as a world, so a player can go back to
+   one, with its own saves, or start a particular seed. `new` runs the
+   generator and plays (usually the same as `recipe`), `play` plays the
+   world kept without generating anew; `files` are what the generator
+   writes (DOS names, `*` and `?`), matched in the profile's state only. The
+   files `new` and `play` run have to be in the download, but for those in
+   `files`. With `seed`, the player can enter one (`arg` and the number are
+   appended to `new`'s command, up to `max`), and `read` says where the
+   generator notes the seed it used: the number right after `after` in
+   `file`, one of `files`. `options` are offered in "Start new world": a
+   `flag` passes `arg` when on, a `number` passes `arg n` (`min`, `max`,
+   `default`); `label` in English and German. Older apps ignore the field
+   and play `recipe`, so it needs no `minAppVersion`.
+
+   ```yaml
+   worlds:
+     new: { type: batch, file: RNDKEEN1.BAT }
+     play: { type: patch, patcher: CK1PATCH.EXE, patch: RNDKEEN1.PAT }
+     files: [RNDLV*.CK1, RNDKEEN1.PAT]
+     seed:
+       arg: /SEED
+       max: 2147483647
+       read: { file: RNDKEEN1.PAT, after: "Seed: " }
+     options:
+       - id: startpogo
+         arg: /STARTPOGO
+         type: flag
+         label: { en: "Start with the pogo stick", de: "Mit Pogo-Stick starten" }
+   ```
 
 3. Check it, including the download:
 

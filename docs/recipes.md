@@ -170,3 +170,12 @@ folder (`compose.rs`) and runs `Recipe::command` there. On the way:
 
 The recipe is part of the composition's hash, so changing it rebuilds the
 folder.
+
+## Worlds
+
+An index entry's `worlds` (`index/README.md`) replaces the recipe's command
+for mods that generate their levels (`worlds.rs`): a new world runs `new`
+with the seed and options as arguments (`launcher::runnable` appends them,
+also to a batch file copied to drive X), continuing one runs `play`. The
+recipe still decides everything else (composition, cover, one-button
+firing, the setup a mod report names).

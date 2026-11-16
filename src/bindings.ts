@@ -23,7 +23,14 @@ export const commands = {
 	 *  Starts a profile in DOSBox. Returns once the process is running; emits
 	 *  `GameLaunch` as it gets going and `PlaySessionEnded` when it exits.
 	 */
-	launchProfile: (profileId: string) => typedError<null, CommandError>(__TAURI_INVOKE("launch_profile", { profileId })),
+	launchProfile: (profileId: string, world: WorldStart | null) => typedError<null, CommandError>(__TAURI_INVOKE("launch_profile", { profileId, world })),
+	/**  The worlds of a profile whose mod keeps them (§9.6), else `None`. */
+	profileWorlds: (profileId: string) => typedError<ProfileWorlds | null, CommandError>(__TAURI_INVOKE("profile_worlds", { profileId })),
+	/**  Names a world; without a name it gets its default back. */
+	renameWorld: (profileId: string, worldId: number, name: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("rename_world", { profileId, worldId, name })),
+	setWorldFavourite: (profileId: string, worldId: number, favourite: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("set_world_favourite", { profileId, worldId, favourite })),
+	/**  Deletes a world after backing it up; not while the game runs. */
+	deleteWorld: (profileId: string, worldId: number) => typedError<null, CommandError>(__TAURI_INVOKE("delete_world", { profileId, worldId })),
 	listSaves: (profileId: string) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("list_saves", { profileId })),
 	/**  The earlier versions of a save that backups hold, newest first. */
 	saveVersions: (profileId: string, file: string) => typedError<SaveVersion[], CommandError>(__TAURI_INVOKE("save_versions", { profileId, file })),
@@ -308,6 +315,8 @@ export type Backup = {
 	other: number,
 	auto: boolean,
 	size: number,
+	/**  The world it was made of, for mods with worlds (§9.6). */
+	world: number | null,
 };
 
 export type BackupSettings = {
@@ -465,7 +474,7 @@ export type EarlierBackup = {
 export type Engine = "vorticons" | "galaxy" | "dreams";
 
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
-export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "alreadyInLibrary" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "runtimeTooOld" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "invalidSetting" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "olderIndex" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload" | "noSavesFound" | "otherGame";
+export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "alreadyInLibrary" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "runtimeTooOld" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "invalidSetting" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "olderIndex" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload" | "noSavesFound" | "otherGame" | "worldIncomplete";
 
 /**  Where a game or mod stands with the patch. */
 export type Firing = 
@@ -667,6 +676,11 @@ export type IndexEntry = {
 	requiresGame?: boolean,
 	tags?: string[],
 	featured?: boolean,
+	/**
+	 *  For mods that generate their levels at every start: how to keep
+	 *  them as worlds.
+	 */
+	worlds?: Worlds | null,
 	minAppVersion?: string | null,
 };
 
@@ -933,6 +947,12 @@ export type ModUpdate = {
 	refreshed: PageDetail[],
 };
 
+export type OptionKind = 
+/**  Passed as `arg` when on (1). */
+"flag" | 
+/**  Passed as `arg n`. */
+"number";
+
 /**  What a mod's KeenWiki page says about it. */
 export type PageDetail = "authors" | "description" | "released" | "homepage" | "pckf" | "keenmodding";
 
@@ -947,6 +967,8 @@ export type PlaySessionEnded = {
 	 *  less than 30 seconds (`SHORT_SESSION`): it may not have started properly.
 	 */
 	startProblem: boolean,
+	/**  A new world was to begin, but the mod generated none (§9.6). */
+	noWorld: boolean,
 };
 
 /**  The mod another one is played over. */
@@ -1003,6 +1025,10 @@ export type Profile = {
 	 *  one.
 	 */
 	gameProfileId: string | null,
+	/**  A mod that generates its levels and keeps them as worlds (§9.6). */
+	worlds: boolean,
+	/**  The world played last, which "Play" goes on with. */
+	activeWorld: number | null,
 };
 
 export type ProfileConfig = {
@@ -1037,6 +1063,16 @@ export type ProfilePatches =
  */
 { kind: "mod"; status: CustomStatus; gameProfileId: string; gameLabel: string };
 
+/**  What the Worlds tab and the "Start new world" dialog show. */
+export type ProfileWorlds = {
+	definition: Worlds,
+	/**  Favourites first, then by last start. */
+	worlds: World[],
+	active: number | null,
+	/**  What the last new world was started with. */
+	lastOptions: { [key in string]: number },
+};
+
 /**  Quitting was asked for while these games run; the frontend asks what to do. */
 export type QuitRequested = {
 	games: string[],
@@ -1069,7 +1105,14 @@ export type Reason =
  */
 "beforeLaunch" | "beforeOverwrite" | "beforeRestore" | "beforeDelete" | "modRemoved" | "gameRemoved" | 
 /**  Before dropping the copies a mod's launcher left (`launcher_copies`). */
-"launcherReset";
+"launcherReset" | 
+/**
+ *  The saves made before a mod had worlds, taken out of `state/` when
+ *  its first world begins (§9.6).
+ */
+"beforeWorlds" | 
+/**  Before a world was deleted. */
+"worldDeleted";
 
 export type Recipe = 
 /**  Run the episode's patcher with a patch file. */
@@ -1176,6 +1219,21 @@ export type Screenshot = {
 	/**  Unix epoch seconds. */
 	takenAt: number | null,
 	size: number,
+};
+
+export type Seed = {
+	/**  The argument before the number, e.g. `/SEED`. */
+	arg: string,
+	/**  The largest seed a player may enter. */
+	max: number,
+	/**  Where the generator notes the seed it used. */
+	read?: SeedRead | null,
+};
+
+/**  The seed is the number right after `after` in `file`. */
+export type SeedRead = {
+	file: string,
+	after: string,
 };
 
 export type Setting = {
@@ -1331,6 +1389,59 @@ export type WikiMod = {
 	credits: string[],
 	/**  As listed; the first one is the newest. */
 	downloads: WikiDownload[],
+};
+
+/**  A kept world. */
+export type World = {
+	/**
+	 *  Counts up per profile; the app names a world without `name` after
+	 *  it or its seed.
+	 */
+	id: number,
+	name: string | null,
+	seed: number | null,
+	/**  Option id → value as generated (flags 0 or 1). */
+	options: { [key in string]: number },
+	/**  Its first start, Unix epoch seconds. */
+	createdAt: number,
+	lastPlayedAt: number,
+	favourite: boolean,
+	/**  Its files and saves are the ones the game sees. */
+	active: boolean,
+	saves: number,
+};
+
+/**  An option of the generator, offered when starting a new world. */
+export type WorldOption = {
+	id: string,
+	arg: string,
+	type: OptionKind,
+	min?: number | null,
+	max?: number | null,
+	default?: number | null,
+	/**  Language code → label; `en` is always there. */
+	label: { [key in string]: string },
+};
+
+/**  How to start a profile with worlds. */
+export type WorldStart = { type: "continue"; id: number } | { type: "new"; seed: number | null; options?: { [key in string]: number } };
+
+/**  How a mod keeps its worlds, from its index entry. */
+export type Worlds = {
+	/**
+	 *  Generates a new world and plays it; the seed and options are
+	 *  appended to its command.
+	 */
+	new: Recipe,
+	/**  Plays the world in `state/` without generating anew. */
+	play: Recipe,
+	/**
+	 *  What a world is made of, as the generator writes it into `state/`:
+	 *  DOS names or patterns.
+	 */
+	files: string[],
+	seed?: Seed | null,
+	options?: WorldOption[],
 };
 
 /* Tauri Specta runtime */

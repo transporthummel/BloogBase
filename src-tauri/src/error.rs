@@ -77,6 +77,8 @@ pub enum Error {
     NoSavesFound,
     #[error("this backup is from another game: {0}")]
     OtherGame(String),
+    #[error("the world's files are missing")]
+    WorldIncomplete,
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -136,6 +138,7 @@ impl Error {
             Error::UnsupportedDownload(_) => ErrorKind::UnsupportedDownload,
             Error::NoSavesFound => ErrorKind::NoSavesFound,
             Error::OtherGame(_) => ErrorKind::OtherGame,
+            Error::WorldIncomplete => ErrorKind::WorldIncomplete,
         }
     }
 }
@@ -175,6 +178,7 @@ pub enum ErrorKind {
     UnsupportedDownload,
     NoSavesFound,
     OtherGame,
+    WorldIncomplete,
 }
 
 /// The error shape every command returns to the frontend.

@@ -49,6 +49,11 @@ pub enum Reason {
     GameRemoved,
     /// Before dropping the copies a mod's launcher left (`launcher_copies`).
     LauncherReset,
+    /// The saves made before a mod had worlds, taken out of `state/` when
+    /// its first world begins (§9.6).
+    BeforeWorlds,
+    /// Before a world was deleted.
+    WorldDeleted,
 }
 
 const REASON_PREFIX: &str = "bloogbase:";
@@ -63,6 +68,8 @@ impl Reason {
             Reason::ModRemoved => "mod-removed",
             Reason::GameRemoved => "game-removed",
             Reason::LauncherReset => "launcher-reset",
+            Reason::BeforeWorlds => "before-worlds",
+            Reason::WorldDeleted => "world-deleted",
         }
     }
 
@@ -80,6 +87,8 @@ impl Reason {
             Reason::ModRemoved,
             Reason::GameRemoved,
             Reason::LauncherReset,
+            Reason::BeforeWorlds,
+            Reason::WorldDeleted,
         ]
         .into_iter()
         .find(|r| r.key() == key)
@@ -124,6 +133,8 @@ pub struct Backup {
     pub other: u32,
     pub auto: bool,
     pub size: u32,
+    /// The world it was made of, for mods with worlds (§9.6).
+    pub world: Option<u32>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -138,6 +149,13 @@ struct Manifest {
     label: Option<String>,
     created_at: u32,
     files: Vec<String>,
+    /// The world it was made of.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    world: Option<u32>,
+    /// In the backup made when a mod is removed: all its worlds, so they
+    /// come back with it (§9.6).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    worlds: Option<crate::worlds::KeptWorlds>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -265,12 +283,58 @@ pub fn create<'a>(
     contents: Contents<'_>,
     origin: impl Into<Origin<'a>>,
 ) -> Result<Option<Backup>> {
-    let (profile, layers) = profiles::get(db, profile_id)?;
-    let files = collect(&layers, contents)?;
+    let (_, layers) = profiles::get(db, profile_id)?;
+    let mut files = collect(&layers, contents)?;
+    let world = crate::worlds::active_world(db, profile_id)?;
+    let origin = origin.into();
+    let mut kept = None;
+    if matches!(origin, Origin::Auto(Reason::ModRemoved))
+        && let Some((worlds, parked)) = crate::worlds::for_removal(paths, db, profile_id)?
+    {
+        files.extend(parked);
+        files.sort_by(|a, b| a.0.cmp(&b.0));
+        kept = Some(worlds);
+    }
+    store(paths, db, profile_id, files, origin, world, kept)
+}
+
+/// Archives the files and saves of a world that isn't played: they aren't
+/// in `state/`, but in its folder.
+pub fn create_of_world(
+    paths: &AppPaths,
+    db: &Db,
+    profile_id: &str,
+    mut files: Files,
+    reason: Reason,
+    world: u32,
+) -> Result<Option<Backup>> {
+    files.sort_by(|a, b| a.0.cmp(&b.0));
+    store(
+        paths,
+        db,
+        profile_id,
+        files,
+        Origin::Auto(reason),
+        Some(world),
+        None,
+    )
+}
+
+/// Archives `files` as a backup of a profile, as [`create`] describes.
+fn store(
+    paths: &AppPaths,
+    db: &Db,
+    profile_id: &str,
+    files: Files,
+    origin: Origin<'_>,
+    world: Option<u32>,
+    worlds: Option<crate::worlds::KeptWorlds>,
+) -> Result<Option<Backup>> {
+    let (profile, _) = profiles::get(db, profile_id)?;
     if files.is_empty() {
         return Ok(None);
     }
-    let (label, reason) = match origin.into() {
+    let (label, reason) = match origin {
         Origin::User(label) => (
             label
                 .map(str::trim)
@@ -319,6 +383,8 @@ pub fn create<'a>(
         label: label.clone(),
         created_at,
         files: names.clone(),
+        world,
+        worlds,
     };
     let archive = new_archive_path(paths, profile_id, created_at)?;
     write_zip(&archive, &files, &manifest)?;
@@ -327,8 +393,9 @@ pub fn create<'a>(
         let conn = db.conn();
         conn.execute(
             "INSERT INTO save_backups
-                 (profile_id, label, archive_path, created_at, files_json, auto, content_hash)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                 (profile_id, label, archive_path, created_at, files_json, auto, content_hash,
+                  world_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![
                 profile_id,
                 label,
@@ -336,7 +403,8 @@ pub fn create<'a>(
                 created_at,
                 serde_json::to_string(&names).expect("strings serialize"),
                 auto,
-                hash
+                hash,
+                world
             ],
         )?;
         let id = conn.last_insert_rowid() as u32;
@@ -467,7 +535,8 @@ fn remove(db: &Db, id: u32, archive: &str) -> Result<()> {
     Ok(())
 }
 
-const SELECT: &str = "SELECT id, profile_id, label, created_at, files_json, auto, archive_path
+const SELECT: &str = "SELECT id, profile_id, label, created_at, files_json, auto, archive_path,
+                             world_id
                       FROM save_backups";
 
 /// Where a backup's archive is, from its stored path.
@@ -493,6 +562,7 @@ fn from_row(db: &Db, r: &rusqlite::Row<'_>) -> rusqlite::Result<(Backup, String)
             other: 0,
             auto: r.get(5)?,
             size: fs::metadata(&archive).map_or(0, |m| m.len() as u32),
+            world: r.get(7)?,
         },
         archive,
     ))
@@ -707,7 +777,31 @@ pub fn restore(
     include_other: bool,
 ) -> Result<bool> {
     let (backup, archive) = get_with_archive(db, id)?;
-    let (files, _) = read_zip(Path::new(&archive))?;
+    let (mut files, manifest) = read_zip(Path::new(&archive))?;
+    // The worlds of a removed mod come back with all of the backup.
+    if let Some(kept) = manifest.and_then(|m| m.worlds)
+        && file.is_none()
+        && include_other
+    {
+        crate::worlds::bring_back(paths, db, &backup.profile_id, &kept, &files)?;
+    }
+    let parked = format!("{}/", crate::worlds::ARCHIVE_DIR);
+    files.retain(|(name, _)| !name.starts_with(&parked));
+    // A world's saves fit only that world: it's played again first, if
+    // it's still there. Another world's files never replace the ones of
+    // the world played.
+    if let Some(def) = crate::worlds::definition(db, &backup.profile_id)? {
+        let mut active = crate::worlds::active_world(db, &backup.profile_id)?;
+        if let Some(world) = backup.world
+            && active != Some(world)
+            && crate::worlds::activate(paths, db, &backup.profile_id, world).is_ok()
+        {
+            active = Some(world);
+        }
+        if backup.world.is_none() || backup.world != active {
+            files.retain(|(name, _)| !def.holds(name));
+        }
+    }
     let backed_up = put_back(
         paths,
         db,
@@ -938,6 +1032,8 @@ pub fn import(paths: &AppPaths, db: &Db, profile_id: &str, src: &Path) -> Result
         label: label.clone(),
         created_at,
         files: names.clone(),
+        world: None,
+        worlds: None,
     };
     let archive = new_archive_path(paths, profile_id, created_at)?;
     write_zip(&archive, &files, &manifest)?;
@@ -1544,6 +1640,8 @@ mod tests {
                 label: None,
                 created_at: 0,
                 files: vec!["SAVED1.CK1".into()],
+                world: None,
+                worlds: None,
             },
         )
         .unwrap();

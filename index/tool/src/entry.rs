@@ -79,6 +79,11 @@ pub struct Entry {
     pub tags: Vec<String>,
     #[serde(default)]
     pub featured: bool,
+    /// For mods that generate their levels at every start: how to keep
+    /// such a set as a world and play it again. Older apps ignore it and
+    /// play `recipe`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub worlds: Option<Worlds>,
     /// Oldest app version that can install this entry.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min_app_version: Option<String>,
@@ -161,6 +166,95 @@ pub enum Recipe {
         file: String,
     },
     Episode,
+}
+
+/// How a mod that generates its levels keeps them (PLAN.md §9.6).
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Worlds {
+    /// Generates a new world and plays it; the seed and options are
+    /// appended to its command.
+    pub new: Recipe,
+    /// Plays the world kept in the profile, without generating anew.
+    pub play: Recipe,
+    /// What a world is made of, as the generator writes it: DOS names or
+    /// patterns with `*` and `?`.
+    pub files: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seed: Option<Seed>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub options: Vec<WorldOption>,
+}
+
+/// The generator's seed.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Seed {
+    /// The argument before the number, e.g. `/SEED`.
+    pub arg: String,
+    /// The largest seed a player may enter.
+    pub max: u32,
+    /// Where the generator notes the seed it used.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub read: Option<SeedRead>,
+}
+
+/// The seed as the number right after `after` in `file`, one of the
+/// world's files.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct SeedRead {
+    pub file: String,
+    pub after: String,
+}
+
+/// An option of the generator offered in "Start new world".
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct WorldOption {
+    pub id: String,
+    pub arg: String,
+    #[serde(rename = "type")]
+    pub kind: OptionKind,
+    /// For numbers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default: Option<u32>,
+    /// Language code (`en` and [`LANGUAGES`]) → label.
+    pub label: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum OptionKind {
+    /// Passed as `arg` when on.
+    Flag,
+    /// Passed as `arg n`.
+    Number,
+}
+
+impl Worlds {
+    /// Whether `name` is one of the world's files.
+    pub fn holds(&self, name: &str) -> bool {
+        self.files.iter().any(|p| glob_match(p, name))
+    }
+}
+
+/// DOS-style match, ignoring case: `*` any run, `?` one character.
+pub fn glob_match(pattern: &str, name: &str) -> bool {
+    fn go(p: &[u8], n: &[u8]) -> bool {
+        match (p.first(), n.first()) {
+            (None, None) => true,
+            (Some(b'*'), _) => go(&p[1..], n) || (!n.is_empty() && go(p, &n[1..])),
+            (Some(b'?'), Some(_)) => go(&p[1..], &n[1..]),
+            (Some(a), Some(b)) if a.eq_ignore_ascii_case(b) => go(&p[1..], &n[1..]),
+            _ => false,
+        }
+    }
+    go(pattern.as_bytes(), name.as_bytes())
 }
 
 impl Entry {
@@ -437,6 +531,9 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
             fail("standalone: can't extend another mod".into());
         }
     }
+    if let Some(w) = &entry.worlds {
+        worlds_problems(w, &mut fail);
+    }
     if entry.requires_game {
         fail(
             "requiresGame: the app decides it, by whether the game's shareware is free; take it out"
@@ -449,6 +546,95 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
         }
     }
     out
+}
+
+/// What's wrong with an entry's `worlds`.
+fn worlds_problems(w: &Worlds, fail: &mut impl FnMut(String)) {
+    for (name, r) in [("new", &w.new), ("play", &w.play)] {
+        if matches!(r, Recipe::Episode) {
+            fail(format!("worlds.{name}: has to run something of the mod"));
+        }
+        for file in r.files() {
+            if !is_plain_name(file) || file.contains(['*', '?']) {
+                fail(format!(
+                    "worlds.{name}: `{file}` must be a plain DOS file name"
+                ));
+            }
+        }
+    }
+    if w.files.is_empty() {
+        fail("worlds.files: lists nothing".into());
+    }
+    for f in &w.files {
+        if !is_plain_name(f) {
+            fail(format!("worlds.files: `{f}` must be a DOS name or pattern"));
+        }
+    }
+    if let Some(seed) = &w.seed {
+        if !is_word(&seed.arg) {
+            fail(format!("worlds.seed.arg: `{}` must be one word", seed.arg));
+        }
+        if seed.max == 0 || seed.max > i32::MAX as u32 {
+            fail(format!("worlds.seed.max: must be 1 to {}", i32::MAX));
+        }
+        if let Some(read) = &seed.read {
+            if !w.holds(&read.file) {
+                fail(format!(
+                    "worlds.seed.read.file: `{}` is not one of the world's files",
+                    read.file
+                ));
+            }
+            if read.after.is_empty() {
+                fail("worlds.seed.read.after: is empty".into());
+            }
+        }
+    }
+    let mut ids = BTreeSet::new();
+    for o in &w.options {
+        if !is_slug(&o.id) {
+            fail(format!("worlds.options: id `{}` must be a slug", o.id));
+        }
+        if !ids.insert(&o.id) {
+            fail(format!("worlds.options: id `{}` comes twice", o.id));
+        }
+        if !is_word(&o.arg) {
+            fail(format!("worlds.options.{}: arg must be one word", o.id));
+        }
+        for lang in std::iter::once(&"en").chain(LANGUAGES) {
+            if o.label.get(*lang).is_none_or(|l| l.trim().is_empty()) {
+                fail(format!("worlds.options.{}: label.{lang} is missing", o.id));
+            }
+        }
+        for lang in o.label.keys() {
+            if lang != "en" && !LANGUAGES.contains(&lang.as_str()) {
+                fail(format!(
+                    "worlds.options.{}: label.{lang} is no language of the app",
+                    o.id
+                ));
+            }
+        }
+        match o.kind {
+            OptionKind::Flag => {
+                if o.min.is_some() || o.max.is_some() || o.default.is_some() {
+                    fail(format!(
+                        "worlds.options.{}: a flag has no min, max or default",
+                        o.id
+                    ));
+                }
+            }
+            OptionKind::Number => match (o.min, o.default, o.max) {
+                (Some(min), Some(default), Some(max)) if min <= default && default <= max => {}
+                (Some(_), Some(_), Some(_)) => fail(format!(
+                    "worlds.options.{}: needs min <= default <= max",
+                    o.id
+                )),
+                _ => fail(format!(
+                    "worlds.options.{}: a number needs min, max and default",
+                    o.id
+                )),
+            },
+        }
+    }
 }
 
 /// What's wrong with a download's own `recipe` and its `programs`.
@@ -564,6 +750,13 @@ fn is_program(name: &str) -> bool {
 
 fn is_plain_name(s: &str) -> bool {
     !s.is_empty() && !s.contains(['/', '\\', ' '])
+}
+
+/// One argument on a DOS command line, e.g. `/SEED`.
+fn is_word(s: &str) -> bool {
+    !s.is_empty()
+        && s.bytes()
+            .all(|b| b.is_ascii_graphic() && !b"%|<>&\"".contains(&b))
 }
 
 fn is_slug(s: &str) -> bool {
@@ -722,6 +915,53 @@ recipe:
             .insert("keen4-1.0".into(), Recipe::Episode);
         let p = problems(&bad, "aurora-bliss", &catalog());
         assert_eq!(p.len(), 3, "{p:#?}");
+    }
+
+    const WORLDS: &str = r#"worlds:
+  new: { type: batch, file: RNDKEEN1.BAT }
+  play: { type: patch, patcher: CK1PATCH.EXE, patch: RNDKEEN1.PAT }
+  files: [RNDLV*.CK1, RNDKEEN1.PAT]
+  seed:
+    arg: /SEED
+    max: 2147483647
+    read: { file: RNDKEEN1.PAT, after: "Seed: " }
+  options:
+    - id: startpogo
+      arg: /STARTPOGO
+      type: flag
+      label: { en: "Start with the pogo stick", de: "Mit Pogo-Stick starten" }
+    - id: startammo
+      arg: /STARTAMMO
+      type: number
+      min: 0
+      max: 99
+      default: 0
+      label: { en: "Starting ammo", de: "Munition zu Beginn" }
+"#;
+
+    #[test]
+    fn worlds() {
+        let e = parse(&format!("{AURORA}{WORLDS}")).unwrap();
+        let w = e.worlds.as_ref().unwrap();
+        assert_eq!(w.options.len(), 2);
+        assert!(w.holds("rndlv01.ck1") && w.holds("RNDKEEN1.PAT") && !w.holds("LEVEL01.CK1"));
+        assert_eq!(
+            problems(&e, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+
+        let mut bad = e.clone();
+        let w = bad.worlds.as_mut().unwrap();
+        w.files.push("a/b".into());
+        let seed = w.seed.as_mut().unwrap();
+        seed.max = 0;
+        seed.read.as_mut().unwrap().file = "OTHER.TXT".into();
+        w.options[1].default = Some(100);
+        w.options[0].label.remove("de");
+        w.options.push(w.options[0].clone());
+        let p = problems(&bad, "aurora-bliss", &catalog());
+        // a/b, max, read.file, default, label.de twice, id twice.
+        assert_eq!(p.len(), 7, "{p:#?}");
     }
 
     #[test]

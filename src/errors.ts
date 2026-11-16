@@ -31,6 +31,7 @@ const translated: ErrorKind[] = [
   "unsupportedDownload",
   "noSavesFound",
   "otherGame",
+  "worldIncomplete",
 ];
 
 export function errorMessage(t: TFunction, err: unknown): string {

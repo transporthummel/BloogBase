@@ -13,6 +13,7 @@ use crate::keymap;
 use crate::launcher::{self, LaunchSpec};
 use crate::paths::AppPaths;
 use crate::runtime::Runtime;
+use crate::worlds::{self, NewWorld, WorldStart};
 
 /// A game that has started.
 pub struct Started {
@@ -20,23 +21,30 @@ pub struct Started {
     pub session: i64,
     /// The backup made before it, to compare the saves with afterwards.
     pub backup: Option<u32>,
+    /// The world it generates, recorded at its end.
+    pub new_world: Option<NewWorld>,
 }
 
 /// Backs up the saves, prepares the profile and starts DOSBox; `on_log`
-/// hears what its log tells.
+/// hears what its log tells. `world`: which world a mod with worlds plays
+/// (§9.6); without, the one played last goes on.
+#[allow(clippy::too_many_arguments)]
 pub fn start(
     paths: &AppPaths,
     db: &Db,
     runtime: &Runtime,
     profile_id: &str,
+    world: Option<WorldStart>,
     fullscreen: bool,
     letters: &[(char, u16)],
     on_log: impl FnMut(launcher::LogEvent) + Send + 'static,
 ) -> Result<Started> {
     // Left by a session that ended without us, e.g. in a crash.
     merge_settings(paths, db, profile_id);
+    // First, so the backup sees the saves of the world played.
+    let run = worlds::prepare(paths, db, profile_id, world)?;
     let backup = backups::before_launch(paths, db, profile_id);
-    let spec = launcher::prepare(paths, db, profile_id, fullscreen)?;
+    let spec = launcher::prepare(paths, db, profile_id, fullscreen, run.as_ref())?;
     if let Err(e) = game_settings::apply(paths, db, profile_id) {
         tracing::warn!("could not apply global settings to {profile_id}: {e}");
     }
@@ -55,6 +63,7 @@ pub fn start(
         child,
         session,
         backup,
+        new_world: run.and_then(|r| r.new),
     })
 }
 
@@ -94,17 +103,22 @@ pub struct Ended {
     pub message: Option<String>,
     /// See `PlaySessionEnded::start_problem`.
     pub start_problem: bool,
+    /// A new world was to begin, but the mod generated none.
+    pub no_world: bool,
 }
 
 /// Records the end of a session, checks the backup made before it and reads
-/// what the game printed last. `quitting`: BloogBase ended the game as it
-/// quit. Problems are logged, not returned: the session is over either way.
+/// what the game printed last; records the world it generated. `quitting`:
+/// BloogBase ended the game as it quit. Problems are logged, not returned:
+/// the session is over either way.
+#[allow(clippy::too_many_arguments)]
 pub fn end(
     paths: &AppPaths,
     db: &Db,
     profile_id: &str,
     session: i64,
     backup: Option<u32>,
+    new_world: Option<&NewWorld>,
     exit_code: Option<i32>,
     quitting: bool,
 ) -> Ended {
@@ -113,6 +127,14 @@ pub fn end(
         0
     });
     merge_settings(paths, db, profile_id);
+    let no_world = match new_world.map(|w| worlds::after_session(paths, db, profile_id, w)) {
+        None => false,
+        Some(Ok(id)) => id.is_none(),
+        Some(Err(e)) => {
+            tracing::error!("could not record the new world of {profile_id}: {e}");
+            true
+        }
+    };
     if let Some(backup) = backup
         && let Err(e) = backups::after_session(db, profile_id, backup)
     {
@@ -133,6 +155,7 @@ pub fn end(
         seconds,
         message,
         start_problem,
+        no_world,
     }
 }
 
@@ -169,7 +192,18 @@ mod tests {
     #[test]
     fn short_first_sessions_with_a_setup_are_start_problems() {
         let (_tmp, paths, db) = setup();
-        let end = |session, quitting| end(&paths, &db, "keen4-1", session, None, Some(0), quitting);
+        let end = |session, quitting| {
+            end(
+                &paths,
+                &db,
+                "keen4-1",
+                session,
+                None,
+                None,
+                Some(0),
+                quitting,
+            )
+        };
 
         let game = end(session(&db, None, 5), false);
         // The clock ticks on meanwhile, more so on a busy machine.
@@ -208,7 +242,7 @@ mod tests {
             managed: false,
         };
 
-        assert!(start(&paths, &db, &runtime, "keen4-1", false, &[], |_| {}).is_err());
+        assert!(start(&paths, &db, &runtime, "keen4-1", None, false, &[], |_| {}).is_err());
         assert_eq!(std::fs::read(&file).unwrap(), original);
     }
 }

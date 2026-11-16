@@ -95,6 +95,7 @@ test("goes when the game fails or ends before, or on a click", async () => {
         seconds: 0,
         message: null,
         startProblem: false,
+        noWorld: false,
       },
     }),
   );

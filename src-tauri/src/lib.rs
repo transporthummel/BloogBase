@@ -39,6 +39,7 @@ mod settings;
 mod source;
 mod storage;
 mod stores;
+mod worlds;
 
 pub use crate::mods::index_add;
 
@@ -76,6 +77,10 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::list_profiles,
             commands::storage_usage,
             commands::launch_profile,
+            commands::profile_worlds,
+            commands::rename_world,
+            commands::set_world_favourite,
+            commands::delete_world,
             commands::list_saves,
             commands::save_versions,
             commands::delete_save,

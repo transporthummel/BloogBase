@@ -585,6 +585,7 @@ fn curated(recipe: Recipe) -> Curated {
         keenwiki_url: Some("https://keenwiki.shikadi.net/wiki/Aurora_Bliss".into()),
         url: "https://example.com/m.dave216.aurora.zip".into(),
         sha256: "ab".repeat(32),
+        worlds: None,
     }
 }
 

@@ -116,6 +116,10 @@ pub struct IndexEntry {
     pub tags: Vec<String>,
     #[serde(default)]
     pub featured: bool,
+    /// For mods that generate their levels at every start: how to keep
+    /// them as worlds.
+    #[serde(default)]
+    pub worlds: Option<crate::worlds::Worlds>,
     #[serde(default)]
     pub min_app_version: Option<String>,
 }
@@ -745,6 +749,7 @@ pub fn link_installed(index: &ModIndex, db: &Db) -> Result<()> {
             }
         }
         mods::set_standalone(db, &e.id, e.needs_no_game(), e.standalone)?;
+        mods::set_worlds(db, &e.id, e.worlds.as_ref())?;
     }
     Ok(())
 }
@@ -921,6 +926,9 @@ mod tests {
         );
         assert!(matches!(e.recipe, Recipe::Patch { .. }));
         assert_eq!(e.downloads[0].size, 1234);
+        let worlds = e.worlds.as_ref().unwrap();
+        assert_eq!(worlds.seed.as_ref().unwrap().max, 65535);
+        assert_eq!(worlds.options[1].default, Some(3));
 
         let newer = SAMPLE.replace(r#""type": "levelpack""#, r#""type": "minigame""#);
         let newer = newer.replace("9.0.0", "0.0.1");

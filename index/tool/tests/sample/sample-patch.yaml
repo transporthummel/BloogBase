@@ -27,3 +27,23 @@ recipe:
   patch: SAMPLE.PAT
 tags: [new-graphics]
 featured: true
+worlds:
+  new: { type: batch, file: GEN.BAT }
+  play: { type: patch, patcher: CK4PATCH.EXE, patch: WORLD.PAT }
+  files: [WORLD*.CK4, WORLD.PAT]
+  seed:
+    arg: /SEED
+    max: 65535
+    read: { file: WORLD.PAT, after: "Seed: " }
+  options:
+    - id: hard
+      arg: /HARD
+      type: flag
+      label: { en: "Hard", de: "Schwer" }
+    - id: lives
+      arg: /LIVES
+      type: number
+      min: 1
+      max: 9
+      default: 3
+      label: { en: "Lives", de: "Leben" }

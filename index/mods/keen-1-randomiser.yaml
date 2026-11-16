@@ -27,5 +27,35 @@ standalone: true
 recipe:
   type: batch
   file: RNDKEEN1.BAT
+# Every start shuffles anew; a save only fits the set it was made in.
+worlds:
+  new: { type: batch, file: RNDKEEN1.BAT }
+  play: { type: patch, patcher: CK1PATCH.EXE, patch: RNDKEEN1.PAT }
+  files: [RNDLV*.CK1, RNDKEEN1.PAT]
+  seed:
+    arg: /SEED
+    # RANDKEEN reads it with atoi; the status screen shows 32 bits.
+    max: 2147483647
+    read: { file: RNDKEEN1.PAT, after: "Seed: " }
+  # Left out: /NOLEVELNAMES, /NOENEMYSHUFFLE and /DEBUG (spoilers).
+  options:
+    - id: startpogo
+      arg: /STARTPOGO
+      type: flag
+      label: { en: "Start with the pogo stick", de: "Mit Pogo-Stick starten" }
+    - id: startammo
+      arg: /STARTAMMO
+      type: number
+      min: 0
+      max: 99
+      default: 0
+      label: { en: "Starting ammo", de: "Munition zu Beginn" }
+    - id: extrapogo
+      arg: /EXTRAPOGO
+      type: number
+      min: 0
+      max: 10
+      default: 0
+      label: { en: "Extra pogo sticks hidden", de: "Zusätzlich versteckte Pogo-Sticks" }
 # Older apps drop its unchanged executable and would play it without one.
 minAppVersion: 1.3.0

@@ -17,6 +17,7 @@ use crate::mod_index::IndexEntry;
 use crate::paths::AppPaths;
 use crate::recipe::{Recipe, VersionRecipes};
 use crate::source::{Source, split_dir};
+use crate::worlds::Worlds;
 
 use super::analyze::{Analysis, analyze};
 use super::fit::{best_install, fits, needed_game, parse_requires, rehome, requires};
@@ -306,6 +307,8 @@ pub struct Curated {
     pub url: String,
     /// The download's SHA-256.
     pub sha256: String,
+    /// How it keeps the levels it generates.
+    pub worlds: Option<Worlds>,
 }
 
 impl Curated {
@@ -340,6 +343,7 @@ impl Curated {
             keenwiki_url: entry.links.keenwiki.clone(),
             url: d.url.clone(),
             sha256: d.sha256.clone(),
+            worlds: entry.worlds.clone(),
         }
     }
 }
@@ -445,7 +449,7 @@ pub fn install_curated(
             true => None,
             false => updated_install(db, &mod_id, game, requires)?,
         };
-        return update(
+        let m = update(
             paths,
             db,
             &mod_id,
@@ -453,7 +457,9 @@ pub fn install_curated(
             &analysis,
             &stored,
             target.as_ref(),
-        );
+        )?;
+        set_worlds(db, &c.index_id, c.worlds.as_ref())?;
+        return Ok(m);
     }
     let target = match install_id {
         _ if on_its_own => None,
@@ -469,7 +475,20 @@ pub fn install_curated(
             target => target,
         },
     };
-    store(paths, db, &source, &analysis, &stored, target.as_ref())
+    let m = store(paths, db, &source, &analysis, &stored, target.as_ref())?;
+    set_worlds(db, &c.index_id, c.worlds.as_ref())?;
+    Ok(m)
+}
+
+/// Makes the mods installed from the index entry `index_id` keep their
+/// worlds as it says (§9.6); the entry may gain or change them later.
+pub fn set_worlds(db: &Db, index_id: &str, worlds: Option<&Worlds>) -> Result<()> {
+    let json = worlds.map(|w| serde_json::to_string(w).expect("worlds serialize"));
+    db.conn().execute(
+        "UPDATE mods SET worlds_json = ?2 WHERE index_id = ?1 AND worlds_json IS NOT ?2",
+        params![index_id, json],
+    )?;
+    Ok(())
 }
 
 /// Installs a standalone index mod from the player's own folder or ZIP,

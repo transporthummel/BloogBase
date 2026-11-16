@@ -136,6 +136,8 @@ const profile: Profile = {
   sourceMod: false,
   playedOver: null,
   gameProfileId: null,
+  worlds: false,
+  activeWorld: null,
 };
 
 const save = (file: string, slot: number, name: string | null): SaveFile => ({
@@ -170,6 +172,7 @@ const backup: Backup = {
   other: 0,
   auto: true,
   size: 300,
+  world: null,
 };
 
 const ready: RuntimeStatus = {

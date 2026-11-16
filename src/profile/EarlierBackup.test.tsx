@@ -52,6 +52,8 @@ const old: Profile = {
   sourceMod: false,
   playedOver: null,
   gameProfileId: null,
+  worlds: false,
+  activeWorld: null,
 };
 
 const added: Profile = {
@@ -76,6 +78,7 @@ const backup: Backup = {
   other: 0,
   auto: true,
   size: 300,
+  world: null,
 };
 
 beforeEach(() => {

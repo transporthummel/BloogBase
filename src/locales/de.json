@@ -256,6 +256,7 @@
     "webPage": "Der Link führt zu einer Webseite statt zu einer Datei. <browser>Öffne ihn im Browser</browser>, lade die Mod dort herunter und füge sie als ZIP-Datei oder Ordner hinzu.",
     "unsupportedDownload": "BloogBase kann diesen Download noch nicht öffnen ({{message}}). <browser>Lade ihn im Browser herunter</browser>, entpacke ihn und füge den Ordner hinzu.",
     "noSavesFound": "Dort wurden keine Spielstände für dieses Spiel gefunden.",
+    "worldIncomplete": "Die Dateien dieser Welt fehlen. Beginne stattdessen eine neue Welt.",
     "otherGame": "Diese Sicherung gehört zu einem anderen Spiel ({{message}})."
   },
   "jobs": {

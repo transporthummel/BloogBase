@@ -23,3 +23,19 @@ downloads:
 recipe:
   type: batch
   file: play.bat
+# random.exe makes new levels at every start, seeded from the clock.
+worlds:
+  new: { type: batch, file: play.bat }
+  play: { type: patch, patcher: CK3PATCH.EXE, patch: patch.pat }
+  files:
+    - LEVEL01.CK3
+    - LEVEL02.CK3
+    - LEVEL03.CK3
+    - LEVEL04.CK3
+    - LEVEL05.CK3
+    - LEVEL06.CK3
+    - LEVEL07.CK3
+    - LEVEL08.CK3
+    - LEVEL09.CK3
+    - LEVEL10.CK3
+    - LEVEL16.CK3

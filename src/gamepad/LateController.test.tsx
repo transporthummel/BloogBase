@@ -56,6 +56,7 @@ test("a controller connected during a game asks for a restart, until the game en
         seconds: 60,
         message: null,
         startProblem: false,
+        noWorld: false,
       },
     }),
   );

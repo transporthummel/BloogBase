@@ -256,6 +256,7 @@
     "webPage": "The link leads to a web page instead of a file. <browser>Open it in your browser</browser>, download the mod there and add it as a ZIP file or folder.",
     "unsupportedDownload": "BloogBase can't open this download yet ({{message}}). <browser>Download it in your browser</browser>, unpack it and add the folder.",
     "noSavesFound": "No saved games for this game were found there.",
+    "worldIncomplete": "The files of this world are missing. Start a new world instead.",
     "otherGame": "That backup belongs to another game ({{message}})."
   },
   "jobs": {

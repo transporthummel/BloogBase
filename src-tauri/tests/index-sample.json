@@ -71,7 +71,54 @@
       "tags": [
         "new-graphics"
       ],
-      "featured": true
+      "featured": true,
+      "worlds": {
+        "new": {
+          "type": "batch",
+          "file": "GEN.BAT"
+        },
+        "play": {
+          "type": "patch",
+          "patcher": "CK4PATCH.EXE",
+          "patch": "WORLD.PAT",
+          "args": []
+        },
+        "files": [
+          "WORLD*.CK4",
+          "WORLD.PAT"
+        ],
+        "seed": {
+          "arg": "/SEED",
+          "max": 65535,
+          "read": {
+            "file": "WORLD.PAT",
+            "after": "Seed: "
+          }
+        },
+        "options": [
+          {
+            "id": "hard",
+            "arg": "/HARD",
+            "type": "flag",
+            "label": {
+              "de": "Schwer",
+              "en": "Hard"
+            }
+          },
+          {
+            "id": "lives",
+            "arg": "/LIVES",
+            "type": "number",
+            "min": 1,
+            "max": 9,
+            "default": 3,
+            "label": {
+              "de": "Leben",
+              "en": "Lives"
+            }
+          }
+        ]
+      }
     }
   ]
 }

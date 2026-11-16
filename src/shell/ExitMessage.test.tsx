@@ -34,7 +34,14 @@ beforeEach(() => {
 function ended(message: string | null, startProblem = false) {
   act(() =>
     listener!({
-      payload: { profileId: "pak-een", exitCode: 0, seconds: 3, message, startProblem },
+      payload: {
+        profileId: "pak-een",
+        exitCode: 0,
+        seconds: 3,
+        message,
+        startProblem,
+        noWorld: false,
+      },
     }),
   );
 }

@@ -169,7 +169,11 @@ pub async fn storage_usage(app: AppHandle) -> CommandResult<StorageUsage> {
 /// `GameLaunch` as it gets going and `PlaySessionEnded` when it exits.
 #[tauri::command]
 #[specta::specta]
-pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult<()> {
+pub async fn launch_profile(
+    app: AppHandle,
+    profile_id: String,
+    world: Option<crate::worlds::WorldStart>,
+) -> CommandResult<()> {
     let runtime = runtime::active(&app.state::<Db>())?;
     let claim = app.state::<Running>().claim(&profile_id)?;
     let launch = |phase| {
@@ -205,6 +209,7 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
             &a.state::<Db>(),
             &runtime,
             &id,
+            world,
             fullscreen,
             &letters,
             on_log,
@@ -215,6 +220,7 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
         mut child,
         session,
         backup,
+        new_world,
     } = match started {
         Ok(s) => s,
         Err(e) => {
@@ -249,6 +255,7 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
             &profile_id,
             session,
             backup,
+            new_world.as_ref(),
             exit_code,
             quitting,
         );
@@ -259,6 +266,7 @@ pub async fn launch_profile(app: AppHandle, profile_id: String) -> CommandResult
             seconds: ended.seconds,
             message: ended.message,
             start_problem: ended.start_problem,
+            no_world: ended.no_world,
         }
         .emit(&app);
     });
@@ -304,6 +312,75 @@ async fn with_profile_locked<T: Send + 'static>(
     let _claim = app.state::<Running>().claim(profile_id)?;
     let a = app.clone();
     blocking(move || f(&a.state::<AppPaths>(), &a.state::<Db>())).await
+}
+
+/// The worlds of a profile whose mod keeps them (§9.6), else `None`.
+#[tauri::command]
+#[specta::specta]
+pub async fn profile_worlds(
+    app: AppHandle,
+    profile_id: String,
+) -> CommandResult<Option<crate::worlds::ProfileWorlds>> {
+    // Not while a switch could be under way.
+    if app.state::<Running>().contains(&profile_id) {
+        return blocking(move || {
+            let db = app.state::<Db>();
+            Ok(
+                crate::worlds::definition(&db, &profile_id)?.map(|definition| {
+                    crate::worlds::ProfileWorlds {
+                        definition,
+                        worlds: Vec::new(),
+                        active: None,
+                        last_options: Default::default(),
+                    }
+                }),
+            )
+        })
+        .await;
+    }
+    with_profile_locked(&app, &profile_id.clone(), move |paths, db| {
+        crate::worlds::list(paths, db, &profile_id)
+    })
+    .await
+}
+
+/// Names a world; without a name it gets its default back.
+#[tauri::command]
+#[specta::specta]
+pub async fn rename_world(
+    app: AppHandle,
+    profile_id: String,
+    world_id: u32,
+    name: Option<String>,
+) -> CommandResult<()> {
+    blocking(move || {
+        crate::worlds::rename(&app.state::<Db>(), &profile_id, world_id, name.as_deref())
+    })
+    .await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn set_world_favourite(
+    app: AppHandle,
+    profile_id: String,
+    world_id: u32,
+    favourite: bool,
+) -> CommandResult<()> {
+    blocking(move || {
+        crate::worlds::set_favourite(&app.state::<Db>(), &profile_id, world_id, favourite)
+    })
+    .await
+}
+
+/// Deletes a world after backing it up; not while the game runs.
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_world(app: AppHandle, profile_id: String, world_id: u32) -> CommandResult<()> {
+    with_profile_locked(&app, &profile_id.clone(), move |paths, db| {
+        crate::worlds::delete(paths, db, &profile_id, world_id)
+    })
+    .await
 }
 
 #[tauri::command]

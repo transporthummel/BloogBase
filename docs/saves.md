@@ -157,6 +157,27 @@ others stay as they are. So do the games' diagonal keys, Quiet AdLib and
 two-button firing. A setting overwrites an in-game change at the next start;
 it comes back into effect when the setting goes back to unset.
 
+## Worlds
+
+Mods that generate their levels at every start (an index entry's `worlds`,
+`index/README.md`) keep each set as a world (`worlds.rs`): the files the
+generator wrote and the saves made while playing it. A save only fits its
+own world. The world played has its files and saves in `state/`, like any
+profile; the others wait in `worlds/<id>/` next to it. Settings, high scores
+and the rest of `state/` stay with the profile.
+
+Switching moves the world played into its folder and the chosen one into
+`state/`, file by file. `worlds/swap.json` notes the switch first, so one cut
+short (a crash) is finished at the next switch, launch or list. Starting a
+new world sets the one played aside; after the session, the files the
+generator wrote become a new world if they're all there, labelled with the
+seed the generator noted (or the one passed). Continuing a world whose
+files are missing fails instead of generating anew.
+
+Saves from before a mod had worlds belong to none: the first new world takes
+them out of `state/` into an automatic backup ("from before worlds"). A
+world deleted is backed up first.
+
 ## Backups
 
 A backup is a ZIP in `backups/<profile>/` with a manifest
@@ -186,6 +207,8 @@ the profile's newest backup isn't made again.
 | Before deleting a save                          | As an automatic backup, offered to undo the deletion    |
 | When a game or mod is removed with "keep saves" | Offered when it's added again                           |
 | Before a launcher's copies are cleared          | As an automatic backup                                  |
+| Before a world's first start, of older saves    | As an automatic backup                                  |
+| Before a world is deleted                       | As an automatic backup                                  |
 
 Automatic backups are named by their reason, manual ones by the player's
 label. Of the automatic ones, the newest 10 per profile are kept (1 to 100,
@@ -223,6 +246,11 @@ and deletion markers, or a single save under another slot's name. If the
 game wrote the file in other case, that file is replaced. Files not in the
 backup stay as they are.
 
+Backups of a mod with worlds record the world they were made of (manifest
+`world`). Restoring one of another world plays that world again first; if
+it was deleted, its saves are restored into the world played, but never its
+generated files.
+
 ### Export and import
 
 Exporting copies the backup's ZIP. Importing a ZIP adds it as a new backup
@@ -252,7 +280,10 @@ holds the same files. Without "keep saves", all of the profile's backups go. The
 "keep saves" checkbox when the profile has saves, or backups it decides
 about (the player's own and removal backups), and names what it keeps.
 Automatic backups of profiles removed before this rule existed are removed
-on start.
+on start. A mod's removal backup also holds its worlds: the files of those
+not played under `bloogbase-worlds/<id>/`, and the list of worlds in the
+manifest (`worlds`), so restoring it when the mod comes back brings them all
+back.
 
 ### Added again
 

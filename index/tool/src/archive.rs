@@ -114,6 +114,13 @@ pub fn problems(
         .into_iter()
         .flat_map(Recipe::files)
         .chain(entry.cover.as_deref())
+        // What a world plays, but for what the generator writes.
+        .chain(entry.worlds.iter().flat_map(|w| {
+            [&w.new, &w.play]
+                .into_iter()
+                .flat_map(Recipe::files)
+                .filter(|f| !w.holds(f))
+        }))
         .filter(|w| !inherited.iter().any(|n| n.eq_ignore_ascii_case(w)))
         .collect();
     // All recipe files have to sit together in one folder, the mod's root,
@@ -271,6 +278,34 @@ mod tests {
             Vec::<String>::new()
         );
         assert_eq!(problems(&e, &e.downloads[0], &levels, &below[..1]).len(), 1);
+    }
+
+    #[test]
+    fn world_recipes_must_be_in_it_but_for_generated_files() {
+        let data = zip(&[
+            ("Mod/CK4PATCH.EXE", b"p"),
+            ("Mod/x.pat", b"x"),
+            ("Mod/GEN.BAT", b"g"),
+        ]);
+        let mut e = entry_for(&data);
+        e.worlds = Some(
+            serde_yaml_ng::from_str(
+                "new: {type: batch, file: GEN.BAT}\n\
+                 play: {type: patch, patcher: CK4PATCH.EXE, patch: OUT.PAT}\n\
+                 files: [LVL*.CK4, OUT.PAT]\n",
+            )
+            .unwrap(),
+        );
+        assert_eq!(
+            problems(&e, &e.downloads[0], &data, &[]),
+            Vec::<String>::new()
+        );
+        if let Some(w) = &mut e.worlds {
+            w.new = Recipe::Batch {
+                file: "MISSING.BAT".into(),
+            };
+        }
+        assert_eq!(problems(&e, &e.downloads[0], &data, &[]).len(), 1);
     }
 
     #[test]

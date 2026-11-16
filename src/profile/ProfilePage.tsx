@@ -66,7 +66,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   }, [queryClient, profileId]);
 
   const launch = useMutation({
-    mutationFn: () => unwrap(commands.launchProfile(profileId)),
+    mutationFn: () => unwrap(commands.launchProfile(profileId, null)),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: profilesKey });
       queryClient.invalidateQueries({ queryKey: backupsKey(profileId) });

@@ -42,6 +42,7 @@ use crate::paths::AppPaths;
 use crate::profiles;
 use crate::recipe::Recipe;
 use crate::runtime::{self, Runtime};
+use crate::worlds;
 
 /// Profiles with a running DOSBox process; one instance per profile (§6.2).
 #[derive(Default)]
@@ -185,6 +186,8 @@ pub struct PlaySessionEnded {
     /// A mod's first session with its setup ended with a message or after
     /// less than 30 seconds (`SHORT_SESSION`): it may not have started properly.
     pub start_problem: bool,
+    /// A new world was to begin, but the mod generated none (§9.6).
+    pub no_world: bool,
 }
 
 /// A first session shorter than this (seconds) looks like the mod didn't start.
@@ -205,11 +208,13 @@ pub struct LaunchSpec {
 }
 
 /// Ensures all directories and config layers exist and builds the command line.
+/// `world`: what a mod with worlds runs instead of its recipe (§9.6).
 pub fn prepare(
     paths: &AppPaths,
     db: &Db,
     profile_id: &str,
     fullscreen: bool,
+    world: Option<&worlds::Run>,
 ) -> Result<LaunchSpec> {
     let (profile, layers) = profiles::get(db, profile_id)?;
     let game = catalog::game(&profile.game_id)
@@ -277,11 +282,17 @@ pub fn prepare(
             (composed.dir, m.as_ref().and_then(|m| m.recipe.command()))
         }
     };
-    let command = match command {
-        Some(c) => c,
-        None => profiles::find_executable(game, profile.version_id.as_deref(), &lower)?,
+    let (command, args) = match (world, command) {
+        // The setup stays the recipe's: generating and playing a world
+        // belong to it.
+        (Some(w), _) if layers.mod_layer.is_some() => (w.command.clone(), w.args.as_slice()),
+        (_, Some(c)) => (c, &[][..]),
+        (_, None) => (
+            profiles::find_executable(game, profile.version_id.as_deref(), &lower)?,
+            &[][..],
+        ),
     };
-    let command = runnable(command, &lower, &dirs.exit_screen)?;
+    let command = runnable(command, args, &lower, &dirs.exit_screen)?;
     let one_button = one_button_key(game, &layers, base.is_some(), firing);
 
     let confs = dosconf::ensure(
@@ -382,18 +393,27 @@ pub fn relative(root: &Path, path: &Path) -> String {
 /// every `'` in a `-c` command into `"` (Billy Can't's
 /// `CK5PATCH.EXE Can't.pat` became `Can"t.pat`), but not in batch files.
 /// So such a batch file is copied to drive X, and such a command runs from
-/// a batch file there.
-fn runnable(command: String, lower: &Path, exit_screen: &Path) -> Result<String> {
+/// a batch file there. `args` follow the command, e.g. a world's seed.
+fn runnable(command: String, args: &[String], lower: &Path, exit_screen: &Path) -> Result<String> {
     let start = exit_screen.join(START);
     let batch = lower.join(&command);
+    let with_args = |c: String| {
+        std::iter::once(c)
+            .chain(args.iter().cloned())
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
+    let copy = format!("{}:\\{START}", exit_screen::DRIVE);
     if command.contains(' ') && is_batch(&command) && batch.is_file() {
         dosconf::write_if_changed(&start, fs::read(batch)?)?;
+        Ok(with_args(copy))
     } else if command.contains('\'') {
-        dosconf::write_if_changed(&start, format!("{}\r\n", run_line(&command)))?;
+        let line = run_line(&with_args(command));
+        dosconf::write_if_changed(&start, format!("{line}\r\n"))?;
+        Ok(copy)
     } else {
-        return Ok(command);
+        Ok(with_args(command))
     }
-    Ok(format!("{}:\\{START}", exit_screen::DRIVE))
 }
 
 /// The batch file [`runnable`] writes.
@@ -696,9 +716,12 @@ mod tests {
     fn commands_with_apostrophes_run_from_a_batch_file() {
         let tmp = tempfile::tempdir().unwrap();
         let x = tmp.path();
-        assert_eq!(runnable("KEEN1.EXE".into(), x, x).unwrap(), "KEEN1.EXE");
+        assert_eq!(
+            runnable("KEEN1.EXE".into(), &[], x, x).unwrap(),
+            "KEEN1.EXE"
+        );
         assert!(!x.join(START).exists());
-        let cmd = runnable("CK5PATCH.EXE Can't.pat".into(), x, x).unwrap();
+        let cmd = runnable("CK5PATCH.EXE Can't.pat".into(), &[], x, x).unwrap();
         assert_eq!(cmd, r"X:\START.BAT");
         assert_eq!(
             fs::read_to_string(x.join(START)).unwrap(),
@@ -718,16 +741,29 @@ mod tests {
         fs::create_dir_all(&x).unwrap();
         let batch = "@echo off\r\nck4patch patch4.pat -nowait\r\n";
         fs::write(c.join("DasBrots First Mod.bat"), batch).unwrap();
-        let cmd = runnable("DasBrots First Mod.bat".into(), &c, &x).unwrap();
+        let cmd = runnable("DasBrots First Mod.bat".into(), &[], &c, &x).unwrap();
         assert_eq!(cmd, r"X:\START.BAT");
         assert_eq!(fs::read_to_string(x.join(START)).unwrap(), batch);
-        assert_eq!(runnable("PLAY.BAT".into(), &c, &x).unwrap(), "PLAY.BAT");
+        assert_eq!(
+            runnable("PLAY.BAT".into(), &[], &c, &x).unwrap(),
+            "PLAY.BAT"
+        );
+        // A world's seed and options follow the command (§9.6).
+        let args = ["/SEED".to_string(), "12".to_string()];
+        assert_eq!(
+            runnable("PLAY.BAT".into(), &args, &c, &x).unwrap(),
+            "PLAY.BAT /SEED 12"
+        );
+        assert_eq!(
+            runnable("DasBrots First Mod.bat".into(), &args, &c, &x).unwrap(),
+            r"X:\START.BAT /SEED 12"
+        );
     }
 
     #[test]
     fn prepare_writes_layers_and_builds_command_line() {
         let (_tmp, paths, db) = setup();
-        let spec = prepare(&paths, &db, "keen4-1", false).unwrap();
+        let spec = prepare(&paths, &db, "keen4-1", false, None).unwrap();
         let dirs = paths.profile("keen4-1");
         // Only mods tell first sessions apart.
         assert_eq!(spec.setup, None);
@@ -795,13 +831,13 @@ mod tests {
     #[test]
     fn user_overrides_are_kept_and_defaults_refreshed() {
         let (_tmp, paths, db) = setup();
-        prepare(&paths, &db, "keen4-1", false).unwrap();
+        prepare(&paths, &db, "keen4-1", false, None).unwrap();
         let dirs = paths.profile("keen4-1");
         fs::write(&dirs.override_conf, "[cpu]\ncpu_cycles = 1\n").unwrap();
         fs::write(paths.global_override_conf(), "[sdl]\nfullscreen = on\n").unwrap();
         fs::write(paths.default_conf("galaxy"), "stale").unwrap();
 
-        prepare(&paths, &db, "keen4-1", false).unwrap();
+        prepare(&paths, &db, "keen4-1", false, None).unwrap();
         assert_eq!(
             fs::read_to_string(&dirs.override_conf).unwrap(),
             "[cpu]\ncpu_cycles = 1\n"
@@ -835,7 +871,7 @@ mod tests {
         library::import(&paths, &db, &src).unwrap();
         assert!(firing::enabled(&db).unwrap(), "on by default");
 
-        let mount = |id: &str| prepare(&paths, &db, id, false).unwrap().args[14].clone();
+        let mount = |id: &str| prepare(&paths, &db, id, false, None).unwrap().args[14].clone();
         // Keen 4 has no such patch: it still runs from the install.
         assert!(mount("keen4-1").contains(&relative(&paths.root, &paths.library)));
         assert!(mount("keen1-1").contains(&relative(&paths.root, &paths.composed("keen1-1"))));
@@ -854,7 +890,7 @@ mod tests {
     fn the_controller_fires_with_the_one_button_key() {
         let (tmp, paths, db) = setup();
         let id = keen1(tmp.path(), &paths, &db);
-        let one_button = |db: &Db| prepare(&paths, db, &id, false).unwrap().one_button;
+        let one_button = |db: &Db| prepare(&paths, db, &id, false, None).unwrap().one_button;
         assert_eq!(one_button(&db), Some(firing::SPACE));
         let settings = game_settings::GameSettings {
             keys: game_settings::GameKeys {
@@ -868,7 +904,9 @@ mod tests {
         firing::set_enabled(&db, false).unwrap();
         assert_eq!(one_button(&db), None, "fires with Jump and Pogo");
         assert_eq!(
-            prepare(&paths, &db, "keen4-1", false).unwrap().one_button,
+            prepare(&paths, &db, "keen4-1", false, None)
+                .unwrap()
+                .one_button,
             None
         );
     }
@@ -885,7 +923,7 @@ mod tests {
         db.conn()
             .execute("UPDATE installs SET version_id = 'keen4-1.4-ega'", [])
             .unwrap();
-        let mount = || prepare(&paths, &db, "keen4-1", false).unwrap().args[14].clone();
+        let mount = || prepare(&paths, &db, "keen4-1", false, None).unwrap().args[14].clone();
         assert!(mount().contains(&relative(&paths.root, &paths.library)));
 
         custom_patches::set(&db, "keen4-1", "%patch $1 $AB").unwrap();
@@ -958,12 +996,12 @@ mod tests {
         // Brought along by an earlier backup restored into the new profile:
         // cleared on its first launch.
         run(b"save");
-        prepare(&paths, &db, &m.profile_id, false).unwrap();
+        prepare(&paths, &db, &m.profile_id, false, None).unwrap();
         assert_eq!(files(state), ["CONFIG.CK4", "SAVEGAM0.CK4"]);
 
         // Unchanged: everything stays.
         run(b"save 2");
-        prepare(&paths, &db, &m.profile_id, false).unwrap();
+        prepare(&paths, &db, &m.profile_id, false, None).unwrap();
         assert_eq!(files(state).len(), 4);
 
         // A mod update: the copies go, after a backup of all of state/.
@@ -976,7 +1014,7 @@ mod tests {
         // goes after a session that lost no save; the one before clearing
         // the copies has the same content but stays.
         let before = crate::backups::before_launch(&paths, &db, &m.profile_id).unwrap();
-        prepare(&paths, &db, &m.profile_id, false).unwrap();
+        prepare(&paths, &db, &m.profile_id, false, None).unwrap();
         assert_eq!(files(state), ["CONFIG.CK4", "SAVEGAM0.CK4"]);
         assert!(!crate::backups::after_session(&db, &m.profile_id, before).unwrap());
         let backups = crate::backups::list(&db, &m.profile_id).unwrap();
@@ -991,7 +1029,7 @@ mod tests {
         // clears them again. Restoring saves only rebuilds nothing.
         crate::backups::restore(&paths, &db, backups[0].id, None, None, true).unwrap();
         assert_eq!(files(state).len(), 4);
-        prepare(&paths, &db, &m.profile_id, false).unwrap();
+        prepare(&paths, &db, &m.profile_id, false, None).unwrap();
         assert_eq!(files(state), ["CONFIG.CK4", "SAVEGAM0.CK4"]);
         crate::backups::restore(&paths, &db, backups[0].id, None, None, false).unwrap();
         let hash = || -> Option<String> {
@@ -1036,7 +1074,7 @@ mod tests {
         .unwrap();
         assert_eq!(profiles::list(&db, |_| false).unwrap()[1].label, "My Mod");
 
-        let spec = prepare(&paths, &db, &m.profile_id, false).unwrap();
+        let spec = prepare(&paths, &db, &m.profile_id, false, None).unwrap();
         let setup = spec.setup.as_deref().unwrap();
         assert!(setup.contains("CK4PATCH.EXE"), "{setup}");
         let composed = paths.composed("my-mod");
@@ -1074,7 +1112,7 @@ mod tests {
 ",
         )
         .unwrap();
-        let spec = prepare(&paths, &db, &m.profile_id, false).unwrap();
+        let spec = prepare(&paths, &db, &m.profile_id, false, None).unwrap();
         let defaults = paths.profile(&m.profile_id).defaults_conf;
         assert!(spec.args.contains(&relative(&paths.root, &defaults)));
         let text = fs::read_to_string(&defaults).unwrap();
@@ -1093,7 +1131,7 @@ machine = cga
 ",
         )
         .unwrap();
-        prepare(&paths, &db, &m.profile_id, false).unwrap();
+        prepare(&paths, &db, &m.profile_id, false, None).unwrap();
         assert!(fs::read_to_string(&defaults).unwrap().contains(
             "[dosbox]
 machine = svga_paradise
@@ -1106,7 +1144,7 @@ machine = svga_paradise
             .execute("UPDATE mods SET index_id = 'my-mod'", [])
             .unwrap();
         crate::mods::set_standalone(&db, "my-mod", false, true).unwrap();
-        prepare(&paths, &db, &m.profile_id, false).unwrap();
+        prepare(&paths, &db, &m.profile_id, false, None).unwrap();
         assert_eq!(fs::read(composed.join("gamemaps.ck4")).unwrap(), b"new");
         assert!(!composed.join("KEEN4E.EXE").exists());
         crate::mods::set_standalone(&db, "my-mod", false, false).unwrap();
@@ -1115,14 +1153,14 @@ machine = svga_paradise
         crate::library::remove(&paths, &db, "keen4-1", false, false).unwrap();
         for own_files in [false, true] {
             crate::mods::set_standalone(&db, "my-mod", false, own_files).unwrap();
-            match prepare(&paths, &db, &m.profile_id, false) {
+            match prepare(&paths, &db, &m.profile_id, false, None) {
                 Err(Error::MissingGame(game)) => assert!(game.starts_with("Commander Keen 4")),
                 other => panic!("{other:?}"),
             }
         }
         // A standalone one starts on its own files alone.
         crate::mods::set_standalone(&db, "my-mod", true, true).unwrap();
-        let spec = prepare(&paths, &db, &m.profile_id, false).unwrap();
+        let spec = prepare(&paths, &db, &m.profile_id, false, None).unwrap();
         assert!(spec.args.iter().any(|a| a == "@CK4PATCH.EXE MOD.PAT"));
         assert_eq!(fs::read(composed.join("gamemaps.ck4")).unwrap(), b"new");
         assert!(!composed.join("KEEN4E.EXE").exists());
@@ -1292,7 +1330,7 @@ machine = svga_paradise
         let (tmp, paths, db) = setup();
         let id = keen1(tmp.path(), &paths, &db);
         music(&db, Some(false));
-        let args = prepare(&paths, &db, &id, false).unwrap().args;
+        let args = prepare(&paths, &db, &id, false, None).unwrap().args;
         let at = |line: &str| args.iter().position(|a| a == line);
         assert!(at(MUTE).unwrap() < at("@config -securemode > NUL").unwrap());
     }
@@ -1301,7 +1339,7 @@ machine = svga_paradise
     fn music_off_leaves_keen_4_to_its_file() {
         let (_tmp, paths, db) = setup();
         music(&db, Some(false));
-        let args = prepare(&paths, &db, "keen4-1", false).unwrap().args;
+        let args = prepare(&paths, &db, "keen4-1", false, None).unwrap().args;
         assert!(!args.iter().any(|a| a == MUTE));
     }
 
@@ -1311,7 +1349,7 @@ machine = svga_paradise
         let id = keen1(tmp.path(), &paths, &db);
         for on in [None, Some(true)] {
             music(&db, on);
-            let args = prepare(&paths, &db, &id, false).unwrap().args;
+            let args = prepare(&paths, &db, &id, false, None).unwrap().args;
             assert!(!args.iter().any(|a| a == MUTE), "{on:?}");
         }
     }
@@ -1328,7 +1366,7 @@ machine = svga_paradise
             ..Default::default()
         };
         crate::game_settings::set(&db, &settings).unwrap();
-        prepare(&paths, &db, &id, false).unwrap();
+        prepare(&paths, &db, &id, false, None).unwrap();
         let exe = fs::read(paths.composed(&id).join("KEEN1.EXE")).unwrap();
         let at = 0x20 + 0x3B23 + 9;
         assert_eq!(&exe[at..at + 2], &0x504Au16.to_le_bytes());
@@ -1374,7 +1412,7 @@ mod e2e {
 
         let installs = library::import(&paths, &db, Path::new(&game)).unwrap();
         let id = &installs[0].id;
-        let spec = prepare(&paths, &db, id, false).unwrap();
+        let spec = prepare(&paths, &db, id, false, None).unwrap();
         let (mut child, session) = spawn(&rt, &spec, &db, id, |_| {}).unwrap();
         tokio::time::sleep(Duration::from_secs(8)).await;
         assert!(
@@ -1518,7 +1556,7 @@ $bmp.Save($env:SHOT_PATH)
                     }
                 };
                 tried = true;
-                let spec = prepare(&paths, &db, &m.profile_id, false).unwrap();
+                let spec = prepare(&paths, &db, &m.profile_id, false, None).unwrap();
                 let (mut child, session) = spawn(&rt, &spec, &db, &m.profile_id, |_| {}).unwrap();
                 tokio::time::sleep(Duration::from_secs(7)).await;
                 let exited = child.try_wait().unwrap();

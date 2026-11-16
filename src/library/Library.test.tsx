@@ -110,6 +110,8 @@ const profile: Profile = {
   sourceMod: false,
   playedOver: null,
   gameProfileId: null,
+  worlds: false,
+  activeWorld: null,
 };
 
 const runtime = { id: "dosbox-staging-0.83.0", version: "0.83.0", path: "/x", managed: true };
@@ -297,7 +299,7 @@ test("play launches the profile", async () => {
   expect(within(dialog).getByRole("checkbox", { name: "Don't show this again" })).toBeChecked();
   expect(commands.launchProfile).not.toHaveBeenCalled();
   await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));
-  expect(commands.launchProfile).toHaveBeenCalledWith("keen5-1");
+  expect(commands.launchProfile).toHaveBeenCalledWith("keen5-1", null);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   // Remembered: the next start goes straight ahead.
   await userEvent.click(play);
