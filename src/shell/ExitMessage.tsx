@@ -7,7 +7,13 @@ import { ModReportDialog } from "../mods/ModReport";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 
-type Ended = { profileId: string; message: string | null; startProblem: boolean };
+type Ended = {
+  profileId: string;
+  message: string | null;
+  startProblem: boolean;
+  /** A new world was to begin, but the mod generated none (§9.6). */
+  noWorld: boolean;
+};
 
 /**
  * Shows what a game printed on the DOS screen when it ended, e.g. a
@@ -23,8 +29,9 @@ export function ExitMessage() {
 
   useEffect(() => {
     const unlisten = events.playSessionEnded.listen(({ payload }) => {
-      const { profileId, message, startProblem } = payload;
-      if (message || startProblem) setEnded((e) => [...e, { profileId, message, startProblem }]);
+      const { profileId, message, startProblem, noWorld } = payload;
+      if (message || startProblem || noWorld)
+        setEnded((e) => [...e, { profileId, message, startProblem, noWorld }]);
     });
     return () => {
       unlisten.then((f) => f());
@@ -57,6 +64,18 @@ export function ExitMessage() {
     </Button>
   );
 
+  if (!first.message && !first.startProblem) {
+    return (
+      <Dialog title={t("exitMessage.noWorldTitle", { name })} onClose={close}>
+        <p className="text-sm">{t("exitMessage.noWorldText")}</p>
+        <div className="flex justify-end">
+          <Button data-autofocus onClick={close}>
+            {t("common.close")}
+          </Button>
+        </div>
+      </Dialog>
+    );
+  }
   if (!first.message) {
     return (
       <Dialog title={t("exitMessage.shortTitle", { name })} onClose={close}>
@@ -73,6 +92,7 @@ export function ExitMessage() {
   return (
     <Dialog title={t("exitMessage.title", { name })} onClose={close}>
       <p className="text-sm">{t("exitMessage.text")}</p>
+      {first.noWorld && <p className="text-sm">{t("exitMessage.noWorldText")}</p>}
       <pre className="max-h-[50vh] overflow-auto rounded-lg bg-black p-3 font-mono text-sm whitespace-pre-wrap text-[#aaa] select-text">
         {first.message}
       </pre>

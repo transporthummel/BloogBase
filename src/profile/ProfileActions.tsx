@@ -16,7 +16,14 @@ import {
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Game, type Install, type Mod, type Profile } from "../bindings";
+import {
+  commands,
+  type Game,
+  type Install,
+  type Mod,
+  type Profile,
+  type WorldStart,
+} from "../bindings";
 import { useFreeGames } from "../discover/queries";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
@@ -40,10 +47,13 @@ import { Dialog } from "../ui/Dialog";
 import { Menu, type MenuItem } from "../ui/Menu";
 import { Notice } from "../ui/Notice";
 import { PlayButton } from "../ui/PlayButton";
+import { SplitButton } from "../ui/SplitButton";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
+import { NewWorldDialog } from "./NewWorldDialog";
 import { RemoveGameDialog } from "./RemoveGameDialog";
+import { asksFirst, useWorlds } from "./worlds";
 
-type Open = "removing" | "replacing" | "reporting" | "picking" | null;
+type Open = "removing" | "replacing" | "reporting" | "picking" | "newWorld" | null;
 
 /** Play, the More menu with its dialogs, and what the player should know before playing. */
 export function ProfileActions({
@@ -58,7 +68,8 @@ export function ProfileActions({
   game?: Game;
   mod?: Mod;
   canPlay: boolean;
-  onPlay: () => void;
+  /** With the world to play, for a mod that keeps worlds. */
+  onPlay: (world: WorldStart | null) => void;
   /** For a game: the mods played on it. */
   modCount: number;
 }) {
@@ -84,6 +95,12 @@ export function ProfileActions({
   const noDosbox = !!runtime.data && !runtime.data.active;
   const blocked = profile.missingGame !== null || noDosbox;
   const check = useModUpdateCheck(mod);
+  const worlds = useWorlds(profile);
+  // A new world asks for its seed and options first, where the mod has any.
+  const newWorld = () => {
+    if (worlds.data && asksFirst(worlds.data.definition)) setOpen("newWorld");
+    else onPlay({ type: "new", seed: null, options: {} });
+  };
   // The index or the KeenWiki page may have a newer version.
   const checkable = mod && (mod.indexId || mod.keenwikiUrl);
 
@@ -143,21 +160,39 @@ export function ProfileActions({
   return (
     <div className="grid gap-3">
       <div className="flex items-stretch gap-2">
-        <PlayButton
-          onClick={onPlay}
-          disabled={!canPlay || profile.running || blocked}
-          // Red while something is missing: the notice below says what.
-          variant={blocked ? "danger" : "primary"}
-          className={`min-w-44 px-8 py-3 text-base ${blocked ? "disabled:opacity-100" : ""}`}
-        >
-          {profile.missingGame !== null
-            ? t("mods.gameMissing")
-            : noDosbox
-              ? t("runtime.missing")
-              : profile.running
-                ? t("library.running")
-                : t("library.play")}
-        </PlayButton>
+        {profile.worlds && !blocked && !profile.running && profile.activeWorld !== null ? (
+          // Says what it does: the world played last goes on; the arrow
+          // begins a new one (§9.6).
+          <SplitButton
+            onClick={() => onPlay({ type: "continue", id: profile.activeWorld! })}
+            disabled={!canPlay}
+            className="min-w-44 px-8 py-3 text-base"
+            menuLabel={t("worlds.more")}
+            items={[{ label: t("worlds.newEllipsis"), onSelect: newWorld }]}
+          >
+            {t("worlds.continue")}
+          </SplitButton>
+        ) : (
+          <PlayButton
+            onClick={() => (profile.worlds ? newWorld() : onPlay(null))}
+            disabled={!canPlay || profile.running || blocked}
+            // Red while something is missing: the notice below says what.
+            variant={blocked ? "danger" : "primary"}
+            className={`min-w-44 px-8 py-3 text-base ${blocked ? "disabled:opacity-100" : ""}`}
+          >
+            {profile.missingGame !== null
+              ? t("mods.gameMissing")
+              : noDosbox
+                ? t("runtime.missing")
+                : profile.running
+                  ? t("library.running")
+                  : profile.worlds
+                    ? worlds.data && asksFirst(worlds.data.definition)
+                      ? t("worlds.newEllipsis")
+                      : t("worlds.new")
+                    : t("library.play")}
+          </PlayButton>
+        )}
         <Menu
           label={t("profile.more")}
           trigger={
@@ -222,6 +257,17 @@ export function ProfileActions({
             forgetRemovedCovers(queryClient);
             queryClient.invalidateQueries({ queryKey: modsKey });
             navigate({ to: "/" });
+          }}
+        />
+      )}
+      {open === "newWorld" && worlds.data && (
+        <NewWorldDialog
+          definition={worlds.data.definition}
+          lastOptions={worlds.data.lastOptions}
+          onClose={close}
+          onStart={(start) => {
+            close();
+            onPlay(start);
           }}
         />
       )}

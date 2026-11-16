@@ -6,7 +6,8 @@
       "Discover can hide the mods you have installed.",
       "Discover's filters are buttons now, the games as tiles, and can choose several games and types.",
       "The game a mod runs on links to the game's page.",
-      "A game that comes with a mod is only offered when you don't have that game yet."
+      "A game that comes with a mod is only offered when you don't have that game yet.",
+      "Randomised mods keep their worlds: replay a seed, with its own saves."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -14,7 +15,8 @@
       "Entdecken kann installierte Mods ausblenden.",
       "Die Filter in Entdecken sind jetzt Knöpfe, die Spiele als Kacheln, mit mehreren Spielen und Arten zugleich.",
       "Das Spiel, mit dem eine Mod läuft, verlinkt auf seine Seite.",
-      "Ein Spiel, das mit einer Mod kommt, wird nur angeboten, wenn du das Spiel noch nicht hast."
+      "Ein Spiel, das mit einer Mod kommt, wird nur angeboten, wenn du das Spiel noch nicht hast.",
+      "Zufalls-Mods behalten ihre Welten: Seeds erneut spielen, mit eigenen Spielständen."
     ]
   },
   "releases": [

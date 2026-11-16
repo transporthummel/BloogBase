@@ -7,6 +7,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
+import { buttonClass, type Variant } from "./buttonClass";
 
 export type MenuItem = {
   label: string;
@@ -30,12 +31,17 @@ export function Menu({
   trigger,
   items,
   className = "",
+  variant,
+  disabled = false,
 }: {
   /** The button's accessible name. */
   label: string;
   trigger: ReactNode;
   items: MenuItem[];
   className?: string;
+  /** Styled as that kind of button, e.g. next to a primary one. */
+  variant?: Variant;
+  disabled?: boolean;
 }) {
   const id = useId();
   const button = useRef<HTMLButtonElement>(null);
@@ -113,8 +119,13 @@ export function Menu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
+        disabled={disabled}
         onClick={() => (open ? close() : setOpen(true))}
-        className={`inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-ink shadow-key transition hover:border-muted active:translate-y-px active:shadow-key-down active:duration-0 ${className}`}
+        className={
+          variant
+            ? buttonClass(variant, className)
+            : `inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-ink shadow-key transition hover:border-muted active:translate-y-px active:shadow-key-down active:duration-0 ${className}`
+        }
       >
         {trigger}
       </button>

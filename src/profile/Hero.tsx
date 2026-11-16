@@ -4,7 +4,7 @@ import { ExternalLink, TriangleAlert } from "lucide-react";
 import { Fragment, useRef, type ReactNode } from "react";
 import { type TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import { type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
+import { type Game, type IndexEntry, type Mod, type Profile, type WorldStart } from "../bindings";
 import { useIndexMods } from "../discover/queries";
 import { formatDate, formatPlayTime, looseDateText } from "../format";
 import { Cover } from "../library/Cover";
@@ -31,7 +31,8 @@ export function Hero({
   profile: Profile;
   game?: Game;
   canPlay: boolean;
-  onPlay: () => void;
+  /** With the world to play, for a mod that keeps worlds. */
+  onPlay: (world: WorldStart | null) => void;
   /** For a game: the mods played on it. */
   modCount: number;
 }) {

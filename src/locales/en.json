@@ -672,7 +672,8 @@
     "removeGameMods_one": "Also remove the mod played on it",
     "removeGameMods_other": "Also remove the {{count}} mods played on it",
     "removeGameModsKept": "Otherwise they move to another copy of the game, or wait until it’s back.",
-    "tabControls": "Controls"
+    "tabControls": "Controls",
+    "tabWorlds": "Worlds"
   },
   "saves": {
     "title": "Saved games",
@@ -772,7 +773,9 @@
       "beforeDelete": "Before deleting a save",
       "modRemoved": "Mod removed",
       "gameRemoved": "Game removed",
-      "launcherReset": "Before refreshing the mod's files"
+      "launcherReset": "Before refreshing the mod's files",
+      "beforeWorlds": "From before worlds",
+      "worldDeleted": "Before deleting a world"
     }
   },
   "patches": {
@@ -929,7 +932,9 @@
     "text": "This was on the DOS screen when it ended:",
     "shortTitle": "{{name}} ended right away",
     "shortText": "If the mod didn’t start properly, you can report it on GitHub. BloogBase puts together what’s needed to find the problem.",
-    "fine": "All fine"
+    "fine": "All fine",
+    "noWorldTitle": "{{name}} made no world",
+    "noWorldText": "The mod didn’t make all of a new world’s files, so none was kept. The world played before is still in the Worlds tab."
   },
   "modReport": {
     "button": "Mod won’t start?",
@@ -1131,5 +1136,53 @@
       "keen6-demo-apogee": "A demo of Aliens Ate My Baby Sitter! that Apogee released in February 1992. Only part of the game can be played.",
       "keen6-promo": "A later promotional release of the demo, with re-recorded demos. Only part of the game can be played."
     }
+  },
+  "worlds": {
+    "continue": "Continue world",
+    "new": "Start new world",
+    "newEllipsis": "Start new world…",
+    "more": "More ways to start",
+    "newTitle": "Start new world",
+    "seed": "Seed",
+    "seedRandom": "Random",
+    "seedHint": "Leave it empty for a random world. The same seed makes the same world.",
+    "seedBad": "A whole number from 0 to {{max}}.",
+    "optionRange": "A whole number from {{min}} to {{max}}.",
+    "start": "Start",
+    "intro": "This mod makes new levels at every start. Each set is kept as a world with its own saves, so you can play it again.",
+    "empty": "No worlds yet. “Start new world” makes the first one.",
+    "locked": "While the game runs, worlds can’t be deleted.",
+    "playing": "Playing",
+    "seedName": "Seed {{seed}}",
+    "numberName": "World {{number}}",
+    "firstStart": "First played {{date}}",
+    "lastStart": "last {{date}}",
+    "saves_one": "{{count}} save",
+    "saves_other": "{{count}} saves",
+    "play": "Play",
+    "playNamed": "Play {{name}}",
+    "favourite": "Favourite",
+    "favouriteNamed": "Favourite: {{name}}",
+    "rename": "Rename",
+    "renameNamed": "Rename {{name}}",
+    "renameTitle": "Rename world",
+    "renameHint": "Leave it empty to name it after its seed or number again.",
+    "name": "Name",
+    "save": "Save",
+    "copySeed": "Copy seed",
+    "copySeedNamed": "Copy the seed of {{name}}",
+    "seedCopied": "Seed copied.",
+    "delete": "Delete",
+    "deleteNamed": "Delete {{name}}",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteText": "Its levels and saves are backed up first; the backup is under Saves.",
+    "deleteActiveText": "It’s the world played last. Its levels and saves are backed up first; the backup is under Saves. Then start a new world or pick another one.",
+    "deleted": "World deleted. Its levels and saves are in a backup.",
+    "savesOf": "Saves of the world",
+    "nonePlayed": "No world is played yet.",
+    "showAll": "All worlds",
+    "ofWorld": "world {{name}}",
+    "deletedWorld": "a deleted world",
+    "switchedFor": "{{name}} is the world played now."
   }
 }

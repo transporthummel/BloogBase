@@ -672,7 +672,8 @@
     "removeGameMods_one": "Auch die Mod für dieses Spiel entfernen",
     "removeGameMods_other": "Auch die {{count}} Mods für dieses Spiel entfernen",
     "removeGameModsKept": "Sonst wechseln sie auf eine andere Kopie des Spiels oder warten, bis es wieder da ist.",
-    "tabControls": "Steuerung"
+    "tabControls": "Steuerung",
+    "tabWorlds": "Welten"
   },
   "saves": {
     "title": "Spielstände",
@@ -772,7 +773,9 @@
       "beforeDelete": "Vor dem Löschen eines Spielstands",
       "modRemoved": "Mod entfernt",
       "gameRemoved": "Spiel entfernt",
-      "launcherReset": "Vor dem Auffrischen der Mod-Dateien"
+      "launcherReset": "Vor dem Auffrischen der Mod-Dateien",
+      "beforeWorlds": "Von vor den Welten",
+      "worldDeleted": "Vor dem Löschen einer Welt"
     }
   },
   "patches": {
@@ -929,7 +932,9 @@
     "text": "Das stand beim Beenden auf dem DOS-Bildschirm:",
     "shortTitle": "{{name}} hat sich gleich wieder beendet",
     "shortText": "Wenn die Mod nicht richtig gestartet ist, kannst du das auf GitHub melden. BloogBase stellt zusammen, was zum Finden des Problems nötig ist.",
-    "fine": "Alles in Ordnung"
+    "fine": "Alles in Ordnung",
+    "noWorldTitle": "{{name}} hat keine Welt erzeugt",
+    "noWorldText": "Die Mod hat nicht alle Dateien einer neuen Welt erzeugt, daher wurde keine behalten. Die zuvor gespielte Welt steht weiter im Tab Welten."
   },
   "modReport": {
     "button": "Mod startet nicht?",
@@ -1131,5 +1136,53 @@
       "keen6-demo-apogee": "Eine Demo von Aliens Ate My Baby Sitter!, die Apogee im Februar 1992 veröffentlichte. Nur ein Teil des Spiels ist spielbar.",
       "keen6-promo": "Eine spätere Werbefassung der Demo mit neu aufgenommenen Vorführungen. Nur ein Teil des Spiels ist spielbar."
     }
+  },
+  "worlds": {
+    "continue": "Welt fortsetzen",
+    "new": "Neue Welt beginnen",
+    "newEllipsis": "Neue Welt beginnen…",
+    "more": "Weitere Startmöglichkeiten",
+    "newTitle": "Neue Welt beginnen",
+    "seed": "Seed",
+    "seedRandom": "Zufällig",
+    "seedHint": "Leer lassen für eine zufällige Welt. Derselbe Seed ergibt dieselbe Welt.",
+    "seedBad": "Eine ganze Zahl von 0 bis {{max}}.",
+    "optionRange": "Eine ganze Zahl von {{min}} bis {{max}}.",
+    "start": "Starten",
+    "intro": "Diese Mod erzeugt bei jedem Start neue Level. Jede Zusammenstellung bleibt als Welt mit eigenen Spielständen erhalten, sodass du sie erneut spielen kannst.",
+    "empty": "Noch keine Welten. „Neue Welt beginnen“ erzeugt die erste.",
+    "locked": "Solange das Spiel läuft, lassen sich keine Welten löschen.",
+    "playing": "Aktuell",
+    "seedName": "Seed {{seed}}",
+    "numberName": "Welt {{number}}",
+    "firstStart": "Zuerst gespielt {{date}}",
+    "lastStart": "zuletzt {{date}}",
+    "saves_one": "{{count}} Spielstand",
+    "saves_other": "{{count}} Spielstände",
+    "play": "Spielen",
+    "playNamed": "{{name}} spielen",
+    "favourite": "Favorit",
+    "favouriteNamed": "Favorit: {{name}}",
+    "rename": "Umbenennen",
+    "renameNamed": "{{name}} umbenennen",
+    "renameTitle": "Welt umbenennen",
+    "renameHint": "Leer lassen, um sie wieder nach Seed oder Nummer zu benennen.",
+    "name": "Name",
+    "save": "Speichern",
+    "copySeed": "Seed kopieren",
+    "copySeedNamed": "Seed von {{name}} kopieren",
+    "seedCopied": "Seed kopiert.",
+    "delete": "Löschen",
+    "deleteNamed": "{{name}} löschen",
+    "deleteTitle": "{{name}} löschen?",
+    "deleteText": "Ihre Level und Spielstände werden vorher gesichert; die Sicherung steht unter Spielstände.",
+    "deleteActiveText": "Das ist die zuletzt gespielte Welt. Ihre Level und Spielstände werden vorher gesichert; die Sicherung steht unter Spielstände. Beginne danach eine neue Welt oder wähle eine andere.",
+    "deleted": "Welt gelöscht. Ihre Level und Spielstände sind in einer Sicherung.",
+    "savesOf": "Spielstände der Welt",
+    "nonePlayed": "Noch wird keine Welt gespielt.",
+    "showAll": "Alle Welten",
+    "ofWorld": "Welt {{name}}",
+    "deletedWorld": "eine gelöschte Welt",
+    "switchedFor": "{{name}} ist jetzt die gespielte Welt."
   }
 }

@@ -22,6 +22,7 @@ import { Notice } from "../ui/Notice";
 import { RelativeTime } from "../ui/RelativeTime";
 import { FolderRestoreDialog, RestoreDialog } from "./RestoreDialog";
 import { VersionsDialog } from "./VersionsDialog";
+import { useWorlds, worldName, worldsKey } from "./worlds";
 import {
   backupContents,
   backupTitle,
@@ -32,11 +33,32 @@ import {
   useSaves,
 } from "./saves";
 
-/** The save manager of one profile: its saves and their backups (§11). */
-export function SavesPanel({ profile, game }: { profile: Profile; game?: Game }) {
+/**
+ * The save manager of one profile: its saves and their backups (§11). A mod
+ * that keeps worlds shows the saves of the world played (§9.6).
+ */
+export function SavesPanel({
+  profile,
+  game,
+  onShowWorlds,
+}: {
+  profile: Profile;
+  game?: Game;
+  /** Goes to the Worlds tab. */
+  onShowWorlds?: () => void;
+}) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const saves = useSaves(profile.id);
+  const worlds = useWorlds(profile);
+  const worldOf = (id: number) => worlds.data?.worlds.find((w) => w.id === id);
+  const played = profile.activeWorld !== null ? worldOf(profile.activeWorld) : undefined;
+  /** Where a backup's saves come from, for a mod with worlds. */
+  const backupWorld = (b: Backup) => {
+    if (!profile.worlds || b.world === null) return null;
+    const w = worldOf(b.world);
+    return w ? worldName(t, w) : t("worlds.deletedWorld");
+  };
   const backups = useQuery({
     queryKey: backupsKey(profile.id),
     queryFn: () => unwrap(commands.listBackups(profile.id)),
@@ -62,6 +84,8 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
     queryClient.invalidateQueries({ queryKey: savesKey(profile.id) });
     queryClient.invalidateQueries({ queryKey: backupsKey(profile.id) });
     queryClient.invalidateQueries({ queryKey: profilesKey });
+    // Restoring a backup of another world plays that world again.
+    queryClient.invalidateQueries({ queryKey: worldsKey(profile.id) });
   };
 
   const backup = useMutation({
@@ -160,6 +184,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
               </h3>
               <p className="text-xs text-muted">
                 {formatDateTime(i18n.language, b.createdAt)} · {backupContents(t, b)}
+                {backupWorld(b) && <> · {t("worlds.ofWorld", { name: backupWorld(b) })}</>}
               </p>
             </div>
             <div className="flex gap-1">
@@ -227,6 +252,30 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
         <h2 id="saves-heading" className="font-semibold">
           {t("saves.title")}
         </h2>
+        {profile.worlds && (
+          <p className="text-sm text-muted">
+            {played ? (
+              <>
+                {t("worlds.savesOf")}{" "}
+                <span className="font-semibold text-ink">{worldName(t, played)}</span>
+              </>
+            ) : (
+              t("worlds.nonePlayed")
+            )}
+            {onShowWorlds && (
+              <>
+                {" · "}
+                <button
+                  type="button"
+                  className="text-ink underline underline-offset-2"
+                  onClick={onShowWorlds}
+                >
+                  {t("worlds.showAll")}
+                </button>
+              </>
+            )}
+          </p>
+        )}
         {saves.data?.length === 0 && <p className="text-sm text-muted">{t("saves.empty")}</p>}
         <ul className="grid gap-2">
           {saves.data?.map((s) => (
@@ -404,8 +453,13 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
           current={saves.data ?? []}
           onClose={() => setRestoring(null)}
           onRestored={(backedUp) => {
+            const other =
+              restoring.world !== null &&
+              restoring.world !== profile.activeWorld &&
+              worldOf(restoring.world);
             setRestoring(null);
-            say(restoredText(t("backups.restored"), backedUp));
+            const done = restoredText(t("backups.restored"), backedUp);
+            say(other ? `${done} ${t("worlds.switchedFor", { name: worldName(t, other) })}` : done);
             refresh();
           }}
         />

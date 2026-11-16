@@ -15,7 +15,9 @@ import {
   type SaveFile,
   type Screenshot,
   type Video,
+  type ProfileWorlds,
 } from "../bindings";
+import { setControlsShown } from "../preferences";
 import { ProfileDetail } from "./ProfilePage";
 import { slotFiles } from "./saves";
 
@@ -97,6 +99,10 @@ vi.mock("../bindings", () => {
     "profileMachine",
     "profileCustomPatches",
     "setCustomPatches",
+    "profileWorlds",
+    "renameWorld",
+    "setWorldFavourite",
+    "deleteWorld",
   ];
   return {
     commands: Object.fromEntries(names.map((n) => [n, vi.fn()])),
@@ -1231,4 +1237,161 @@ test("the tabs count saves, screenshots and videos, leaving out none", async () 
   expect(await screen.findByRole("tab", { name: "Saves 2" })).toBeInTheDocument();
   expect(await screen.findByRole("tab", { name: "Screenshots 2" })).toBeInTheDocument();
   expect(screen.getByRole("tab", { name: "Videos" })).toBeInTheDocument();
+});
+
+const randomiser: ProfileWorlds = {
+  definition: {
+    new: { type: "batch", file: "RNDKEEN1.BAT" },
+    play: { type: "patch", patcher: "CK1PATCH.EXE", patch: "RNDKEEN1.PAT", args: [] },
+    files: ["RNDLV*.CK1", "RNDKEEN1.PAT"],
+    seed: { arg: "/SEED", max: 65535, read: null },
+    options: [
+      {
+        id: "startpogo",
+        arg: "/STARTPOGO",
+        type: "flag",
+        min: null,
+        max: null,
+        default: null,
+        label: { en: "Start with the pogo stick", de: "Mit Pogo-Stick starten" },
+      },
+      {
+        id: "startammo",
+        arg: "/STARTAMMO",
+        type: "number",
+        min: 0,
+        max: 99,
+        default: 0,
+        label: { en: "Starting ammo", de: "Munition zu Beginn" },
+      },
+    ],
+  },
+  worlds: [
+    {
+      id: 2,
+      name: null,
+      seed: 4711,
+      options: { startpogo: 1, startammo: 15 },
+      createdAt: 1_700_000_000,
+      lastPlayedAt: 1_700_100_000,
+      favourite: false,
+      active: true,
+      saves: 2,
+    },
+    {
+      id: 1,
+      name: "Hard one",
+      seed: 12,
+      options: { startpogo: 0, startammo: 0 },
+      createdAt: 1_690_000_000,
+      lastPlayedAt: 1_690_000_000,
+      favourite: false,
+      active: false,
+      saves: 0,
+    },
+  ],
+  active: 2,
+  lastOptions: { startpogo: 1, startammo: 15 },
+};
+
+function withWorlds(activeWorld: number | null = 2) {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, modId: "rnd", label: "Keen 1 Randomiser", worlds: true, activeWorld }]),
+  );
+  vi.mocked(commands.profileWorlds).mockResolvedValue(ok(randomiser));
+  vi.mocked(commands.launchProfile).mockResolvedValue(ok(null));
+  // Straight to the game, without the controls first.
+  setControlsShown("galaxy");
+}
+
+test("a mod with worlds continues the one played last, or starts a new one with a seed", async () => {
+  withWorlds();
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "Continue world" }));
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 2 }),
+  );
+
+  await userEvent.click(screen.getByRole("button", { name: "More ways to start" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Start new world…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Start new world" });
+  // The last world's options come back.
+  expect(within(dialog).getByRole("checkbox", { name: "Start with the pogo stick" })).toBeChecked();
+  const ammo = within(dialog).getByRole("spinbutton", { name: "Starting ammo" });
+  expect(ammo).toHaveValue(15);
+  const seed = within(dialog).getByRole("textbox", { name: "Seed" });
+  await userEvent.type(seed, "70000");
+  expect(within(dialog).getByText("A whole number from 0 to 65535.")).toBeInTheDocument();
+  expect(within(dialog).getByRole("button", { name: "Start" })).toBeDisabled();
+  await userEvent.clear(seed);
+  await userEvent.type(seed, "12345");
+  await userEvent.clear(ammo);
+  await userEvent.type(ammo, "20");
+  await userEvent.click(within(dialog).getByRole("button", { name: "Start" }));
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenLastCalledWith("keen4-1", {
+      type: "new",
+      seed: 12345,
+      options: { startpogo: 1, startammo: 20 },
+    }),
+  );
+});
+
+test("without a world played, Play begins one", async () => {
+  withWorlds(null);
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "Start new world…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Start new world" });
+  await userEvent.click(within(dialog).getByRole("button", { name: "Start" }));
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", {
+      type: "new",
+      seed: null,
+      options: { startpogo: 1, startammo: 15 },
+    }),
+  );
+});
+
+test("the Worlds tab lists the worlds and plays, renames and deletes them", async () => {
+  withWorlds();
+  vi.mocked(commands.setWorldFavourite).mockResolvedValue(ok(null));
+  vi.mocked(commands.renameWorld).mockResolvedValue(ok(null));
+  vi.mocked(commands.deleteWorld).mockResolvedValue(ok(null));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("tab", { name: "Worlds" }));
+  const rows = await screen.findAllByRole("listitem");
+  expect(rows[0]).toHaveTextContent("Seed 4711");
+  expect(rows[0]).toHaveTextContent("Playing");
+  expect(rows[0]).toHaveTextContent("Start with the pogo stick · Starting ammo: 15");
+  expect(rows[0]).toHaveTextContent("2 saves");
+  expect(rows[1]).toHaveTextContent("Hard one");
+
+  await userEvent.click(screen.getByRole("button", { name: "Play Hard one" }));
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 1 }),
+  );
+  await userEvent.click(screen.getByRole("button", { name: "Favourite: Hard one" }));
+  expect(commands.setWorldFavourite).toHaveBeenCalledWith("keen4-1", 1, true);
+
+  await userEvent.click(screen.getByRole("button", { name: "Rename Seed 4711" }));
+  const rename = await screen.findByRole("dialog", { name: "Rename world" });
+  await userEvent.type(within(rename).getByRole("textbox", { name: "Name" }), "Mine");
+  await userEvent.click(within(rename).getByRole("button", { name: "Save" }));
+  expect(commands.renameWorld).toHaveBeenCalledWith("keen4-1", 2, "Mine");
+
+  await userEvent.click(screen.getByRole("button", { name: "Delete Hard one" }));
+  const confirm = await screen.findByRole("dialog", { name: "Delete Hard one?" });
+  await userEvent.click(within(confirm).getByRole("button", { name: "Delete" }));
+  expect(commands.deleteWorld).toHaveBeenCalledWith("keen4-1", 1);
+});
+
+test("the Saves tab names the world whose saves it shows", async () => {
+  withWorlds();
+  vi.mocked(commands.listBackups).mockResolvedValue(ok([{ ...backup, world: 1 }]));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("tab", { name: /Saves/ }));
+  expect(await screen.findByText("Seed 4711")).toBeInTheDocument();
+  expect(screen.getByText(/world Hard one/)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "All worlds" }));
+  expect(screen.getByRole("tab", { name: "Worlds" })).toHaveAttribute("aria-selected", "true");
 });

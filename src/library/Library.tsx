@@ -464,7 +464,11 @@ const ProfileCard = memo(function ProfileCard({
               ? t("mods.gameMissing")
               : profile.running
                 ? t("library.running")
-                : t("library.play")}
+                : profile.worlds
+                  ? // Without a choice the world played last goes on, else a
+                    // new one begins with the last options (§9.6).
+                    t(profile.activeWorld !== null ? "worlds.continue" : "worlds.new")
+                  : t("library.play")}
           </PlayButton>
         </div>
       </div>

@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Info } from "lucide-react";
-import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, events } from "../bindings";
+import { commands, events, type WorldStart } from "../bindings";
 import { useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
@@ -22,10 +22,12 @@ import { useReadmes } from "./readme";
 import { SavesPanel } from "./SavesPanel";
 import { ScreenshotsPanel } from "./ScreenshotsPanel";
 import { VideosPanel } from "./VideosPanel";
+import { WorldsPanel } from "./WorldsPanel";
+import { worldsKey } from "./worlds";
 import { screenshotsKey, useScreenshots, useVideos, videosKey } from "./captures";
 import { backupsKey, savesKey, useSaves } from "./saves";
 
-type Tab = "readme" | "controls" | "saves" | "screenshots" | "videos" | "config";
+type Tab = "readme" | "controls" | "worlds" | "saves" | "screenshots" | "videos" | "config";
 
 export function ProfileRoute() {
   const { profileId } = useParams({ from: "/profiles/$profileId" });
@@ -59,6 +61,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
       queryClient.invalidateQueries({ queryKey: backupsKey(profileId) });
       queryClient.invalidateQueries({ queryKey: screenshotsKey(profileId) });
       queryClient.invalidateQueries({ queryKey: videosKey(profileId) });
+      queryClient.invalidateQueries({ queryKey: worldsKey(profileId) });
     });
     return () => {
       unlisten.then((f) => f());
@@ -66,21 +69,32 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   }, [queryClient, profileId]);
 
   const launch = useMutation({
-    mutationFn: () => unwrap(commands.launchProfile(profileId, null)),
+    mutationFn: (world: WorldStart | null) => unwrap(commands.launchProfile(profileId, world)),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: profilesKey });
       queryClient.invalidateQueries({ queryKey: backupsKey(profileId) });
+      // Starting a world swaps the saves the game sees.
+      queryClient.invalidateQueries({ queryKey: savesKey(profileId) });
+      queryClient.invalidateQueries({ queryKey: worldsKey(profileId) });
     },
   });
+  // The world to start once the controls have been shown, if they are.
+  const world = useRef<WorldStart | null>(null);
 
   const profile = profiles.data?.find((p) => p.id === profileId);
   const game = games.data?.find((g) => g.id === profile?.gameId);
   // The first start of a series shows its keys first.
-  const gate = useControlsGate(() => launch.mutate());
+  const gate = useControlsGate(() => launch.mutate(world.current));
   const readmes = useReadmes(profile);
   const saves = useSaves(profileId);
   const shots = useScreenshots(profileId);
   const videos = useVideos(profileId);
+
+  function play(start: WorldStart | null) {
+    if (!profile) return;
+    world.current = start;
+    gate.play(profile, game);
+  }
 
   // A mod just installed opens before the list has been fetched again.
   if (profiles.data && !profile && !profiles.isFetching) {
@@ -98,6 +112,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
     ...(game && !profile?.modId
       ? [{ id: "controls" as const, label: t("profile.tabControls") }]
       : []),
+    ...(profile?.worlds ? [{ id: "worlds" as const, label: t("profile.tabWorlds") }] : []),
     { id: "saves", label: <Counted label={t("profile.tabSaves")} items={saves.data} /> },
     {
       id: "screenshots",
@@ -127,7 +142,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
           profile={profile}
           game={game}
           canPlay={!!runtime.data?.active && !launch.isPending}
-          onPlay={() => gate.play(profile, game)}
+          onPlay={play}
           modCount={
             profiles.data?.filter((p) => p.modId !== null && p.installId === profile.installId)
               .length ?? 0
@@ -165,7 +180,16 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
               </>
             )}
             {tab === "controls" && game && <ControlsSheet profile={profile} game={game} />}
-            {tab === "saves" && <SavesPanel profile={profile} game={game} />}
+            {tab === "worlds" && (
+              <WorldsPanel
+                profile={profile}
+                canPlay={!!runtime.data?.active && !launch.isPending}
+                onPlay={play}
+              />
+            )}
+            {tab === "saves" && (
+              <SavesPanel profile={profile} game={game} onShowWorlds={() => setTab("worlds")} />
+            )}
             {tab === "screenshots" && <ScreenshotsPanel profile={profile} />}
             {tab === "videos" && <VideosPanel profile={profile} />}
             {tab === "config" && <ConfigPanel profileId={profile.id} />}
