@@ -751,7 +751,7 @@ mod tests {
 
     #[test]
     fn a_game_next_to_a_mod_is_offered_only_as_a_known_release() {
-        let (tmp, paths, db) = setup();
+        let (tmp, _paths, db) = setup();
         let src = tmp.path().join("Keen 4 with a mod");
         write_folder(&src, KEEN4);
         // An executable the catalog doesn't know may be the mod's own.
