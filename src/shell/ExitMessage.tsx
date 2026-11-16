@@ -79,6 +79,7 @@ export function ExitMessage() {
   if (!first.message) {
     return (
       <Dialog title={t("exitMessage.shortTitle", { name })} onClose={close}>
+        {first.noWorld && <p className="text-sm">{t("exitMessage.noWorldText")}</p>}
         <p className="text-sm">{t("exitMessage.shortText")}</p>
         <div className="flex flex-wrap justify-end gap-2">
           {report}

@@ -31,7 +31,7 @@ beforeEach(() => {
   } as never);
 });
 
-function ended(message: string | null, startProblem = false) {
+function ended(message: string | null, startProblem = false, noWorld = false) {
   act(() =>
     listener!({
       payload: {
@@ -40,7 +40,7 @@ function ended(message: string | null, startProblem = false) {
         seconds: 3,
         message,
         startProblem,
-        noWorld: false,
+        noWorld,
       },
     }),
   );
@@ -101,4 +101,16 @@ test("a message without a start problem has no report button", async () => {
   ended("Error: Unrecognised version of KEEN4C.EXE");
   await screen.findByRole("dialog", { name: "Pak Een ended with a message" });
   expect(screen.queryByRole("button", { name: "Mod won’t start?" })).toBeNull();
+});
+
+test("a new world the mod didn't make is mentioned, also after a quick end", async () => {
+  renderIt();
+  ended(null, false, true);
+  const alone = await screen.findByRole("dialog", { name: "Pak Een made no world" });
+  expect(alone).toHaveTextContent("so none was kept");
+  await userEvent.setup().click(screen.getByRole("button", { name: "Close" }));
+
+  ended(null, true, true);
+  const quick = await screen.findByRole("dialog", { name: "Pak Een ended right away" });
+  expect(quick).toHaveTextContent("so none was kept");
 });
