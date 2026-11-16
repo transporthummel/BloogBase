@@ -1,0 +1,31 @@
+id: keen-1-randomiser
+name: "Keen 1 Randomiser"
+game: keen1
+authors: ["Multimania"]
+authorLinks:
+  "Multimania": https://keenwiki.shikadi.net/wiki/User:Multimania
+version: "1.1"
+released: 2020-12-14
+updated: 2021-03-14
+added: 2026-11-16
+type: levelpack
+description: "Keen 1 shuffled anew at every start: level entrances, ship parts, pogo stick, enemies, keycards and door colours land somewhere else, and Yorp statues hint where. The seed is on the status screen."
+translations:
+  de:
+    description: "Keen 1 bei jedem Start neu gemischt: Level-Eingänge, Schiffsteile, Pogo-Stick, Gegner, Schlüsselkarten und Türfarben liegen woanders, und Yorp-Statuen verraten, wo. Den Seed zeigt der Statusbildschirm."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_1_Randomiser
+  pckf: https://pckf.com/viewtopic.php?t=8569
+  homepage: https://davidgow.net/keen/randomiser.html
+downloads:
+  - version: "1.1"
+    url: https://files.shikadi.net/keenwiki/tools/t.keen1_randomiser.v1.1.multimania.2021-03-14.zip
+    sha256: 97d29cd0b5cfce0066515a465cfcc479b24bee2784b5977012cca0c54b5a10ad
+    size: 283832
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
+recipe:
+  type: batch
+  file: RNDKEEN1.BAT
+# Older apps drop its unchanged executable and would play it without one.
+minAppVersion: 1.3.0
