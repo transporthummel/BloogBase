@@ -706,9 +706,33 @@ pub fn restore(
     include_other: bool,
 ) -> Result<()> {
     let (backup, archive) = get_with_archive(db, id)?;
-    let (profile, layers) = profiles::get(db, &backup.profile_id)?;
-    let game = saves::profile_game(&profile.game_id, &layers)?;
     let (files, _) = read_zip(Path::new(&archive))?;
+    put_back(
+        paths,
+        db,
+        &backup.profile_id,
+        &files,
+        file,
+        target,
+        include_other,
+    )?;
+    tracing::info!("restored backup {id} into {}", backup.profile_id);
+    Ok(())
+}
+
+/// Writes `files` into a profile's `state/`, after backing up what's there,
+/// as [`restore`] describes.
+fn put_back(
+    paths: &AppPaths,
+    db: &Db,
+    profile_id: &str,
+    files: &Files,
+    file: Option<&str>,
+    target: Option<&str>,
+    include_other: bool,
+) -> Result<()> {
+    let (profile, layers) = profiles::get(db, profile_id)?;
+    let game = saves::profile_game(&profile.game_id, &layers)?;
     let chosen: Vec<(String, &[u8])> = match file {
         None => files
             .iter()
@@ -719,7 +743,7 @@ pub fn restore(
             let (_, data) = files
                 .iter()
                 .find(|(n, _)| n == file)
-                .ok_or_else(|| Error::NotFound(format!("{file} in backup {id}")))?;
+                .ok_or_else(|| Error::NotFound(file.to_string()))?;
             let name = target.unwrap_or(file);
             if !saves::is_save(game, name) && name != file {
                 return Err(Error::NotFound(format!("save slot {name}")));
@@ -732,7 +756,7 @@ pub fn restore(
     create(
         paths,
         db,
-        &backup.profile_id,
+        profile_id,
         Contents::State,
         Reason::BeforeRestore,
     )?;
@@ -754,10 +778,9 @@ pub fn restore(
     if restored_other {
         db.conn().execute(
             "UPDATE profiles SET composed_hash = NULL WHERE id = ?1",
-            [&backup.profile_id],
+            [profile_id],
         )?;
     }
-    tracing::info!("restored backup {id} into {}", backup.profile_id);
     Ok(())
 }
 
@@ -780,34 +803,83 @@ pub fn export(db: &Db, id: u32, dest: &Path) -> Result<()> {
     Ok(())
 }
 
+/// The saves, settings and high scores of a profile's game lying in a
+/// folder, such as an old copy of the game or a mod, to restore from there
+/// without keeping them as a backup.
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct FolderSaves {
+    pub saves: Vec<SaveFile>,
+    /// Settings and high scores.
+    pub settings: u32,
+}
+
+/// A file read from a folder, with its modification time.
+type TimedFile = (String, Vec<u8>, Option<u32>);
+
 /// The files directly in `dir` that look like `game`'s saves, config or
-/// scores: an old copy of the game or a mod keeps them next to its program.
-fn read_folder(game: &Game, dir: &Path) -> Result<Files> {
+/// scores: an old copy keeps them next to its program.
+fn read_folder(game: &Game, dir: &Path) -> Result<Vec<TimedFile>> {
     let mut files = Vec::new();
     for entry in fs::read_dir(dir)?.flatten() {
         let name = entry.file_name().to_string_lossy().into_owned();
         if entry.file_type().is_ok_and(|t| t.is_file()) && game.is_state_file(&name) {
-            files.push((name, fs::read(entry.path())?));
+            let path = entry.path();
+            files.push((name, fs::read(&path)?, saves::modified(&path)));
         }
     }
+    if files.is_empty() {
+        return Err(Error::NoSavesFound);
+    }
+    files.sort_by(|a, b| a.0.cmp(&b.0));
     Ok(files)
 }
 
-/// Adds a ZIP or a folder as a new backup of a profile, to be restored from
-/// there. BloogBase exports keep everything; other archives contribute the
-/// files that look like this game's saves, config or scores, wherever they
-/// are, a folder those lying directly in it.
+/// What [`restore_folder`] can take from `dir`.
+pub fn folder_saves(db: &Db, profile_id: &str, dir: &Path) -> Result<FolderSaves> {
+    let game = game_of_profile(db, profile_id)?;
+    let files = read_folder(game, dir)?;
+    let mut saves: Vec<SaveFile> = files
+        .iter()
+        .filter(|(name, ..)| saves::is_save(game, name))
+        .map(|(name, data, at)| saves::describe(game, name, data, *at))
+        .collect();
+    saves.sort_by(|a, b| (a.slot, &a.file).cmp(&(b.slot, &b.file)));
+    let settings = (files.len() - saves.len()) as u32;
+    Ok(FolderSaves { saves, settings })
+}
+
+/// Puts saves from a folder into a profile as [`restore`] does from a
+/// backup; only what the profile has now is backed up.
+pub fn restore_folder(
+    paths: &AppPaths,
+    db: &Db,
+    profile_id: &str,
+    dir: &Path,
+    file: Option<&str>,
+    target: Option<&str>,
+    include_other: bool,
+) -> Result<()> {
+    let game = game_of_profile(db, profile_id)?;
+    let files: Files = read_folder(game, dir)?
+        .into_iter()
+        .map(|(name, data, _)| (name, data))
+        .collect();
+    put_back(paths, db, profile_id, &files, file, target, include_other)?;
+    tracing::info!("restored saves from {} into {profile_id}", dir.display());
+    Ok(())
+}
+
+/// Adds a ZIP as a new backup of a profile, to be restored from there.
+/// BloogBase exports keep everything; other archives contribute the files
+/// that look like this game's saves, config or scores, wherever they are.
 pub fn import(paths: &AppPaths, db: &Db, profile_id: &str, src: &Path) -> Result<Backup> {
     let (profile, layers) = profiles::get(db, profile_id)?;
     let game = saves::profile_game(&profile.game_id, &layers)?;
-    let (files, manifest) = if src.is_dir() {
-        (read_folder(game, src)?, None)
-    } else {
-        read_zip(src).map_err(|e| match e {
-            Error::Archive(_) => Error::UnsupportedSource(src.to_path_buf()),
-            e => e,
-        })?
-    };
+    let (files, manifest) = read_zip(src).map_err(|e| match e {
+        Error::Archive(_) => Error::UnsupportedSource(src.to_path_buf()),
+        e => e,
+    })?;
     let (mut files, label) = match manifest {
         Some(m) if m.game_id != profile.game_id => {
             return Err(Error::OtherGame(m.game_id));
@@ -823,13 +895,8 @@ pub fn import(paths: &AppPaths, db: &Db, profile_id: &str, src: &Path) -> Result
                     picked.push((base, data));
                 }
             }
-            // A folder's whole name: "Keen 4 v1.4" has no extension.
-            let name = if src.is_dir() {
-                src.file_name()
-            } else {
-                src.file_stem()
-            };
-            (picked, name.map(|s| s.to_string_lossy().into_owned()))
+            let stem = src.file_stem().map(|s| s.to_string_lossy().into_owned());
+            (picked, stem)
         }
     };
     if files.is_empty() {
@@ -1413,29 +1480,51 @@ mod tests {
     }
 
     #[test]
-    fn import_takes_the_saves_lying_in_a_folder() {
+    fn saves_in_a_folder_are_restored_without_a_backup_of_them() {
         let (tmp, paths, db) = setup();
-        let old = tmp.path().join("Keen 4 v1.4");
+        let old = tmp.path().join("KEEN4");
         for (name, data) in [
             ("KEEN4E.EXE", b"exe".as_slice()),
             ("savegam2.ck4", b"a"),
-            ("CONFIG.CK4", b"c"),
+            ("CONFIG.CK4", b"old config"),
             ("sub/SAVEGAM5.CK4", b"deeper"),
         ] {
             let path = old.join(name);
             fs::create_dir_all(path.parent().unwrap()).unwrap();
             fs::write(path, data).unwrap();
         }
-        let b = import(&paths, &db, "keen4-1", &old).unwrap();
-        assert_eq!(b.files, ["CONFIG.CK4", "savegam2.ck4"]);
-        assert_eq!(b.label.as_deref(), Some("Keen 4 v1.4"));
-        // Picking the subfolder takes what lies in there.
-        let sub = import(&paths, &db, "keen4-1", &old.join("sub")).unwrap();
-        assert_eq!(sub.files, ["SAVEGAM5.CK4"]);
+        let found = folder_saves(&db, "keen4-1", &old).unwrap();
+        let names: Vec<_> = found.saves.iter().map(|s| s.file.as_str()).collect();
+        assert_eq!(names, ["savegam2.ck4"]);
+        assert_eq!(found.saves[0].slot, Some(3));
+        assert!(found.saves[0].modified_at.is_some());
+        assert_eq!(found.settings, 1);
+
+        let state = paths.profiles.join("keen4-1/state");
+        fs::write(state.join("CONFIG.CK4"), b"mine").unwrap();
+        restore_folder(&paths, &db, "keen4-1", &old, None, None, false).unwrap();
+        assert_eq!(fs::read(state.join("savegam2.ck4")).unwrap(), b"a");
+        assert_eq!(fs::read(state.join("CONFIG.CK4")).unwrap(), b"mine");
+        restore_folder(
+            &paths,
+            &db,
+            "keen4-1",
+            &old,
+            Some("savegam2.ck4"),
+            Some("SAVEGAM7.CK4"),
+            false,
+        )
+        .unwrap();
+        assert_eq!(fs::read(state.join("SAVEGAM7.CK4")).unwrap(), b"a");
+        // Only what the profile had is backed up, never the folder.
+        let made = list(&db, "keen4-1").unwrap();
+        assert!(!made.is_empty());
+        assert!(made.iter().all(|b| b.reason == Some(Reason::BeforeRestore)));
+
         let empty = tmp.path().join("empty");
         fs::create_dir_all(&empty).unwrap();
         assert!(matches!(
-            import(&paths, &db, "keen4-1", &empty),
+            folder_saves(&db, "keen4-1", &empty),
             Err(Error::NoSavesFound)
         ));
     }

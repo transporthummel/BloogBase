@@ -645,7 +645,44 @@ pub async fn export_backup(app: AppHandle, backup_id: u32, path: String) -> Comm
     blocking(move || backups::export(&app.state::<Db>(), backup_id, Path::new(&path))).await
 }
 
-/// Adds a ZIP or a folder of saves as a new backup of the profile.
+/// The saves lying in a folder, such as an old copy of the game.
+#[tauri::command]
+#[specta::specta]
+pub async fn folder_saves(
+    app: AppHandle,
+    profile_id: String,
+    path: String,
+) -> CommandResult<backups::FolderSaves> {
+    blocking(move || backups::folder_saves(&app.state::<Db>(), &profile_id, Path::new(&path))).await
+}
+
+/// Restores saves from a folder, as [`restore_backup`] does from a backup.
+#[tauri::command]
+#[specta::specta]
+pub async fn restore_folder(
+    app: AppHandle,
+    profile_id: String,
+    path: String,
+    file: Option<String>,
+    target: Option<String>,
+    include_other: bool,
+) -> CommandResult<()> {
+    let id = profile_id.clone();
+    with_profile_locked(&app, &id, move |paths, db| {
+        backups::restore_folder(
+            paths,
+            db,
+            &profile_id,
+            Path::new(&path),
+            file.as_deref(),
+            target.as_deref(),
+            include_other,
+        )
+    })
+    .await
+}
+
+/// Adds a ZIP of saves as a new backup of the profile.
 #[tauri::command]
 #[specta::specta]
 pub async fn import_backup(

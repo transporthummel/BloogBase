@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Backup, type Game, type SaveFile } from "../bindings";
+import { commands, type Backup, type FolderSaves, type Game, type SaveFile } from "../bindings";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { Button } from "../ui/Button";
@@ -9,28 +9,82 @@ import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
 import { backupTitle, saveSummary, saveTitle, slotFiles } from "./saves";
 
-/**
- * Restores a whole backup, or one save from it into a chosen slot. Says
- * which current saves get replaced; the backend backs them up first.
- */
-export function RestoreDialog({
-  backup,
-  game,
-  current,
-  onClose,
-  onRestored,
-}: {
-  backup: Backup;
+type Shared = {
   game: Game;
   current: SaveFile[];
   onClose: () => void;
   onRestored: () => void;
-}) {
-  const { t, i18n } = useTranslation();
+};
+
+/** Restores a whole backup, or one save from it into a chosen slot. */
+export function RestoreDialog({ backup, ...shared }: Shared & { backup: Backup }) {
+  const { t } = useTranslation();
   const inBackup = useQuery({
     queryKey: ["backupSaves", backup.id],
     queryFn: () => unwrap(commands.backupSaves(backup.id)),
   });
+  return (
+    <RestoreFrom
+      {...shared}
+      title={t("backups.restoreTitle", { name: backupTitle(t, backup) })}
+      saves={inBackup.data}
+      error={inBackup.error}
+      hasOther={backup.settings + backup.other > 0}
+      restore={(file, target, all) => unwrap(commands.restoreBackup(backup.id, file, target, all))}
+    />
+  );
+}
+
+/**
+ * Restores the saves lying in a folder, such as an old copy of the game,
+ * all or one into a chosen slot, without keeping them as a backup.
+ */
+export function FolderRestoreDialog({
+  profileId,
+  path,
+  found,
+  ...shared
+}: Shared & { profileId: string; path: string; found: FolderSaves }) {
+  const { t } = useTranslation();
+  const name = path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+  return (
+    <RestoreFrom
+      {...shared}
+      title={t("saves.importFolderTitle", { name })}
+      saves={found.saves}
+      error={null}
+      hasOther={found.settings > 0}
+      restore={(file, target, all) =>
+        unwrap(commands.restoreFolder(profileId, path, file, target, all))
+      }
+    />
+  );
+}
+
+/**
+ * Restores all saves of a backup or folder, or one into a chosen slot.
+ * Says which current saves get replaced; the backend backs them up first.
+ */
+function RestoreFrom({
+  title,
+  saves,
+  error,
+  hasOther,
+  restore: put,
+  game,
+  current,
+  onClose,
+  onRestored,
+}: Shared & {
+  title: string;
+  saves: SaveFile[] | undefined;
+  error: Error | null;
+  /** Settings or high scores to restore too, if asked. */
+  hasOther: boolean;
+  restore: (file: string | null, target: string | null, all: boolean) => Promise<unknown>;
+}) {
+  const { t, i18n } = useTranslation();
+  const inBackup = { data: saves, error };
   const [targets, setTargets] = useState<Record<string, string>>({});
   // Settings and high scores stay as they are unless asked.
   const [includeOther, setIncludeOther] = useState(false);
@@ -43,18 +97,17 @@ export function RestoreDialog({
       file: string | null;
       target: string | null;
       all?: boolean;
-    }) => unwrap(commands.restoreBackup(backup.id, file, target, all)),
+    }) => put(file, target, all),
     onSuccess: onRestored,
   });
 
   const occupied = (file: string) =>
     current.find((c) => c.file.toUpperCase() === file.toUpperCase());
   const replacedByAll = (inBackup.data ?? []).map((s) => occupied(s.file)).filter((s) => !!s);
-  const hasOther = backup.settings + backup.other > 0;
   const onlyOther = hasOther && inBackup.data?.length === 0;
 
   return (
-    <Dialog title={t("backups.restoreTitle", { name: backupTitle(t, backup) })} onClose={onClose}>
+    <Dialog title={title} onClose={onClose}>
       {inBackup.error && <Notice tone="error">{errorMessage(t, inBackup.error)}</Notice>}
       {restore.error && <Notice tone="error">{errorMessage(t, restore.error)}</Notice>}
       <ul className="grid gap-3">

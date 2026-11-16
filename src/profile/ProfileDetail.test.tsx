@@ -66,6 +66,8 @@ vi.mock("../bindings", () => {
     "deleteBackup",
     "exportBackup",
     "importBackup",
+    "folderSaves",
+    "restoreFolder",
     "configView",
     "saveConfig",
     "resetConfig",
@@ -1069,20 +1071,24 @@ test("restores an earlier version of a save", async () => {
   expect(await screen.findByText(/^Earlier version restored/)).toBeInTheDocument();
 });
 
-test("imports the saves of an old copy from a folder and offers to restore them", async () => {
-  vi.mocked(openDialog).mockResolvedValue("C:/Games/Keen 4");
-  const imported = { ...backup, id: 9, label: "Keen 4", reason: null, auto: false };
-  vi.mocked(commands.importBackup).mockResolvedValue(ok(imported));
-  vi.mocked(commands.backupSaves).mockResolvedValue(ok([save("SAVEGAM3.CK4", 4, "old")]));
-  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(null));
+test("imports the saves of an old copy straight from a folder, not as a backup", async () => {
+  const folder = String.raw`C:\Games\KEEN4`;
+  vi.mocked(openDialog).mockResolvedValue(folder);
+  vi.mocked(commands.folderSaves).mockResolvedValue(
+    ok({ saves: [save("SAVEGAM3.CK4", 4, "old")], settings: 1 }),
+  );
+  vi.mocked(commands.restoreFolder).mockResolvedValue(ok(null));
   renderDetail();
   await userEvent.click(await screen.findByRole("button", { name: "Import from folder…" }));
   expect(openDialog).toHaveBeenCalledWith({ directory: true });
-  expect(commands.importBackup).toHaveBeenCalledWith("keen4-1", "C:/Games/Keen 4");
-  const dialog = await screen.findByRole("dialog", { name: "Restore “Keen 4”" });
-  expect(await within(dialog).findByText("Slot 4 · old")).toBeInTheDocument();
+  expect(commands.folderSaves).toHaveBeenCalledWith("keen4-1", folder);
+  const dialog = await screen.findByRole("dialog", { name: "Import saves from “KEEN4”" });
+  expect(within(dialog).getByText("Slot 4 · old")).toBeInTheDocument();
+  expect(within(dialog).getByLabelText(/Also reset settings and high scores/)).not.toBeChecked();
   await userEvent.click(within(dialog).getByRole("button", { name: "Restore all saves" }));
-  expect(commands.restoreBackup).toHaveBeenCalledWith(9, null, null, false);
+  expect(commands.restoreFolder).toHaveBeenCalledWith("keen4-1", folder, null, null, false);
+  expect(await screen.findByText(/^Saves imported\./)).toBeInTheDocument();
+  expect(commands.importBackup).not.toHaveBeenCalled();
 });
 
 test("save actions are locked while the game runs", async () => {

@@ -716,7 +716,9 @@
     "restoreVersionNamed": "Restore the version from {{date}}",
     "versionRestored": "Earlier version restored. What was there before was backed up.",
     "importFolder": "Import from folder…",
-    "importFolderHint": "Saves from an old copy of the game or mod: pick the folder its program is in. They are kept as a backup, from which you choose what to restore."
+    "importFolderHint": "Saves from an old copy of the game or mod: pick the folder its program is in.",
+    "importFolderTitle": "Import saves from “{{name}}”",
+    "importedFromFolder": "Saves imported. What was there before was backed up."
   },
   "backups": {
     "title": "Backups",

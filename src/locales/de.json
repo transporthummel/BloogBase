@@ -716,7 +716,9 @@
     "restoreVersionNamed": "Version vom {{date}} wiederherstellen",
     "versionRestored": "Frühere Version wiederhergestellt. Der vorherige Stand wurde gesichert.",
     "importFolder": "Aus Ordner importieren…",
-    "importFolderHint": "Spielstände aus einer alten Kopie des Spiels oder der Mod: Wähle den Ordner, in dem ihr Programm liegt. Sie werden als Sicherung abgelegt, aus der du wählst, was du wiederherstellst."
+    "importFolderHint": "Spielstände aus einer alten Kopie des Spiels oder der Mod: Wähle den Ordner, in dem ihr Programm liegt.",
+    "importFolderTitle": "Spielstände aus „{{name}}“ importieren",
+    "importedFromFolder": "Spielstände importiert. Der vorherige Stand wurde gesichert."
   },
   "backups": {
     "title": "Sicherungen",

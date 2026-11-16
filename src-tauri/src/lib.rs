@@ -95,6 +95,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::delete_backup,
             commands::export_backup,
             commands::import_backup,
+            commands::folder_saves,
+            commands::restore_folder,
             commands::backup_settings,
             commands::set_backup_settings,
             commands::display_options,

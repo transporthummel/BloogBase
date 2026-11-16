@@ -66,8 +66,12 @@ export const commands = {
 	answerEarlierBackup: (profileId: string, backupId: number, restore: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("answer_earlier_backup", { profileId, backupId, restore })),
 	deleteBackup: (backupId: number) => typedError<null, CommandError>(__TAURI_INVOKE("delete_backup", { backupId })),
 	exportBackup: (backupId: number, path: string) => typedError<null, CommandError>(__TAURI_INVOKE("export_backup", { backupId, path })),
-	/**  Adds a ZIP or a folder of saves as a new backup of the profile. */
+	/**  Adds a ZIP of saves as a new backup of the profile. */
 	importBackup: (profileId: string, path: string) => typedError<Backup, CommandError>(__TAURI_INVOKE("import_backup", { profileId, path })),
+	/**  The saves lying in a folder, such as an old copy of the game. */
+	folderSaves: (profileId: string, path: string) => typedError<FolderSaves, CommandError>(__TAURI_INVOKE("folder_saves", { profileId, path })),
+	/**  Restores saves from a folder, as [`restore_backup`] does from a backup. */
+	restoreFolder: (profileId: string, path: string, file: string | null, target: string | null, includeOther: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("restore_folder", { profileId, path, file, target, includeOther })),
 	backupSettings: () => typedError<BackupSettings, CommandError>(__TAURI_INVOKE("backup_settings")),
 	setBackupSettings: (settings: BackupSettings) => typedError<null, CommandError>(__TAURI_INVOKE("set_backup_settings", { settings })),
 	/**  The simple display options on the settings page. */
@@ -479,6 +483,17 @@ export type Firing =
  *  patch is for.
  */
 "otherVersion";
+
+/**
+ *  The saves, settings and high scores of a profile's game lying in a
+ *  folder, such as an old copy of the game or a mod, to restore from there
+ *  without keeping them as a backup.
+ */
+export type FolderSaves = {
+	saves: SaveFile[],
+	/**  Settings and high scores. */
+	settings: number,
+};
 
 export type FoundGame = {
 	gameId: string,

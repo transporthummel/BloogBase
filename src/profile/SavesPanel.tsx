@@ -3,7 +3,14 @@ import { open, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { Archive, Download, FolderOpen, History, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Backup, type Game, type Profile, type SaveFile } from "../bindings";
+import {
+  commands,
+  type Backup,
+  type FolderSaves,
+  type Game,
+  type Profile,
+  type SaveFile,
+} from "../bindings";
 import { errorMessage } from "../errors";
 import { formatDateTime } from "../format";
 import { unwrap } from "../ipc";
@@ -13,7 +20,7 @@ import { Card } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Notice } from "../ui/Notice";
 import { RelativeTime } from "../ui/RelativeTime";
-import { RestoreDialog } from "./RestoreDialog";
+import { FolderRestoreDialog, RestoreDialog } from "./RestoreDialog";
 import { VersionsDialog } from "./VersionsDialog";
 import {
   backupContents,
@@ -112,19 +119,16 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
     },
   });
 
-  // Saves of an old copy become a backup, restored from right away.
+  // Saves of an old copy, restored from the folder itself: they aren't
+  // kept as a backup the player didn't make.
+  const [fromFolder, setFromFolder] = useState<{ path: string; found: FolderSaves } | null>(null);
   const importFolder = useMutation({
     mutationFn: async () => {
       const path = await open({ directory: true });
       if (!path) return null;
-      return unwrap(commands.importBackup(profile.id, path));
+      return { path, found: await unwrap(commands.folderSaves(profile.id, path)) };
     },
-    onSuccess: (made) => {
-      if (!made) return;
-      refresh();
-      if (game) setRestoring(made);
-      else say(t("backups.imported"));
-    },
+    onSuccess: (picked) => picked && setFromFolder(picked),
   });
 
   const locked = profile.running;
@@ -269,17 +273,19 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
             </li>
           ))}
         </ul>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <Button
-            variant="secondary"
-            onClick={() => importFolder.mutate()}
-            disabled={locked || importFolder.isPending}
-          >
-            <FolderOpen className="size-4" aria-hidden />
-            {t("saves.importFolder")}
-          </Button>
-          <p className="min-w-0 flex-1 text-xs text-muted">{t("saves.importFolderHint")}</p>
-        </div>
+        {game && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <Button
+              variant="secondary"
+              onClick={() => importFolder.mutate()}
+              disabled={locked || importFolder.isPending}
+            >
+              <FolderOpen className="size-4" aria-hidden />
+              {t("saves.importFolder")}
+            </Button>
+            <p className="min-w-0 flex-1 text-xs text-muted">{t("saves.importFolderHint")}</p>
+          </div>
+        )}
       </section>
 
       <section className="grid gap-3" aria-labelledby="backups-heading">
@@ -368,6 +374,21 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
             })}
           </p>
         </ConfirmDialog>
+      )}
+      {fromFolder && game && (
+        <FolderRestoreDialog
+          profileId={profile.id}
+          path={fromFolder.path}
+          found={fromFolder.found}
+          game={game}
+          current={saves.data ?? []}
+          onClose={() => setFromFolder(null)}
+          onRestored={() => {
+            setFromFolder(null);
+            say(t("saves.importedFromFolder"));
+            refresh();
+          }}
+        />
       )}
       {restoring && game && (
         <RestoreDialog
