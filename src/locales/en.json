@@ -934,7 +934,7 @@
     "shortText": "If the mod didn’t start properly, you can report it on GitHub. BloogBase puts together what’s needed to find the problem.",
     "fine": "All fine",
     "noWorldTitle": "{{name}} made no world",
-    "noWorldText": "The mod didn’t make all of a new world’s files, so none was kept. The world played before is still in the Worlds tab."
+    "noWorldText": "The mod didn’t make all of a new world’s files, so none was kept."
   },
   "modReport": {
     "button": "Mod won’t start?",

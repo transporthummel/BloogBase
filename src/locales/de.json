@@ -934,7 +934,7 @@
     "shortText": "Wenn die Mod nicht richtig gestartet ist, kannst du das auf GitHub melden. BloogBase stellt zusammen, was zum Finden des Problems nötig ist.",
     "fine": "Alles in Ordnung",
     "noWorldTitle": "{{name}} hat keine Welt erzeugt",
-    "noWorldText": "Die Mod hat nicht alle Dateien einer neuen Welt erzeugt, daher wurde keine behalten. Die zuvor gespielte Welt steht weiter im Tab Welten."
+    "noWorldText": "Die Mod hat nicht alle Dateien einer neuen Welt erzeugt, daher wurde keine behalten."
   },
   "modReport": {
     "button": "Mod startet nicht?",
