@@ -197,20 +197,23 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
     </ul>
   );
 
+  // Only while the backup holding the deleted save is still there.
+  const canUndo = !!undo && !!backups.data?.some((b) => b.id === undo.backupId);
+
   return (
     <div className="grid gap-6">
       {locked && <Notice>{t("saves.locked")}</Notice>}
       {message && !error && (
         <Notice>
           {message}
-          {undo && (
+          {canUndo && (
             <>
               {" "}
               <button
                 type="button"
                 className="text-ink underline underline-offset-2"
                 disabled={locked || undoDelete.isPending}
-                onClick={() => undoDelete.mutate(undo)}
+                onClick={() => undo && undoDelete.mutate(undo)}
               >
                 {t("saves.undoDelete")}
               </button>

@@ -974,7 +974,12 @@ test("saves sharing a slot show their file names", async () => {
 });
 
 test("deleting a save asks first and can be undone", async () => {
-  vi.mocked(commands.deleteSave).mockResolvedValue(ok(12));
+  vi.mocked(commands.deleteSave).mockImplementation(async () => {
+    vi.mocked(commands.listBackups).mockResolvedValue(
+      ok([{ ...backup, id: 12, reason: "beforeDelete" }, backup]),
+    );
+    return ok(12);
+  });
   vi.mocked(commands.restoreBackup).mockResolvedValue(ok(true));
   renderDetail();
   await userEvent.click(await screen.findByRole("button", { name: "Delete Slot 1 · pabba" }));
@@ -988,6 +993,25 @@ test("deleting a save asks first and can be undone", async () => {
   expect(commands.restoreBackup).toHaveBeenCalledWith(12, "SAVEGAM0.CK4", null, false);
   expect(await screen.findByText("Save brought back.")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Undo" })).not.toBeInTheDocument();
+});
+
+test("deleting a save can't be undone once its backup is deleted too", async () => {
+  vi.mocked(commands.deleteSave).mockResolvedValue(ok(7));
+  vi.mocked(commands.deleteBackup).mockImplementation(async () => {
+    vi.mocked(commands.listBackups).mockResolvedValue(ok([]));
+    return ok(null);
+  });
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "Delete Slot 1 · pabba" }));
+  await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
+  expect(await screen.findByRole("button", { name: "Undo" })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: "Delete backup Before playing" }));
+  await userEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
+  await vi.waitFor(() =>
+    expect(screen.queryByRole("button", { name: "Undo" })).not.toBeInTheDocument(),
+  );
+  expect(screen.getByText("Save deleted.")).toBeInTheDocument();
 });
 
 test("automatic backups sit in a closed group below the user's own", async () => {

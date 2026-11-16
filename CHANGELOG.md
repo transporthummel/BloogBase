@@ -18,6 +18,7 @@
 
 ### Bug Fixes
 
+- "Undo" after deleting a save is no longer offered once the backup holding it has been deleted.
 ### Misc
 
 ## 1.3.0 (2026-11-14)
