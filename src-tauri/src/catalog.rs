@@ -52,6 +52,11 @@ pub struct Game {
 pub struct GameVersion {
     pub id: String,
     pub label: String,
+    /// When it came out, as KeenWiki's version pages say ("1991-11-22",
+    /// "1993-09", "1991"). Builds without copy protection have their
+    /// original's.
+    #[serde(default)]
+    pub released: Option<String>,
     /// File name → lowercase hex SHA-256. At least one executable; other
     /// files tell apart releases that share it.
     pub files: BTreeMap<String, String>,

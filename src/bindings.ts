@@ -567,6 +567,12 @@ export type GameVersion = {
 	id: string,
 	label: string,
 	/**
+	 *  When it came out, as KeenWiki's version pages say ("1991-11-22",
+	 *  "1993-09", "1991"). Builds without copy protection have their
+	 *  original's.
+	 */
+	released?: string | null,
+	/**
 	 *  File name → lowercase hex SHA-256. At least one executable; other
 	 *  files tell apart releases that share it.
 	 */

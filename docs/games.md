@@ -28,6 +28,8 @@ Per version:
 - **`files`**: file name to SHA-256. At least one executable; other files
   tell apart releases that share one.
 - **`kind`**: release, beta or demo; **`shareware`**.
+- **`released`**: when it came out, from KeenWiki's version pages, as
+  precise as they are (`1991-11-22`, `1993-09`, `1991`).
 - **`patchVersion`**: what patch files call it in `%version` (`1.4`), if
   they're made for it.
 - **`start`**: a program or batch file to launch instead of the episode

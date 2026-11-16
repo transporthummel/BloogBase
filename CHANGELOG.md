@@ -4,6 +4,7 @@
 
 ### Features
 
+- A game's page shows, like a mod's, a description in English and German, "by id Software" with a link to their website and the release date of its version (from KeenWiki); demos and betas have descriptions of their own.
 - Discover can hide installed mods. A mod installed while the filter is on stays in the list until the filter is turned on again or the page is opened again.
 
 ### Improvements

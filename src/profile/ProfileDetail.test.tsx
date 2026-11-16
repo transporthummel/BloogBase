@@ -446,6 +446,38 @@ test("a mod's More menu reports that it won't start, once it has been started", 
   expect(screen.queryByRole("menuitem", { name: "Mod won’t start?" })).not.toBeInTheDocument();
 });
 
+test("a game's page credits id Software, with the version's release date and text", async () => {
+  const version = { id: "keen4-1.4-ega", label: "v1.4 EGA", files: {}, shareware: true };
+  const demo = { ...version, id: "keen4-demo", label: "Special demo", kind: "demo" as const };
+  vi.mocked(commands.listGames).mockResolvedValue([
+    {
+      ...keen4,
+      versions: [
+        { ...version, released: "1992-02-27" },
+        { ...demo, released: "1991-10" },
+      ],
+    },
+  ]);
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, versionId: "keen4-1.4-ega" }]),
+  );
+  const { unmount } = renderDetail();
+  const developer = await screen.findByRole("button", { name: "id Software" });
+  expect(developer.parentElement).toHaveTextContent(/^by id Software$/);
+  await userEvent.click(developer);
+  expect(openUrl).toHaveBeenCalledWith("https://www.idsoftware.com");
+  expect(screen.getByText("Released on Feb 27, 1992")).toBeInTheDocument();
+  expect(screen.getByText(/the Shikadi plan to destroy the galaxy/)).toBeInTheDocument();
+  unmount();
+
+  // A demo has its own text.
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([{ ...profile, versionId: "keen4-demo" }]));
+  renderDetail();
+  expect(await screen.findByText("Released in October 1991")).toBeInTheDocument();
+  expect(screen.getByText(/A demo of Goodbye, Galaxy!/)).toBeInTheDocument();
+  expect(screen.queryByText(/the Shikadi plan to destroy the galaxy/)).toBeNull();
+});
+
 test("a game's page opens the folder with its files", async () => {
   vi.mocked(commands.openGameFolder).mockResolvedValue(ok(null));
   renderDetail();

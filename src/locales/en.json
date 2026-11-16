@@ -1107,5 +1107,23 @@
       "ownKeys": "The buttons press the keys the game is set to. Change them in the game, and the controller follows at the next start.",
       "diagonals": "Diagonals only work on the D-pad, not on the stick."
     }
+  },
+  "catalog": {
+    "developer": "id Software",
+    "description": {
+      "keen1": "Eight-year-old genius Billy Blaze builds a spaceship in his backyard and flies to Mars as Commander Keen. While he looks around, the Vorticons steal four parts of his ship and hide them in their cities. To get home, Keen has to find them all, armed with a raygun and, before long, a pogo stick. The first episode of Invasion of the Vorticons: Apogee gave it away as shareware in December 1990, and the other two were ordered from them.",
+      "keen2": "Back on his ship, Keen finds out that the Vorticon mothership is orbiting Earth, its Tantalus rays aimed at the greatest cities. He sneaks aboard and has to shut down all eight before the Vorticons fire. The second episode of Invasion of the Vorticons, which Apogee sold together with the third.",
+      "keen3": "Keen flies to Vorticon VI, the Vorticons’ home world, to find out who is behind the attack on Earth. On the way through their cities he learns that the Vorticons are only being controlled, by the mysterious Grand Intellect. The third and last episode of Invasion of the Vorticons.",
+      "keen4": "Keen’s new radio picks up a message: the Shikadi plan to destroy the galaxy. Only the Oracle of Gnosticus IV knows how to stop them, but its eight Council Members have been carried off. Keen sets out across the Shadowlands to rescue them, now with a neural stunner in hand. The first episode of Goodbye, Galaxy!, shareware from Apogee since November 1991, on a new engine: Keen now walks up slopes, and the world is seen slightly from above.",
+      "keen5": "The Shikadi have built the Omegamatic, a space station that can blow up the galaxy. Keen gets aboard and has to blow its fuses one by one, among robots and electric Shikadi. The second episode of Goodbye, Galaxy!, sold by Apogee; its ending announced a sequel that was never made.",
+      "keen6": "The Bloogs of Fribbulus Xax have kidnapped Keen’s babysitter Molly. Keen flies after them to rescue her from the Bloog planet. Made as the third episode of Goodbye, Galaxy!, it was sold on its own by FormGen in stores and never came out as shareware.",
+      "kdreams": "Billy won’t eat his vegetables and goes to bed hungry. In his dream, King Boobus Tuber and his vegetable army have taken the children of the land prisoner. Instead of a raygun, Keen throws flower power seeds that turn vegetables into flowers. id Software made this episode for Softdisk, between the Vorticons and Goodbye, Galaxy!",
+      "keen1-beta-nov": "An early test build from November 1990, a few weeks before the first release. It still has a cutscene that was removed later, and much looks a bit different from the finished game.",
+      "keen1-beta-dec": "A test build from December 3, 1990, shortly before the release, also known as version 1.0. It is close to the finished game.",
+      "keen4-demo": "A demo of Goodbye, Galaxy! that FormGen gave away in a Keen 6 promotional package. Only some of the levels can be entered.",
+      "keen6-demo": "A demo released in November 1991 to promote Aliens Ate My Baby Sitter!, before the game itself. Large parts of the map are blocked off.",
+      "keen6-demo-apogee": "A demo of Aliens Ate My Baby Sitter! that Apogee released in February 1992. Only part of the game can be played.",
+      "keen6-promo": "A later promotional release of the demo, with re-recorded demos. Only part of the game can be played."
+    }
   }
 }

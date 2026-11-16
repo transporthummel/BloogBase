@@ -1,11 +1,13 @@
 {
   "unreleased": {
     "en": [
+      "Games and demos have a description, their release date and id Software as the author.",
       "Discover can hide the mods you have installed.",
       "Discover's filters are buttons now, the games as tiles, and can choose several games and types.",
       "The game a mod runs on links to the game's page."
     ],
     "de": [
+      "Spiele und Demos haben eine Beschreibung, ihr Erscheinungsdatum und id Software als Autor.",
       "Entdecken kann installierte Mods ausblenden.",
       "Die Filter in Entdecken sind jetzt Knöpfe, die Spiele als Kacheln, mit mehreren Spielen und Arten zugleich.",
       "Das Spiel, mit dem eine Mod läuft, verlinkt auf seine Seite."

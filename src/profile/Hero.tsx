@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ExternalLink, TriangleAlert } from "lucide-react";
 import { Fragment, useRef, type ReactNode } from "react";
+import { type TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { type Game, type IndexEntry, type Mod, type Profile } from "../bindings";
 import { useIndexMods } from "../discover/queries";
@@ -53,7 +54,11 @@ export function Hero({
   const latest = shots.data?.[0];
   // A translation from the index wins over the English text the mod stored.
   const description =
-    entry?.translations?.[i18n.language]?.description ?? mod?.description ?? entry?.description;
+    profile.modId === null
+      ? gameDescription(t, profile)
+      : (entry?.translations?.[i18n.language]?.description ??
+        mod?.description ??
+        entry?.description);
 
   return (
     <Card ref={cardRef} className="mb-6 flex flex-col md:flex-row">
@@ -110,6 +115,18 @@ export function Hero({
   );
 }
 
+/** Every episode, demo and beta is id Software's. */
+const DEVELOPER = "id Software";
+const DEVELOPER_URL = "https://www.idsoftware.com";
+
+/** A demo's or beta's own text, else the episode's; none for unknown games. */
+function gameDescription(t: TFunction, profile: Profile): string {
+  const keys = [profile.versionId, profile.gameId].flatMap((id) =>
+    id ? [`catalog.description.${id}`] : [],
+  );
+  return t(keys, { defaultValue: "" });
+}
+
 /** Title, what it runs on, authors, release, the mods played over it and links. */
 function Credits({
   profile,
@@ -153,6 +170,16 @@ function Credits({
           <Badge>{/^\d/.test(mod.version) ? `v${mod.version}` : mod.version}</Badge>
         )}
       </div>
+      {profile.modId === null && game && (
+        <p className="text-sm">
+          <Authors authors={[DEVELOPER]} links={{ [DEVELOPER]: DEVELOPER_URL }} />
+        </p>
+      )}
+      {profile.modId === null && version?.released && (
+        <p className="text-sm text-muted">
+          {looseDateText(t, i18n.language, "mods.releasedOn", version.released)}
+        </p>
+      )}
       {mod && mod.authors.length > 0 && (
         <p className="text-sm">
           <Authors authors={mod.authors} links={{ ...mod.authorLinks, ...entry?.authorLinks }} />
