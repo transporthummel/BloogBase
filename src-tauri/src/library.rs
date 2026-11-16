@@ -129,23 +129,19 @@ pub fn import_from(
     Ok(installs)
 }
 
-/// The release of `game_id` in `path` the library lacks: a mod's folder
-/// that holds the game too. Only a known release counts; an executable the
-/// catalog doesn't know may be the mod's own.
-pub fn bundled_game(
-    paths: &AppPaths,
-    db: &Db,
-    path: &Path,
-    game_id: &str,
-) -> Result<Option<String>> {
-    let source = Source::open(path)?;
-    let have = release_keys(paths, db)?;
-    for d in detect(&source)? {
-        if d.game_id == game_id && d.version_id.is_some() && !has_release(&source, &d, &have)? {
-            return Ok(d.version_id);
-        }
+/// The release of `game_id` in `path`, a mod's folder that holds the game
+/// too, while the library has no copy of that game at all; another release
+/// of it is enough to play the mod. Only a known release counts; an
+/// executable the catalog doesn't know may be the mod's own.
+pub fn bundled_game(db: &Db, path: &Path, game_id: &str) -> Result<Option<String>> {
+    if list(db)?.iter().any(|i| i.game_id == game_id) {
+        return Ok(None);
     }
-    Ok(None)
+    let source = Source::open(path)?;
+    Ok(detect(&source)?
+        .into_iter()
+        .find(|d| d.game_id == game_id && d.version_id.is_some())
+        .and_then(|d| d.version_id))
 }
 
 /// Imports the release [`bundled_game`] found in `path`. `None` when the
@@ -759,7 +755,26 @@ mod tests {
         let src = tmp.path().join("Keen 4 with a mod");
         write_folder(&src, KEEN4);
         // An executable the catalog doesn't know may be the mod's own.
-        assert_eq!(bundled_game(&paths, &db, &src, "keen4").unwrap(), None);
-        assert_eq!(bundled_game(&paths, &db, &src, "keen5").unwrap(), None);
+        assert_eq!(bundled_game(&db, &src, "keen4").unwrap(), None);
+        assert_eq!(bundled_game(&db, &src, "keen5").unwrap(), None);
+    }
+
+    /// `cargo test --lib library::tests::a_game_next_to_a_mod -- --ignored`
+    #[test]
+    #[ignore = "needs the real games"]
+    fn a_game_next_to_a_mod_is_offered_only_without_a_copy_of_it() {
+        let versions = std::env::var_os("KEEN_GAMES")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../.local/games"))
+            .join("versions");
+        let (_tmp, paths, db) = setup();
+        let ega = versions.join("Commander Keen 4 v1.4");
+        assert_eq!(
+            bundled_game(&db, &ega, "keen4").unwrap().as_deref(),
+            Some("keen4-1.4-ega")
+        );
+        // Any copy of the game will do, even another release.
+        import(&paths, &db, &versions.join("Commander Keen 4 v1.4 CGA")).unwrap();
+        assert_eq!(bundled_game(&db, &ega, "keen4").unwrap(), None);
     }
 }

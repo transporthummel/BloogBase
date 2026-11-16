@@ -1001,11 +1001,11 @@ pub async fn inspect_dropped(app: AppHandle, path: String) -> CommandResult<Drop
     .await
 }
 
-/// The game lying next to the mod, when the library doesn't have it yet.
+/// The game lying next to the mod, when the library has no copy of it.
 fn find_bundled_game(app: &AppHandle, path: &str, info: &mut ModInfo) {
-    let (paths, db) = (app.state::<AppPaths>(), app.state::<Db>());
-    info.bundled_game = library::bundled_game(&paths, &db, Path::new(path), &info.game_id)
-        .unwrap_or_else(|e| {
+    let db = app.state::<Db>();
+    info.bundled_game =
+        library::bundled_game(&db, Path::new(path), &info.game_id).unwrap_or_else(|e| {
             tracing::warn!("could not look for the game next to the mod: {e}");
             None
         });

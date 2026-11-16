@@ -69,8 +69,8 @@ pub struct ModInfo {
     /// (`l.keen_community.episode_smile`), for [`named_mod`].
     #[serde(skip)]
     pub made_for: Option<String>,
-    /// A release of the game lying next to the mod that the library doesn't
-    /// have yet, to import along with it.
+    /// A release of the game lying next to the mod while the library has no
+    /// copy of that game, to import along with it.
     pub bundled_game: Option<String>,
     /// Brings an executable and all of the game's files: plays from them
     /// alone, on any version of its game, as nothing below it is read.

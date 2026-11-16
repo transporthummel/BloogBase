@@ -12,6 +12,7 @@
 - Discover's filters are buttons instead of drop-downs: the games as the tiles of the cards and the types as chips, several of each at once, "I can play" (with a tooltip saying what it means) and "Not installed" as toggles, with "Clear filters" next to the count whenever a filter is set. Only the sort is still a drop-down, next to the search.
 - "Runs on Keen 4 v1.4 EGA" under a mod, in the library and on its page, links the game's page, as the mod it's played over already was.
 - A mod's "DOSBox & patches" tab is called "DOSBox settings", as its patches are edited on the game's page.
+- A folder or ZIP holding a mod and its game offers to add the game only while the library has no copy of that game; another release of it is enough for the mod.
 
 ### Bug Fixes
 

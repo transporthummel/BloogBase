@@ -890,8 +890,8 @@ export type ModInfo = {
 	/**  Known by its programs (see `index_version`). */
 	indexFiles: boolean,
 	/**
-	 *  A release of the game lying next to the mod that the library doesn't
-	 *  have yet, to import along with it.
+	 *  A release of the game lying next to the mod while the library has no
+	 *  copy of that game, to import along with it.
 	 */
 	bundledGame: string | null,
 	/**

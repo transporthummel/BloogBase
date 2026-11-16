@@ -5,16 +5,16 @@ import { commands, type Install, type ModInfo } from "../bindings";
 import { useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
-import { installsKey, profilesKey, useInstalls } from "../library/queries";
+import { installsKey, profilesKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Notice } from "../ui/Notice";
 
 export type Pick = "game" | "mod" | "both";
 
 /**
- * A folder or ZIP holding a mod and a release of its game the library lacks:
- * the game alone, the mod alone, or both, the game first. Both is the pick
- * while the library has no copy of the game, else the mod alone.
+ * A folder or ZIP holding a mod and its game while the library has no copy
+ * of that game: the game alone, the mod alone, or both (the pick), the game
+ * first.
  */
 export function GameAndMod({
   path,
@@ -34,11 +34,9 @@ export function GameAndMod({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const games = useGames();
-  const installs = useInstalls();
   const game = games.data?.find((g) => g.id === info.gameId);
   const version = game?.versions.find((v) => v.id === info.bundledGame);
-  const [picked, setPicked] = useState<Pick | null>(null);
-  const pick = picked ?? (installs.data?.some((i) => i.gameId === info.gameId) ? "mod" : "both");
+  const [pick, setPick] = useState<Pick>("both");
 
   const add = useMutation({
     mutationFn: async (p: Pick) => {
@@ -61,7 +59,7 @@ export function GameAndMod({
       className="grid gap-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (installs.data && !add.isPending) add.mutate(pick);
+        if (!add.isPending) add.mutate(pick);
       }}
     >
       <p>{t("mods.gameAndMod.found")}</p>
@@ -82,7 +80,7 @@ export function GameAndMod({
               type="radio"
               name="game-and-mod"
               checked={pick === value}
-              onChange={() => setPicked(value)}
+              onChange={() => setPick(value)}
             />
             {label}
           </label>
@@ -93,7 +91,7 @@ export function GameAndMod({
         <Button variant="ghost" onClick={onCancel}>
           {t(queued ? "drop.skip" : "common.cancel")}
         </Button>
-        <Button type="submit" data-autofocus disabled={!installs.data || add.isPending}>
+        <Button type="submit" data-autofocus disabled={add.isPending}>
           {add.isPending ? t("mods.gameAndMod.adding") : t("mods.gameAndMod.next")}
         </Button>
       </div>

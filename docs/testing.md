@@ -74,11 +74,13 @@ index's cached downloads, out of the run.)
 ## 3. Real games (CI weekly, or locally)
 
 Ignored tests that read the games in `$KEEN_GAMES` (default `.local/games`
-for the version test; the others need it set, as an absolute path):
+for the version tests and the game next to a mod; the others need it set,
+as an absolute path):
 
 ```sh
 cd src-tauri
 cargo test --lib detect::tests::real_ -- --ignored   # versions, renamed executables
+cargo test --lib library::tests::a_game_next_to_a_mod -- --ignored   # offered without a copy only
 KEEN_GAMES=… cargo test -p keen-graphics corpus -- --ignored
 KEEN_GAMES=… cargo test --lib covers::tests::dreams_map_titles -- --ignored
 KEEN_MODS=<unpacked mods, one folder each> KEEN_GAMES=… KEEN_OUT=<folder> \

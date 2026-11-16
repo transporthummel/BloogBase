@@ -779,7 +779,7 @@ test("installs the free shareware first for a mod made for it", async () => {
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalled());
 });
 
-test("asks first whether to add the game lying next to the mod, both without a copy", async () => {
+test("asks first whether to add the game lying next to the mod, both preselected", async () => {
   vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, bundledGame: "keen4-1.4-ega" }));
   vi.mocked(commands.listInstalls).mockReturnValue(ok([]));
   vi.mocked(commands.importBundledGame).mockImplementation(async () => {
@@ -809,13 +809,13 @@ test("asks first whether to add the game lying next to the mod, both without a c
   await vi.waitFor(() => expect(onInstalled).toHaveBeenCalledWith({ id: "aurora" }, [install]));
 });
 
-test("picks the mod alone when the library has a copy of the game", async () => {
+test("adds only the mod when asked to", async () => {
   vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, bundledGame: "keen4-1.4-ega" }));
   renderDialog();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Choose folder…" }));
 
-  expect(await screen.findByRole("radio", { name: "Only the mod" })).toBeChecked();
+  await user.click(await screen.findByRole("radio", { name: "Only the mod" }));
   await user.click(screen.getByRole("button", { name: "Continue" }));
   expect(await screen.findByRole("textbox", { name: "Name" })).toBeInTheDocument();
   expect(commands.importBundledGame).not.toHaveBeenCalled();
