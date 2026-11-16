@@ -54,6 +54,10 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
     setUndo(deleted);
   };
 
+  // "What was there before was backed up" only when it was.
+  const restoredText = (done: string, backedUp: boolean) =>
+    backedUp ? `${done} ${t("backups.backedUpBefore")}` : done;
+
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: savesKey(profile.id) });
     queryClient.invalidateQueries({ queryKey: backupsKey(profile.id) });
@@ -341,9 +345,9 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
           save={versionsOf}
           others={saves.data ?? []}
           onClose={() => setVersionsOf(null)}
-          onRestored={() => {
+          onRestored={(backedUp) => {
             setVersionsOf(null);
-            say(t("saves.versionRestored"));
+            say(restoredText(t("saves.versionRestored"), backedUp));
             refresh();
           }}
         />
@@ -383,9 +387,9 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
           game={game}
           current={saves.data ?? []}
           onClose={() => setFromFolder(null)}
-          onRestored={() => {
+          onRestored={(backedUp) => {
             setFromFolder(null);
-            say(t("saves.importedFromFolder"));
+            say(restoredText(t("saves.importedFromFolder"), backedUp));
             refresh();
           }}
         />
@@ -396,9 +400,9 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
           game={game}
           current={saves.data ?? []}
           onClose={() => setRestoring(null)}
-          onRestored={() => {
+          onRestored={(backedUp) => {
             setRestoring(null);
-            say(t("backups.restored"));
+            say(restoredText(t("backups.restored"), backedUp));
             refresh();
           }}
         />

@@ -13,7 +13,8 @@ type Shared = {
   game: Game;
   current: SaveFile[];
   onClose: () => void;
-  onRestored: () => void;
+  /** Whether what was there was backed up first. */
+  onRestored: (backedUp: boolean) => void;
 };
 
 /** Restores a whole backup, or one save from it into a chosen slot. */
@@ -81,7 +82,7 @@ function RestoreFrom({
   error: Error | null;
   /** Settings or high scores to restore too, if asked. */
   hasOther: boolean;
-  restore: (file: string | null, target: string | null, all: boolean) => Promise<unknown>;
+  restore: (file: string | null, target: string | null, all: boolean) => Promise<boolean>;
 }) {
   const { t, i18n } = useTranslation();
   const inBackup = { data: saves, error };

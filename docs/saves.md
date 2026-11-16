@@ -214,8 +214,11 @@ newest first. Any of them can be put back, also into another slot.
 
 ### Restoring
 
-A restore first backs up the current `state/`, then writes the chosen files
-over it: by default only the saves, optionally also settings, high scores
+A restore first backs up the current `state/` if it holds files of the kind
+restored (saves, or settings and high scores): saves restored where there are
+only settings, or the other way round, replace nothing worth a backup. The
+message after it says whether the old state was backed up. It then writes
+the chosen files over it: by default only the saves, optionally also settings, high scores
 and deletion markers, or a single save under another slot's name. If the
 game wrote the file in other case, that file is replaced. Files not in the
 backup stay as they are.
@@ -237,7 +240,7 @@ a mod: the files lying directly in it that look like this game's saves,
 config or high scores. They are restored straight from the folder in the
 same dialog as a backup, never kept as a backup of their own: the backups
 list shows only what the player backed up. As with every restore, what the
-profile had before is backed up first.
+profile had before is backed up first, if it is of the kind restored.
 
 ### Removed
 

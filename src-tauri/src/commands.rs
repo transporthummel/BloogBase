@@ -618,7 +618,7 @@ pub async fn restore_backup(
     file: Option<String>,
     target: Option<String>,
     include_other: bool,
-) -> CommandResult<()> {
+) -> CommandResult<bool> {
     let profile_id = backups::get(&app.state::<Db>(), backup_id)?.profile_id;
     with_profile_locked(&app, &profile_id, move |paths, db| {
         backups::restore(
@@ -666,7 +666,7 @@ pub async fn restore_folder(
     file: Option<String>,
     target: Option<String>,
     include_other: bool,
-) -> CommandResult<()> {
+) -> CommandResult<bool> {
     let id = profile_id.clone();
     with_profile_locked(&app, &id, move |paths, db| {
         backups::restore_folder(

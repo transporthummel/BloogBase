@@ -25,7 +25,7 @@ export function VersionsDialog({
   /** The profile's saves, which may share its slot. */
   others: SaveFile[];
   onClose: () => void;
-  onRestored: () => void;
+  onRestored: (backedUp: boolean) => void;
 }) {
   const { t, i18n } = useTranslation();
   const versions = useQuery({

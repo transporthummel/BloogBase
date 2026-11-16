@@ -693,10 +693,11 @@ pub fn saves_in(db: &Db, id: u32) -> Result<Vec<SaveFile>> {
         .collect())
 }
 
-/// Puts a backup's saves back into `state/`, after backing up what's there;
-/// with `include_other`, all its files: settings, high scores and deletion
+/// Puts a backup's saves back into `state/`, after backing up what's there
+/// if it holds files of the kind restored (saves, or the others); with `include_other`, all its files: settings, high scores and deletion
 /// markers too. With `file`, only that file, written under the name
 /// `target` (another slot) if given. Files not in the backup stay as they are.
+/// Whether what was there was backed up.
 pub fn restore(
     paths: &AppPaths,
     db: &Db,
@@ -704,10 +705,10 @@ pub fn restore(
     file: Option<&str>,
     target: Option<&str>,
     include_other: bool,
-) -> Result<()> {
+) -> Result<bool> {
     let (backup, archive) = get_with_archive(db, id)?;
     let (files, _) = read_zip(Path::new(&archive))?;
-    put_back(
+    let backed_up = put_back(
         paths,
         db,
         &backup.profile_id,
@@ -717,11 +718,26 @@ pub fn restore(
         include_other,
     )?;
     tracing::info!("restored backup {id} into {}", backup.profile_id);
-    Ok(())
+    Ok(backed_up)
 }
 
-/// Writes `files` into a profile's `state/`, after backing up what's there,
-/// as [`restore`] describes.
+/// Whether a profile's `state/` holds saves, and other files (settings,
+/// high scores and the like; deletion markers count as neither).
+fn state_kinds(game: &Game, layers: &Layers) -> Result<(bool, bool)> {
+    let (mut saves_found, mut other) = (false, false);
+    for (name, _) in collect(layers, Contents::State)? {
+        let file_name = name.rsplit('/').next().unwrap_or(&name);
+        if saves::is_save(game, &name) {
+            saves_found = true;
+        } else if !overlay_view::is_marker(file_name) {
+            other = true;
+        }
+    }
+    Ok((saves_found, other))
+}
+
+/// Writes `files` into a profile's `state/`, after backing up what's there
+/// if it holds files of the kind restored, as [`restore`] describes.
 fn put_back(
     paths: &AppPaths,
     db: &Db,
@@ -730,7 +746,7 @@ fn put_back(
     file: Option<&str>,
     target: Option<&str>,
     include_other: bool,
-) -> Result<()> {
+) -> Result<bool> {
     let (profile, layers) = profiles::get(db, profile_id)?;
     let game = saves::profile_game(&profile.game_id, &layers)?;
     let chosen: Vec<(String, &[u8])> = match file {
@@ -752,14 +768,22 @@ fn put_back(
         }
     };
 
+    let restored_saves = chosen.iter().any(|(n, _)| saves::is_save(game, n));
     let restored_other = chosen.iter().any(|(n, _)| !saves::is_save(game, n));
-    create(
-        paths,
-        db,
-        profile_id,
-        Contents::State,
-        Reason::BeforeRestore,
-    )?;
+    // Backed up only if it holds files of the kind restored: restoring saves
+    // where there are only settings and high scores, or the other way round,
+    // replaces nothing a backup would bring back.
+    let (has_saves, has_other) = state_kinds(game, &layers)?;
+    let backed_up = (restored_saves && has_saves) || (restored_other && has_other);
+    if backed_up {
+        create(
+            paths,
+            db,
+            profile_id,
+            Contents::State,
+            Reason::BeforeRestore,
+        )?;
+    }
     fs::create_dir_all(&layers.upper)?;
     for (name, data) in chosen {
         let file_name = name.rsplit('/').next().unwrap_or(&name);
@@ -781,7 +805,7 @@ fn put_back(
             [profile_id],
         )?;
     }
-    Ok(())
+    Ok(backed_up)
 }
 
 /// A file in `dir` whose `/`-separated relative name matches case-insensitively.
@@ -850,7 +874,7 @@ pub fn folder_saves(db: &Db, profile_id: &str, dir: &Path) -> Result<FolderSaves
 }
 
 /// Puts saves from a folder into a profile as [`restore`] does from a
-/// backup; only what the profile has now is backed up.
+/// backup; only what the profile has now is backed up. Whether it was.
 pub fn restore_folder(
     paths: &AppPaths,
     db: &Db,
@@ -859,15 +883,15 @@ pub fn restore_folder(
     file: Option<&str>,
     target: Option<&str>,
     include_other: bool,
-) -> Result<()> {
+) -> Result<bool> {
     let game = game_of_profile(db, profile_id)?;
     let files: Files = read_folder(game, dir)?
         .into_iter()
         .map(|(name, data, _)| (name, data))
         .collect();
-    put_back(paths, db, profile_id, &files, file, target, include_other)?;
+    let backed_up = put_back(paths, db, profile_id, &files, file, target, include_other)?;
     tracing::info!("restored saves from {} into {profile_id}", dir.display());
-    Ok(())
+    Ok(backed_up)
 }
 
 /// Adds a ZIP as a new backup of a profile, to be restored from there.
@@ -1174,6 +1198,62 @@ mod tests {
         let s = get_settings(&db).unwrap();
         assert!(!s.auto);
         assert_eq!(s.keep, 1);
+    }
+
+    #[test]
+    fn restoring_backs_up_only_files_of_the_kind_restored() {
+        let (tmp, paths, db) = setup();
+        let st = state(&paths);
+        let before_restore = |db: &Db| {
+            list(db, "keen4-1")
+                .unwrap()
+                .iter()
+                .filter(|b| b.reason == Some(Reason::BeforeRestore))
+                .count()
+        };
+        // The fixture's save goes; only settings are left.
+        fs::remove_file(st.join("SAVEGAM0.CK4")).unwrap();
+        fs::write(st.join("CONFIG.CK4"), b"mine").unwrap();
+        let old = tmp.path().join("old");
+        fs::create_dir_all(&old).unwrap();
+        fs::write(old.join("SAVEGAM1.CK4"), b"a").unwrap();
+        fs::write(old.join("CONFIG.CK4"), b"old").unwrap();
+
+        // Saves over settings only: nothing to keep.
+        restore_folder(&paths, &db, "keen4-1", &old, None, None, false).unwrap();
+        assert_eq!(before_restore(&db), 0);
+        // Saves over saves, and settings over settings, are backed up.
+        fs::write(st.join("SAVEGAM1.CK4"), b"newer").unwrap();
+        restore_folder(&paths, &db, "keen4-1", &old, None, None, false).unwrap();
+        assert_eq!(before_restore(&db), 1);
+        fs::write(st.join("CONFIG.CK4"), b"changed").unwrap();
+        restore_folder(
+            &paths,
+            &db,
+            "keen4-1",
+            &old,
+            Some("CONFIG.CK4"),
+            None,
+            false,
+        )
+        .unwrap();
+        assert_eq!(before_restore(&db), 2);
+
+        // Settings over saves only: nothing to keep either.
+        fs::remove_file(st.join("CONFIG.CK4")).unwrap();
+        fs::write(st.join("SAVEGAM1.CK4"), b"newest").unwrap();
+        restore_folder(
+            &paths,
+            &db,
+            "keen4-1",
+            &old,
+            Some("CONFIG.CK4"),
+            None,
+            false,
+        )
+        .unwrap();
+        assert_eq!(before_restore(&db), 2);
+        assert_eq!(fs::read(st.join("CONFIG.CK4")).unwrap(), b"old");
     }
 
     #[test]

@@ -714,11 +714,11 @@
     "versionFrom": "Backed up {{date}}",
     "restoreVersion": "Restore this version",
     "restoreVersionNamed": "Restore the version from {{date}}",
-    "versionRestored": "Earlier version restored. What was there before was backed up.",
+    "versionRestored": "Earlier version restored.",
     "importFolder": "Import from folder…",
     "importFolderHint": "Saves from an old copy of the game or mod: pick the folder its program is in.",
     "importFolderTitle": "Import saves from “{{name}}”",
-    "importedFromFolder": "Saves imported. What was there before was backed up."
+    "importedFromFolder": "Saves imported."
   },
   "backups": {
     "title": "Backups",
@@ -742,7 +742,8 @@
     "nothing": "Nothing to back up yet.",
     "exported": "Backup exported.",
     "imported": "Backup imported. Restore it to use the saves.",
-    "restored": "Restored. What was there before was backed up.",
+    "restored": "Restored.",
+    "backedUpBefore": "What was there before was backed up.",
     "restore": "Restore",
     "restoreNamed": "Restore {{name}}",
     "restoreTitle": "Restore “{{name}}”",

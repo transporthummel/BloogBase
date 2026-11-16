@@ -56,7 +56,7 @@ export const commands = {
 	 *  its `file`, optionally into the slot file `target`. What's there now is
 	 *  backed up first.
 	 */
-	restoreBackup: (backupId: number, file: string | null, target: string | null, includeOther: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("restore_backup", { backupId, file, target, includeOther })),
+	restoreBackup: (backupId: number, file: string | null, target: string | null, includeOther: boolean) => typedError<boolean, CommandError>(__TAURI_INVOKE("restore_backup", { backupId, file, target, includeOther })),
 	/**
 	 *  The backup made when this mod or game was removed before, to offer
 	 *  when it's added again.
@@ -71,7 +71,7 @@ export const commands = {
 	/**  The saves lying in a folder, such as an old copy of the game. */
 	folderSaves: (profileId: string, path: string) => typedError<FolderSaves, CommandError>(__TAURI_INVOKE("folder_saves", { profileId, path })),
 	/**  Restores saves from a folder, as [`restore_backup`] does from a backup. */
-	restoreFolder: (profileId: string, path: string, file: string | null, target: string | null, includeOther: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("restore_folder", { profileId, path, file, target, includeOther })),
+	restoreFolder: (profileId: string, path: string, file: string | null, target: string | null, includeOther: boolean) => typedError<boolean, CommandError>(__TAURI_INVOKE("restore_folder", { profileId, path, file, target, includeOther })),
 	backupSettings: () => typedError<BackupSettings, CommandError>(__TAURI_INVOKE("backup_settings")),
 	setBackupSettings: (settings: BackupSettings) => typedError<null, CommandError>(__TAURI_INVOKE("set_backup_settings", { settings })),
 	/**  The simple display options on the settings page. */

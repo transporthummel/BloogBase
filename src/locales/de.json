@@ -714,11 +714,11 @@
     "versionFrom": "Gesichert {{date}}",
     "restoreVersion": "Diese Version wiederherstellen",
     "restoreVersionNamed": "Version vom {{date}} wiederherstellen",
-    "versionRestored": "Frühere Version wiederhergestellt. Der vorherige Stand wurde gesichert.",
+    "versionRestored": "Frühere Version wiederhergestellt.",
     "importFolder": "Aus Ordner importieren…",
     "importFolderHint": "Spielstände aus einer alten Kopie des Spiels oder der Mod: Wähle den Ordner, in dem ihr Programm liegt.",
     "importFolderTitle": "Spielstände aus „{{name}}“ importieren",
-    "importedFromFolder": "Spielstände importiert. Der vorherige Stand wurde gesichert."
+    "importedFromFolder": "Spielstände importiert."
   },
   "backups": {
     "title": "Sicherungen",
@@ -742,7 +742,8 @@
     "nothing": "Noch nichts zu sichern.",
     "exported": "Sicherung exportiert.",
     "imported": "Sicherung importiert. Stelle sie wieder her, um die Spielstände zu nutzen.",
-    "restored": "Wiederhergestellt. Der vorherige Stand wurde gesichert.",
+    "restored": "Wiederhergestellt.",
+    "backedUpBefore": "Der vorherige Stand wurde gesichert.",
     "restore": "Wiederherstellen",
     "restoreNamed": "{{name}} wiederherstellen",
     "restoreTitle": "„{{name}}“ wiederherstellen",

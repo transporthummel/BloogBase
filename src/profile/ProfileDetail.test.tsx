@@ -975,7 +975,7 @@ test("saves sharing a slot show their file names", async () => {
 
 test("deleting a save asks first and can be undone", async () => {
   vi.mocked(commands.deleteSave).mockResolvedValue(ok(12));
-  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(null));
+  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(true));
   renderDetail();
   await userEvent.click(await screen.findByRole("button", { name: "Delete Slot 1 · pabba" }));
   const dialog = screen.getByRole("dialog");
@@ -1013,7 +1013,7 @@ test("backs up everything with a label", async () => {
 
 test("restores one save into another slot and warns about what it replaces", async () => {
   vi.mocked(commands.backupSaves).mockResolvedValue(ok([save("SAVEGAM0.CK4", 1, "old")]));
-  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(null));
+  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(true));
   renderDetail();
   await userEvent.click(await screen.findByRole("button", { name: "Restore Before playing" }));
   const dialog = screen.getByRole("dialog");
@@ -1026,12 +1026,14 @@ test("restores one save into another slot and warns about what it replaces", asy
   expect(within(dialog).queryByText(/^Replaces/)).not.toBeInTheDocument();
   await userEvent.click(within(dialog).getByRole("button", { name: "Restore this save" }));
   expect(commands.restoreBackup).toHaveBeenCalledWith(7, "SAVEGAM0.CK4", "SAVEGAM2.CK4", false);
-  expect(await screen.findByText(/^Restored/)).toBeInTheDocument();
+  expect(
+    await screen.findByText("Restored. What was there before was backed up."),
+  ).toBeInTheDocument();
 });
 
 test("restores all saves, and settings and high scores only if asked", async () => {
   vi.mocked(commands.backupSaves).mockResolvedValue(ok([save("SAVEGAM0.CK4", 1, "old")]));
-  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(null));
+  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(true));
   renderDetail();
   await userEvent.click(await screen.findByRole("button", { name: "Restore Before playing" }));
   const dialog = screen.getByRole("dialog");
@@ -1055,7 +1057,7 @@ test("restores an earlier version of a save", async () => {
       { backupId: 7, save: save("savegam0.ck4", 1, "start") },
     ]),
   );
-  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(null));
+  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(true));
   renderDetail();
   // Only the save with earlier versions offers them.
   const open = await screen.findByRole("button", { name: "Earlier versions of Slot 1 · pabba" });
@@ -1077,7 +1079,8 @@ test("imports the saves of an old copy straight from a folder, not as a backup",
   vi.mocked(commands.folderSaves).mockResolvedValue(
     ok({ saves: [save("SAVEGAM3.CK4", 4, "old")], settings: 1 }),
   );
-  vi.mocked(commands.restoreFolder).mockResolvedValue(ok(null));
+  // Only settings to replace: nothing was backed up.
+  vi.mocked(commands.restoreFolder).mockResolvedValue(ok(false));
   renderDetail();
   await userEvent.click(await screen.findByRole("button", { name: "Import from folder…" }));
   expect(openDialog).toHaveBeenCalledWith({ directory: true });
@@ -1087,7 +1090,7 @@ test("imports the saves of an old copy straight from a folder, not as a backup",
   expect(within(dialog).getByLabelText(/Also reset settings and high scores/)).not.toBeChecked();
   await userEvent.click(within(dialog).getByRole("button", { name: "Restore all saves" }));
   expect(commands.restoreFolder).toHaveBeenCalledWith("keen4-1", folder, null, null, false);
-  expect(await screen.findByText(/^Saves imported\./)).toBeInTheDocument();
+  expect(await screen.findByText("Saves imported.")).toBeInTheDocument();
   expect(commands.importBackup).not.toHaveBeenCalled();
 });
 
