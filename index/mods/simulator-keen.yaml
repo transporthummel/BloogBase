@@ -23,7 +23,8 @@ downloads:
 recipe:
   type: batch
   file: play.bat
-# random.exe makes new levels at every start, seeded from the clock.
+# random.exe makes new levels at every start, seeded from the clock: levels
+# 1-9, and the tenth as LEVEL16.CK3.
 worlds:
   new: { type: batch, file: play.bat }
   play: { type: patch, patcher: CK3PATCH.EXE, patch: patch.pat }
@@ -37,5 +38,4 @@ worlds:
     - LEVEL07.CK3
     - LEVEL08.CK3
     - LEVEL09.CK3
-    - LEVEL10.CK3
     - LEVEL16.CK3
