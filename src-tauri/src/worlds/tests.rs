@@ -439,3 +439,31 @@ fn removing_the_mod_with_its_saves_keeps_its_worlds() {
     t.prepare(Some(WorldStart::Continue { id: first })).unwrap();
     assert!(t.read("SAVEGAM0.CK4").contains("first"));
 }
+
+#[test]
+fn saves_from_before_worlds_outlive_pruning() {
+    let t = setup();
+    fs::write(t.state.join("SAVEGAM3.CK4"), keen4_save("old")).unwrap();
+    t.prepare(Some(new(None))).unwrap();
+    backups::set_settings(
+        &t.db,
+        &backups::BackupSettings {
+            auto: true,
+            keep: 1,
+        },
+    )
+    .unwrap();
+    for i in 0..3 {
+        fs::write(t.state.join("SAVEGAM0.CK4"), keen4_save(&format!("s{i}"))).unwrap();
+        backups::create(
+            &t.paths,
+            &t.db,
+            &t.profile,
+            Contents::State,
+            Reason::BeforeRestore,
+        )
+        .unwrap();
+    }
+    let kept = backups::list(&t.db, &t.profile).unwrap();
+    assert!(kept.iter().any(|b| b.reason == Some(Reason::BeforeWorlds)));
+}

@@ -347,7 +347,9 @@ fn store(
             Some(reason),
         ),
     };
-    let auto = reason.is_some();
+    // Saves from before worlds are only in that backup: it's kept like the
+    // player's own, never pruned (§9.6).
+    let auto = reason.is_some() && reason != Some(Reason::BeforeWorlds);
     let hash = content_hash(&files);
     // The backup made when a profile is removed is the one that outlives it
     // (`forget`) and is offered when it comes back, so it's always made.

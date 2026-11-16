@@ -207,7 +207,7 @@ the profile's newest backup isn't made again.
 | Before deleting a save                          | As an automatic backup, offered to undo the deletion    |
 | When a game or mod is removed with "keep saves" | Offered when it's added again                           |
 | Before a launcher's copies are cleared          | As an automatic backup                                  |
-| Before a world's first start, of older saves    | As an automatic backup                                  |
+| Before a world's first start, of older saves    | Like a manual one: never pruned                         |
 | Before a world is deleted                       | As an automatic backup                                  |
 
 Automatic backups are named by their reason, manual ones by the player's
