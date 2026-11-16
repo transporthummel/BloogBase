@@ -321,27 +321,9 @@ pub async fn profile_worlds(
     app: AppHandle,
     profile_id: String,
 ) -> CommandResult<Option<crate::worlds::ProfileWorlds>> {
-    // Not while a switch could be under way.
-    if app.state::<Running>().contains(&profile_id) {
-        return blocking(move || {
-            let db = app.state::<Db>();
-            Ok(
-                crate::worlds::definition(&db, &profile_id)?.map(|definition| {
-                    crate::worlds::ProfileWorlds {
-                        definition,
-                        worlds: Vec::new(),
-                        active: None,
-                        last_options: Default::default(),
-                    }
-                }),
-            )
-        })
-        .await;
-    }
-    with_profile_locked(&app, &profile_id.clone(), move |paths, db| {
-        crate::worlds::list(paths, db, &profile_id)
-    })
-    .await
+    // Without holding the profile: that would show it as running.
+    blocking(move || crate::worlds::list(&app.state::<AppPaths>(), &app.state::<Db>(), &profile_id))
+        .await
 }
 
 /// Names a world; without a name it gets its default back.

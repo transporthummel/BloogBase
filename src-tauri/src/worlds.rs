@@ -622,13 +622,14 @@ pub fn after_session(
     Ok(Some(id))
 }
 
-/// A profile's worlds, or `None` if its mod has none.
+/// A profile's worlds, or `None` if its mod has none. Only reads, so it
+/// needs no hold on the profile: a switch cut short is finished by the next
+/// launch or deletion, which have one.
 pub fn list(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<ProfileWorlds>> {
     let Some(def) = definition(db, profile_id)? else {
         return Ok(None);
     };
     let ctx = Ctx::new(paths, db, profile_id, &def)?;
-    ctx.recover()?;
     let active = active(db, profile_id)?;
     let mut worlds = Vec::new();
     for w in records(db, profile_id)? {

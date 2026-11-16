@@ -287,8 +287,10 @@ fn a_switch_cut_short_is_finished_next_time() {
     )
     .unwrap();
 
-    let l = t.list();
-    assert_eq!(l.active, Some(first));
+    // Listing only reads.
+    assert_eq!(t.list().active, Some(second));
+    t.prepare(Some(WorldStart::Continue { id: first })).unwrap();
+    assert_eq!(t.list().active, Some(first));
     assert!(t.read("WORLD.PAT").contains("Seed: 1"));
     assert!(to_dir.join("WORLD.PAT").is_file() && to_dir.join("WLEVEL01.CK4").is_file());
     assert!(!dir(&t.paths, &t.profile).join(JOURNAL).exists());
