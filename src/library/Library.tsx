@@ -419,6 +419,7 @@ const ProfileCard = memo(function ProfileCard({
         <div className="flex flex-wrap gap-1">
           {profile.modId !== null && !profile.sourceMod && <Badge>{t("mods.badge")}</Badge>}
           {profile.sourceMod && <Badge>{t("mods.sourceMod")}</Badge>}
+          {profile.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
           {profile.modId === null && <Badge>{versionLabel}</Badge>}
         </div>
         <dl className="grid gap-0.5 text-xs text-muted">

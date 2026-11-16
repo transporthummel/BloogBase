@@ -447,6 +447,7 @@
     "badge": "Mod",
     "standalone": "Standalone",
     "sourceMod": "Source mod",
+    "randomWorlds": "Random worlds",
     "baseGame": "Runs on <game>{{game}} {{version}}</game>",
     "baseGame_over": "Runs on <game>{{game}} {{version}}</game> and <mod>{{mod}}</mod>",
     "baseGame_standalone": "<game>{{game}}</game> · Standalone",

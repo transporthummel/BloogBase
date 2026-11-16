@@ -447,6 +447,7 @@
     "badge": "Mod",
     "standalone": "Allein lauffähig",
     "sourceMod": "Source-Mod",
+    "randomWorlds": "Zufallswelten",
     "baseGame": "Läuft mit <game>{{game}} {{version}}</game>",
     "baseGame_over": "Läuft mit <game>{{game}} {{version}}</game> und <mod>{{mod}}</mod>",
     "baseGame_standalone": "<game>{{game}}</game> · Allein lauffähig",

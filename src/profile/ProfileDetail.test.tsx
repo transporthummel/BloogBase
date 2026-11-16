@@ -1307,6 +1307,7 @@ function withWorlds(activeWorld: number | null = 2) {
 test("a mod with worlds continues the one played last, or starts a new one with a seed", async () => {
   withWorlds();
   renderDetail();
+  expect(await screen.findByText("Random worlds")).toBeInTheDocument();
   await userEvent.click(await screen.findByRole("button", { name: "Continue world" }));
   await vi.waitFor(() =>
     expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 2 }),

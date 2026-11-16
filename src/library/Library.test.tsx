@@ -261,6 +261,23 @@ test("a standalone mod is a source mod, not a mod on its game", async () => {
   expect(screen.queryByText("Mod")).not.toBeInTheDocument();
 });
 
+test("a mod that keeps worlds is marked and its card says what Play does", async () => {
+  const randomiser: Profile = {
+    ...profile,
+    id: "rnd",
+    modId: "rnd",
+    label: "Randomiser",
+    worlds: true,
+    activeWorld: 3,
+  };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [randomiser] });
+  renderLibrary();
+  expect(await screen.findByText("Random worlds")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Play Randomiser" })).toHaveTextContent(
+    "Continue world",
+  );
+});
+
 test("coming back from a details page keeps the place and shows the card", async () => {
   const other = { ...profile, id: "other", label: "Other Game" };
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile, other] });

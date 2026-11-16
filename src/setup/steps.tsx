@@ -486,6 +486,7 @@ export function ModsStep({ next, back }: StepProps) {
                     <span className="font-semibold">{entry.name}</span>
                     <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
                     {isSourceMod(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
+                    {entry.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
                   </span>
                   <span className="text-xs text-muted">
                     {isSourceMod(entry) ? t("mods.standalone") : gameTitle(games, entry.game)}

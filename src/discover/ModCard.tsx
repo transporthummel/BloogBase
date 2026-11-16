@@ -91,6 +91,7 @@ export function ModCard({
           {mod.updateAvailable && <Badge tone="status">{t("discover.updateBadge")}</Badge>}
           <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
           {isSourceMod(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
+          {entry.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
           {mod.new && <Badge>{t("mods.new")}</Badge>}
           {entry.featured && <Badge>{t("discover.featured")}</Badge>}
         </div>
