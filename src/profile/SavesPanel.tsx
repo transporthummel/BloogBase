@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { open, save as saveDialog } from "@tauri-apps/plugin-dialog";
-import { Archive, Download, History, Trash2, Upload } from "lucide-react";
+import { Archive, Download, FolderOpen, History, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Backup, type Game, type Profile, type SaveFile } from "../bindings";
@@ -112,6 +112,21 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
     },
   });
 
+  // Saves of an old copy become a backup, restored from right away.
+  const importFolder = useMutation({
+    mutationFn: async () => {
+      const path = await open({ directory: true });
+      if (!path) return null;
+      return unwrap(commands.importBackup(profile.id, path));
+    },
+    onSuccess: (made) => {
+      if (!made) return;
+      refresh();
+      if (game) setRestoring(made);
+      else say(t("backups.imported"));
+    },
+  });
+
   const locked = profile.running;
   const error =
     saves.error ??
@@ -121,6 +136,7 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
     undoDelete.error ??
     exportBackup.error ??
     importBackup.error ??
+    importFolder.error ??
     deleteBackup.error;
 
   const own = backups.data?.filter((b) => !b.auto) ?? [];
@@ -253,6 +269,17 @@ export function SavesPanel({ profile, game }: { profile: Profile; game?: Game })
             </li>
           ))}
         </ul>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Button
+            variant="secondary"
+            onClick={() => importFolder.mutate()}
+            disabled={locked || importFolder.isPending}
+          >
+            <FolderOpen className="size-4" aria-hidden />
+            {t("saves.importFolder")}
+          </Button>
+          <p className="min-w-0 flex-1 text-xs text-muted">{t("saves.importFolderHint")}</p>
+        </div>
       </section>
 
       <section className="grid gap-3" aria-labelledby="backups-heading">

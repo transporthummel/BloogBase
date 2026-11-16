@@ -255,7 +255,7 @@
     "tooLarge": "The download is far too big for a Commander Keen mod, so it was stopped.",
     "webPage": "The link leads to a web page instead of a file. <browser>Open it in your browser</browser>, download the mod there and add it as a ZIP file or folder.",
     "unsupportedDownload": "BloogBase can't open this download yet ({{message}}). <browser>Download it in your browser</browser>, unpack it and add the folder.",
-    "noSavesFound": "No saved games for this game were found in that file.",
+    "noSavesFound": "No saved games for this game were found there.",
     "otherGame": "That backup belongs to another game ({{message}})."
   },
   "jobs": {
@@ -714,7 +714,9 @@
     "versionFrom": "Backed up {{date}}",
     "restoreVersion": "Restore this version",
     "restoreVersionNamed": "Restore the version from {{date}}",
-    "versionRestored": "Earlier version restored. What was there before was backed up."
+    "versionRestored": "Earlier version restored. What was there before was backed up.",
+    "importFolder": "Import from folder…",
+    "importFolderHint": "Saves from an old copy of the game or mod: pick the folder its program is in. They are kept as a backup, from which you choose what to restore."
   },
   "backups": {
     "title": "Backups",

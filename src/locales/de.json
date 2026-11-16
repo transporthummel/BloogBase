@@ -255,7 +255,7 @@
     "tooLarge": "Der Download ist viel zu groß für eine Commander-Keen-Mod und wurde abgebrochen.",
     "webPage": "Der Link führt zu einer Webseite statt zu einer Datei. <browser>Öffne ihn im Browser</browser>, lade die Mod dort herunter und füge sie als ZIP-Datei oder Ordner hinzu.",
     "unsupportedDownload": "BloogBase kann diesen Download noch nicht öffnen ({{message}}). <browser>Lade ihn im Browser herunter</browser>, entpacke ihn und füge den Ordner hinzu.",
-    "noSavesFound": "In dieser Datei wurden keine Spielstände für dieses Spiel gefunden.",
+    "noSavesFound": "Dort wurden keine Spielstände für dieses Spiel gefunden.",
     "otherGame": "Diese Sicherung gehört zu einem anderen Spiel ({{message}})."
   },
   "jobs": {
@@ -714,7 +714,9 @@
     "versionFrom": "Gesichert {{date}}",
     "restoreVersion": "Diese Version wiederherstellen",
     "restoreVersionNamed": "Version vom {{date}} wiederherstellen",
-    "versionRestored": "Frühere Version wiederhergestellt. Der vorherige Stand wurde gesichert."
+    "versionRestored": "Frühere Version wiederhergestellt. Der vorherige Stand wurde gesichert.",
+    "importFolder": "Aus Ordner importieren…",
+    "importFolderHint": "Spielstände aus einer alten Kopie des Spiels oder der Mod: Wähle den Ordner, in dem ihr Programm liegt. Sie werden als Sicherung abgelegt, aus der du wählst, was du wiederherstellst."
   },
   "backups": {
     "title": "Sicherungen",

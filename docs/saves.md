@@ -230,6 +230,11 @@ of a profile, to restore from there:
   config or high scores, wherever they are inside, one per name. Its file
   name becomes the label.
 
+The saves tab also imports from a folder, such as an old copy of the game or
+a mod: the files lying directly in it that look like this game's saves,
+config or high scores, with the folder's name as the label. The restore
+dialog for the new backup opens right away.
+
 ### Removed
 
 When a game or mod is removed, so are its profile's automatic backups. With

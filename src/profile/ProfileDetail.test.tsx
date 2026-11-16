@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, test, vi } from "vitest";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   commands,
@@ -1066,6 +1067,22 @@ test("restores an earlier version of a save", async () => {
   await userEvent.click(within(dialog).getAllByRole("button", { name: /Restore the version/ })[1]);
   expect(commands.restoreBackup).toHaveBeenCalledWith(7, "savegam0.ck4", null, false);
   expect(await screen.findByText(/^Earlier version restored/)).toBeInTheDocument();
+});
+
+test("imports the saves of an old copy from a folder and offers to restore them", async () => {
+  vi.mocked(openDialog).mockResolvedValue("C:/Games/Keen 4");
+  const imported = { ...backup, id: 9, label: "Keen 4", reason: null, auto: false };
+  vi.mocked(commands.importBackup).mockResolvedValue(ok(imported));
+  vi.mocked(commands.backupSaves).mockResolvedValue(ok([save("SAVEGAM3.CK4", 4, "old")]));
+  vi.mocked(commands.restoreBackup).mockResolvedValue(ok(null));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "Import from folder…" }));
+  expect(openDialog).toHaveBeenCalledWith({ directory: true });
+  expect(commands.importBackup).toHaveBeenCalledWith("keen4-1", "C:/Games/Keen 4");
+  const dialog = await screen.findByRole("dialog", { name: "Restore “Keen 4”" });
+  expect(await within(dialog).findByText("Slot 4 · old")).toBeInTheDocument();
+  await userEvent.click(within(dialog).getByRole("button", { name: "Restore all saves" }));
+  expect(commands.restoreBackup).toHaveBeenCalledWith(9, null, null, false);
 });
 
 test("save actions are locked while the game runs", async () => {

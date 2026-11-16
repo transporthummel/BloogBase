@@ -645,7 +645,7 @@ pub async fn export_backup(app: AppHandle, backup_id: u32, path: String) -> Comm
     blocking(move || backups::export(&app.state::<Db>(), backup_id, Path::new(&path))).await
 }
 
-/// Adds a ZIP of saves as a new backup of the profile.
+/// Adds a ZIP or a folder of saves as a new backup of the profile.
 #[tauri::command]
 #[specta::specta]
 pub async fn import_backup(

@@ -66,7 +66,7 @@ export const commands = {
 	answerEarlierBackup: (profileId: string, backupId: number, restore: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("answer_earlier_backup", { profileId, backupId, restore })),
 	deleteBackup: (backupId: number) => typedError<null, CommandError>(__TAURI_INVOKE("delete_backup", { backupId })),
 	exportBackup: (backupId: number, path: string) => typedError<null, CommandError>(__TAURI_INVOKE("export_backup", { backupId, path })),
-	/**  Adds a ZIP of saves as a new backup of the profile. */
+	/**  Adds a ZIP or a folder of saves as a new backup of the profile. */
 	importBackup: (profileId: string, path: string) => typedError<Backup, CommandError>(__TAURI_INVOKE("import_backup", { profileId, path })),
 	backupSettings: () => typedError<BackupSettings, CommandError>(__TAURI_INVOKE("backup_settings")),
 	setBackupSettings: (settings: BackupSettings) => typedError<null, CommandError>(__TAURI_INVOKE("set_backup_settings", { settings })),

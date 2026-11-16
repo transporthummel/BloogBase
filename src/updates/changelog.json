@@ -1,6 +1,7 @@
 {
   "unreleased": {
     "en": [
+      "Saves can be imported from a folder, e.g. an old copy of the game.",
       "Games and demos have a description, their release date and id Software as the author.",
       "Discover can hide the mods you have installed.",
       "Discover's filters are buttons now, the games as tiles, and can choose several games and types.",
@@ -8,6 +9,7 @@
       "A game that comes with a mod is only offered when you don't have that game yet."
     ],
     "de": [
+      "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
       "Spiele und Demos haben eine Beschreibung, ihr Erscheinungsdatum und id Software als Autor.",
       "Entdecken kann installierte Mods ausblenden.",
       "Die Filter in Entdecken sind jetzt Knöpfe, die Spiele als Kacheln, mit mehreren Spielen und Arten zugleich.",

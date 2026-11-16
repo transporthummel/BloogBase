@@ -780,16 +780,34 @@ pub fn export(db: &Db, id: u32, dest: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Adds a ZIP as a new backup of a profile, to be restored from there.
-/// BloogBase exports keep everything; other archives contribute the files
-/// that look like this game's saves, config or scores, wherever they are.
+/// The files directly in `dir` that look like `game`'s saves, config or
+/// scores: an old copy of the game or a mod keeps them next to its program.
+fn read_folder(game: &Game, dir: &Path) -> Result<Files> {
+    let mut files = Vec::new();
+    for entry in fs::read_dir(dir)?.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if entry.file_type().is_ok_and(|t| t.is_file()) && game.is_state_file(&name) {
+            files.push((name, fs::read(entry.path())?));
+        }
+    }
+    Ok(files)
+}
+
+/// Adds a ZIP or a folder as a new backup of a profile, to be restored from
+/// there. BloogBase exports keep everything; other archives contribute the
+/// files that look like this game's saves, config or scores, wherever they
+/// are, a folder those lying directly in it.
 pub fn import(paths: &AppPaths, db: &Db, profile_id: &str, src: &Path) -> Result<Backup> {
     let (profile, layers) = profiles::get(db, profile_id)?;
     let game = saves::profile_game(&profile.game_id, &layers)?;
-    let (files, manifest) = read_zip(src).map_err(|e| match e {
-        Error::Archive(_) => Error::UnsupportedSource(src.to_path_buf()),
-        e => e,
-    })?;
+    let (files, manifest) = if src.is_dir() {
+        (read_folder(game, src)?, None)
+    } else {
+        read_zip(src).map_err(|e| match e {
+            Error::Archive(_) => Error::UnsupportedSource(src.to_path_buf()),
+            e => e,
+        })?
+    };
     let (mut files, label) = match manifest {
         Some(m) if m.game_id != profile.game_id => {
             return Err(Error::OtherGame(m.game_id));
@@ -805,8 +823,13 @@ pub fn import(paths: &AppPaths, db: &Db, profile_id: &str, src: &Path) -> Result
                     picked.push((base, data));
                 }
             }
-            let stem = src.file_stem().map(|s| s.to_string_lossy().into_owned());
-            (picked, stem)
+            // A folder's whole name: "Keen 4 v1.4" has no extension.
+            let name = if src.is_dir() {
+                src.file_name()
+            } else {
+                src.file_stem()
+            };
+            (picked, name.map(|s| s.to_string_lossy().into_owned()))
         }
     };
     if files.is_empty() {
@@ -1386,6 +1409,34 @@ mod tests {
         assert!(matches!(
             import(&paths, &db, "keen4-1", &text),
             Err(Error::UnsupportedSource(_))
+        ));
+    }
+
+    #[test]
+    fn import_takes_the_saves_lying_in_a_folder() {
+        let (tmp, paths, db) = setup();
+        let old = tmp.path().join("Keen 4 v1.4");
+        for (name, data) in [
+            ("KEEN4E.EXE", b"exe".as_slice()),
+            ("savegam2.ck4", b"a"),
+            ("CONFIG.CK4", b"c"),
+            ("sub/SAVEGAM5.CK4", b"deeper"),
+        ] {
+            let path = old.join(name);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, data).unwrap();
+        }
+        let b = import(&paths, &db, "keen4-1", &old).unwrap();
+        assert_eq!(b.files, ["CONFIG.CK4", "savegam2.ck4"]);
+        assert_eq!(b.label.as_deref(), Some("Keen 4 v1.4"));
+        // Picking the subfolder takes what lies in there.
+        let sub = import(&paths, &db, "keen4-1", &old.join("sub")).unwrap();
+        assert_eq!(sub.files, ["SAVEGAM5.CK4"]);
+        let empty = tmp.path().join("empty");
+        fs::create_dir_all(&empty).unwrap();
+        assert!(matches!(
+            import(&paths, &db, "keen4-1", &empty),
+            Err(Error::NoSavesFound)
         ));
     }
 
