@@ -191,5 +191,5 @@ particular ones.
 - **A program of the mod's own** is left alone.
 
 The game's "DOSBox & patches" tab says when its own start skips them; a mod's
-says whether it gets them, with a link to the game copy. The text is part of the
+"DOSBox settings" tab says whether it gets them, with a link to the game copy. The text is part of the
 composed folder's hash, so a change applies from the next start.

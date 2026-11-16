@@ -1121,7 +1121,7 @@ test("a mod's settings tab says whether it gets the game's custom patches", asyn
     }),
   );
   renderDetail();
-  await userEvent.click(await screen.findByRole("tab", { name: "DOSBox & patches" }));
+  await userEvent.click(await screen.findByRole("tab", { name: "DOSBox settings" }));
   expect(
     await screen.findByText(/doesn't get the custom patches of Keen 4 v1\.4: it starts a program/),
   ).toBeInTheDocument();
