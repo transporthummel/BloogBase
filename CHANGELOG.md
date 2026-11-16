@@ -19,6 +19,7 @@
 
 ### Bug Fixes
 
+- A game folder with a mod's levels copied into it, without a patch file, is added as a mod instead of as the game, and its game isn't offered for the library.
 - "Undo" after deleting a save is no longer offered once the backup holding it has been deleted.
 
 ### Misc

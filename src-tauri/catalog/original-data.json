@@ -1,0 +1,353 @@
+{
+  "$comment": "SHA-256 of every data file (games.json `dataFiles`) of every release in games.json, by game and file name. A known release whose data files are not among them holds a mod. Written by scripts/original-data.mjs from .local/games/versions.",
+  "keen1": {
+    "EGAHEAD.CK1": [
+      "33a6c4f6d1a21fb154bb5c55b05c59501003b58d69d5c31e34879c360fba3228",
+      "5f5352d8e2783aeca5e8a02d3628a54cd5d0cfcf70bd1ff6be8877706d18c60c"
+    ],
+    "EGALATCH.CK1": [
+      "19778c72c5294117bdc95af373c426aed97580a967b61b3a25cc4d9dccf45dd3",
+      "628392e9d8afd6f9bbba3be4912a70baa663109172a41ec30b7dcd0bf85bbdf9",
+      "93faeff3b8dcc4feedeca1b5883dbb5ee4aa7a28496dec11a36f5fe164c28c3a"
+    ],
+    "EGASPRIT.CK1": [
+      "0c72134b8728a65d2e2ae7eadffa3b9ead51c3deab3db85ffe7b7779c50f48c6",
+      "7332900930aa0838aa09d55eee3f68ed4d20faa69fe9da3dcc6fec861391f92c",
+      "8eeadc1160a635d0eec78623c6abbb47dc4b70145c837ad6c5f4b190c06c8a31",
+      "b8afa7c64b63bea8af15043a8f0701fb799f130dd5983b4aeb9106fda74aced2"
+    ],
+    "SOUNDS.CK1": [
+      "5a9cdc1cc3e7bb3d8c7a7461f1575300f750d8c75930d4ceec4a9e78de2eccfa"
+    ],
+    "FINALE.CK1": [
+      "4f934d78747ca82bc2805f5fffdb7cd11eacdb891ddc38d24c1bf0e0d37becd9"
+    ],
+    "HELPTEXT.CK1": [
+      "1ce3f3fa5c62377486681a639e064f45cf6f2ce03cc4e0a424d1ed91cdafd32a",
+      "d465810f50a3110d5060963267bfbae419336d6d9efdce9d5025357572c47c92"
+    ],
+    "STORYTXT.CK1": [
+      "5cd4a43fb4936f05f7255fad485e0671358395d0acd930e6f3d3414242c98998"
+    ],
+    "ENDTEXT.CK1": [
+      "8ac883fb327cb05ec9b335ba76df17d92e0e4839b1de0183661e0f34c3c97d99",
+      "a5525005ba9afc2a7e794ed5118a45cbddecbeec6fbfab5701936baa426bb2e0"
+    ],
+    "PREVIEW2.CK1": [
+      "3666ec40332570013ac3ecf0a9235b5226d98e6b5891849b9861a2e664413679",
+      "6952b775fd769f56d7fd110049b21d06cd9b42413a809ca776860af28d3e86c7"
+    ],
+    "PREVIEW3.CK1": [
+      "90ae5bbcd8a9805d2b6ca56dc9b1ee3a5f7dfc461053d4bc56ac5168fcb6a435",
+      "efe1f4181d4623a80d84130c6672b31bf1e650128b8f2c199b374a6e9035ffd0"
+    ],
+    "PREVIEWS.CK1": [
+      "0f7898ae1eef3e5175bc365cfa203912fbec2d4c73ac8ced994e7c4cfb78804e",
+      "982b59d085c31a7a1096320324f0a4a2012b559eaaed71035580ce401b3dacf8",
+      "b7d6cd5f28022bc9d22793a2fc4b0e1860165c81ff9d3289a34cbbcf658b94ff",
+      "f0b55e402788d8bf122e40ce5ad95393429061fc338b99968ea7c7fb9213a562"
+    ],
+    "LEVEL01.CK1": [
+      "3216a6d9c6f3c6436e7c489c3cc5b49fd83c1818823036134f1507ab5fb2a689"
+    ],
+    "LEVEL02.CK1": [
+      "003d235b6c36462d1216f6f6a05fe39a8f97a1aa14497412acbbc473fee4f6f8"
+    ],
+    "LEVEL03.CK1": [
+      "f337bb077b3b0a3cffeb1c4047125f0a98c273ec71ec9a6aa6e48f8514e14958"
+    ],
+    "LEVEL04.CK1": [
+      "f679c0a3de3e2db88ad335ed1241c54d4aaf91bedf1cff339fca96eff2319d01"
+    ],
+    "LEVEL05.CK1": [
+      "0cca5186f6854339a7c879c94d257da93555de4023f6969104390b7ad0cbef92"
+    ],
+    "LEVEL06.CK1": [
+      "e41f628df4c7b3064fdb1908b12b90f42907469917fccc777e6c37fb11e2ecdf"
+    ],
+    "LEVEL07.CK1": [
+      "c768b9d3156b7581a2f079f767d2c2388849035115c62b916cab5cb43c9a8a9c"
+    ],
+    "LEVEL08.CK1": [
+      "7b256df821bdfd29b6611606b01f585beb7010a20e9ad0aaba4c21c1a963fa9c",
+      "e4e5d70bf8d5bd7be93a9bdd5b79ee2e7af6f0a3245e232ab8abb827b6e15328"
+    ],
+    "LEVEL09.CK1": [
+      "4a4aeb19d06e666369439279f1956263e42f4401301dc9135c43d08c6af71d16"
+    ],
+    "LEVEL10.CK1": [
+      "8adcead150f09bd328995e0a7721b3b8537b7de0e409772e36fe93e950746aa0"
+    ],
+    "LEVEL11.CK1": [
+      "b8580bbf00d912982a2790a7f868f55d38e51ef93be364fc4ae4871f4a2fdee2"
+    ],
+    "LEVEL12.CK1": [
+      "6a794cad6f67013f9f36ac06aa04b9f3a0ec7fe6014de7e5a099ddce7aca8cf2",
+      "e5ef8a6e5b77cf78d2fe91c0d0cdac75f26e989eccfb79a1027af97f6c132c29"
+    ],
+    "LEVEL13.CK1": [
+      "dc73938ebe3138599bfb01764531ef1f4864fa5256f3feb05652492348832c01"
+    ],
+    "LEVEL14.CK1": [
+      "1219d11fa0d21b5a7ab25f28cbdc7c92284b2055879cb760c6e5b43a8c0dd553",
+      "da54fd958dabad95977d4993b03a8eb6f81dc7e4ffd67d0f9535c54eb6df8627"
+    ],
+    "LEVEL15.CK1": [
+      "c9113bb116664088520796aef03a1fef06e4d02efbfa5cd0ae612d9cd85ca12b"
+    ],
+    "LEVEL16.CK1": [
+      "43e33c77d4b2bf83b1666896aebcb6202352d35549545bab43eaaf1051604925",
+      "5a5b8e58dc599ac54e082a419f641130cbeb109861aea910ab0c3b801cf16e86"
+    ],
+    "LEVEL80.CK1": [
+      "a86188084bc06bb4a8b03c38aa34fbef6e9a125dcf0de01b4df6599ad9dab7cb",
+      "c3ba4c4246560f63ada4038152f8b03f13f92c68dd2255bd991cb312250d06b8"
+    ],
+    "LEVEL81.CK1": [
+      "eb6b815e6c6406c0a41b01745ca278c641c4c7858c827aa6337350221e884e95"
+    ],
+    "LEVEL90.CK1": [
+      "49a3708027cb875636c6737a93a845c7f6dfbdbdd5ea381caa9f78aa2dda0d54",
+      "6900afc98ffc76f25849abb6acd3fe56ced9886d5cb1cb0f7398b81498e92f4f"
+    ]
+  },
+  "keen2": {
+    "EGAHEAD.CK2": [
+      "175de2a3939cd5a08156316cd5cd85e7b3a963b5587f6186a1af6445075662a0",
+      "73d3d919523e74a7f7d995bc36b917b1b630111a851dccdbcefca37850bddec9"
+    ],
+    "EGALATCH.CK2": [
+      "37f3862dc896707215b44283a2b95f1783a73b0e664f16ef1cd4f3b297372209"
+    ],
+    "EGASPRIT.CK2": [
+      "1052cb7eea4fbdb0a5e6bb22faf3077c960a76f78922fb2e0c88166d6ecc308d"
+    ],
+    "FINALE.CK2": [
+      "4b60e952c524deab020979bbb4a7c07f8eb368adc7e421f9a7e20020c9c2f352"
+    ],
+    "LEVEL01.CK2": [
+      "fd7368348b3cb4c5ace7aa888d1b3053fc57b86861f1ecdcb0cc2192f2102579"
+    ],
+    "LEVEL02.CK2": [
+      "6f8044e25f6fc420971f673d86617f842131d1a72a51e261e637bb7bdae01618"
+    ],
+    "LEVEL03.CK2": [
+      "0dcf19dcda9b38d15932b3fe1c328b9250a0d6537ff759fceb88a3ea25d6eb94"
+    ],
+    "LEVEL04.CK2": [
+      "abbe52196dc41e481e50eabf69bc92fbd3810af5387c1380fd50bc6c1f36b544"
+    ],
+    "LEVEL05.CK2": [
+      "f5f293797aba608f6180074c71743409924b505656c40b407c9bb2368d8626af"
+    ],
+    "LEVEL06.CK2": [
+      "3c5cc7f1876335d432bc9fdddb214a389b2256b99221fa4908e5ebcf9e8c608f"
+    ],
+    "LEVEL07.CK2": [
+      "2bea6a60890a0d14765024be0e376446922c10ecff9bf1bb7bd17e92d32f7340"
+    ],
+    "LEVEL08.CK2": [
+      "607560e5b168a8ec90f67e13c6203d638253c5973e768996642bba38329ace91"
+    ],
+    "LEVEL09.CK2": [
+      "25be3b2c36349b67e7b9f8dfcf0290fbf78b981bde4f46bada06c446578586c3"
+    ],
+    "LEVEL10.CK2": [
+      "a8abe06fe14030d027b4bb4459370d88a81f6978e3ce849bf5f7d49426a5a6dd"
+    ],
+    "LEVEL11.CK2": [
+      "ef73aa521096780d56c7b321278e07980b4348940d2237f1612296afb7446cb7"
+    ],
+    "LEVEL12.CK2": [
+      "8353d97841d4e250dca36cc8fd264c68b23431809f97e4855c99e762d8fdc962"
+    ],
+    "LEVEL13.CK2": [
+      "01c194a3dd14a5627d9147b237f2e3445d55032cf3dd62f06e9b207c628c44f9"
+    ],
+    "LEVEL14.CK2": [
+      "c83497b8a899a9d38a16fc250caa21d874626843f81d864b25ba8515d4f3ed88"
+    ],
+    "LEVEL15.CK2": [
+      "2225bcc4d5efa237d6aacdb2bcfd9b687b4a8df2c100d02cfa73f3d9ec5ddb25"
+    ],
+    "LEVEL16.CK2": [
+      "fa6ecc3f249a5537af0eea3803ae08e81410e3e1f3a0e40a41a5fd1baa550c32"
+    ],
+    "LEVEL80.CK2": [
+      "bbc95e7fbd0243ec29e6f54b27f285532a76dfe5e18936a17d79917b7a5a9a4b"
+    ],
+    "LEVEL81.CK2": [
+      "55b331309fdfcdbf681476e285a27ce11a758f6e6ae2da580cbbe91569875e2f"
+    ],
+    "LEVEL90.CK2": [
+      "c8a1696f92ad5d689e6879487601107b6269e4ef5b3730b168c99981aacd6bcd"
+    ]
+  },
+  "keen3": {
+    "EGAHEAD.CK3": [
+      "d4d95455702723a04a49f775bbae440b9ba88418da5cdef08b2d34a3942a00cb",
+      "fc55218375aa40094cfd34744ccf31984ed836c2d338886de4682509559b86d4"
+    ],
+    "EGALATCH.CK3": [
+      "2ca0431bbc911a3a3b68bab27b0a193fbfd91df438d9b7a0abf5c741d8b1ac05",
+      "88d79a05e985f0dfb7c2bf37a4e7691b732943c3bc6cd63e54de1fccdf768aa2"
+    ],
+    "EGASPRIT.CK3": [
+      "1e455d32dfc0d0f64bf7f20a40d72b8571d02b9eb9fe13e7ca21b4c50ab26478"
+    ],
+    "FINALE.CK3": [
+      "813bdbe9f89ad194f270178c0579bfe07a18a36fe7ce5717e419fad2b6cf49fe"
+    ],
+    "LEVEL01.CK3": [
+      "70ee63c7fe8284727aad809fd2920da3bf57ebdb74942e942465f10390808d9e"
+    ],
+    "LEVEL02.CK3": [
+      "46e5d8f03ad5869b88d542155b800c02ba83737a9e0765201c2c12676639cce2"
+    ],
+    "LEVEL03.CK3": [
+      "1a89abd6091b845714b4032dd2b56ff44ea34171db08f49b187f0fccd0115830"
+    ],
+    "LEVEL04.CK3": [
+      "8365cf1c89c16577f21b8fd54a180d7436909ccdf13cff4bbba11381620288c1"
+    ],
+    "LEVEL05.CK3": [
+      "536aaab352335882e9607375573ff07cfa7f52e02828b3f42d0460566298be6d"
+    ],
+    "LEVEL06.CK3": [
+      "677187774566f103fc4f8bca159ab9407b171c42668e0b83255e7217aadab402"
+    ],
+    "LEVEL07.CK3": [
+      "d9252a549dd1773d3669128f3eb4b4a2417b416d56f8507422fbd43c29ec1254"
+    ],
+    "LEVEL08.CK3": [
+      "a61e13eb3e55ab53560b01e4ea68ab67003198cb03b0300c3deb1fe0d9bfa974"
+    ],
+    "LEVEL09.CK3": [
+      "a213e65a9e58c9ca38ec1cac87e98b0de20f35bb7ecd7319af8f36c8c942222a"
+    ],
+    "LEVEL10.CK3": [
+      "99c69ed5f5224ddbe2cfbfcc3a8733b950afd76f42d3a6888f0b4771f4e22b6b",
+      "9afc0a238c870c271e26e7cfbf89b29e358626997fe1750629b2886241ca98f1"
+    ],
+    "LEVEL11.CK3": [
+      "163264fcd4c2662a2edab835ef1b0f27cce9968cf86232aa5847180f7b8e7ee9"
+    ],
+    "LEVEL12.CK3": [
+      "c2612c9fcd4fbb3f3b66d39da1ad03b52a37e3a532b0326fbd8d2d35a544639a"
+    ],
+    "LEVEL13.CK3": [
+      "4b0754ba0bc86db8988400018a384dae2dcff0a1e54206746f9698cf44047032",
+      "f6989a590e528b18335b973e950c305c71eba8a2a08776c77ca6085699690f41"
+    ],
+    "LEVEL14.CK3": [
+      "c1b77d4671be4076a3a04955541c9fcd2309bf8cd3bb978d3c3a0263dd481af1"
+    ],
+    "LEVEL15.CK3": [
+      "f2f2999d1137b56462e392aaed6a137683af68282c0f47884e510870c0cb56fe"
+    ],
+    "LEVEL16.CK3": [
+      "b1ec9807cc27b9cc90c3ff04dd519ef0d88f9901ce92c93dd418dc133a1c1f84"
+    ],
+    "LEVEL80.CK3": [
+      "7ac9c89dfd1da0337c5c761050d140435875ea6f52286efdfacd447f9de3c613"
+    ],
+    "LEVEL81.CK3": [
+      "53d1fbb0b075b1c3a1be8ae933a06cd650c194ec09eace4a836bf52e408f0210"
+    ],
+    "LEVEL90.CK3": [
+      "a69596bfd7e88e872e14143f9fecd755d56ca213b9682439f31866000c3c8caa"
+    ]
+  },
+  "keen4": {
+    "EGAGRAPH.CK4": [
+      "5883551f6514af2ff8c2d9214d6144c7b5f7e2e1fa56cf1d3aabeec2ed4fb380",
+      "9805168fb910385ad40455541cbcfa1aaa61f9d81b2504274ee0ca0ec4b71550",
+      "b424f8b18bdd0ca78794dca7bc887a7d2e77924807bb797cdbdf07e21a002069",
+      "cc71f482b3df7a109107bfd349499e319606fcf733de27a1d2c05bf01d06df5b",
+      "d228fff333994921a34c137807246597073ee457202e6fab7daa2807ed60a7b0",
+      "e2c3d99b72b96c806e5fc3124e6563c7bb7c72bef6d0ae39e02cd1e58ae91175"
+    ],
+    "GAMEMAPS.CK4": [
+      "01186f8cb99257b69a4f475186deb9ba79b872ed52378131c79c21f6344753ea",
+      "7d1e4a5f8c774ddb104517a0acbbd2e8f42927ee6e0065bdda7b99e8258ea3c1"
+    ],
+    "AUDIOT.CK4": [
+      "d88fdcd445e1462cc3cd21ef5ab10fc066f87df955ef70bc7932dcef4fd2767c"
+    ],
+    "AUDIO.CK4": [
+      "66dcf6070a4bc5c8933815b15dab7145ddcccb959f8f43af2a0449b085a04366"
+    ],
+    "CGAGRAPH.CK4": [
+      "5734c4eee44eab5b0a296297b27ae6f541ce33382bda5dcfd8b674bb33f23a96",
+      "9eb36d0d83b582efdcbd3e71f0ea4bdcb07fe62c3c7787c40f48bd9b1c79d3ee",
+      "e212c48aa4e3455e10ce207dea0e23c26785c5a8fb5a2671d7e25a8258a03d98"
+    ]
+  },
+  "keen5": {
+    "EGAGRAPH.CK5": [
+      "38a684c52673187465e4c4eabd0dfa188c9727014818f526cad7eb617dc48211",
+      "4070e4962a1a078cbe9f5d319c1861bcec45a9b13654910b3a73ee97d4c4c484",
+      "fa90d780c32d262e812e552a7bda9de33fe9397d351246c3c10a4eebdd9973dc"
+    ],
+    "GAMEMAPS.CK5": [
+      "0f0ae9bb64b2d511b7fbda95c67d069412643f45d6935cee060d5ba2a5dce616",
+      "3b1a7f586c194060a1e1a370b0c58b36e77ad940d532e7a05690493125c3d8a5",
+      "4f2a88b1cfad55e424eab5cd92fbadcef0b574557113ae1ed41a2fb216438697"
+    ],
+    "AUDIO.CK5": [
+      "1a9aae3de1d43d02334e1ad3b5063b64fd71766aed5e574431d7b3fdd3bfd02f"
+    ],
+    "CGAGRAPH.CK5": [
+      "9893a96100f053bc138e7b08664c0d2e905dbbb0708ea416906dd6e1b02fb30a"
+    ]
+  },
+  "keen6": {
+    "EGAGRAPH.CK6": [
+      "84d782e776dcf0e431231cce4ca8aebf10bbb5c6ae6fd25670fe28a0dce0b675",
+      "8838c6f6f34bbca2be59270e00a608d2532d8bda83b268d8b9dedec7ce1ca295",
+      "91892b7ef21f7a647601cb27a07895f3aad536d3eb404a1bdbadcbbea8b9a305",
+      "b34edd96735f2bc8a63361ba6a83f2c484d29e57dca2f36be10232d02c0db7aa",
+      "dccefb1c96722fbe6e2b6252e12f3fe8226fc9071be57e90e16959b2d899ed38",
+      "fe37d47faeb91b2ff6188415b773ed46cd51e6425652d1ef29bbf81780cc0d25"
+    ],
+    "GAMEMAPS.CK6": [
+      "48047f19d0f7a69db5f351f342868d52a5101e1732129ba297acb35439f8b50e",
+      "50dfc40a055076c3d4aca3d8335e7291759f1e8416bd2086d0cff2a52a90d8d3",
+      "518e4179039e307430c419386ba5fc55ff49b2844aeec27de8eb4b1e9409b3b8",
+      "fb413c47e5efa7aae88c05c344e08f9f231af447e6366aff26fb209debb919e3"
+    ],
+    "AUDIO.CK6": [
+      "518ff3c0b1b144b2fa93713efc30b0cd7a379aba7eb8322e78b7d35ac59ce9b9",
+      "5eef576c62773bc7c54c2c55c56117dd89ae7aba1d826f1bd201a8699d07b0e3"
+    ],
+    "CGAGRAPH.CK6": [
+      "1a0995bfb8ebd3ddc0f774969c7fc59b33a3f73f235119bdb47ac0846458b1fd",
+      "2b0ed456208cbb1da86bd5fe52509223c526e63e8ef2f2c5b55ba47a9c571ca7"
+    ]
+  },
+  "kdreams": {
+    "KDREAMS.EGA": [
+      "b37744937f21aa071328b71ee56dd582e035c3eae46440f161dc4ac1afa5ad83"
+    ],
+    "KDREAMS.MAP": [
+      "3bc5828d3385f5e01e8ecb47ceb40abdfeb15b9e86a91a659a1300e017b72a34",
+      "971b062a1b842f1f708013e05638c1c9eee808991ff40ba4a6b4f1bb88b15bb4"
+    ],
+    "KDREAMS.AUD": [
+      "b21ccdbb07428ada4e967e6148f7b470b2924f0b2b9a80871873f2ba73d4fc02"
+    ],
+    "EGAGRAPH.KDR": [
+      "b37744937f21aa071328b71ee56dd582e035c3eae46440f161dc4ac1afa5ad83"
+    ],
+    "GAMEMAPS.KDR": [
+      "484097b90c631f112605d619e158eddcfd595344f5b4b2e1f74634dbba94ba8e",
+      "f64d1672ebaee56dc0274138d186868dbc93df587739e099263afb2935094899"
+    ],
+    "AUDIO.KDR": [
+      "b21ccdbb07428ada4e967e6148f7b470b2924f0b2b9a80871873f2ba73d4fc02"
+    ],
+    "CGAGRAPH.KDR": [
+      "8b8a724c11e654c7610738757b2a22c5f61268cbfec216352ff6bb6e2e53f6c8"
+    ]
+  }
+}

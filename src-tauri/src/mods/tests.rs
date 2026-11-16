@@ -1947,3 +1947,36 @@ fn installed_mods_without_their_executable_stay_on_their_copy() {
     let (p, _) = profiles::get(&db, &m.profile_id).unwrap();
     assert_eq!((p.install_id, p.standalone), (None, true));
 }
+
+/// A mod's levels copied over a real Keen 3 make the folder a mod, and its
+/// game isn't offered for the library.
+///
+/// `cargo test --lib levels_copied_over -- --ignored`
+#[test]
+#[ignore = "needs the real games"]
+fn levels_copied_over_the_game_are_a_mod() {
+    let games = std::env::var_os("KEEN_GAMES")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../.local/games"));
+    let original = games.join("versions/Commander Keen 3 v1.31");
+    let tmp = tempfile::tempdir().unwrap();
+    let game = tmp.path().join("keen3");
+    fs::create_dir(&game).unwrap();
+    for entry in fs::read_dir(&original).unwrap() {
+        let entry = entry.unwrap();
+        fs::copy(entry.path(), game.join(entry.file_name())).unwrap();
+    }
+    assert!(matches!(classify(&game).unwrap(), Dropped::Games));
+
+    let level = fs::read(game.join("LEVEL02.CK3")).unwrap();
+    fs::write(game.join("LEVEL01.CK3"), level).unwrap();
+    let Dropped::Mod { info } = classify(&game).unwrap() else {
+        panic!("not a mod");
+    };
+    assert_eq!(info.game_id, "keen3");
+    let (_dir, _paths, db) = setup();
+    assert_eq!(
+        crate::library::bundled_game(&db, &game, "keen3").unwrap(),
+        None
+    );
+}

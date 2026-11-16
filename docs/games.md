@@ -18,6 +18,8 @@ Dreams). Per game:
 - **`saves`, `stateFiles`**: patterns (`?`, `*`, case-insensitive) for
   files the game writes: saved games, settings, high scores.
 - **`versions`**: every known release, with the SHA-256 of its files.
+- **`dataFiles`**: everything a full copy reads, `A|B` for either. Their
+  hashes in every release are in `original-data.json`.
 - **`moddingVersion`**: the release most mods are made for, where the
   community settled on one (v1.4 EGA for Keen 4–6).
 - **`preferredVersions`**: where mods go when several copies fit, best
@@ -97,8 +99,15 @@ far smaller, and such an archive is damaged or made to fill the memory.
 
 A file dropped onto the library may be a game or a mod. Many mods ship the
 game's files, often with their own executable. So whatever starts through
-a patch or a batch file is a mod, even where a game is detected; otherwise
-detected games are imported as games.
+a patch or a batch file is a mod, even where a game is detected. Players
+also copy a mod's levels into their game's folder, with no patch to tell:
+a known release whose data files (`dataFiles`) aren't those of any release
+of its game is a mod too, and its game isn't offered for the library, as
+the mod's levels would come along as the game's. The original hashes are in
+`src-tauri/catalog/original-data.json`, written by
+`node scripts/original-data.mjs` from the copies in `.local/games/versions`;
+rerun it when a release is added to the catalog. Otherwise detected games
+are imported as games.
 
 ## Steam and GOG
 

@@ -1,6 +1,7 @@
 //! Finds games inside an import source (PLAN.md §5).
 
 use std::collections::{BTreeMap, HashMap};
+use std::sync::LazyLock;
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -190,6 +191,43 @@ fn identify_version(
         }
     }
     Ok(None)
+}
+
+/// File name → the hashes it has in some release, by game id.
+type Originals = HashMap<String, HashMap<String, Vec<String>>>;
+
+static ORIGINAL_DATA: LazyLock<Originals> = LazyLock::new(|| {
+    let mut all: serde_json::Map<String, serde_json::Value> =
+        serde_json::from_str(include_str!("../catalog/original-data.json"))
+            .expect("bundled original-data.json is invalid");
+    all.remove("$comment");
+    serde_json::from_value(all.into()).expect("bundled original-data.json is invalid")
+});
+
+/// Whether `detection` is a known release whose data files (levels,
+/// graphics) aren't those of any release: a mod copied over the game,
+/// without a patch to tell. An unknown executable may be any release, so
+/// its data files aren't judged.
+pub fn modified_data(source: &Source, detection: &Detection) -> Result<bool> {
+    modified_against(source, detection, &ORIGINAL_DATA)
+}
+
+fn modified_against(source: &Source, detection: &Detection, originals: &Originals) -> Result<bool> {
+    if detection.version_id.is_none() {
+        return Ok(false);
+    }
+    let Some(known) = originals.get(&detection.game_id) else {
+        return Ok(false);
+    };
+    for rel in &detection.base_files {
+        let name = detection.library_name(rel).to_ascii_uppercase();
+        if let Some(hashes) = known.get(&name)
+            && !hashes.contains(&sha256_hex(&source.read(rel)?))
+        {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 pub fn sha256_hex(data: &[u8]) -> String {
@@ -430,6 +468,42 @@ mod tests {
     }
 
     #[test]
+    fn data_of_no_release_is_a_mod() {
+        let tmp = tempfile::tempdir().unwrap();
+        for (name, data) in [
+            ("KEEN3.EXE", &b"exe"[..]),
+            ("LEVEL01.CK3", b"level"),
+            ("README.TXT", b"x"),
+        ] {
+            std::fs::write(tmp.path().join(name), data).unwrap();
+        }
+        let source = Source::open(tmp.path()).unwrap();
+        let detection = |version: Option<&str>| Detection {
+            game_id: "keen3".into(),
+            dir: String::new(),
+            version_id: version.map(String::from),
+            base_files: vec![
+                "KEEN3.EXE".into(),
+                "LEVEL01.CK3".into(),
+                "README.TXT".into(),
+            ],
+            state_files: vec![],
+            renamed: BTreeMap::new(),
+        };
+        let originals = |level: &[u8]| -> Originals {
+            HashMap::from([(
+                "keen3".into(),
+                HashMap::from([("LEVEL01.CK3".into(), vec!["0".into(), sha256_hex(level)])]),
+            )])
+        };
+        let known = detection(Some("keen3-1.31"));
+        assert!(!modified_against(&source, &known, &originals(b"level")).unwrap());
+        assert!(modified_against(&source, &known, &originals(b"other")).unwrap());
+        // An unknown release may have levels of its own.
+        assert!(!modified_against(&source, &detection(None), &originals(b"other")).unwrap());
+    }
+
+    #[test]
     fn sha256() {
         assert_eq!(
             sha256_hex(b"abc"),
@@ -531,6 +605,12 @@ mod tests {
                 .collect();
             if found != [(String::new(), Some(version.to_string()))] {
                 wrong.push(format!("{folder}: {found:?}, expected {version}"));
+            }
+            let source = Source::open(&root.join(folder)).unwrap();
+            for d in detect(&source).unwrap() {
+                if modified_data(&source, &d).unwrap() {
+                    wrong.push(format!("{folder}: data files taken for a mod's"));
+                }
             }
         }
         // Every catalog version is covered, and no folder is left out.

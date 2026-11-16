@@ -132,16 +132,22 @@ pub fn import_from(
 /// The release of `game_id` in `path`, a mod's folder that holds the game
 /// too, while the library has no copy of that game at all; another release
 /// of it is enough to play the mod. Only a known release counts; an
-/// executable the catalog doesn't know may be the mod's own.
+/// executable the catalog doesn't know may be the mod's own. Nor does one
+/// whose levels the mod replaced: the library would get them as the game's.
 pub fn bundled_game(db: &Db, path: &Path, game_id: &str) -> Result<Option<String>> {
     if list(db)?.iter().any(|i| i.game_id == game_id) {
         return Ok(None);
     }
     let source = Source::open(path)?;
-    Ok(detect(&source)?
-        .into_iter()
-        .find(|d| d.game_id == game_id && d.version_id.is_some())
-        .and_then(|d| d.version_id))
+    for d in detect(&source)? {
+        if d.game_id == game_id
+            && d.version_id.is_some()
+            && !crate::detect::modified_data(&source, &d)?
+        {
+            return Ok(d.version_id);
+        }
+    }
+    Ok(None)
 }
 
 /// Imports the release [`bundled_game`] found in `path`. `None` when the

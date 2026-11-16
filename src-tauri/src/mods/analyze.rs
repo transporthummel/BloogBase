@@ -10,7 +10,7 @@ use specta::Type;
 
 use crate::catalog::{self, Game};
 use crate::ckpatch;
-use crate::detect::{detect, sha256_hex};
+use crate::detect::{detect, modified_data, sha256_hex};
 use crate::error::{Error, Result};
 use crate::readme;
 use crate::recipe::{self, Recipe, has_ext, patcher_game};
@@ -106,10 +106,18 @@ pub enum Dropped {
 
 /// Tells games from a mod. Game detection goes by file names, and many mods
 /// ship the game's files, often with their own executable. So whatever starts
-/// through a patch or a batch file is a mod, even where a game is detected.
+/// through a patch or a batch file is a mod, even where a game is detected,
+/// and so is a game whose levels or graphics aren't those of any release:
+/// players copy a mod's files into their game's folder.
 pub fn classify(path: &Path) -> Result<Dropped> {
     let source = Source::open(path)?;
-    let game = !detect(&source)?.is_empty();
+    let mut game = false;
+    for d in detect(&source)? {
+        if !modified_data(&source, &d)? {
+            game = true;
+            break;
+        }
+    }
     let analysis = match analyze(&source, path, None) {
         Ok(a) => Some(a.info),
         Err(Error::NoModFound) => None,
