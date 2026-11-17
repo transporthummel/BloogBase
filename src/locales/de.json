@@ -862,6 +862,7 @@
   },
   "screenshots": {
     "hint": "Drücke beim Spielen {{key}}, um einen Screenshot zu machen.",
+    "folderMenu": "Ordner",
     "openFolder": "Ordner öffnen",
     "emptyTitle": "Noch keine Screenshots",
     "empty": "Drücke beim Spielen {{key}}, um einen Moment festzuhalten. Deine Screenshots erscheinen dann hier.",

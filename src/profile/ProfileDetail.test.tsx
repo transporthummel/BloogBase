@@ -961,6 +961,14 @@ test("a tab copies its screenshots to a folder", async () => {
   // Only screenshots, not the videos too.
   expect(commands.copyCaptures).toHaveBeenCalledWith(["keen4-1"], "screenshot", "C:/Keepers");
   expect(await screen.findByText(/^Copied 1 file to:/)).toHaveTextContent("C:/Keepers/Keen 4");
+
+  // Narrow, both are in a menu instead (the CSS that picks one isn't run here).
+  await userEvent.click(screen.getByRole("button", { name: "Folder" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Copy to a folder…" }));
+  expect(commands.copyCaptures).toHaveBeenCalledTimes(2);
+  await userEvent.click(screen.getByRole("button", { name: "Folder" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Open folder" }));
+  expect(commands.openCaptureFolder).toHaveBeenCalledWith("keen4-1");
 });
 
 test("videos show their first frame and length, and open in a player", async () => {
