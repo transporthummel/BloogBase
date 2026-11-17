@@ -1314,7 +1314,7 @@ test("a mod with worlds continues the one played last, or starts a new one with 
   );
 
   await userEvent.click(screen.getByRole("button", { name: "More ways to start" }));
-  await userEvent.click(screen.getByRole("menuitem", { name: "Start new world…" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "New world…" }));
   const dialog = await screen.findByRole("dialog", { name: "Start new world" });
   // The last world's options come back.
   expect(within(dialog).getByRole("checkbox", { name: "Start with the pogo stick" })).toBeChecked();
@@ -1356,7 +1356,7 @@ test("the arrow beside Continue offers the five worlds played last", async () =>
   const items = await screen.findAllByRole("menuitem");
   // The world Continue starts isn't repeated; the oldest is left out.
   expect(items.map((i) => i.textContent)).toEqual([
-    "Start new world…",
+    "New world…",
     "World 5",
     "World 4",
     "World 3",
@@ -1386,14 +1386,14 @@ test("without a world going on, the arrow beside New world offers the others", a
   await vi.waitFor(() =>
     expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 1 }),
   );
-  await userEvent.click(screen.getByRole("button", { name: "Start new world…" }));
+  await userEvent.click(screen.getByRole("button", { name: "New world…" }));
   expect(await screen.findByRole("dialog", { name: "Start new world" })).toBeInTheDocument();
 });
 
 test("without a world played, Play begins one", async () => {
   withWorlds(null);
   renderDetail();
-  await userEvent.click(await screen.findByRole("button", { name: "Start new world…" }));
+  await userEvent.click(await screen.findByRole("button", { name: "New world…" }));
   const dialog = await screen.findByRole("dialog", { name: "Start new world" });
   await userEvent.click(within(dialog).getByRole("button", { name: "Start" }));
   await vi.waitFor(() =>
