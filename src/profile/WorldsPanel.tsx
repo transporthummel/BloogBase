@@ -85,6 +85,8 @@ export function WorldsPanel({
     makeCurrent.error ??
     copySeed.error;
   const locked = profile.running;
+  // Copying a seed is offered in every row as soon as one has a seed.
+  const seeded = !!data?.worlds.some((w) => w.seed !== null);
 
   return (
     <div className="grid gap-4">
@@ -152,18 +154,20 @@ export function WorldsPanel({
                     <Play className="size-4" aria-hidden />
                     {t("worlds.play")}
                   </Button>
-                  {!w.active && (
-                    <Button
-                      variant="ghost"
-                      className="px-2"
-                      disabled={locked || makeCurrent.isPending}
-                      onClick={() => makeCurrent.mutate(w)}
-                      aria-label={t("worlds.makeCurrentNamed", { name })}
-                      title={t("worlds.makeCurrent")}
-                    >
-                      <CircleCheck className="size-4" aria-hidden />
-                    </Button>
-                  )}
+                  {/* Greyed out rather than left out, so every row's
+                      buttons stand in the same places. */}
+                  <Button
+                    variant="ghost"
+                    className="px-2"
+                    disabled={w.active || locked || makeCurrent.isPending}
+                    onClick={() => makeCurrent.mutate(w)}
+                    aria-label={t(w.active ? "worlds.isCurrentNamed" : "worlds.makeCurrentNamed", {
+                      name,
+                    })}
+                    title={t(w.active ? "worlds.isCurrent" : "worlds.makeCurrent")}
+                  >
+                    <CircleCheck className="size-4" aria-hidden />
+                  </Button>
                   <Button
                     variant="ghost"
                     className="px-2"
@@ -173,10 +177,11 @@ export function WorldsPanel({
                   >
                     <Pencil className="size-4" aria-hidden />
                   </Button>
-                  {w.seed !== null && (
+                  {seeded && (
                     <Button
                       variant="ghost"
                       className="px-2"
+                      disabled={w.seed === null}
                       onClick={() => copySeed.mutate(w.seed!)}
                       aria-label={t("worlds.copySeedNamed", { name })}
                       title={t("worlds.copySeed")}

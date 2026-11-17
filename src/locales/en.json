@@ -1154,6 +1154,8 @@
     "intro": "This mod makes new levels at every start. Each set is kept as a world with its own saves, so you can play it again.",
     "empty": "No worlds yet. “New world” makes the first one.",
     "locked": "While the game runs, worlds can’t be deleted.",
+    "isCurrent": "Already current",
+    "isCurrentNamed": "{{name}} is already current",
     "makeCurrent": "Make current without playing",
     "makeCurrentNamed": "Make {{name}} current without playing",
     "madeCurrent": "“{{name}}” is current now. The Saves tab shows its saves, and “Continue world” plays it.",

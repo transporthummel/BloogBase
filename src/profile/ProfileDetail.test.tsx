@@ -1434,11 +1434,9 @@ test("a world can be made current without playing it", async () => {
   vi.mocked(commands.activateWorld).mockResolvedValue(ok(null));
   renderDetail();
   await userEvent.click(await screen.findByRole("tab", { name: /^Worlds/ }));
-  // Not for the one that is already.
+  // Greyed out for the one that is already, so the rows line up.
   await screen.findByRole("button", { name: "Make Hard one current without playing" });
-  expect(
-    screen.queryByRole("button", { name: "Make Seed 4711 current without playing" }),
-  ).toBeNull();
+  expect(screen.getByRole("button", { name: "Seed 4711 is already current" })).toBeDisabled();
   await userEvent.click(
     screen.getByRole("button", { name: "Make Hard one current without playing" }),
   );

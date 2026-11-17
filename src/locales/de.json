@@ -1154,6 +1154,8 @@
     "intro": "Diese Mod erzeugt bei jedem Start neue Level. Jede Zusammenstellung bleibt als Welt mit eigenen Spielständen erhalten, sodass du sie erneut spielen kannst.",
     "empty": "Noch keine Welten. „Neue Welt“ erzeugt die erste.",
     "locked": "Solange das Spiel läuft, lassen sich keine Welten löschen.",
+    "isCurrent": "Schon aktuell",
+    "isCurrentNamed": "{{name}} ist schon aktuell",
     "makeCurrent": "Aktuell machen, ohne zu spielen",
     "makeCurrentNamed": "{{name}} aktuell machen, ohne zu spielen",
     "madeCurrent": "„{{name}}“ ist jetzt aktuell. Der Tab „Spielstände“ zeigt ihre Spielstände, „Welt fortsetzen“ spielt sie.",
