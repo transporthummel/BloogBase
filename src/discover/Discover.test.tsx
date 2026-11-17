@@ -656,7 +656,6 @@ test("offers shareware episodes and demos on their own tabs", async () => {
         gameProfileId: null,
         worlds: false,
         activeWorld: null,
-        worldCount: 0,
       },
     ],
   });

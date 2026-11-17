@@ -145,7 +145,6 @@ const profile: Profile = {
   gameProfileId: null,
   worlds: false,
   activeWorld: null,
-  worldCount: 0,
 };
 
 const save = (file: string, slot: number, name: string | null): SaveFile => ({

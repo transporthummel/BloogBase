@@ -112,7 +112,6 @@ const profile: Profile = {
   gameProfileId: null,
   worlds: false,
   activeWorld: null,
-  worldCount: 0,
 };
 
 const runtime = { id: "dosbox-staging-0.83.0", version: "0.83.0", path: "/x", managed: true };
@@ -270,9 +269,6 @@ test("a mod that keeps worlds is marked and its card says what Play does", async
     label: "Randomiser",
     worlds: true,
     activeWorld: 3,
-    worldCount: 4,
-    // The active world's only.
-    saveCount: 0,
   };
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [randomiser] });
   renderLibrary();
@@ -280,9 +276,6 @@ test("a mod that keeps worlds is marked and its card says what Play does", async
   expect(screen.getByRole("button", { name: "Play Randomiser" })).toHaveTextContent(
     "Continue world",
   );
-  // Its worlds, not the saves of one.
-  expect(screen.getByText("4 worlds")).toBeInTheDocument();
-  expect(screen.queryByText("No saved games")).toBeNull();
 });
 
 test("coming back from a details page keeps the place and shows the card", async () => {

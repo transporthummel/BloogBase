@@ -192,7 +192,6 @@ fn the_world_a_session_generated_is_kept_with_the_seed_it_notes() {
     let p = profiles::get(&t.db, &t.profile).unwrap().0;
     assert!(p.worlds);
     assert_eq!(p.active_world, Some(1));
-    assert_eq!(p.world_count, 1);
 
     // Without a play command's files, nothing is recorded.
     let run = t.prepare(Some(new(None))).unwrap().unwrap();

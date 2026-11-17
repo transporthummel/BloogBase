@@ -439,10 +439,7 @@ const ProfileCard = memo(function ProfileCard({
               </dd>
             </>
           )}
-          {/* A mod with worlds has the saves of one only: its worlds instead. */}
-          <dt className="sr-only">
-            {t(profile.worlds ? "library.worldCountLabel" : "library.saveCountLabel")}
-          </dt>
+          <dt className="sr-only">{t("library.saveCountLabel")}</dt>
           <dd>
             {/* Leads where the title does: for the mouse only, so keyboards
                 stop once per card before Play. */}
@@ -452,9 +449,7 @@ const ProfileCard = memo(function ProfileCard({
               tabIndex={-1}
               className="underline-offset-2 hover:underline"
             >
-              {profile.worlds
-                ? t("library.worldCount", { count: profile.worldCount })
-                : t("library.saveCount", { count: profile.saveCount })}
+              {t("library.saveCount", { count: profile.saveCount })}
             </Link>
           </dd>
         </dl>
