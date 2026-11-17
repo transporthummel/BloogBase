@@ -682,7 +682,10 @@
     "screenshots_other": "{{count}} screenshots",
     "videos_one": "1 video",
     "videos_other": "{{count}} videos",
-    "and": "{{a}} and {{b}}"
+    "and": "{{a}} and {{b}}",
+    "copy": "Copy to a folder…",
+    "copied_one": "Copied 1 file into a folder named after the game or mod, in:",
+    "copied_other": "Copied {{count}} files into a folder per game or mod, in:"
   },
   "saves": {
     "title": "Saved games",

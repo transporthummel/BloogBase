@@ -82,6 +82,7 @@ vi.mock("../bindings", () => {
     "gameReadmes",
     "openGameReadme",
     "deleteMod",
+    "copyCaptures",
     "modInstalls",
     "setModInstall",
     "removeGame",
@@ -363,6 +364,14 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   await pick("Remove");
   const dialog = screen.getByRole("dialog");
   expect(await within(dialog).findByText(/This also deletes 1 video\./)).toBeInTheDocument();
+  // They can be copied first.
+  vi.mocked(openDialog).mockResolvedValue("C:/Keepers");
+  vi.mocked(commands.copyCaptures).mockResolvedValue(ok(1));
+  await userEvent.click(within(dialog).getByRole("button", { name: "Copy to a folder…" }));
+  expect(commands.copyCaptures).toHaveBeenCalledWith(["keen4-1"], "C:/Keepers");
+  expect(await within(dialog).findByText(/Copied 1 file into a folder/)).toHaveTextContent(
+    "C:/Keepers",
+  );
   await userEvent.click(within(dialog).getByRole("checkbox"));
   await userEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
   expect(commands.deleteMod).toHaveBeenCalledWith("aurora-bliss", false);

@@ -520,6 +520,30 @@ pub fn open_capture_folder(
     open_path(&app, &dir)
 }
 
+/// Copies the screenshots and videos of profiles into a folder the player
+/// chose, one folder per profile named after it; how many were copied.
+#[tauri::command]
+#[specta::specta]
+pub async fn copy_captures(
+    app: AppHandle,
+    profile_ids: Vec<String>,
+    dest: String,
+) -> CommandResult<u32> {
+    blocking(move || {
+        let db = app.state::<Db>();
+        let profiles = profile_ids
+            .into_iter()
+            .map(|id| Ok((id.clone(), profiles::get(&db, &id)?.0.label)))
+            .collect::<crate::error::Result<Vec<_>>>()?;
+        captures::copy_to(
+            &app.state::<AppPaths>(),
+            &profiles,
+            std::path::Path::new(&dest),
+        )
+    })
+    .await
+}
+
 /// Opens the folder with a mod's installed files.
 #[tauri::command]
 #[specta::specta]

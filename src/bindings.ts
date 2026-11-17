@@ -34,6 +34,11 @@ export const commands = {
 	 *  not while the game runs.
 	 */
 	activateWorld: (profileId: string, worldId: number) => typedError<null, CommandError>(__TAURI_INVOKE("activate_world", { profileId, worldId })),
+	/**
+	 *  Copies the screenshots and videos of profiles into a folder the player
+	 *  chose, one folder per profile named after it; how many were copied.
+	 */
+	copyCaptures: (profileIds: string[], dest: string) => typedError<number, CommandError>(__TAURI_INVOKE("copy_captures", { profileIds, dest })),
 	/**  Deletes a world after backing it up; not while the game runs. */
 	deleteWorld: (profileId: string, worldId: number) => typedError<null, CommandError>(__TAURI_INVOKE("delete_world", { profileId, worldId })),
 	listSaves: (profileId: string) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("list_saves", { profileId })),

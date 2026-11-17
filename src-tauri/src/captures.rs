@@ -196,6 +196,64 @@ pub fn delete(paths: &AppPaths, profile_id: &str, kind: Kind, file: &str) -> Res
     Ok(())
 }
 
+/// Copies the screenshots and videos of each profile, given with its name,
+/// into a folder of that name in `dest`, e.g. before removing it. Files
+/// already there are kept: a copy of the same name gets a number. Returns
+/// how many were copied.
+pub fn copy_to(paths: &AppPaths, profiles: &[(String, String)], dest: &Path) -> Result<u32> {
+    let mut copied = 0;
+    for (profile_id, name) in profiles {
+        let files: Vec<Entry> = entries(paths, profile_id, Kind::Screenshot)?
+            .into_iter()
+            .chain(entries(paths, profile_id, Kind::Video)?)
+            .collect();
+        if files.is_empty() {
+            continue;
+        }
+        let dir = dest.join(folder_name(name, profile_id));
+        fs::create_dir_all(&dir)?;
+        for file in files {
+            fs::copy(&file.path, free_name(&dir, &file.file))?;
+            copied += 1;
+        }
+    }
+    tracing::info!("copied {copied} captures to {}", dest.display());
+    Ok(copied)
+}
+
+/// A name that's safe as a folder name on every system, else `fallback`.
+fn folder_name(name: &str, fallback: &str) -> String {
+    let safe: String = name
+        .chars()
+        .map(|c| {
+            if c.is_control() || r#"<>:"/\|?*"#.contains(c) {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
+    let safe = safe.trim().trim_end_matches('.').trim();
+    if safe.is_empty() {
+        fallback.to_string()
+    } else {
+        safe.to_string()
+    }
+}
+
+/// `file` in `dir`, or "name (2).ext" and so on if that's taken.
+fn free_name(dir: &Path, file: &str) -> PathBuf {
+    let path = dir.join(file);
+    if !path.exists() {
+        return path;
+    }
+    let (stem, ext) = file.rsplit_once('.').unwrap_or((file, ""));
+    (2..)
+        .map(|n| dir.join(format!("{stem} ({n}).{ext}")))
+        .find(|p| !p.exists())
+        .expect("a free name")
+}
+
 pub fn video_index(paths: &AppPaths, profile_id: &str, file: &str) -> Result<VideoIndex> {
     let avi = read_avi(&path(paths, profile_id, Kind::Video, file)?, true)?;
     // AVI files stay below 4 GiB; anything past that is broken.
@@ -479,6 +537,33 @@ mod tests {
         let file = fs::OpenOptions::new().write(true).open(path).unwrap();
         file.set_modified(SystemTime::now() - std::time::Duration::from_secs(age))
             .unwrap();
+    }
+
+    #[test]
+    fn copies_captures_into_a_folder_per_profile() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(tmp.path().join("data"));
+        let dir = paths.profile("keen4-1").capture;
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("image0001.png"), b"png").unwrap();
+        fs::write(dir.join("video0001.avi"), b"avi").unwrap();
+        fs::write(dir.join("audio0001.wav"), b"wav").unwrap();
+        let dest = tmp.path().join("out");
+        let profiles = [
+            ("keen4-1".to_string(), "Keen 4: Secret?".to_string()),
+            ("empty".to_string(), "Nothing".to_string()),
+        ];
+        assert_eq!(copy_to(&paths, &profiles, &dest).unwrap(), 2);
+        let out = dest.join("Keen 4_ Secret_");
+        assert_eq!(fs::read(out.join("image0001.png")).unwrap(), b"png");
+        assert!(out.join("video0001.avi").is_file());
+        assert!(!out.join("audio0001.wav").exists());
+        // Nothing to copy, no folder.
+        assert!(!dest.join("Nothing").exists());
+        // Again: the first copies stay.
+        assert_eq!(copy_to(&paths, &profiles, &dest).unwrap(), 2);
+        assert!(out.join("image0001 (2).png").is_file());
+        assert_eq!(folder_name(" .. ", "keen4-1"), "keen4-1");
     }
 
     #[test]
