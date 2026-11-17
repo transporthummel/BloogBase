@@ -1003,6 +1003,7 @@ export type Profile = {
 	lastPlayedAt: number | null,
 	/**  Unix epoch seconds. */
 	addedAt: number,
+	/**  For a mod with worlds, the saves of all of them. */
 	saveCount: number,
 	running: boolean,
 	/**  The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`. */

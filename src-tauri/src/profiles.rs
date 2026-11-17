@@ -32,6 +32,7 @@ pub struct Profile {
     pub last_played_at: Option<u32>,
     /// Unix epoch seconds.
     pub added_at: u32,
+    /// For a mod with worlds, the saves of all of them.
     pub save_count: u32,
     pub running: bool,
     /// The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`.
@@ -252,10 +253,18 @@ pub fn list(db: &Db, is_running: impl Fn(&str) -> bool) -> Result<Vec<Profile>> 
                 let mut p = row.profile;
                 p.running = is_running(&p.id);
                 if let Ok(game) = crate::saves::profile_game(&p.game_id, &row.layers) {
-                    p.save_count = count_saves(game, &row.layers).unwrap_or_else(|e| {
-                        tracing::warn!("could not scan saves of {}: {e}", p.id);
-                        0
-                    });
+                    p.save_count = count_saves(game, &row.layers)
+                        .and_then(|n| {
+                            Ok(n + if p.worlds {
+                                parked_saves(game, &row.layers)?
+                            } else {
+                                0
+                            })
+                        })
+                        .unwrap_or_else(|e| {
+                            tracing::warn!("could not scan saves of {}: {e}", p.id);
+                            0
+                        });
                 }
                 Ok(p)
             })
@@ -280,6 +289,29 @@ fn count_saves(game: &Game, layers: &Layers) -> Result<u32> {
         .iter()
         .filter(|e| game.saves.iter().any(|p| glob_match(p, &e.path)))
         .count() as u32)
+}
+
+/// The saves of the worlds not played, waiting next to `state/` (§9.6).
+fn parked_saves(game: &Game, layers: &Layers) -> Result<u32> {
+    let Some(dir) = layers.upper.parent().map(|p| p.join("worlds")) else {
+        return Ok(0);
+    };
+    let worlds = match fs::read_dir(&dir) {
+        Ok(d) => d,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+        Err(e) => return Err(e.into()),
+    };
+    let mut count = 0;
+    for world in worlds {
+        let world = world?;
+        if world.file_type()?.is_dir() {
+            count += file_names(&world.path())
+                .iter()
+                .filter(|n| game.saves.iter().any(|p| glob_match(p, n)))
+                .count() as u32;
+        }
+    }
+    Ok(count)
 }
 
 /// The program to start inside `dir`, spelled as on disk: the version's own
