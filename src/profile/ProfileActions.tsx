@@ -11,6 +11,7 @@ import {
   Keyboard,
   MonitorCog,
   PackagePlus,
+  Play,
   RefreshCw,
   Trash2,
 } from "lucide-react";
@@ -51,7 +52,10 @@ import { SplitButton } from "../ui/SplitButton";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { NewWorldDialog } from "./NewWorldDialog";
 import { RemoveGameDialog } from "./RemoveGameDialog";
-import { asksFirst, useWorlds } from "./worlds";
+import { asksFirst, useWorlds, worldName } from "./worlds";
+
+/** How many other worlds the arrow beside Continue offers. */
+const RECENT_WORLDS = 5;
 
 type Open = "removing" | "replacing" | "reporting" | "picking" | "newWorld" | null;
 
@@ -101,6 +105,20 @@ export function ProfileActions({
     if (worlds.data && asksFirst(worlds.data.definition)) setOpen("newWorld");
     else onPlay({ type: "new", seed: null, options: {} });
   };
+  // Beside a new one, the worlds played last but the one Continue starts.
+  const startItems: MenuItem[] = [
+    { label: t("worlds.newEllipsis"), onSelect: newWorld },
+    ...(worlds.data?.worlds ?? [])
+      .filter((w) => !w.active)
+      .sort((a, b) => b.lastPlayedAt - a.lastPlayedAt)
+      .slice(0, RECENT_WORLDS)
+      .map((w, i) => ({
+        label: worldName(t, w),
+        icon: <Play className="size-4" />,
+        onSelect: () => onPlay({ type: "continue", id: w.id }),
+        separated: i === 0,
+      })),
+  ];
   // The index or the KeenWiki page may have a newer version.
   const checkable = mod && (mod.indexId || mod.keenwikiUrl);
 
@@ -168,7 +186,7 @@ export function ProfileActions({
             disabled={!canPlay}
             className="min-w-44 px-8 py-3 text-base"
             menuLabel={t("worlds.more")}
-            items={[{ label: t("worlds.newEllipsis"), onSelect: newWorld }]}
+            items={startItems}
           >
             {t("worlds.continue")}
           </SplitButton>

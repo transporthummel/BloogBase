@@ -1338,6 +1338,37 @@ test("a mod with worlds continues the one played last, or starts a new one with 
   );
 });
 
+test("the arrow beside Continue offers the five worlds played last", async () => {
+  withWorlds();
+  const others = Array.from({ length: 6 }, (_, i) => ({
+    ...randomiser.worlds[1],
+    id: 10 + i,
+    name: `World ${i}`,
+    lastPlayedAt: 1_690_000_000 + i,
+  }));
+  vi.mocked(commands.profileWorlds).mockResolvedValue(
+    ok({ ...randomiser, worlds: [randomiser.worlds[0], ...others] }),
+  );
+  renderDetail();
+  await screen.findByRole("button", { name: "Continue world" });
+  await vi.waitFor(() => expect(commands.profileWorlds).toHaveBeenCalled());
+  await userEvent.click(screen.getByRole("button", { name: "More ways to start" }));
+  const items = await screen.findAllByRole("menuitem");
+  // The world Continue starts isn't repeated; the oldest is left out.
+  expect(items.map((i) => i.textContent)).toEqual([
+    "Start new world…",
+    "World 5",
+    "World 4",
+    "World 3",
+    "World 2",
+    "World 1",
+  ]);
+  await userEvent.click(items[2]);
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 14 }),
+  );
+});
+
 test("without a world played, Play begins one", async () => {
   withWorlds(null);
   renderDetail();
