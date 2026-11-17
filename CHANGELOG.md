@@ -7,7 +7,7 @@
 - The saves tab imports saves from a folder, such as an old copy of the game or a mod: the files lying in it that look like the game's saves, settings or high scores are restored from there, all or one into a chosen slot, without becoming a backup of their own.
 - A game's page shows, like a mod's, a description in English and German, "by id Software" with a link to their website and the release date of its version (from KeenWiki); demos and betas have descriptions of their own.
 - Discover can hide installed mods. A mod installed while the filter is on stays in the list until the filter is turned on again or the page is opened again.
-- Mods that generate their levels at every start (Keen 1 Randomiser, Simulator Keen) are marked "Random worlds" and keep each set as a world with its own saves: "Continue world" plays the last one again, "Start new world" takes a seed and the randomiser's options, and the new Worlds tab lists every world with its seed, options and saves, to play again, star, rename, copy the seed or delete. Saves from before worlds go into a backup.
+- Mods that generate their levels at every start (Keen 1 Randomiser, Simulator Keen) are marked "Random worlds" and keep each set as a world with its own saves: "Continue world" plays the last one again, the arrow beside it offers "New world" (a seed and the randomiser's options; a seed and options already played continue that world) and up to five favourite or recent worlds, and the new Worlds tab lists every world with its seed, options and saves, to play again, make current without playing, star, rename, copy the seed or delete. Saves from before worlds go into a backup.
 
 ### Improvements
 
