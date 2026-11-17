@@ -1338,13 +1338,14 @@ test("a mod with worlds continues the one played last, or starts a new one with 
   );
 });
 
-test("the arrow beside Continue offers the five worlds played last", async () => {
+test("the arrow beside Continue offers five worlds, favourites first, each by last start", async () => {
   withWorlds();
   const others = Array.from({ length: 6 }, (_, i) => ({
     ...randomiser.worlds[1],
     id: 10 + i,
     name: `World ${i}`,
     lastPlayedAt: 1_690_000_000 + i,
+    favourite: i === 0 || i === 2,
   }));
   vi.mocked(commands.profileWorlds).mockResolvedValue(
     ok({ ...randomiser, worlds: [randomiser.worlds[0], ...others] }),
@@ -1354,18 +1355,18 @@ test("the arrow beside Continue offers the five worlds played last", async () =>
   await vi.waitFor(() => expect(commands.profileWorlds).toHaveBeenCalled());
   await userEvent.click(screen.getByRole("button", { name: "More ways to start" }));
   const items = await screen.findAllByRole("menuitem");
-  // The world Continue starts isn't repeated; the oldest is left out.
+  // The world Continue starts isn't repeated; the oldest non-favourite is left out.
   expect(items.map((i) => i.textContent)).toEqual([
     "New world…",
+    "World 2",
+    "World 0",
     "World 5",
     "World 4",
     "World 3",
-    "World 2",
-    "World 1",
   ]);
   await userEvent.click(items[2]);
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 14 }),
+    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 10 }),
   );
 });
 

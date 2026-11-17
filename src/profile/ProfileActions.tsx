@@ -107,12 +107,13 @@ export function ProfileActions({
   };
   const newLabel =
     worlds.data && asksFirst(worlds.data.definition) ? t("worlds.newEllipsis") : t("worlds.new");
-  // The worlds played last but the one Continue starts; beside Continue, a
-  // new one too. Without a world going on, a new one is the main action.
+  // Up to five worlds but the one Continue starts; beside Continue, a new
+  // one too. Without a world going on, a new one is the main action.
   const active = profile.activeWorld;
   const recent: MenuItem[] = (worlds.data?.worlds ?? [])
     .filter((w) => !w.active)
-    .sort((a, b) => b.lastPlayedAt - a.lastPlayedAt)
+    // Favourites first, each group by last start.
+    .sort((a, b) => Number(b.favourite) - Number(a.favourite) || b.lastPlayedAt - a.lastPlayedAt)
     .slice(0, RECENT_WORLDS)
     .map((w, i) => ({
       label: worldName(t, w),
