@@ -366,11 +366,15 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
   expect(await within(dialog).findByText(/This also deletes 1 video\./)).toBeInTheDocument();
   // They can be copied first.
   vi.mocked(openDialog).mockResolvedValue("C:/Keepers");
-  vi.mocked(commands.copyCaptures).mockResolvedValue(ok(1));
+  vi.mocked(commands.copyCaptures).mockResolvedValue(
+    ok({ files: 1, folders: ["C:/Keepers/Aurora Bliss"] }),
+  );
   await userEvent.click(within(dialog).getByRole("button", { name: "Copy to a folder…" }));
   expect(commands.copyCaptures).toHaveBeenCalledWith(["keen4-1"], "C:/Keepers");
-  expect(await within(dialog).findByText(/Copied 1 file into a folder/)).toHaveTextContent(
-    "C:/Keepers",
+  // One of each: said in the singular.
+  expect(dialog).toHaveTextContent("This also deletes 1 video. Unlike saves, no backup keeps it.");
+  expect(await within(dialog).findByText(/^Copied 1 file to:/)).toHaveTextContent(
+    "C:/Keepers/Aurora Bliss",
   );
   await userEvent.click(within(dialog).getByRole("checkbox"));
   await userEvent.click(within(dialog).getByRole("button", { name: "Remove" }));

@@ -196,12 +196,25 @@ pub fn delete(paths: &AppPaths, profile_id: &str, kind: Kind, file: &str) -> Res
     Ok(())
 }
 
+/// What `copy_to` copied.
+#[derive(Debug, Clone, PartialEq, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CopiedCaptures {
+    pub files: u32,
+    /// The folders they went to, one per profile that had any.
+    pub folders: Vec<String>,
+}
+
 /// Copies the screenshots and videos of each profile, given with its name,
 /// into a folder of that name in `dest`, e.g. before removing it. Files
-/// already there are kept: a copy of the same name gets a number. Returns
-/// how many were copied.
-pub fn copy_to(paths: &AppPaths, profiles: &[(String, String)], dest: &Path) -> Result<u32> {
+/// already there are kept: a copy of the same name gets a number.
+pub fn copy_to(
+    paths: &AppPaths,
+    profiles: &[(String, String)],
+    dest: &Path,
+) -> Result<CopiedCaptures> {
     let mut copied = 0;
+    let mut folders = Vec::new();
     for (profile_id, name) in profiles {
         let files: Vec<Entry> = entries(paths, profile_id, Kind::Screenshot)?
             .into_iter()
@@ -216,9 +229,13 @@ pub fn copy_to(paths: &AppPaths, profiles: &[(String, String)], dest: &Path) -> 
             fs::copy(&file.path, free_name(&dir, &file.file))?;
             copied += 1;
         }
+        folders.push(dir.display().to_string());
     }
     tracing::info!("copied {copied} captures to {}", dest.display());
-    Ok(copied)
+    Ok(CopiedCaptures {
+        files: copied,
+        folders,
+    })
 }
 
 /// A name that's safe as a folder name on every system, else `fallback`.
@@ -553,15 +570,17 @@ mod tests {
             ("keen4-1".to_string(), "Keen 4: Secret?".to_string()),
             ("empty".to_string(), "Nothing".to_string()),
         ];
-        assert_eq!(copy_to(&paths, &profiles, &dest).unwrap(), 2);
+        let copied = copy_to(&paths, &profiles, &dest).unwrap();
         let out = dest.join("Keen 4_ Secret_");
+        assert_eq!(copied.files, 2);
+        assert_eq!(copied.folders, [out.display().to_string()]);
         assert_eq!(fs::read(out.join("image0001.png")).unwrap(), b"png");
         assert!(out.join("video0001.avi").is_file());
         assert!(!out.join("audio0001.wav").exists());
         // Nothing to copy, no folder.
         assert!(!dest.join("Nothing").exists());
         // Again: the first copies stay.
-        assert_eq!(copy_to(&paths, &profiles, &dest).unwrap(), 2);
+        assert_eq!(copy_to(&paths, &profiles, &dest).unwrap().files, 2);
         assert!(out.join("image0001 (2).png").is_file());
         assert_eq!(folder_name(" .. ", "keen4-1"), "keen4-1");
     }

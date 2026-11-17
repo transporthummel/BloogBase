@@ -36,7 +36,7 @@ export function LostCaptures({ profileIds }: { profileIds: string[] }) {
     mutationFn: async () => {
       const dest = await open({ directory: true });
       if (!dest) return null;
-      return { dest, count: await unwrap(commands.copyCaptures(profileIds, dest)) };
+      return { dest, ...(await unwrap(commands.copyCaptures(profileIds, dest))) };
     },
   });
 
@@ -47,11 +47,12 @@ export function LostCaptures({ profileIds }: { profileIds: string[] }) {
   ].filter((p): p is string => !!p);
   const what =
     parts.length === 2 ? t("removeCaptures.and", { a: parts[0], b: parts[1] }) : parts[0];
+  const files = copy.data && t("removeCaptures.files", { count: copy.data.files });
   return (
     <div className="grid justify-items-start gap-2">
       <p className="flex items-start gap-2 text-sm text-muted">
         <Camera className="mt-0.5 size-4 shrink-0" aria-hidden />
-        <span>{t("removeCaptures.text", { what })}</span>
+        <span>{t("removeCaptures.text", { what, count: screenshots + videos })}</span>
       </p>
       <Button
         variant="secondary"
@@ -64,8 +65,13 @@ export function LostCaptures({ profileIds }: { profileIds: string[] }) {
       </Button>
       {copy.data && (
         <Notice>
-          {t("removeCaptures.copied", { count: copy.data.count })}{" "}
-          <span className="select-text">{copy.data.dest}</span>
+          {/* One folder: where the files are; several: where the folders are. */}
+          {copy.data.folders.length === 1
+            ? t("removeCaptures.copiedOne", { files })
+            : t("removeCaptures.copiedEach", { files })}{" "}
+          <span className="select-text">
+            {copy.data.folders.length === 1 ? copy.data.folders[0] : copy.data.dest}
+          </span>
         </Notice>
       )}
       {copy.error && <Notice tone="error">{errorMessage(t, copy.error)}</Notice>}

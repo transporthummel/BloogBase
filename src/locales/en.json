@@ -677,15 +677,18 @@
     "tabWorlds": "Worlds"
   },
   "removeCaptures": {
-    "text": "This also deletes {{what}}. Unlike saves, no backup keeps them.",
+    "text_one": "This also deletes {{what}}. Unlike saves, no backup keeps it.",
+    "text_other": "This also deletes {{what}}. Unlike saves, no backup keeps them.",
     "screenshots_one": "1 screenshot",
     "screenshots_other": "{{count}} screenshots",
     "videos_one": "1 video",
     "videos_other": "{{count}} videos",
     "and": "{{a}} and {{b}}",
     "copy": "Copy to a folder…",
-    "copied_one": "Copied 1 file into a folder named after the game or mod, in:",
-    "copied_other": "Copied {{count}} files into a folder per game or mod, in:"
+    "files_one": "1 file",
+    "files_other": "{{count}} files",
+    "copiedOne": "Copied {{files}} to:",
+    "copiedEach": "Copied {{files}}, into a folder per game or mod, to:"
   },
   "saves": {
     "title": "Saved games",

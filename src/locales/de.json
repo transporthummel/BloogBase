@@ -677,15 +677,18 @@
     "tabWorlds": "Welten"
   },
   "removeCaptures": {
-    "text": "Dabei werden auch {{what}} gelöscht. Anders als Spielstände bleiben sie nicht als Sicherung erhalten.",
+    "text_one": "Dabei wird auch {{what}} gelöscht. Anders als bei Spielständen bleibt keine Sicherung davon.",
+    "text_other": "Dabei werden auch {{what}} gelöscht. Anders als bei Spielständen bleibt keine Sicherung davon.",
     "screenshots_one": "1 Screenshot",
     "screenshots_other": "{{count}} Screenshots",
     "videos_one": "1 Video",
     "videos_other": "{{count}} Videos",
     "and": "{{a}} und {{b}}",
     "copy": "In einen Ordner kopieren…",
-    "copied_one": "1 Datei kopiert, in einen Ordner mit dem Namen des Spiels oder der Mod, in:",
-    "copied_other": "{{count}} Dateien kopiert, je Spiel oder Mod in einen eigenen Ordner, in:"
+    "files_one": "1 Datei",
+    "files_other": "{{count}} Dateien",
+    "copiedOne": "{{files}} kopiert nach:",
+    "copiedEach": "{{files}} kopiert, je Spiel oder Mod in einen eigenen Ordner, nach:"
   },
   "saves": {
     "title": "Spielstände",

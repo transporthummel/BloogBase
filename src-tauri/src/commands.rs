@@ -521,14 +521,14 @@ pub fn open_capture_folder(
 }
 
 /// Copies the screenshots and videos of profiles into a folder the player
-/// chose, one folder per profile named after it; how many were copied.
+/// chose, one folder per profile named after it.
 #[tauri::command]
 #[specta::specta]
 pub async fn copy_captures(
     app: AppHandle,
     profile_ids: Vec<String>,
     dest: String,
-) -> CommandResult<u32> {
+) -> CommandResult<captures::CopiedCaptures> {
     blocking(move || {
         let db = app.state::<Db>();
         let profiles = profile_ids

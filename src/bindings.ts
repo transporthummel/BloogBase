@@ -36,9 +36,9 @@ export const commands = {
 	activateWorld: (profileId: string, worldId: number) => typedError<null, CommandError>(__TAURI_INVOKE("activate_world", { profileId, worldId })),
 	/**
 	 *  Copies the screenshots and videos of profiles into a folder the player
-	 *  chose, one folder per profile named after it; how many were copied.
+	 *  chose, one folder per profile named after it.
 	 */
-	copyCaptures: (profileIds: string[], dest: string) => typedError<number, CommandError>(__TAURI_INVOKE("copy_captures", { profileIds, dest })),
+	copyCaptures: (profileIds: string[], dest: string) => typedError<CopiedCaptures, CommandError>(__TAURI_INVOKE("copy_captures", { profileIds, dest })),
 	/**  Deletes a world after backing it up; not while the game runs. */
 	deleteWorld: (profileId: string, worldId: number) => typedError<null, CommandError>(__TAURI_INVOKE("delete_world", { profileId, worldId })),
 	listSaves: (profileId: string) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("list_saves", { profileId })),
@@ -405,6 +405,13 @@ export type Controller =
  */
 export type ControllerTooLate = {
 	profileId: string,
+};
+
+/**  What `copy_to` copied. */
+export type CopiedCaptures = {
+	files: number,
+	/**  The folders they went to, one per profile that had any. */
+	folders: string[],
 };
 
 /**  How a profile takes the custom patches of its game copy. */
