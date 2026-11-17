@@ -105,20 +105,23 @@ export function ProfileActions({
     if (worlds.data && asksFirst(worlds.data.definition)) setOpen("newWorld");
     else onPlay({ type: "new", seed: null, options: {} });
   };
-  // Beside a new one, the worlds played last but the one Continue starts.
-  const startItems: MenuItem[] = [
-    { label: t("worlds.newEllipsis"), onSelect: newWorld },
-    ...(worlds.data?.worlds ?? [])
-      .filter((w) => !w.active)
-      .sort((a, b) => b.lastPlayedAt - a.lastPlayedAt)
-      .slice(0, RECENT_WORLDS)
-      .map((w, i) => ({
-        label: worldName(t, w),
-        icon: <Play className="size-4" />,
-        onSelect: () => onPlay({ type: "continue", id: w.id }),
-        separated: i === 0,
-      })),
-  ];
+  const newLabel =
+    worlds.data && asksFirst(worlds.data.definition) ? t("worlds.newEllipsis") : t("worlds.new");
+  // The worlds played last but the one Continue starts; beside Continue, a
+  // new one too. Without a world going on, a new one is the main action.
+  const active = profile.activeWorld;
+  const recent: MenuItem[] = (worlds.data?.worlds ?? [])
+    .filter((w) => !w.active)
+    .sort((a, b) => b.lastPlayedAt - a.lastPlayedAt)
+    .slice(0, RECENT_WORLDS)
+    .map((w, i) => ({
+      label: worldName(t, w),
+      icon: <Play className="size-4" />,
+      onSelect: () => onPlay({ type: "continue", id: w.id }),
+      separated: active !== null && i === 0,
+    }));
+  const startItems: MenuItem[] =
+    active !== null ? [{ label: t("worlds.newEllipsis"), onSelect: newWorld }, ...recent] : recent;
   // The index or the KeenWiki page may have a newer version.
   const checkable = mod && (mod.indexId || mod.keenwikiUrl);
 
@@ -178,17 +181,19 @@ export function ProfileActions({
   return (
     <div className="grid gap-3">
       <div className="flex items-stretch gap-2">
-        {profile.worlds && !blocked && !profile.running && profile.activeWorld !== null ? (
-          // Says what it does: the world played last goes on; the arrow
-          // begins a new one (§9.6).
+        {profile.worlds && !blocked && !profile.running && startItems.length > 0 ? (
+          // Says what it does: the world played last goes on, else a new one
+          // begins; the arrow offers the other ways to start (§9.6).
           <SplitButton
-            onClick={() => onPlay({ type: "continue", id: profile.activeWorld! })}
+            onClick={() =>
+              active !== null ? onPlay({ type: "continue", id: active }) : newWorld()
+            }
             disabled={!canPlay}
             className="min-w-44 px-8 py-3 text-base"
             menuLabel={t("worlds.more")}
             items={startItems}
           >
-            {t("worlds.continue")}
+            {active !== null ? t("worlds.continue") : newLabel}
           </SplitButton>
         ) : (
           <PlayButton
@@ -205,9 +210,7 @@ export function ProfileActions({
                 : profile.running
                   ? t("library.running")
                   : profile.worlds
-                    ? worlds.data && asksFirst(worlds.data.definition)
-                      ? t("worlds.newEllipsis")
-                      : t("worlds.new")
+                    ? newLabel
                     : t("library.play")}
           </PlayButton>
         )}

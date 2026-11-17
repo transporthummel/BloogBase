@@ -1369,6 +1369,27 @@ test("the arrow beside Continue offers the five worlds played last", async () =>
   );
 });
 
+test("without a world going on, the arrow beside New world offers the others", async () => {
+  withWorlds(null);
+  vi.mocked(commands.profileWorlds).mockResolvedValue(
+    ok({
+      ...randomiser,
+      worlds: randomiser.worlds.map((w) => ({ ...w, active: false })),
+      active: null,
+    }),
+  );
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "More ways to start" }));
+  const items = await screen.findAllByRole("menuitem");
+  expect(items.map((i) => i.textContent)).toEqual(["Seed 4711", "Hard one"]);
+  await userEvent.click(items[1]);
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 1 }),
+  );
+  await userEvent.click(screen.getByRole("button", { name: "Start new world…" }));
+  expect(await screen.findByRole("dialog", { name: "Start new world" })).toBeInTheDocument();
+});
+
 test("without a world played, Play begins one", async () => {
   withWorlds(null);
   renderDetail();
