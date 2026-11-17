@@ -1636,6 +1636,36 @@ html:not(.js) .walker,
   font-size: 0.95rem;
 }
 
+/* Privacy (privacy.html): one column of text to read through. */
+.legal-text {
+  width: min(44rem, 100% - 2 * var(--gutter));
+  margin-inline: auto;
+  padding-top: clamp(2.5rem, 8vh, 5rem);
+}
+
+.legal-text h1 {
+  font: 800 clamp(2.1rem, 5vw, 3.5rem)/1.1 var(--sans);
+  letter-spacing: -0.025em;
+}
+
+.press main.legal-text > section {
+  width: auto;
+  margin-top: clamp(2.5rem, 6vh, 3.5rem);
+}
+
+.legal-text section p {
+  color: var(--muted);
+  margin: 1rem 0 0;
+}
+
+.legal-text .stars {
+  color: var(--muted);
+}
+
+.legal-text strong {
+  color: var(--ink);
+}
+
 .footer-top a[aria-current="page"] {
   color: var(--ink);
 }

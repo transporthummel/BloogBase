@@ -23,6 +23,7 @@ const LANGUAGES = ["en", "de"];
 const PAGES = [
   { template: "page.html", dir: "" },
   { template: "press.html", dir: "press/" },
+  { template: "privacy.html", dir: "privacy/" },
 ];
 const PRESS_ZIP = "bloogbase-press-kit.zip";
 const shotsDir = path.join(root, "docs", "screenshots");

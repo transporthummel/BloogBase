@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="{{@lang}}">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {{@languageScript}}
+    <title>{{privacy.meta.title}}</title>
+    <meta name="description" content="{{privacy.meta.description}}" />
+    <meta name="theme-color" content="#0d0c1d" />
+    <link rel="canonical" href="{{@url}}" />
+    <link rel="alternate" hreflang="en" href="{{@urlEn}}" />
+    <link rel="alternate" hreflang="de" href="{{@urlDe}}" />
+    <link rel="alternate" hreflang="x-default" href="{{@urlEn}}" />
+    <link rel="icon" type="image/svg+xml" href="{{@root}}img/icon.svg" />
+    <link
+      rel="preload"
+      href="{{@root}}fonts/press-start-2p-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="{{@root}}fonts/inter-latin-wght-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="{{@root}}style.css" />
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+    <script src="{{@root}}press.js" defer></script>
+  </head>
+  <body class="press legal">
+    <div class="sky" aria-hidden="true">
+      <div class="sky-layer sky-far"></div>
+      <div class="sky-layer sky-mid"></div>
+      <div class="sky-layer sky-near"></div>
+    </div>
+
+    <a class="skip" href="#main">{{nav.skip}}</a>
+
+    <header class="topbar">
+      <a class="wordmark" href="{{@home}}">
+        <img src="{{@root}}img/icon.svg" alt="" width="32" height="32" />
+        <span>BloogBase</span>
+      </a>
+      <nav aria-label="{{privacy.nav.label}}">
+        <a
+          class="lang"
+          href="{{@otherUrl}}"
+          hreflang="{{@otherLang}}"
+          lang="{{@otherLang}}"
+          aria-label="{{privacy.nav.languageLabel}}"
+          >{{nav.language}}</a
+        >
+      </nav>
+    </header>
+
+    <main id="main" class="legal-text">
+      <h1>{{privacy.title}}</h1>
+      <p class="lead">{{privacy.lead}}</p>
+
+      <section aria-labelledby="online-title">
+        <h2 id="online-title">{{privacy.online.title}}</h2>
+        <p>{{privacy.online.intro}}</p>
+        <ul class="stars">
+          <li>{{privacy.online.li1}}</li>
+          <li>{{privacy.online.li2}}</li>
+          <li>{{privacy.online.li3}}</li>
+          <li>{{privacy.online.li4}}</li>
+          <li>{{privacy.online.li5}}</li>
+          <li>{{privacy.online.li6}}</li>
+        </ul>
+        <p>{{privacy.online.request}}</p>
+        <p>{{privacy.online.links}}</p>
+      </section>
+
+      <section aria-labelledby="local-title">
+        <h2 id="local-title">{{privacy.local.title}}</h2>
+        <p>{{privacy.local.text}}</p>
+      </section>
+
+      <section aria-labelledby="reports-title">
+        <h2 id="reports-title">{{privacy.reports.title}}</h2>
+        <p>{{privacy.reports.text}}</p>
+      </section>
+
+      <section aria-labelledby="site-title">
+        <h2 id="site-title">{{privacy.site.title}}</h2>
+        <p>{{privacy.site.text}}</p>
+      </section>
+
+      <section aria-labelledby="contact-title">
+        <h2 id="contact-title">{{privacy.contact.title}}</h2>
+        <p>{{privacy.contact.text}}</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-top">
+        <a class="wordmark" href="{{@home}}" aria-label="{{press.footer.home}}">
+          <svg
+            class="bloog bloog-small"
+            viewBox="0 0 8 8"
+            shape-rendering="crispEdges"
+            aria-hidden="true"
+          >
+            <path class="body" d="M2 1h4v1h1v4h-1v1h-4v-1h-1v-4h1zM2 7h1v1h-1zM5 7h1v1h-1z" />
+            <path class="eye" d="M3 2h2v2h-2z" />
+            <path class="pupil" d="M4 3h1v1h-1z" />
+          </svg>
+          <span>BloogBase</span>
+        </a>
+        <a href="https://github.com/transporthummel/BloogBase">{{footer.source}}</a>
+        <a href="{{@home}}press/">{{footer.press}}</a>
+        <a href="./" aria-current="page">{{footer.privacy}}</a>
+        <a href="{{@otherUrl}}" hreflang="{{@otherLang}}" lang="{{@otherLang}}">{{nav.language}}</a>
+      </div>
+      <p>{{footer.license}}</p>
+      <p>{{footer.trademark}}</p>
+      <p>{{footer.updated}} <time datetime="{{@updatedIso}}">{{@updated}}</time></p>
+    </footer>
+  </body>
+</html>

@@ -3,7 +3,8 @@
 The project website lives in `site/` and is published to GitHub Pages at
 `https://transporthummel.github.io/BloogBase/` (English) and `…/de/`
 (German), together with the mod index at `…/index/`. The press kit is at
-`…/press/` and `…/de/press/`, linked from the footer.
+`…/press/` and `…/de/press/`, the privacy policy at `…/privacy/` and
+`…/de/privacy/`, both linked from the footer.
 
 ## Files
 
@@ -25,6 +26,11 @@ The project website lives in `site/` and is published to GitHub Pages at
   page's language and `{{svg:<name>}}` its line ("SVG · 1200 × 1304 · 114 KB").
   Its facts, texts to copy and story are in the
   `press.*` texts; the story is the owner's, from the PCKF introduction.
+- `privacy.html`: the privacy policy, with the press kit's placeholders and
+  its sky (`press.js`). Its texts (`privacy.*`) list every host the app
+  fetches from; when the app goes online for something new (a host in
+  `src-tauri/catalog/free-games.json`, a new kind of download), update them
+  with it. SignPath and the Microsoft Store link to it.
 - `i18n/en.json`, `i18n/de.json`: every text, the same keys in both; the
   build stops when one is missing. Texts may hold inline HTML.
 - `style.css`: the app's Midnight Galaxy colours, type and components
@@ -51,7 +57,8 @@ The project website lives in `site/` and is published to GitHub Pages at
   button, and stands still as a row to scroll with reduced motion.
 - `fonts/`: Inter and Press Start 2P (latin), with their OFL licences.
 - `build.mjs`: writes `site/dist/` (ignored): `index.html`, `de/index.html`,
-  `press/index.html`, `de/press/index.html`, the screenshots, the controller charts
+  `press/index.html`, `de/press/index.html`, `privacy/index.html`,
+  `de/privacy/index.html`, the screenshots, the controller charts
   of `docs/controller/` (in `img/controller/`), logo and icon
   (SVGs from `src/assets/`, also full size: `docs/logo.png` and
   `docs/logo-light.png` and the 512px app icon), fonts, styles, scripts and
