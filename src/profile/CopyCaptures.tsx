@@ -12,7 +12,7 @@ import { Notice } from "../ui/Notice";
  * "Copy to a folder…" for the screenshots and videos of profiles (with
  * `kind`, only those): each goes into a folder named after its game or mod
  * in the folder the player picks. The button and what came of it, to be
- * placed apart, and `start` for a menu item.
+ * placed apart.
  */
 export function useCopyCaptures(profileIds: string[], kind: Kind | null = null) {
   const { t } = useTranslation();
@@ -48,5 +48,5 @@ export function useCopyCaptures(profileIds: string[], kind: Kind | null = null) 
       {copy.error && <Notice tone="error">{errorMessage(t, copy.error)}</Notice>}
     </>
   );
-  return { button, result, start: () => copy.mutate(), pending: copy.isPending };
+  return { button, result };
 }

@@ -862,7 +862,6 @@
   },
   "screenshots": {
     "hint": "Press {{key}} while playing to take a screenshot.",
-    "folderMenu": "Folder",
     "openFolder": "Open folder",
     "emptyTitle": "No screenshots yet",
     "empty": "Press {{key}} while playing to keep a moment. Your screenshots show up here.",

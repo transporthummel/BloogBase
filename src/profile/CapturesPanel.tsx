@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
-import { ChevronDown, ChevronLeft, ChevronRight, Copy, FolderOpen, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FolderOpen, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Profile } from "../bindings";
@@ -10,7 +10,6 @@ import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { EmptyState } from "../ui/EmptyState";
 import { Loading } from "../ui/Loading";
-import { Menu } from "../ui/Menu";
 import { Notice } from "../ui/Notice";
 import { useCopyCaptures } from "./CopyCaptures";
 
@@ -72,42 +71,15 @@ export function CapturesPanel<T extends Capture>({
     <div className="grid gap-4">
       {/* Without any, the empty state says the same and the folder is empty. */}
       {list.length > 0 && (
-        // Narrow, the two buttons fold into one menu beside the hint.
-        <div className="@container">
-          <div className="flex items-center gap-3">
-            <p className="mr-auto text-sm text-muted">{t(`${kind}.hint`, { key: hotkey })}</p>
-            <div className="hidden shrink-0 gap-2 @2xl:flex">
-              {copy.button}
-              <Button variant="secondary" onClick={() => openFolder.mutate()}>
-                <FolderOpen className="size-4" aria-hidden />
-                {t("screenshots.openFolder")}
-              </Button>
-            </div>
-            <div className="shrink-0 @2xl:hidden">
-              <Menu
-                label={t("screenshots.folderMenu")}
-                trigger={
-                  <>
-                    <FolderOpen className="size-4" aria-hidden />
-                    {t("screenshots.folderMenu")}
-                    <ChevronDown className="size-4" aria-hidden />
-                  </>
-                }
-                items={[
-                  {
-                    label: t("copyCaptures.copy"),
-                    icon: <Copy className="size-4" />,
-                    onSelect: copy.start,
-                    disabled: copy.pending,
-                  },
-                  {
-                    label: t("screenshots.openFolder"),
-                    icon: <FolderOpen className="size-4" />,
-                    onSelect: () => openFolder.mutate(),
-                  },
-                ]}
-              />
-            </div>
+        // The buttons keep their place on the right; the hint wraps beside them.
+        <div className="flex items-center gap-3">
+          <p className="mr-auto text-sm text-muted">{t(`${kind}.hint`, { key: hotkey })}</p>
+          <div className="flex shrink-0 gap-2">
+            {copy.button}
+            <Button variant="secondary" onClick={() => openFolder.mutate()}>
+              <FolderOpen className="size-4" aria-hidden />
+              {t("screenshots.openFolder")}
+            </Button>
           </div>
         </div>
       )}
