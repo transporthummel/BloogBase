@@ -73,11 +73,14 @@ export function CapturesPanel<T extends Capture>({
       {list.length > 0 && (
         <div className="flex flex-wrap items-center gap-3">
           <p className="mr-auto text-sm text-muted">{t(`${kind}.hint`, { key: hotkey })}</p>
-          {copy.button}
-          <Button variant="secondary" onClick={() => openFolder.mutate()}>
-            <FolderOpen className="size-4" aria-hidden />
-            {t("screenshots.openFolder")}
-          </Button>
+          {/* Together and to the right, also when they wrap below the hint. */}
+          <div className="ml-auto flex flex-wrap justify-end gap-2">
+            {copy.button}
+            <Button variant="secondary" onClick={() => openFolder.mutate()}>
+              <FolderOpen className="size-4" aria-hidden />
+              {t("screenshots.openFolder")}
+            </Button>
+          </div>
         </div>
       )}
       {copy.result}
