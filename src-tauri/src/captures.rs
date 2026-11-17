@@ -7,7 +7,7 @@ use std::io::{self, BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::error::{Error, Result};
@@ -66,7 +66,8 @@ pub struct VideoAudio {
     pub chunks: Vec<[u32; 2]>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub enum Kind {
     Screenshot,
     Video,
@@ -206,20 +207,24 @@ pub struct CopiedCaptures {
 }
 
 /// Copies the screenshots and videos of each profile, given with its name,
-/// into a folder of that name in `dest`, e.g. before removing it. Files
-/// already there are kept: a copy of the same name gets a number.
+/// into a folder of that name in `dest`, e.g. before removing it; with
+/// `kind`, only those. Files already there are kept: a copy of the same
+/// name gets a number.
 pub fn copy_to(
     paths: &AppPaths,
     profiles: &[(String, String)],
+    kind: Option<Kind>,
     dest: &Path,
 ) -> Result<CopiedCaptures> {
     let mut copied = 0;
     let mut folders = Vec::new();
     for (profile_id, name) in profiles {
-        let files: Vec<Entry> = entries(paths, profile_id, Kind::Screenshot)?
-            .into_iter()
-            .chain(entries(paths, profile_id, Kind::Video)?)
-            .collect();
+        let mut files = Vec::new();
+        for k in [Kind::Screenshot, Kind::Video] {
+            if kind.is_none_or(|kind| kind == k) {
+                files.extend(entries(paths, profile_id, k)?);
+            }
+        }
         if files.is_empty() {
             continue;
         }
@@ -570,7 +575,7 @@ mod tests {
             ("keen4-1".to_string(), "Keen 4: Secret?".to_string()),
             ("empty".to_string(), "Nothing".to_string()),
         ];
-        let copied = copy_to(&paths, &profiles, &dest).unwrap();
+        let copied = copy_to(&paths, &profiles, None, &dest).unwrap();
         let out = dest.join("Keen 4_ Secret_");
         assert_eq!(copied.files, 2);
         assert_eq!(copied.folders, [out.display().to_string()]);
@@ -580,8 +585,13 @@ mod tests {
         // Nothing to copy, no folder.
         assert!(!dest.join("Nothing").exists());
         // Again: the first copies stay.
-        assert_eq!(copy_to(&paths, &profiles, &dest).unwrap().files, 2);
+        assert_eq!(copy_to(&paths, &profiles, None, &dest).unwrap().files, 2);
         assert!(out.join("image0001 (2).png").is_file());
+        // Only one kind, from a tab.
+        let only = copy_to(&paths, &profiles, Some(Kind::Video), &dest).unwrap();
+        assert_eq!(only.files, 1);
+        assert!(out.join("video0001 (3).avi").is_file());
+        assert!(!out.join("image0001 (3).png").exists());
         assert_eq!(folder_name(" .. ", "keen4-1"), "keen4-1");
     }
 

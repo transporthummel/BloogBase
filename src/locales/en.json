@@ -683,7 +683,9 @@
     "screenshots_other": "{{count}} screenshots",
     "videos_one": "1 video",
     "videos_other": "{{count}} videos",
-    "and": "{{a}} and {{b}}",
+    "and": "{{a}} and {{b}}"
+  },
+  "copyCaptures": {
     "copy": "Copy to a folder…",
     "files_one": "1 file",
     "files_other": "{{count}} files",

@@ -36,9 +36,9 @@ export const commands = {
 	activateWorld: (profileId: string, worldId: number) => typedError<null, CommandError>(__TAURI_INVOKE("activate_world", { profileId, worldId })),
 	/**
 	 *  Copies the screenshots and videos of profiles into a folder the player
-	 *  chose, one folder per profile named after it.
+	 *  chose, one folder per profile named after it; with `kind`, only those.
 	 */
-	copyCaptures: (profileIds: string[], dest: string) => typedError<CopiedCaptures, CommandError>(__TAURI_INVOKE("copy_captures", { profileIds, dest })),
+	copyCaptures: (profileIds: string[], kind: Kind | null, dest: string) => typedError<CopiedCaptures, CommandError>(__TAURI_INVOKE("copy_captures", { profileIds, kind, dest })),
 	/**  Deletes a world after backing it up; not while the game runs. */
 	deleteWorld: (profileId: string, worldId: number) => typedError<null, CommandError>(__TAURI_INVOKE("delete_world", { profileId, worldId })),
 	listSaves: (profileId: string) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("list_saves", { profileId })),
@@ -852,6 +852,8 @@ export type KeenwikiProgress = {
 	received: number,
 	total: number,
 };
+
+export type Kind = "screenshot" | "video";
 
 export type LaunchPhase = "starting" | 
 /**  DOSBox's window is up. */

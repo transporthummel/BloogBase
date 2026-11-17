@@ -9,7 +9,8 @@
       "A game that comes with a mod is only offered when you don't have that game yet.",
       "Randomised mods keep their worlds: replay a seed, with its own saves.",
       "A game folder with a mod's levels copied in is added as a mod.",
-      "Removing a mod or game says if screenshots or videos go with it, and can copy them first."
+      "Removing a mod or game says if screenshots or videos go with it, and can copy them first.",
+      "Screenshots and videos can be copied to a folder."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -20,7 +21,8 @@
       "Ein Spiel, das mit einer Mod kommt, wird nur angeboten, wenn du das Spiel noch nicht hast.",
       "Zufalls-Mods behalten ihre Welten: Seeds erneut spielen, mit eigenen Spielständen.",
       "Ein Spielordner mit hineinkopierten Leveln einer Mod wird als Mod hinzugefügt.",
-      "Beim Entfernen einer Mod oder eines Spiels steht da, ob Screenshots oder Videos mitgehen, und kann sie vorher kopieren."
+      "Beim Entfernen einer Mod oder eines Spiels steht da, ob Screenshots oder Videos mitgehen, und kann sie vorher kopieren.",
+      "Screenshots und Videos lassen sich in einen Ordner kopieren."
     ]
   },
   "releases": [

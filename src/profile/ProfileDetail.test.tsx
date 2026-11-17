@@ -370,7 +370,7 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
     ok({ files: 1, folders: ["C:/Keepers/Aurora Bliss"] }),
   );
   await userEvent.click(within(dialog).getByRole("button", { name: "Copy to a folder…" }));
-  expect(commands.copyCaptures).toHaveBeenCalledWith(["keen4-1"], "C:/Keepers");
+  expect(commands.copyCaptures).toHaveBeenCalledWith(["keen4-1"], null, "C:/Keepers");
   // One of each: said in the singular.
   expect(dialog).toHaveTextContent("This also deletes 1 video. Unlike saves, no backup keeps it.");
   expect(await within(dialog).findByText(/^Copied 1 file to:/)).toHaveTextContent(
@@ -947,6 +947,20 @@ test("screenshots open in a viewer and delete after a second click", async () =>
   expect(commands.deleteScreenshot).not.toHaveBeenCalled();
   await userEvent.click(within(dialog).getByRole("button", { name: "Really delete?" }));
   expect(commands.deleteScreenshot).toHaveBeenCalledWith("keen4-1", "image0002.png");
+});
+
+test("a tab copies its screenshots to a folder", async () => {
+  vi.mocked(commands.listScreenshots).mockResolvedValue(ok([shot("image0001.png", 1)]));
+  vi.mocked(openDialog).mockResolvedValue("C:/Keepers");
+  vi.mocked(commands.copyCaptures).mockResolvedValue(
+    ok({ files: 1, folders: ["C:/Keepers/Keen 4"] }),
+  );
+  renderDetail();
+  await userEvent.click(await screen.findByRole("tab", { name: /^Screenshots/ }));
+  await userEvent.click(await screen.findByRole("button", { name: "Copy to a folder…" }));
+  // Only screenshots, not the videos too.
+  expect(commands.copyCaptures).toHaveBeenCalledWith(["keen4-1"], "screenshot", "C:/Keepers");
+  expect(await screen.findByText(/^Copied 1 file to:/)).toHaveTextContent("C:/Keepers/Keen 4");
 });
 
 test("videos show their first frame and length, and open in a player", async () => {

@@ -11,6 +11,7 @@ import { Dialog } from "../ui/Dialog";
 import { EmptyState } from "../ui/EmptyState";
 import { Loading } from "../ui/Loading";
 import { Notice } from "../ui/Notice";
+import { useCopyCaptures } from "./CopyCaptures";
 
 type Capture = { file: string; takenAt: number | null };
 
@@ -48,6 +49,8 @@ export function CapturesPanel<T extends Capture>({
     setConfirming(false);
   };
 
+  // Only this tab's kind.
+  const copy = useCopyCaptures([profile.id], kind === "screenshots" ? "screenshot" : "video");
   const openFolder = useMutation({
     mutationFn: () => unwrap(commands.openCaptureFolder(profile.id)),
   });
@@ -70,12 +73,14 @@ export function CapturesPanel<T extends Capture>({
       {list.length > 0 && (
         <div className="flex flex-wrap items-center gap-3">
           <p className="mr-auto text-sm text-muted">{t(`${kind}.hint`, { key: hotkey })}</p>
+          {copy.button}
           <Button variant="secondary" onClick={() => openFolder.mutate()}>
             <FolderOpen className="size-4" aria-hidden />
             {t("screenshots.openFolder")}
           </Button>
         </div>
       )}
+      {copy.result}
       {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
       {captures.isPending && <Loading />}
       {captures.data?.length === 0 && (

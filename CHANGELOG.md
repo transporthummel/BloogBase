@@ -17,6 +17,7 @@
 - A mod's "DOSBox & patches" tab is called "DOSBox settings", as its patches are edited on the game's page.
 - A folder or ZIP holding a mod and its game offers to add the game only while the library has no copy of that game; another release of it is enough for the mod.
 - Removing a mod or game says how many screenshots and videos go with it (with its mods, theirs too), as no backup keeps them, and can copy them to a folder first, one folder per game or mod.
+- The Screenshots and Videos tabs can copy them to a folder, into a folder named after the game or mod.
 
 ### Bug Fixes
 
