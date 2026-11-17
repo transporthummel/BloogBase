@@ -241,7 +241,9 @@ function Stats({ profile, added }: { profile: Profile; added?: number }) {
       <p className="text-sm text-muted">
         {[
           t("library.neverPlayed"),
-          t("library.saveCount", { count: profile.saveCount }),
+          profile.worlds
+            ? t("library.worldCount", { count: profile.worldCount })
+            : t("library.saveCount", { count: profile.saveCount }),
           added !== undefined && `${t("profile.added")} ${formatDate(i18n.language, added)}`,
         ]
           .filter(Boolean)
@@ -261,7 +263,10 @@ function Stats({ profile, added }: { profile: Profile; added?: number }) {
       t("library.lastPlayed"),
       profile.lastPlayedAt === null ? "–" : <RelativeTime at={profile.lastPlayedAt} />,
     ],
-    [t("library.saveCountLabel"), String(profile.saveCount)],
+    // A mod with worlds has the saves of one only: its worlds instead.
+    profile.worlds
+      ? [t("library.worldCountLabel"), String(profile.worldCount)]
+      : [t("library.saveCountLabel"), String(profile.saveCount)],
   ];
   if (added !== undefined) stats.push([t("profile.added"), formatDate(i18n.language, added)]);
   // Columns, so the second row lines up with the first.

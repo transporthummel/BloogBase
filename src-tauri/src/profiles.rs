@@ -55,6 +55,9 @@ pub struct Profile {
     pub worlds: bool,
     /// The world played last, which "Play" goes on with.
     pub active_world: Option<u32>,
+    /// How many worlds it keeps; the library shows them instead of the
+    /// saves, which are only the active world's.
+    pub world_count: u32,
 }
 
 /// The mod another one is played over.
@@ -124,7 +127,8 @@ const SELECT: &str = "
            COALESCE(m.standalone, 0),
            (SELECT gp.id FROM profiles gp
             WHERE p.mod_id IS NOT NULL AND gp.install_id = p.install_id AND gp.mod_id IS NULL),
-           m.worlds_json IS NOT NULL, p.active_world
+           m.worlds_json IS NOT NULL, p.active_world,
+           (SELECT COUNT(*) FROM worlds w WHERE w.profile_id = p.id)
     FROM profiles p
     LEFT JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id
@@ -211,6 +215,7 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             game_profile_id: r.get(21)?,
             worlds: r.get(22)?,
             active_world: r.get(23)?,
+            world_count: r.get(24)?,
         },
         layers: Layers {
             lower: install_path.map(|p| p.join("base")),

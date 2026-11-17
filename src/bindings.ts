@@ -1034,6 +1034,11 @@ export type Profile = {
 	worlds: boolean,
 	/**  The world played last, which "Play" goes on with. */
 	activeWorld: number | null,
+	/**
+	 *  How many worlds it keeps; the library shows them instead of the
+	 *  saves, which are only the active world's.
+	 */
+	worldCount: number,
 };
 
 export type ProfileConfig = {
