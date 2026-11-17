@@ -1359,7 +1359,8 @@ test("the Worlds tab lists the worlds and plays, renames and deletes them", asyn
   vi.mocked(commands.renameWorld).mockResolvedValue(ok(null));
   vi.mocked(commands.deleteWorld).mockResolvedValue(ok(null));
   renderDetail();
-  await userEvent.click(await screen.findByRole("tab", { name: "Worlds" }));
+  // Counted, like saves.
+  await userEvent.click(await screen.findByRole("tab", { name: "Worlds 2" }));
   const rows = await screen.findAllByRole("listitem");
   expect(rows[0]).toHaveTextContent("Seed 4711");
   expect(rows[0]).toHaveTextContent("Playing");
@@ -1397,5 +1398,5 @@ test("the Saves tab names the world whose saves it shows", async () => {
   expect(await screen.findByText("Seed 4711")).toBeInTheDocument();
   expect(screen.getByText(/world Hard one/)).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "All worlds" }));
-  expect(screen.getByRole("tab", { name: "Worlds" })).toHaveAttribute("aria-selected", "true");
+  expect(screen.getByRole("tab", { name: /^Worlds/ })).toHaveAttribute("aria-selected", "true");
 });

@@ -23,7 +23,7 @@ import { SavesPanel } from "./SavesPanel";
 import { ScreenshotsPanel } from "./ScreenshotsPanel";
 import { VideosPanel } from "./VideosPanel";
 import { WorldsPanel } from "./WorldsPanel";
-import { worldsKey } from "./worlds";
+import { useWorlds, worldsKey } from "./worlds";
 import { screenshotsKey, useScreenshots, useVideos, videosKey } from "./captures";
 import { backupsKey, savesKey, useSaves } from "./saves";
 
@@ -89,6 +89,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   const saves = useSaves(profileId);
   const shots = useScreenshots(profileId);
   const videos = useVideos(profileId);
+  const worlds = useWorlds({ id: profileId, worlds: !!profile?.worlds });
 
   function play(start: WorldStart | null) {
     if (!profile) return;
@@ -112,7 +113,14 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
     ...(game && !profile?.modId
       ? [{ id: "controls" as const, label: t("profile.tabControls") }]
       : []),
-    ...(profile?.worlds ? [{ id: "worlds" as const, label: t("profile.tabWorlds") }] : []),
+    ...(profile?.worlds
+      ? [
+          {
+            id: "worlds" as const,
+            label: <Counted label={t("profile.tabWorlds")} items={worlds.data?.worlds} />,
+          },
+        ]
+      : []),
     { id: "saves", label: <Counted label={t("profile.tabSaves")} items={saves.data} /> },
     {
       id: "screenshots",
