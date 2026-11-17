@@ -29,6 +29,11 @@ export const commands = {
 	/**  Names a world; without a name it gets its default back. */
 	renameWorld: (profileId: string, worldId: number, name: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("rename_world", { profileId, worldId, name })),
 	setWorldFavourite: (profileId: string, worldId: number, favourite: boolean) => typedError<null, CommandError>(__TAURI_INVOKE("set_world_favourite", { profileId, worldId, favourite })),
+	/**
+	 *  Makes a world the one played without starting it, so its saves show;
+	 *  not while the game runs.
+	 */
+	activateWorld: (profileId: string, worldId: number) => typedError<null, CommandError>(__TAURI_INVOKE("activate_world", { profileId, worldId })),
 	/**  Deletes a world after backing it up; not while the game runs. */
 	deleteWorld: (profileId: string, worldId: number) => typedError<null, CommandError>(__TAURI_INVOKE("delete_world", { profileId, worldId })),
 	listSaves: (profileId: string) => typedError<SaveFile[], CommandError>(__TAURI_INVOKE("list_saves", { profileId })),

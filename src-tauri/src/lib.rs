@@ -80,6 +80,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::profile_worlds,
             commands::rename_world,
             commands::set_world_favourite,
+            commands::activate_world,
             commands::delete_world,
             commands::list_saves,
             commands::save_versions,

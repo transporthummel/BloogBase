@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Pencil, Play, Star, Trash2 } from "lucide-react";
+import { CircleCheck, Copy, Pencil, Play, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Profile, type World, type WorldStart } from "../bindings";
@@ -63,13 +63,27 @@ export function WorldsPanel({
       queryClient.invalidateQueries({ queryKey: backupsKey(profile.id) });
     },
   });
+  const makeCurrent = useMutation({
+    mutationFn: (w: World) => unwrap(commands.activateWorld(profile.id, w.id)),
+    onSuccess: (_, w) => {
+      setMessage(t("worlds.madeCurrent", { name: worldName(t, w) }));
+      refresh();
+      queryClient.invalidateQueries({ queryKey: savesKey(profile.id) });
+    },
+  });
   const copySeed = useMutation({
     mutationFn: (seed: number) => navigator.clipboard.writeText(String(seed)),
     onSuccess: () => setMessage(t("worlds.seedCopied")),
   });
 
   const data = worlds.data;
-  const error = worlds.error ?? favourite.error ?? rename.error ?? remove.error ?? copySeed.error;
+  const error =
+    worlds.error ??
+    favourite.error ??
+    rename.error ??
+    remove.error ??
+    makeCurrent.error ??
+    copySeed.error;
   const locked = profile.running;
 
   return (
@@ -138,6 +152,18 @@ export function WorldsPanel({
                     <Play className="size-4" aria-hidden />
                     {t("worlds.play")}
                   </Button>
+                  {!w.active && (
+                    <Button
+                      variant="ghost"
+                      className="px-2"
+                      disabled={locked || makeCurrent.isPending}
+                      onClick={() => makeCurrent.mutate(w)}
+                      aria-label={t("worlds.makeCurrentNamed", { name })}
+                      title={t("worlds.makeCurrent")}
+                    >
+                      <CircleCheck className="size-4" aria-hidden />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     className="px-2"

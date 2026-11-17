@@ -469,6 +469,30 @@ fn saves_from_before_worlds_outlive_pruning() {
 }
 
 #[test]
+fn a_world_made_current_brings_its_saves_without_a_start() {
+    let t = setup();
+    let first = t.new_world(1, "first");
+    t.new_world(2, "second");
+    let played = t
+        .list()
+        .worlds
+        .iter()
+        .find(|w| w.id == first)
+        .unwrap()
+        .last_played_at;
+    activate(&t.paths, &t.db, &t.profile, first).unwrap();
+    assert!(t.read("SAVEGAM0.CK4").contains("first"));
+    let l = t.list();
+    assert_eq!(l.active, Some(first));
+    let w = l.worlds.iter().find(|w| w.id == first).unwrap();
+    assert_eq!(w.last_played_at, played);
+    assert!(matches!(
+        activate(&t.paths, &t.db, &t.profile, 99),
+        Err(Error::NotFound(_))
+    ));
+}
+
+#[test]
 fn a_seed_and_options_already_played_continue_that_world() {
     let t = setup();
     let first = t.new_world(4711, "first");

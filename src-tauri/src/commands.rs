@@ -355,6 +355,21 @@ pub async fn set_world_favourite(
     .await
 }
 
+/// Makes a world the one played without starting it, so its saves show;
+/// not while the game runs.
+#[tauri::command]
+#[specta::specta]
+pub async fn activate_world(
+    app: AppHandle,
+    profile_id: String,
+    world_id: u32,
+) -> CommandResult<()> {
+    with_profile_locked(&app, &profile_id.clone(), move |paths, db| {
+        crate::worlds::activate(paths, db, &profile_id, world_id)
+    })
+    .await
+}
+
 /// Deletes a world after backing it up; not while the game runs.
 #[tauri::command]
 #[specta::specta]

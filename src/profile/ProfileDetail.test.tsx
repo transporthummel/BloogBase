@@ -103,6 +103,7 @@ vi.mock("../bindings", () => {
     "renameWorld",
     "setWorldFavourite",
     "deleteWorld",
+    "activateWorld",
   ];
   return {
     commands: Object.fromEntries(names.map((n) => [n, vi.fn()])),
@@ -1426,6 +1427,24 @@ test("without a world played, Play begins one", async () => {
       options: { startpogo: 1, startammo: 15 },
     }),
   );
+});
+
+test("a world can be made current without playing it", async () => {
+  withWorlds();
+  vi.mocked(commands.activateWorld).mockResolvedValue(ok(null));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("tab", { name: /^Worlds/ }));
+  // Not for the one that is already.
+  await screen.findByRole("button", { name: "Make Hard one current without playing" });
+  expect(
+    screen.queryByRole("button", { name: "Make Seed 4711 current without playing" }),
+  ).toBeNull();
+  await userEvent.click(
+    screen.getByRole("button", { name: "Make Hard one current without playing" }),
+  );
+  expect(commands.activateWorld).toHaveBeenCalledWith("keen4-1", 1);
+  expect(await screen.findByText(/“Hard one” is current now/)).toBeInTheDocument();
+  expect(commands.launchProfile).not.toHaveBeenCalled();
 });
 
 test("the Worlds tab lists the worlds and plays, renames and deletes them", async () => {

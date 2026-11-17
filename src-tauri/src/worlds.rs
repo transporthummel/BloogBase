@@ -768,8 +768,8 @@ pub fn delete(paths: &AppPaths, db: &Db, profile_id: &str, id: u32) -> Result<()
     Ok(())
 }
 
-/// Makes `id` the world played, for restoring one of its backups. Not
-/// while the game runs.
+/// Makes `id` the world played without starting it: for the player to see
+/// its saves, or to restore one of its backups. Not while the game runs.
 pub fn activate(paths: &AppPaths, db: &Db, profile_id: &str, id: u32) -> Result<()> {
     let def = definition(db, profile_id)?
         .ok_or_else(|| Error::NotFound(format!("worlds of {profile_id}")))?;
