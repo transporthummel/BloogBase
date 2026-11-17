@@ -676,6 +676,14 @@
     "tabControls": "Steuerung",
     "tabWorlds": "Welten"
   },
+  "removeCaptures": {
+    "text": "Dabei werden auch {{what}} gelöscht. Anders als Spielstände bleiben sie nicht als Sicherung erhalten.",
+    "screenshots_one": "1 Screenshot",
+    "screenshots_other": "{{count}} Screenshots",
+    "videos_one": "1 Video",
+    "videos_other": "{{count}} Videos",
+    "and": "{{a}} und {{b}}"
+  },
   "saves": {
     "title": "Spielstände",
     "empty": "Noch keine Spielstände. Speichere im Spiel, dann erscheinen sie hier.",

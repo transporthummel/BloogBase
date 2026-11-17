@@ -16,6 +16,7 @@
 - "Runs on Keen 4 v1.4 EGA" under a mod, in the library and on its page, links the game's page, as the mod it's played over already was.
 - A mod's "DOSBox & patches" tab is called "DOSBox settings", as its patches are edited on the game's page.
 - A folder or ZIP holding a mod and its game offers to add the game only while the library has no copy of that game; another release of it is enough for the mod.
+- Removing a mod or game says how many screenshots and videos go with it (with its mods, theirs too), as no backup keeps them.
 
 ### Bug Fixes
 

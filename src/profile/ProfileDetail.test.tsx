@@ -356,9 +356,13 @@ test("a mod is removed from its page, keeping saves unless unticked", async () =
     src: "keen5.png",
     scrambled: false,
   });
+  vi.mocked(commands.listVideos).mockResolvedValue(
+    ok([{ ...shot("video0001.avi", 1), size: 1000, duration: null, thumbnail: null }]),
+  );
   renderDetail(client);
   await pick("Remove");
   const dialog = screen.getByRole("dialog");
+  expect(await within(dialog).findByText(/This also deletes 1 video\./)).toBeInTheDocument();
   await userEvent.click(within(dialog).getByRole("checkbox"));
   await userEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
   expect(commands.deleteMod).toHaveBeenCalledWith("aurora-bliss", false);
@@ -379,6 +383,8 @@ test("without saves, removing asks only about backups that would go", async () =
   await pick("Remove");
   await vi.waitFor(() => expect(commands.listBackups).toHaveBeenCalled());
   expect(within(screen.getByRole("dialog")).queryByRole("checkbox")).toBeNull();
+  // No screenshots or videos, nothing said about them.
+  expect(within(screen.getByRole("dialog")).queryByText(/also deletes/)).toBeNull();
 
   cleanup();
   const manual = { ...backup, id: 8, label: "mine", reason: null, auto: false };
@@ -523,6 +529,16 @@ test("a game is removed from its page, with its mods if asked", async () => {
   ]) {
     client.setQueryData(["cover", id, installId], { src: `${id}.png`, scrambled: false });
   }
+  vi.mocked(commands.listScreenshots).mockImplementation(async (id) =>
+    ok(id === "keen4-1" ? [shot("image0001.png", 1), shot("image0002.png", 2)] : []),
+  );
+  vi.mocked(commands.listVideos).mockImplementation(async (id) =>
+    ok(
+      id === "aurora-bliss"
+        ? [{ ...shot("video0001.avi", 1), size: 1000, duration: null, thumbnail: null }]
+        : [],
+    ),
+  );
   renderDetail(client);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "More" }));
@@ -535,7 +551,13 @@ test("a game is removed from its page, with its mods if asked", async () => {
     name: "Also remove the mod played on it",
   });
   expect(dialog).toHaveTextContent("Otherwise they move to another copy");
+  // Screenshots and videos go without a backup: the game's, and with its
+  // mods theirs.
+  expect(await within(dialog).findByText(/This also deletes 2 screenshots\./)).toBeInTheDocument();
   await user.click(withMods);
+  expect(
+    await within(dialog).findByText(/This also deletes 2 screenshots and 1 video\./),
+  ).toBeInTheDocument();
   await user.click(within(dialog).getByRole("button", { name: "Remove" }));
   expect(commands.removeGame).toHaveBeenCalledWith("keen4-1", true, true);
   expect(navigate).toHaveBeenCalledWith({ to: "/" });

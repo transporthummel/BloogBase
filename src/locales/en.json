@@ -676,6 +676,14 @@
     "tabControls": "Controls",
     "tabWorlds": "Worlds"
   },
+  "removeCaptures": {
+    "text": "This also deletes {{what}}. Unlike saves, no backup keeps them.",
+    "screenshots_one": "1 screenshot",
+    "screenshots_other": "{{count}} screenshots",
+    "videos_one": "1 video",
+    "videos_other": "{{count}} videos",
+    "and": "{{a}} and {{b}}"
+  },
   "saves": {
     "title": "Saved games",
     "empty": "No saved games yet. Save in the game and they show up here.",

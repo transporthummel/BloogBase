@@ -10,6 +10,7 @@ import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
 import { KeepSaves } from "../profile/KeepSaves";
+import { LostCaptures } from "../profile/LostCaptures";
 
 /** Asks before removing a mod; saves and backups are kept unless unticked. */
 export function RemoveModDialog({
@@ -48,6 +49,7 @@ export function RemoveModDialog({
         </p>
       )}
       <KeepSaves profile={profile} checked={keepSaves} onChange={setKeepSaves} />
+      <LostCaptures profileIds={[profile.id, ...extensions.map((m) => m.profileId)]} />
       {remove.error && <Notice tone="error">{errorMessage(t, remove.error)}</Notice>}
       <div className="flex justify-end gap-3">
         <Button variant="ghost" onClick={onClose} data-autofocus>

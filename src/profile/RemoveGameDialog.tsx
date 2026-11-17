@@ -4,10 +4,12 @@ import { useTranslation } from "react-i18next";
 import { commands, type Profile } from "../bindings";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
+import { useProfiles } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
 import { KeepSaves } from "./KeepSaves";
+import { LostCaptures } from "./LostCaptures";
 
 /** Asks before uninstalling a game, and whether its mods go too. */
 export function RemoveGameDialog({
@@ -27,6 +29,11 @@ export function RemoveGameDialog({
   const { t } = useTranslation();
   const [keepSaves, setKeepSaves] = useState(true);
   const [withMods, setWithMods] = useState(false);
+  const profiles = useProfiles();
+  // With its mods, theirs go too.
+  const modProfiles = withMods
+    ? (profiles.data ?? []).filter((p) => p.installId === installId && p.modId !== null)
+    : [];
   const remove = useMutation({
     mutationFn: () => unwrap(commands.removeGame(installId, keepSaves, withMods)),
     onSuccess: onRemoved,
@@ -51,6 +58,7 @@ export function RemoveGameDialog({
           )}
         </div>
       )}
+      <LostCaptures profileIds={[profile.id, ...modProfiles.map((p) => p.id)]} />
       {remove.error && <Notice tone="error">{errorMessage(t, remove.error)}</Notice>}
       <div className="flex justify-end gap-3">
         <Button variant="ghost" onClick={onClose} data-autofocus>
