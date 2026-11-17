@@ -467,3 +467,36 @@ fn saves_from_before_worlds_outlive_pruning() {
     let kept = backups::list(&t.db, &t.profile).unwrap();
     assert!(kept.iter().any(|b| b.reason == Some(Reason::BeforeWorlds)));
 }
+
+#[test]
+fn a_seed_and_options_already_played_continue_that_world() {
+    let t = setup();
+    let first = t.new_world(4711, "first");
+    t.new_world(2, "second");
+    // The default options, given or not, are the same world.
+    let mut options = BTreeMap::new();
+    options.insert("lives".to_string(), 3);
+    let run = t
+        .prepare(Some(WorldStart::New {
+            seed: Some(4711),
+            options,
+        }))
+        .unwrap()
+        .unwrap();
+    assert!(run.new.is_none());
+    assert_eq!(run.command, "CK4PATCH.EXE WORLD.PAT");
+    assert!(t.read("SAVEGAM0.CK4").contains("first"));
+    assert_eq!(t.list().active, Some(first));
+
+    // Other options make another world.
+    let mut options = BTreeMap::new();
+    options.insert("hard".to_string(), 1);
+    let run = t
+        .prepare(Some(WorldStart::New {
+            seed: Some(4711),
+            options,
+        }))
+        .unwrap()
+        .unwrap();
+    assert!(run.new.is_some());
+}

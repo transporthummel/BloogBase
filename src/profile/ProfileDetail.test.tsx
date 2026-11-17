@@ -1390,6 +1390,28 @@ test("without a world going on, the arrow beside New world offers the others", a
   expect(await screen.findByRole("dialog", { name: "Start new world" })).toBeInTheDocument();
 });
 
+test("a new world with a seed and options already played continues that one", async () => {
+  withWorlds();
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "More ways to start" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "New world…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Start new world" });
+  await userEvent.type(within(dialog).getByRole("textbox", { name: "Seed" }), "12");
+  // "Hard one" was made with the defaults; the last options aren't those.
+  expect(within(dialog).getByRole("button", { name: "Start" })).toBeInTheDocument();
+  await userEvent.click(
+    within(dialog).getByRole("checkbox", { name: "Start with the pogo stick" }),
+  );
+  const ammo = within(dialog).getByRole("spinbutton", { name: "Starting ammo" });
+  await userEvent.clear(ammo);
+  await userEvent.type(ammo, "0");
+  expect(within(dialog).getByText(/is “Hard one”, which you already have/)).toBeInTheDocument();
+  await userEvent.click(within(dialog).getByRole("button", { name: "Continue world" }));
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 1 }),
+  );
+});
+
 test("without a world played, Play begins one", async () => {
   withWorlds(null);
   renderDetail();

@@ -171,8 +171,10 @@ Switching moves the world played into its folder and the chosen one into
 short (a crash) is finished at the next switch, launch or list. Starting a
 new world sets the one played aside; after the session, the files the
 generator wrote become a new world if they're all there, labelled with the
-seed the generator noted (or the one passed). Continuing a world whose
-files are missing fails instead of generating anew.
+seed the generator noted (or the one passed). A new world asked for with
+the seed and options of one already kept continues that one instead, as the
+generator would only make it again. Continuing a world whose files are
+missing fails instead of generating anew.
 
 Saves from before a mod had worlds belong to none: the first new world takes
 them out of `state/` into an automatic backup ("from before worlds"). A

@@ -285,6 +285,7 @@ export function ProfileActions({
         <NewWorldDialog
           definition={worlds.data.definition}
           lastOptions={worlds.data.lastOptions}
+          worlds={worlds.data.worlds}
           onClose={close}
           onStart={(start) => {
             close();

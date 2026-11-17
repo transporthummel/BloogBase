@@ -1150,6 +1150,7 @@
     "seedBad": "A whole number from 0 to {{max}}.",
     "optionRange": "A whole number from {{min}} to {{max}}.",
     "start": "Start",
+    "exists": "This seed with these options is “{{name}}”, which you already have. It goes on where you left it.",
     "intro": "This mod makes new levels at every start. Each set is kept as a world with its own saves, so you can play it again.",
     "empty": "No worlds yet. “New world” makes the first one.",
     "locked": "While the game runs, worlds can’t be deleted.",

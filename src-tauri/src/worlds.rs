@@ -502,6 +502,21 @@ pub fn prepare(
             },
         },
     };
+    // A seed and options a world was already made with make it again: that
+    // world goes on instead of a copy of it.
+    let start = match start {
+        WorldStart::New {
+            seed: Some(seed),
+            options,
+        } => match same_world(db, profile_id, &def, seed, &def.checked_options(&options)?)? {
+            Some(id) => WorldStart::Continue { id },
+            None => WorldStart::New {
+                seed: Some(seed),
+                options,
+            },
+        },
+        s => s,
+    };
     let command = |r: &Recipe| {
         r.command()
             .ok_or_else(|| Error::NotFound(format!("command of the worlds of {profile_id}")))
@@ -552,6 +567,32 @@ pub fn prepare(
             }))
         }
     }
+}
+
+/// The world made with `seed` and `options`, if there is one. Options a
+/// world predates count with their defaults.
+fn same_world(
+    db: &Db,
+    profile_id: &str,
+    def: &Worlds,
+    seed: u32,
+    options: &BTreeMap<String, u32>,
+) -> Result<Option<u32>> {
+    let conn = db.conn();
+    let mut stmt = conn.prepare(
+        "SELECT id, options_json FROM worlds WHERE profile_id = ?1 AND seed = ?2 ORDER BY id",
+    )?;
+    let rows = stmt
+        .query_map(params![profile_id, seed], |r| {
+            Ok((r.get::<_, u32>(0)?, r.get::<_, String>(1)?))
+        })?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    Ok(rows.into_iter().find_map(|(id, json)| {
+        let mut kept: BTreeMap<String, u32> = serde_json::from_str(&json).ok()?;
+        // Ones the mod no longer has don't tell worlds apart.
+        kept.retain(|k, _| def.options.iter().any(|o| &o.id == k));
+        (def.checked_options(&kept).ok()? == *options).then_some(id)
+    }))
 }
 
 fn last_options(db: &Db, profile_id: &str) -> Result<BTreeMap<String, u32>> {

@@ -1,9 +1,10 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { WorldOption, WorldStart, Worlds } from "../bindings";
+import type { World, WorldOption, WorldStart, Worlds } from "../bindings";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
-import { optionDefault, optionLabel, worldOptions } from "./worlds";
+import { Notice } from "../ui/Notice";
+import { optionDefault, optionLabel, worldName, worldOptions } from "./worlds";
 
 const fieldClass = "rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm";
 
@@ -15,11 +16,14 @@ const fieldClass = "rounded-lg border border-border bg-surface-raised px-3 py-2 
 export function NewWorldDialog({
   definition,
   lastOptions,
+  worlds,
   onStart,
   onClose,
 }: {
   definition: Worlds;
   lastOptions: { [key in string]?: number };
+  /** The worlds kept; one made with the same seed and options goes on. */
+  worlds: World[];
   onStart: (start: WorldStart) => void;
   onClose: () => void;
 }) {
@@ -41,9 +45,21 @@ export function NewWorldDialog({
     return !/^\d+$/.test(text) || n < (o.min ?? 0) || (o.max != null && n > o.max);
   };
   const invalid = seedBad || worldOptions(definition).some(bad);
+  // The same seed and options make the same world: that one goes on.
+  const existing =
+    seedValue === null || invalid
+      ? undefined
+      : worlds.find(
+          (w) =>
+            w.seed === seedValue &&
+            worldOptions(definition).every(
+              (o) => (w.options[o.id] ?? optionDefault(o)) === Number(options[o.id]),
+            ),
+        );
 
   function start() {
     if (invalid) return;
+    if (existing) return onStart({ type: "continue", id: existing.id });
     onStart({
       type: "new",
       seed: seedValue,
@@ -120,12 +136,13 @@ export function NewWorldDialog({
             </div>
           ),
         )}
+        {existing && <Notice>{t("worlds.exists", { name: worldName(t, existing) })}</Notice>}
         <div className="flex justify-end gap-3">
           <Button variant="ghost" onClick={onClose}>
             {t("common.cancel")}
           </Button>
           <Button type="submit" disabled={invalid}>
-            {t("worlds.start")}
+            {existing ? t("worlds.continue") : t("worlds.start")}
           </Button>
         </div>
       </form>

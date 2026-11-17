@@ -1150,6 +1150,7 @@
     "seedBad": "Eine ganze Zahl von 0 bis {{max}}.",
     "optionRange": "Eine ganze Zahl von {{min}} bis {{max}}.",
     "start": "Starten",
+    "exists": "Diesen Seed mit diesen Optionen gibt es schon als „{{name}}“. Die Welt geht dort weiter, wo du aufgehört hast.",
     "intro": "Diese Mod erzeugt bei jedem Start neue Level. Jede Zusammenstellung bleibt als Welt mit eigenen Spielständen erhalten, sodass du sie erneut spielen kannst.",
     "empty": "Noch keine Welten. „Neue Welt“ erzeugt die erste.",
     "locked": "Solange das Spiel läuft, lassen sich keine Welten löschen.",
