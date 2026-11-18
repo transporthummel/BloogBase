@@ -1309,9 +1309,10 @@ mod tests {
                 .filter(|b| b.reason == Some(Reason::BeforeRestore))
                 .count()
         };
-        // The fixture's save goes; only settings are left.
+        // The fixture's save goes; only settings are left (in lower case,
+        // as the fixture names them).
         fs::remove_file(st.join("SAVEGAM0.CK4")).unwrap();
-        fs::write(st.join("CONFIG.CK4"), b"mine").unwrap();
+        fs::write(st.join("config.ck4"), b"mine").unwrap();
         let old = tmp.path().join("old");
         fs::create_dir_all(&old).unwrap();
         fs::write(old.join("SAVEGAM1.CK4"), b"a").unwrap();
@@ -1324,7 +1325,7 @@ mod tests {
         fs::write(st.join("SAVEGAM1.CK4"), b"newer").unwrap();
         restore_folder(&paths, &db, "keen4-1", &old, None, None, false).unwrap();
         assert_eq!(before_restore(&db), 1);
-        fs::write(st.join("CONFIG.CK4"), b"changed").unwrap();
+        fs::write(st.join("config.ck4"), b"changed").unwrap();
         restore_folder(
             &paths,
             &db,
@@ -1338,7 +1339,7 @@ mod tests {
         assert_eq!(before_restore(&db), 2);
 
         // Settings over saves only: nothing to keep either.
-        fs::remove_file(st.join("CONFIG.CK4")).unwrap();
+        fs::remove_file(st.join("config.ck4")).unwrap();
         fs::write(st.join("SAVEGAM1.CK4"), b"newest").unwrap();
         restore_folder(
             &paths,
