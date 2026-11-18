@@ -16,6 +16,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen5/m.viler.keen5c16.k5.2016-07-16.zip
     sha256: 939be7db71f58279ec49ca1d48b2ff7a97e64f1a00795907c54006b050e90f90
     size: 315451
+    fingerprint:
+      sha256: 133ed9e4092bd79e6e0643e19b40204c9eb204bdb95c9c2c0eb8d04e29a5fa11
+      files: [C16GRAPH.CK5, C16HEAD.CK5, CK5PATCH.EXE, KEEN5C16.BAT, KEEN5C16.PAT, play.bat]
 recipe:
   type: patch
   patcher: CK5PATCH.EXE

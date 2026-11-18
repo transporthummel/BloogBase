@@ -22,6 +22,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/Packs/Keen5/l.darkale.the_ultra_omegamatic_v2.0.k5.2020-09-08.zip
     sha256: 82c72a2ac9967e1558b2f4bf6aa88bc5a513eb05dd7e0433d7ca247c5e6048f4
     size: 600440
+    fingerprint:
+      sha256: 7905e6472907d0e99bfbc08a9a89a5e2f149047b0d9c964c7524bdc731062ac3
+      files: [AUDIO.CK5, AUDIODCT.CK5, AUDIOHED.CK5, CK5LOAD.BIN, CK5PATCH.EXE, EGAGRAPH.CK5, EGAHEAD.CK5, GAMEMAPS.CK5, Keen13.bat, Keen13.PAT, Keen13.tli, maphead.ck5, STORY.CK5]
 recipe:
   type: patch
   patcher: CK5PATCH.EXE

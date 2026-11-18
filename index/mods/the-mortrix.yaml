@@ -20,6 +20,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.quillax.mortrix.k2.2019-01-07.zip
     sha256: fd6ffebae39a6b9db5bc5fa3a0ea2079d946c25b9a3e8cd7886ee4e64890fd06
     size: 117325
+    fingerprint:
+      sha256: 93f113adaaffa67fbab96e2c8fa8aecf1bd599deffee2c9c297617abf283fe7f
+      files: [CK2PATCH.EXE, EGAHEAD.CK2, EGALATCH.CK2, EGASPRIT.CK2, ENDTEXT.CK2, FINALE.CK2, HELPTXT.CK2, LEVEL01.CK2, LEVEL02.CK2, LEVEL03.CK2, LEVEL04.CK2, LEVEL05.CK2, LEVEL06.CK2, LEVEL07.CK2, LEVEL08.CK2, LEVEL09.CK2, LEVEL10.CK2, LEVEL11.CK2, LEVEL12.CK2, LEVEL13.CK2, LEVEL14.CK2, LEVEL15.CK2, LEVEL16.CK2, LEVEL80.CK2, LEVEL81.CK2, LEVEL90.CK2, Mortrix.pat, play.bat, PREVIEWS.CK2, STORYTXT.CK2, tiles.tli]
 recipe:
   type: patch
   patcher: CK2PATCH.EXE

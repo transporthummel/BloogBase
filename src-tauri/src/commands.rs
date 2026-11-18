@@ -1025,7 +1025,7 @@ pub fn reset_config(
 #[specta::specta]
 pub async fn inspect_mod(app: AppHandle, path: String) -> CommandResult<ModInfo> {
     blocking(move || {
-        let known = source_mod_match(&app, &path);
+        let known = files_match(&app, &path);
         let hint = known.as_ref().map(|(e, _)| e.game.as_str());
         let mut info = mods::inspect(Path::new(&path), hint)?;
         index_match(&app, &path, &mut info, known);
@@ -1036,15 +1036,15 @@ pub async fn inspect_mod(app: AppHandle, path: String) -> CommandResult<ModInfo>
     .await
 }
 
-/// The standalone index entry and download whose programs are in `path`, a
-/// source mod the player has on disk.
-fn source_mod_match(app: &AppHandle, path: &str) -> Option<(mod_index::IndexEntry, usize)> {
+/// The index entry and download whose files are in `path`, a mod the
+/// player has on disk.
+fn files_match(app: &AppHandle, path: &str) -> Option<(mod_index::IndexEntry, usize)> {
     let source = crate::source::Source::open(Path::new(path)).ok()?;
     app.state::<ModIndex>().entry_for_files(&source)
 }
 
 /// Ties `info`, found in `path`, to the index entry whose download it is,
-/// else to `known`, the source mod whose programs it has.
+/// else to `known`, the mod whose files it has.
 fn index_match(
     app: &AppHandle,
     path: &str,
@@ -1120,7 +1120,7 @@ fn find_base_mods(app: &AppHandle, info: &mut ModInfo) {
 #[specta::specta]
 pub async fn inspect_dropped(app: AppHandle, path: String) -> CommandResult<Dropped> {
     blocking(move || {
-        let known = source_mod_match(&app, &path);
+        let known = files_match(&app, &path);
         let mut dropped = match &known {
             // Its own programs and data, which may not look like a mod.
             Some((e, _)) => Dropped::Mod {
@@ -1393,7 +1393,7 @@ pub async fn download_keenwiki_mod(
     let a = app.clone();
     let info = blocking(move || {
         let path = p.display().to_string();
-        let known = source_mod_match(&a, &path);
+        let known = files_match(&a, &path);
         let hint = known.as_ref().map(|(e, _)| e.game.clone()).or(game_id);
         let mut info = mods::inspect(&p, hint.as_deref())?;
         // The page may not be the one the index links, the download may be.
@@ -1437,7 +1437,11 @@ pub async fn refresh_index(app: AppHandle, force: bool) -> IndexStatus {
 
 /// See [`mod_index::link_installed`]; a failure only leaves mods untied.
 pub fn link_installed(app: &AppHandle) {
-    if let Err(e) = mod_index::link_installed(&app.state::<ModIndex>(), &app.state::<Db>()) {
+    if let Err(e) = mod_index::link_installed(
+        &app.state::<ModIndex>(),
+        &app.state::<Db>(),
+        &app.state::<AppPaths>(),
+    ) {
         tracing::warn!("could not tie installed mods to the index: {e}");
     }
 }
@@ -1488,8 +1492,8 @@ pub fn install_index_mod(
 
 /// Downloads (unless `own` is the player's copy) and installs one index
 /// mod for [`install_index_mod`]. `own` may also be the player's own folder
-/// or ZIP of a standalone mod, known by its programs: then its files are
-/// installed as they are, with the entry's recipe for that version.
+/// or ZIP of the mod, known by its files: then they are installed as they
+/// are, with the entry's recipe for that version.
 async fn install_entry(
     a: &AppHandle,
     report: &jobs::Reporter,

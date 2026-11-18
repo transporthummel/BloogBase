@@ -21,6 +21,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen5/m.dr_colossus.marooned_on_mars_-_galaxy_mod_v.1.7b.k5.2018-10-10.zip
     sha256: 2d19c1f76c304e2ca101e181a2d1217cd3bca5bcf780e60680daa8b3c91560fc
     size: 720962
+    fingerprint:
+      sha256: a599065ccbf021bea1ca76cd7ce1a291d908c38b9b306fb8063b0bcf8ae39fe6
+      files: [AUDIO.CK5, AUDIODCT.CK5, AUDIOHED.CK5, CK5PATCH.EXE, editmaps.ck5, EGAGRAPH.CK5, EGAHEAD.CK5, GAMEMAPS.CK5, Keen5.tli, maphead.ck5, pat.pat, play.bat]
     version: "Beta 1.7b"
 recipe:
   type: patch

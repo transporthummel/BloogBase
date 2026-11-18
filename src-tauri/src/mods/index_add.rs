@@ -11,12 +11,13 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::catalog;
 use crate::detect::sha256_hex;
 use crate::keenwiki::{self, WikiDownload, WikiMod};
+use crate::mod_index::{Fingerprint, fingerprint_sha256};
 use crate::readme;
 use crate::recipe::{self, Recipe, has_ext};
 use crate::source::{Source, split_dir};
 
 use super::ModInfo;
-use super::analyze::{analyze, is_keen_file, version_ids};
+use super::analyze::{Analysis, analyze, is_keen_file, version_ids};
 use super::install::slug;
 use super::metadata::is_date;
 
@@ -341,6 +342,7 @@ fn draft(facts: &Facts, path: &Path) -> crate::error::Result<Draft> {
         .collect();
 
     let found = Found {
+        fingerprint: fingerprint(&source, &analysis)?,
         hashes,
         info,
         named,
@@ -377,6 +379,7 @@ struct Found<'a> {
     /// The recipe's files with their SHA-256, for a standalone mod's
     /// `programs`.
     hashes: Vec<(String, String)>,
+    fingerprint: Option<Fingerprint>,
 }
 
 impl Found<'_> {
@@ -450,6 +453,53 @@ fn authors<'a>(facts: &'a Facts, found: &'a Found) -> &'a [String] {
 }
 
 /// A YAML string; JSON's are valid YAML.
+/// Documents and archives, by extension; no game reads them, and players
+/// may well delete them.
+const DOCUMENTS: &[&str] = &[
+    "TXT", "DOC", "DOCX", "RTF", "WRI", "PDF", "HTM", "HTML", "MD", "NFO", "DIZ", "JPG", "JPEG",
+    "PNG", "GIF", "CHM", "HLP", "ZIP", "RAR", "7Z", "ARJ", "LZH",
+];
+
+/// What tells the download `analysis` (of `source`) from any other: the
+/// files right in its mod root that make the version, documents and what
+/// the game writes (saves, settings, high scores) aside, with one SHA-256
+/// over them. Files a player adds or that lie beside them don't change it.
+pub(super) fn fingerprint(
+    source: &Source,
+    analysis: &Analysis,
+) -> crate::error::Result<Option<Fingerprint>> {
+    let game = catalog::game(&analysis.info.game_id);
+    let mut files: Vec<(String, String)> = Vec::new();
+    for f in &analysis.files {
+        let (dir, name) = split_dir(f);
+        if dir != analysis.root
+            || DOCUMENTS.iter().any(|ext| has_ext(name, ext))
+            || game.is_some_and(|g| g.is_state_file(name))
+        {
+            continue;
+        }
+        files.push((name.to_string(), sha256_hex(&source.read(f)?)));
+    }
+    if files.is_empty() {
+        return Ok(None);
+    }
+    files.sort_by_key(|(name, _)| name.to_ascii_uppercase());
+    Ok(Some(Fingerprint {
+        sha256: fingerprint_sha256(&files),
+        files: files.into_iter().map(|(name, _)| name).collect(),
+    }))
+}
+
+/// `fingerprint` as YAML lines in a download.
+pub(super) fn fingerprint_yaml(f: &Fingerprint) -> String {
+    let files: Vec<String> = f.files.iter().map(|n| scalar(n)).collect();
+    format!(
+        "    fingerprint:\n      sha256: {}\n      files: [{}]\n",
+        f.sha256,
+        files.join(", ")
+    )
+}
+
 fn quoted(s: &str) -> String {
     serde_json::to_string(s).expect("strings serialize")
 }
@@ -589,6 +639,9 @@ fn yaml(facts: &Facts, found: &Found) -> String {
         facts.sha256,
         facts.size
     );
+    if let Some(f) = &found.fingerprint {
+        y += &fingerprint_yaml(f);
+    }
     if found.standalone() {
         y += "    programs:\n";
         for (name, hash) in &found.hashes {
@@ -1029,12 +1082,27 @@ downloads:
     url: {URL}
     sha256: {}
     size: 10
+    fingerprint:
+      sha256: {}
+      files: [abiathar.pat, CK4PATCH.EXE, GAMEMAPS.CK4]
 recipe:
   type: patch
   patcher: CK4PATCH.EXE
   patch: abiathar.pat
 "#,
-                "ab".repeat(32)
+                "ab".repeat(32),
+                crate::mod_index::fingerprint_sha256(&[
+                    (
+                        "abiathar.pat".into(),
+                        sha256_hex(
+                            b"%ext ck4
+%version 1.4
+"
+                        )
+                    ),
+                    ("CK4PATCH.EXE".into(), sha256_hex(b"patcher")),
+                    ("GAMEMAPS.CK4".into(), sha256_hex(b"maps")),
+                ])
             )
         );
         assert_eq!(d.root, "Aurora");

@@ -735,6 +735,41 @@ fn standalone_mods_play_without_their_game_and_follow_their_entry() {
 }
 
 #[test]
+fn a_fingerprint_is_the_mod_roots_files_but_documents_and_saves() {
+    let tmp = tempfile::tempdir().unwrap();
+    let zip = tmp.path().join("aurora.zip");
+    let mut files = AURORA.to_vec();
+    files.extend([
+        ("Aurora/SAVEGAM0.CK4", b"save" as &[u8]),
+        ("Aurora/extras/LEVEL99.CK4", b"extra"),
+        ("Aurora/EXTRAS.RAR", b"rar"),
+    ]);
+    write_zip(&zip, &files);
+    let source = Source::open(&zip).unwrap();
+    let analysis = analyze(&source, &zip, None).unwrap();
+    let f = super::index_add::fingerprint(&source, &analysis)
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        f.files,
+        ["abiathar.pat", "CK4PATCH.EXE", "GAMEMAPS.CK4", "play.bat"]
+    );
+    let hashes: Vec<(String, String)> = f
+        .files
+        .iter()
+        .map(|n| {
+            let data = AURORA
+                .iter()
+                .find(|(p, _)| p.ends_with(&format!("/{n}")))
+                .unwrap()
+                .1;
+            (n.clone(), sha256_hex(data))
+        })
+        .collect();
+    assert_eq!(f.sha256, crate::mod_index::fingerprint_sha256(&hashes));
+}
+
+#[test]
 fn a_players_source_mod_keeps_its_files_and_saves() {
     let (tmp, paths, db) = setup();
     let folder = tmp.path().join("My Games/OSI");

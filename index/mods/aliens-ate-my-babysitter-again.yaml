@@ -19,6 +19,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen6/m.ny00123.aliens_ate_my_babysitter_again_v1.5.k6.2024-12-30.zip
     sha256: 4372cc03bed6612d0e73338cbabb25374c7ae9094c775e24f94af59fc96f0437
     size: 859795
+    fingerprint:
+      sha256: c6ddc833573c6cc4255efa32a6bdca1bf493d533f95cf286d52b09c8c21eaa9f
+      files: [AAMBA.BAT, AAMBA.PAT, AAMBA_O.BAT, AAMBA_O.PAT, AUDIO.CK6, AUDIODCT.CK6, AUDIOHHD.CK6, CK6LOAD.BIN, CK6PATCH.EXE, EGADICT.CK6, EGADICTO.CK6, EGAGRAPH.CK6, EGAGRPHO.CK6, EGAHEAD.CK6, EGAHEADO.CK6, GAMEMAPS.CK6, MOD.CK6, MOD_C.CK6, MOD_O.CK6, MTEMP.TMP, play.bat, STORY.CK6, STORY_O.CK6, TILEINFO.CK6]
 recipe:
   type: patch
   patcher: CK6PATCH.EXE

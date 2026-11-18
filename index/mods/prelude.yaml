@@ -18,6 +18,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.levellass.prelude.k1.2023-10-31.zip
     sha256: cf2a58538ceceefa7388803a8c2576dce7cd935203eba2694f106e1b9c3360fb
     size: 145791
+    fingerprint:
+      sha256: bfc99e765dcee7abbcb152e053c3fd75a9e2e3e64ec04e3ba37c2720ba89671b
+      files: [CK1PATCH.EXE, CONFIG.BIN, EGAHEAD.CK1, EGALATCH.CK1, EGASPRIT.CK1, ENDTEXT.CK1, FINALE.CK1, LEVEL01.CK1, LEVEL02.CK1, LEVEL03.CK1, LEVEL04.CK1, LEVEL05.CK1, level1.tls, LEVEL80.CK1, LEVEL81.CK1, LEVEL90.CK1, play.bat, PRELUDE.BAT, PRELUDE.PAT, SOUNDS.CK1, STORYTXT.CK1, TILEHEAD.CK1, tileset1.tls, title.tls]
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

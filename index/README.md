@@ -102,7 +102,7 @@ By hand:
    standalone mod). Mods added by hand can go over it, through its
    `provides` (Episode X for xky1rooms), and then need no copy either. Only entries can make a source mod standalone: added
    by hand, the same files play on a copy of `game`, unless the app knows
-   them by their `programs` (below). Apps
+   them by their `programs` or `fingerprint` (below). Apps
    before 1.2.0 ignore the field and play the mod on that game, so an entry
    can take it up without a `minAppVersion`; mods installed from it leave
    their copy of the game at the next index check, with their saves.
@@ -132,6 +132,23 @@ By hand:
        recipe: { type: program, program: osidos32.exe }
        programs:
          osidos32.exe: f8b4…
+   ```
+
+   Every download has a `fingerprint`: the files right in the mod's root
+   that make the version (documents, archives, saves and settings aside)
+   and one SHA-256 over them, a line `NAME sha256` per file, names upper
+   case, sorted. By it the app knows the mod in a folder or ZIP the player
+   has, unpacked or repacked, and among mods installed by hand, which then
+   become the entry's. `pnpm index:add` fills it in; the check says the
+   right SHA-256 when it's wrong. For the whole index,
+   `BLOOGBASE_WRITE_FINGERPRINTS=1 cargo test --lib index_fingerprints -- --ignored`
+   (in `src-tauri`, after `pnpm index:build` and with the downloads cached)
+   writes them all. Older apps ignore it.
+
+   ```yaml
+   fingerprint:
+     sha256: 3b47…
+     files: [abiathar.pat, AUDIO.CK4, CK4PATCH.EXE, GAMEMAPS.CK4, play.bat]
    ```
 
    A mod that brings an executable and all the files of its game

@@ -20,6 +20,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.xtraverse.norp_the_yorp_3.k3.2003-02-03.zip
     sha256: 020d5751a2f9a4a81e65f44b5896d09d4d1f90020c01c534de484f06c32eea6c
     size: 179863
+    fingerprint:
+      sha256: 328b857c4018d90e1d6910edba2bebc8b399151d2e892e6ba2ffde02ef67c12b
+      files: [DRAGON.NY3, DRYAD.NY3, ENDING.NY3, HOBBIT.NY3, Landscap.ny3, MAGMA.NY3, N3MAP01.NY3, N3MAP02.NY3, N3map03.ny3, N3map04.ny3, N3MAP05.NY3, N3MAP06.NY3, N3MAP07.NY3, N3MAP08.NY3, N3MAP09.NY3, N3MAP10.NY3, N3MAP11.NY3, N3MAP12.NY3, N3MAP13.NY3, N3map14.ny3, N3map15.ny3, N3MAP16.NY3, N3MAP80.NY3, N3map81.ny3, N3MAP90.NY3, NORP3v10.bat, NORP3v131.bat, NORPER.EXE, NYMPH.NY3, PHOENIX.NY3, PLASMA.NY3, SETTINGS.NY3, SPHYNX.NY3, UNLZEXE.EXE]
 # NORPER.EXE is CK3PATCH 0.5.1; the readme runs it with one patch file per
 # game version (NORP3v131.bat, NORP3v10.bat).
 recipe:

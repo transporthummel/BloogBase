@@ -22,6 +22,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen4/m.ceilick.the_keys_of_krodacia_v2.0.k4.2009-03-14.zip
     sha256: 95f516ec50063d02222d22ab048d88cffaeeda1fa1f331bfc7512fea578518a3
     size: 670695
+    fingerprint:
+      sha256: 1b7b89d3289ef735712b84457dc28b5baf6800f9ad9287441293ab61e0951d3e
+      files: [AUDIO.CK4, AUDIODCT.CK4, AUDIOHED.CK4, CK4LOAD.BIN, CK4PATCH.EXE, editmaps.ck4, EGADICT.CK4, Egagraph.ck4, EGAHEAD.CK4, Gamemaps.ck4, Keen4.tli, KEEN4E.EXE, KEEN7.bat, KEEN7.pat, maphead.ck4, play.bat]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

@@ -19,6 +19,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.keenrush.a_new_dope.k3.2007-03-14.zip
     sha256: 25a26257e8eedbc6b280a0cbe926ec48b06c5255e8b0f494b5b93dae2c2402a9
     size: 102129
+    fingerprint:
+      sha256: e61b40f52fc184e4bd7daeec3875fb1082788bbe91d378d501ebbfa05481d37e
+      files: [CK3PATCH.EXE, EGAHEAD.CK3, EGALATCH.CK3, EGASPRIT.CK3, ENDTEXT.CK3, FINALE.CK3, HAMARTIA.CK3, HELPTEXT.CK3, LEVEL01.CK3, LEVEL02.CK3, LEVEL03.CK3, LEVEL04.CK3, LEVEL05.CK3, LEVEL06.CK3, LEVEL07.CK3, LEVEL08.CK3, LEVEL09.CK3, LEVEL10.CK3, LEVEL11.CK3, LEVEL12.CK3, LEVEL13.CK3, LEVEL14.CK3, LEVEL15.CK3, LEVEL16.CK3, LEVEL80.CK3, LEVEL81.CK3, LEVEL90.CK3, play.bat, SCREEN.CK3, STORYTXT.CK3, stuff.pat, tiles.tli, UNLZEXE.EXE]
 # play.bat runs `ck3patch stuff.pat`. The patch names no version; in DOSBox
 # it shows its own intro on v1.31 and stays black on v1.0.
 recipe:

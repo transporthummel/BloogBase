@@ -18,6 +18,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/keend/m.levellass.keen_dreams_modette.kd.2012-07-25.zip
     sha256: 5b836062e579a2282a765c2dcf383f381855daef5b06ed2e9e64953f57d7438e
     size: 274145
+    fingerprint:
+      sha256: 2fde768130580cbc80a9bf3c0a34de2d5df4762c767733b2b3fe16c210f61807
+      files: [Dreams.bat, dreams.PAT, EGADICT.KDR, EGAHEAD.KDR, KDREAMS.AUD, KDREAMS.CMP, KDREAMS.EGA, KDREAMS.EXE, KDREAMS.MAP, KDRPATCH.EXE, KeenD.tli, MAPDICT.CK7, maphead.ck7, STORY.KDR, TRASH.BIN, TRASH.CAN]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

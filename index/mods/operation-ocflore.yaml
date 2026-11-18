@@ -21,6 +21,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen4/m.bubbatom.operation_ocflore_v1.3.k4.2020-02-18.zip
     sha256: ae5d7d2c3823524dd2777c3866d6e50581fe95caa8bf93b169ed21c0f8cbcced
     size: 914993
+    fingerprint:
+      sha256: 3e194585bab8c625dd3916431875d0e8ff428131c7655de6cf1825eed7487d04
+      files: [AUDIO.CK4, AUDIODCT.CK4, AUDIOHED.CK4, CK4LOAD.BIN, CK4PATCH.EXE, EGAGRAPH.CK4, EGAHEAD.CK4, GAMEMAPS.CK4, Keen4.tli, KEEN4E.EXE, maphead.ck4, Ocflore.PAT, play.bat]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

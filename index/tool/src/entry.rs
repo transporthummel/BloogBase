@@ -167,6 +167,19 @@ pub struct Download {
     /// every download of a source mod lists them.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub programs: BTreeMap<String, String>,
+    /// The files right in the mod's root that make this version and one
+    /// SHA-256 over them, by which the app knows the mod in a player's own
+    /// folder or ZIP and among mods installed by hand. Every download has
+    /// one; `pnpm index:add` fills it in.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fingerprint: Option<Fingerprint>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Fingerprint {
+    pub sha256: String,
+    pub files: Vec<String>,
 }
 
 /// How the app starts the mod; same shape as the app's `Recipe`.
@@ -661,6 +674,33 @@ fn worlds_problems(w: &Worlds, fail: &mut impl FnMut(String)) {
 
 /// What's wrong with a download's own `recipe` and its `programs`.
 fn download_problems(entry: &Entry, d: &Download, newest: bool, fail: &mut impl FnMut(String)) {
+    match &d.fingerprint {
+        None => fail(format!(
+            "{}: lacks its fingerprint (pnpm index:add drafts it; docs: index/README.md)",
+            d.url
+        )),
+        Some(f) => {
+            if !is_sha256(&f.sha256) {
+                fail(format!(
+                    "{}: fingerprint sha256 must be 64 hex digits",
+                    d.url
+                ));
+            }
+            if f.files.is_empty() {
+                fail(format!("{}: fingerprint lists no files", d.url));
+            }
+            let mut seen = BTreeSet::new();
+            for file in &f.files {
+                let plain = !file.is_empty() && !file.contains(['/', '\\']);
+                if !plain || !seen.insert(file.to_ascii_uppercase()) {
+                    fail(format!(
+                        "{}: fingerprint file `{file}` must be a file name without folder, once",
+                        d.url
+                    ));
+                }
+            }
+        }
+    }
     if let Some(r) = &d.recipe {
         if newest {
             fail(format!(
@@ -714,7 +754,7 @@ fn download_problems(entry: &Entry, d: &Download, newest: bool, fail: &mut impl 
         ));
     }
     for (file, hash) in &d.programs {
-        if hash.len() != 64 || !hash.bytes().all(|b| b.is_ascii_hexdigit()) {
+        if !is_sha256(hash) {
             fail(format!(
                 "{}: sha256 of `{file}` must be 64 hex digits",
                 d.url
@@ -768,6 +808,10 @@ pub fn provides_problems(entries: &[Entry]) -> Vec<String> {
 fn is_program(name: &str) -> bool {
     name.rsplit_once('.')
         .is_some_and(|(_, ext)| ext.eq_ignore_ascii_case("EXE") || ext.eq_ignore_ascii_case("COM"))
+}
+
+fn is_sha256(s: &str) -> bool {
+    s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit())
 }
 
 fn is_plain_name(s: &str) -> bool {
@@ -829,6 +873,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/x.zip
     sha256: 0000000000000000000000000000000000000000000000000000000000000000
     size: 10
+    fingerprint:
+      sha256: 1111111111111111111111111111111111111111111111111111111111111111
+      files: [abiathar.pat, CK4PATCH.EXE]
 recipe:
   type: patch
   patcher: CK4PATCH.EXE
@@ -1086,6 +1133,20 @@ recipe:
         e.extends = Some("x".into());
         // The programs no longer fit the recipe either.
         assert_eq!(problems(&e, "aurora-bliss", &catalog()).len(), 5);
+    }
+
+    #[test]
+    fn every_download_has_a_fingerprint_of_plain_names() {
+        let mut e = parse(AURORA).unwrap();
+        let problems = |e: &Entry| problems(e, "aurora-bliss", &catalog());
+        assert!(problems(&e).is_empty());
+        let f = e.downloads[0].fingerprint.as_mut().unwrap();
+        f.sha256 = "abc".into();
+        f.files.push("ABIATHAR.PAT".into());
+        f.files.push("a/b.ck4".into());
+        assert_eq!(problems(&e).len(), 3, "{:?}", problems(&e));
+        e.downloads[0].fingerprint = None;
+        assert!(problems(&e)[0].contains("lacks its fingerprint"));
     }
 
     #[test]

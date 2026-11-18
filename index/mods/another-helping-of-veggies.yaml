@@ -20,6 +20,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/keend/m.szemigi.another_helping_of_veggies_v1.2.kd.2021-10-15.zip
     sha256: 0410ec862bfe8151926ebb25ac68d28df559a8a7f86393a9dd4e936b10f1fd0a
     size: 316564
+    fingerprint:
+      sha256: c5b1a6c96494cada10ae726308a15901ad30b53d2ddad7a41c7cca7e12f50363
+      files: [EGADICT.KD2, EGAHEAD.KD2, HELP.KD2, HELP2.KD2, HELP3.KD2, KDREAMS.EXE, KDREAMS2.AUD, KDREAMS2.BAT, KDREAMS2.BIN, KDREAMS2.CMP, KDREAMS2.DAT, KDREAMS2.EGA, KDREAMS2.MAP, KDREAMS2.PAT, KDREAMS2.SCN, KDREAMS2.TLI, KDRPATCH.EXE, MAPDICT.KD2, MAPHEAD.KD2]
 recipe:
   type: patch
   patcher: KDRPATCH.EXE

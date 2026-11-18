@@ -1214,7 +1214,7 @@ test("installs a known source mod with the player's own files", async () => {
   await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
 
   expect(
-    await screen.findByText(/knows this source mod from its mod list: it's version 1.0\./),
+    await screen.findByText(/knows this mod from its mod list: it's version 1.0\./),
   ).toBeInTheDocument();
   await user.keyboard("{Enter}");
   expect(commands.installIndexMod).toHaveBeenCalledWith(

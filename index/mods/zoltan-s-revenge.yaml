@@ -18,6 +18,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.levellass.zoltans_revenge.k4.2012-10-20.zip
     sha256: 68d6e13d10604c751c5f17c240efd3ec8255e125bf22eaee8e51c0b74665e8ce
     size: 531582
+    fingerprint:
+      sha256: 9007443b853b069926045419f47c10cc392ecb376301455559ae6d33b9e4aa44
+      files: [AUDIO.CK4, AUDIOHED.CK4, CK4PATCH.EXE, EGADICT.CK4, EGAGRAPH.CK4, EGAHEAD.CK4, GAMEMAPS.CK4, Keen4.tli, KEEN4E.EXE, MAPHEAD.CK4, PAT.PAT, Zoltan.BAT]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

@@ -19,6 +19,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.shikadi.trapped_keen.k3.2010-08-25.zip
     sha256: 3b9e2216084dd097e0262009a4d533ac331d0619befa9e06c85909b7ce81014d
     size: 89643
+    fingerprint:
+      sha256: 5ffdd4912f49610d8cbdc5f154a4cebe1cd8c74850e31c5d21f505dfcab7917a
+      files: [CK3PATCH.EXE, EGAHEAD.CK3, EGALATCH.CK3, EGASPRIT.CK3, FINALE.CK3, keenztt.pat, level01.ck3, level02.ck3, level03.ck3, level04.ck3, level05.ck3, level06.ck3, level07.ck3, level08.ck3, level09.ck3, level10.ck3, level11.ck3, level12.ck3, level13.ck3, level14.ck3, level15.ck3, level16.ck3, level17.ck3, level18.Ck3, level19.ck3, level21.CK3, level24.Ck3, level80.ck3, LEVEL81.CK3, LEVEL90.CK3, Some.Bat, tiles.tli]
 recipe:
   type: patch
   patcher: CK3PATCH.EXE

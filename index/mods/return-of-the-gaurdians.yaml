@@ -17,6 +17,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.ceilick.return_of_the_gaurdians.k3.2005-03-08.zip
     sha256: 7f1a939c01f2808a41d1e5796763f7b89da16cae919841afa8220fcf90cc27cd
     size: 100912
+    fingerprint:
+      sha256: 8cb4d412bf149db78434888e1316f439bf7007f2d64f1b1c45401d55bc814883
+      files: [CK3PATCH.EXE, EGAHEAD.CK3, EGALATCH.CK3, EGASPRIT.CK3, ending.ck3, enemies.ck3, FINALE.CK3, LEVEL01.CK3, LEVEL02.CK3, LEVEL03.CK3, LEVEL04.CK3, LEVEL05.CK3, LEVEL06.CK3, LEVEL07.CK3, LEVEL08.CK3, LEVEL09.CK3, LEVEL10.CK3, LEVEL11.CK3, LEVEL12.CK3, LEVEL13.CK3, LEVEL14.CK3, LEVEL15.CK3, LEVEL16.CK3, LEVEL80.CK3, LEVEL81.CK3, LEVEL90.CK3, skree.bat, skree.pat, skree.tli, story.ck3]
 recipe:
   type: batch
   file: skree.bat

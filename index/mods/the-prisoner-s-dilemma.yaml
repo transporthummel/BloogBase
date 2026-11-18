@@ -20,6 +20,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen6/m.kohntarkosz_.the_prisoner's_dilemma_v1.1_unofficial.k6.2024-08-15.zip
     sha256: 8e250a1bd43df6101124f9a0138fb0d38e44aa3a660041bf3667ccc41e8f887e
     size: 794600
+    fingerprint:
+      sha256: 9ff1e5f30edc3f43d0129f96e9a38434d12ef59d98956b08901dbae67437df5e
+      files: [Audio.ck6, AUDIO.RU6, AUDIODCT.CK6, AUDIOHED.CK6, AUDIOHED.RU6, CK6PATCH.EXE, DILEMMA.EXE, EGADICT.CK6, EGADICT.RU6, EGAGRAPH.CK6, EGAGRAPH.RU6, EGAHEAD.CK6, EGAHEAD.RU6, Gamemaps.ck6, HELPGRPH.CK6, HELPTEXT.CK6, maphead.ck6, patch1.ck6, patch2.ck6, patch3.ck6, tileinfo.ck6, tileinfo.ru6, TITLE.CK6, TITLE.RU6]
 recipe:
   type: program
   program: DILEMMA.EXE

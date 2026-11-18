@@ -16,6 +16,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.88vega.fireblaze_curse_of_the_dragonlords.k1.2018-11-18.zip
     sha256: 542f21e02f7047126b741ae88fdf1908adde81bb126b3f764b514e9cec1ff71a
     size: 132051
+    fingerprint:
+      sha256: d7fbc79cd8002f5f6ae02d1c5c6fa841847c8ed9e30265fd465ba8ab8cfb48c8
+      files: [CK1PATCH.exe, egahead.ck1, egalatch.ck1, egasprit.ck1, endtext.ck1, finale.ck1, fire.pat, helptext.ck1, KEEN1.exe, level02.ck1, level03.ck1, level04.ck1, level05.ck1, level06.ck1, level07.ck1, level08.ck1, level09.ck1, level80.ck1, level81.ck1, level90.ck1, play.bat, preview2.ck1, preview3.ck1, previews.ck1, SOUNDS.CK1, storytxt.ck1, TILEHEAD.CK1]
 recipe:
   type: patch
   patcher: CK1PATCH.exe

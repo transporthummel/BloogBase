@@ -19,6 +19,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.keenrush_tulip.yorphius_ii_deluxe.k1.2014-03-14.zip
     sha256: e9b92d8bda456c478080b0525d95ca774c27bf69e04cf8e4be9252f949cd44a8
     size: 212313
+    fingerprint:
+      sha256: d3d9200a2e0fb332ce0d6953d89689ead5adecce44883d23a90dbd94f549f544
+      files: ["01_yorp.imf", "02_yorp.imf", "03_yorp.imf", carnival.imf, CK1PATCH.EXE, crappyso.imf, DUMP.BEH, egahead.ck1, egalatch.ck1, egasprit.ck1, ENDTEXT.CK1, finale.ck1, HELPTEXT.CK1, KEEN1.EXE, LEVEL01.CK1, LEVEL02.CK1, LEVEL03.CK1, LEVEL04.CK1, LEVEL05.CK1, LEVEL06.CK1, LEVEL07.CK1, LEVEL08.CK1, LEVEL09.CK1, LEVEL10.CK1, LEVEL11.CK1, LEVEL12.CK1, LEVEL13.CK1, LEVEL14.CK1, LEVEL15.CK1, LEVEL16.CK1, LEVEL80.CK1, LEVEL81.CK1, LEVEL90.CK1, para_lol.imf, preview2.ck1, preview3.ck1, previews.ck1, shmaynor.imf, songlist.lst, SOUNDS.CK1, STATUS.CK1, STORYTXT.CK1, testoshm.imf, tsrmusic.com, yorp.pat, Yorphius.BAT, Yorphius.tli]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

@@ -19,6 +19,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.xtraverse.norp_the_yorp_3_5.k1.2005-03-23.zip
     sha256: 31984577d36210128de87d44d87318b8a786a26271abffe6ec9ade7e99e2fef3
     size: 159712
+    fingerprint:
+      sha256: 3bde338d24e1f085beac9e617d47fa047267c9dcc58cfd61098c2bb047b9abab
+      files: [CK1PATCH.EXE, EGAHEAD.CK1, EGALATCH.CK1, EGASPRIT.CK1, ENDTEXT.CK1, FINALE.CK1, FOO.CK1, HELPTEXT.CK1, LEVEL02.CK1, LEVEL80.CK1, LEVEL81.CK1, LEVEL90.CK1, mod.tli, Norp.bat, norp.pat, PREVIEW2.CK1, PREVIEW3.CK1, PREVIEWS.CK1, SOUNDS.CK1, STATUS.CK1, STORYTXT.CK1]
 # Norp.bat renames FOO.CK1, an unpacked copy of KEEN1.EXE 1.31, to KEEN1.EXE
 # for CK1PATCH and back afterwards; both fail next to the game's own
 # KEEN1.EXE. CK1PATCH 0.9 unpacks that one itself.

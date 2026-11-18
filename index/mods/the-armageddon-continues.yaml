@@ -19,6 +19,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen5/m.alessandro.the_armageddon_continues.k5.2020-06-07.zip
     sha256: 5c1c4b52dcd94171cc10ca8bc4cc85ce7f6b47c4b4d829b61611ebddc911c4cc
     size: 486328
+    fingerprint:
+      sha256: ca6496936fe5949e145002dd6b93ac845f74b45d23a7699da6b13f00c1d348ec
+      files: [AUDIO.CK5, AUDIODCT.CK5, AUDIOHED.CK5, CK5LOAD.BIN, CK5PATCH.EXE, EGAGRAPH.CK5, EGAHEAD.CK5, GAMEMAPS.CK5, maphead.ck5, PATCH5.PAT, Play.BAT, STORY.CK5, UltraII.tli]
 recipe:
   type: patch
   patcher: CK5PATCH.EXE

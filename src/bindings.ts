@@ -473,6 +473,11 @@ export type Download = {
 	 *  mod is known in the player's own folder ([`download_for_files`]).
 	 */
 	programs?: { [key in string]: string },
+	/**
+	 *  The files that make this version, by which the mod is known in a
+	 *  player's own folder or ZIP and among the mods installed by hand.
+	 */
+	fingerprint?: Fingerprint | null,
 };
 
 /**  What a folder or ZIP dropped on the window holds. */
@@ -492,6 +497,16 @@ export type Engine = "vorticons" | "galaxy" | "dreams";
 
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
 export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "alreadyInLibrary" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "runtimeTooOld" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "invalidSetting" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "olderIndex" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload" | "noSavesFound" | "otherGame" | "worldIncomplete";
+
+/**
+ *  The files of a download's mod root that make its version (levels,
+ *  graphics, sounds, patches, programs; no documents, saves or settings),
+ *  and one SHA-256 over them ([`fingerprint_sha256`]).
+ */
+export type Fingerprint = {
+	files: string[],
+	sha256: string,
+};
 
 /**  Where a game or mod stands with the patch. */
 export type Firing = 

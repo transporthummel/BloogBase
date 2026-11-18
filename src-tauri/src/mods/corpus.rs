@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::detect::sha256_hex;
 use crate::recipe::Recipe;
+use crate::source::Source;
 
 use super::*;
 use crate::downloads;
@@ -185,4 +186,120 @@ fn index_entries_say_whether_they_bring_their_game() {
     }
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));
     eprintln!("{checked} downloads as expected");
+}
+
+/// Every index download's `fingerprint` is the one its archive gives
+/// ([`super::index_add::fingerprint`]). With
+/// `BLOOGBASE_WRITE_FINGERPRINTS=1` it writes missing or wrong ones into
+/// `index/mods/<id>.yaml` instead. Reads `index/dist/index.json`
+/// (`pnpm index:build`) and the archives `pnpm index:check` cached.
+///
+/// `cargo test index_fingerprints -- --ignored --nocapture`
+#[test]
+#[ignore = "needs the index's cached downloads"]
+fn index_fingerprints_are_those_of_the_downloads() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+    let index: serde_json::Value =
+        serde_json::from_slice(&fs::read(root.join("index/dist/index.json")).unwrap()).unwrap();
+    let cache = root.join(".local/mods/index-cache");
+    let write = std::env::var_os("BLOOGBASE_WRITE_FINGERPRINTS").is_some();
+    let mut wrong = Vec::new();
+    let mut written = 0;
+    for e in index["mods"].as_array().unwrap() {
+        let entry: crate::mod_index::IndexEntry = serde_json::from_value(e.clone()).unwrap();
+        for d in &entry.downloads {
+            let path = cache.join(format!("{}.zip", d.sha256.to_ascii_lowercase()));
+            if !path.is_file() {
+                wrong.push(format!("{}: {} not cached", entry.id, d.url));
+                continue;
+            }
+            let source = Source::open(&path).unwrap();
+            let found = analyze::analyze(&source, &path, Some(&entry.game))
+                .map_err(|e| e.to_string())
+                .and_then(|a| {
+                    super::index_add::fingerprint(&source, &a).map_err(|e| e.to_string())
+                });
+            let found = match found {
+                Ok(Some(f)) => f,
+                Ok(None) => {
+                    wrong.push(format!(
+                        "{}: {} has no files to know it by",
+                        entry.id, d.url
+                    ));
+                    continue;
+                }
+                Err(err) => {
+                    wrong.push(format!("{}: {err}", entry.id));
+                    continue;
+                }
+            };
+            if d.fingerprint.as_ref() == Some(&found) {
+                continue;
+            }
+            if !write {
+                wrong.push(format!(
+                    "{}: {} has fingerprint {}",
+                    entry.id, d.url, found.sha256
+                ));
+                continue;
+            }
+            let yaml_path = root.join("index/mods").join(format!("{}.yaml", entry.id));
+            let yaml = fs::read_to_string(&yaml_path).unwrap();
+            fs::write(&yaml_path, with_fingerprint(&yaml, &d.sha256, &found)).unwrap();
+            written += 1;
+        }
+    }
+    assert!(wrong.is_empty(), "{}", wrong.join("\n"));
+    eprintln!("{written} fingerprints written");
+}
+
+/// `yaml` with `f` as the fingerprint of the download `sha256`, right
+/// after its `size`, in place of the one it had.
+fn with_fingerprint(yaml: &str, sha256: &str, f: &crate::mod_index::Fingerprint) -> String {
+    let lines: Vec<&str> = yaml.lines().collect();
+    let at = lines
+        .iter()
+        .position(|l| {
+            l.trim()
+                .strip_prefix("sha256:")
+                .is_some_and(|h| h.trim().eq_ignore_ascii_case(sha256))
+        })
+        .expect("the download's sha256 line");
+    let size = (at..lines.len())
+        .find(|&i| lines[i].trim_start().starts_with("size:"))
+        .expect("the download's size line");
+    // The download's other fields, until the next download or field.
+    let end = (size + 1..lines.len())
+        .find(|&i| !lines[i].starts_with("    ") || lines[i].starts_with("  - "))
+        .unwrap_or(lines.len());
+    let mut out: Vec<String> = lines[..=size].iter().map(|l| l.to_string()).collect();
+    out.push(super::index_add::fingerprint_yaml(f).trim_end().to_string());
+    let mut i = size + 1;
+    while i < end {
+        if lines[i] == "    fingerprint:" {
+            i += 1;
+            while i < end && lines[i].starts_with("      ") {
+                i += 1;
+            }
+            continue;
+        }
+        out.push(lines[i].to_string());
+        i += 1;
+    }
+    out.extend(lines[end..].iter().map(|l| l.to_string()));
+    out.join("\n") + "\n"
+}
+
+#[test]
+fn fingerprints_go_after_the_size_in_place_of_the_old() {
+    let f = crate::mod_index::Fingerprint {
+        files: vec!["LEVEL01.CK4".into(), "1.PAT".into()],
+        sha256: "ab".repeat(32),
+    };
+    let yaml = "downloads:\n  - url: https://a/b.zip\n    sha256: AA\n    size: 1\n    fingerprint:\n      sha256: old\n      files: [X]\n    programs:\n      A.EXE: cc\n  - url: https://a/c.zip\n    sha256: bb\n    size: 2\nrecipe: x\n";
+    let want = format!(
+        "downloads:\n  - url: https://a/b.zip\n    sha256: AA\n    size: 1\n    fingerprint:\n      sha256: {}\n      files: [LEVEL01.CK4, \"1.PAT\"]\n    programs:\n      A.EXE: cc\n  - url: https://a/c.zip\n    sha256: bb\n    size: 2\nrecipe: x\n",
+        "ab".repeat(32)
+    );
+    assert_eq!(with_fingerprint(yaml, "aa", &f), want);
 }

@@ -17,6 +17,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.joriz_.keen_q.k2.2007-11-09.zip
     sha256: 9b833c9ce64b66bde2db0ae6165afa762a40699c9476020f81867fe8af431d95
     size: 140080
+    fingerprint:
+      sha256: 01b8c92a00407f6c49cc8ba0291a1d7efe5b562b3dc5216c382c1a4d7072c7ba
+      files: [CK2PATCH.EXE, CREDITS.CKQ, EGAHEAD.CKQ, EGALATCH.CKQ, EGASPRIT.CKQ, FINALE.ckq, GEEL.PAT, GEEL3.PAT, HELPTXT.CKQ, HOI.CKQ, INFO.TLI, KEENQ.COM, LEVEL01.ckq, LEVEL02.ckq, LEVEL03.ckq, LEVEL04.ckq, LEVEL05.ckq, LEVEL06.ckq, LEVEL07.ckq, LEVEL08.ckq, LEVEL09.ckq, LEVEL10.ckq, LEVEL11.ckq, LEVEL12.ckq, LEVEL13.ckq, LEVEL14.ckq, LEVEL15.ckq, LEVEL16.ckq, LEVEL80.CKQ, LEVEL81.ckq, LEVEL82.ckq, LEVEL83.ckq, LEVEL90.ckq, LEVELX.CKQ, SCREEN.CKQ, STORYTXT.CKQ, UNLZEXE.CKQ]
 recipe:
   type: program
   program: KEENQ.COM

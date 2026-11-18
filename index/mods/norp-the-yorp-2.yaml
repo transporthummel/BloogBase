@@ -19,6 +19,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.xtraverse.norp_the_yorp_2.k2.2002-12-23.zip
     sha256: d4893934fc21813bbbef86d5089b8808f92a27294da0e4b0663bbe7868c5e6a1
     size: 89088
+    fingerprint:
+      sha256: 94926639897ad0f783131144796260bc95f963f1974379f1ea39417a1f28776d
+      files: [CK2PATCH.EXE, Creature.ny2, Ending.ny2, Landscap.ny2, N2map01.ny2, N2map02.ny2, N2map03.ny2, N2map04.ny2, N2map05.ny2, N2map06.ny2, N2map07.ny2, N2map08.ny2, N2map09.ny2, N2map10.ny2, N2map11.ny2, N2map12.ny2, N2map13.ny2, N2map14.ny2, N2map15.ny2, N2map16.ny2, N2map80.ny2, N2map81.ny2, N2map90.ny2, Norp2v100.bat, Norp2v131.bat, plasma.ny2, plasma2.ny2, Tiles.ny2, Titles1.ny2, UNLZEXE.EXE]
 # CK2PATCH 0.5.1; the readme runs it with one patch file per game version
 # (Norp2v131.bat, Norp2v100.bat).
 recipe:

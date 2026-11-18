@@ -18,6 +18,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.tulip.commander_bleen.k2.2010-08-29.zip
     sha256: 82be7edf22a59f82a7b9ad5791ba056d4e817120ec648edbf058585d49a6f6fb
     size: 129470
+    fingerprint:
+      sha256: dbdf3e52c3a1d42777bd5e3e4ad4d78defb481826472ab178b585fd06ea1f8d0
+      files: [Bleen.bat, bleen.pat, CK2PATCH.EXE, EGAHEAD.CK2, EGALATCH.CK2, EGASPRIT.CK2, ENDTXT.CK2, FINALE.CK2, HELPTXT.CK2, KEEN2.EXE, LEVEL08.CK2, LEVEL10.CK2, LEVEL80.CK2, LEVEL81.CK2, LEVEL90.CK2, STORYTXT.CK2]
 recipe:
   type: patch
   patcher: CK2PATCH.EXE

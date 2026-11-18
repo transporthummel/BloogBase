@@ -16,6 +16,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.kohntarkosz.the_search_for_the_sentinel.k1.2004-08-08.zip
     sha256: 3a36a82f821867309f82b6a4c97bcc7dd0526dd3a599c12490846c9df6d1b654
     size: 173630
+    fingerprint:
+      sha256: f007eff8b88122e9d409dc839f44e5e2e7b972c5a4e5e002dacf5e4232393c72
+      files: [CK1PATCH.EXE, EGAHEAD.CK1, EGALATCH.CK1, EGASPRIT.CK1, ENDTEXT.CK1, FINALE.CK1, HELPTEXT.CK1, KEEN1.exe, LEVEL02.CK1, LEVEL03.CK1, LEVEL04.CK1, LEVEL05.CK1, LEVEL06.CK1, LEVEL07.CK1, LEVEL08.CK1, LEVEL09.CK1, LEVEL10.CK1, LEVEL11.CK1, LEVEL12.CK1, LEVEL16.CK1, LEVEL80.CK1, LEVEL81.CK1, LEVEL90.CK1, PREVIEW2.CK1, PREVIEW3.CK1, PREVIEWS.ck1, sentinel.bat, sentinel.pat, SOUNDS.CK1, STORYTXT.ck1, test1.tli]
 recipe:
   type: patch
   patcher: CK1PATCH.EXE

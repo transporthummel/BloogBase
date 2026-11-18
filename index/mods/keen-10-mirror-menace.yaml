@@ -20,6 +20,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen6/m.szemigi.mirror_menace.k6.2014-10-01.zip
     sha256: 67f9ad6edce53c75cd943dd7ade29a0ee88db68e5296e39d4d9058700613deed
     size: 517085
+    fingerprint:
+      sha256: 296ef9a753179ed6efa68fb2dede598afe7518dc06cc4ea3cdb55a373f7cd34f
+      files: [AUDIO.CK6, AUDIOHED.CK6, CK6PATCH.EXE, EGADICT.CK6, EGAGRAPH.CK6, EGAHEAD.CK6, GAMEMAPS.CK6, Keen10.bat, Keen10.bin, Keen10.pat, Keen10.tli, MAPHEAD.CK6, STORY.K10, UNLZEXE.EXE]
 recipe:
   type: patch
   patcher: CK6PATCH.EXE

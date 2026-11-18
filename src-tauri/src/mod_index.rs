@@ -223,6 +223,37 @@ pub struct Download {
     /// mod is known in the player's own folder ([`download_for_files`]).
     #[serde(default)]
     pub programs: BTreeMap<String, String>,
+    /// The files that make this version, by which the mod is known in a
+    /// player's own folder or ZIP and among the mods installed by hand.
+    #[serde(default)]
+    pub fingerprint: Option<Fingerprint>,
+}
+
+/// The files of a download's mod root that make its version (levels,
+/// graphics, sounds, patches, programs; no documents, saves or settings),
+/// and one SHA-256 over them ([`fingerprint_sha256`]).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+pub struct Fingerprint {
+    pub files: Vec<String>,
+    pub sha256: String,
+}
+
+/// The SHA-256 of a [`Fingerprint`]: over a line `NAME sha256` for each of
+/// its files (name upper case, SHA-256 lower case), sorted by name. The
+/// index tool computes it the same way.
+pub fn fingerprint_sha256(files: &[(String, String)]) -> String {
+    let mut lines: Vec<String> = files
+        .iter()
+        .map(|(name, sha)| {
+            format!(
+                "{} {}\n",
+                name.to_ascii_uppercase(),
+                sha.to_ascii_lowercase()
+            )
+        })
+        .collect();
+    lines.sort();
+    sha256_hex(lines.concat().as_bytes())
 }
 
 #[derive(Deserialize)]
@@ -462,14 +493,15 @@ impl ModIndex {
         })
     }
 
-    /// The standalone entry with the download whose programs are in
-    /// `source`, byte for byte: a source mod the player has on disk, maybe
-    /// an older version and with saves. Newest download first.
+    /// The entry with the download whose files are in `source`, byte for
+    /// byte ([`download_for_files`]): a mod the player has on disk, unpacked
+    /// or repacked, maybe an older version and with saves. Newest download
+    /// first.
     pub fn entry_for_files(&self, source: &Source) -> Option<(IndexEntry, usize)> {
         let entries: Vec<IndexEntry> = self
             .entries()
             .into_iter()
-            .filter(|e| e.standalone && e.downloads.iter().any(|d| !d.programs.is_empty()))
+            .filter(|e| e.downloads.iter().any(Download::known_by_files))
             .collect();
         if entries.is_empty() {
             return None;
@@ -718,13 +750,10 @@ fn version_at_least(version: &str, min: &str) -> bool {
     a >= b
 }
 
-/// The download of standalone `entry` whose programs the player's own
-/// folder or ZIP at `path` has, unless it's the newest download itself,
-/// which installs as that.
+/// The download of `entry` whose files the player's own folder or ZIP at
+/// `path` has, unless it's the newest download itself, which installs as
+/// that.
 pub fn players_download(entry: &IndexEntry, path: &Path) -> Option<usize> {
-    if !entry.standalone {
-        return None;
-    }
     if path.is_file()
         && let (Some(d), Ok(data)) = (entry.downloads.first(), std::fs::read(path))
         && sha256_hex(&data).eq_ignore_ascii_case(&d.sha256)
@@ -736,8 +765,17 @@ pub fn players_download(entry: &IndexEntry, path: &Path) -> Option<usize> {
     download_for_files(entry, &source, &files, &mut HashMap::new())
 }
 
-/// The download of `entry` whose `programs` all sit in one folder of
-/// `source` (`files`), byte for byte. `hashes` keeps what was read, by path.
+impl Download {
+    /// Whether a player's own copy of it can be told by its files.
+    fn known_by_files(&self) -> bool {
+        self.fingerprint.is_some() || !self.programs.is_empty()
+    }
+}
+
+/// The download of `entry` whose files all sit in one folder of `source`
+/// (`files`), byte for byte: those of its `fingerprint`, else its
+/// `programs`. Other files beside them don't matter. `hashes` keeps what
+/// was read, by path.
 fn download_for_files(
     entry: &IndexEntry,
     source: &Source,
@@ -750,38 +788,56 @@ fn download_for_files(
             .or_insert_with(|| source.read(rel).ok().map(|d| sha256_hex(&d)))
             .clone()
     };
+    // The SHA-256 of each of `names` in `dir`, if all are there.
+    let mut in_dir = |dir: &str, names: &mut dyn Iterator<Item = &String>| {
+        names
+            .map(|name| {
+                let path = files.iter().find(|g| {
+                    let (gd, gn) = split_dir(g);
+                    gd == dir && gn.eq_ignore_ascii_case(name)
+                })?;
+                Some((name.clone(), hash(path)?))
+            })
+            .collect::<Option<Vec<(String, String)>>>()
+    };
     entry.downloads.iter().position(|d| {
-        let Some(first) = d.programs.keys().next() else {
+        let first = match &d.fingerprint {
+            Some(f) => f.files.first(),
+            None => d.programs.keys().next(),
+        };
+        let Some(first) = first else {
             return false;
         };
-        // The folders holding the first program are the candidates.
+        // The folders holding the first file are the candidates.
         files
             .iter()
             .filter(|f| split_dir(f).1.eq_ignore_ascii_case(first))
             .any(|f| {
                 let dir = split_dir(f).0;
-                d.programs.iter().all(|(name, sha)| {
-                    files
-                        .iter()
-                        .find(|g| {
-                            let (gd, gn) = split_dir(g);
-                            gd == dir && gn.eq_ignore_ascii_case(name)
-                        })
-                        .and_then(|g| hash(g))
-                        .is_some_and(|h| h.eq_ignore_ascii_case(sha))
-                })
+                match &d.fingerprint {
+                    Some(fp) => in_dir(dir, &mut fp.files.iter())
+                        .is_some_and(|h| fingerprint_sha256(&h).eq_ignore_ascii_case(&fp.sha256)),
+                    None => in_dir(dir, &mut d.programs.keys()).is_some_and(|h| {
+                        h.iter()
+                            .zip(d.programs.values())
+                            .all(|((_, h), sha)| h.eq_ignore_ascii_case(sha))
+                    }),
+                }
             })
     })
 }
 
 /// Ties installed mods that aren't tied to an entry to the one whose
-/// download they were installed from, byte for byte: added from KeenWiki
-/// or a file, maybe before the entry joined the index. An older download
-/// counts too, so the entry offers the update. The entry's details replace
-/// what the mod brought along ([`mods::tie_to_index`]). Mods tied already
-/// follow their entry's `standalone`, so an entry can drop its game.
-pub fn link_installed(index: &ModIndex, db: &Db) -> Result<()> {
-    for e in index.entries() {
+/// download they were installed from: added from KeenWiki or a file, maybe
+/// before the entry joined the index. Known by the archive's SHA-256, or by
+/// the download's files among the mod's (in `paths.mods`), unless the
+/// entry is installed already. An older download counts too, so the entry
+/// offers the update. The entry's details replace what the mod brought
+/// along ([`mods::tie_to_index`]). Mods tied already follow their entry's
+/// `standalone`, so an entry can drop its game.
+pub fn link_installed(index: &ModIndex, db: &Db, paths: &AppPaths) -> Result<()> {
+    let entries = index.entries();
+    for e in &entries {
         for (i, d) in e.downloads.iter().enumerate() {
             let found: Vec<String> = db
                 .conn()
@@ -792,9 +848,40 @@ pub fn link_installed(index: &ModIndex, db: &Db) -> Result<()> {
                 .query_map(params![e.game, d.sha256], |r| r.get(0))?
                 .collect::<rusqlite::Result<_>>()?;
             for mod_id in found {
-                mods::tie_to_index(db, &mod_id, &Curated::new(&e, i))?;
+                mods::tie_to_index(db, &mod_id, &Curated::new(e, i))?;
             }
         }
+    }
+    let untied: Vec<(String, String)> = db
+        .conn()
+        .prepare("SELECT id, game_id FROM mods WHERE index_id IS NULL ORDER BY added_at")?
+        .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?
+        .collect::<rusqlite::Result<_>>()?;
+    for (mod_id, game_id) in untied {
+        let candidates: Vec<&IndexEntry> = entries
+            .iter()
+            .filter(|e| e.game == game_id && e.downloads.iter().any(Download::known_by_files))
+            .collect();
+        if candidates.is_empty() {
+            continue;
+        }
+        let Ok(source) = Source::open(&paths.mods.join(&mod_id).join("files")) else {
+            continue;
+        };
+        let Ok(files) = source.files() else {
+            continue;
+        };
+        let mut hashes = HashMap::new();
+        let found = candidates
+            .into_iter()
+            .find_map(|e| Some((e, download_for_files(e, &source, &files, &mut hashes)?)));
+        if let Some((e, i)) = found
+            && mods::find_by_index(db, &e.id)?.is_none()
+        {
+            mods::tie_to_index(db, &mod_id, &Curated::new(e, i))?;
+        }
+    }
+    for e in &entries {
         mods::set_standalone(db, &e.id, e.needs_no_game(), e.standalone)?;
         mods::set_worlds(db, &e.id, e.worlds.as_ref())?;
     }
@@ -1121,9 +1208,79 @@ mod tests {
         let zip = tmp.path().join("newest.zip");
         std::fs::write(&zip, b"the newest zip").unwrap();
         assert_eq!(found(&zip), None);
-        // Only standalone mods.
-        entry.standalone = false;
-        assert_eq!(players_download(&entry, &new), None);
+    }
+
+    #[test]
+    fn a_fingerprint_hashes_sorted_upper_case_names() {
+        let lines = format!(
+            "LEVEL01.CK4 {}\nX.PAT {}\n",
+            sha256_hex(b"l"),
+            sha256_hex(b"x")
+        );
+        let files = [("x.pat", b"x"), ("Level01.ck4", b"l")]
+            .map(|(n, d)| (n.to_string(), sha256_hex(d).to_uppercase()));
+        assert_eq!(fingerprint_sha256(&files), sha256_hex(lines.as_bytes()));
+    }
+
+    /// `entry` with a fingerprint of `files` for its download `i`.
+    fn with_fingerprint(entry: &mut IndexEntry, i: usize, files: &[(&str, &[u8])]) {
+        let hashes: Vec<(String, String)> = files
+            .iter()
+            .map(|(n, d)| (n.to_string(), sha256_hex(d)))
+            .collect();
+        entry.downloads[i].fingerprint = Some(Fingerprint {
+            sha256: fingerprint_sha256(&hashes),
+            files: files.iter().map(|(n, _)| n.to_string()).collect(),
+        });
+    }
+
+    #[test]
+    fn knows_any_mod_by_its_fingerprint() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut entry = sample_entry(&sha256_hex(b"the newest zip"));
+        let mut old = entry.downloads[0].clone();
+        old.sha256 = "ab".repeat(32);
+        entry.downloads.push(old);
+        with_fingerprint(
+            &mut entry,
+            0,
+            &[("GAMEMAPS.CK4", b"new maps"), ("MOD.PAT", b"patch")],
+        );
+        with_fingerprint(
+            &mut entry,
+            1,
+            &[("GAMEMAPS.CK4", b"old maps"), ("MOD.PAT", b"patch")],
+        );
+        let folder = |name: &str, files: &[(&str, &[u8])]| {
+            let dir = tmp.path().join(name);
+            crate::source::testutil::write_folder(&dir, files);
+            dir
+        };
+        let found = |path: &Path| players_download(&entry, path);
+        // Unpacked into a folder of the game, with saves and readmes.
+        let new = folder(
+            "new",
+            &[
+                ("Keen/gamemaps.ck4", b"new maps"),
+                ("Keen/mod.pat", b"patch"),
+                ("Keen/SAVEGAM0.CK4", b"s"),
+                ("Keen/KEEN4E.EXE", b"game"),
+                ("Keen/README.TXT", b"r"),
+            ],
+        );
+        assert_eq!(found(&new), Some(0));
+        let old = folder(
+            "old",
+            &[("GAMEMAPS.CK4", b"old maps"), ("MOD.PAT", b"patch")],
+        );
+        assert_eq!(found(&old), Some(1));
+        // A changed level, a missing file: not that mod.
+        let changed = folder(
+            "changed",
+            &[("GAMEMAPS.CK4", b"my maps"), ("MOD.PAT", b"patch")],
+        );
+        assert_eq!(found(&changed), None);
+        assert_eq!(found(&folder("part", &[("MOD.PAT", b"patch")])), None);
     }
 
     #[tokio::test]
@@ -1391,7 +1548,7 @@ mod tests {
                 )
                 .unwrap();
         }
-        link_installed(&index, &db).unwrap();
+        link_installed(&index, &db, &paths).unwrap();
         let tied: Vec<(String, Option<String>)> = db
             .conn()
             .prepare("SELECT id, index_id FROM mods ORDER BY id")
@@ -1455,6 +1612,95 @@ mod tests {
     }
 
     #[test]
+    fn ties_mods_installed_by_hand_by_their_files() {
+        let (tmp, paths) = setup();
+        let k = keys();
+        let mut json: serde_json::Value = serde_json::from_str(SAMPLE).unwrap();
+        let files = [("GAMEMAPS.CK4", b"maps" as &[u8]), ("MOD.PAT", b"patch")];
+        let hashes: Vec<(String, String)> = files
+            .iter()
+            .map(|(n, d)| (n.to_string(), sha256_hex(d)))
+            .collect();
+        for e in json["mods"].as_array_mut().unwrap() {
+            if e["id"] == "sample-patch" {
+                e["downloads"][0]["fingerprint"] = serde_json::json!({
+                    "files": ["GAMEMAPS.CK4", "MOD.PAT"],
+                    "sha256": fingerprint_sha256(&hashes),
+                });
+            }
+        }
+        let url = publish(tmp.path(), &k, &json.to_string());
+        let index = ModIndex::with_keys(&paths, url, &[&k.pk]);
+        tauri::async_runtime::block_on(index.refresh(false));
+        let db = Db::open_in_memory().unwrap();
+        // From a folder, renamed, with the player's saves; the same files a
+        // second time; another mod; another game's.
+        for (id, game, files, at) in [
+            (
+                "mine",
+                "keen4",
+                &[
+                    ("gamemaps.ck4", b"maps" as &[u8]),
+                    ("MOD.PAT", b"patch"),
+                    ("SAVEGAM0.CK4", b"s"),
+                ][..],
+                1,
+            ),
+            ("again", "keen4", &files[..], 2),
+            (
+                "other",
+                "keen4",
+                &[("GAMEMAPS.CK4", b"other" as &[u8]), ("MOD.PAT", b"patch")][..],
+                3,
+            ),
+            ("k5", "keen5", &files[..], 4),
+        ] {
+            crate::source::testutil::write_folder(&paths.mods.join(id).join("files"), files);
+            db.conn()
+                .execute(
+                    "INSERT INTO mods (id, game_id, name, authors, recipe_json, path, source,
+                                       added_at)
+                     VALUES (?1, ?2, 'My name', '[]', '{}', '/x', 'manual', ?3)",
+                    params![id, game, at],
+                )
+                .unwrap();
+        }
+        link_installed(&index, &db, &paths).unwrap();
+        let tied: Vec<(String, Option<String>, String, Option<String>)> = db
+            .conn()
+            .prepare("SELECT id, index_id, name, archive_sha256 FROM mods ORDER BY added_at")
+            .unwrap()
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)))
+            .unwrap()
+            .collect::<rusqlite::Result<_>>()
+            .unwrap();
+        let sha = index.entry("sample-patch").unwrap().downloads[0]
+            .sha256
+            .clone();
+        assert_eq!(
+            tied[0],
+            (
+                "mine".into(),
+                Some("sample-patch".into()),
+                "Sample Patch Mod".into(),
+                Some(sha)
+            )
+        );
+        // The entry has its mod now; the others stay as they are.
+        assert!(
+            tied[1..]
+                .iter()
+                .all(|(_, i, n, _)| i.is_none() && n == "My name")
+        );
+        assert!(
+            !list(&index, &db)
+                .unwrap()
+                .iter()
+                .any(|m| m.update_available)
+        );
+    }
+
+    #[test]
     fn tied_mods_follow_their_entry_as_it_becomes_standalone() {
         let (tmp, paths) = setup();
         let k = keys();
@@ -1478,7 +1724,7 @@ mod tests {
                  VALUES ('m', 'keen4-1', 'm', '/s', 0);",
             )
             .unwrap();
-        link_installed(&index, &db).unwrap();
+        link_installed(&index, &db, &paths).unwrap();
         let (install, flag): (Option<String>, bool) = db
             .conn()
             .query_row(

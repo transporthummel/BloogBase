@@ -23,6 +23,24 @@ pub fn sha256_hex(data: &[u8]) -> String {
         .collect()
 }
 
+/// The SHA-256 of a fingerprint, as the app computes it
+/// (`mod_index::fingerprint_sha256`): over a line `NAME sha256` for each
+/// file (name upper case, SHA-256 lower case), sorted by name.
+pub fn fingerprint_sha256(files: &[(String, String)]) -> String {
+    let mut lines: Vec<String> = files
+        .iter()
+        .map(|(name, sha)| {
+            format!(
+                "{} {}\n",
+                name.to_ascii_uppercase(),
+                sha.to_ascii_lowercase()
+            )
+        })
+        .collect();
+    lines.sort();
+    sha256_hex(lines.concat().as_bytes())
+}
+
 fn client() -> Result<reqwest::blocking::Client, String> {
     reqwest::blocking::Client::builder()
         .user_agent(USER_AGENT)
@@ -176,6 +194,9 @@ pub fn problems(
             all.join(", ")
         ));
     }
+    if let Some(f) = &download.fingerprint {
+        out.extend(fingerprint_problems(&download.url, f, data, &names));
+    }
     for file in &entry.provides {
         if !names.iter().any(|n| file_of(n).eq_ignore_ascii_case(file)) {
             out.push(format!(
@@ -185,6 +206,48 @@ pub fn problems(
         }
     }
     out
+}
+
+/// Whether one folder of the archive (`names`) holds all files of the
+/// fingerprint `f`, which hash to its SHA-256.
+fn fingerprint_problems(
+    url: &str,
+    f: &crate::entry::Fingerprint,
+    data: &[u8],
+    names: &[String],
+) -> Vec<String> {
+    let Some(first) = f.files.first() else {
+        return Vec::new();
+    };
+    let dirs: Vec<&str> = names
+        .iter()
+        .filter(|n| file_of(n).eq_ignore_ascii_case(first))
+        .map(|n| dir_of(n))
+        .collect();
+    let mut found = Vec::new();
+    for dir in dirs {
+        let hashes: Option<Vec<(String, String)>> = f
+            .files
+            .iter()
+            .map(|file| {
+                let path = names
+                    .iter()
+                    .find(|n| dir_of(n) == dir && file_of(n).eq_ignore_ascii_case(file))?;
+                Some((file.clone(), sha256_hex(&zip_read(data, path).ok()?)))
+            })
+            .collect();
+        if let Some(h) = hashes {
+            let sha = fingerprint_sha256(&h);
+            if sha.eq_ignore_ascii_case(&f.sha256) {
+                return Vec::new();
+            }
+            found.push(sha);
+        }
+    }
+    vec![match found.first() {
+        Some(sha) => format!("{url}: fingerprint sha256 is {sha}"),
+        None => format!("{url}: no folder holds all files of its fingerprint"),
+    }]
 }
 
 fn zip_files(data: &[u8]) -> Result<Vec<String>, zip::result::ZipError> {
@@ -391,6 +454,49 @@ mod tests {
             .insert("TITLE.EXE".into(), sha256_hex(b"other"));
         let p = problems(&e, &wrong, &data, &[]);
         assert!(p.len() == 1 && p[0].contains(&sha256_hex(b"t")), "{p:?}");
+    }
+
+    #[test]
+    fn fingerprints_are_checked_in_one_folder() {
+        let data = zip(&[
+            ("mod/CK4PATCH.EXE", b"p"),
+            ("mod/x.pat", b"x"),
+            ("mod/LEVEL01.CK4", b"l"),
+            ("other/LEVEL01.CK4", b"o"),
+        ]);
+        let mut e = entry_for(&data);
+        let files = [("level01.ck4", b"l"), ("X.PAT", b"x")];
+        // The app's way: upper case names, sorted, each with its SHA-256.
+        let lines = format!(
+            "LEVEL01.CK4 {}\nX.PAT {}\n",
+            sha256_hex(b"l"),
+            sha256_hex(b"x")
+        );
+        let sha = sha256_hex(lines.as_bytes());
+        assert_eq!(
+            fingerprint_sha256(&files.map(|(n, d)| (n.to_string(), sha256_hex(d)))),
+            sha
+        );
+        e.downloads[0].fingerprint = Some(crate::entry::Fingerprint {
+            sha256: sha.clone(),
+            files: files.map(|(n, _)| n.to_string()).into(),
+        });
+        let d = e.downloads[0].clone();
+        assert_eq!(problems(&e, &d, &data, &[]), Vec::<String>::new());
+
+        let mut wrong = d.clone();
+        wrong.fingerprint.as_mut().unwrap().sha256 = "00".repeat(32);
+        let p = problems(&e, &wrong, &data, &[]);
+        assert!(p.len() == 1 && p[0].contains(&sha), "{p:?}");
+        let mut missing = d;
+        missing
+            .fingerprint
+            .as_mut()
+            .unwrap()
+            .files
+            .push("GONE.CK4".into());
+        let p = problems(&e, &missing, &data, &[]);
+        assert!(p.len() == 1 && p[0].contains("no folder"), "{p:?}");
     }
 
     #[test]

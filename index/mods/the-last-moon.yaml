@@ -17,6 +17,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.allstories.the_last_moon.k1.2004-07-25.zip
     sha256: b3f7d5d9892aed29dedffd6dd314dae1f2d1bc87626b25245f45a820de0df3ed
     size: 179648
+    fingerprint:
+      sha256: ebc79c36ecc38a37b0e37e24118904d6050adf765d6edfc8e76490f655ebaac4
+      files: [CK1PATCH.EXE, EGAHEAD.CK1, EGALATCH.CK1, EGASPRIT.CK1, ENDTEXT.CK1, FINALE.CK1, HELPTEXT.CK1, KEEN1.EXE, Lastmoon.bat, lastmoon.pat, LEVEL01.CK1, LEVEL02.CK1, LEVEL03.CK1, LEVEL04.CK1, LEVEL05.CK1, LEVEL06.CK1, LEVEL07.CK1, LEVEL08.CK1, LEVEL09.CK1, LEVEL10.CK1, LEVEL11.CK1, LEVEL12.CK1, LEVEL13.CK1, LEVEL14.CK1, LEVEL15.CK1, LEVEL16.CK1, LEVEL80.CK1, LEVEL81.CK1, LEVEL90.CK1, PREVIEW2.CK1, PREVIEW3.CK1, PREVIEWS.CK1, SOUNDS.CK1, STORYTXT.CK1, tileinfo.tli]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

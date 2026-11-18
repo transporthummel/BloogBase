@@ -16,6 +16,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.viler.keen4c16.k4.2016-05-22.zip
     sha256: a35f6cfa9b1f32b20b4b8d23a85cb93f7e2f2235915c1c7142b6db6f5ca04de6
     size: 322684
+    fingerprint:
+      sha256: 2c91aabf59e562df056d7c02acfc05d774d5f8ca035b1399f7bf085f6fcfa86e
+      files: [C16GRAPH.CK4, C16HEAD.CK4, CK4PATCH.EXE, KEEN4C16.BAT, KEEN4C16.PAT, play.bat]
 recipe:
   type: patch
   patcher: CK4PATCH.EXE

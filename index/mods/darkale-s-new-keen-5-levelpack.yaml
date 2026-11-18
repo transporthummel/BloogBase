@@ -21,6 +21,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/Packs/Keen5/l.alessandro.darkales_new_levelpack_v1.1.k5.2023-01-01.zip
     sha256: f4c8a535fc215d17c33dd95bee8cdb6334bdfd2ca55da2d8e16c38ce8964452c
     size: 739962
+    fingerprint:
+      sha256: b29ac528bb18e45926660670583e7a78ee574e4657bc062557781bc1f0ea4818
+      files: [AUDIO.CK5, AUDIODCT.CK5, AUDIOHED.CK5, EGADICT.CK5, EGAGRAPH.CK5, EGAHEAD.CK5, GAMEMAPS.CK5, MAPHEAD.CK5, play.bat, RCK5.EXE]
     programs:
       RCK5.EXE: 000fb5d86276c0be5394608fdc95b6469ee3c81c5f0208758a8f05654114ce2e
 standalone: true

@@ -20,6 +20,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen5/m.55aavenue.the_armageddon_app_v.1.2.k5.2020-05-26.zip
     sha256: c0074fe62d1b4de5d9c05f532ad19b228ae3258a5c3c431ee0c846fc3729530a
     size: 715077
+    fingerprint:
+      sha256: 55fa697fa9c9de75d45223a64b48ad65c5f89c44fc3f4d51f38cc14ef05e9e57
+      files: [abiathar.pat, AUDIO.CK5, AUDIODCT.CK5, AUDIOHED.CK5, CK5LOAD.BIN, CK5PATCH.EXE, EGAGRAPH.CK5, egahead.ck5, GAMEMAPS.CK5, KEEN5.TLI, KEEN5.VIF, MAPHEAD.CK5, play.bat]
 recipe:
   type: patch
   patcher: CK5PATCH.EXE

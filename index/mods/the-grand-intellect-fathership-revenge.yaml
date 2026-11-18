@@ -19,6 +19,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen2/m.szemigi.fathership_revenge.k2.2009-08-16.zip
     sha256: f20c66c5394712a83579310941cbe8798014979e4fab7b7a915e2ebb395077d1
     size: 276898
+    fingerprint:
+      sha256: 3e0f40cb095b507744bb5f90c3f98433432e4bf13f5a8a1f4341f8775bd7ae7f
+      files: [CK2PATCH.EXE, EGAHEAD.CK2, EGALATCH.CK2, EGASPRIT.CK2, Endtext.ck2, FINALE.CK2, Helptext.ck2, KEEN2.EXE, LEVEL01.CK2, LEVEL02.CK2, LEVEL03.CK2, LEVEL04.CK2, LEVEL05.CK2, LEVEL06.CK2, LEVEL07.CK2, LEVEL08.CK2, LEVEL09.CK2, LEVEL10.CK2, LEVEL11.CK2, LEVEL12.CK2, LEVEL13.CK2, LEVEL14.CK2, LEVEL15.CK2, LEVEL16.CK2, LEVEL17.CK2, LEVEL29.CK2, LEVEL80.CK2, LEVEL81.CK2, LEVEL90.CK2, Mort2.bat, Mort2.pat, PREVIEWS.CK2, SOUNDS.CK2, STORYTXT.CK2]
 # Brings an executable and all of the game's files: plays on any copy of it.
 standalone: true
 recipe:

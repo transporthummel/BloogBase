@@ -21,6 +21,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen4/m.dave216.aurora_bliss_v.1.2.k4.2023-08-23.zip
     sha256: 0140e4531f2f9953ad7deac3e2dee24eb3d67b270781a753c3ab753a4d02b271
     size: 4822659
+    fingerprint:
+      sha256: 42da5ba6f392985a4956154d04d618e44fdee8ab586daf06340a1f25d4b03c28
+      files: [abiathar.pat, AUDIO.CK4, AUDIODCT.CK4, AUDIOHED.CK4, AURORA.bat, CK4LOAD.BIN, CK4PATCH.EXE, EGADICT.CK4, EGAGRAPH.CK4, EGAHEAD.CK4, GAMEMAPS.CK4, Keen4.tli, KEEN4E.EXE, maphead.ck4, play.bat, STORY.CK4]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

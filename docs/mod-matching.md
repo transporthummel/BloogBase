@@ -27,16 +27,33 @@ folder or file name.
 ## An index entry
 
 The index has tested recipes, so a mod that is an index entry's download
-should be installed as that entry. A dropped or picked archive matches an
-entry of the same game whose **newest** download has the archive's SHA-256.
-Older downloads don't count here: the entry's recipe may not fit them. The
-dialog then offers the entry instead ([keenwiki.md](keenwiki.md) has the
-same check for KeenWiki links).
+should be installed as that entry; the add dialog then offers only the
+entry. A dropped or picked mod matches an entry of the same game
 
-After any install, installed mods that aren't tied to an entry are tied to
-the one whose download they were installed from, byte for byte, older
-downloads included. A mod installed from KeenWiki before its entry joined
-the index thus becomes that entry's, and the entry offers its update.
+- when it's the archive of the entry's **newest** download (its SHA-256),
+  which then installs as that download ([keenwiki.md](keenwiki.md) has the
+  same check for KeenWiki links), or
+- when one of its folders holds the files of a download's **fingerprint**,
+  byte for byte: the files right in the download's mod root that make the
+  version (levels, graphics, sounds, patches, programs), documents,
+  archives, saves and settings aside, with one SHA-256 over them
+  (`mod_index::fingerprint_sha256`). Other files beside them don't matter,
+  so it works for an unpacked or repacked mod too, in a folder of its own
+  or in the game's, with the player's saves. Older downloads count as well.
+  The player's files are installed then, with the entry's recipe and
+  details; their saves and settings go to the mod's profile, and an older
+  download shows the update. Downloads without a fingerprint are known by
+  their `programs` instead, if they list any.
+
+After any install, at every start and after each index check (every few
+hours), installed mods that aren't tied to an entry are tied to the one
+whose download they were installed from: by the archive's SHA-256, or by
+the fingerprint's files among the mod's own, older downloads included,
+unless the entry has an installed mod already. The entry's name and details
+replace the mod's, and it counts as that download, so the entry offers its
+update; how it starts stays as it was installed. A mod installed from
+KeenWiki or by hand before its entry joined the index thus becomes that
+entry's.
 
 ## The mod a mod goes over
 

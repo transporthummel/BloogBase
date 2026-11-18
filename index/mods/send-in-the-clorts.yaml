@@ -20,6 +20,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen5/m.kohntarkosz_.send_in_the_clorts_v1.1_unofficial.k5.2024-08-15.zip
     sha256: 0e3287861710656b226d62d320aec63e264941782ff8ddc8667e6f2a2d359a58
     size: 520327
+    fingerprint:
+      sha256: b5d51dad758070cc1db758740a8198e12f2462f89ec5fdc583fc2ef35106395c
+      files: [AUDIO.CK5, AUDIODCT.CK5, AUDIOHED.CK5, CK5PATCH.exe, EGADICT.CK5, EGAGRAPH.CK5, EGAHEAD.CK5, GAMEMAPS.CK5, Keen5.tli, KEEN5a.PAT, maphead.ck5, play.bat]
 recipe:
   type: patch
   patcher: CK5PATCH.exe

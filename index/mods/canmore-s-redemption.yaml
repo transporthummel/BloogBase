@@ -22,6 +22,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen5/m.dave216.canmores_redemption_v.1.0.2.k5.2023-07-30.zip
     sha256: f94593557fffd1828681fdac5b65bd51522d48e2f5ce18067d70d58682dca6e3
     size: 46455531
+    fingerprint:
+      sha256: 3ecbf223e62cadfe0038f194637eb156cfebb34cd21164e2565bdbad08094893
+      files: [abiathar.pat, AUDIO.CK5, AUDIODCT.CK5, AUDIOHED.CK5, CK5LOAD.BIN, CK5PATCH.EXE, CRAIG.bat, EGAGRAPH.CK5, EGAHEAD.CK5, GAMEMAPS.CK5, Keen5.tli, KEEN5.VIF, MAPHEAD.CK5, play.bat, STORY.CK5]
 recipe:
   type: patch
   patcher: CK5PATCH.EXE

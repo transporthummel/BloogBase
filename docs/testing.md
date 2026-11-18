@@ -57,8 +57,9 @@ cargo test --lib corpus_matches_expectations -- --ignored --nocapture
 ```
 
 (The full name keeps the `keen-graphics` corpus test below and the index
-check `index_entries_say_whether_they_bring_their_game`, which needs the
-index's cached downloads, out of the run.)
+checks `index_entries_say_whether_they_bring_their_game` and
+`index_fingerprints_are_those_of_the_downloads`, which need the index's
+cached downloads, out of the run.)
 
 - Cache: `BLOOGBASE_MOD_CACHE`, default `.local/mods`.
 - Adding a mod: append `{ "url": "…" }` to the manifest, put the archive into
@@ -176,9 +177,11 @@ pnpm index:check --only <id>           # all entries, but only that one's downlo
 cd index/tool && cargo test            # the tool itself
 cd src-tauri && cargo test --lib index_entries_say -- --ignored
                                        # standalone where the download has all of the game's files
+cd src-tauri && cargo test --lib index_fingerprints -- --ignored
+                                       # every fingerprint is the app's for its download
 ```
 
-The last one reads `index/dist/index.json` (`pnpm index:build`) and the
+The last two read `index/dist/index.json` (`pnpm index:build`) and the
 downloads `pnpm index:check` cached.
 
 CI (`.github/workflows/index.yml`) runs both on every change to `index/` and

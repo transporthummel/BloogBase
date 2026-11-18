@@ -355,8 +355,9 @@ impl Curated {
 
 /// Ties an installed mod to the index entry whose download it was
 /// installed from, and takes the entry's details over what the mod brought
-/// along, as an install from the index would store them. How it's played
-/// stays as installed: the entry's recipe is made for its newest download.
+/// along, as an install from the index would store them, and the download
+/// it is, so a newer one shows as an update. How it's played stays as
+/// installed: the entry's recipe is made for its newest download.
 pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
     // Every field gets a decision, so new ones aren't forgotten here.
     let Stored {
@@ -383,13 +384,13 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
         status: _,
         source_url: _,
         archive_name: _,
-        archive_sha256: _,
+        archive_sha256,
     } = Stored::curated(c, None);
     db.conn().execute(
         "UPDATE mods SET name = ?2, authors = ?3, author_links = ?4,
                          version = COALESCE(?5, version), description = ?6, released = ?7,
                          source = ?8, index_id = ?9, keenwiki_url = ?10, homepage = ?11,
-                         pckf = ?12, keenmodding = ?13, cover = ?14
+                         pckf = ?12, keenmodding = ?13, cover = ?14, archive_sha256 = ?15
          WHERE id = ?1",
         params![
             mod_id,
@@ -406,6 +407,7 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
             pckf,
             keenmodding,
             cover,
+            archive_sha256,
         ],
     )?;
     tracing::info!("tied mod {mod_id} to index entry {}", c.index_id);
@@ -497,8 +499,8 @@ pub fn set_worlds(db: &Db, index_id: &str, worlds: Option<&Worlds>) -> Result<()
     Ok(())
 }
 
-/// Installs a standalone index mod from the player's own folder or ZIP,
-/// whose programs are those of the entry's download `c` (see
+/// Installs an index mod from the player's own folder or ZIP, whose files
+/// are those of the entry's download `c` (see
 /// [`crate::mod_index::ModIndex::entry_for_files`]): the entry's recipe and
 /// details, the player's files. Their saves and settings go to the
 /// profile's state, where the game writes them, so an update keeps them.

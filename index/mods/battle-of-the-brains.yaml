@@ -26,6 +26,9 @@ downloads:
     url: https://files.shikadi.net/keenwiki/mods/Keen5/m.ceilick_mink_tulip.battle_of_the_brains_v.2.5.k5.2011-11-23.zip
     sha256: bef2d78618bd43cebcbac96f30e767e342c656ee44ca8f7eec736012b383010d
     size: 993963
+    fingerprint:
+      sha256: 80741159c9e79c89329102f074caf5dc3b65624b6f362f6d8faecfd323ffc428
+      files: [AUDIO.CK5, AUDIODCT.CK5, AUDIOHED.CK5, BotB.PAT, CK5LOAD.BIN, CK5PATCH.EXE, editmaps.ck5, EGAGRAPH.CK5, EGAHEAD.CK5, Keen9.bat, Keen9.tli, maphead.ck5, play.bat, Setup.bat, story.ck5, unlzexe.exe]
 recipe:
   type: patch
   patcher: CK5PATCH.EXE

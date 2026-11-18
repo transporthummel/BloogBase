@@ -18,6 +18,9 @@ downloads:
   - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.bubbatom.the_eight_accumulators.k4.2011-12-13.zip
     sha256: fac1b79e84578cf4e193944976547f5057c5eea05bff5b5155d5a86642efb0e0
     size: 672398
+    fingerprint:
+      sha256: f86a45e9015eebed040d15c964cac922f147fe5ce008c2b6732a5c3303de3710
+      files: [AUDIO.CK4, CK4LOAD.BIN, CK4PATCH.EXE, CWSDPMI.EXE, DOPEFISH.ANS, Egagraph.ck4, EGAHEAD.CK4, Gamemaps.ck4, Keen4.tli, KEEN4E.EXE, maphead.ck4, Mymod.PAT, Play.bat, STORY.CK4]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:
