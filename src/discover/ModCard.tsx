@@ -20,6 +20,7 @@ import { Dialog } from "../ui/Dialog";
 import { useEnterAction } from "../ui/useEnterAction";
 import { fitting, freeFit, isSourceMod, needsNoGame, requiredLabels } from "./fit";
 import { useFreeGames, useIndexMods } from "./queries";
+import { StatusBadge } from "./StatusBadge";
 
 /** A mod from the index with everything needed to install it. */
 export function ModCard({
@@ -90,13 +91,7 @@ export function ModCard({
           {mod.modId && <Badge tone="status">{t("discover.installed")}</Badge>}
           {mod.updateAvailable && <Badge tone="status">{t("discover.updateBadge")}</Badge>}
           <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
-          {(entry.status === "alpha" ||
-            entry.status === "beta" ||
-            entry.status === "abandoned") && (
-            <Badge tone={entry.status === "abandoned" ? "warning" : undefined}>
-              {t(`discover.status.${entry.status}`)}
-            </Badge>
-          )}
+          <StatusBadge status={entry.status} />
           {isSourceMod(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
           {entry.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
           {mod.new && <Badge>{t("mods.new")}</Badge>}

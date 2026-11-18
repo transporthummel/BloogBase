@@ -5,6 +5,8 @@ import { beforeEach, expect, test, vi } from "vitest";
 import {
   commands,
   type Game,
+  type IndexEntry,
+  type IndexMod,
   type Install,
   type Mod,
   type Profile,
@@ -71,6 +73,7 @@ vi.mock("../bindings", () => {
       oneButtonFiring: vi.fn(() => Promise.resolve({ status: "ok", data: false })),
       profileFiring: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
       gameSettings: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
+      indexMods: vi.fn(() => Promise.resolve({ status: "ok", data: [] })),
     },
     events: { playSessionEnded: event, jobUpdated: event },
   };
@@ -197,6 +200,44 @@ test("lists profiles with version and play stats", async () => {
   expect(screen.getByText("Played 1 h 5 min")).toBeInTheDocument();
   // On the card and in the status bar.
   expect(screen.getAllByText("1 saved game")).toHaveLength(2);
+});
+
+/** An index entry of `modId` with `status`. */
+const indexed = (modId: string, status: IndexEntry["status"]): IndexMod => ({
+  entry: {
+    id: modId,
+    name: modId,
+    game: "keen4",
+    requires: [],
+    authors: [],
+    added: "2020-01-01",
+    type: "episode",
+    status,
+    links: {},
+    downloads: [],
+    recipe: { type: "episode" },
+  },
+  modId,
+  updateAvailable: false,
+  new: false,
+});
+
+test("a mod in beta or abandoned says so", async () => {
+  const mod = (id: string): Profile => ({ ...profile, id, modId: id, label: id });
+  vi.mocked(commands.listProfiles).mockResolvedValue({
+    status: "ok",
+    data: [mod("Beta"), mod("Gone"), mod("Done")],
+  });
+  vi.mocked(commands.indexMods).mockResolvedValue({
+    status: "ok",
+    data: [indexed("Beta", "beta"), indexed("Gone", "abandoned"), indexed("Done", "complete")],
+  });
+  renderLibrary();
+  const card = async (name: string) =>
+    (await screen.findByRole("link", { name })).closest("article") as HTMLElement;
+  expect(await within(await card("Beta")).findByText("Beta")).toBeInTheDocument();
+  expect(within(await card("Gone")).getByText("Abandoned")).toHaveClass("text-warning");
+  expect(within(await card("Done")).queryByText(/complete/i)).not.toBeInTheDocument();
 });
 
 test("a mod played over another one names it with its game", async () => {

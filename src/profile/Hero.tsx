@@ -6,6 +6,7 @@ import { type TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { type Game, type IndexEntry, type Mod, type Profile, type WorldStart } from "../bindings";
 import { useIndexMods } from "../discover/queries";
+import { StatusBadge } from "../discover/StatusBadge";
 import { formatDate, formatPlayTime, looseDateText } from "../format";
 import { Cover } from "../library/Cover";
 import { useCover } from "../library/covers";
@@ -165,6 +166,7 @@ function Credits({
         {profile.modId !== null && !profile.sourceMod && <Badge>{t("mods.badge")}</Badge>}
         {profile.sourceMod && <Badge>{t("mods.sourceMod")}</Badge>}
         {profile.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
+        <StatusBadge status={entry?.status} />
         {profile.modId === null && <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>}
         {profile.modId === null && version?.shareware && <Badge>{t("profile.shareware")}</Badge>}
         {mod?.version && (

@@ -8,6 +8,8 @@ import {
   commands,
   type Backup,
   type Game,
+  type IndexEntry,
+  type IndexMod,
   type Install,
   type Mod,
   type Profile,
@@ -312,6 +314,36 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   // The game's folder is on the game's own page.
   await userEvent.click(screen.getByRole("button", { name: "More" }));
   expect(screen.queryByRole("menuitem", { name: "Open game folder" })).not.toBeInTheDocument();
+});
+
+/** An index entry of `modId` with `status`. */
+const indexed = (modId: string, status: IndexEntry["status"]): IndexMod => ({
+  entry: {
+    id: modId,
+    name: modId,
+    game: "keen4",
+    requires: [],
+    authors: [],
+    added: "2020-01-01",
+    type: "episode",
+    status,
+    links: {},
+    downloads: [],
+    recipe: { type: "episode" },
+  },
+  modId,
+  updateAvailable: false,
+  new: false,
+});
+
+test("a mod's page says it was abandoned", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
+  );
+  vi.mocked(commands.listMods).mockResolvedValue(ok([{ ...aurora, indexId: "aurora-bliss" }]));
+  vi.mocked(commands.indexMods).mockResolvedValue(ok([indexed("aurora-bliss", "abandoned")]));
+  renderDetail();
+  expect(await screen.findByText("Abandoned")).toHaveClass("text-warning");
 });
 
 test("a mod's page changes the copy of the game it plays on", async () => {

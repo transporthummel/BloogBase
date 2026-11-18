@@ -13,6 +13,8 @@ import { AddedDialog, type Outcome } from "./AddedDialog";
 import { FindOwnedDialog } from "./FindOwnedDialog";
 import { AddModDialog } from "../mods/AddModDialog";
 import { RunsOn } from "../mods/RunsOn";
+import { useIndexMods } from "../discover/queries";
+import { StatusBadge } from "../discover/StatusBadge";
 import { Cover } from "./Cover";
 import { useCover } from "./covers";
 import { profilesKey, profilesQuery, useProfiles } from "./queries";
@@ -364,6 +366,10 @@ const ProfileCard = memo(function ProfileCard({
   // with the name.
   const name = sharedLabel ? `${profile.label} (${versionLabel})` : profile.label;
   const cover = useCover(profile.id, profile.installId);
+  // Alpha, beta or abandoned, as the index says now.
+  const status = useIndexMods().data?.find(
+    (m) => profile.modId !== null && m.modId === profile.modId,
+  )?.entry.status;
   return (
     // Only the border colour changes, so nothing inside the card moves.
     <Card className="flex h-full flex-col transition-colors has-[a:hover]:border-accent/35">
@@ -420,6 +426,7 @@ const ProfileCard = memo(function ProfileCard({
           {profile.modId !== null && !profile.sourceMod && <Badge>{t("mods.badge")}</Badge>}
           {profile.sourceMod && <Badge>{t("mods.sourceMod")}</Badge>}
           {profile.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
+          <StatusBadge status={status} />
           {profile.modId === null && <Badge>{versionLabel}</Badge>}
         </div>
         <dl className="grid gap-0.5 text-xs text-muted">
