@@ -19,6 +19,7 @@
 - Removing a mod or game says how many screenshots and videos go with it (with its mods, theirs too), as no backup keeps them, and can copy them to a folder first, one folder per game or mod.
 - The Screenshots and Videos tabs can copy them to a folder, into a folder named after the game or mod.
 - Discover, the library and a mod's page mark mods whose KeenWiki page calls them Alpha, Beta or Abandoned, abandoned ones in yellow. The index has a `status` field for it, which `index-add` fills in from the page; ten mods, Episode 59: Underworld Ultimate and Keenball among them, are marked Beta. Mods installed from their KeenWiki page keep its status, and checking for an update takes over a new one.
+- A folder or ZIP the mod list knows installs as that entry; the add dialog no longer offers "Set it up myself instead", which made a copy without its tested setup and updates (a second one if the mod was installed already).
 
 ### Bug Fixes
 

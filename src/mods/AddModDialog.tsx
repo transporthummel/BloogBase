@@ -261,23 +261,12 @@ function AddFrom({
   );
 }
 
-/**
- * A file that is an index download installs as that entry, unless the player sets it up;
- * a source mod only as the entry, as set up by hand it would play on its game.
- */
+/** A file that is an index download installs as that entry, tested, with its updates. */
 function Confirm(props: SetUpProps) {
   const { t } = useTranslation();
-  const [myself, setMyself] = useState(false);
   const { info, path, replacing, queued, onCancel } = props;
   const installed = useIndexInstalled(info.indexId);
-  const entry = useIndexMods().data?.find((m) => m.entry.id === info.indexId)?.entry;
-  // Known by the programs its downloads list: a mod with all of Keen's files
-  // is standalone too, but plays the same when set up by hand.
-  const sourceMod =
-    info.indexFiles ||
-    (entry?.standalone === true &&
-      entry.downloads.some((d) => Object.keys(d.programs ?? {}).length > 0));
-  if (!info.indexId || replacing || (myself && !sourceMod)) return <SetUp {...props} />;
+  if (!info.indexId || replacing) return <SetUp {...props} />;
   return (
     <div className="grid gap-4">
       <IndexHit
@@ -288,11 +277,6 @@ function Confirm(props: SetUpProps) {
         version={info.indexVersion}
       />
       <div className="flex justify-end gap-3">
-        {!sourceMod && (
-          <Button variant="ghost" onClick={() => setMyself(true)}>
-            {t("mods.setUpMyself")}
-          </Button>
-        )}
         {queued ? (
           <Button variant={installed ? "primary" : "ghost"} onClick={onCancel}>
             {t("drop.continue")}

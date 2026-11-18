@@ -1216,8 +1216,6 @@ test("installs a known source mod with the player's own files", async () => {
   expect(
     await screen.findByText(/knows this source mod from its mod list: it's version 1.0\./),
   ).toBeInTheDocument();
-  // Set up by hand, it would play on a copy of its game.
-  expect(screen.queryByRole("button", { name: "Set it up myself instead" })).toBeNull();
   await user.keyboard("{Enter}");
   expect(commands.installIndexMod).toHaveBeenCalledWith(
     "aurora-bliss",
@@ -1252,43 +1250,17 @@ test("updates an installed source mod from the list, not to the player's files",
   expect(commands.installIndexMod).toHaveBeenCalledWith("aurora-bliss", null, true, null);
 });
 
-test("doesn't offer to set up a source mod's download by hand", async () => {
-  vi.mocked(commands.listJobs).mockResolvedValue([]);
-  vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, indexId: "aurora-bliss" }));
-  vi.mocked(commands.indexMods).mockReturnValue(
-    ok([
-      {
-        ...auroraInIndex,
-        entry: {
-          ...auroraInIndex.entry,
-          standalone: true,
-          // A source mod's downloads list its programs.
-          downloads: auroraInIndex.entry.downloads.map((d) => ({
-            ...d,
-            programs: { "FITF.EXE": "ab" },
-          })),
-        },
-      },
-    ]),
-  );
-  renderDialog();
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
-
-  expect(await screen.findByText(/The BloogBase mod list knows this file/)).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Set it up myself instead" })).toBeNull();
-});
-
-test("lets the player set up an index download themselves", async () => {
+test("installs an index download as that entry, with no setting it up by hand", async () => {
   vi.mocked(commands.listJobs).mockResolvedValue([]);
   vi.mocked(commands.inspectMod).mockReturnValue(ok({ ...info, indexId: "aurora-bliss" }));
   vi.mocked(commands.indexMods).mockReturnValue(ok([auroraInIndex]));
   renderDialog();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Choose ZIP file…" }));
-  await user.click(await screen.findByRole("button", { name: "Set it up myself instead" }));
 
-  expect(await screen.findByRole("textbox", { name: "Name" })).toHaveValue("Aurora Bliss");
+  expect(await screen.findByText(/The BloogBase mod list knows this file/)).toBeInTheDocument();
+  expect(screen.queryByRole("textbox", { name: "Name" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /set it up/i })).toBeNull();
 });
 
 test("explains links that aren't KeenWiki pages", async () => {
