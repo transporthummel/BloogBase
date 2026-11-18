@@ -41,6 +41,7 @@ By hand:
    | `released`       | First release, `YYYY-MM-DD`; `updated` for the latest one                                   |
    | `added`          | Today: when the entry joined the index (sorts "Newest" first)                               |
    | `type`           | `episode` (a new adventure), `levelpack` or `conversion` (plays unlike Keen, "Offbeat")     |
+   | `status`         | `alpha`, `beta` or `abandoned`, from KeenWiki's "Status"; leave out when complete           |
    | `description`    | One or two sentences in your own words, in English                                          |
    | `translations`   | Language: texts in it; for now `de` with `description` (see below)                          |
    | `links`          | `keenwiki`, `pckf`, `keenmodding` (Keen: Modding forum), `homepage`                         |

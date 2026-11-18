@@ -31,6 +31,10 @@ pub struct Entry {
     pub added: String,
     #[serde(rename = "type")]
     pub kind: Kind,
+    /// How far along the mod is, as its KeenWiki page says; left out when
+    /// it's complete.
+    #[serde(default, skip_serializing_if = "Status::is_complete")]
+    pub status: Status,
     /// In English.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -112,6 +116,24 @@ pub enum Kind {
     Levelpack,
     /// Changes the game into something else entirely.
     Conversion,
+}
+
+/// The "Status" of a mod's KeenWiki page.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Status {
+    #[default]
+    Complete,
+    Alpha,
+    Beta,
+    /// Never finished, and no longer worked on.
+    Abandoned,
+}
+
+impl Status {
+    pub fn is_complete(&self) -> bool {
+        *self == Status::Complete
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Deserialize, Serialize)]
@@ -835,6 +857,19 @@ recipe:
             problems(&e, "aurora-bliss", &catalog()),
             Vec::<String>::new()
         );
+    }
+
+    #[test]
+    fn the_status_is_complete_unless_it_says_otherwise() {
+        let e = parse(AURORA).unwrap();
+        assert_eq!(e.status, Status::Complete);
+        let json = serde_json::to_value(&e).unwrap();
+        assert!(json.get("status").is_none());
+        let e =
+            parse(&AURORA.replace("type: episode", "type: episode\nstatus: abandoned")).unwrap();
+        assert_eq!(e.status, Status::Abandoned);
+        assert_eq!(serde_json::to_value(&e).unwrap()["status"], "abandoned");
+        assert!(parse(&AURORA.replace("type: episode", "type: episode\nstatus: gamma")).is_err());
     }
 
     #[test]

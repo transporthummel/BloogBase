@@ -205,6 +205,26 @@ test("shows what each mod needs and installs on the chosen game", async () => {
   expect(commands.installIndexMod).toHaveBeenCalledWith("Aurora", "keen4-b", false, null);
 });
 
+test("marks unfinished mods, abandoned ones as a warning", async () => {
+  vi.mocked(commands.indexMods).mockResolvedValue({
+    status: "ok",
+    data: [
+      mod(entry("Aurora", { status: "beta" })),
+      mod(entry("Krodacia", { status: "abandoned" })),
+      mod(entry("Oblivion", { status: "complete" })),
+      mod(entry("Fribbulus", { status: "gamma" })),
+    ],
+  });
+  renderDiscover();
+
+  await screen.findByRole("heading", { name: "Aurora" });
+  expect(within(card("Aurora")).getByText("Beta")).toBeInTheDocument();
+  expect(within(card("Krodacia")).getByText("Abandoned")).toHaveClass("text-warning");
+  for (const name of ["Oblivion", "Fribbulus"]) {
+    expect(within(card(name)).queryByText(/^(complete|gamma)$/i)).not.toBeInTheDocument();
+  }
+});
+
 test("names the copy of another version and explains why it won't do", async () => {
   vi.mocked(commands.listInstalls).mockResolvedValue({
     status: "ok",

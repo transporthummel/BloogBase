@@ -554,6 +554,9 @@ fn yaml(facts: &Facts, found: &Found) -> String {
         y += &format!("updated: {d}\n");
     }
     y += &format!("added: {}\ntype: {}\n", facts.today, kind(facts));
+    if let Some(status) = status(wiki.status.as_deref()) {
+        y += &format!("status: {status}\n");
+    }
     y += "# TODO: description (your own words, in English) and translations.de.description.\n";
     if let Some(d) = &wiki.description {
         y += "# KeenWiki says:\n";
@@ -801,6 +804,7 @@ fn notes(facts: &Facts, found: &Found) -> (Vec<String>, Vec<String>) {
     check.push("featured: not set; a handful per game are, for the setup wizard".to_string());
     if let Some(status) = &wiki.status
         && !status.eq_ignore_ascii_case("complete")
+        && self::status(Some(status)).is_none()
     {
         check.push(format!("status: the page calls the mod \"{status}\""));
     }
@@ -823,6 +827,17 @@ fn notes(facts: &Facts, found: &Found) -> (Vec<String>, Vec<String>) {
         }
     }
     (todo, check)
+}
+
+/// The entry's `status` for the page's "Status", unless it's complete or
+/// one the index doesn't know.
+fn status(page: Option<&str>) -> Option<&'static str> {
+    match page?.trim().to_ascii_lowercase().as_str() {
+        "alpha" => Some("alpha"),
+        "beta" => Some("beta"),
+        "abandoned" => Some("abandoned"),
+        _ => None,
+    }
 }
 
 /// Whether the archive name goes on after `version`: the page's `2.0` for
@@ -1066,11 +1081,12 @@ recipe:
             "game: keen4 by the files; the page says keen5",
             "copyToRoot: 1 in the mod's root",
             "https://example.com/old.zip (less buggy)",
-            "status: the page calls the mod \\\"Beta\\\"",
             "links.pckf: commented out",
         ] {
             assert!(notes.contains(wanted), "{wanted} in {notes}");
         }
+        assert!(d.yaml.contains("\nstatus: beta\n"), "{}", d.yaml);
+        assert!(!notes.contains("status:"), "{notes}");
         assert!(d.yaml.contains("  # pckf: http://example.com/thread\n"));
         assert!(!d.yaml.contains("released:") && !d.yaml.contains("\nversion:"));
     }

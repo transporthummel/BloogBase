@@ -74,6 +74,9 @@ pub struct IndexEntry {
     pub added: String,
     #[serde(rename = "type")]
     pub kind: ModKind,
+    /// How far along the mod is, from its KeenWiki page.
+    #[serde(default)]
+    pub status: ModStatus,
     /// In English.
     #[serde(default)]
     pub description: Option<String>,
@@ -146,6 +149,21 @@ pub enum ModKind {
     Episode,
     Levelpack,
     Conversion,
+}
+
+/// The "Status" of a mod's KeenWiki page; the index leaves out `complete`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub enum ModStatus {
+    #[default]
+    Complete,
+    Alpha,
+    Beta,
+    Abandoned,
+    /// One a newer index knows: shown like `complete` rather than hiding
+    /// the entry.
+    #[serde(other)]
+    Other,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Type)]
@@ -936,6 +954,23 @@ mod tests {
         let future = SAMPLE.replace(r#""schemaVersion": 1"#, r#""schemaVersion": 2"#);
         let p = parse(future.as_bytes()).unwrap();
         assert_eq!((p.entries.len(), p.hidden), (0, 2));
+    }
+
+    #[test]
+    fn a_status_the_app_doesnt_know_hides_nothing() {
+        let status = |status: Option<&str>| {
+            let mut index: serde_json::Value = serde_json::from_str(SAMPLE).unwrap();
+            let mods = index["mods"].as_array_mut().unwrap();
+            let e = mods.iter_mut().find(|m| m["id"] == "sample-patch").unwrap();
+            if let Some(s) = status {
+                e["status"] = s.into();
+            }
+            let p = parse(index.to_string().as_bytes()).unwrap();
+            p.entries[0].status
+        };
+        assert_eq!(status(None), ModStatus::Complete);
+        assert_eq!(status(Some("abandoned")), ModStatus::Abandoned);
+        assert_eq!(status(Some("gamma")), ModStatus::Other);
     }
 
     #[test]

@@ -656,6 +656,8 @@ export type IndexEntry = {
 	/**  When it joined the index, `YYYY-MM-DD`. */
 	added: string,
 	type: ModKind,
+	/**  How far along the mod is, from its KeenWiki page. */
+	status?: ModStatus,
 	/**  In English. */
 	description?: string | null,
 	/**  Language code → the texts in that language. */
@@ -957,6 +959,14 @@ export type ModInfo = {
 export type ModKind = "episode" | "levelpack" | "conversion";
 
 export type ModSource = "index" | "keenwiki" | "manual";
+
+/**  The "Status" of a mod's KeenWiki page; the index leaves out `complete`. */
+export type ModStatus = "complete" | "alpha" | "beta" | "abandoned" | 
+/**
+ *  One a newer index knows: shown like `complete` rather than hiding
+ *  the entry.
+ */
+string;
 
 /**  What a mod's KeenWiki page offers compared to the installed version. */
 export type ModUpdate = {

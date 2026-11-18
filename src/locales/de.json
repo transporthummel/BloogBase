@@ -562,6 +562,11 @@
       "levelpack": "Level-Paket",
       "conversion": "Ausgefallen"
     },
+    "status": {
+      "alpha": "Alpha",
+      "beta": "Beta",
+      "abandoned": "Aufgegeben"
+    },
     "featured": "Empfohlen",
     "installed": "Installiert",
     "updateBadge": "Update",
