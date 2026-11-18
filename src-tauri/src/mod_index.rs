@@ -166,6 +166,35 @@ pub enum ModStatus {
     Other,
 }
 
+impl ModStatus {
+    /// The status a KeenWiki page's "Status" (`Complete`, `Beta`) names.
+    pub fn from_page(status: &str) -> Self {
+        match status.trim().to_ascii_lowercase().as_str() {
+            "complete" => Self::Complete,
+            "alpha" => Self::Alpha,
+            "beta" => Self::Beta,
+            "abandoned" => Self::Abandoned,
+            _ => Self::Other,
+        }
+    }
+
+    /// As stored and in the index; `None` for [`ModStatus::Other`].
+    pub fn as_str(self) -> Option<&'static str> {
+        match self {
+            Self::Complete => Some("complete"),
+            Self::Alpha => Some("alpha"),
+            Self::Beta => Some("beta"),
+            Self::Abandoned => Some("abandoned"),
+            Self::Other => None,
+        }
+    }
+
+    /// A page's status as stored, unless the app doesn't know it.
+    pub fn stored(page: Option<&str>) -> Option<Self> {
+        page.map(Self::from_page).filter(|s| *s != Self::Other)
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, Type)]
 pub struct Links {
     #[serde(default)]

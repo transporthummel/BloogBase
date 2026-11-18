@@ -29,6 +29,7 @@ const MIGRATIONS_SLICE: &[M<'_>] = &[
     M::up(include_str!("../migrations/0016_custom_patches.sql")),
     M::up(include_str!("../migrations/0017_own_files.sql")),
     M::up(include_str!("../migrations/0018_worlds.sql")),
+    M::up(include_str!("../migrations/0019_status.sql")),
 ];
 const MIGRATIONS: Migrations<'_> = Migrations::from_slice(MIGRATIONS_SLICE);
 

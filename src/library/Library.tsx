@@ -366,10 +366,10 @@ const ProfileCard = memo(function ProfileCard({
   // with the name.
   const name = sharedLabel ? `${profile.label} (${versionLabel})` : profile.label;
   const cover = useCover(profile.id, profile.installId);
-  // Alpha, beta or abandoned, as the index says now.
-  const status = useIndexMods().data?.find(
-    (m) => profile.modId !== null && m.modId === profile.modId,
-  )?.entry.status;
+  // Alpha, beta or abandoned, as the index says now, else the KeenWiki page.
+  const status =
+    useIndexMods().data?.find((m) => profile.modId !== null && m.modId === profile.modId)?.entry
+      .status ?? profile.modStatus;
   return (
     // Only the border colour changes, so nothing inside the card moves.
     <Card className="flex h-full flex-col transition-colors has-[a:hover]:border-accent/35">

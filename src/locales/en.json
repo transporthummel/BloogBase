@@ -517,7 +517,8 @@
       "released": "release date",
       "homepage": "website",
       "pckf": "PCKF link",
-      "keenmodding": "Keen: Modding link"
+      "keenmodding": "Keen: Modding link",
+      "status": "status"
     }
   },
   "discover": {

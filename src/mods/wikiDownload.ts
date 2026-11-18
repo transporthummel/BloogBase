@@ -24,6 +24,7 @@ export function downloaded(
       homepage: page.homepage,
       pckf: page.pckf,
       keenmodding: page.keenmodding,
+      status: page.status,
     },
   };
 }

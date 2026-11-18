@@ -9,6 +9,7 @@ use crate::detect::sha256_hex;
 use crate::error::Error;
 use crate::keenwiki::WikiMod;
 use crate::library::{self, Install};
+use crate::mod_index::ModStatus;
 use crate::paths::AppPaths;
 use crate::recipe::{self, Recipe, VersionRecipes};
 use crate::source::Source;
@@ -247,6 +248,7 @@ fn keenwiki_install_keeps_the_page_and_can_be_suggested() {
         homepage: Some("http://aurora.example/".into()),
         pckf: Some("https://pckf.com/viewtopic.php?t=1".into()),
         keenmodding: None,
+        status: None,
     });
     let m = install(&paths, &db, &req).unwrap();
     assert_eq!(m.source, ModSource::Keenwiki);
@@ -315,8 +317,14 @@ fn takes_over_what_the_keenwiki_page_now_says() {
         homepage: Some("http://aurora.example/".into()),
         pckf: None,
         keenmodding: None,
+        status: Some("Beta".into()),
     });
     let m = install(&paths, &db, &req).unwrap();
+    assert_eq!(list(&db).unwrap()[0].status, Some(ModStatus::Beta));
+    assert_eq!(
+        crate::profiles::list(&db, |_| false).unwrap()[0].mod_status,
+        Some(ModStatus::Beta)
+    );
 
     let mut page = WikiMod {
         page_url: page_url.into(),
@@ -327,7 +335,7 @@ fn takes_over_what_the_keenwiki_page_now_says() {
             "Dave216".into(),
             "https://keenwiki.shikadi.net/wiki/User:Dave216".into(),
         )]),
-        status: None,
+        status: Some("Abandoned".into()),
         released: Some("2012-05-01".into()),
         updated: None,
         levels: None,
@@ -345,7 +353,8 @@ fn takes_over_what_the_keenwiki_page_now_says() {
             PageDetail::Authors,
             PageDetail::Description,
             PageDetail::Pckf,
-            PageDetail::Keenmodding
+            PageDetail::Keenmodding,
+            PageDetail::Status
         ]
     );
     let listed = &list(&db).unwrap()[0];
@@ -356,6 +365,7 @@ fn takes_over_what_the_keenwiki_page_now_says() {
     assert_eq!(listed.description.as_deref(), Some("Even more blissful."));
     assert_eq!(listed.pckf.as_deref(), page.pckf.as_deref());
     assert_eq!(listed.keenmodding.as_deref(), page.keenmodding.as_deref());
+    assert_eq!(listed.status, Some(ModStatus::Abandoned));
     assert_eq!(listed.homepage.as_deref(), Some("http://aurora.example/"));
     // Nothing new the second time.
     assert!(refresh_details(&db, &m.id, &page).unwrap().is_empty());
@@ -385,6 +395,7 @@ fn replaces_another_version_keeping_saves_and_page() {
         homepage: Some("http://aurora.example/".into()),
         pckf: Some("https://pckf.com/viewtopic.php?t=1".into()),
         keenmodding: None,
+        status: None,
     });
     let old = install(&paths, &db, &req).unwrap();
     fs::write(paths.profiles.join("aurora/state/SAVEGAM0.CK4"), b"save").unwrap();

@@ -166,7 +166,7 @@ function Credits({
         {profile.modId !== null && !profile.sourceMod && <Badge>{t("mods.badge")}</Badge>}
         {profile.sourceMod && <Badge>{t("mods.sourceMod")}</Badge>}
         {profile.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
-        <StatusBadge status={entry?.status} />
+        <StatusBadge status={entry?.status ?? mod?.status} />
         {profile.modId === null && <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>}
         {profile.modId === null && version?.shareware && <Badge>{t("profile.shareware")}</Badge>}
         {mod?.version && (

@@ -517,7 +517,8 @@
       "released": "Erscheinungsdatum",
       "homepage": "Website",
       "pckf": "PCKF-Link",
-      "keenmodding": "Keen-Modding-Link"
+      "keenmodding": "Keen-Modding-Link",
+      "status": "Status"
     }
   },
   "discover": {

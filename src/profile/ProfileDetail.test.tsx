@@ -148,6 +148,7 @@ const profile: Profile = {
   gameProfileId: null,
   worlds: false,
   activeWorld: null,
+  modStatus: null,
 };
 
 const save = (file: string, slot: number, name: string | null): SaveFile => ({
@@ -244,6 +245,7 @@ const aurora: Mod = {
   homepage: "https://aurora.example/",
   pckf: "https://pckf.com/viewtopic.php?t=1",
   keenmodding: "https://keenmodding.org/viewtopic.php?t=2",
+  status: null,
   addedAt: 1_700_000_000,
   profileId: "aurora-bliss",
 };
@@ -344,6 +346,15 @@ test("a mod's page says it was abandoned", async () => {
   vi.mocked(commands.indexMods).mockResolvedValue(ok([indexed("aurora-bliss", "abandoned")]));
   renderDetail();
   expect(await screen.findByText("Abandoned")).toHaveClass("text-warning");
+});
+
+test("a KeenWiki mod's page says what its page said", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...profile, modId: "aurora-bliss", label: "Aurora Bliss" }]),
+  );
+  vi.mocked(commands.listMods).mockResolvedValue(ok([{ ...aurora, status: "alpha" }]));
+  renderDetail();
+  expect(await screen.findByText("Alpha")).toBeInTheDocument();
 });
 
 test("a mod's page changes the copy of the game it plays on", async () => {

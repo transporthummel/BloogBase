@@ -832,12 +832,10 @@ fn notes(facts: &Facts, found: &Found) -> (Vec<String>, Vec<String>) {
 /// The entry's `status` for the page's "Status", unless it's complete or
 /// one the index doesn't know.
 fn status(page: Option<&str>) -> Option<&'static str> {
-    match page?.trim().to_ascii_lowercase().as_str() {
-        "alpha" => Some("alpha"),
-        "beta" => Some("beta"),
-        "abandoned" => Some("abandoned"),
-        _ => None,
-    }
+    use crate::mod_index::ModStatus;
+    ModStatus::stored(page)
+        .filter(|s| *s != ModStatus::Complete)
+        .and_then(ModStatus::as_str)
 }
 
 /// Whether the archive name goes on after `version`: the page's `2.0` for

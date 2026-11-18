@@ -115,6 +115,7 @@ const profile: Profile = {
   gameProfileId: null,
   worlds: false,
   activeWorld: null,
+  modStatus: null,
 };
 
 const runtime = { id: "dosbox-staging-0.83.0", version: "0.83.0", path: "/x", managed: true };
@@ -226,7 +227,7 @@ test("a mod in beta or abandoned says so", async () => {
   const mod = (id: string): Profile => ({ ...profile, id, modId: id, label: id });
   vi.mocked(commands.listProfiles).mockResolvedValue({
     status: "ok",
-    data: [mod("Beta"), mod("Gone"), mod("Done")],
+    data: [mod("Beta"), mod("Gone"), mod("Done"), { ...mod("Wiki"), modStatus: "abandoned" }],
   });
   vi.mocked(commands.indexMods).mockResolvedValue({
     status: "ok",
@@ -238,6 +239,8 @@ test("a mod in beta or abandoned says so", async () => {
   expect(await within(await card("Beta")).findByText("Beta")).toBeInTheDocument();
   expect(within(await card("Gone")).getByText("Abandoned")).toHaveClass("text-warning");
   expect(within(await card("Done")).queryByText(/complete/i)).not.toBeInTheDocument();
+  // Installed from its KeenWiki page, not the index.
+  expect(within(await card("Wiki")).getByText("Abandoned")).toBeInTheDocument();
 });
 
 test("a mod played over another one names it with its game", async () => {

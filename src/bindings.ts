@@ -843,6 +843,8 @@ export type KeenwikiOrigin = {
 	pckf?: string | null,
 	/**  The discussion thread on the Keen: Modding forum. */
 	keenmodding?: string | null,
+	/**  The page's "Status", e.g. `Beta`. */
+	status?: string | null,
 };
 
 /**
@@ -905,6 +907,11 @@ export type Mod = {
 	pckf: string | null,
 	/**  Its thread on the Keen: Modding forum, from its KeenWiki page. */
 	keenmodding: string | null,
+	/**
+	 *  How far along it is, from its KeenWiki page; index mods have it in
+	 *  their entry instead.
+	 */
+	status: ModStatus | null,
 	/**  Unix epoch seconds. */
 	addedAt: number,
 	/**  The play profile created for the mod. */
@@ -983,7 +990,7 @@ export type OptionKind =
 "number";
 
 /**  What a mod's KeenWiki page says about it. */
-export type PageDetail = "authors" | "description" | "released" | "homepage" | "pckf" | "keenmodding";
+export type PageDetail = "authors" | "description" | "released" | "homepage" | "pckf" | "keenmodding" | "status";
 
 export type PlaySessionEnded = {
 	profileId: string,
@@ -1059,6 +1066,11 @@ export type Profile = {
 	worlds: boolean,
 	/**  The world played last, which "Play" goes on with. */
 	activeWorld: number | null,
+	/**
+	 *  A mod's status from its KeenWiki page; index mods have it in their
+	 *  entry instead.
+	 */
+	modStatus: ModStatus | null,
 };
 
 export type ProfileConfig = {

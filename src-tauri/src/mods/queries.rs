@@ -13,6 +13,7 @@ use crate::backups::{self, Contents, Reason};
 use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::keenwiki::WikiMod;
+use crate::mod_index::ModStatus;
 use crate::paths::AppPaths;
 use crate::recipe::{self, Recipe, VersionRecipes};
 
@@ -25,7 +26,7 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
         "SELECT m.id, m.game_id, m.name, m.authors, m.version, m.recipe_json, m.source,
                 m.added_at, p.id, m.index_id, m.keenwiki_url, m.description, m.released,
                 m.author_links, m.version_recipes_json, i.version_id, m.extends, m.homepage,
-                m.pckf, m.keenmodding
+                m.pckf, m.keenmodding, m.status
          FROM mods m JOIN profiles p ON p.mod_id = m.id
          LEFT JOIN installs i ON i.id = p.install_id
          ORDER BY m.added_at, m.id",
@@ -64,6 +65,10 @@ pub fn list(db: &Db) -> Result<Vec<Mod>> {
             homepage: r.get(17)?,
             pckf: r.get(18)?,
             keenmodding: r.get(19)?,
+            status: r
+                .get::<_, Option<String>>(20)?
+                .as_deref()
+                .and_then(|s| ModStatus::stored(Some(s))),
             description: r.get(11)?,
             released: r.get(12)?,
         })
@@ -81,6 +86,7 @@ pub enum PageDetail {
     Homepage,
     Pckf,
     Keenmodding,
+    Status,
 }
 
 /// Takes over what a mod's KeenWiki page now says about it; what the page
@@ -96,12 +102,13 @@ pub fn refresh_details(db: &Db, mod_id: &str, page: &WikiMod) -> Result<Vec<Page
         Option<String>,
         Option<String>,
         Option<String>,
+        Option<String>,
     );
     let conn = db.conn();
-    let (source, authors, author_links, description, released, homepage, pckf, keenmodding): Row =
+    let (source, authors, author_links, description, released, homepage, pckf, keenmodding, status): Row =
         conn.query_row(
             "SELECT source, authors, author_links, description, released, homepage, pckf,
-                    keenmodding
+                    keenmodding, status
              FROM mods WHERE id = ?1",
             [mod_id],
             |r| {
@@ -114,6 +121,7 @@ pub fn refresh_details(db: &Db, mod_id: &str, page: &WikiMod) -> Result<Vec<Page
                     r.get(5)?,
                     r.get(6)?,
                     r.get(7)?,
+                    r.get(8)?,
                 ))
             },
         )
@@ -145,10 +153,15 @@ pub fn refresh_details(db: &Db, mod_id: &str, page: &WikiMod) -> Result<Vec<Page
     take(&mut homepage, &page.homepage, PageDetail::Homepage);
     take(&mut pckf, &page.pckf, PageDetail::Pckf);
     take(&mut keenmodding, &page.keenmodding, PageDetail::Keenmodding);
+    let mut status = status;
+    let page_status = ModStatus::stored(page.status.as_deref())
+        .and_then(ModStatus::as_str)
+        .map(str::to_string);
+    take(&mut status, &page_status, PageDetail::Status);
     if !changed.is_empty() {
         conn.execute(
             "UPDATE mods SET authors = ?2, author_links = ?3, description = ?4, released = ?5,
-                             homepage = ?6, pckf = ?7, keenmodding = ?8
+                             homepage = ?6, pckf = ?7, keenmodding = ?8, status = ?9
              WHERE id = ?1",
             params![
                 mod_id,
@@ -158,7 +171,8 @@ pub fn refresh_details(db: &Db, mod_id: &str, page: &WikiMod) -> Result<Vec<Page
                 released,
                 homepage,
                 pckf,
-                keenmodding
+                keenmodding,
+                status
             ],
         )?;
         tracing::info!("took {changed:?} of mod {mod_id} from its KeenWiki page");

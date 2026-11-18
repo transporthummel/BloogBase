@@ -181,6 +181,9 @@ pub struct KeenwikiOrigin {
     /// The discussion thread on the Keen: Modding forum.
     #[serde(default)]
     pub keenmodding: Option<String>,
+    /// The page's "Status", e.g. `Beta`.
+    #[serde(default)]
+    pub status: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]
@@ -209,6 +212,9 @@ pub struct Mod {
     pub pckf: Option<String>,
     /// Its thread on the Keen: Modding forum, from its KeenWiki page.
     pub keenmodding: Option<String>,
+    /// How far along it is, from its KeenWiki page; index mods have it in
+    /// their entry instead.
+    pub status: Option<crate::mod_index::ModStatus>,
     /// Unix epoch seconds.
     #[specta(type = u32)]
     pub added_at: i64,

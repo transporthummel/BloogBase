@@ -14,6 +14,7 @@ use crate::detect::sha256_hex;
 use crate::error::{Error, Result};
 use crate::library::{self, Install, now};
 use crate::mod_index::IndexEntry;
+use crate::mod_index::ModStatus;
 use crate::paths::AppPaths;
 use crate::recipe::{Recipe, VersionRecipes};
 use crate::source::{Source, split_dir};
@@ -52,6 +53,7 @@ struct Stored<'a> {
     homepage: Option<String>,
     pckf: Option<String>,
     keenmodding: Option<String>,
+    status: Option<ModStatus>,
     /// The picked folder or ZIP, or the download URL.
     source_url: &'a str,
     /// Name for the kept copy of the archive; default: its own.
@@ -84,6 +86,7 @@ impl<'a> Stored<'a> {
             homepage: None,
             pckf: None,
             keenmodding: None,
+            status: None,
             source_url: &c.url,
             archive_name: Some(crate::downloads::url_file_name(&c.url)).filter(|n| !n.is_empty()),
             archive_sha256: Some(&c.sha256),
@@ -131,6 +134,7 @@ impl<'a> Stored<'a> {
             homepage: page.and_then(|o| o.homepage.clone()),
             pckf: page.and_then(|o| o.pckf.clone()),
             keenmodding: page.and_then(|o| o.keenmodding.clone()),
+            status: ModStatus::stored(page.and_then(|o| o.status.as_deref())),
             source_url: page.map_or(&req.path, |o| &o.download_url),
             archive_name: None,
             archive_sha256: None,
@@ -148,6 +152,7 @@ impl<'a> Stored<'a> {
         self.homepage = self.homepage.or_else(|| old.homepage.clone());
         self.pckf = self.pckf.or_else(|| old.pckf.clone());
         self.keenmodding = self.keenmodding.or_else(|| old.keenmodding.clone());
+        self.status = self.status.or(old.status);
         self
     }
 }
@@ -375,6 +380,7 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
         homepage,
         pckf,
         keenmodding,
+        status: _,
         source_url: _,
         archive_name: _,
         archive_sha256: _,
@@ -835,6 +841,7 @@ fn store(
             homepage: s.homepage.clone(),
             pckf: s.pckf.clone(),
             keenmodding: s.keenmodding.clone(),
+            status: s.status,
             added_at: now(),
             profile_id: id.clone(),
         };
@@ -845,9 +852,9 @@ fn store(
                                recipe_json, path, source, source_url, archive_sha256, added_at,
                                description, released, author_links, requires_json,
                                version_recipes_json, extends, homepage, pckf,
-                               keenmodding, cover, standalone, own_files)
+                               keenmodding, cover, standalone, own_files, status)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25)",
+                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26)",
             params![
                 m.id,
                 m.game_id,
@@ -873,7 +880,8 @@ fn store(
                 s.keenmodding,
                 s.cover,
                 s.standalone,
-                s.own_files
+                s.own_files,
+                s.status.and_then(ModStatus::as_str)
             ],
         )?;
         tx.execute(
@@ -948,7 +956,7 @@ fn update(
                              name = ?12, source = ?13, index_id = ?14,
                              version_recipes_json = ?15, extends = ?16, homepage = ?17,
                              pckf = ?18, keenmodding = ?19, cover = ?20, standalone = ?21,
-                             own_files = ?22
+                             own_files = ?22, status = ?23
              WHERE id = ?1",
             params![
                 mod_id,
@@ -972,7 +980,8 @@ fn update(
                 s.keenmodding,
                 s.cover,
                 s.standalone,
-                s.own_files
+                s.own_files,
+                s.status.and_then(ModStatus::as_str)
             ],
         )?;
         tx.execute(
@@ -1231,6 +1240,7 @@ mod tests {
             homepage: Some("https://home".into()),
             pckf: None,
             keenmodding: Some("https://km".into()),
+            status: Some("Alpha".into()),
         }
     }
 
@@ -1267,6 +1277,7 @@ mod tests {
             ),
             (Some("https://home"), None, Some("https://km"))
         );
+        assert_eq!(s.status, Some(ModStatus::Alpha));
 
         // A page without authors leaves the guessed ones.
         let unnamed = request(Some(KeenwikiOrigin {
@@ -1296,6 +1307,7 @@ mod tests {
             homepage: Some("https://old-home".into()),
             pckf: Some("https://pckf".into()),
             keenmodding: None,
+            status: Some(ModStatus::Beta),
             added_at: 0,
             profile_id: "aurora".into(),
         };
@@ -1308,6 +1320,7 @@ mod tests {
         assert_eq!(s.keenwiki_url, old.keenwiki_url.as_deref());
         assert_eq!(s.homepage, old.homepage);
         assert_eq!(s.pckf, old.pckf);
+        assert_eq!(s.status, old.status);
         // What the new files tell wins.
         assert_eq!(s.authors, ["From the files"]);
         assert_eq!(s.source, ModSource::Manual);
@@ -1322,5 +1335,6 @@ mod tests {
         assert_eq!(s.keenwiki_url, Some(page().page_url.as_str()));
         assert_eq!(s.homepage.as_deref(), Some("https://home"));
         assert_eq!(s.pckf, old.pckf);
+        assert_eq!(s.status, Some(ModStatus::Alpha));
     }
 }

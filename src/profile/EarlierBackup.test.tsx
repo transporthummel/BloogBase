@@ -54,6 +54,7 @@ const old: Profile = {
   gameProfileId: null,
   worlds: false,
   activeWorld: null,
+  modStatus: null,
 };
 
 const added: Profile = {

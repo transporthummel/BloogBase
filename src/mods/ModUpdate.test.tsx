@@ -55,6 +55,7 @@ const mod: Mod = {
   homepage: null,
   pckf: null,
   keenmodding: null,
+  status: null,
   addedAt: 0,
   profileId: "aurora-bliss",
 };

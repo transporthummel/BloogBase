@@ -165,8 +165,8 @@ case. Versions compare as dotted numbers (`1.10` > `1.9`, `2` = `2.0`). An
 update is downloaded and installed over the old mod through the same dialog.
 
 The check also takes over what the page now says about the mod: authors,
-description, release date, homepage and threads. What the page leaves out
-stays. Mods from the index keep the index's details. They ask the index
+description, release date, homepage, threads and status (alpha, beta and
+abandoned show as a badge). What the page leaves out stays. Mods from the index keep the index's details. They ask the index
 first and their KeenWiki page only when the index has nothing newer;
 updating from the page takes the mod out of the index.
 
