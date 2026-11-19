@@ -48,6 +48,15 @@ Save files are found by the game's patterns in the catalog (`SAVED?.CK1`,
 saves share a slot (a mod saving under two names), the list shows their file
 names too: "Slot 1 (SAVEGAM0.CKS)".
 
+An index mod whose launcher starts each part inside a folder (Revival of
+Bliss) lists those folders in its entry's `saveDirs`. Saves and state files
+then count in them too, with their folder (`KEEN/SAVEGAM0.CK4`), and each
+folder numbers its own slots (`Game::save_dirs`, set by
+`saves::profile_game`). Backups keep the folder. A mod whose entry came to
+name its root played from one folder before (`oldRoot`): its state moved
+there, and saves and settings without a folder in its older backups go
+there when restored.
+
 A mod may give these files other names. Its patch writes them over the
 ones in the executable, as it does for its data files
 ([covers.md](covers.md)): Keen Q saves as `SAVED1.CKQ`, Norp the Yorp 2 as
@@ -144,8 +153,11 @@ The settings page can set sound, music, the sound device, the score box and
 keys for all games (`game_settings`). Each stays with the game until set.
 
 Before a session, the set values go into the settings file as DOS sees it,
-as a file in `state/`. `generated/settings-session.json` records each changed
-field's original and written value first. After the session each field still
+as a file in `state/`; with `saveDirs`, also into each folder's file that
+exists (a folder gets none before the game wrote one). The keys shown are
+those of the `oldRoot` folder's file, else the first folder's.
+`generated/settings-session.json` records each changed file and field's
+original and written value first. After the session each field still
 as written gets its original back. Anything else stays: high scores, and what
 the player changed in the game. A copy of a mod's file that ends up equal to
 it goes away again. A session that never ended (a crash, or BloogBase quit

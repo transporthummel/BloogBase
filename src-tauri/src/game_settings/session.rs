@@ -19,11 +19,11 @@ use crate::profiles;
 use crate::recipe::Recipe;
 use crate::saves;
 
-/// What a session changed, kept beside it so a crash can't lose the player's
-/// values.
+/// What a session changed in one settings file, kept beside it so a crash
+/// can't lose the player's values.
 #[derive(Debug, Serialize, Deserialize)]
 struct Pending {
-    /// As it's spelled in `state/`.
+    /// As it's spelled in `state/`, with its folder if it's in one.
     file: String,
     origin: Origin,
     fields: Vec<Field>,
@@ -70,57 +70,97 @@ pub fn apply(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> {
         profile.version_id.as_deref(),
         &game.state_files,
     );
-    let found = find_file(&layers, &names)?;
-    let (file, origin, mut data) = match found {
-        Some((entry, source)) => {
-            let origin = match entry.layer {
-                Layer::Upper => Origin::State,
-                Layer::Lower => Origin::Lower,
-            };
-            let data = fs::read(source)?;
-            (entry.path, origin, data)
+    // Each folder the game keeps its settings in has a file of its own.
+    let mut changed: Vec<(Pending, Vec<u8>)> = Vec::new();
+    for dir in settings_dirs(game) {
+        let (file, origin, mut data) = match find_file(&layers, dir, &names)? {
+            Some((entry, source)) => {
+                let origin = match entry.layer {
+                    Layer::Upper => Origin::State,
+                    Layer::Lower => Origin::Lower,
+                };
+                let data = fs::read(source)?;
+                (entry.path, origin, data)
+            }
+            // A folder's file comes once the game wrote one: there's no
+            // telling which program it runs there.
+            None if !dir.is_empty() => continue,
+            None => {
+                let Some(data) = new_file(&profile, &layers, game) else {
+                    tracing::info!("global settings: no {name} yet for {profile_id}, first start");
+                    continue;
+                };
+                (name.clone(), Origin::Created, data)
+            }
+        };
+        let Some(file_format) = format::recognize(&profile.game_id, &data) else {
+            tracing::info!("global settings: leaving {file} of {profile_id} alone, unknown format");
+            continue;
+        };
+        let edits = format::edits(file_format, &settings, &data);
+        if edits.is_empty() {
+            continue;
         }
-        None => {
-            let Some(data) = new_file(&profile, &layers, game) else {
-                tracing::info!("global settings: no {name} yet for {profile_id}, first start");
-                return Ok(());
-            };
-            (name.clone(), Origin::Created, data)
+        let fields = fields(&data, &edits);
+        for edit in &edits {
+            format::write(&mut data, edit);
         }
-    };
-    let Some(file_format) = format::recognize(&profile.game_id, &data) else {
-        tracing::info!("global settings: leaving {name} of {profile_id} alone, unknown format");
+        changed.push((
+            Pending {
+                file,
+                origin,
+                fields,
+            },
+            data,
+        ));
+    }
+    if changed.is_empty() {
         return Ok(());
-    };
-    let edits = format::edits(file_format, &settings, &data);
-    if edits.is_empty() {
-        return Ok(());
     }
-    let fields = fields(&data, &edits);
-    for edit in &edits {
-        format::write(&mut data, edit);
-    }
-    let pending = Pending {
-        file,
-        origin,
-        fields,
-    };
-    write_pending(&sidecar(paths, profile_id), &pending)?;
-    if origin == Origin::Created {
-        // A file deleted in the game stays hidden from below by a marker.
-        overlay_view::prepare_write(&layers.upper, &pending.file)?;
-    }
+    let (pending, data): (Vec<Pending>, Vec<Vec<u8>>) = changed.into_iter().unzip();
     let record = sidecar(paths, profile_id);
-    if let Err(e) = write_whole(&record, &layers.upper.join(&pending.file), &data) {
-        let _ = fs::remove_file(sidecar(paths, profile_id));
-        return Err(e);
+    write_pending(&record, &pending)?;
+    for (written, (p, data)) in pending.iter().zip(&data).enumerate() {
+        let result = (|| {
+            // A folder's file from below goes into a folder of `state/`.
+            if let Some(dir) = layers.upper.join(&p.file).parent() {
+                fs::create_dir_all(dir)?;
+            }
+            if p.origin == Origin::Created {
+                // A file deleted in the game stays hidden from below by a marker.
+                overlay_view::prepare_write(&layers.upper, &p.file)?;
+            }
+            write_whole(&record, &layers.upper.join(&p.file), data)
+        })();
+        if let Err(e) = result {
+            // Only the files written so far need their values back.
+            match written {
+                0 => {
+                    let _ = fs::remove_file(&record);
+                }
+                n => {
+                    let _ = write_pending(&record, &pending[..n]);
+                }
+            }
+            return Err(e);
+        }
     }
     Ok(())
 }
 
+/// The folders the game keeps a settings file in, from the drive root:
+/// the root (`""`) and those of [`Game::save_dirs`].
+fn settings_dirs(game: &Game) -> Vec<&str> {
+    std::iter::once("")
+        .chain(game.save_dirs.iter().map(String::as_str))
+        .collect()
+}
+
 /// The keys the profile's game will play with: those in its settings file,
 /// with the global settings [`apply`] wrote; the game's defaults if it has
-/// none yet or one we don't know.
+/// none yet or one we don't know. With settings in folders, the one of
+/// the folder played from before the mod's entry named its root, else the
+/// first.
 pub fn effective_keys(db: &Db, profile_id: &str) -> Result<ActionKeys> {
     let (profile, layers) = profiles::get(db, profile_id)?;
     let game = saves::profile_game(&profile.game_id, &layers)?;
@@ -130,7 +170,12 @@ pub fn effective_keys(db: &Db, profile_id: &str) -> Result<ActionKeys> {
         profile.version_id.as_deref(),
         &game.state_files,
     );
-    let Some((_, path)) = find_file(&layers, &names)? else {
+    let dir = game
+        .old_root
+        .as_deref()
+        .or(game.save_dirs.first().map(String::as_str))
+        .unwrap_or("");
+    let Some((_, path)) = find_file(&layers, dir, &names)? else {
         return Ok(defaults);
     };
     let data = fs::read(path)?;
@@ -149,8 +194,9 @@ pub fn merge_pending(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> 
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
         Err(e) => return Err(e.into()),
     };
-    let pending: Pending = match serde_json::from_slice(&text) {
-        Ok(pending) => pending,
+    let pending: Vec<Pending> = match serde_json::from_slice::<Record>(&text) {
+        Ok(Record::Files(pending)) => pending,
+        Ok(Record::File(pending)) => vec![pending],
         Err(e) => {
             tracing::warn!("dropping the unreadable global settings record of {profile_id}: {e}");
             fs::remove_file(&path)?;
@@ -158,15 +204,26 @@ pub fn merge_pending(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<()> 
         }
     };
     let (_, layers) = profiles::get(db, profile_id)?;
-    let file = layers.upper.join(&pending.file);
-    match fs::read(&file) {
-        Ok(data) => restore(&path, &file, data, &pending, &below_state(&layers))?,
-        // Deleted meanwhile, e.g. with the profile's saves.
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
-        Err(e) => return Err(e.into()),
+    for pending in &pending {
+        let file = layers.upper.join(&pending.file);
+        match fs::read(&file) {
+            Ok(data) => restore(&path, &file, data, pending, &below_state(&layers))?,
+            // Deleted meanwhile, e.g. with the profile's saves.
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e.into()),
+        }
     }
     fs::remove_file(&path)?;
     Ok(())
+}
+
+/// The record beside a session: one [`Pending`] per settings file. Apps
+/// before 1.4.0 kept one alone, which a crash may have left.
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum Record {
+    Files(Vec<Pending>),
+    File(Pending),
 }
 
 fn restore(
@@ -222,23 +279,30 @@ fn below_state(layers: &profiles::Layers) -> Vec<&Path> {
     std::iter::once(layers.view_lower()).chain(below).collect()
 }
 
-/// The first of `names` that DOS sees, and where it is.
+/// The first of `names` that DOS sees in its folder `folder` (`""` for the
+/// drive root), and where it is. The entry's path has the folder.
 fn find_file(
     layers: &profiles::Layers,
+    folder: &str,
     names: &[String],
 ) -> Result<Option<(overlay_view::Entry, PathBuf)>> {
+    let upper = layers.upper.join(folder);
     for name in names {
         for dir in below_state(layers) {
-            let entries = overlay_view::list_root(dir, &layers.upper)?;
-            if let Some(entry) = entries
+            let lower = dir.join(folder);
+            let entries = overlay_view::list_root(&lower, &upper)?;
+            if let Some(mut entry) = entries
                 .into_iter()
                 .find(|e| e.path.eq_ignore_ascii_case(name))
             {
                 let root = match entry.layer {
-                    Layer::Upper => &layers.upper,
-                    Layer::Lower => dir,
+                    Layer::Upper => &upper,
+                    Layer::Lower => &lower,
                 };
                 let path = root.join(&entry.path);
+                if !folder.is_empty() {
+                    entry.path = format!("{folder}/{}", entry.path);
+                }
                 return Ok(Some((entry, path)));
             }
         }
@@ -304,7 +368,7 @@ fn write_whole(record: &Path, file: &Path, data: &[u8]) -> Result<()> {
 }
 
 /// In one step, so a crash leaves it whole or not at all.
-fn write_pending(path: &Path, pending: &Pending) -> Result<()> {
+fn write_pending(path: &Path, pending: &[Pending]) -> Result<()> {
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir)?;
     }
@@ -462,6 +526,100 @@ mod tests {
         apply(&paths, &db, "keen4-1").unwrap();
         merge_pending(&paths, &db, "keen4-1").unwrap();
         assert_eq!(fs::read(&file).unwrap(), original);
+    }
+
+    const JUMP: usize = 0x20C;
+
+    #[test]
+    fn settings_go_into_every_folder_the_game_keeps_them_in() {
+        let (tmp, paths, db) = setup();
+        let src = tmp.path().join("mod");
+        let data = sample(Format::GalaxyNew);
+        let mut craig = data.clone();
+        craig[JUMP] = 0x1D;
+        write_folder(
+            &src,
+            &[
+                ("PLAY.BAT", b"ck4patch mod.pat"),
+                ("CK4PATCH.EXE", b"p"),
+                ("MOD.PAT", b"%ext ck4"),
+                ("CRAIG/CONFIG.CK4", &craig),
+                ("KEEN/KEEN4E.EXE", b"k"),
+                ("FUTURE/KEEN4E.EXE", b"k"),
+            ],
+        );
+        let info = crate::mods::inspect(&src, None).unwrap();
+        let m = crate::mods::install(
+            &paths,
+            &db,
+            &crate::mods::InstallModRequest {
+                path: src.display().to_string(),
+                name: "Launcher".into(),
+                recipe: info.recipes[0].recipe.clone(),
+                install_id: Some("keen4-1".into()),
+                keenwiki: None,
+                extends: None,
+                replace: None,
+            },
+        )
+        .unwrap();
+        db.conn()
+            .execute(
+                "UPDATE mods SET save_dirs_json = ?2 WHERE id = ?1",
+                rusqlite::params![
+                    m.id,
+                    r#"[{"dir": "KEEN", "name": "Keen"},
+                        {"dir": "CRAIG", "name": "Craig", "oldRoot": true},
+                        {"dir": "FUTURE", "name": "Epilogue"}]"#
+                ],
+            )
+            .unwrap();
+        let state = upper(&db, &m.profile_id);
+        for dir in ["KEEN", "FUTURE"] {
+            fs::create_dir_all(state.join(dir)).unwrap();
+            fs::write(state.join(dir).join("CONFIG.CK4"), &data).unwrap();
+        }
+        sound_off(&db);
+
+        apply(&paths, &db, &m.profile_id).unwrap();
+        for file in ["KEEN/CONFIG.CK4", "CRAIG/CONFIG.CK4", "FUTURE/CONFIG.CK4"] {
+            assert_eq!(fs::read(state.join(file)).unwrap()[SOUND], 0, "{file}");
+        }
+        // The root has none, and gets none.
+        assert!(!state.join("CONFIG.CK4").exists());
+        // The keys are Craig's, the folder played from before.
+        let keys = effective_keys(&db, &m.profile_id).unwrap();
+        assert_eq!(keys.jump, 0x1D);
+
+        // The game changed the epilogue's file.
+        let mut played = fs::read(state.join("FUTURE/CONFIG.CK4")).unwrap();
+        played[SCORE] = 0x77;
+        fs::write(state.join("FUTURE/CONFIG.CK4"), &played).unwrap();
+        merge_pending(&paths, &db, &m.profile_id).unwrap();
+        assert_eq!(fs::read(state.join("KEEN/CONFIG.CK4")).unwrap(), data);
+        assert!(
+            !state.join("CRAIG/CONFIG.CK4").exists(),
+            "the mod's shows again"
+        );
+        let future = fs::read(state.join("FUTURE/CONFIG.CK4")).unwrap();
+        assert_eq!((future[SCORE], future[SOUND]), (0x77, data[SOUND]));
+        assert!(!sidecar(&paths, &m.profile_id).exists());
+    }
+
+    #[test]
+    fn a_record_of_one_file_from_before_is_merged() {
+        let (_tmp, paths, db) = setup();
+        let (file, original) = config(&db);
+        sound_off(&db);
+        apply(&paths, &db, "keen4-1").unwrap();
+        // As apps before 1.4.0 wrote it.
+        let list: serde_json::Value =
+            serde_json::from_slice(&fs::read(pending(&paths)).unwrap()).unwrap();
+        fs::write(pending(&paths), serde_json::to_vec(&list[0]).unwrap()).unwrap();
+
+        merge_pending(&paths, &db, "keen4-1").unwrap();
+        assert_eq!(fs::read(&file).unwrap(), original);
+        assert!(!pending(&paths).exists());
     }
 
     #[test]
