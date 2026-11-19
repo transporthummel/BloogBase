@@ -624,6 +624,7 @@ fn curated(recipe: Recipe) -> Curated {
         sha256: "ab".repeat(32),
         worlds: None,
         root: None,
+        save_dirs: Vec::new(),
     }
 }
 
@@ -2094,9 +2095,22 @@ fn revival(zip: &Path, root: Option<&str>) -> Curated {
         own_files: true,
         url: "https://example.com/m.dave216.revival.zip".into(),
         sha256: sha256_hex(&fs::read(zip).unwrap()),
+        save_dirs: match root {
+            Some(_) => revival_dirs(),
+            None => Vec::new(),
+        },
         root,
         ..curated(recipe)
     }
+}
+
+fn revival_dirs() -> Vec<crate::mod_index::SaveDir> {
+    serde_json::from_str(
+        r#"[{"dir": "KEEN", "name": "Keen"},
+            {"dir": "CRAIG", "name": "Craig", "oldRoot": true},
+            {"dir": "FUTURE", "name": "Epilogue", "translations": {"de": {"name": "Epilog"}}}]"#,
+    )
+    .unwrap()
 }
 
 fn mod_root(db: &Db, id: &str) -> Option<String> {
@@ -2247,4 +2261,112 @@ fn a_failed_move_to_the_root_changes_nothing() {
         assert!(!state.join("CRAIG").exists());
         assert_eq!(mod_root(&db, &m.id), None);
     }
+}
+
+#[test]
+fn saves_in_a_launchers_folders_count_and_come_back() {
+    use crate::saves::tests::keen4_save;
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("revival.zip");
+    write_zip(&zip, REVIVAL);
+    let m = install_curated(&paths, &db, &zip, &revival(&zip, Some("")), None, false).unwrap();
+    let state = paths.profiles.join(&m.profile_id).join("state");
+    for dir in ["KEEN", "CRAIG", "OTHER"] {
+        fs::create_dir_all(state.join(dir)).unwrap();
+    }
+    fs::write(state.join("KEEN/SAVEGAM0.CK4"), keen4_save("keen")).unwrap();
+    fs::write(state.join("CRAIG/SAVEGAM4.CK4"), keen4_save("craig")).unwrap();
+    fs::write(state.join("CRAIG/CONFIG.CK4"), b"config").unwrap();
+    // Not a folder of the entry's.
+    fs::write(state.join("OTHER/SAVEGAM1.CK4"), keen4_save("other")).unwrap();
+
+    let saves = crate::saves::list(&db, &m.profile_id).unwrap();
+    let got: Vec<(&str, Option<u32>)> = saves.iter().map(|s| (s.file.as_str(), s.slot)).collect();
+    assert_eq!(
+        got,
+        [
+            ("KEEN/SAVEGAM0.CK4", Some(1)),
+            ("CRAIG/SAVEGAM4.CK4", Some(5))
+        ]
+    );
+    let listed = profiles::list(&db, |_| false).unwrap();
+    assert_eq!(
+        listed
+            .iter()
+            .find(|p| p.id == m.profile_id)
+            .unwrap()
+            .save_count,
+        2
+    );
+
+    let b = backups::create(
+        &paths,
+        &db,
+        &m.profile_id,
+        Contents::State,
+        backups::Reason::BeforeDelete,
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!((b.saves, b.settings, b.other), (2, 1, 1));
+    fs::remove_file(state.join("KEEN/SAVEGAM0.CK4")).unwrap();
+    backups::restore(&paths, &db, b.id, None, None, false).unwrap();
+    assert_eq!(
+        fs::read(state.join("KEEN/SAVEGAM0.CK4")).unwrap(),
+        keen4_save("keen")
+    );
+}
+
+#[test]
+fn saves_of_backups_from_before_the_root_go_to_its_old_folder() {
+    let (_tmp, paths, db, m, zip) = old_revival();
+    let old = backups::create(
+        &paths,
+        &db,
+        &m.profile_id,
+        Contents::State,
+        backups::Reason::BeforeDelete,
+    )
+    .unwrap()
+    .unwrap();
+    let running = crate::launcher::Running::default();
+    assert!(
+        follow_root(
+            &paths,
+            &db,
+            &running,
+            &m.id,
+            &revival(&zip, Some("")),
+            Some("CRAIG")
+        )
+        .unwrap()
+    );
+    let state = paths.profiles.join(&m.profile_id).join("state");
+    fs::remove_file(state.join("CRAIG/SAVEGAM0.CK4")).unwrap();
+
+    let names: Vec<String> = backups::saves_in(&db, old.id)
+        .unwrap()
+        .into_iter()
+        .map(|s| s.file)
+        .collect();
+    assert_eq!(names, ["CRAIG/SAVEGAM0.CK4"]);
+    backups::restore(&paths, &db, old.id, Some("CRAIG/SAVEGAM0.CK4"), None, false).unwrap();
+    assert_eq!(fs::read(state.join("CRAIG/SAVEGAM0.CK4")).unwrap(), b"save");
+    assert!(!state.join("SAVEGAM0.CK4").exists());
+}
+
+#[test]
+fn deleting_a_save_a_launchers_folder_ships_hides_it_there() {
+    use crate::saves::tests::keen4_save;
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("revival.zip");
+    let shipped = keen4_save("shipped");
+    let mut files = REVIVAL.to_vec();
+    files.push(("KEEN/SAVEGAM9.CK4", &shipped));
+    write_zip(&zip, &files);
+    let m = install_curated(&paths, &db, &zip, &revival(&zip, Some("")), None, false).unwrap();
+    crate::saves::delete(&paths, &db, &m.profile_id, "KEEN/SAVEGAM9.CK4").unwrap();
+    let state = paths.profiles.join(&m.profile_id).join("state");
+    assert!(state.join("KEEN/DBOVERLAY_DEL_SAVEGAM9.CK4").is_file());
+    assert!(crate::saves::list(&db, &m.profile_id).unwrap().is_empty());
 }

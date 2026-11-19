@@ -925,6 +925,7 @@ pub fn link_installed(index: &ModIndex, db: &Db, paths: &AppPaths) -> Result<()>
     for e in &entries {
         mods::set_standalone(db, &e.id, e.needs_no_game(), e.standalone)?;
         mods::set_worlds(db, &e.id, e.worlds.as_ref())?;
+        mods::set_save_dirs(db, &e.id, &e.save_dirs)?;
     }
     Ok(())
 }

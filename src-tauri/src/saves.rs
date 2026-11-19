@@ -14,6 +14,7 @@ use crate::catalog::{self, Engine, Game, glob_match};
 use crate::covers;
 use crate::db::Db;
 use crate::error::{Error, Result};
+use crate::mod_index::SaveDir;
 use crate::overlay_view::{self, Layer, OVERLAY_DELETED_FILE_PREFIX};
 use crate::paths::AppPaths;
 use crate::profiles::{self, Layers};
@@ -34,13 +35,18 @@ pub struct SaveFile {
     pub versions: u32,
 }
 
+/// Whether `name`, a path from the drive root, is a save: in the root or
+/// in one of the folders the game keeps them in ([`Game::save_dirs`]).
 pub fn is_save(game: &Game, name: &str) -> bool {
-    !name.contains('/') && game.saves.iter().any(|p| glob_match(p, name))
+    game.in_save_dir(name)
+        .is_some_and(|name| game.saves.iter().any(|p| glob_match(p, name)))
 }
 
 /// The slot number the game shows for a save file name: Keen 1-3 count from
-/// the digit in the name, the others number slots from 1 for file 0.
+/// the digit in the name, the others number slots from 1 for file 0. Each
+/// folder numbers its own.
 fn slot(game: &Game, name: &str) -> Option<u32> {
+    let name = name.rsplit('/').next().unwrap_or(name);
     let pattern = game.saves.iter().find(|p| glob_match(p, name))?;
     let at = pattern.find('?')?;
     let digit = name
@@ -90,7 +96,7 @@ pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Ga
     };
     // A mod waiting for its game has no executable to read.
     let Ok(files) = covers::Files::new(&layers.sources()) else {
-        return Ok(game);
+        return Ok(with_dirs(game, &m.save_dirs));
     };
     // Reading the executable takes unpacking it, so the answer is kept for
     // as long as the files stay the same, also over restarts.
@@ -98,7 +104,9 @@ pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Ga
     let mut known = known_lock();
     if let Some(names) = known.names.get(&key) {
         let names = names.clone();
-        return Ok(known.game(&key, game, names));
+        let played = known.game(&key, game, names);
+        drop(known);
+        return Ok(with_dirs(played, &m.save_dirs));
     }
     drop(known);
     let texts = covers::patch_texts(game, &m.recipe, &files);
@@ -138,7 +146,32 @@ pub(crate) fn profile_game(game_id: &str, layers: &Layers) -> Result<&'static Ga
     if known.batch == 0 {
         known.store();
     }
-    Ok(played)
+    Ok(with_dirs(played, &m.save_dirs))
+}
+
+/// `game` keeping saves and state files in the folders `dirs` too, as a
+/// mod's index entry says (`saveDirs`).
+fn with_dirs(game: &'static Game, dirs: &[SaveDir]) -> &'static Game {
+    if dirs.is_empty() {
+        return game;
+    }
+    type Key = (usize, Vec<String>, Option<String>);
+    static GAMES: OnceLock<Mutex<HashMap<Key, &'static Game>>> = OnceLock::new();
+    let names: Vec<String> = dirs.iter().map(|d| d.dir.clone()).collect();
+    let old_root = dirs.iter().find(|d| d.old_root).map(|d| d.dir.clone());
+    let key = (game as *const Game as usize, names, old_root);
+    let mut games = GAMES
+        .get_or_init(Default::default)
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    games.entry(key.clone()).or_insert_with(|| {
+        // One per mod and change of its entry while BloogBase runs.
+        Box::leak(Box::new(Game {
+            save_dirs: key.1,
+            old_root: key.2,
+            ..game.clone()
+        }))
+    })
 }
 
 /// The save and state file patterns `profile_game` found for one mod's
@@ -488,11 +521,14 @@ pub fn delete(paths: &AppPaths, db: &Db, profile_id: &str, file: &str) -> Result
         .into_iter()
         .find(|e| e.path.eq_ignore_ascii_case(&entry.path));
     if let Some(lower) = below {
-        fs::create_dir_all(&layers.upper)?;
+        // The marker goes next to the file, in its folder.
+        let (dir, name) = lower.path.rsplit_once('/').unwrap_or(("", &lower.path));
+        let dir = layers.upper.join(dir);
+        fs::create_dir_all(&dir)?;
         fs::write(
-            layers.upper.join(format!(
+            dir.join(format!(
                 "{OVERLAY_DELETED_FILE_PREFIX}{}",
-                lower.path.to_ascii_uppercase()
+                name.to_ascii_uppercase()
             )),
             b"empty",
         )?;
@@ -741,6 +777,7 @@ pub(crate) mod tests {
             lower: None,
             upper: tmp.path().join("state"),
             mod_layer: Some(profiles::ModLayer {
+                save_dirs: Vec::new(),
                 files: files.clone(),
                 base: None,
                 recipe: Recipe::Program {
@@ -782,6 +819,7 @@ pub(crate) mod tests {
             lower: None,
             upper: tmp.path().join("state"),
             mod_layer: Some(profiles::ModLayer {
+                save_dirs: Vec::new(),
                 files,
                 base: None,
                 recipe: Recipe::Program {
@@ -815,6 +853,7 @@ pub(crate) mod tests {
             lower: Some(base.clone()),
             upper: tmp.path().join("state"),
             mod_layer: Some(profiles::ModLayer {
+                save_dirs: Vec::new(),
                 files: files.clone(),
                 base: None,
                 recipe: Recipe::Patch {

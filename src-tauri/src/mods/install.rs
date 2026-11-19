@@ -14,8 +14,8 @@ use crate::detect::sha256_hex;
 use crate::error::{Error, Result};
 use crate::launcher::Running;
 use crate::library::{self, Install, now};
-use crate::mod_index::IndexEntry;
 use crate::mod_index::ModStatus;
+use crate::mod_index::{IndexEntry, SaveDir};
 use crate::paths::AppPaths;
 use crate::recipe::{Recipe, VersionRecipes};
 use crate::source::{Source, split_dir};
@@ -330,6 +330,8 @@ pub struct Curated {
     /// The folder of the archive it's installed from, `""` for its root;
     /// `None`: the one found.
     pub root: Option<String>,
+    /// Folders right in its root the game keeps saves and settings in.
+    pub save_dirs: Vec<SaveDir>,
 }
 
 impl Curated {
@@ -366,6 +368,7 @@ impl Curated {
             sha256: d.sha256.clone(),
             worlds: entry.worlds.clone(),
             root: entry.root.clone(),
+            save_dirs: entry.save_dirs.clone(),
         }
     }
 }
@@ -486,6 +489,7 @@ pub fn install_curated(
             target.as_ref(),
         )?;
         set_worlds(db, &c.index_id, c.worlds.as_ref())?;
+        set_save_dirs(db, &c.index_id, &c.save_dirs)?;
         return Ok(m);
     }
     let target = match install_id {
@@ -504,6 +508,7 @@ pub fn install_curated(
     };
     let m = store(paths, db, &source, &analysis, &stored, target.as_ref())?;
     set_worlds(db, &c.index_id, c.worlds.as_ref())?;
+    set_save_dirs(db, &c.index_id, &c.save_dirs)?;
     Ok(m)
 }
 
@@ -628,6 +633,17 @@ pub fn set_worlds(db: &Db, index_id: &str, worlds: Option<&Worlds>) -> Result<()
     let json = worlds.map(|w| serde_json::to_string(w).expect("worlds serialize"));
     db.conn().execute(
         "UPDATE mods SET worlds_json = ?2 WHERE index_id = ?1 AND worlds_json IS NOT ?2",
+        params![index_id, json],
+    )?;
+    Ok(())
+}
+
+/// Makes the mods installed from the index entry `index_id` keep saves and
+/// settings in the folders it lists (`saveDirs`) too.
+pub fn set_save_dirs(db: &Db, index_id: &str, dirs: &[SaveDir]) -> Result<()> {
+    let json = (!dirs.is_empty()).then(|| serde_json::to_string(dirs).expect("dirs serialize"));
+    db.conn().execute(
+        "UPDATE mods SET save_dirs_json = ?2 WHERE index_id = ?1 AND save_dirs_json IS NOT ?2",
         params![index_id, json],
     )?;
     Ok(())

@@ -45,6 +45,16 @@ pub struct Game {
     /// original, though after every release.
     #[serde(default)]
     pub preferred_versions: Vec<String>,
+    /// Folders right in the drive root the game keeps saves and state files
+    /// in besides the root, as a mod's index entry lists them (`saveDirs`);
+    /// set by [`crate::saves::profile_game`], never in the catalog.
+    #[serde(skip)]
+    pub save_dirs: Vec<String>,
+    /// The one of `save_dirs` such a mod played from before its entry named
+    /// its root: saves and state files without a folder in its older
+    /// backups belong there.
+    #[serde(skip)]
+    pub old_root: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Type)]
@@ -128,12 +138,29 @@ impl Game {
             && self.data_files.iter().all(|d| d.split('|').any(has))
     }
 
-    /// Whether `name` (a bare file name) is something the game writes at runtime.
+    /// Whether `name` (a bare file name, or one in a folder of
+    /// [`Game::save_dirs`]) is something the game writes at runtime.
     pub fn is_state_file(&self, name: &str) -> bool {
-        self.saves
-            .iter()
-            .chain(&self.state_files)
-            .any(|p| glob_match(p, name))
+        self.in_save_dir(name).is_some_and(|name| {
+            self.saves
+                .iter()
+                .chain(&self.state_files)
+                .any(|p| glob_match(p, name))
+        })
+    }
+
+    /// The file name of `path` (`/`-separated, from the drive root) where
+    /// the game keeps saves and state files: in the root, or in one of
+    /// [`Game::save_dirs`].
+    pub fn in_save_dir<'a>(&self, path: &'a str) -> Option<&'a str> {
+        match path.rsplit_once('/') {
+            None => Some(path),
+            Some((dir, name)) => self
+                .save_dirs
+                .iter()
+                .any(|d| d.eq_ignore_ascii_case(dir))
+                .then_some(name),
+        }
     }
 
     /// The place of `version_id` in `preferred_versions`; a build takes its

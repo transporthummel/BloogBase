@@ -579,7 +579,7 @@ fn tally(game: &Game, mut b: Backup) -> Backup {
         }
         if saves::is_save(game, file) {
             b.saves += 1;
-        } else if !file.contains('/') && game.is_state_file(name) {
+        } else if game.is_state_file(file) {
             b.settings += 1;
         } else {
             b.other += 1;
@@ -757,12 +757,32 @@ pub fn saves_in(db: &Db, id: u32) -> Result<Vec<SaveFile>> {
     let (profile, layers) = profiles::get(db, &backup.profile_id)?;
     let game = saves::profile_game(&profile.game_id, &layers)?;
     let (files, manifest) = read_zip(Path::new(&archive))?;
+    let files = as_kept_now(game, files);
     let at = manifest.map_or(backup.created_at, |m| m.created_at);
     Ok(files
         .iter()
         .filter(|(name, _)| saves::is_save(game, name))
         .map(|(name, data)| saves::describe(game, name, data, Some(at)))
         .collect())
+}
+
+/// A backup's files where the game keeps them now: a mod whose index entry
+/// came to name its root (`oldRoot`) played from that folder before, so
+/// saves and settings without a folder in its older backups go there.
+fn as_kept_now(game: &Game, files: Files) -> Files {
+    let Some(dir) = &game.old_root else {
+        return files;
+    };
+    files
+        .into_iter()
+        .map(|(name, data)| {
+            if !name.contains('/') && !overlay_view::is_marker(&name) && game.is_state_file(&name) {
+                (format!("{dir}/{name}"), data)
+            } else {
+                (name, data)
+            }
+        })
+        .collect()
 }
 
 /// Puts a backup's saves back into `state/`, after backing up what's there
@@ -789,6 +809,7 @@ pub fn restore(
     }
     let parked = format!("{}/", crate::worlds::ARCHIVE_DIR);
     files.retain(|(name, _)| !name.starts_with(&parked));
+    let mut files = as_kept_now(game_of_profile(db, &backup.profile_id)?, files);
     // A world's saves fit only that world: it's played again first, if
     // it's still there. Another world's files never replace the ones of
     // the world played.

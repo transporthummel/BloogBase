@@ -11,6 +11,7 @@ use specta::Type;
 use crate::catalog::{self, Game, glob_match};
 use crate::db::Db;
 use crate::error::{Error, Result};
+use crate::mod_index::SaveDir;
 use crate::mods;
 use crate::overlay_view;
 use crate::recipe::{self, Recipe, VersionRecipes};
@@ -115,6 +116,9 @@ pub struct ModLayer {
     /// The files of the mod it's played over, below its own.
     pub base: Option<PathBuf>,
     pub recipe: Recipe,
+    /// Folders right in its root the game keeps saves and settings in, as
+    /// its index entry says (`saveDirs`).
+    pub save_dirs: Vec<SaveDir>,
 }
 
 const SELECT: &str = "
@@ -128,7 +132,7 @@ const SELECT: &str = "
            COALESCE(m.standalone, 0),
            (SELECT gp.id FROM profiles gp
             WHERE p.mod_id IS NOT NULL AND gp.install_id = p.install_id AND gp.mod_id IS NULL),
-           m.worlds_json IS NOT NULL, p.active_world, m.status
+           m.worlds_json IS NOT NULL, p.active_world, m.status, m.save_dirs_json
     FROM profiles p
     LEFT JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id
@@ -170,6 +174,10 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
         .get::<_, Option<String>>(15)?
         .and_then(|j| serde_json::from_str(&j).ok())
         .unwrap_or_default();
+    let save_dirs: Vec<SaveDir> = r
+        .get::<_, Option<String>>(25)?
+        .and_then(|j| serde_json::from_str(&j).ok())
+        .unwrap_or_default();
     let mod_layer = mod_path.zip(recipe).map(|(path, recipe)| {
         // Written by `mods::install`; an unreadable one falls back to the episode.
         let recipe = serde_json::from_str(&recipe).unwrap_or(Recipe::Episode);
@@ -178,6 +186,7 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             base: base_path.map(|b| b.join("files")),
             recipe: recipe::for_version(&recipe, &by_version, &game_id, version_id.as_deref())
                 .clone(),
+            save_dirs,
         }
     });
     // With the files of the mod it's played over (xky1rooms over Episode X).
@@ -188,7 +197,11 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             .is_some_and(|(m, game)| {
                 let mut names = file_names(&m.files);
                 names.extend(m.base.iter().flat_map(|b| file_names(b)));
+                // A launcher's root starts folders that each hold the game.
                 game.all_in(&names)
+                    || m.save_dirs
+                        .iter()
+                        .any(|d| game.all_in(&file_names(&m.files.join(&d.dir))))
             });
     Ok(ProfileRow {
         profile: Profile {
@@ -284,11 +297,17 @@ pub fn get(db: &Db, id: &str) -> Result<(Profile, Layers)> {
     Ok((row.profile, row.layers))
 }
 
-/// Saves as DOS sees them: through the overlay, in the drive root.
+/// Saves as DOS sees them: through the overlay, in the drive root and the
+/// folders the game keeps them in.
 fn count_saves(game: &Game, layers: &Layers) -> Result<u32> {
-    Ok(overlay_view::list_root(layers.view_lower(), &layers.upper)?
+    let files = if game.save_dirs.is_empty() {
+        overlay_view::list_root(layers.view_lower(), &layers.upper)?
+    } else {
+        overlay_view::list(layers.view_lower(), &layers.upper)?
+    };
+    Ok(files
         .iter()
-        .filter(|e| game.saves.iter().any(|p| glob_match(p, &e.path)))
+        .filter(|e| crate::saves::is_save(game, &e.path))
         .count() as u32)
 }
 

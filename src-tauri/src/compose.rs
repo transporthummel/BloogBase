@@ -454,6 +454,7 @@ mod tests {
                 &[("ck1patch.exe", patcher), ("GO.BAT", b"ck1patch m.pat")],
             );
             let layer = ModLayer {
+                save_dirs: Vec::new(),
                 files: modf.clone(),
                 base: None,
                 recipe,
@@ -495,6 +496,7 @@ mod tests {
             &[("norper.exe", &renamed), ("RUN.BAT", b"norper m.pat")],
         );
         let layer = ModLayer {
+            save_dirs: Vec::new(),
             files: modf.clone(),
             base: None,
             recipe: Recipe::Batch {
@@ -530,6 +532,7 @@ mod tests {
             let _ = fs::remove_dir_all(&modf);
             write_folder(&modf, files);
             let layer = ModLayer {
+                save_dirs: Vec::new(),
                 files: modf.clone(),
                 base: None,
                 recipe: Recipe::Episode,
@@ -570,6 +573,7 @@ mod tests {
             let _ = fs::remove_dir_all(&modf);
             write_folder(&modf, files);
             let layer = ModLayer {
+                save_dirs: Vec::new(),
                 files: modf.clone(),
                 base: None,
                 recipe: Recipe::Program {
@@ -640,6 +644,7 @@ mod tests {
         );
 
         let episode = ModLayer {
+            save_dirs: Vec::new(),
             files: modf.clone(),
             base: None,
             recipe: Recipe::Episode,
@@ -684,6 +689,7 @@ mod tests {
 
         // A different recipe or changed file rebuilds it.
         let batch = ModLayer {
+            save_dirs: Vec::new(),
             files: modf.clone(),
             base: None,
             recipe: Recipe::Batch {
@@ -752,6 +758,7 @@ mod tests {
             ],
         );
         let layer = ModLayer {
+            save_dirs: Vec::new(),
             files: modf.clone(),
             base: None,
             recipe: Recipe::Episode,
@@ -798,6 +805,7 @@ mod tests {
         );
         write_folder(&levels, &[("LEVEL04.CK1", b"pack"), ("lego.pat", b"pack")]);
         let layer = ModLayer {
+            save_dirs: Vec::new(),
             files: levels.clone(),
             base: Some(lego.clone()),
             recipe: Recipe::Episode,
