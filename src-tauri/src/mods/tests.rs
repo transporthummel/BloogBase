@@ -321,10 +321,10 @@ fn takes_over_what_the_keenwiki_page_now_says() {
     });
     let m = install(&paths, &db, &req).unwrap();
     assert_eq!(list(&db).unwrap()[0].status, Some(ModStatus::Beta));
-    assert_eq!(
-        crate::profiles::list(&db, |_| false).unwrap()[0].mod_status,
-        Some(ModStatus::Beta)
-    );
+    // The game's profile comes first when the mod's was made a second later.
+    let profiles = crate::profiles::list(&db, |_| false).unwrap();
+    let profile = profiles.iter().find(|p| p.id == m.profile_id).unwrap();
+    assert_eq!(profile.mod_status, Some(ModStatus::Beta));
 
     let mut page = WikiMod {
         page_url: page_url.into(),
