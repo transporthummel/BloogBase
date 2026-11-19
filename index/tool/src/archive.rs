@@ -160,8 +160,21 @@ pub fn problems(
             })
         })
     };
-    let root = names.iter().map(|n| dir_of(n)).find(|d| holds_all(d));
+    // The entry may name it; else the first folder holding them all.
+    let root = match &entry.root {
+        Some(r) => match folder(&names, r) {
+            Some(dir) => holds_all(dir).then_some(dir),
+            None => {
+                out.push(format!("{}: has no folder `{r}` (root)", download.url));
+                return out;
+            }
+        },
+        None => names.iter().map(|n| dir_of(n)).find(|d| holds_all(d)),
+    };
     let found = root.is_some();
+    if let Some(root) = root {
+        out.extend(folder_problems(entry, &download.url, &names, root));
+    }
     for (file, hash) in &download.programs {
         let path = root.and_then(|dir| {
             names
@@ -188,11 +201,18 @@ pub fn problems(
             .map(|w| w.to_string())
             .chain(entry.copy_to_root.iter().map(|f| format!("{f}/")))
             .collect();
-        out.push(format!(
-            "{}: no folder holds all of {}",
-            download.url,
-            all.join(", ")
-        ));
+        out.push(match &entry.root {
+            Some(r) => format!(
+                "{}: the root `{r}` doesn't hold all of {}",
+                download.url,
+                all.join(", ")
+            ),
+            None => format!(
+                "{}: no folder holds all of {}",
+                download.url,
+                all.join(", ")
+            ),
+        });
     }
     if let Some(f) = &download.fingerprint {
         out.extend(fingerprint_problems(&download.url, f, data, &names));
@@ -203,6 +223,45 @@ pub fn problems(
                 "{}: provides `{file}`, which it lacks",
                 download.url
             ));
+        }
+    }
+    out
+}
+
+/// The folder `path` of the archive (`names`), as spelled there; `""` is
+/// the archive's root.
+fn folder<'a, S: AsRef<str> + 'a>(names: &'a [S], path: &str) -> Option<&'a str> {
+    if path.is_empty() {
+        return Some("");
+    }
+    names.iter().map(AsRef::as_ref).find_map(|n| {
+        let dir = n.get(..path.len())?;
+        (dir.eq_ignore_ascii_case(path) && n[path.len()..].starts_with('/')).then_some(dir)
+    })
+}
+
+/// What's missing of the entry's `saveDirs` and `coverFrom` below `root`.
+fn folder_problems(entry: &Entry, url: &str, names: &[String], root: &str) -> Vec<String> {
+    let inner: Vec<&str> = names
+        .iter()
+        .filter_map(|n| {
+            if root.is_empty() {
+                Some(n.as_str())
+            } else {
+                n.strip_prefix(root)?.strip_prefix('/')
+            }
+        })
+        .collect();
+    let mut out = Vec::new();
+    for d in &entry.save_dirs {
+        if folder(&inner, &d.dir).is_none() {
+            out.push(format!("{url}: lacks the folder `{}` (saveDirs)", d.dir));
+        }
+    }
+    if let Some(c) = &entry.cover_from {
+        let path = format!("{}/{}", c.dir, c.patch);
+        if !inner.iter().any(|n| n.eq_ignore_ascii_case(&path)) {
+            out.push(format!("{url}: lacks `{path}` (coverFrom)"));
         }
     }
     out
@@ -421,6 +480,48 @@ mod tests {
         );
         e.cover = Some("MENU.EXE".into());
         assert_eq!(problems(&e, &e.downloads[0], &data, &[]).len(), 1);
+    }
+
+    #[test]
+    fn a_named_root_holds_the_recipe_save_folders_and_cover() {
+        let data = zip(&[
+            ("play.bat", b"p"),
+            ("CRAIG/CK4PATCH.EXE", b"p"),
+            ("CRAIG/abiathar.pat", b"x"),
+            ("KEEN/abiathar.pat", b"x"),
+            ("FUTURE/WRAPPER.COM", b"w"),
+        ]);
+        let mut e = entry_for(&data);
+        e.root = Some(String::new());
+        e.recipe = Recipe::Batch {
+            file: "PLAY.BAT".into(),
+        };
+        e.save_dirs = serde_yaml_ng::from_str(
+            "[{dir: keen, name: Keen}, {dir: CRAIG, name: Craig}, {dir: FUTURE, name: E}]",
+        )
+        .unwrap();
+        e.cover_from = Some(serde_yaml_ng::from_str("{dir: Craig, patch: ABIATHAR.PAT}").unwrap());
+        assert_eq!(
+            problems(&e, &e.downloads[0], &data, &[]),
+            Vec::<String>::new()
+        );
+
+        let mut bad = e.clone();
+        bad.save_dirs[2].dir = "PAST".into();
+        bad.cover_from.as_mut().unwrap().patch = "other.pat".into();
+        assert_eq!(problems(&bad, &bad.downloads[0], &data, &[]).len(), 2);
+
+        // The recipe isn't in the named root, or it's not there at all.
+        let mut bad = e.clone();
+        bad.root = Some("craig".into());
+        let p = problems(&bad, &bad.downloads[0], &data, &[]);
+        assert!(p.len() == 1 && p[0].contains("root `craig`"), "{p:?}");
+        bad.root = Some("Revival".into());
+        let p = problems(&bad, &bad.downloads[0], &data, &[]);
+        assert!(
+            p.len() == 1 && p[0].contains("no folder `Revival`"),
+            "{p:?}"
+        );
     }
 
     #[test]

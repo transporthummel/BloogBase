@@ -414,6 +414,15 @@ export type CopiedCaptures = {
 	folders: string[],
 };
 
+/**
+ *  The cover of a mod whose root only holds a launcher: the title screen
+ *  of `dir`, played with `patch`.
+ */
+export type CoverFrom = {
+	dir: string,
+	patch: string,
+};
+
 /**  How a profile takes the custom patches of its game copy. */
 export type CustomStatus = "applied" | 
 /**  The mod runs a program of its own, not the episode's. */
@@ -715,6 +724,18 @@ export type IndexEntry = {
 	 *  them as worlds.
 	 */
 	worlds?: Worlds | null,
+	/**
+	 *  The folder of the archive the mod is installed from, `""` for its
+	 *  root; `None`: the app finds it.
+	 */
+	root?: string | null,
+	/**
+	 *  Folders right in the mod's root the game keeps saves and settings
+	 *  in, besides the root.
+	 */
+	saveDirs?: SaveDir[],
+	/**  The cover is the title screen of a folder of the mod, with its patch. */
+	coverFrom?: CoverFrom | null,
 	minAppVersion?: string | null,
 };
 
@@ -1229,6 +1250,24 @@ export type RuntimeStatus = {
 	downloadAvailable: boolean,
 	/**  The active runtime is too old for the CRT switch to have an effect. */
 	crtSwitchIgnored: boolean,
+};
+
+/**  A folder right in a mod's root the game keeps saves and settings in. */
+export type SaveDir = {
+	dir: string,
+	/**  In English. */
+	name: string,
+	/**
+	 *  Installs from before the entry named its root kept this folder's
+	 *  files as their root.
+	 */
+	oldRoot?: boolean,
+	/**  Language code → the name in that language. */
+	translations?: { [key in string]: SaveDirTranslation },
+};
+
+export type SaveDirTranslation = {
+	name: string,
 };
 
 export type SaveFile = {

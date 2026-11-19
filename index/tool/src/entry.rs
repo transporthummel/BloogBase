@@ -88,12 +88,60 @@ pub struct Entry {
     /// play `recipe`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub worlds: Option<Worlds>,
+    /// The folder of the archive the mod is installed from, `""` for the
+    /// archive's own root; left out, the app finds it. For mods whose start
+    /// lies above the folders the game runs in (Revival of Bliss's
+    /// launcher).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub root: Option<String>,
+    /// Folders right in the mod's root the game keeps its saves and
+    /// settings in, besides the root: a launcher starts each part of the
+    /// mod inside its own folder.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub save_dirs: Vec<SaveDir>,
+    /// The cover is the title screen of a folder of the mod, with its
+    /// patch, where the root only holds a launcher. Not a form of `cover`:
+    /// apps before 1.4.0 read that as a string and would drop the entry.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover_from: Option<CoverFrom>,
     /// Oldest app version that can install this entry.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min_app_version: Option<String>,
     /// For maintainers, e.g. why the entry links somewhere unusual.
     #[serde(default, skip_serializing)]
     pub license_note: Option<String>,
+}
+
+/// A folder the game keeps saves and settings in (`saveDirs`).
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+pub struct SaveDir {
+    /// Right in the mod's root, e.g. `KEEN`.
+    pub dir: String,
+    /// What the Saves tab calls it, in English.
+    pub name: String,
+    /// Installs from before the entry named its `root` kept this folder's
+    /// files as their root: their saves move here.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub old_root: bool,
+    /// Language code → the name in that language.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub translations: BTreeMap<String, SaveDirTranslation>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct SaveDirTranslation {
+    pub name: String,
+}
+
+/// Where the cover comes from (`coverFrom`): the title screen of `dir`, a
+/// folder right in the mod's root, played with `patch`.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CoverFrom {
+    pub dir: String,
+    pub patch: String,
 }
 
 /// The languages of the app besides English, which entries are written in.
@@ -569,6 +617,7 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
     if let Some(w) = &entry.worlds {
         worlds_problems(w, &mut fail);
     }
+    folder_problems(entry, &mut fail);
     if entry.requires_game {
         fail(
             "requiresGame: the app decides it, by whether the game's shareware is free; take it out"
@@ -581,6 +630,78 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
         }
     }
     out
+}
+
+/// What's wrong with an entry's `root`, `saveDirs` and `coverFrom`.
+fn folder_problems(entry: &Entry, fail: &mut impl FnMut(String)) {
+    let folder = |s: &str| is_plain_name(s) && s != "." && s != "..";
+    if let Some(root) = &entry.root
+        && !(root.is_empty() || root.split('/').all(folder))
+    {
+        fail(format!(
+            "root: `{root}` must be \"\" or a folder of the archive, with `/`"
+        ));
+    }
+    let mut dirs = BTreeSet::new();
+    let mut names = BTreeSet::new();
+    for d in &entry.save_dirs {
+        if !folder(&d.dir) {
+            fail(format!(
+                "saveDirs: `{}` must be a folder right in the mod's root",
+                d.dir
+            ));
+        }
+        if !dirs.insert(d.dir.to_ascii_uppercase()) {
+            fail(format!("saveDirs: `{}` comes twice", d.dir));
+        }
+        if d.name.trim().is_empty() {
+            fail(format!("saveDirs.{}: name is empty", d.dir));
+        } else if !names.insert(d.name.clone()) {
+            fail(format!("saveDirs.{}: name `{}` comes twice", d.dir, d.name));
+        }
+        for (lang, t) in &d.translations {
+            if !LANGUAGES.contains(&lang.as_str()) {
+                fail(format!(
+                    "saveDirs.{}: translations.{lang} is no language of the app",
+                    d.dir
+                ));
+            }
+            if t.name.trim().is_empty() {
+                fail(format!(
+                    "saveDirs.{}: translations.{lang}.name is empty",
+                    d.dir
+                ));
+            }
+        }
+    }
+    if entry.save_dirs.iter().filter(|d| d.old_root).count() > 1 {
+        fail("saveDirs: only one folder can be the oldRoot".into());
+    }
+    if !entry.save_dirs.is_empty() && entry.worlds.is_some() {
+        fail("saveDirs: a mod with worlds keeps its saves in its root".into());
+    }
+    if let Some(c) = &entry.cover_from {
+        if !folder(&c.dir) {
+            fail(format!(
+                "coverFrom.dir: `{}` must be a folder right in the mod's root",
+                c.dir
+            ));
+        }
+        if !is_plain_name(&c.patch) {
+            fail(format!(
+                "coverFrom.patch: `{}` must be a plain DOS file name",
+                c.patch
+            ));
+        }
+        if entry.cover.is_some() {
+            fail("coverFrom: the entry names its cover with `cover` already".into());
+        }
+    }
+    if (entry.root.is_some() || !entry.save_dirs.is_empty() || entry.cover_from.is_some())
+        && entry.min_app_version.is_none()
+    {
+        fail("root, saveDirs and coverFrom need a minAppVersion".into());
+    }
 }
 
 /// What's wrong with an entry's `worlds`.
@@ -1044,6 +1165,62 @@ recipe:
         let p = problems(&bad, "aurora-bliss", &catalog());
         // a/b, max, read.file, default, label.de twice, id twice.
         assert_eq!(p.len(), 7, "{p:#?}");
+    }
+
+    const FOLDERS: &str = r#"root: ""
+saveDirs:
+  - dir: KEEN
+    name: Keen
+  - dir: CRAIG
+    name: Craig
+    oldRoot: true
+  - dir: FUTURE
+    name: Epilogue
+    translations: { de: { name: Epilog } }
+coverFrom: { dir: CRAIG, patch: abiathar.pat }
+minAppVersion: 1.4.0
+"#;
+
+    #[test]
+    fn a_root_saves_in_folders_and_a_cover_from_one() {
+        let e = parse(&format!("{AURORA}{FOLDERS}")).unwrap();
+        assert_eq!(e.root.as_deref(), Some(""));
+        assert_eq!(e.save_dirs.len(), 3);
+        assert!(e.save_dirs[1].old_root);
+        assert_eq!(e.save_dirs[2].translations["de"].name, "Epilog");
+        assert_eq!(e.cover_from.as_ref().unwrap().dir, "CRAIG");
+        assert_eq!(
+            problems(&e, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+        let mut nested = e.clone();
+        nested.root = Some("Revival/Game".into());
+        assert_eq!(
+            problems(&nested, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+
+        let mut bad = e.clone();
+        bad.root = Some("../x".into());
+        bad.save_dirs[0].dir = "a/b".into();
+        bad.save_dirs[1].name = "Epilogue".into();
+        bad.save_dirs[2].old_root = true;
+        bad.save_dirs[2]
+            .translations
+            .insert("fr".into(), SaveDirTranslation { name: " ".into() });
+        bad.save_dirs.push(bad.save_dirs[2].clone());
+        bad.cover_from.as_mut().unwrap().patch = "sub/x.pat".into();
+        bad.cover = Some("KEEN4E.EXE".into());
+        let p = problems(&bad, "aurora-bliss", &catalog());
+        // root, a/b, FUTURE twice, Epilogue twice and fr twice for each
+        // FUTURE, oldRoot, patch, cover.
+        assert_eq!(p.len(), 12, "{p:#?}");
+
+        let mut old = e.clone();
+        old.min_app_version = None;
+        old.worlds = parse(&format!("{AURORA}{WORLDS}")).unwrap().worlds;
+        let p = problems(&old, "aurora-bliss", &catalog());
+        assert_eq!(p.len(), 2, "{p:#?}");
     }
 
     #[test]

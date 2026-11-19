@@ -123,8 +123,48 @@ pub struct IndexEntry {
     /// them as worlds.
     #[serde(default)]
     pub worlds: Option<crate::worlds::Worlds>,
+    /// The folder of the archive the mod is installed from, `""` for its
+    /// root; `None`: the app finds it.
+    #[serde(default)]
+    pub root: Option<String>,
+    /// Folders right in the mod's root the game keeps saves and settings
+    /// in, besides the root.
+    #[serde(default)]
+    pub save_dirs: Vec<SaveDir>,
+    /// The cover is the title screen of a folder of the mod, with its patch.
+    #[serde(default)]
+    pub cover_from: Option<CoverFrom>,
     #[serde(default)]
     pub min_app_version: Option<String>,
+}
+
+/// A folder right in a mod's root the game keeps saves and settings in.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveDir {
+    pub dir: String,
+    /// In English.
+    pub name: String,
+    /// Installs from before the entry named its root kept this folder's
+    /// files as their root.
+    #[serde(default)]
+    pub old_root: bool,
+    /// Language code → the name in that language.
+    #[serde(default)]
+    pub translations: BTreeMap<String, SaveDirTranslation>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+pub struct SaveDirTranslation {
+    pub name: String,
+}
+
+/// The cover of a mod whose root only holds a launcher: the title screen
+/// of `dir`, played with `patch`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Type)]
+pub struct CoverFrom {
+    pub dir: String,
+    pub patch: String,
 }
 
 impl IndexEntry {
@@ -1042,6 +1082,18 @@ mod tests {
         for k in PUBLIC_KEYS {
             PublicKey::from_base64(k).unwrap();
         }
+    }
+
+    #[test]
+    fn reads_a_root_save_folders_and_a_cover_from_one() {
+        let index: serde_json::Value = serde_json::from_str(SAMPLE).unwrap();
+        let e: IndexEntry = serde_json::from_value(index["mods"][0].clone()).unwrap();
+        assert_eq!(e.root.as_deref(), Some("Levels"));
+        assert_eq!(e.save_dirs.len(), 2);
+        assert!(e.save_dirs[0].old_root && !e.save_dirs[1].old_root);
+        assert_eq!(e.save_dirs[1].translations["de"].name, "Schwer");
+        let c = e.cover_from.unwrap();
+        assert_eq!((c.dir.as_str(), c.patch.as_str()), ("EASY", "EASY.PAT"));
     }
 
     #[test]

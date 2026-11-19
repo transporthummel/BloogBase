@@ -54,6 +54,9 @@ By hand:
    | `cover`          | The program whose title screen is the cover, when the recipe runs a menu (see below)        |
    | `standalone`     | `true` for a mod that ships its whole game and plays without a copy of it (see below)       |
    | `worlds`         | For mods that generate their levels at every start: how to keep them as worlds (see below)  |
+   | `root`           | Folder of the archive to install from, `""` for its root (see below)                        |
+   | `saveDirs`       | Folders in the mod's root the game keeps saves and settings in (see below)                  |
+   | `coverFrom`      | `dir` and `patch` whose title screen is the cover (see below)                               |
    | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
    | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
 
@@ -204,6 +207,37 @@ By hand:
          arg: /STARTPOGO
          type: flag
          label: { en: "Start with the pogo stick", de: "Mit Pogo-Stick starten" }
+   ```
+
+   Some mods start from a launcher above the folders their parts run in
+   (Revival of Bliss: `play.bat` runs `MKLAUNCH.EXE`, whose menu starts
+   `KEEN\`, `CRAIG\` or `FUTURE\`). The app would install one of those
+   folders on its own, so `root` names the folder of the archive to
+   install from, `""` for the archive's root, with `/` between folders;
+   the recipe files have to be right in it. Each part keeps its saves and
+   settings in its own folder: list those in `saveDirs`, with the `name`
+   the Saves tab shows them under (and a German one in `translations`, if
+   it differs). Global settings go into each folder's settings file.
+   `oldRoot: true` marks the one folder copies installed before the entry
+   named its `root` played from: the app reinstalls them from their
+   archive at the next index check and moves their saves into that folder.
+   A mod with `worlds` can't have `saveDirs`. As the root holds no game,
+   `coverFrom` names the folder (`dir`) and the `patch` the cover is the
+   title screen of. All three need `minAppVersion: 1.4.0`.
+
+   ```yaml
+   root: ""
+   recipe: { type: batch, file: play.bat }
+   saveDirs:
+     - dir: KEEN
+       name: Keen
+     - dir: CRAIG
+       name: Craig
+       oldRoot: true
+     - dir: FUTURE
+       name: Epilogue
+       translations: { de: { name: Epilog } }
+   coverFrom: { dir: CRAIG, patch: abiathar.pat }
    ```
 
 3. Check it, including the download:

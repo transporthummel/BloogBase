@@ -25,6 +25,27 @@
       },
       "tags": [],
       "featured": false,
+      "root": "Levels",
+      "saveDirs": [
+        {
+          "dir": "EASY",
+          "name": "Easy",
+          "oldRoot": true
+        },
+        {
+          "dir": "HARD",
+          "name": "Hard",
+          "translations": {
+            "de": {
+              "name": "Schwer"
+            }
+          }
+        }
+      ],
+      "coverFrom": {
+        "dir": "EASY",
+        "patch": "EASY.PAT"
+      },
       "minAppVersion": "9.0.0"
     },
     {
