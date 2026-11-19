@@ -35,8 +35,8 @@ import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { AddModDialog } from "../mods/AddModDialog";
 import { SuggestToIndex } from "../mods/KeenwikiImport";
 import { ModReportDialog } from "../mods/ModReport";
-import { ModUpdate } from "../mods/ModUpdate";
-import { useModUpdateCheck } from "../mods/modUpdateCheck";
+import { IndexModUpdate, ModUpdate } from "../mods/ModUpdate";
+import { checksKeenwiki, useModUpdateCheck } from "../mods/modUpdateCheck";
 import { WhyExactVersion } from "../mods/OtherVersion";
 import { useOwnedVersions } from "../mods/ownedVersions";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
@@ -123,8 +123,8 @@ export function ProfileActions({
     }));
   const startItems: MenuItem[] =
     active !== null ? [{ label: t("worlds.newEllipsis"), onSelect: newWorld }, ...recent] : recent;
-  // The index or the KeenWiki page may have a newer version.
-  const checkable = mod && (mod.indexId || mod.keenwikiUrl);
+  // A KeenWiki mod's page may have a newer version; the index's shows by itself.
+  const checkable = checksKeenwiki(mod);
 
   const actions: MenuItem[] = [];
   if (mod && installs.data && installs.data.length > 1)
@@ -247,6 +247,7 @@ export function ProfileActions({
         </div>
       )}
       {checkable && <ModUpdate mod={mod} check={check} disabled={profile.running} />}
+      {mod?.indexId && <IndexModUpdate mod={mod} disabled={profile.running} />}
       {mod?.source === "keenwiki" && !mod.indexId && (
         <p className="text-sm">
           <SuggestToIndex modId={mod.id} />

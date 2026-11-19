@@ -148,7 +148,7 @@ None of these stop the install:
 
 ## Updates
 
-On the mod's page, "Check for updates" reads its KeenWiki page again (from
+On the page of a mod from KeenWiki, "Check for updates" reads its KeenWiki page again (from
 the cache if it was read today) and compares the page's newest download with
 the installed one:
 
@@ -166,9 +166,12 @@ update is downloaded and installed over the old mod through the same dialog.
 
 The check also takes over what the page now says about the mod: authors,
 description, release date, homepage, threads and status (alpha, beta and
-abandoned show as a badge). What the page leaves out stays. Mods from the index keep the index's details. They ask the index
-first and their KeenWiki page only when the index has nothing newer;
-updating from the page takes the mod out of the index.
+abandoned show as a badge). What the page leaves out stays.
+
+Mods from the index have no "Check for updates" and never update from their
+KeenWiki page, which would take them out of the index with an untested
+recipe. Their page shows the index's update by itself, with an "Update"
+button, as the index is checked at every start and every few hours.
 
 ## Suggesting a mod for the index
 

@@ -1,40 +1,20 @@
 import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
-import { commands, type IndexMod, type Mod, type ModUpdate } from "../bindings";
-import { indexModsKey, indexStatusKey } from "../discover/queries";
+import { commands, type Mod, type ModUpdate } from "../bindings";
 import { modsKey, profilesKey } from "../library/queries";
 import { unwrap } from "../ipc";
 
-/**
- * What a check found: the index's entry (null when it left the index), or what
- * the KeenWiki page offers.
- */
-export type UpdateFound =
-  { source: "index"; mod: IndexMod | null } | { source: "keenwiki"; update: ModUpdate };
-
-export type ModUpdateCheck = UseMutationResult<UpdateFound, Error, void>;
+export type ModUpdateCheck = UseMutationResult<ModUpdate, Error, void>;
 
 /**
- * Asks for a newer version of a mod; `ModUpdate` shows the answer. A mod from
- * the index asks a fresh index first and its KeenWiki page only when the
- * index has nothing newer: updating from there takes it out of the index.
+ * Asks a KeenWiki mod's page for a newer version; `ModUpdate` shows the
+ * answer. Mods from the index aren't asked: the index's update shows by
+ * itself (`IndexModUpdate`), and one from KeenWiki would take them out of it.
  */
 export function useModUpdateCheck(mod: Mod | undefined): ModUpdateCheck {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (): Promise<UpdateFound> => {
+    mutationFn: async (): Promise<ModUpdate> => {
       if (!mod) throw new Error("no mod to check");
-      if (mod.indexId) {
-        const status = await commands.refreshIndex(true);
-        client.setQueryData(indexStatusKey, status);
-        const mods = await unwrap(commands.indexMods());
-        client.setQueryData(indexModsKey, mods);
-        const found = mods.find((m) => m.entry.id === mod.indexId) ?? null;
-        if (found?.updateAvailable || !mod.keenwikiUrl) {
-          // An old index can't say there's nothing newer.
-          if (status.error && !found?.updateAvailable) throw status.error;
-          return { source: "index", mod: found };
-        }
-      }
       const update = await unwrap(commands.checkModUpdate(mod.id));
       // It took over what the page now says about the mod.
       if (update.refreshed.length) client.invalidateQueries({ queryKey: modsKey });
@@ -42,7 +22,12 @@ export function useModUpdateCheck(mod: Mod | undefined): ModUpdateCheck {
       if (update.refreshed.includes("status")) {
         client.invalidateQueries({ queryKey: profilesKey });
       }
-      return { source: "keenwiki", update };
+      return update;
     },
   });
+}
+
+/** Whether the mod's KeenWiki page is where its updates come from. */
+export function checksKeenwiki(mod: Mod | undefined): mod is Mod {
+  return !!mod && !mod.indexId && !!mod.keenwikiUrl;
 }

@@ -2,7 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Download, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type IndexMod, type Mod, type ModUpdate as Update } from "../bindings";
+import { commands, type Mod, type ModUpdate as Update } from "../bindings";
+import { useIndexMods } from "../discover/queries";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { JobRow } from "../jobs/JobList";
@@ -16,7 +17,7 @@ import { DownloadProgress } from "./DownloadProgress";
 import type { ModUpdateCheck } from "./modUpdateCheck";
 import { downloaded, type Downloaded } from "./wikiDownload";
 
-/** What a check found, and installing a newer version over the old one. */
+/** What a KeenWiki check found, and installing a newer version over the old one. */
 export function ModUpdate({
   mod,
   check,
@@ -38,8 +39,7 @@ export function ModUpdate({
     onSuccess: setFetched,
   });
 
-  const found = check.data;
-  const update = found?.source === "keenwiki" ? found.update : undefined;
+  const update = check.data;
   const newest = update?.page.downloads[0];
   const offered = update && (update.status === "newer" || update.status === "unknown");
 
@@ -53,12 +53,6 @@ export function ModUpdate({
     <div className="grid justify-items-start gap-2">
       {check.isPending && <Notice>{t("modUpdate.checking")}</Notice>}
       {check.error && <Notice tone="error">{errorMessage(t, check.error)}</Notice>}
-      {found?.source === "index" &&
-        (found.mod ? (
-          <IndexUpdate mod={found.mod} disabled={disabled} onDismiss={dismiss} />
-        ) : (
-          <Notice>{t("modUpdate.notInIndex")}</Notice>
-        ))}
       {update && update.refreshed.length > 0 && (
         <Notice>
           {t("modUpdate.refreshed", {
@@ -78,7 +72,6 @@ export function ModUpdate({
                 })
               : t("modUpdate.unknown", { download: newest.label })}
           </Notice>
-          {mod.indexId && <Notice>{t("modUpdate.leavesIndex")}</Notice>}
           <div className="flex flex-wrap gap-2">
             <Button
               onClick={() => download.mutate(update)}
@@ -113,42 +106,35 @@ export function ModUpdate({
   );
 }
 
-/** The index's newer version, installed over the old one like from Discover. */
-function IndexUpdate({
-  mod,
-  disabled,
-  onDismiss,
-}: {
-  mod: IndexMod;
-  disabled: boolean;
-  onDismiss: () => void;
-}) {
+/**
+ * The index's newer version of a mod from it, installed over the old one like
+ * from Discover. Shows by itself: the index is checked at every start and
+ * every few hours.
+ */
+export function IndexModUpdate({ mod, disabled }: { mod: Mod; disabled: boolean }) {
   const { t } = useTranslation();
-  const { entry } = mod;
-  const job = useJob("mod", entry.id);
+  const found = useIndexMods().data?.find((m) => m.entry.id === mod.indexId);
+  const job = useJob("mod", mod.indexId ?? "");
   // The installed mod's own game version gets it.
-  const start = useStartJob(() => commands.installIndexMod(entry.id, null, true, null));
+  const start = useStartJob(() => commands.installIndexMod(mod.indexId!, null, true, null));
 
+  if (!found) return null;
+  const { entry } = found;
   if (job && (!isFinished(job) || start.isSuccess)) return <JobRow job={job} label={entry.name} />;
-  if (!mod.updateAvailable) return <Notice>{t("modUpdate.upToDate")}</Notice>;
+  if (!found.updateAvailable) return null;
   return (
-    <>
+    <div className="grid justify-items-start gap-2">
       <Notice>
         {t("modUpdate.inIndex", {
           version: entry.version,
           context: entry.version ? "version" : undefined,
         })}
       </Notice>
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => start.mutate()} disabled={disabled || start.isPending}>
-          <RefreshCw className="size-4" aria-hidden />
-          {t("modUpdate.update")}
-        </Button>
-        <Button variant="secondary" onClick={onDismiss} disabled={start.isPending}>
-          {t("modUpdate.dismiss")}
-        </Button>
-      </div>
+      <Button onClick={() => start.mutate()} disabled={disabled || start.isPending}>
+        <RefreshCw className="size-4" aria-hidden />
+        {t("modUpdate.update")}
+      </Button>
       {start.error && <Notice tone="error">{errorMessage(t, start.error)}</Notice>}
-    </>
+    </div>
   );
 }

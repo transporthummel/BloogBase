@@ -12,7 +12,7 @@ import {
   type Recipe,
   type WikiMod,
 } from "../bindings";
-import { ModUpdate } from "./ModUpdate";
+import { IndexModUpdate, ModUpdate } from "./ModUpdate";
 import { useModUpdateCheck } from "./modUpdateCheck";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
@@ -234,63 +234,6 @@ test("downloads a newer version and replaces the installed one", async () => {
   await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });
 
-test("updates an index mod from a fresh index", async () => {
-  inIndex(true);
-  vi.mocked(commands.installIndexMod).mockResolvedValue({
-    id: 1,
-    kind: "mod",
-    subject: "aurora-bliss",
-    phase: "starting",
-  } as never);
-  const user = renderUpdate(indexMod);
-  await user.click(screen.getByRole("button", { name: "Check for updates" }));
-  expect(await screen.findByText("Version 1.2 is in the BloogBase mod list.")).toBeInTheDocument();
-  expect(commands.refreshIndex).toHaveBeenCalledWith(true);
-  expect(commands.checkModUpdate).not.toHaveBeenCalled();
-
-  await user.click(screen.getByRole("button", { name: "Update" }));
-  expect(commands.installIndexMod).toHaveBeenCalledWith("aurora-bliss", null, true, null);
-});
-
-test("an index mod without a KeenWiki page asks only the index", async () => {
-  inIndex(false);
-  const user = renderUpdate({ ...indexMod, keenwikiUrl: null });
-  await user.click(screen.getByRole("button", { name: "Check for updates" }));
-  expect(await screen.findByText("You have the newest version.")).toBeInTheDocument();
-  expect(commands.checkModUpdate).not.toHaveBeenCalled();
-});
-
-test("a failed index check can't tell the mod is up to date", async () => {
-  inIndex(false);
-  vi.mocked(commands.refreshIndex).mockResolvedValue({
-    ...indexStatus,
-    error: { kind: "network", message: "offline" },
-  } as never);
-  const user = renderUpdate({ ...indexMod, keenwikiUrl: null });
-  await user.click(screen.getByRole("button", { name: "Check for updates" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent(/internet connection/);
-  expect(screen.queryByText("You have the newest version.")).toBeNull();
-});
-
-test("asks KeenWiki when the index has nothing newer, and warns it leaves the index", async () => {
-  inIndex(false);
-  vi.mocked(commands.checkModUpdate).mockReturnValue(
-    ok({ status: "unknown", page, refreshed: [] }),
-  );
-  const user = renderUpdate(indexMod);
-  await user.click(screen.getByRole("button", { name: "Check for updates" }));
-  expect(
-    await screen.findByText(
-      "KeenWiki offers “newest”. BloogBase can’t tell whether it is newer than yours.",
-    ),
-  ).toBeInTheDocument();
-  expect(
-    screen.getByText(
-      "After this update, the mod no longer gets updates from the BloogBase mod list.",
-    ),
-  ).toBeInTheDocument();
-});
-
 test("offers a download BloogBase can't open in the browser", async () => {
   vi.mocked(commands.checkModUpdate).mockReturnValue(ok({ status: "newer", page, refreshed: [] }));
   vi.mocked(commands.downloadKeenwikiMod).mockResolvedValue({
@@ -326,11 +269,36 @@ test("dismissing an offered update hides it", async () => {
   expect(screen.queryByRole("button", { name: "Update" })).toBeNull();
 });
 
-test("dismissing the index's update hides it", async () => {
+function renderIndexUpdate(m = indexMod) {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <IndexModUpdate mod={m} disabled={false} />
+    </QueryClientProvider>,
+  );
+  return userEvent.setup();
+}
+
+test("shows the index's update by itself and installs it", async () => {
   inIndex(true);
-  const user = renderUpdate(indexMod);
-  await user.click(screen.getByRole("button", { name: "Check for updates" }));
-  await user.click(await screen.findByRole("button", { name: "Dismiss" }));
-  expect(screen.queryByText("Version 1.2 is in the BloogBase mod list.")).toBeNull();
-  expect(commands.installIndexMod).not.toHaveBeenCalled();
+  vi.mocked(commands.installIndexMod).mockResolvedValue({
+    id: 1,
+    kind: "mod",
+    subject: "aurora-bliss",
+    phase: "starting",
+  } as never);
+  const user = renderIndexUpdate();
+  expect(await screen.findByText("Version 1.2 is in the BloogBase mod list.")).toBeInTheDocument();
+  expect(commands.refreshIndex).not.toHaveBeenCalled();
+  expect(commands.checkModUpdate).not.toHaveBeenCalled();
+
+  await user.click(screen.getByRole("button", { name: "Update" }));
+  expect(commands.installIndexMod).toHaveBeenCalledWith("aurora-bliss", null, true, null);
+});
+
+test("says nothing when the index has nothing newer", async () => {
+  inIndex(false);
+  renderIndexUpdate();
+  await vi.waitFor(() => expect(commands.indexMods).toHaveBeenCalled());
+  expect(screen.queryByRole("button", { name: "Update" })).toBeNull();
+  expect(screen.queryByText(/mod list/)).toBeNull();
 });
