@@ -379,8 +379,8 @@ impl Curated {
 /// Ties an installed mod to the index entry whose download it was
 /// installed from, and takes the entry's details over what the mod brought
 /// along, as an install from the index would store them, and the download
-/// it is, so a newer one shows as an update. How it's played stays as
-/// installed: the entry's recipe is made for its newest download.
+/// it is, so a newer one shows as an update. How it's played follows at
+/// the same index check ([`follow_entry`]), once its files are checked.
 pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
     // Every field gets a decision, so new ones aren't forgotten here.
     let Stored {
@@ -632,6 +632,127 @@ fn move_state_into(state: &Path, dir: &str) -> Result<Vec<(PathBuf, PathBuf)>> {
     Ok(moved)
 }
 
+/// Makes the installed index mod `mod_id` follow its entry `c`, the
+/// download it is (decided 2026-11-19): its details (name, authors and
+/// their links, description, release date, links, cover), and its recipe
+/// and version recipes, if its files have what they run and it isn't
+/// running; then its composed layer is made anew. The version and the
+/// download stay those installed. Whether anything changed.
+pub fn follow_entry(
+    paths: &AppPaths,
+    db: &Db,
+    running: &Running,
+    mod_id: &str,
+    c: &Curated,
+) -> Result<bool> {
+    let details = follow_details(db, mod_id, c)?;
+    let s = Stored::curated(c, None);
+    let recipe = serde_json::to_string(&s.recipe).expect("recipes serialize");
+    let by_version = version_recipes_json(&s);
+    let (stored, stored_by_version, base, profile_id): (
+        String,
+        Option<String>,
+        Option<String>,
+        String,
+    ) = db.conn().query_row(
+        "SELECT m.recipe_json, m.version_recipes_json, m.extends, p.id
+         FROM mods m JOIN profiles p ON p.mod_id = m.id WHERE m.id = ?1",
+        [mod_id],
+        |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+    )?;
+    if stored == recipe && stored_by_version == by_version {
+        return Ok(details);
+    }
+    let Ok(_claim) = running.claim(&profile_id) else {
+        tracing::info!("mod {mod_id} runs; it takes its entry's recipe later");
+        return Ok(details);
+    };
+    let in_root: Vec<String> = fs::read_dir(paths.mods.join(mod_id).join("files"))?
+        .flatten()
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .collect();
+    if let Err(e) = check_recipe_names(paths, in_root, c, base.as_deref()) {
+        tracing::warn!("mod {mod_id} keeps its recipe, its entry's doesn't fit: {e}");
+        return Ok(details);
+    }
+    let mut conn = db.conn();
+    let tx = conn.transaction()?;
+    tx.execute(
+        "UPDATE mods SET recipe_json = ?2, version_recipes_json = ?3 WHERE id = ?1",
+        params![mod_id, recipe, by_version],
+    )?;
+    tx.execute(
+        "UPDATE profiles SET composed_hash = NULL WHERE mod_id = ?1",
+        [mod_id],
+    )?;
+    tx.commit()?;
+    tracing::info!("mod {mod_id} takes its entry's recipe {:?}", s.recipe);
+    Ok(true)
+}
+
+/// Takes the details of the entry `c` over those stored for `mod_id`, as
+/// [`tie_to_index`] does, but for the download and its version. Whether
+/// they changed.
+fn follow_details(db: &Db, mod_id: &str, c: &Curated) -> Result<bool> {
+    // Every field gets a decision, so new ones aren't forgotten here.
+    let Stored {
+        name,
+        authors,
+        author_links,
+        version: _,
+        description,
+        released,
+        // `follow_entry`, once the files are checked.
+        recipe: _,
+        version_recipes: _,
+        requires: _,
+        source: _,
+        index_id: _,
+        extends: _,
+        cover,
+        standalone: _,
+        own_files: _,
+        keenwiki_url,
+        homepage,
+        pckf,
+        keenmodding,
+        status: _,
+        source_url: _,
+        archive_name: _,
+        archive_sha256: _,
+        root: _,
+    } = Stored::curated(c, None);
+    let changed = db.conn().execute(
+        "UPDATE mods SET name = ?2, authors = ?3, author_links = ?4, description = ?5,
+                         released = ?6, keenwiki_url = ?7, homepage = ?8, pckf = ?9,
+                         keenmodding = ?10, cover = ?11
+         WHERE id = ?1
+           AND NOT (name IS ?2 AND authors IS ?3 AND author_links IS ?4 AND description IS ?5
+                    AND released IS ?6 AND keenwiki_url IS ?7 AND homepage IS ?8 AND pckf IS ?9
+                    AND keenmodding IS ?10 AND cover IS ?11)",
+        params![
+            mod_id,
+            name,
+            serde_json::to_string(&authors).expect("strings serialize"),
+            serde_json::to_string(&author_links).expect("strings serialize"),
+            description,
+            released,
+            keenwiki_url,
+            homepage,
+            pckf,
+            keenmodding,
+            cover,
+        ],
+    )? > 0;
+    if changed {
+        tracing::info!(
+            "mod {mod_id} takes the details of index entry {}",
+            c.index_id
+        );
+    }
+    Ok(changed)
+}
+
 /// Makes the mods installed from the index entry `index_id` keep their
 /// worlds as it says (§9.6); the entry may gain or change them later.
 pub fn set_worlds(db: &Db, index_id: &str, worlds: Option<&Worlds>) -> Result<()> {
@@ -726,12 +847,23 @@ fn check_recipe_files(
     c: &Curated,
     base_id: Option<&str>,
 ) -> Result<()> {
-    let mut in_root: Vec<String> = analysis
+    let in_root: Vec<String> = analysis
         .files
         .iter()
         .filter(|f| split_dir(f).0 == analysis.root)
         .map(|f| split_dir(f).1.to_string())
         .collect();
+    check_recipe_names(paths, in_root, c, base_id)
+}
+
+/// Checks that the files the index recipes run are among `in_root`, the
+/// names in the mod's root, or in the root of `base_id`.
+fn check_recipe_names(
+    paths: &AppPaths,
+    mut in_root: Vec<String>,
+    c: &Curated,
+    base_id: Option<&str>,
+) -> Result<()> {
     if let Some(base_id) = base_id {
         for entry in fs::read_dir(paths.mods.join(base_id).join("files"))? {
             in_root.push(entry?.file_name().to_string_lossy().into_owned());

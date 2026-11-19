@@ -4,7 +4,10 @@ The curated list of mods BloogBase offers under **Discover** (PLAN.md §10).
 Every mod is one file in `mods/`. CI checks them, builds a single
 `index.json`, signs it and publishes it on GitHub Pages; the app fetches it
 from there, checks the signature and keeps a copy for offline use. New mods
-reach every app without an app update.
+reach every app without an app update. So do changes to an entry: mods
+installed from it take its recipe (when their files have what it runs) and
+its details (name, authors, description, links, cover) at the next index
+check, for the download they are; a new download is offered as an update.
 
 BloogBase never hosts mods: entries link to the original download, credit the
 authors and link back to KeenWiki and PCKF.

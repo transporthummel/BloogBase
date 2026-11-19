@@ -25,6 +25,7 @@
 - Mods from the mod list can no longer be replaced with a local copy, and adding another version of one (same name or KeenWiki page) installs it alongside instead of offering to replace it. They update from the list; an old beta goes beside them with its own saves.
 - Text fields no longer check spelling, so names, paths, seeds and Keen terms aren't underlined in red.
 - Revival of Bliss starts its own menu: play as Keen or Craig, and the password-locked epilogue. Each keeps its saves and settings in its own folder; the Saves tab groups them under "Keen", "Craig" and "Epilogue", global settings reach all three, and the cover is Craig's title screen. Copies installed before move over at the next index check, their saves into Craig's folder. The index has the fields `root`, `saveDirs` and `coverFrom` for mods like it.
+- Mods from the mod list follow their entry at every start and index check, without an update: a fixed name, description, authors, links or cover, and a new way to start them (when their files have what it runs, and not while they run). Commander Cool 1 thus starts without the "Use 2-Button Firing?" question, and Yorphius II Deluxe is called Yorphius II.
 
 ### Bug Fixes
 

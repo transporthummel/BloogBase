@@ -971,6 +971,39 @@ pub fn follow_roots(index: &ModIndex, db: &Db, paths: &AppPaths, running: &Runni
     Ok(())
 }
 
+/// Makes the installed index mods follow their entry's recipe and details,
+/// for the download they are ([`mods::follow_entry`]). Mods still waiting
+/// to move to their entry's `root` wait for that ([`follow_roots`]).
+pub fn follow_entries(
+    index: &ModIndex,
+    db: &Db,
+    paths: &AppPaths,
+    running: &Running,
+) -> Result<()> {
+    for e in index.entries() {
+        let found: Vec<(String, Option<String>, Option<String>)> = db
+            .conn()
+            .prepare("SELECT id, archive_sha256, root FROM mods WHERE index_id = ?1")?
+            .query_map([&e.id], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?
+            .collect::<rusqlite::Result<_>>()?;
+        for (mod_id, sha, root) in found {
+            if e.root.is_some() && root != e.root {
+                continue;
+            }
+            let download = e.downloads.iter().position(|d| {
+                sha.as_deref()
+                    .is_some_and(|s| s.eq_ignore_ascii_case(&d.sha256))
+            });
+            let Some(i) = download else { continue };
+            if let Err(err) = mods::follow_entry(paths, db, running, &mod_id, &Curated::new(&e, i))
+            {
+                tracing::warn!("mod {mod_id} could not follow its entry: {err}");
+            }
+        }
+    }
+    Ok(())
+}
+
 /// The index entries with their install state.
 pub fn list(index: &ModIndex, db: &Db) -> Result<Vec<IndexMod>> {
     let entries = index.entries();

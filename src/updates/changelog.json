@@ -17,7 +17,8 @@
       "Other versions of a mod from the mod list are installed alongside it instead of replacing it.",
       "Keen 1–3 mods with level files of 64 KB or more, like Keen 0 April Fools, no longer crash DOSBox on quitting.",
       "Text fields no longer underline words as misspelled.",
-      "Revival of Bliss starts its own menu: play as Keen or Craig, and the epilogue."
+      "Revival of Bliss starts its own menu: play as Keen or Craig, and the epilogue.",
+      "Mods from the mod list take over corrected names, details and start settings from it."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -36,7 +37,8 @@
       "Andere Versionen einer Mod aus der Modliste werden neben ihr installiert, statt sie zu ersetzen.",
       "Keen-1–3-Mods mit Leveldateien ab 64 KB, etwa Keen 0 April Fools, bringen DOSBox beim Beenden nicht mehr zum Absturz.",
       "Textfelder unterstreichen keine Wörter mehr als falsch geschrieben.",
-      "Revival of Bliss startet mit seinem eigenen Menü: als Keen oder Craig spielen, dazu der Epilog."
+      "Revival of Bliss startet mit seinem eigenen Menü: als Keen oder Craig spielen, dazu der Epilog.",
+      "Mods aus der Modliste übernehmen von ihr korrigierte Namen, Angaben und Starteinstellungen."
     ]
   },
   "releases": [

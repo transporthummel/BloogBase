@@ -2371,3 +2371,99 @@ fn deleting_a_save_a_launchers_folder_ships_hides_it_there() {
     assert!(state.join("KEEN/DBOVERLAY_DEL_SAVEGAM9.CK4").is_file());
     assert!(crate::saves::list(&db, &m.profile_id).unwrap().is_empty());
 }
+
+fn stored(
+    db: &Db,
+    id: &str,
+) -> (
+    String,
+    String,
+    Option<String>,
+    String,
+    Option<String>,
+    Option<String>,
+) {
+    db.conn()
+        .query_row(
+            "SELECT m.name, m.recipe_json, m.version, m.archive_sha256, m.cover, p.composed_hash
+             FROM mods m JOIN profiles p ON p.mod_id = m.id WHERE m.id = ?1",
+            [id],
+            |r| {
+                Ok((
+                    r.get(0)?,
+                    r.get(1)?,
+                    r.get(2)?,
+                    r.get(3)?,
+                    r.get(4)?,
+                    r.get(5)?,
+                ))
+            },
+        )
+        .unwrap()
+}
+
+#[test]
+fn installed_index_mods_follow_their_entrys_recipe_and_details() {
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("aurora.zip");
+    write_zip(&zip, AURORA);
+    let c = curated(aurora_patch(&["/nocheck"]));
+    let m = install_curated(&paths, &db, &zip, &c, None, false).unwrap();
+    db.conn()
+        .execute("UPDATE profiles SET composed_hash = 'old'", [])
+        .unwrap();
+    let running = crate::launcher::Running::default();
+
+    // The entry now names it otherwise and starts it with its batch file.
+    let newer = Curated {
+        name: "Aurora Bliss Deluxe".into(),
+        version: Some("9.9".into()),
+        sha256: "cd".repeat(32),
+        cover: Some("KEEN4E.EXE".into()),
+        recipe: Recipe::Batch {
+            file: "play.bat".into(),
+        },
+        ..c.clone()
+    };
+    assert!(follow_entry(&paths, &db, &running, &m.id, &newer).unwrap());
+    let (name, recipe, version, sha, cover, composed) = stored(&db, &m.id);
+    assert_eq!(name, "Aurora Bliss Deluxe");
+    assert!(recipe.contains("play.bat"), "{recipe}");
+    assert_eq!(cover.as_deref(), Some("KEEN4E.EXE"));
+    // The download and its version stay those installed.
+    assert_eq!((version.as_deref(), sha), (Some("1.2"), c.sha256.clone()));
+    assert_eq!(composed, None);
+    // Nothing new the next time.
+    assert!(!follow_entry(&paths, &db, &running, &m.id, &newer).unwrap());
+
+    // A recipe whose files the mod lacks stays out; the details come.
+    db.conn()
+        .execute("UPDATE profiles SET composed_hash = 'old'", [])
+        .unwrap();
+    let missing = Curated {
+        name: "Aurora".into(),
+        recipe: Recipe::Batch {
+            file: "START.BAT".into(),
+        },
+        ..newer.clone()
+    };
+    assert!(follow_entry(&paths, &db, &running, &m.id, &missing).unwrap());
+    let (name, recipe, _, _, _, composed) = stored(&db, &m.id);
+    assert_eq!(name, "Aurora");
+    assert!(recipe.contains("play.bat"), "{recipe}");
+    assert_eq!(composed.as_deref(), Some("old"));
+
+    // Not while it runs: then only the details.
+    let claim = running.claim(&m.profile_id).unwrap();
+    let back = Curated {
+        name: "Aurora Bliss".into(),
+        ..c.clone()
+    };
+    follow_entry(&paths, &db, &running, &m.id, &back).unwrap();
+    let (name, recipe, ..) = stored(&db, &m.id);
+    assert_eq!(name, "Aurora Bliss");
+    assert!(recipe.contains("play.bat"), "{recipe}");
+    drop(claim);
+    follow_entry(&paths, &db, &running, &m.id, &back).unwrap();
+    assert!(stored(&db, &m.id).1.contains("ABIATHAR.PAT"));
+}
