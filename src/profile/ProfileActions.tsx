@@ -147,12 +147,14 @@ export function ProfileActions({
         onSelect: () => check.mutate(),
         disabled: check.isPending,
       });
-    actions.push({
-      label: t("profile.replaceMod"),
-      icon: <FileArchive className="size-4" />,
-      onSelect: () => setOpen("replacing"),
-      disabled: profile.running,
-    });
+    // One from the index updates from it; other files of it go alongside.
+    if (!mod.indexId)
+      actions.push({
+        label: t("profile.replaceMod"),
+        icon: <FileArchive className="size-4" />,
+        onSelect: () => setOpen("replacing"),
+        disabled: profile.running,
+      });
     // Right after a first start that went wrong, the game's end offers it too.
     if (profile.sessionCount > 0)
       actions.push({

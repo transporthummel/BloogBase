@@ -377,6 +377,32 @@ fn takes_over_what_the_keenwiki_page_now_says() {
 }
 
 #[test]
+fn wont_replace_a_mod_from_the_index() {
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("aurora.zip");
+    write_zip(&zip, AURORA);
+    let recipe = inspect(&zip, None).unwrap().recipes[0].recipe.clone();
+    let old = install(&paths, &db, &request(&zip, recipe.clone())).unwrap();
+    db.conn()
+        .execute(
+            "UPDATE mods SET index_id = 'aurora' WHERE id = ?1",
+            [&old.id],
+        )
+        .unwrap();
+    let err = install(
+        &paths,
+        &db,
+        &InstallModRequest {
+            replace: Some(old.id.clone()),
+            ..request(&zip, recipe)
+        },
+    )
+    .unwrap_err();
+    assert!(matches!(err, Error::IncompatibleInstall(_)), "{err:?}");
+    assert_eq!(list(&db).unwrap().len(), 1);
+}
+
+#[test]
 fn replaces_another_version_keeping_saves_and_page() {
     let (tmp, paths, db) = setup();
     let zip = tmp.path().join("aurora.zip");

@@ -100,6 +100,11 @@ when it finds one for the same game that
   aside), unless their KeenWiki pages or index entries are both known and
   differ: then they're different mods, whatever they're called.
 
+A mod from the index is never offered: it updates from the index, and other
+files of it (an old beta, say) go alongside with their own saves. For the
+same reason its page has no "Replace with a local copy", and `install_mod`
+refuses to replace it.
+
 An update check ([keenwiki.md](keenwiki.md)) opens the dialog with the old
 mod already chosen.
 

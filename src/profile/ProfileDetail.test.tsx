@@ -502,6 +502,16 @@ test("a mod can be replaced with a local copy, unless it runs", async () => {
   expect(screen.getByRole("menuitem", { name: "Replace with a local copy…" })).toBeDisabled();
 });
 
+test("a mod from the index can't be replaced with a local copy", async () => {
+  const mine = { ...profile, modId: "aurora-bliss", label: "Aurora Bliss" };
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([mine]));
+  vi.mocked(commands.listMods).mockResolvedValue(ok([{ ...aurora, indexId: "aurora-bliss" }]));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "More" }));
+  expect(screen.getByRole("menuitem", { name: "Open mod folder" })).toBeInTheDocument();
+  expect(screen.queryByRole("menuitem", { name: "Replace with a local copy…" })).toBeNull();
+});
+
 test("a mod's More menu reports that it won't start, once it has been started", async () => {
   const mine = { ...profile, modId: "aurora-bliss", label: "Aurora Bliss" };
   vi.mocked(commands.listProfiles).mockResolvedValue(ok([mine]));

@@ -17,7 +17,8 @@ const differ = (a: string | null | undefined, b: string | null | undefined) =>
 /**
  * Other versions of the mod the player has, to offer replacing: the one
  * picked to replace, same KeenWiki page, or same game and name (`name` as
- * typed or as detected).
+ * typed or as detected). Never one from the index: it updates from there,
+ * and other files of it go alongside.
  */
 export function otherVersions(
   mods: Mod[],
@@ -29,6 +30,7 @@ export function otherVersions(
   return mods.filter(
     (m) =>
       m.gameId === info.gameId &&
+      !m.indexId &&
       (m.id === replacing ||
         (origin && m.keenwikiUrl === origin.pageUrl) ||
         ((same(m.name, name) || same(m.name, info.name)) &&

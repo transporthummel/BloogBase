@@ -255,7 +255,8 @@ fn picked_install(
     Ok(target)
 }
 
-/// The mod a new version replaces, which must be for the same game.
+/// The mod a new version replaces, which must be for the same game and not
+/// from the index: those update from it, and other files go alongside.
 fn replaced_mod(db: &Db, id: &str, game_id: &str) -> Result<Mod> {
     let old = list(db)?
         .into_iter()
@@ -265,6 +266,12 @@ fn replaced_mod(db: &Db, id: &str, game_id: &str) -> Result<Mod> {
         return Err(Error::IncompatibleInstall(format!(
             "{} is for {}, not {game_id}",
             old.name, old.game_id
+        )));
+    }
+    if let Some(entry) = &old.index_id {
+        return Err(Error::IncompatibleInstall(format!(
+            "{} updates from the mod index ({entry})",
+            old.name
         )));
     }
     Ok(old)

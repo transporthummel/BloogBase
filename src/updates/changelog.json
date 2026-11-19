@@ -13,7 +13,8 @@
       "Screenshots and videos can be copied to a folder.",
       "Discover, the library and mod pages mark mods that are in alpha, beta or abandoned.",
       "Mods from the mod list are recognised unpacked too, and matching ones in your library get its details and updates.",
-      "A mod's page shows an update from the mod list by itself."
+      "A mod's page shows an update from the mod list by itself.",
+      "Other versions of a mod from the mod list are installed alongside it instead of replacing it."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -28,7 +29,8 @@
       "Screenshots und Videos lassen sich in einen Ordner kopieren.",
       "Entdecken, die Bibliothek und Mod-Seiten kennzeichnen Mods in Alpha oder Beta und aufgegebene Mods.",
       "Mods aus der Modliste werden auch entpackt erkannt, und passende Mods in deiner Bibliothek bekommen ihre Angaben und Updates.",
-      "Die Seite einer Mod aus der Modliste zeigt ein Update von selbst an."
+      "Die Seite einer Mod aus der Modliste zeigt ein Update von selbst an.",
+      "Andere Versionen einer Mod aus der Modliste werden neben ihr installiert, statt sie zu ersetzen."
     ]
   },
   "releases": [

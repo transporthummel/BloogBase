@@ -78,7 +78,8 @@ download for update checks.
 
 If the player already has a mod from the same page, or one with the same
 name for the same game, the dialog offers to replace it or to install the
-new one alongside.
+new one alongside. A mod from the index isn't offered; the new one goes
+alongside ([mod-matching.md](mod-matching.md)).
 
 ## 4. Which game is the mod for?
 

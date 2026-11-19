@@ -82,6 +82,13 @@ describe("otherVersions", () => {
     expect(ids("Aurora", page("wiki/bliss"))).toEqual(["aurora", "Aurora Bliss"]);
     expect(ids("Renamed", null, "picked")).toEqual(["aurora", "picked", "other page"]);
   });
+
+  it("never offers a mod from the index", () => {
+    const mods = [
+      installed("aurora", { name: "Aurora", indexId: "aurora", keenwikiUrl: "wiki/a" }),
+    ];
+    expect(otherVersions(mods, info(), "Aurora", page("wiki/a"), undefined)).toEqual([]);
+  });
 });
 
 describe("pickTarget", () => {
