@@ -120,6 +120,7 @@ pub fn ensure(
             fs::create_dir_all(parent)?;
         }
         fs::copy(&input.path, &dest)?;
+        trim_level(input, &dest)?;
         // Windows keeps the time when copying, Linux doesn't; saves show it.
         if let Ok(time) = fs::metadata(&input.path).and_then(|m| m.modified()) {
             File::options()
@@ -158,6 +159,55 @@ pub fn ensure(
     )?;
     let changed = stored.as_deref() != Some(hash.as_str());
     Ok(Composed { dir, changed })
+}
+
+/// Cuts a Keen 1-3 level of 64 KB or more at `dest` to its data. Level
+/// editors may leave old data after a level's end; the games read the whole
+/// file, and from 64 KB on past their memory into DOS's, which then can't
+/// run another program (Keen 0's April Fools edition, quit to DOS).
+fn trim_level(input: &Input, dest: &Path) -> Result<()> {
+    if input.size < 0x10000 || !is_level(&input.rel) {
+        return Ok(());
+    }
+    let data = fs::read(dest)?;
+    if let Some(len) = level_len(&data).filter(|&len| len < data.len()) {
+        tracing::info!("cut {} from {} to {len} bytes", input.rel, data.len());
+        File::options()
+            .write(true)
+            .open(dest)?
+            .set_len(len as u64)?;
+    }
+    Ok(())
+}
+
+/// Whether `rel` names a Keen 1-3 level, `LEVELnn.CK1` to `.CK3`.
+fn is_level(rel: &str) -> bool {
+    let name = rel.rsplit('/').next().unwrap_or(rel).as_bytes();
+    name.len() == 11
+        && name[..5].eq_ignore_ascii_case(b"LEVEL")
+        && name[5..7].iter().all(u8::is_ascii_digit)
+        && name[7..10].eq_ignore_ascii_case(b".CK")
+        && matches!(name[10], b'1'..=b'3')
+}
+
+/// How many bytes of a Keen 1-3 level the game unpacks: its unpacked size,
+/// then words, `FEFE` starting a run of a count and a word. `None` if it
+/// ends before that size.
+fn level_len(data: &[u8]) -> Option<usize> {
+    let size = u32::from_le_bytes(data.get(..4)?.try_into().ok()?) as usize;
+    let word = |at: usize| Some(u16::from_le_bytes(data.get(at..at + 2)?.try_into().ok()?));
+    let (mut at, mut out) = (4, 0);
+    while out < size {
+        if word(at)? == 0xFEFE {
+            out += 2 * usize::from(word(at + 2)?);
+            word(at + 4)?;
+            at += 6;
+        } else {
+            out += 2;
+            at += 2;
+        }
+    }
+    Some(at)
 }
 
 /// The file at the root that DOS runs for `name`, trying `exts` if it has
@@ -318,9 +368,9 @@ fn composition_hash(
     let mut h = Sha256::new();
     // v2: the episode unpacked for old patchers; v3: CWSDPMI; v4: CKPatch;
     // v5: patch files adapted to it; v6: unchanged, but rebuilt once so
-    // `launcher_copies` clears what older profiles hold. Firing v2: patch
-    // files launchers run.
-    h.update(b"composed v6\n");
+    // `launcher_copies` clears what older profiles hold; v7: levels of 64 KB
+    // and more cut to their data. Firing v2: patch files launchers run.
+    h.update(b"composed v7\n");
     h.update(serde_json::to_string(recipe).expect("recipes serialize"));
     if let Some(key) = firing {
         h.update(b"\none-button firing v2");
@@ -669,6 +719,65 @@ mod tests {
         assert!(!paths.cache.join("composed/p.tmp").exists());
     }
 
+    /// A Keen 1-3 level: its unpacked size, a run of 4 words, a word, then
+    /// `junk` bytes after the end.
+    fn level(junk: usize) -> Vec<u8> {
+        let mut out = 10u32.to_le_bytes().to_vec();
+        out.extend([0xFE, 0xFE, 4, 0, 7, 0, 9, 0]);
+        out.resize(out.len() + junk, 0x90);
+        out
+    }
+
+    #[test]
+    fn levels_of_64_kb_and_more_lose_what_follows_their_data() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (paths, db) = setup(tmp.path());
+        let base = tmp.path().join("base");
+        let modf = tmp.path().join("mod");
+        write_folder(&base, &[("KEEN1.EXE", b"exe")]);
+        // As Keen 0's April Fools edition: the game reads levels of 64 KB
+        // and more past their memory and damages DOS's.
+        let big = level(0x10000 - 12);
+        let small = level(0xFFFF - 12);
+        // Ends before its unpacked size: left as it is.
+        let short = [&0x30000u32.to_le_bytes()[..], &[1; 0x10000]].concat();
+        write_folder(
+            &modf,
+            &[
+                ("level80.ck1", &big),
+                ("LEVEL16.CK1", &small),
+                ("LEVEL02.CK1", &short),
+                ("sub/LEVEL01.CK3", &big),
+                ("BIG.DAT", &big),
+            ],
+        );
+        let layer = ModLayer {
+            files: modf.clone(),
+            base: None,
+            recipe: Recipe::Episode,
+        };
+        let dir = ensure(
+            &paths,
+            &db,
+            "p",
+            Some(base.as_path()),
+            Some(&layer),
+            keen1(),
+            None,
+            None,
+        )
+        .unwrap()
+        .dir;
+
+        assert_eq!(fs::read(dir.join("level80.ck1")).unwrap(), level(0));
+        assert_eq!(fs::read(dir.join("sub/LEVEL01.CK3")).unwrap(), level(0));
+        assert_eq!(fs::read(dir.join("LEVEL16.CK1")).unwrap(), small);
+        assert_eq!(fs::read(dir.join("LEVEL02.CK1")).unwrap(), short);
+        assert_eq!(fs::read(dir.join("BIG.DAT")).unwrap(), big);
+        // The mod's own files stay as they came.
+        assert_eq!(fs::read(modf.join("level80.ck1")).unwrap(), big);
+    }
+
     #[test]
     fn composes_a_mod_over_the_mod_it_extends() {
         let tmp = tempfile::tempdir().unwrap();
@@ -741,7 +850,7 @@ mod tests {
         let recipe = Recipe::Episode;
         // As it was before the key could be chosen.
         let mut before = Sha256::new();
-        before.update(b"composed v6\n");
+        before.update(b"composed v7\n");
         before.update(serde_json::to_string(&recipe).unwrap());
         before.update(b"\none-button firing v2");
         assert_eq!(
