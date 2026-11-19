@@ -23,6 +23,10 @@ downloads:
     fingerprint:
       sha256: 8ba2d65ab27f4e75a27ca6cb623cfbecec4c21bb050a6ba10592c03463b74cbd
       files: [CK1PATCH.exe, cool1.bat, cool1.pat, cool1.tli, cool1c.pat, egahead.ck1, egalatch.ck1, egasprit.ck1, ENDSCR.BIN, ENDTEXT.CK1, finale.ck1, HELPTEXT.CK1, HELPTXT2.CK1, KEEN1.exe, LEVEL01.CK1, LEVEL02.CK1, LEVEL03.CK1, LEVEL04.CK1, LEVEL05.CK1, LEVEL06.CK1, LEVEL07.CK1, LEVEL08.CK1, LEVEL09.CK1, LEVEL10.CK1, LEVEL11.CK1, LEVEL12.CK1, LEVEL13.CK1, LEVEL14.CK1, LEVEL15.CK1, LEVEL16.CK1, LEVEL80.CK1, LEVEL81.CK1, LEVEL90.CK1, PREVIEWS.CK1, SOUNDS.CK1, STORYTXT.CK1]
+# cool1.bat asks "Use 2-Button Firing?" and runs cool1.pat (Ctrl+Alt) or
+# cool1c.pat (the same with one-button firing); the app's own firing
+# setting makes that choice, so the plain patch runs.
 recipe:
-  type: batch
-  file: cool1.bat
+  type: patch
+  patcher: CK1PATCH.exe
+  patch: cool1.pat
