@@ -21,6 +21,7 @@ use crate::db::Db;
 use crate::detect::sha256_hex;
 use crate::downloads::{self, USER_AGENT};
 use crate::error::{CommandError, Error, Result};
+use crate::launcher::Running;
 use crate::library::now;
 use crate::mods::{self, Curated};
 use crate::paths::AppPaths;
@@ -924,6 +925,46 @@ pub fn link_installed(index: &ModIndex, db: &Db, paths: &AppPaths) -> Result<()>
     for e in &entries {
         mods::set_standalone(db, &e.id, e.needs_no_game(), e.standalone)?;
         mods::set_worlds(db, &e.id, e.worlds.as_ref())?;
+    }
+    Ok(())
+}
+
+/// Reinstalls the index mods whose entry names a `root` other than the one
+/// they were installed from, from the archive they keep, with the entry's
+/// download they are ([`mods::follow_root`]): copies installed before the
+/// entry named it (decided 2026-11-19). A mod that runs, or whose
+/// reinstall fails, stays as it is until the next check.
+pub fn follow_roots(index: &ModIndex, db: &Db, paths: &AppPaths, running: &Running) -> Result<()> {
+    for e in index.entries() {
+        let Some(root) = &e.root else { continue };
+        let found: Vec<(String, Option<String>)> = db
+            .conn()
+            .prepare("SELECT id, archive_sha256 FROM mods WHERE index_id = ?1 AND root IS NOT ?2")?
+            .query_map(params![e.id, root], |r| Ok((r.get(0)?, r.get(1)?)))?
+            .collect::<rusqlite::Result<_>>()?;
+        let old_root = e
+            .save_dirs
+            .iter()
+            .find(|d| d.old_root)
+            .map(|d| d.dir.as_str());
+        for (mod_id, sha) in found {
+            let download = e.downloads.iter().position(|d| {
+                sha.as_deref()
+                    .is_some_and(|s| s.eq_ignore_ascii_case(&d.sha256))
+            });
+            let Some(i) = download else {
+                tracing::warn!(
+                    "mod {mod_id} is no download of {}; left in its folder",
+                    e.id
+                );
+                continue;
+            };
+            match mods::follow_root(paths, db, running, &mod_id, &Curated::new(&e, i), old_root) {
+                Ok(true) => {}
+                Ok(false) => tracing::info!("mod {mod_id} runs; it moves to its root later"),
+                Err(err) => tracing::warn!("could not move mod {mod_id} to its root: {err}"),
+            }
+        }
     }
     Ok(())
 }

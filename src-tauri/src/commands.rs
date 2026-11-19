@@ -1435,7 +1435,8 @@ pub async fn refresh_index(app: AppHandle, force: bool) -> IndexStatus {
     status
 }
 
-/// See [`mod_index::link_installed`]; a failure only leaves mods untied.
+/// See [`mod_index::link_installed`] and [`mod_index::follow_roots`]; a
+/// failure only leaves mods untied or where they were.
 pub fn link_installed(app: &AppHandle) {
     if let Err(e) = mod_index::link_installed(
         &app.state::<ModIndex>(),
@@ -1443,6 +1444,14 @@ pub fn link_installed(app: &AppHandle) {
         &app.state::<AppPaths>(),
     ) {
         tracing::warn!("could not tie installed mods to the index: {e}");
+    }
+    if let Err(e) = mod_index::follow_roots(
+        &app.state::<ModIndex>(),
+        &app.state::<Db>(),
+        &app.state::<AppPaths>(),
+        &app.state::<Running>(),
+    ) {
+        tracing::warn!("could not move installed mods to their entry's root: {e}");
     }
 }
 

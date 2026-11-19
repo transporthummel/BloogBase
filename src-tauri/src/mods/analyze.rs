@@ -142,6 +142,18 @@ pub(super) fn decide(game: bool, info: Option<ModInfo>) -> Dropped {
 }
 
 pub(super) fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> Result<Analysis> {
+    analyze_in(source, path, game_hint, None)
+}
+
+/// Like [`analyze`], from `root`, the folder of the source an index entry
+/// names (`""` for its own root), instead of the one found.
+pub(super) fn analyze_in(
+    source: &Source,
+    path: &Path,
+    game_hint: Option<&str>,
+    root: Option<&str>,
+) -> Result<Analysis> {
+    let fixed = root;
     let files: Vec<String> = source
         .files()?
         .into_iter()
@@ -165,9 +177,13 @@ pub(super) fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> 
     // A source mod has nothing of the game's (Foray in the Forest: its own
     // executables, its data as *.CKS); where the index or the KeenWiki page
     // says which game it's for, its programs mark the root.
-    let root = find_root(&files, |f| patchers.contains_key(f))
-        .or_else(|| game_hint.and_then(|_| program_root(&files)))
-        .ok_or(Error::NoModFound)?;
+    let root = match fixed {
+        Some(r) => folder_of(&files, r)
+            .ok_or_else(|| Error::UnexpectedContent(format!("folder {r} is missing")))?,
+        None => find_root(&files, |f| patchers.contains_key(f))
+            .or_else(|| game_hint.and_then(|_| program_root(&files)))
+            .ok_or(Error::NoModFound)?,
+    };
     let in_root = |f: &&String| root.is_empty() || f.starts_with(&format!("{root}/"));
     let mut files: Vec<String> = files.iter().filter(in_root).cloned().collect();
     // Bare names in the mod root, where recipes have to live.
@@ -329,6 +345,18 @@ pub(super) fn analyze(source: &Source, path: &Path, game_hint: Option<&str>) -> 
         root,
         files,
         copies: Vec::new(),
+    })
+}
+
+/// The folder `path` among `files`, as they spell it; `""` is the root.
+fn folder_of(files: &[String], path: &str) -> Option<String> {
+    if path.is_empty() {
+        return Some(String::new());
+    }
+    files.iter().find_map(|f| {
+        let dir = f.get(..path.len())?;
+        (dir.eq_ignore_ascii_case(path) && f[path.len()..].starts_with('/'))
+            .then(|| dir.to_string())
     })
 }
 

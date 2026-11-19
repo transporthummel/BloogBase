@@ -4,7 +4,7 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::io;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use rusqlite::{OptionalExtension, params};
 
@@ -12,6 +12,7 @@ use crate::catalog::{self, Game};
 use crate::db::Db;
 use crate::detect::sha256_hex;
 use crate::error::{Error, Result};
+use crate::launcher::Running;
 use crate::library::{self, Install, now};
 use crate::mod_index::IndexEntry;
 use crate::mod_index::ModStatus;
@@ -20,7 +21,7 @@ use crate::recipe::{Recipe, VersionRecipes};
 use crate::source::{Source, split_dir};
 use crate::worlds::Worlds;
 
-use super::analyze::{Analysis, analyze};
+use super::analyze::{Analysis, analyze, analyze_in};
 use super::fit::{best_install, fits, needed_game, parse_requires, rehome, requires};
 use super::queries::list;
 use super::{InstallModRequest, Mod, ModInfo, ModSource, RecipeOption};
@@ -60,6 +61,9 @@ struct Stored<'a> {
     archive_name: Option<&'a str>,
     /// The download the files are; default: the hash of the picked ZIP.
     archive_sha256: Option<&'a str>,
+    /// The folder of the archive the files are from, as the index entry
+    /// names it; `None` where the app found it.
+    root: Option<&'a str>,
 }
 
 impl<'a> Stored<'a> {
@@ -90,6 +94,7 @@ impl<'a> Stored<'a> {
             source_url: &c.url,
             archive_name: Some(crate::downloads::url_file_name(&c.url)).filter(|n| !n.is_empty()),
             archive_sha256: Some(&c.sha256),
+            root: c.root.as_deref(),
         }
     }
 
@@ -138,6 +143,7 @@ impl<'a> Stored<'a> {
             source_url: page.map_or(&req.path, |o| &o.download_url),
             archive_name: None,
             archive_sha256: None,
+            root: None,
         }
     }
 
@@ -321,6 +327,9 @@ pub struct Curated {
     pub sha256: String,
     /// How it keeps the levels it generates.
     pub worlds: Option<Worlds>,
+    /// The folder of the archive it's installed from, `""` for its root;
+    /// `None`: the one found.
+    pub root: Option<String>,
 }
 
 impl Curated {
@@ -356,6 +365,7 @@ impl Curated {
             url: d.url.clone(),
             sha256: d.sha256.clone(),
             worlds: entry.worlds.clone(),
+            root: entry.root.clone(),
         }
     }
 }
@@ -392,6 +402,8 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
         source_url: _,
         archive_name: _,
         archive_sha256,
+        // Its files stay as installed; `follow_root` moves them.
+        root: _,
     } = Stored::curated(c, None);
     db.conn().execute(
         "UPDATE mods SET name = ?2, authors = ?3, author_links = ?4,
@@ -434,7 +446,7 @@ pub fn install_curated(
     without_game: bool,
 ) -> Result<Mod> {
     let source = Source::open(archive)?;
-    let mut analysis = analyze(&source, archive, Some(&c.game_id))?;
+    let mut analysis = analyze_in(&source, archive, Some(&c.game_id), c.root.as_deref())?;
     if analysis.info.game_id != c.game_id {
         return Err(Error::UnexpectedContent(format!(
             "the download looks like a mod for {}, not {}",
@@ -493,6 +505,121 @@ pub fn install_curated(
     let m = store(paths, db, &source, &analysis, &stored, target.as_ref())?;
     set_worlds(db, &c.index_id, c.worlds.as_ref())?;
     Ok(m)
+}
+
+/// Reinstalls the index mod `mod_id` from the archive it keeps, from the
+/// folder its entry now names (`c.root`), as an update to the download `c`
+/// would: installed before the entry named it, it holds one folder's files.
+/// What the game wrote into its state's root moves into `old_root`, the
+/// folder those files came from, where the game now writes it; the
+/// overlay's markers stay. Never while the mod runs: then it's `false`, to
+/// try again at the next index check. A failure changes nothing.
+pub fn follow_root(
+    paths: &AppPaths,
+    db: &Db,
+    running: &Running,
+    mod_id: &str,
+    c: &Curated,
+    old_root: Option<&str>,
+) -> Result<bool> {
+    let profile_id: String =
+        db.conn()
+            .query_row("SELECT id FROM profiles WHERE mod_id = ?1", [mod_id], |r| {
+                r.get(0)
+            })?;
+    let Ok(_claim) = running.claim(&profile_id) else {
+        return Ok(false);
+    };
+    let kept = fs::read_dir(paths.mods.join(mod_id).join("source"))
+        .ok()
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .find(|p| p.is_file())
+        .ok_or_else(|| Error::NotFound(format!("the archive of mod {mod_id}")))?;
+    // A copy: the folder it's in gets replaced while it's read.
+    let archive = paths.cache.join(format!("mod-{mod_id}-root.zip"));
+    fs::copy(&kept, &archive)?;
+    let result = (|| {
+        let state = crate::profiles::get(db, &profile_id)?.1.upper;
+        let moved = match old_root {
+            Some(dir) => move_state_into(&state, dir)?,
+            None => Vec::new(),
+        };
+        let installed = install_curated(paths, db, &archive, c, None, true);
+        Ok::<_, Error>((state, moved, installed))
+    })();
+    let _ = fs::remove_file(&archive);
+    let (state, moved, installed) = result?;
+    match installed {
+        Ok(_) => {
+            tracing::info!(
+                "reinstalled mod {mod_id} from {:?}, moved {} files of its state into {old_root:?}",
+                c.root,
+                moved.len()
+            );
+            Ok(true)
+        }
+        Err(e) => {
+            for (from, to) in moved.iter().rev() {
+                let _ = fs::rename(to, from);
+            }
+            if let Some(dir) = old_root {
+                // Only if it's empty: it was made for the move.
+                let _ = fs::remove_dir(state.join(dir));
+            }
+            Err(e)
+        }
+    }
+}
+
+/// Moves the files right in `state` into its folder `dir` (made if need
+/// be), but for the overlay's markers and names `dir` has already: from →
+/// to.
+fn move_state_into(state: &Path, dir: &str) -> Result<Vec<(PathBuf, PathBuf)>> {
+    let Ok(entries) = fs::read_dir(state) else {
+        return Ok(Vec::new());
+    };
+    let mut files = Vec::new();
+    let mut target = state.join(dir);
+    for entry in entries {
+        let entry = entry?;
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if entry.file_type()?.is_dir() {
+            // DOSBox may have spelled the folder otherwise.
+            if name.eq_ignore_ascii_case(dir) {
+                target = entry.path();
+            }
+            continue;
+        }
+        if !crate::overlay_view::is_marker(&name) {
+            files.push((name, entry.path()));
+        }
+    }
+    if files.is_empty() {
+        return Ok(Vec::new());
+    }
+    fs::create_dir_all(&target)?;
+    let there: Vec<String> = fs::read_dir(&target)?
+        .flatten()
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .collect();
+    let mut moved = Vec::new();
+    for (name, from) in files {
+        if there.iter().any(|t| t.eq_ignore_ascii_case(&name)) {
+            continue;
+        }
+        let to = target.join(&name);
+        if let Err(e) = fs::rename(&from, &to) {
+            for (from, to) in moved.iter().rev() {
+                let _ = fs::rename(to, from);
+            }
+            return Err(e.into());
+        }
+        moved.push((from, to));
+    }
+    Ok(moved)
 }
 
 /// Makes the mods installed from the index entry `index_id` keep their
@@ -861,9 +988,9 @@ fn store(
                                recipe_json, path, source, source_url, archive_sha256, added_at,
                                description, released, author_links, requires_json,
                                version_recipes_json, extends, homepage, pckf,
-                               keenmodding, cover, standalone, own_files, status)
+                               keenmodding, cover, standalone, own_files, status, root)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26)",
+                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27)",
             params![
                 m.id,
                 m.game_id,
@@ -890,7 +1017,8 @@ fn store(
                 s.cover,
                 s.standalone,
                 s.own_files,
-                s.status.and_then(ModStatus::as_str)
+                s.status.and_then(ModStatus::as_str),
+                s.root
             ],
         )?;
         tx.execute(
@@ -940,6 +1068,8 @@ fn update(
 ) -> Result<Mod> {
     let staging = paths.cache.join(format!("mod-{mod_id}-update"));
     let mod_dir = paths.mods.join(mod_id);
+    // The parts moved aside so far, put back when a later step fails.
+    let mut swapped: Vec<&str> = Vec::new();
     let result: Result<()> = (|| {
         stage(source, analysis, &staging, s.archive_name)?;
         for part in ["files", "source"] {
@@ -948,12 +1078,10 @@ fn update(
             let new = staging.join(part);
             if live.exists() {
                 fs::rename(&live, &old)?;
+                swapped.push(part);
             }
-            if new.exists()
-                && let Err(e) = fs::rename(&new, &live)
-            {
-                let _ = fs::rename(&old, &live);
-                return Err(e.into());
+            if new.exists() {
+                fs::rename(&new, &live)?;
             }
         }
         let mut conn = db.conn();
@@ -965,7 +1093,7 @@ fn update(
                              name = ?12, source = ?13, index_id = ?14,
                              version_recipes_json = ?15, extends = ?16, homepage = ?17,
                              pckf = ?18, keenmodding = ?19, cover = ?20, standalone = ?21,
-                             own_files = ?22, status = ?23
+                             own_files = ?22, status = ?23, root = ?24
              WHERE id = ?1",
             params![
                 mod_id,
@@ -990,7 +1118,8 @@ fn update(
                 s.cover,
                 s.standalone,
                 s.own_files,
-                s.status.and_then(ModStatus::as_str)
+                s.status.and_then(ModStatus::as_str),
+                s.root
             ],
         )?;
         tx.execute(
@@ -1000,6 +1129,15 @@ fn update(
         tx.commit()?;
         Ok(())
     })();
+    if result.is_err() {
+        for part in swapped.into_iter().rev() {
+            let live = mod_dir.join(part);
+            if live.exists() {
+                let _ = fs::remove_dir_all(&live);
+            }
+            let _ = fs::rename(staging.join(format!("old-{part}")), &live);
+        }
+    }
     let _ = fs::remove_dir_all(&staging);
     result?;
     tracing::info!("updated mod {mod_id} to {:?}", s.version);

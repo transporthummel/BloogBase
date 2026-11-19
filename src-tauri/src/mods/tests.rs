@@ -623,6 +623,7 @@ fn curated(recipe: Recipe) -> Curated {
         url: "https://example.com/m.dave216.aurora.zip".into(),
         sha256: "ab".repeat(32),
         worlds: None,
+        root: None,
     }
 }
 
@@ -2051,4 +2052,199 @@ fn levels_copied_over_the_game_are_a_mod() {
         crate::library::bundled_game(&db, &game, "keen3").unwrap(),
         None
     );
+}
+
+/// Revival of Bliss: a launcher in the archive's root starts one of three
+/// folders, each a whole game.
+const REVIVAL: &[(&str, &[u8])] = &[
+    ("play.bat", b"@echo off\r\ncls\r\n_lfilea.bat %1\r\n"),
+    (
+        "_lfilea.bat",
+        b"@echo off\r\nmklaunch /b _lfileb.bat _lfilea.bat\r\n",
+    ),
+    ("MKLAUNCH.EXE", b"launcher"),
+    ("LAUNCHER.DAT", b"menu"),
+    ("CRAIG/CK4PATCH.EXE", b"patcher"),
+    ("CRAIG/abiathar.pat", b"%ext ck4\n%version 1.4\n"),
+    ("CRAIG/file.bat", b"CK4PATCH abiathar.pat\r\n"),
+    ("CRAIG/GAMEMAPS.CK4", b"craig maps"),
+    ("KEEN/CK4PATCH.EXE", b"patcher"),
+    ("KEEN/abiathar.pat", b"%ext ck4\n%version 1.4\n"),
+    ("KEEN/file.bat", b"CK4PATCH abiathar.pat\r\n"),
+    ("KEEN/GAMEMAPS.CK4", b"keen maps"),
+    ("FUTURE/CK4PATCH.EXE", b"patcher"),
+    ("FUTURE/WRAPPER.COM", b"wrapper"),
+];
+
+fn revival(zip: &Path, root: Option<&str>) -> Curated {
+    let (recipe, root) = match root {
+        Some(r) => (
+            Recipe::Batch {
+                file: "play.bat".into(),
+            },
+            Some(r.to_string()),
+        ),
+        None => (aurora_patch(&[]), None),
+    };
+    Curated {
+        index_id: "revival-of-bliss".into(),
+        name: "Revival of Bliss".into(),
+        requires: Vec::new(),
+        standalone: true,
+        own_files: true,
+        url: "https://example.com/m.dave216.revival.zip".into(),
+        sha256: sha256_hex(&fs::read(zip).unwrap()),
+        root,
+        ..curated(recipe)
+    }
+}
+
+fn mod_root(db: &Db, id: &str) -> Option<String> {
+    db.conn()
+        .query_row("SELECT root FROM mods WHERE id = ?1", [id], |r| r.get(0))
+        .unwrap()
+}
+
+#[test]
+fn a_named_root_installs_the_launcher_with_every_folder() {
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("revival.zip");
+    write_zip(&zip, REVIVAL);
+    // Left to itself, the app takes one of the folders.
+    let m = install_curated(&paths, &db, &zip, &revival(&zip, None), None, false).unwrap();
+    assert!(paths.mods.join(&m.id).join("files/abiathar.pat").is_file());
+    assert_eq!(mod_root(&db, &m.id), None);
+    delete(&paths, &db, &m.id, false).unwrap();
+
+    let m = install_curated(&paths, &db, &zip, &revival(&zip, Some("")), None, false).unwrap();
+    let files = paths.mods.join(&m.id).join("files");
+    for f in [
+        "play.bat",
+        "MKLAUNCH.EXE",
+        "CRAIG/abiathar.pat",
+        "KEEN/file.bat",
+        "FUTURE/WRAPPER.COM",
+    ] {
+        assert!(files.join(f).is_file(), "{f}");
+    }
+    assert_eq!(mod_root(&db, &m.id).as_deref(), Some(""));
+    assert_eq!(
+        m.recipe,
+        Recipe::Batch {
+            file: "play.bat".into()
+        }
+    );
+
+    // A root the archive lacks.
+    let c = Curated {
+        root: Some("PAST".into()),
+        ..revival(&zip, Some(""))
+    };
+    assert!(install_curated(&paths, &db, &zip, &c, None, false).is_err());
+}
+
+/// An install from before the entry named its root: Craig's files, with
+/// saves, settings and a marker in its state.
+fn old_revival() -> (tempfile::TempDir, AppPaths, Db, Mod, std::path::PathBuf) {
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("revival.zip");
+    write_zip(&zip, REVIVAL);
+    let m = install_curated(&paths, &db, &zip, &revival(&zip, None), None, false).unwrap();
+    let state = paths.profiles.join(&m.profile_id).join("state");
+    fs::write(state.join("SAVEGAM0.CK4"), b"save").unwrap();
+    fs::write(state.join("CONFIG.CK4"), b"config").unwrap();
+    fs::write(state.join("DBOVERLAY_DEL_X.CK4"), b"empty").unwrap();
+    db.conn()
+        .execute("UPDATE profiles SET composed_hash = 'old'", [])
+        .unwrap();
+    (tmp, paths, db, m, zip)
+}
+
+#[test]
+fn an_install_from_before_the_root_moves_there_with_its_saves() {
+    let (_tmp, paths, db, m, zip) = old_revival();
+    let running = crate::launcher::Running::default();
+    let c = revival(&zip, Some(""));
+    assert!(follow_root(&paths, &db, &running, &m.id, &c, Some("CRAIG")).unwrap());
+
+    let files = paths.mods.join(&m.id).join("files");
+    assert!(files.join("play.bat").is_file());
+    assert!(files.join("CRAIG/abiathar.pat").is_file());
+    assert!(!files.join("abiathar.pat").exists());
+    let state = paths.profiles.join(&m.profile_id).join("state");
+    assert_eq!(fs::read(state.join("CRAIG/SAVEGAM0.CK4")).unwrap(), b"save");
+    assert_eq!(fs::read(state.join("CRAIG/CONFIG.CK4")).unwrap(), b"config");
+    assert!(!state.join("SAVEGAM0.CK4").exists());
+    assert!(state.join("DBOVERLAY_DEL_X.CK4").exists());
+    assert_eq!(mod_root(&db, &m.id).as_deref(), Some(""));
+    let (recipe, composed): (String, Option<String>) = db
+        .conn()
+        .query_row(
+            "SELECT m.recipe_json, p.composed_hash FROM mods m JOIN profiles p ON p.mod_id = m.id",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    assert!(recipe.contains("play.bat"), "{recipe}");
+    assert_eq!(composed, None);
+    assert!(
+        paths
+            .mods
+            .join(&m.id)
+            .join("source/m.dave216.revival.zip")
+            .is_file()
+    );
+}
+
+#[test]
+fn a_running_mod_moves_to_its_root_later() {
+    let (_tmp, paths, db, m, zip) = old_revival();
+    let running = crate::launcher::Running::default();
+    let claim = running.claim(&m.profile_id).unwrap();
+    let c = revival(&zip, Some(""));
+    assert!(!follow_root(&paths, &db, &running, &m.id, &c, Some("CRAIG")).unwrap());
+    assert_eq!(mod_root(&db, &m.id), None);
+    let state = paths.profiles.join(&m.profile_id).join("state");
+    assert!(state.join("SAVEGAM0.CK4").is_file());
+    drop(claim);
+    assert!(follow_root(&paths, &db, &running, &m.id, &c, Some("CRAIG")).unwrap());
+}
+
+#[test]
+fn a_failed_move_to_the_root_changes_nothing() {
+    let (_tmp, paths, db, m, zip) = old_revival();
+    let running = crate::launcher::Running::default();
+    // The recipe isn't in the root.
+    let c = Curated {
+        recipe: Recipe::Batch {
+            file: "START.BAT".into(),
+        },
+        ..revival(&zip, Some(""))
+    };
+    assert!(follow_root(&paths, &db, &running, &m.id, &c, Some("CRAIG")).is_err());
+    let files = paths.mods.join(&m.id).join("files");
+    assert!(files.join("abiathar.pat").is_file());
+    assert!(!files.join("play.bat").exists());
+    let state = paths.profiles.join(&m.profile_id).join("state");
+    assert_eq!(fs::read(state.join("SAVEGAM0.CK4")).unwrap(), b"save");
+    assert!(!state.join("CRAIG").exists());
+    assert_eq!(mod_root(&db, &m.id), None);
+
+    // Files that can't be swapped (Windows keeps open ones in place).
+    #[cfg(windows)]
+    {
+        let c = revival(&zip, Some(""));
+        use std::os::windows::fs::OpenOptionsExt;
+        let open = fs::OpenOptions::new()
+            .read(true)
+            .share_mode(0)
+            .open(files.join("abiathar.pat"))
+            .unwrap();
+        assert!(follow_root(&paths, &db, &running, &m.id, &c, Some("CRAIG")).is_err());
+        drop(open);
+        assert!(files.join("abiathar.pat").is_file());
+        assert_eq!(fs::read(state.join("SAVEGAM0.CK4")).unwrap(), b"save");
+        assert!(!state.join("CRAIG").exists());
+        assert_eq!(mod_root(&db, &m.id), None);
+    }
 }
