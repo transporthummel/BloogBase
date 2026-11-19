@@ -13,7 +13,7 @@ use crate::backups::{self, Contents, Reason};
 use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::keenwiki::WikiMod;
-use crate::mod_index::ModStatus;
+use crate::mod_index::{CoverFrom, ModStatus};
 use crate::paths::AppPaths;
 use crate::recipe::{self, Recipe, VersionRecipes};
 
@@ -305,6 +305,21 @@ pub fn cover_program(db: &Db, mod_id: &str) -> Result<Option<String>> {
         })
         .optional()?
         .flatten())
+}
+
+/// Where an index mod's cover comes from when its root only holds a
+/// launcher (the entry's `coverFrom`).
+pub fn cover_from(db: &Db, mod_id: &str) -> Result<Option<CoverFrom>> {
+    let json: Option<String> = db
+        .conn()
+        .query_row(
+            "SELECT cover_from_json FROM mods WHERE id = ?1",
+            [mod_id],
+            |r| r.get(0),
+        )
+        .optional()?
+        .flatten();
+    Ok(json.and_then(|j| serde_json::from_str(&j).ok()))
 }
 
 /// The mods played over `mod_id`.

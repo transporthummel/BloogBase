@@ -625,6 +625,7 @@ fn curated(recipe: Recipe) -> Curated {
         worlds: None,
         root: None,
         save_dirs: Vec::new(),
+        cover_from: None,
     }
 }
 

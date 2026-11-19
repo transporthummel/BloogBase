@@ -86,7 +86,11 @@ table of where they sit in each version, they're searched for:
    `FITF-X.EXE` or `FITF-C.EXE`, and which of them has the right title can't
    be told from the files. Stored per mod (`mods.cover`) at install from the
    index, and when a mod is tied to its entry. Without it, such a mod gets
-   the game's title.
+   the game's title. A launcher whose root holds no game at all (Revival of
+   Bliss's `MKLAUNCH.EXE`) names a folder and its patch in `coverFrom`
+   instead (`mods.cover_from_json`, followed at every index check): the
+   files are then those of that folder in each layer, read with a patch
+   recipe of that patch, and the fingerprint takes both in.
    - **Source mods** open their graphics under names of their own. Where the
      mod's own executables name an `EGAGRAPH` with another extension than
      the game's (`EGAGRAPH.CKS`), that file is tried first, with the

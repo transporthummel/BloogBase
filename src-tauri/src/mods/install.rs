@@ -15,7 +15,7 @@ use crate::error::{Error, Result};
 use crate::launcher::Running;
 use crate::library::{self, Install, now};
 use crate::mod_index::ModStatus;
-use crate::mod_index::{IndexEntry, SaveDir};
+use crate::mod_index::{CoverFrom, IndexEntry, SaveDir};
 use crate::paths::AppPaths;
 use crate::recipe::{Recipe, VersionRecipes};
 use crate::source::{Source, split_dir};
@@ -332,6 +332,8 @@ pub struct Curated {
     pub root: Option<String>,
     /// Folders right in its root the game keeps saves and settings in.
     pub save_dirs: Vec<SaveDir>,
+    /// The folder and patch whose title screen is the cover.
+    pub cover_from: Option<CoverFrom>,
 }
 
 impl Curated {
@@ -369,6 +371,7 @@ impl Curated {
             worlds: entry.worlds.clone(),
             root: entry.root.clone(),
             save_dirs: entry.save_dirs.clone(),
+            cover_from: entry.cover_from.clone(),
         }
     }
 }
@@ -490,6 +493,7 @@ pub fn install_curated(
         )?;
         set_worlds(db, &c.index_id, c.worlds.as_ref())?;
         set_save_dirs(db, &c.index_id, &c.save_dirs)?;
+        set_cover_from(db, &c.index_id, c.cover_from.as_ref())?;
         return Ok(m);
     }
     let target = match install_id {
@@ -509,6 +513,7 @@ pub fn install_curated(
     let m = store(paths, db, &source, &analysis, &stored, target.as_ref())?;
     set_worlds(db, &c.index_id, c.worlds.as_ref())?;
     set_save_dirs(db, &c.index_id, &c.save_dirs)?;
+    set_cover_from(db, &c.index_id, c.cover_from.as_ref())?;
     Ok(m)
 }
 
@@ -644,6 +649,17 @@ pub fn set_save_dirs(db: &Db, index_id: &str, dirs: &[SaveDir]) -> Result<()> {
     let json = (!dirs.is_empty()).then(|| serde_json::to_string(dirs).expect("dirs serialize"));
     db.conn().execute(
         "UPDATE mods SET save_dirs_json = ?2 WHERE index_id = ?1 AND save_dirs_json IS NOT ?2",
+        params![index_id, json],
+    )?;
+    Ok(())
+}
+
+/// Makes the mods installed from the index entry `index_id` take their
+/// cover from the folder it names (`coverFrom`).
+pub fn set_cover_from(db: &Db, index_id: &str, cover_from: Option<&CoverFrom>) -> Result<()> {
+    let json = cover_from.map(|c| serde_json::to_string(c).expect("cover serializes"));
+    db.conn().execute(
+        "UPDATE mods SET cover_from_json = ?2 WHERE index_id = ?1 AND cover_from_json IS NOT ?2",
         params![index_id, json],
     )?;
     Ok(())

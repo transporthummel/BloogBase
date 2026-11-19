@@ -16,6 +16,7 @@ use crate::catalog::{self, Engine, Game};
 use crate::db::Db;
 use crate::detect::hex;
 use crate::error::{Error, Result};
+use crate::mod_index::CoverFrom;
 use crate::mods;
 use crate::paths::AppPaths;
 use crate::profiles;
@@ -39,20 +40,33 @@ pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<Cover
     let (profile, layers) = profiles::get(db, profile_id)?;
     let game = catalog::game(&profile.game_id)
         .ok_or_else(|| Error::NotFound(format!("game {}", profile.game_id)))?;
-    let recipe = layers.mod_layer.as_ref().map(|m| &m.recipe);
-    let cover_program = match &profile.mod_id {
-        Some(id) => mods::cover_program(db, id)?,
-        None => None,
+    let (cover_program, cover_from) = match &profile.mod_id {
+        Some(id) => (mods::cover_program(db, id)?, mods::cover_from(db, id)?),
+        None => (None, None),
     };
+    // A launcher's root holds no game: the cover is the title one of its
+    // folders shows, played with its patch.
+    let from_recipe = cover_from.as_ref().map(|c| Recipe::Patch {
+        patcher: String::new(),
+        patch: c.patch.clone(),
+        args: Vec::new(),
+    });
+    let recipe = from_recipe
+        .as_ref()
+        .or(layers.mod_layer.as_ref().map(|m| &m.recipe));
     // A mod waiting for its game may have all it takes; once the game is
     // there, the changed files make for a new try.
-    let files = Files::new(&layers.sources())?;
+    let sources = cover_sources(&layers.sources(), cover_from.as_ref());
+    let files = Files::new(&sources.iter().map(PathBuf::as_path).collect::<Vec<_>>())?;
 
     let (png, stamp) = cache_files(paths, profile_id);
-    let key = match &cover_program {
-        Some(program) => format!("{}+{program}", files.fingerprint(recipe)),
-        None => files.fingerprint(recipe),
-    };
+    let mut key = files.fingerprint(recipe);
+    if let Some(program) = &cover_program {
+        key = format!("{key}+{program}");
+    }
+    if let Some(c) = &cover_from {
+        key = format!("{key}+{}/{}", c.dir, c.patch);
+    }
     let wanted = |state: &str| format!("{key} {state}");
     let found = |state: &str| match state {
         "none" => None,
@@ -91,6 +105,27 @@ pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<Cover
     };
     fs::write(&stamp, wanted(state))?;
     Ok(found(state))
+}
+
+/// The folders whose files the cover comes from: those DOS sees in the
+/// drive root, or with `cover_from` its folder in each of them that has it.
+fn cover_sources(sources: &[&Path], cover_from: Option<&CoverFrom>) -> Vec<PathBuf> {
+    let Some(c) = cover_from else {
+        return sources.iter().map(|s| s.to_path_buf()).collect();
+    };
+    sources
+        .iter()
+        .filter_map(|s| {
+            fs::read_dir(s)
+                .ok()?
+                .flatten()
+                .find(|e| {
+                    e.file_type().is_ok_and(|t| t.is_dir())
+                        && e.file_name().to_string_lossy().eq_ignore_ascii_case(&c.dir)
+                })
+                .map(|e| e.path())
+        })
+        .collect()
 }
 
 /// Forgets the cover of a removed profile.
@@ -1134,6 +1169,65 @@ mod tests {
         assert_eq!(
             [ext("keen1"), ext("keen6"), ext("kdreams")],
             ["CK1", "CK6", "KDR"]
+        );
+    }
+
+    #[test]
+    fn a_cover_from_a_folder_reads_that_folder_in_each_layer() {
+        let tmp = tempfile::tempdir().unwrap();
+        let (mod_dir, game_dir) = (tmp.path().join("mod"), tmp.path().join("game"));
+        fs::create_dir_all(mod_dir.join("Craig")).unwrap();
+        fs::create_dir_all(mod_dir.join("KEEN")).unwrap();
+        fs::create_dir_all(&game_dir).unwrap();
+        let c = CoverFrom {
+            dir: "CRAIG".into(),
+            patch: "abiathar.pat".into(),
+        };
+        let sources = [mod_dir.as_path(), game_dir.as_path()];
+        assert_eq!(cover_sources(&sources, Some(&c)), [mod_dir.join("Craig")]);
+        assert_eq!(cover_sources(&sources, None), [mod_dir, game_dir]);
+    }
+
+    /// Revival of Bliss's cover from its folder `CRAIG` with its patch, on
+    /// the owner's copy of the mod.
+    ///
+    /// `cargo test covers::tests::revival_of_bliss -- --ignored`
+    #[test]
+    #[ignore]
+    fn revival_of_bliss() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../.local/m.dave216.revival_of_bliss_v.1.1.k4.2024-06-08");
+        let c = CoverFrom {
+            dir: "CRAIG".into(),
+            patch: "abiathar.pat".into(),
+        };
+        let sources = cover_sources(&[root.as_path()], Some(&c));
+        let files = Files::new(&sources.iter().map(PathBuf::as_path).collect::<Vec<_>>()).unwrap();
+        let recipe = Recipe::Patch {
+            patcher: String::new(),
+            patch: c.patch.clone(),
+            args: Vec::new(),
+        };
+        let title = extract(
+            catalog::game("keen4").unwrap(),
+            None,
+            Some(&recipe),
+            None,
+            &files,
+        )
+        .unwrap();
+        assert_eq!((title.image.width, title.image.height), (320, 200));
+        // Without the folder, there's no game to read.
+        let files = Files::new(&[root.as_path()]).unwrap();
+        assert!(
+            extract(
+                catalog::game("keen4").unwrap(),
+                None,
+                Some(&recipe),
+                None,
+                &files
+            )
+            .is_err()
         );
     }
 
