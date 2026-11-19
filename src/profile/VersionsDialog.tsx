@@ -1,13 +1,13 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { commands, type SaveFile } from "../bindings";
+import { commands, type SaveDir, type SaveFile } from "../bindings";
 import { errorMessage } from "../errors";
 import { formatDateTime } from "../format";
 import { unwrap } from "../ipc";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
-import { saveSummary, saveTitle } from "./saves";
+import { placedSaveTitle, saveSummary } from "./saves";
 
 /**
  * The earlier versions of one save that backups hold (§11.1); restoring one
@@ -15,12 +15,15 @@ import { saveSummary, saveTitle } from "./saves";
  */
 export function VersionsDialog({
   profileId,
+  saveDirs,
   save,
   others,
   onClose,
   onRestored,
 }: {
   profileId: string;
+  /** The folders the mod keeps saves in besides the root. */
+  saveDirs: SaveDir[];
   save: SaveFile;
   /** The profile's saves, which may share its slot. */
   others: SaveFile[];
@@ -37,12 +40,10 @@ export function VersionsDialog({
       unwrap(commands.restoreBackup(backupId, file, null, false)),
     onSuccess: onRestored,
   });
+  const named = (s: SaveFile) => placedSaveTitle(t, i18n.language, saveDirs, s, others);
 
   return (
-    <Dialog
-      title={t("saves.versionsNamed", { name: saveTitle(t, save, others) })}
-      onClose={onClose}
-    >
+    <Dialog title={t("saves.versionsNamed", { name: named(save) })} onClose={onClose}>
       <p className="text-sm text-muted">{t("saves.versionsHint")}</p>
       {versions.error && <Notice tone="error">{errorMessage(t, versions.error)}</Notice>}
       {restore.error && <Notice tone="error">{errorMessage(t, restore.error)}</Notice>}
@@ -56,7 +57,7 @@ export function VersionsDialog({
               className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3"
             >
               <div className="grid min-w-0 flex-1 gap-0.5">
-                <h3 className="text-sm font-semibold">{saveTitle(t, v.save, others)}</h3>
+                <h3 className="text-sm font-semibold">{named(v.save)}</h3>
                 <p className="text-xs text-muted">{saveSummary(t, i18n.language, v.save)}</p>
                 <p className="text-xs text-muted">{t("saves.versionFrom", { date })}</p>
               </div>

@@ -50,6 +50,7 @@ const old: Profile = {
   missingVersions: [],
   standalone: false,
   sourceMod: false,
+  saveDirs: [],
   playedOver: null,
   gameProfileId: null,
   worlds: false,

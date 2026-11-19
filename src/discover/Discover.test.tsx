@@ -672,6 +672,7 @@ test("offers shareware episodes and demos on their own tabs", async () => {
         missingVersions: [],
         standalone: false,
         sourceMod: false,
+        saveDirs: [],
         playedOver: null,
         gameProfileId: null,
         worlds: false,

@@ -1107,6 +1107,11 @@ export type Profile = {
 	 *  entry instead.
 	 */
 	modStatus: ModStatus | null,
+	/**
+	 *  Folders the game keeps saves in besides the root, with the names
+	 *  the Saves tab groups them under (the index entry's `saveDirs`).
+	 */
+	saveDirs: SaveDir[],
 };
 
 export type ProfileConfig = {

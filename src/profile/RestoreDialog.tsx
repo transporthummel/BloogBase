@@ -1,16 +1,25 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { commands, type Backup, type FolderSaves, type Game, type SaveFile } from "../bindings";
+import {
+  commands,
+  type Backup,
+  type FolderSaves,
+  type Game,
+  type SaveDir,
+  type SaveFile,
+} from "../bindings";
 import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
-import { backupTitle, saveSummary, saveTitle, slotFiles } from "./saves";
+import { backupTitle, placedSaveTitle, saveSummary, slotFiles } from "./saves";
 
 type Shared = {
   game: Game;
+  /** The folders the mod keeps saves in besides the root. */
+  saveDirs: SaveDir[];
   current: SaveFile[];
   onClose: () => void;
   /** Whether what was there was backed up first. */
@@ -73,6 +82,7 @@ function RestoreFrom({
   hasOther,
   restore: put,
   game,
+  saveDirs,
   current,
   onClose,
   onRestored,
@@ -86,6 +96,8 @@ function RestoreFrom({
 }) {
   const { t, i18n } = useTranslation();
   const inBackup = { data: saves, error };
+  const named = (s: SaveFile, others: SaveFile[]) =>
+    placedSaveTitle(t, i18n.language, saveDirs, s, others);
   const [targets, setTargets] = useState<Record<string, string>>({});
   // Settings and high scores stay as they are unless asked.
   const [includeOther, setIncludeOther] = useState(false);
@@ -118,7 +130,7 @@ function RestoreFrom({
           return (
             <li key={s.file} className="grid gap-2 rounded-lg border border-border p-3">
               <div className="grid gap-0.5">
-                <h3 className="text-sm font-semibold">{saveTitle(t, s, inBackup.data)}</h3>
+                <h3 className="text-sm font-semibold">{named(s, inBackup.data ?? [])}</h3>
                 <p className="text-xs text-muted">{saveSummary(t, i18n.language, s)}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -148,7 +160,7 @@ function RestoreFrom({
               </div>
               {replaced && (
                 <p className="text-xs text-muted">
-                  {t("backups.replaces", { name: saveTitle(t, replaced, current) })}
+                  {t("backups.replaces", { name: named(replaced, current) })}
                 </p>
               )}
             </li>

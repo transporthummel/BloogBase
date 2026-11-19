@@ -60,6 +60,9 @@ pub struct Profile {
     /// A mod's status from its KeenWiki page; index mods have it in their
     /// entry instead.
     pub mod_status: Option<crate::mod_index::ModStatus>,
+    /// Folders the game keeps saves in besides the root, with the names
+    /// the Saves tab groups them under (the index entry's `saveDirs`).
+    pub save_dirs: Vec<SaveDir>,
 }
 
 /// The mod another one is played over.
@@ -178,6 +181,7 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
         .get::<_, Option<String>>(25)?
         .and_then(|j| serde_json::from_str(&j).ok())
         .unwrap_or_default();
+    let profile_dirs = save_dirs.clone();
     let mod_layer = mod_path.zip(recipe).map(|(path, recipe)| {
         // Written by `mods::install`; an unreadable one falls back to the episode.
         let recipe = serde_json::from_str(&recipe).unwrap_or(Recipe::Episode);
@@ -231,6 +235,7 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             mod_status: r
                 .get::<_, Option<String>>(24)?
                 .and_then(|s| crate::mod_index::ModStatus::stored(Some(&s))),
+            save_dirs: profile_dirs,
         },
         layers: Layers {
             lower: install_path.map(|p| p.join("base")),

@@ -27,6 +27,8 @@ import {
   backupContents,
   backupTitle,
   backupsKey,
+  groupSaves,
+  placedSaveTitle,
   saveSummary,
   saveTitle,
   savesKey,
@@ -160,6 +162,64 @@ export function SavesPanel({
   });
 
   const locked = profile.running;
+  /** A save's title with its folder's name, where the mod has folders. */
+  const placed = (s: SaveFile) =>
+    placedSaveTitle(t, i18n.language, profile.saveDirs, s, saves.data ?? []);
+  // Under a folder's heading, a save's title is a level below it.
+  const saveList = (list: SaveFile[], Title: "h3" | "h4" = "h3") => (
+    <ul className="grid gap-2">
+      {list.map((s) => (
+        <li key={s.file}>
+          <Card className="flex flex-wrap items-center gap-3 p-3">
+            <div className="grid min-w-0 flex-1 gap-0.5">
+              <Title className="text-sm font-semibold">{saveTitle(t, s, saves.data)}</Title>
+              <p className="text-xs text-muted">{saveSummary(t, i18n.language, s)}</p>
+              {s.modifiedAt !== null && (
+                <p className="text-xs text-muted">
+                  <RelativeTime at={s.modifiedAt}>
+                    {(date) => t("saves.savedAt", { date })}
+                  </RelativeTime>
+                </p>
+              )}
+            </div>
+            <div className="flex gap-1">
+              {s.versions > 0 && (
+                <Button
+                  variant="ghost"
+                  disabled={locked}
+                  onClick={() => setVersionsOf(s)}
+                  aria-label={t("saves.versionsNamed", { name: placed(s) })}
+                >
+                  <History className="size-4" aria-hidden />
+                  {t("saves.versions", { count: s.versions })}
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                className="px-2"
+                disabled={locked || backup.isPending}
+                onClick={() => backup.mutate(s.file)}
+                aria-label={t("saves.backupNamed", { name: placed(s) })}
+                title={t("saves.backup")}
+              >
+                <Archive className="size-4" aria-hidden />
+              </Button>
+              <Button
+                variant="ghost"
+                className="px-2"
+                disabled={locked}
+                onClick={() => setDeleting(s)}
+                aria-label={t("saves.deleteNamed", { name: placed(s) })}
+                title={t("saves.delete")}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </Button>
+            </div>
+          </Card>
+        </li>
+      ))}
+    </ul>
+  );
   const error =
     saves.error ??
     backups.error ??
@@ -277,58 +337,19 @@ export function SavesPanel({
           </p>
         )}
         {saves.data?.length === 0 && <p className="text-sm text-muted">{t("saves.empty")}</p>}
-        <ul className="grid gap-2">
-          {saves.data?.map((s) => (
-            <li key={s.file}>
-              <Card className="flex flex-wrap items-center gap-3 p-3">
-                <div className="grid min-w-0 flex-1 gap-0.5">
-                  <h3 className="text-sm font-semibold">{saveTitle(t, s, saves.data)}</h3>
-                  <p className="text-xs text-muted">{saveSummary(t, i18n.language, s)}</p>
-                  {s.modifiedAt !== null && (
-                    <p className="text-xs text-muted">
-                      <RelativeTime at={s.modifiedAt}>
-                        {(date) => t("saves.savedAt", { date })}
-                      </RelativeTime>
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-1">
-                  {s.versions > 0 && (
-                    <Button
-                      variant="ghost"
-                      disabled={locked}
-                      onClick={() => setVersionsOf(s)}
-                      aria-label={t("saves.versionsNamed", { name: saveTitle(t, s, saves.data) })}
-                    >
-                      <History className="size-4" aria-hidden />
-                      {t("saves.versions", { count: s.versions })}
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    className="px-2"
-                    disabled={locked || backup.isPending}
-                    onClick={() => backup.mutate(s.file)}
-                    aria-label={t("saves.backupNamed", { name: saveTitle(t, s, saves.data) })}
-                    title={t("saves.backup")}
-                  >
-                    <Archive className="size-4" aria-hidden />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="px-2"
-                    disabled={locked}
-                    onClick={() => setDeleting(s)}
-                    aria-label={t("saves.deleteNamed", { name: saveTitle(t, s, saves.data) })}
-                    title={t("saves.delete")}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                </div>
-              </Card>
-            </li>
-          ))}
-        </ul>
+        {saves.data &&
+          groupSaves(saves.data, profile.saveDirs, i18n.language).map((g) =>
+            g.name === null ? (
+              <div key="">{saveList(g.saves)}</div>
+            ) : (
+              <section key={g.dir} className="grid gap-2" aria-labelledby={`saves-${g.dir}`}>
+                <h3 id={`saves-${g.dir}`} className="text-sm font-semibold text-muted">
+                  {g.name}
+                </h3>
+                {saveList(g.saves, "h4")}
+              </section>
+            ),
+          )}
         {game && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <Button
@@ -394,6 +415,7 @@ export function SavesPanel({
       {versionsOf && (
         <VersionsDialog
           profileId={profile.id}
+          saveDirs={profile.saveDirs}
           save={versionsOf}
           others={saves.data ?? []}
           onClose={() => setVersionsOf(null)}
@@ -406,7 +428,7 @@ export function SavesPanel({
       )}
       {deleting && (
         <ConfirmDialog
-          title={t("saves.deleteTitle", { name: saveTitle(t, deleting, saves.data) })}
+          title={t("saves.deleteTitle", { name: placed(deleting) })}
           confirm={t("saves.delete")}
           busy={deleteSave.isPending}
           onConfirm={() => deleteSave.mutate(deleting.file)}
@@ -437,6 +459,7 @@ export function SavesPanel({
           path={fromFolder.path}
           found={fromFolder.found}
           game={game}
+          saveDirs={profile.saveDirs}
           current={saves.data ?? []}
           onClose={() => setFromFolder(null)}
           onRestored={(backedUp) => {
@@ -450,6 +473,7 @@ export function SavesPanel({
         <RestoreDialog
           backup={restoring}
           game={game}
+          saveDirs={profile.saveDirs}
           current={saves.data ?? []}
           onClose={() => setRestoring(null)}
           onRestored={(backedUp) => {

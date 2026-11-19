@@ -14,6 +14,7 @@ import {
   type Mod,
   type Profile,
   type RuntimeStatus,
+  type SaveDir,
   type SaveFile,
   type Screenshot,
   type Video,
@@ -144,6 +145,7 @@ const profile: Profile = {
   missingVersions: [],
   standalone: false,
   sourceMod: false,
+  saveDirs: [],
   playedOver: null,
   gameProfileId: null,
   worlds: false,
@@ -1083,6 +1085,40 @@ test("saves sharing a slot show their file names", async () => {
   expect(screen.getByText("Slot 1 (SAVEGAM0.CKC)")).toBeInTheDocument();
   expect(screen.getByText("Slot 2")).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Delete Slot 1 (SAVEGAM0.CKC)" })).toBeInTheDocument();
+});
+
+test("a launcher's saves are grouped under the names of its folders", async () => {
+  // As Revival of Bliss: Keen, Craig and the epilogue each save in a folder.
+  const saveDirs: SaveDir[] = [
+    { dir: "KEEN", name: "Keen" },
+    { dir: "CRAIG", name: "Craig", oldRoot: true },
+    { dir: "FUTURE", name: "Epilogue", translations: { de: { name: "Epilog" } } },
+  ];
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([{ ...profile, saveDirs }]));
+  vi.mocked(commands.listSaves).mockResolvedValue(
+    ok([
+      save("KEEN/SAVEGAM0.CK4", 1, "pabba"),
+      save("CRAIG/SAVEGAM0.CK4", 1, null),
+      save("CRAIG/SAVEGAM4.CK4", 5, "boss"),
+    ]),
+  );
+  vi.mocked(commands.backupSaves).mockResolvedValue(ok([save("CRAIG/SAVEGAM0.CK4", 1, "old")]));
+  renderDetail();
+  const keen = (await screen.findByRole("heading", { name: "Keen" })).closest("section")!;
+  expect(within(keen).getByText("Slot 1 · pabba")).toBeInTheDocument();
+  const craig = screen.getByRole("heading", { name: "Craig" }).closest("section")!;
+  // Each folder numbers its own slots.
+  expect(within(craig).getByText("Slot 1")).toBeInTheDocument();
+  expect(within(craig).getByText("Slot 5 · boss")).toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: "Epilogue" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Delete Craig · Slot 1" })).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole("button", { name: "Restore Before playing" }));
+  const dialog = screen.getByRole("dialog");
+  expect(await within(dialog).findByText("Craig · Slot 1 · old")).toBeInTheDocument();
+  expect(within(dialog).getByText("Replaces Craig · Slot 1; it’s backed up first.")).toBeVisible();
+  await userEvent.selectOptions(within(dialog).getByLabelText("Into"), "CRAIG/SAVEGAM2.CK4");
+  expect(within(dialog).queryByText(/^Replaces/)).not.toBeInTheDocument();
 });
 
 test("deleting a save asks first and can be undone", async () => {
