@@ -24,7 +24,25 @@ downloads:
     size: 432797
     fingerprint:
       sha256: 06c4f567b5098fbb897d913ff3e98a1b87a2669413e874987298dd150d30b30f
-      files: [AUDIOHED.AUD, BISTROARY.mht, EGADICT.KDR, EGAHEAD.KDR, HELP.KDR, INTROSCN.RSD, KDREAMS.AUD, KDREAMS.CMP, KDREAMS.EGA, KDREAMS.EXE, KDREAMS.MAP, KDRPATCH.EXE, KeenD.tli, KeenMTM.BAT, MAPDICT.KDR, MAPHEAD.KDR]
+      files:
+        [
+          AUDIOHED.AUD,
+          BISTROARY.mht,
+          EGADICT.KDR,
+          EGAHEAD.KDR,
+          HELP.KDR,
+          INTROSCN.RSD,
+          KDREAMS.AUD,
+          KDREAMS.CMP,
+          KDREAMS.EGA,
+          KDREAMS.EXE,
+          KDREAMS.MAP,
+          KDRPATCH.EXE,
+          KeenD.tli,
+          KeenMTM.BAT,
+          MAPDICT.KDR,
+          MAPHEAD.KDR,
+        ]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

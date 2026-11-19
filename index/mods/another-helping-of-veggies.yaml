@@ -22,7 +22,28 @@ downloads:
     size: 316564
     fingerprint:
       sha256: c5b1a6c96494cada10ae726308a15901ad30b53d2ddad7a41c7cca7e12f50363
-      files: [EGADICT.KD2, EGAHEAD.KD2, HELP.KD2, HELP2.KD2, HELP3.KD2, KDREAMS.EXE, KDREAMS2.AUD, KDREAMS2.BAT, KDREAMS2.BIN, KDREAMS2.CMP, KDREAMS2.DAT, KDREAMS2.EGA, KDREAMS2.MAP, KDREAMS2.PAT, KDREAMS2.SCN, KDREAMS2.TLI, KDRPATCH.EXE, MAPDICT.KD2, MAPHEAD.KD2]
+      files:
+        [
+          EGADICT.KD2,
+          EGAHEAD.KD2,
+          HELP.KD2,
+          HELP2.KD2,
+          HELP3.KD2,
+          KDREAMS.EXE,
+          KDREAMS2.AUD,
+          KDREAMS2.BAT,
+          KDREAMS2.BIN,
+          KDREAMS2.CMP,
+          KDREAMS2.DAT,
+          KDREAMS2.EGA,
+          KDREAMS2.MAP,
+          KDREAMS2.PAT,
+          KDREAMS2.SCN,
+          KDREAMS2.TLI,
+          KDRPATCH.EXE,
+          MAPDICT.KD2,
+          MAPHEAD.KD2,
+        ]
 recipe:
   type: patch
   patcher: KDRPATCH.EXE

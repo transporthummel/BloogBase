@@ -23,7 +23,20 @@ downloads:
     size: 448355
     fingerprint:
       sha256: c2a9b6f8ab959053ff9386110b34109cdadf58bc24a7697000f28dc7b1a02f6d
-      files: [abiathar.pat, AUDIO.CK6, CK6LOAD.BIN, CK6PATCH.EXE, EGAGRAPH.CK6, EGAHEAD.CK6, GAMEMAPS.CK6, KEEN6.TLI, MAPHEAD.CK6, Play.bat, STORY.CK6]
+      files:
+        [
+          abiathar.pat,
+          AUDIO.CK6,
+          CK6LOAD.BIN,
+          CK6PATCH.EXE,
+          EGAGRAPH.CK6,
+          EGAHEAD.CK6,
+          GAMEMAPS.CK6,
+          KEEN6.TLI,
+          MAPHEAD.CK6,
+          Play.bat,
+          STORY.CK6,
+        ]
 recipe:
   type: patch
   patcher: CK6PATCH.EXE

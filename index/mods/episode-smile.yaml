@@ -21,7 +21,42 @@ downloads:
     size: 97881
     fingerprint:
       sha256: 01d4bc402b0f4d8a29a2b2e1cfdc7dd05a2e15756dd35f93d4095a819545e063
-      files: [CK2PATCH.EXE, EGAHEAD.CK2, EGALATCH.CK2, EGASPRIT.CK2, ENDTXT.CK2, FINALE.CK2, HELPTXT.CK2, LEVEL01.CK2, LEVEL02.CK2, LEVEL03.CK2, LEVEL04.CK2, LEVEL05.CK2, LEVEL06.CK2, LEVEL07.CK2, LEVEL08.CK2, LEVEL09.CK2, LEVEL10.CK2, LEVEL11.CK2, LEVEL12.CK2, LEVEL13.CK2, LEVEL14.CK2, LEVEL15.CK2, LEVEL16.CK2, LEVEL80.CK2, LEVEL81.CK2, LEVEL90.CK2, play.bat, SCREEN.CK2, SMILETXT.CK2, SOUNDS.CK2, STORYTXT.CK2, stuff.pat, TILES.CK2]
+      files:
+        [
+          CK2PATCH.EXE,
+          EGAHEAD.CK2,
+          EGALATCH.CK2,
+          EGASPRIT.CK2,
+          ENDTXT.CK2,
+          FINALE.CK2,
+          HELPTXT.CK2,
+          LEVEL01.CK2,
+          LEVEL02.CK2,
+          LEVEL03.CK2,
+          LEVEL04.CK2,
+          LEVEL05.CK2,
+          LEVEL06.CK2,
+          LEVEL07.CK2,
+          LEVEL08.CK2,
+          LEVEL09.CK2,
+          LEVEL10.CK2,
+          LEVEL11.CK2,
+          LEVEL12.CK2,
+          LEVEL13.CK2,
+          LEVEL14.CK2,
+          LEVEL15.CK2,
+          LEVEL16.CK2,
+          LEVEL80.CK2,
+          LEVEL81.CK2,
+          LEVEL90.CK2,
+          play.bat,
+          SCREEN.CK2,
+          SMILETXT.CK2,
+          SOUNDS.CK2,
+          STORYTXT.CK2,
+          stuff.pat,
+          TILES.CK2,
+        ]
 # play.bat runs `ck2patch stuff.pat`. The patch file names no version; it's
 # one set of offsets, and Keen 2 mods of the time patched v1.31 (Norp the
 # Yorp 2 needs a patch file of its own for v1.0).

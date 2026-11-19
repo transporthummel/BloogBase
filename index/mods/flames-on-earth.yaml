@@ -22,7 +22,41 @@ downloads:
     size: 328070
     fingerprint:
       sha256: 9db510205f1923c1afe95bd5b5be12c6fb70083a952fc6d602cab504c3432da6
-      files: [CK2PATCH.EXE, EGAHEAD.CK2, EGALATCH.CK2, EGASPRIT.CK2, ENDTEXT.CK2, FINALE.CK2, HELPTEXT.CK2, LEVEL01.CK2, LEVEL02.CK2, LEVEL03.CK2, LEVEL04.CK2, LEVEL05.CK2, LEVEL06.CK2, LEVEL07.CK2, LEVEL08.CK2, LEVEL09.CK2, LEVEL10.CK2, LEVEL11.CK2, LEVEL12.CK2, LEVEL13.CK2, LEVEL14.CK2, LEVEL15.CK2, LEVEL16.CK2, LEVEL80.CK2, LEVEL81.CK2, LEVEL90.CK2, patches.pat, PREVIEWS.CK2, ROM2.BAT, STORYTXT.CK2, tiles.tli, unlzexe.exe]
+      files:
+        [
+          CK2PATCH.EXE,
+          EGAHEAD.CK2,
+          EGALATCH.CK2,
+          EGASPRIT.CK2,
+          ENDTEXT.CK2,
+          FINALE.CK2,
+          HELPTEXT.CK2,
+          LEVEL01.CK2,
+          LEVEL02.CK2,
+          LEVEL03.CK2,
+          LEVEL04.CK2,
+          LEVEL05.CK2,
+          LEVEL06.CK2,
+          LEVEL07.CK2,
+          LEVEL08.CK2,
+          LEVEL09.CK2,
+          LEVEL10.CK2,
+          LEVEL11.CK2,
+          LEVEL12.CK2,
+          LEVEL13.CK2,
+          LEVEL14.CK2,
+          LEVEL15.CK2,
+          LEVEL16.CK2,
+          LEVEL80.CK2,
+          LEVEL81.CK2,
+          LEVEL90.CK2,
+          patches.pat,
+          PREVIEWS.CK2,
+          ROM2.BAT,
+          STORYTXT.CK2,
+          tiles.tli,
+          unlzexe.exe,
+        ]
 recipe:
   type: patch
   patcher: CK2PATCH.EXE

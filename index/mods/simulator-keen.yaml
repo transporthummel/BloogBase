@@ -22,7 +22,25 @@ downloads:
     size: 576379
     fingerprint:
       sha256: bfefa43fbc2a0329ec8ea4b52bfa23f6df68351bb49aa26ec119494cf20598f5
-      files: [cg3.bin, CK3PATCH.EXE, EGAHEAD.CK3, EGALATCH.CK3, EGASPRIT.CK3, FINALE.CK3, homejack.bin, LEVEL80.CK3, LEVEL81.CK3, LEVEL90.CK3, patch.pat, play.bat, random.exe, simkeen.tli, simkeenRandomizer.cpp, start.Bat]
+      files:
+        [
+          cg3.bin,
+          CK3PATCH.EXE,
+          EGAHEAD.CK3,
+          EGALATCH.CK3,
+          EGASPRIT.CK3,
+          FINALE.CK3,
+          homejack.bin,
+          LEVEL80.CK3,
+          LEVEL81.CK3,
+          LEVEL90.CK3,
+          patch.pat,
+          play.bat,
+          random.exe,
+          simkeen.tli,
+          simkeenRandomizer.cpp,
+          start.Bat,
+        ]
 recipe:
   type: batch
   file: play.bat

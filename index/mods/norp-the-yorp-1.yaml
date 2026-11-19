@@ -20,7 +20,47 @@ downloads:
     size: 135164
     fingerprint:
       sha256: bdcf7a81e85e9aca8bcf510de3c3d9698519a4324afa5a84600d8eff1142df10
-      files: [CK1PATCH.EXE, EGAHEAD.CK1, EGALATCH.CK1, EGASPRIT.CK1, ENDTEXT.CK1, FINALE.CK1, HELPTEXT.CK1, KEEN1.EXE, Level01.ck1, Level02.ck1, Level03.ck1, LEVEL04.CK1, Level05.ck1, Level06.ck1, LEVEL07.CK1, LEVEL08.CK1, LEVEL09.CK1, LEVEL10.CK1, LEVEL11.CK1, LEVEL12.CK1, LEVEL13.CK1, LEVEL14.CK1, LEVEL15.CK1, LEVEL16.CK1, Level26.ck1, Level29.ck1, Level31.ck1, Level80.ck1, Level81.ck1, Level90.CK1, Norp.bat, NORP.ICO, Norp.pat, PREVIEW2.CK1, PREVIEW3.CK1, PREVIEWS.CK1, SOUNDS.CK1, STORYTXT.CK1]
+      files:
+        [
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          Level01.ck1,
+          Level02.ck1,
+          Level03.ck1,
+          LEVEL04.CK1,
+          Level05.ck1,
+          Level06.ck1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          Level26.ck1,
+          Level29.ck1,
+          Level31.ck1,
+          Level80.ck1,
+          Level81.ck1,
+          Level90.CK1,
+          Norp.bat,
+          NORP.ICO,
+          Norp.pat,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STORYTXT.CK1,
+        ]
 # Ships KEEN1.EXE 1.31 unpacked, so it runs on any version of the game.
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true

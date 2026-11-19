@@ -19,7 +19,46 @@ downloads:
     size: 161883
     fingerprint:
       sha256: 732cfca3bd529f390e9b71a760abbf1e0a524ea7ed2b66e3f7d04ad36838cba8
-      files: [CK1PATCH.EXE, EGAHEAD.CK1, EGALATCH.CK1, EGASPRIT.CK1, ENDTEXT.CK1, FINALE.CK1, HELPTEXT.CK1, keen1.1st, KEEN1.EXE, LEVEL01.CK1, LEVEL02.CK1, Level03.ck1, LEVEL04.CK1, LEVEL05.CK1, LEVEL06.CK1, LEVEL07.CK1, LEVEL08.CK1, LEVEL09.CK1, LEVEL10.CK1, LEVEL11.CK1, LEVEL12.CK1, LEVEL13.CK1, LEVEL14.CK1, LEVEL15.CK1, LEVEL16.CK1, LEVEL80.CK1, LEVEL81.CK1, LEVEL90.CK1, MM.bat, MM.PAT, MM1.tli, PREVIEW2.CK1, PREVIEW3.CK1, PREVIEWS.CK1, SOUNDS.CK1, status.ck1, STORYTXT.CK1]
+      files:
+        [
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          keen1.1st,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          Level03.ck1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          MM.bat,
+          MM.PAT,
+          MM1.tli,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          status.ck1,
+          STORYTXT.CK1,
+        ]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

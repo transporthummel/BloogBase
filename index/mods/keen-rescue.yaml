@@ -21,7 +21,25 @@ downloads:
     size: 1886551
     fingerprint:
       sha256: 1e3c59b05ce983d519e5c50d520f221f3b40160f6bf37255e7729fa60def2271
-      files: [CK3PATCH.EXE, CONFIG.BIN, EGAHEAD.CK3, EGALATCH.CK3, EGASPRIT.CK3, ENDTEXT.CK3, FINALE.CK3, HELPTEXT.CK3, KEEN3.EXE, krescue.bat, martakr.pat, martakr.pat~, martakr.tli, PREVIEWS.CK3, story.txt~, STORYTXT.CK3]
+      files:
+        [
+          CK3PATCH.EXE,
+          CONFIG.BIN,
+          EGAHEAD.CK3,
+          EGALATCH.CK3,
+          EGASPRIT.CK3,
+          ENDTEXT.CK3,
+          FINALE.CK3,
+          HELPTEXT.CK3,
+          KEEN3.EXE,
+          krescue.bat,
+          martakr.pat,
+          martakr.pat~,
+          martakr.tli,
+          PREVIEWS.CK3,
+          story.txt~,
+          STORYTXT.CK3,
+        ]
 recipe:
   type: patch
   patcher: CK3PATCH.EXE

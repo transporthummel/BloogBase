@@ -22,7 +22,21 @@ downloads:
     size: 520327
     fingerprint:
       sha256: b5d51dad758070cc1db758740a8198e12f2462f89ec5fdc583fc2ef35106395c
-      files: [AUDIO.CK5, AUDIODCT.CK5, AUDIOHED.CK5, CK5PATCH.exe, EGADICT.CK5, EGAGRAPH.CK5, EGAHEAD.CK5, GAMEMAPS.CK5, Keen5.tli, KEEN5a.PAT, maphead.ck5, play.bat]
+      files:
+        [
+          AUDIO.CK5,
+          AUDIODCT.CK5,
+          AUDIOHED.CK5,
+          CK5PATCH.exe,
+          EGADICT.CK5,
+          EGAGRAPH.CK5,
+          EGAHEAD.CK5,
+          GAMEMAPS.CK5,
+          Keen5.tli,
+          KEEN5a.PAT,
+          maphead.ck5,
+          play.bat,
+        ]
 recipe:
   type: patch
   patcher: CK5PATCH.exe

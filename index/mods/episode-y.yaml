@@ -18,7 +18,49 @@ downloads:
     size: 126825
     fingerprint:
       sha256: 9e61692feb1610e43114898e4b8f15130674fc33450b872868297a37b67c790b
-      files: [Ck1patch.exe, Egahead.ck1, Egalatch.ck1, Egasprit.ck1, Endtext.ck1, Finale.ck1, Helptext.ck1, Keen1.exe, Keeny.bat, keeny.tli, Keenypat.pat, Level01.ck1, Level02.ck1, Level03.ck1, Level04.ck1, Level05.ck1, Level06.ck1, Level07.ck1, Level08.ck1, Level09.ck1, Level10.ck1, Level11.ck1, Level12.ck1, Level13.ck1, Level14.ck1, Level15.ck1, Level16.ck1, Level18.ck1, Level22.ck1, Level26.ck1, Level29.ck1, Level31.ck1, level80.ck1, Level81.ck1, Level90.ck1, Preview2.ck1, Preview3.ck1, Previews.ck1, Sounds.ck1, Storytxt.ck1]
+      files:
+        [
+          Ck1patch.exe,
+          Egahead.ck1,
+          Egalatch.ck1,
+          Egasprit.ck1,
+          Endtext.ck1,
+          Finale.ck1,
+          Helptext.ck1,
+          Keen1.exe,
+          Keeny.bat,
+          keeny.tli,
+          Keenypat.pat,
+          Level01.ck1,
+          Level02.ck1,
+          Level03.ck1,
+          Level04.ck1,
+          Level05.ck1,
+          Level06.ck1,
+          Level07.ck1,
+          Level08.ck1,
+          Level09.ck1,
+          Level10.ck1,
+          Level11.ck1,
+          Level12.ck1,
+          Level13.ck1,
+          Level14.ck1,
+          Level15.ck1,
+          Level16.ck1,
+          Level18.ck1,
+          Level22.ck1,
+          Level26.ck1,
+          Level29.ck1,
+          Level31.ck1,
+          level80.ck1,
+          Level81.ck1,
+          Level90.ck1,
+          Preview2.ck1,
+          Preview3.ck1,
+          Previews.ck1,
+          Sounds.ck1,
+          Storytxt.ck1,
+        ]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

@@ -21,7 +21,22 @@ downloads:
     size: 486328
     fingerprint:
       sha256: ca6496936fe5949e145002dd6b93ac845f74b45d23a7699da6b13f00c1d348ec
-      files: [AUDIO.CK5, AUDIODCT.CK5, AUDIOHED.CK5, CK5LOAD.BIN, CK5PATCH.EXE, EGAGRAPH.CK5, EGAHEAD.CK5, GAMEMAPS.CK5, maphead.ck5, PATCH5.PAT, Play.BAT, STORY.CK5, UltraII.tli]
+      files:
+        [
+          AUDIO.CK5,
+          AUDIODCT.CK5,
+          AUDIOHED.CK5,
+          CK5LOAD.BIN,
+          CK5PATCH.EXE,
+          EGAGRAPH.CK5,
+          EGAHEAD.CK5,
+          GAMEMAPS.CK5,
+          maphead.ck5,
+          PATCH5.PAT,
+          Play.BAT,
+          STORY.CK5,
+          UltraII.tli,
+        ]
 recipe:
   type: patch
   patcher: CK5PATCH.EXE

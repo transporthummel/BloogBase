@@ -21,7 +21,24 @@ downloads:
     size: 240674
     fingerprint:
       sha256: 8096500a4b02c0f5b5299ae2b6bbfd56f1975e8814e1199b6f57fe7e1e0f77df
-      files: [AUDIOHED.AUD, EGAHEAD.KDR, KDREAMS.AUD, KDREAMS.CMP, KDREAMS.DAT, KDREAMS.EGA, KDREAMS.EXE, KDREAMS.MAP, KDREAMS.SCT, KDRPATCH.EXE, MAPDICT.CK7, MAPHEAD.CK7, MartGold.bat, MartGold.pat, MartGold.tli]
+      files:
+        [
+          AUDIOHED.AUD,
+          EGAHEAD.KDR,
+          KDREAMS.AUD,
+          KDREAMS.CMP,
+          KDREAMS.DAT,
+          KDREAMS.EGA,
+          KDREAMS.EXE,
+          KDREAMS.MAP,
+          KDREAMS.SCT,
+          KDRPATCH.EXE,
+          MAPDICT.CK7,
+          MAPHEAD.CK7,
+          MartGold.bat,
+          MartGold.pat,
+          MartGold.tli,
+        ]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

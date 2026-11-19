@@ -23,7 +23,29 @@ downloads:
     size: 3232443
     fingerprint:
       sha256: 9b4d05db5e656f6de9e5782ae6b3cac6edc6cb1692e7cb2bd17a81b650030650
-      files: [ACTION.CK5, AUDINFOE.CK5, AUDIO.CK5, AUDIODCT.CK5, AUDIOHHD.CK5, CWSDPMI.EXE, egadict.ck5, egagraph.ck5, egahead.ck5, EPISODE.CK5, GAMEMAPS.CK5, GFXINFOE.CK5, maphead.ck5, OSI.EXE, osidos32.exe, osi_linux.x86, osi_linux.x86_64, osi_win32.exe, osi_win64.exe, STRINGS.CK5]
+      files:
+        [
+          ACTION.CK5,
+          AUDINFOE.CK5,
+          AUDIO.CK5,
+          AUDIODCT.CK5,
+          AUDIOHHD.CK5,
+          CWSDPMI.EXE,
+          egadict.ck5,
+          egagraph.ck5,
+          egahead.ck5,
+          EPISODE.CK5,
+          GAMEMAPS.CK5,
+          GFXINFOE.CK5,
+          maphead.ck5,
+          OSI.EXE,
+          osidos32.exe,
+          osi_linux.x86,
+          osi_linux.x86_64,
+          osi_win32.exe,
+          osi_win64.exe,
+          STRINGS.CK5,
+        ]
     programs:
       OSI.EXE: 0c04c21b55b9dedf2ed1c2694c55736835437d57e5b746506605429a100bbb44
   - version: "1.0"
@@ -32,7 +54,29 @@ downloads:
     size: 4862807
     fingerprint:
       sha256: 5e91188baf96070b272c399a1ee10ec6d322a2a3836e493b77852baa06454d09
-      files: [ACTION.CK5, AUDINFOE.CK5, AUDIO.CK5, AUDIODCT.CK5, AUDIOHHD.CK5, CWSDPMI.EXE, CWSDPMI.SWP, egadict.ck5, egagraph.ck5, egahead.ck5, EPISODE.CK5, GAMEMAPS.CK5, GFXINFOE.CK5, maphead.ck5, osidos32.exe, osi_linux.x86, osi_linux.x86_64, osi_win32.exe, osi_win64.exe, STRINGS.CK5]
+      files:
+        [
+          ACTION.CK5,
+          AUDINFOE.CK5,
+          AUDIO.CK5,
+          AUDIODCT.CK5,
+          AUDIOHHD.CK5,
+          CWSDPMI.EXE,
+          CWSDPMI.SWP,
+          egadict.ck5,
+          egagraph.ck5,
+          egahead.ck5,
+          EPISODE.CK5,
+          GAMEMAPS.CK5,
+          GFXINFOE.CK5,
+          maphead.ck5,
+          osidos32.exe,
+          osi_linux.x86,
+          osi_linux.x86_64,
+          osi_win32.exe,
+          osi_win64.exe,
+          STRINGS.CK5,
+        ]
     # Only the Omnispeak build for DOS; OSI.EXE came with 1.4.
     recipe:
       type: program

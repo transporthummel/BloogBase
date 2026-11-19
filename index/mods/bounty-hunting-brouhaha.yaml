@@ -20,7 +20,23 @@ downloads:
     size: 522153
     fingerprint:
       sha256: 0524f1fd47ddb45341227cf76700e7b2b6fe611cde8d748c9ee98e0170a11850
-      files: [AUDIO.CK4, AUDIODCT.CK4, AUDIOHED.CK4, CK4PATCH.EXE, EGADICT.CK4, EGAGRAPH.CK4, EGAHEAD.CK4, GAMEMAPS.CK4, Keen4.tli, KEEN4a.PAT, KEEN4E.EXE, maphead.ck4, patch.BAT, TITLE.CK4]
+      files:
+        [
+          AUDIO.CK4,
+          AUDIODCT.CK4,
+          AUDIOHED.CK4,
+          CK4PATCH.EXE,
+          EGADICT.CK4,
+          EGAGRAPH.CK4,
+          EGAHEAD.CK4,
+          GAMEMAPS.CK4,
+          Keen4.tli,
+          KEEN4a.PAT,
+          KEEN4E.EXE,
+          maphead.ck4,
+          patch.BAT,
+          TITLE.CK4,
+        ]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

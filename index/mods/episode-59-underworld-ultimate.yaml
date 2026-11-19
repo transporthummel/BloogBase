@@ -22,7 +22,22 @@ downloads:
     size: 915468
     fingerprint:
       sha256: b8b61e4fac36707f9d76fb6beecb2f0d0203066a4213fe990a39c6a1211ff538
-      files: [AUDIO.CK4, AUDIODCT.CK4, AUDIOHED.CK4, CK4PATCH.exe, editmaps.ck4, EGADICT.CK4, EGAGRAPH.CK4, EGAHEAD.CK4, Keen4.tli, KEEN4E.EXE, KEEN59.BAT, maphead.ck4, UNDER.PAT]
+      files:
+        [
+          AUDIO.CK4,
+          AUDIODCT.CK4,
+          AUDIOHED.CK4,
+          CK4PATCH.exe,
+          editmaps.ck4,
+          EGADICT.CK4,
+          EGAGRAPH.CK4,
+          EGAHEAD.CK4,
+          Keen4.tli,
+          KEEN4E.EXE,
+          KEEN59.BAT,
+          maphead.ck4,
+          UNDER.PAT,
+        ]
 recipe:
   type: patch
   patcher: CK4PATCH.exe

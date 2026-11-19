@@ -18,7 +18,36 @@ downloads:
     size: 132051
     fingerprint:
       sha256: d7fbc79cd8002f5f6ae02d1c5c6fa841847c8ed9e30265fd465ba8ab8cfb48c8
-      files: [CK1PATCH.exe, egahead.ck1, egalatch.ck1, egasprit.ck1, endtext.ck1, finale.ck1, fire.pat, helptext.ck1, KEEN1.exe, level02.ck1, level03.ck1, level04.ck1, level05.ck1, level06.ck1, level07.ck1, level08.ck1, level09.ck1, level80.ck1, level81.ck1, level90.ck1, play.bat, preview2.ck1, preview3.ck1, previews.ck1, SOUNDS.CK1, storytxt.ck1, TILEHEAD.CK1]
+      files:
+        [
+          CK1PATCH.exe,
+          egahead.ck1,
+          egalatch.ck1,
+          egasprit.ck1,
+          endtext.ck1,
+          finale.ck1,
+          fire.pat,
+          helptext.ck1,
+          KEEN1.exe,
+          level02.ck1,
+          level03.ck1,
+          level04.ck1,
+          level05.ck1,
+          level06.ck1,
+          level07.ck1,
+          level08.ck1,
+          level09.ck1,
+          level80.ck1,
+          level81.ck1,
+          level90.ck1,
+          play.bat,
+          preview2.ck1,
+          preview3.ck1,
+          previews.ck1,
+          SOUNDS.CK1,
+          storytxt.ck1,
+          TILEHEAD.CK1,
+        ]
 recipe:
   type: patch
   patcher: CK1PATCH.exe

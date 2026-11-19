@@ -21,7 +21,20 @@ downloads:
     size: 735851
     fingerprint:
       sha256: 26af28312f998450b6562d5b40bb289a21e6658764aaf20ba0b40dfc5b567579
-      files: [AUDIO.CK4, AUDIOHED.CK4, CHERRY.TLI, CK4PATCH.EXE, EGAGRAPH.CK4, EGAHEAD.CK4, GAMEMAPS.CK4, KEEN4E.EXE, MAPHEAD.CK4, PAT.PAT, SKATER.BAT]
+      files:
+        [
+          AUDIO.CK4,
+          AUDIOHED.CK4,
+          CHERRY.TLI,
+          CK4PATCH.EXE,
+          EGAGRAPH.CK4,
+          EGAHEAD.CK4,
+          GAMEMAPS.CK4,
+          KEEN4E.EXE,
+          MAPHEAD.CK4,
+          PAT.PAT,
+          SKATER.BAT,
+        ]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:

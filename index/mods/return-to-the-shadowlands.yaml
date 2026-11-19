@@ -24,7 +24,19 @@ downloads:
     size: 724306
     fingerprint:
       sha256: 699434b695043aae02c8ce5a3311a8c0a3a238de8b6926db1c6885105ef695a1
-      files: [AUDIOHED.CK4, AUDIOT.CK4, EGADICT.CK4, EGAGRAPH.CK4, egahead.ck4, GAMEMAPS.CK4, GFXINFOE.CK4, maphead.ck4, play.bat, RTTS.EXE]
+      files:
+        [
+          AUDIOHED.CK4,
+          AUDIOT.CK4,
+          EGADICT.CK4,
+          EGAGRAPH.CK4,
+          egahead.ck4,
+          GAMEMAPS.CK4,
+          GFXINFOE.CK4,
+          maphead.ck4,
+          play.bat,
+          RTTS.EXE,
+        ]
     programs:
       RTTS.EXE: 17df5ec106daf3edda9ca0383fe976a99a3f1d62791172ae2a49f34f7c2fc2b6
   - version: "1.6"
@@ -33,7 +45,18 @@ downloads:
     size: 728947
     fingerprint:
       sha256: db95d3c2d87f5158df76b1d8f5d6450b7d40a8009a803ce93a635df7dfd57876
-      files: [AUDIOHED.CK4, AUDIOT.CK4, EGADICT.CK4, EGAGRAPH.CK4, egahead.ck4, GAMEMAPS.CK4, maphead.ck4, play.bat, RTTS.EXE]
+      files:
+        [
+          AUDIOHED.CK4,
+          AUDIOT.CK4,
+          EGADICT.CK4,
+          EGAGRAPH.CK4,
+          egahead.ck4,
+          GAMEMAPS.CK4,
+          maphead.ck4,
+          play.bat,
+          RTTS.EXE,
+        ]
     programs:
       RTTS.EXE: df206f64090e5fb0cb591cd8925abc15a1f0bc9a4dfa5ee344ef24a7053371ea
 standalone: true

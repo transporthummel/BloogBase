@@ -22,7 +22,23 @@ downloads:
     size: 517085
     fingerprint:
       sha256: 296ef9a753179ed6efa68fb2dede598afe7518dc06cc4ea3cdb55a373f7cd34f
-      files: [AUDIO.CK6, AUDIOHED.CK6, CK6PATCH.EXE, EGADICT.CK6, EGAGRAPH.CK6, EGAHEAD.CK6, GAMEMAPS.CK6, Keen10.bat, Keen10.bin, Keen10.pat, Keen10.tli, MAPHEAD.CK6, STORY.K10, UNLZEXE.EXE]
+      files:
+        [
+          AUDIO.CK6,
+          AUDIOHED.CK6,
+          CK6PATCH.EXE,
+          EGADICT.CK6,
+          EGAGRAPH.CK6,
+          EGAHEAD.CK6,
+          GAMEMAPS.CK6,
+          Keen10.bat,
+          Keen10.bin,
+          Keen10.pat,
+          Keen10.tli,
+          MAPHEAD.CK6,
+          STORY.K10,
+          UNLZEXE.EXE,
+        ]
 recipe:
   type: patch
   patcher: CK6PATCH.EXE

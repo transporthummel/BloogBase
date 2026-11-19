@@ -19,7 +19,39 @@ downloads:
     size: 104639
     fingerprint:
       sha256: 636dfed7d79917eaacb63d3fbb57ffe2c4801c26df6a1f95dee762307a8cc08c
-      files: [CK2PATCH.EXE, EGAHEAD.CK2, EGALATCH.CK2, EGASPRIT.CK2, ENDTEXT.ck2, FINALE.CK2, HELPTEXT.CK2, k2.tli, LEVEL01.CK2, LEVEL02.CK2, LEVEL03.CK2, LEVEL04.CK2, LEVEL05.CK2, LEVEL06.CK2, LEVEL07.CK2, LEVEL08.CK2, LEVEL09.CK2, LEVEL10.CK2, LEVEL11.CK2, LEVEL12.CK2, LEVEL13.CK2, LEVEL14.CK2, LEVEL15.CK2, LEVEL16.CK2, LEVEL80.CK2, LEVEL81.CK2, LEVEL90.CK2, skree.bat, skree.pat, STORYTXT.CK2]
+      files:
+        [
+          CK2PATCH.EXE,
+          EGAHEAD.CK2,
+          EGALATCH.CK2,
+          EGASPRIT.CK2,
+          ENDTEXT.ck2,
+          FINALE.CK2,
+          HELPTEXT.CK2,
+          k2.tli,
+          LEVEL01.CK2,
+          LEVEL02.CK2,
+          LEVEL03.CK2,
+          LEVEL04.CK2,
+          LEVEL05.CK2,
+          LEVEL06.CK2,
+          LEVEL07.CK2,
+          LEVEL08.CK2,
+          LEVEL09.CK2,
+          LEVEL10.CK2,
+          LEVEL11.CK2,
+          LEVEL12.CK2,
+          LEVEL13.CK2,
+          LEVEL14.CK2,
+          LEVEL15.CK2,
+          LEVEL16.CK2,
+          LEVEL80.CK2,
+          LEVEL81.CK2,
+          LEVEL90.CK2,
+          skree.bat,
+          skree.pat,
+          STORYTXT.CK2,
+        ]
 recipe:
   type: batch
   file: skree.bat

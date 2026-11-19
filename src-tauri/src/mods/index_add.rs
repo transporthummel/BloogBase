@@ -490,14 +490,18 @@ pub(super) fn fingerprint(
     }))
 }
 
-/// `fingerprint` as YAML lines in a download.
+/// `fingerprint` as YAML lines in a download, the file list wrapped as
+/// Prettier wraps it past 100 columns (`format:check` in CI).
 pub(super) fn fingerprint_yaml(f: &Fingerprint) -> String {
     let files: Vec<String> = f.files.iter().map(|n| scalar(n)).collect();
-    format!(
-        "    fingerprint:\n      sha256: {}\n      files: [{}]\n",
-        f.sha256,
-        files.join(", ")
-    )
+    let line = format!("      files: [{}]", files.join(", "));
+    let files = if line.len() <= 100 {
+        line
+    } else {
+        let items: String = files.iter().map(|n| format!("          {n},\n")).collect();
+        format!("      files:\n        [\n{items}        ]")
+    };
+    format!("    fingerprint:\n      sha256: {}\n{files}\n", f.sha256)
 }
 
 fn quoted(s: &str) -> String {
@@ -1002,6 +1006,18 @@ mod tests {
 
     const URL: &str =
         "https://files.shikadi.net/keenwiki/mods/Keen4/m.a.aurora_v1.2.k4.2023-08-23.zip";
+
+    #[test]
+    fn long_fingerprint_lists_wrap_as_prettier_wraps_them() {
+        let f = |n: usize| Fingerprint {
+            sha256: "ab".into(),
+            files: (0..n).map(|i| format!("LEVEL{i:02}.CK4")).collect(),
+        };
+        assert!(fingerprint_yaml(&f(6)).ends_with("      files: [LEVEL00.CK4, LEVEL01.CK4, LEVEL02.CK4, LEVEL03.CK4, LEVEL04.CK4, LEVEL05.CK4]\n"));
+        assert!(fingerprint_yaml(&f(7)).ends_with(
+            "      files:\n        [\n          LEVEL00.CK4,\n          LEVEL01.CK4,\n          LEVEL02.CK4,\n          LEVEL03.CK4,\n          LEVEL04.CK4,\n          LEVEL05.CK4,\n          LEVEL06.CK4,\n        ]\n"
+        ));
+    }
 
     fn page() -> WikiMod {
         WikiMod {

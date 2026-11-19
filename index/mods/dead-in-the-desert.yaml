@@ -22,7 +22,26 @@ downloads:
     size: 908958
     fingerprint:
       sha256: 7b7a8becd9d8d144d7c12725d8efce745cf562e41bb608b3e105f4e71ceb8eb8
-      files: [AUDIO.CK6, AUDIODCT.CK6, AUDIOHED.CK6, CK6LOAD.BIN, CK6PATCH.EXE, DitD.PAT, editmaps.ck6, EGAGRAPH.CK6, EGAHEAD.CK6, GAMEMAPS.CK6, KEEN6.EXE, Keen6.tli, KEEN8.BAT, maphead.ck6, PAT.PAT, play.bat, story.ck6]
+      files:
+        [
+          AUDIO.CK6,
+          AUDIODCT.CK6,
+          AUDIOHED.CK6,
+          CK6LOAD.BIN,
+          CK6PATCH.EXE,
+          DitD.PAT,
+          editmaps.ck6,
+          EGAGRAPH.CK6,
+          EGAHEAD.CK6,
+          GAMEMAPS.CK6,
+          KEEN6.EXE,
+          Keen6.tli,
+          KEEN8.BAT,
+          maphead.ck6,
+          PAT.PAT,
+          play.bat,
+          story.ck6,
+        ]
 # Brings an executable and all of the game's files: plays on any copy of it.
 standalone: true
 recipe:

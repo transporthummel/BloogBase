@@ -19,7 +19,23 @@ downloads:
     size: 355163
     fingerprint:
       sha256: 5592872876924618116a145541cd62f2344e180e1a54bc169142e7718d6f13aa
-      files: [dreams.PAT, EGAHEAD.DRE, KDREAMS.AUD, KDREAMS.CMP, KDREAMS.DAT, KDREAMS.EGA, KDREAMS.EXE, KDREAMS.MAP, KDRPATCH.EXE, KDRplus.bat, KEEN7.PAT, KeenD.tli, MAPDICT.CK7, maphead.ck7]
+      files:
+        [
+          dreams.PAT,
+          EGAHEAD.DRE,
+          KDREAMS.AUD,
+          KDREAMS.CMP,
+          KDREAMS.DAT,
+          KDREAMS.EGA,
+          KDREAMS.EXE,
+          KDREAMS.MAP,
+          KDRPATCH.EXE,
+          KDRplus.bat,
+          KEEN7.PAT,
+          KeenD.tli,
+          MAPDICT.CK7,
+          maphead.ck7,
+        ]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:
