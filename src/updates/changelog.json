@@ -15,7 +15,8 @@
       "Mods from the mod list are recognised unpacked too, and matching ones in your library get its details and updates.",
       "A mod's page shows an update from the mod list by itself.",
       "Other versions of a mod from the mod list are installed alongside it instead of replacing it.",
-      "Keen 1–3 mods with level files of 64 KB or more, like Keen 0 April Fools, no longer crash DOSBox on quitting."
+      "Keen 1–3 mods with level files of 64 KB or more, like Keen 0 April Fools, no longer crash DOSBox on quitting.",
+      "Text fields no longer underline words as misspelled."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -32,7 +33,8 @@
       "Mods aus der Modliste werden auch entpackt erkannt, und passende Mods in deiner Bibliothek bekommen ihre Angaben und Updates.",
       "Die Seite einer Mod aus der Modliste zeigt ein Update von selbst an.",
       "Andere Versionen einer Mod aus der Modliste werden neben ihr installiert, statt sie zu ersetzen.",
-      "Keen-1–3-Mods mit Leveldateien ab 64 KB, etwa Keen 0 April Fools, bringen DOSBox beim Beenden nicht mehr zum Absturz."
+      "Keen-1–3-Mods mit Leveldateien ab 64 KB, etwa Keen 0 April Fools, bringen DOSBox beim Beenden nicht mehr zum Absturz.",
+      "Textfelder unterstreichen keine Wörter mehr als falsch geschrieben."
     ]
   },
   "releases": [
