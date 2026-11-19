@@ -167,13 +167,32 @@ fn index_entries_say_whether_they_bring_their_game() {
                 continue;
             }
             checked += 1;
-            let info = match inspect(&path, Some(&entry.game)) {
-                Ok(i) => i,
-                Err(err) => {
-                    wrong.push(format!("{}: {err}", entry.id));
-                    continue;
-                }
-            };
+            // A launcher's root holds no game; the folder it played from
+            // before, or its first, holds one.
+            let folder = entry.root.as_ref().map(|r| {
+                let dir = entry
+                    .save_dirs
+                    .iter()
+                    .find(|d| d.old_root)
+                    .or(entry.save_dirs.first())
+                    .map_or("", |d| d.dir.as_str());
+                [r.as_str(), dir]
+                    .into_iter()
+                    .filter(|p| !p.is_empty())
+                    .collect::<Vec<_>>()
+                    .join("/")
+            });
+            let source = Source::open(&path).unwrap();
+            let info =
+                match analyze::analyze_in(&source, &path, Some(&entry.game), folder.as_deref())
+                    .map(|a| a.info)
+                {
+                    Ok(i) => i,
+                    Err(err) => {
+                        wrong.push(format!("{}: {err}", entry.id));
+                        continue;
+                    }
+                };
             let says = (entry.standalone, entry.requires_game);
             let is = (info.complete, info.complete && !info.standalone);
             if says != is {
@@ -214,11 +233,12 @@ fn index_fingerprints_are_those_of_the_downloads() {
                 continue;
             }
             let source = Source::open(&path).unwrap();
-            let found = analyze::analyze(&source, &path, Some(&entry.game))
-                .map_err(|e| e.to_string())
-                .and_then(|a| {
-                    super::index_add::fingerprint(&source, &a).map_err(|e| e.to_string())
-                });
+            let found =
+                analyze::analyze_in(&source, &path, Some(&entry.game), entry.root.as_deref())
+                    .map_err(|e| e.to_string())
+                    .and_then(|a| {
+                        super::index_add::fingerprint(&source, &a).map_err(|e| e.to_string())
+                    });
             let found = match found {
                 Ok(Some(f)) => f,
                 Ok(None) => {

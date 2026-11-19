@@ -24,6 +24,7 @@
 - A mod from the mod list shows its update on its page by itself, with an "Update" button, as the list is checked at every start and every few hours. "Check for updates" is left only for mods from KeenWiki; it no longer offers a KeenWiki download for mods from the list, which took them out of the list with an untested setup.
 - Mods from the mod list can no longer be replaced with a local copy, and adding another version of one (same name or KeenWiki page) installs it alongside instead of offering to replace it. They update from the list; an old beta goes beside them with its own saves.
 - Text fields no longer check spelling, so names, paths, seeds and Keen terms aren't underlined in red.
+- Revival of Bliss starts its own menu: play as Keen or Craig, and the password-locked epilogue. Each keeps its saves and settings in its own folder; the Saves tab groups them under "Keen", "Craig" and "Epilogue", global settings reach all three, and the cover is Craig's title screen. Copies installed before move over at the next index check, their saves into Craig's folder. The index has the fields `root`, `saveDirs` and `coverFrom` for mods like it.
 
 ### Bug Fixes
 

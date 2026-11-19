@@ -21,30 +21,27 @@ downloads:
     sha256: 374bbf6f22c5c1443b9f628d552555d0988a291ba52738e32a3485d1bd709c8c
     size: 3729328
     fingerprint:
-      sha256: 68c1713292d4a6b4027ec440e1c7c3ff16c5582e9c746d1e09d58326ae5dca61
-      files:
-        [
-          abiathar.pat,
-          AUDIO.CK4,
-          AUDIODCT.CK4,
-          AUDIOHED.CK4,
-          CK4LOAD.BIN,
-          CK4PATCH.EXE,
-          EGADICT.CK4,
-          EGAGRAPH.CK4,
-          EGAHEAD.CK4,
-          file.bat,
-          GAMEMAPS.CK4,
-          Keen4.tli,
-          KEEN4E.EXE,
-          maphead.ck4,
-          REVIVAL.bat,
-          STORY.CK4,
-          WRAPPER.COM,
-        ]
+      sha256: e3b07be38b1bcc3c0bb97564dc4108118fdf427f33dfef4a225458a54ab12543
+      files: [LAUNCHER.DAT, MKLAUNCH.EXE, play.bat, "_lfilea.bat", "_LFILEB.BAT"]
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
+# play.bat runs the launcher's menu (MKLAUNCH.EXE): Keen, Craig and the
+# password-locked epilogue, each a whole game in its own folder (decided
+# 2026-11-19, PLAN.md §9.7).
+root: ""
 recipe:
-  type: patch
-  patcher: CK4PATCH.EXE
-  patch: abiathar.pat
+  type: batch
+  file: play.bat
+saveDirs:
+  - dir: KEEN
+    name: Keen
+  - dir: CRAIG
+    name: Craig
+    # Installs from before played CRAIG/ alone.
+    oldRoot: true
+  - dir: FUTURE
+    name: Epilogue
+    translations: { de: { name: Epilog } }
+coverFrom: { dir: CRAIG, patch: abiathar.pat }
+# Older apps would look for play.bat in CRAIG/.
+minAppVersion: 1.4.0
