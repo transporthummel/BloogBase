@@ -39,7 +39,7 @@ export async function forgetRemovedCovers(client: QueryClient) {
 type CoverData = { src: string; scrambled: boolean; retried?: boolean } | null;
 
 async function loadCover(profileId: string, retried = false): Promise<CoverData> {
-  const cover = await unwrap(commands.profileCover(profileId));
+  const cover = await unwrap(commands.profileCover(profileId, null));
   if (cover === null) return null;
   // A new extraction keeps the file name, so the URL has to change.
   return {

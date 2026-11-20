@@ -311,6 +311,22 @@ pub fn active_files(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<std::path
     Ok(paths.mod_files(mod_id, variant.as_deref()))
 }
 
+/// The recipe the index entry of mod `mod_id` starts with on the game
+/// version `version_id`: the default variant's, and that of any other
+/// variant without its own.
+pub fn entry_recipe(db: &Db, mod_id: &str, version_id: Option<&str>) -> Result<Recipe> {
+    let (recipe, by_version, game_id): (String, Option<String>, String) = db.conn().query_row(
+        "SELECT recipe_json, version_recipes_json, game_id FROM mods WHERE id = ?1",
+        [mod_id],
+        |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+    )?;
+    let recipe: Recipe = serde_json::from_str(&recipe).unwrap_or(Recipe::Episode);
+    let by_version: VersionRecipes = by_version
+        .and_then(|j| serde_json::from_str(&j).ok())
+        .unwrap_or_default();
+    Ok(recipe::for_version(&recipe, &by_version, &game_id, version_id).clone())
+}
+
 /// The program whose title screen is the mod's cover, if its index entry
 /// names one.
 pub fn cover_program(db: &Db, mod_id: &str) -> Result<Option<String>> {

@@ -59,7 +59,7 @@ export const commands = {
 	 *  The profile's title screen as a PNG path, extracted on first use; `None`
 	 *  keeps the placeholder.
 	 */
-	profileCover: (profileId: string) => typedError<ProfileCover | null, CommandError>(__TAURI_INVOKE("profile_cover", { profileId })),
+	profileCover: (profileId: string, variant: string | null) => typedError<ProfileCover | null, CommandError>(__TAURI_INVOKE("profile_cover", { profileId, variant })),
 	deleteScreenshot: (profileId: string, file: string) => typedError<null, CommandError>(__TAURI_INVOKE("delete_screenshot", { profileId, file })),
 	/**  Videos recorded in DOSBox, newest first. */
 	listVideos: (profileId: string) => typedError<Video[], CommandError>(__TAURI_INVOKE("list_videos", { profileId })),

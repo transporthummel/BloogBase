@@ -366,7 +366,24 @@ pub async fn list_variants(
 ) -> CommandResult<Option<crate::variants::ProfileVariants>> {
     // Without holding the profile: that would show it as running.
     blocking(move || {
-        crate::variants::list(&app.state::<AppPaths>(), &app.state::<Db>(), &profile_id)
+        let (paths, db) = (app.state::<AppPaths>(), app.state::<Db>());
+        let Some(mut list) = crate::variants::list(&paths, &db, &profile_id)? else {
+            return Ok(None);
+        };
+        // Thumbnails show nothing where every variant has the same cover.
+        let covers: Vec<Option<String>> = list
+            .variants
+            .iter()
+            .map(|v| {
+                covers::cover_of(&paths, &db, &profile_id, Some(&v.variant.id))
+                    .ok()
+                    .flatten()
+                    .and_then(|c| std::fs::read(c.png).ok())
+                    .map(|data| crate::detect::sha256_hex(&data))
+            })
+            .collect();
+        list.same_covers = covers.windows(2).all(|w| w[0] == w[1]);
+        Ok(Some(list))
     })
     .await
 }
@@ -519,14 +536,14 @@ pub struct ProfileCover {
 pub async fn profile_cover(
     app: AppHandle,
     profile_id: String,
+    variant: Option<String>,
 ) -> CommandResult<Option<ProfileCover>> {
     blocking(move || {
+        let (paths, db) = (app.state::<AppPaths>(), app.state::<Db>());
         Ok(
-            covers::cover(&app.state::<AppPaths>(), &app.state::<Db>(), &profile_id)?.map(|c| {
-                ProfileCover {
-                    path: c.png.display().to_string(),
-                    scrambled: c.scrambled,
-                }
+            covers::cover_of(&paths, &db, &profile_id, variant.as_deref())?.map(|c| ProfileCover {
+                path: c.png.display().to_string(),
+                scrambled: c.scrambled,
             }),
         )
     })

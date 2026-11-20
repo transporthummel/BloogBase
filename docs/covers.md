@@ -22,6 +22,12 @@ fingerprint is unchanged, the stamp's result is used again, `none` included.
 A mod waiting for its game is tried once with its own files, then again
 once the game is there. Removing a profile deletes both files.
 
+A mod with variants (PLAN.md §9.7) has a cover per variant,
+`covers/<profile>@<variant>.png`, made from that variant's files and recipe,
+and its `cover` program if it names one. The library and the mod page show
+the one of the variant played; the variant picker compares them and leaves
+out the thumbnails when they are all the same.
+
 ## What the mod's patch file says
 
 When the recipe applies a patch file (its own, or the first `.PAT` a program

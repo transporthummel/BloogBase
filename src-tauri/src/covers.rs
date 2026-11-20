@@ -36,14 +36,46 @@ pub struct Cover {
 
 /// The profile's cover PNG, extracting it first if its files changed since
 /// the last time. `None` if the title can't be read from them.
+#[cfg(test)]
 pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<Cover>> {
-    let (profile, layers) = profiles::get(db, profile_id)?;
+    cover_of(paths, db, profile_id, None)
+}
+
+/// [`cover`] of a variant of the profile's mod (§9.7); without one, of the
+/// variant played.
+pub fn cover_of(
+    paths: &AppPaths,
+    db: &Db,
+    profile_id: &str,
+    variant: Option<&str>,
+) -> Result<Option<Cover>> {
+    let (profile, mut layers) = profiles::get(db, profile_id)?;
     let game = catalog::game(&profile.game_id)
         .ok_or_else(|| Error::NotFound(format!("game {}", profile.game_id)))?;
-    let (cover_program, cover_from) = match &profile.mod_id {
+    let (mut cover_program, cover_from) = match &profile.mod_id {
         Some(id) => (mods::cover_program(db, id)?, mods::cover_from(db, id)?),
         None => (None, None),
     };
+    let variant = match variant {
+        Some(id) => Some(
+            crate::variants::definition(db, profile_id)?
+                .into_iter()
+                .find(|v| v.id == id)
+                .ok_or_else(|| Error::NotFound(format!("variant {id} of {profile_id}")))?,
+        ),
+        None => profile.active_variant.clone(),
+    };
+    if let (Some(v), Some(m), Some(mod_id)) = (&variant, layers.mod_layer.as_mut(), &profile.mod_id)
+    {
+        if profile.active_variant.as_ref().is_none_or(|a| a.id != v.id) {
+            m.files = paths.mod_files(mod_id, Some(&v.id));
+            m.recipe = match &v.recipe {
+                Some(r) => r.clone(),
+                None => mods::entry_recipe(db, mod_id, profile.version_id.as_deref())?,
+            };
+        }
+        cover_program = v.cover.clone().or(cover_program);
+    }
     // A launcher's root holds no game: the cover is the title one of its
     // folders shows, played with its patch.
     let from_recipe = cover_from.as_ref().map(|c| Recipe::Patch {
@@ -59,7 +91,7 @@ pub fn cover(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<Cover
     let sources = cover_sources(&layers.sources(), cover_from.as_ref());
     let files = Files::new(&sources.iter().map(PathBuf::as_path).collect::<Vec<_>>())?;
 
-    let (png, stamp) = cache_files(paths, profile_id);
+    let (png, stamp) = cache_files(paths, profile_id, variant.as_ref().map(|v| v.id.as_str()));
     let mut key = files.fingerprint(recipe);
     if let Some(program) = &cover_program {
         key = format!("{key}+{program}");
@@ -128,9 +160,20 @@ fn cover_sources(sources: &[&Path], cover_from: Option<&CoverFrom>) -> Vec<PathB
         .collect()
 }
 
-/// Forgets the cover of a removed profile.
+/// Forgets the cover of a removed profile, and those of its variants.
 pub fn remove(paths: &AppPaths, profile_id: &str) {
-    for file in <[PathBuf; 2]>::from(cache_files(paths, profile_id)) {
+    let prefix = format!("{profile_id}@");
+    let of_variants = fs::read_dir(dir(paths))
+        .into_iter()
+        .flatten()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name()
+                .is_some_and(|n| n.to_string_lossy().starts_with(&prefix))
+        });
+    let own = <[PathBuf; 2]>::from(cache_files(paths, profile_id, None));
+    for file in own.into_iter().chain(of_variants) {
         if let Err(e) = fs::remove_file(&file)
             && e.kind() != io::ErrorKind::NotFound
         {
@@ -144,12 +187,17 @@ pub fn dir(paths: &AppPaths) -> PathBuf {
     paths.cache.join("covers")
 }
 
-/// The PNG and the stamp saying which files it was made from.
-fn cache_files(paths: &AppPaths, profile_id: &str) -> (PathBuf, PathBuf) {
+/// The PNG and the stamp saying which files it was made from; a variant's
+/// are `<profile>@<variant>`.
+fn cache_files(paths: &AppPaths, profile_id: &str, variant: Option<&str>) -> (PathBuf, PathBuf) {
     let dir = dir(paths);
+    let name = match variant {
+        Some(v) => format!("{profile_id}@{v}"),
+        None => profile_id.to_string(),
+    };
     (
-        dir.join(format!("{profile_id}.png")),
-        dir.join(format!("{profile_id}.stamp")),
+        dir.join(format!("{name}.png")),
+        dir.join(format!("{name}.stamp")),
     )
 }
 
@@ -809,7 +857,7 @@ mod tests {
 
         // The test game's files are stand-ins, so there's no title.
         assert_eq!(cover(&paths, &db, "keen4-1").unwrap(), None);
-        let (png, stamp) = cache_files(&paths, "keen4-1");
+        let (png, stamp) = cache_files(&paths, "keen4-1", None);
         let first = fs::read_to_string(&stamp).unwrap();
         assert!(first.ends_with(" none"));
         assert!(!png.exists());
@@ -819,9 +867,14 @@ mod tests {
         assert_eq!(cover(&paths, &db, "keen4-1").unwrap(), None);
         assert_ne!(fs::read_to_string(&stamp).unwrap(), first);
 
+        // A variant's cover goes with the profile's.
+        let (_, of_variant) = cache_files(&paths, "keen4-1", Some("hard"));
+        fs::write(&of_variant, "x").unwrap();
+        assert!(of_variant.ends_with("keen4-1@hard.stamp"));
         remove(&paths, "keen4-1");
-        assert!(!stamp.exists());
+        assert!(!stamp.exists() && !of_variant.exists());
         assert!(cover(&paths, &db, "nope").is_err());
+        assert!(cover_of(&paths, &db, "keen4-1", Some("hard")).is_err());
     }
 
     #[test]
