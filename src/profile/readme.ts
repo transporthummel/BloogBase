@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { commands } from "../bindings";
 import { unwrap } from "../ipc";
 
@@ -7,19 +7,32 @@ export const readmeKeys = ["readme"] as const;
 export const readmeKey = (modId: string) => [...readmeKeys, modId] as const;
 
 /**
- * The documents of a profile, the README first: those shipped with its mod,
- * else those of its game. Off for a mod waiting for its game's files.
+ * The documents of a profile, the README first: those shipped with its mod
+ * (with the variant played, its own if it has any), else those of its game.
+ * Off for a mod waiting for its game's files.
  */
 export function useReadmes(
-  profile: { modId: string | null; installId: string | null } | undefined,
+  profile:
+    | {
+        modId: string | null;
+        installId: string | null;
+        activeVariant?: { id: string } | null;
+      }
+    | undefined,
 ) {
   const modId = profile?.modId ?? null;
   const installId = profile?.installId ?? null;
+  // Another variant, other documents: under readmeKey, which invalidates all.
+  const variant = profile?.activeVariant?.id ?? null;
   return useQuery({
-    queryKey: modId !== null ? readmeKey(modId) : [...readmeKeys, "game", installId ?? ""],
+    queryKey:
+      modId !== null ? [...readmeKey(modId), variant] : [...readmeKeys, "game", installId ?? ""],
     queryFn: () =>
       unwrap(modId !== null ? commands.modReadmes(modId) : commands.gameReadmes(installId!)),
     enabled: profile !== undefined && (modId !== null || installId !== null),
+    // Those of the variant played before until another's are read, so the
+    // page's tabs don't wait for them again.
+    placeholderData: modId !== null ? keepPreviousData : undefined,
   });
 }
 

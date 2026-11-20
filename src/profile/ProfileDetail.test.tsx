@@ -1744,6 +1744,31 @@ test("the variant's name under the title leads to it in the Variants tab", async
   expect(scrolled[0]).toHaveTextContent("Easy");
 });
 
+test("the Readme tab follows the variant played", async () => {
+  withVariants();
+  const readme = (text: string) =>
+    ok([{ file: "CLOUDS.TXT", text, html: false, pdf: false, word: false }]);
+  vi.mocked(commands.modReadmes).mockResolvedValue(readme("Easy and hard, in black and white."));
+  renderDetail();
+  expect(await screen.findByText("Easy and hard, in black and white.")).toBeInTheDocument();
+
+  // Hard is made current: the variant has its own documents.
+  const listed = await commands.listProfiles();
+  const variants = await commands.listVariants("keen4-1");
+  if (listed.status !== "ok" || variants.status !== "ok") throw new Error("mocked above");
+  const hard = variants.data!.variants[0].variant;
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([{ ...listed.data[0], activeVariant: hard }]),
+  );
+  vi.mocked(commands.modReadmes).mockResolvedValue(readme("Now in green."));
+  await userEvent.click(screen.getByRole("tab", { name: "Variants 2" }));
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Make Hard current without playing" }),
+  );
+  await userEvent.click(screen.getByRole("tab", { name: "Readme" }));
+  expect(await screen.findByText("Now in green.")).toBeInTheDocument();
+});
+
 test("the Variants tab lists them and makes one current without playing", async () => {
   withVariants();
   renderDetail();
