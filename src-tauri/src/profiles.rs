@@ -297,7 +297,15 @@ pub fn list(db: &Db, is_running: impl Fn(&str) -> bool) -> Result<Vec<Profile>> 
                         .and_then(|n| {
                             let parked = match (p.worlds, p.variant_count > 0) {
                                 (true, _) => parked_saves(game, &row.layers, "worlds")?,
-                                (_, true) => parked_saves(game, &row.layers, "variants")?,
+                                (_, true) => match &p.active_variant {
+                                    // Those they came with count too.
+                                    Some(v) => crate::variants::others_save_count(
+                                        game,
+                                        &row.layers,
+                                        &v.id,
+                                    )?,
+                                    None => parked_saves(game, &row.layers, "variants")?,
+                                },
                                 _ => 0,
                             };
                             Ok(n + parked)

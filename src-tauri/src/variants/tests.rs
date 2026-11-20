@@ -38,8 +38,33 @@ const ARCHIVE: &[(&str, &[u8])] = &[
     ("HARD/LEVEL01.CK4", b"hard"),
 ];
 
+/// Like [`ARCHIVE`], with a save that comes with Easy.
+const SHIPPED: &[(&str, &[u8])] = &[
+    ("EASY/CK4PATCH.EXE", b"patcher"),
+    (
+        "EASY/x.pat",
+        b"%ext ck4
+%version 1.4
+",
+    ),
+    ("EASY/LEVEL01.CK4", b"easy"),
+    ("EASY/SAVEGAM1.CK4", b"the author's save"),
+    ("HARD/CK4PATCH.EXE", b"patcher"),
+    (
+        "HARD/x.pat",
+        b"%ext ck4
+%version 1.4
+",
+    ),
+    ("HARD/LEVEL01.CK4", b"hard"),
+];
+
 /// Keen 4 with a mod in two variants, Hard (the default) and Easy.
 fn setup() -> T {
+    setup_with(ARCHIVE)
+}
+
+fn setup_with(archive: &[(&str, &[u8])]) -> T {
     let tmp = tempfile::tempdir().unwrap();
     let paths = AppPaths::new(tmp.path().join("data"));
     paths.ensure().unwrap();
@@ -54,7 +79,7 @@ fn setup() -> T {
         paths,
         db,
     };
-    let profile = t.install();
+    let profile = t.install(archive);
     let state = profiles::get(&t.db, &profile).unwrap().1.upper;
     fs::create_dir_all(&state).unwrap();
     T {
@@ -65,9 +90,9 @@ fn setup() -> T {
 }
 
 impl T {
-    fn install(&self) -> String {
+    fn install(&self, archive: &[(&str, &[u8])]) -> String {
         let zip = self.tmp.path().join("levels.zip");
-        write_zip(&zip, ARCHIVE);
+        write_zip(&zip, archive);
         let entry: IndexEntry = serde_json::from_str(ENTRY).unwrap();
         let m = mods::install_curated(
             &self.paths,
@@ -140,6 +165,40 @@ fn saves_belong_to_a_variant_and_settings_to_the_mod() {
 }
 
 #[test]
+fn saves_a_variant_comes_with_count_as_its_own() {
+    let t = setup_with(SHIPPED);
+    let counts = |t: &T| {
+        let card = profiles::list(&t.db, |_| false)
+            .unwrap()
+            .into_iter()
+            .find(|p| p.id == t.profile)
+            .unwrap()
+            .save_count;
+        let rows = t
+            .list()
+            .variants
+            .iter()
+            .map(|v| (v.active, v.saves))
+            .collect();
+        (rows, card)
+    };
+    // Easy's save counts while Hard is played, and while Easy is.
+    assert_eq!(counts(&t), (vec![(true, 0), (false, 1)], 1));
+    t.switch("easy");
+    assert_eq!(counts(&t), (vec![(false, 0), (true, 1)], 1));
+
+    // Deleted, it stays gone when another variant is played.
+    let marker = "DBOVERLAY_DEL_SAVEGAM1.CK4";
+    fs::write(t.state.join(marker), b"").unwrap();
+    assert_eq!(counts(&t), (vec![(false, 0), (true, 0)], 0));
+    t.switch("hard");
+    assert!(!t.state.join(marker).exists());
+    assert_eq!(counts(&t), (vec![(true, 0), (false, 0)], 0));
+    t.switch("easy");
+    assert!(t.state.join(marker).is_file());
+}
+
+#[test]
 fn a_switch_cut_short_is_finished_next_time() {
     let t = setup();
     t.save("hard save");
@@ -195,7 +254,7 @@ fn removing_the_mod_with_its_saves_keeps_every_variant() {
     mods::delete(&t.paths, &t.db, &mod_id, true).unwrap();
     assert!(!dir(&t.paths, &t.profile).exists());
 
-    assert_eq!(t.install(), t.profile);
+    assert_eq!(t.install(ARCHIVE), t.profile);
     assert_eq!(t.list().active.as_deref(), Some("hard"));
     let offer = backups::earlier(&t.db, &t.profile).unwrap().unwrap();
     backups::answer_earlier(&t.paths, &t.db, &t.profile, offer.backup.id, true).unwrap();

@@ -11,12 +11,14 @@ use rusqlite::{OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+use crate::catalog::Game;
 use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::mod_index::Variant;
 use crate::paths::AppPaths;
-use crate::saves;
+use crate::profiles::{self, Layers};
 use crate::slots::{self, ArchiveFiles, Owner, Slots};
+use crate::{overlay_view, saves};
 
 /// A variant as the Variants tab and the picker show it.
 #[derive(Debug, Clone, Serialize, Type)]
@@ -88,21 +90,63 @@ pub fn dir(paths: &AppPaths, profile_id: &str) -> PathBuf {
     paths.profiles.join(profile_id).join("variants")
 }
 
+/// The folder holding a mod's variants, each in a folder named by its id;
+/// `None` while the mod waits for its game or has no variant chosen.
+fn installed(layers: &Layers) -> Option<&Path> {
+    let files = &layers.mod_layer.as_ref()?.files;
+    let parent = files.parent()?;
+    parent
+        .file_name()
+        .is_some_and(|n| n == "variants")
+        .then_some(parent)
+}
+
+/// The saves of a variant as DOS sees them: those it came with (`files`,
+/// unless the player deleted them) and the player's own (`saved`, its
+/// slot or `state/`). Variants keep saves in the drive root only.
+fn save_count(game: &Game, files: &Path, saved: &Path) -> Result<u32> {
+    Ok(overlay_view::list_root(files, saved)?
+        .iter()
+        .filter(|e| saves::is_save(game, &e.path))
+        .count() as u32)
+}
+
+/// For the library card: the saves of the variants not played, those
+/// they came with included.
+pub(crate) fn others_save_count(game: &Game, layers: &Layers, active: &str) -> Result<u32> {
+    let (Some(all), Some(profile)) = (installed(layers), layers.upper.parent()) else {
+        return Ok(0);
+    };
+    let mut count = 0;
+    for entry in std::fs::read_dir(all)? {
+        let entry = entry?;
+        let id = entry.file_name().to_string_lossy().into_owned();
+        if entry.file_type()?.is_dir() && id != active {
+            count += save_count(game, &entry.path(), &profile.join("variants").join(&id))?;
+        }
+    }
+    Ok(count)
+}
+
 /// A profile's saves per variant: the game as it plays and `state/`.
 struct Ctx<'a> {
     db: &'a Db,
     profile_id: &'a str,
     owner: Owner,
     dir: PathBuf,
+    /// The folder of the mod's variants ([`installed`]).
+    installed: Option<PathBuf>,
 }
 
 impl<'a> Ctx<'a> {
     fn new(paths: &'a AppPaths, db: &'a Db, profile_id: &'a str) -> Result<Self> {
+        let (_, layers) = profiles::get(db, profile_id)?;
         Ok(Ctx {
             db,
             profile_id,
             owner: Owner::of(db, profile_id)?,
             dir: dir(paths, profile_id),
+            installed: installed(&layers).map(Path::to_path_buf),
         })
     }
 }
@@ -118,9 +162,26 @@ impl Slots for Ctx<'_> {
         &self.owner
     }
 
-    /// Saves belong to a variant; settings stay with the mod.
+    /// Saves belong to a variant, and so do the markers hiding the saves
+    /// it came with; settings stay with the mod.
     fn belongs(&self, name: &str) -> bool {
-        saves::is_save(self.owner.game, name)
+        let game = self.owner.game;
+        saves::is_save(game, name)
+            || overlay_view::deleted_name(name).is_some_and(|n| saves::is_save(game, n))
+    }
+
+    fn save_count(&self, key: &String, active: bool) -> Result<u32> {
+        let saved = match active {
+            true => self.owner.upper.clone(),
+            false => self.slot_dir(key),
+        };
+        match &self.installed {
+            Some(all) => save_count(self.owner.game, &all.join(key), &saved),
+            None => Ok(slots::file_names(&saved)?
+                .iter()
+                .filter(|n| saves::is_save(self.owner.game, n))
+                .count() as u32),
+        }
     }
 
     fn active(&self) -> Result<Option<String>> {
