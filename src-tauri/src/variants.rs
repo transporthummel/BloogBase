@@ -5,21 +5,18 @@
 //! others' wait in `variants/<id>/` next to it ([`crate::slots`]).
 //! Settings (DOSBox, the game's keys and sound, high scores) stay per mod.
 
-use std::fs;
 use std::path::{Path, PathBuf};
 
 use rusqlite::{OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::catalog::Game;
 use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::mod_index::Variant;
 use crate::paths::AppPaths;
-use crate::profiles;
 use crate::saves;
-use crate::slots::{Slots, file_names};
+use crate::slots::{self, ArchiveFiles, Owner, Slots};
 
 /// A variant as the Variants tab and the picker show it.
 #[derive(Debug, Clone, Serialize, Type)]
@@ -95,33 +92,18 @@ pub fn dir(paths: &AppPaths, profile_id: &str) -> PathBuf {
 struct Ctx<'a> {
     db: &'a Db,
     profile_id: &'a str,
-    game: &'static Game,
-    upper: PathBuf,
+    owner: Owner,
     dir: PathBuf,
 }
 
 impl<'a> Ctx<'a> {
     fn new(paths: &'a AppPaths, db: &'a Db, profile_id: &'a str) -> Result<Self> {
-        let (profile, layers) = profiles::get(db, profile_id)?;
-        let game = saves::profile_game(&profile.game_id, &layers)?;
         Ok(Ctx {
             db,
             profile_id,
-            game,
-            upper: layers.upper,
+            owner: Owner::of(db, profile_id)?,
             dir: dir(paths, profile_id),
         })
-    }
-
-    fn save_count(&self, id: &str, active: bool) -> Result<u32> {
-        let names = match active {
-            true => file_names(&self.upper)?,
-            false => file_names(&self.dir.join(id))?,
-        };
-        Ok(names
-            .iter()
-            .filter(|n| saves::is_save(self.game, n))
-            .count() as u32)
     }
 }
 
@@ -132,13 +114,13 @@ impl Slots for Ctx<'_> {
         &self.dir
     }
 
-    fn upper(&self) -> &Path {
-        &self.upper
+    fn owner(&self) -> &Owner {
+        &self.owner
     }
 
     /// Saves belong to a variant; settings stay with the mod.
     fn belongs(&self, name: &str) -> bool {
-        saves::is_save(self.game, name)
+        saves::is_save(self.owner.game, name)
     }
 
     fn active(&self) -> Result<Option<String>> {
@@ -227,9 +209,6 @@ fn last_played(db: &Db, profile_id: &str, id: &str) -> Result<Option<u32>> {
     )?)
 }
 
-/// Archive entries: path inside the archive, content.
-pub type ArchiveFiles = Vec<(String, Vec<u8>)>;
-
 /// Where a removal backup keeps the saves of the variants not played:
 /// `bloogbase-variants/<id>/<file>`.
 pub const ARCHIVE_DIR: &str = "bloogbase-variants";
@@ -253,23 +232,7 @@ pub fn for_removal(
         return Ok(None);
     }
     Ctx::new(paths, db, profile_id)?.recover()?;
-    let dir = dir(paths, profile_id);
-    let mut files = Vec::new();
-    if let Ok(entries) = fs::read_dir(&dir) {
-        for e in entries.flatten() {
-            if !e.file_type()?.is_dir() {
-                continue;
-            }
-            let id = e.file_name().to_string_lossy().into_owned();
-            for name in file_names(&e.path())? {
-                files.push((
-                    format!("{ARCHIVE_DIR}/{id}/{name}"),
-                    fs::read(e.path().join(&name))?,
-                ));
-            }
-        }
-    }
-    files.sort_by(|a, b| a.0.cmp(&b.0));
+    let files = slots::pack(&dir(paths, profile_id), ARCHIVE_DIR, |_| true)?;
     let active = active(db, profile_id)?;
     Ok(Some((KeptVariants { active }, files)))
 }
@@ -288,21 +251,7 @@ pub fn bring_back(
     let def = definition(db, profile_id)?;
     let has = |id: &str| def.iter().any(|v| v.id == id);
     let active = active(db, profile_id)?;
-    for (name, data) in files {
-        let Some((id, file)) = name
-            .strip_prefix(ARCHIVE_DIR)
-            .and_then(|r| r.strip_prefix('/'))
-            .and_then(|r| r.split_once('/'))
-        else {
-            continue;
-        };
-        if file.contains('/') || id.is_empty() || id.contains(['.', '\\']) {
-            continue;
-        }
-        let dir = dir(paths, profile_id).join(id);
-        fs::create_dir_all(&dir)?;
-        fs::write(dir.join(file), data)?;
-    }
+    slots::unpack(&dir(paths, profile_id), ARCHIVE_DIR, files, |_| true)?;
     if let Some(id) = &kept.active
         && has(id)
         && active.as_deref() != Some(id.as_str())

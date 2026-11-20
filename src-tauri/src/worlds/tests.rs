@@ -4,6 +4,7 @@ use std::fs;
 use super::*;
 use crate::backups;
 use crate::library;
+use crate::profiles;
 use crate::saves::tests::keen4_save;
 use crate::slots::{JOURNAL, Swap, write_journal};
 use crate::source::testutil::*;

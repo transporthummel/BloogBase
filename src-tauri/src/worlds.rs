@@ -16,16 +16,15 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::backups::{self, Contents, Reason};
-use crate::catalog::{Game, glob_match};
+use crate::catalog::glob_match;
 use crate::db::Db;
 use crate::error::{Error, Result};
 use crate::library::now;
 use crate::paths::AppPaths;
-use crate::profiles;
 use crate::recipe::Recipe;
 use crate::saves;
 use crate::settings;
-use crate::slots::{Slots, file_names};
+use crate::slots::{self, ArchiveFiles, Owner, Slots, file_names};
 
 /// How a mod keeps its worlds, from its index entry.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
@@ -272,37 +271,20 @@ struct Ctx<'a> {
     db: &'a Db,
     profile_id: &'a str,
     def: &'a Worlds,
-    game: &'static Game,
-    upper: PathBuf,
+    owner: Owner,
     dir: PathBuf,
 }
 
 impl<'a> Ctx<'a> {
     fn new(paths: &'a AppPaths, db: &'a Db, profile_id: &'a str, def: &'a Worlds) -> Result<Self> {
-        let (profile, layers) = profiles::get(db, profile_id)?;
-        let game = saves::profile_game(&profile.game_id, &layers)?;
         Ok(Ctx {
             paths,
             db,
             profile_id,
             def,
-            game,
-            upper: layers.upper,
+            owner: Owner::of(db, profile_id)?,
             dir: dir(paths, profile_id),
         })
-    }
-
-    /// The saves of a world.
-    fn save_count(&self, id: u32, active: bool) -> Result<u32> {
-        let names = if active {
-            file_names(&self.upper)?
-        } else {
-            file_names(&world_dir(self.paths, self.profile_id, id))?
-        };
-        Ok(names
-            .iter()
-            .filter(|n| saves::is_save(self.game, n))
-            .count() as u32)
     }
 }
 
@@ -313,13 +295,13 @@ impl Slots for Ctx<'_> {
         &self.dir
     }
 
-    fn upper(&self) -> &Path {
-        &self.upper
+    fn owner(&self) -> &Owner {
+        &self.owner
     }
 
     /// Whether a file in `state/` belongs to the world played.
     fn belongs(&self, name: &str) -> bool {
-        self.def.holds(name) || saves::is_save(self.game, name)
+        self.def.holds(name) || saves::is_save(self.owner.game, name)
     }
 
     fn active(&self) -> Result<Option<u32>> {
@@ -335,7 +317,7 @@ impl Slots for Ctx<'_> {
     fn park_none(&self, names: &[String]) -> Result<()> {
         let saves: Vec<String> = names
             .iter()
-            .filter(|n| saves::is_save(self.game, n))
+            .filter(|n| saves::is_save(self.owner.game, n))
             .cloned()
             .collect();
         if !saves.is_empty() {
@@ -353,7 +335,7 @@ impl Slots for Ctx<'_> {
             );
         }
         for name in names {
-            fs::remove_file(self.upper.join(name))?;
+            fs::remove_file(self.owner.upper.join(name))?;
         }
         Ok(())
     }
@@ -420,7 +402,7 @@ pub fn prepare(
                 return Err(Error::NotFound(format!("world {id}")));
             }
             ctx.switch(Some(id))?;
-            if !def.complete(&file_names(&ctx.upper)?) {
+            if !def.complete(&file_names(&ctx.owner.upper)?) {
                 return Err(Error::WorldIncomplete);
             }
             db.conn().execute(
@@ -513,7 +495,7 @@ pub fn after_session(
         return Ok(None);
     };
     let ctx = Ctx::new(paths, db, profile_id, &def)?;
-    let names = file_names(&ctx.upper)?;
+    let names = file_names(&ctx.owner.upper)?;
     if !def.complete(&names) {
         tracing::warn!("{profile_id}: the generator wrote no complete world");
         return Ok(None);
@@ -524,7 +506,7 @@ pub fn after_session(
         .and_then(|s| s.read.as_ref())
         .and_then(|r| {
             let name = names.iter().find(|n| n.eq_ignore_ascii_case(&r.file))?;
-            let text = fs::read(ctx.upper.join(name)).ok()?;
+            let text = fs::read(ctx.owner.upper.join(name)).ok()?;
             number_after(&String::from_utf8_lossy(&text), &r.after)
         });
     let seed = read.or(new.seed);
@@ -569,7 +551,7 @@ pub fn list(paths: &AppPaths, db: &Db, profile_id: &str) -> Result<Option<Profil
     for w in records(db, profile_id)? {
         let is_active = active == Some(w.id);
         worlds.push(World {
-            saves: ctx.save_count(w.id, is_active)?,
+            saves: ctx.save_count(&w.id, is_active)?,
             id: w.id,
             name: w.name,
             seed: w.seed,
@@ -635,7 +617,7 @@ pub fn delete(paths: &AppPaths, db: &Db, profile_id: &str, id: u32) -> Result<()
             )?;
         }
         for name in &names {
-            fs::remove_file(ctx.upper.join(name))?;
+            fs::remove_file(ctx.owner.upper.join(name))?;
         }
         set_active(db, profile_id, None)?;
     } else {
@@ -721,9 +703,6 @@ fn records(db: &Db, profile_id: &str) -> Result<Vec<KeptWorld>> {
     Ok(rows)
 }
 
-/// Archive entries: path inside the archive, content.
-pub type ArchiveFiles = Vec<(String, Vec<u8>)>;
-
 /// Where a removal backup keeps the files of the worlds not played:
 /// `bloogbase-worlds/<id>/<file>`.
 pub const ARCHIVE_DIR: &str = "bloogbase-worlds";
@@ -742,16 +721,9 @@ pub fn for_removal(
     if worlds.is_empty() {
         return Ok(None);
     }
-    let mut files = Vec::new();
-    for w in &worlds {
-        let dir = world_dir(paths, profile_id, w.id);
-        for name in file_names(&dir)? {
-            files.push((
-                format!("{ARCHIVE_DIR}/{}/{name}", w.id),
-                fs::read(dir.join(&name))?,
-            ));
-        }
-    }
+    let files = slots::pack(&dir(paths, profile_id), ARCHIVE_DIR, |key| {
+        worlds.iter().any(|w| w.id.to_string() == key)
+    })?;
     let active = active(db, profile_id)?;
     Ok(Some((KeptWorlds { active, worlds }, files)))
 }
@@ -766,22 +738,9 @@ pub fn bring_back(
     kept: &KeptWorlds,
     files: &[(String, Vec<u8>)],
 ) -> Result<()> {
-    for (name, data) in files {
-        let Some((id, file)) = name
-            .strip_prefix(ARCHIVE_DIR)
-            .and_then(|r| r.strip_prefix('/'))
-            .and_then(|r| r.split_once('/'))
-        else {
-            continue;
-        };
-        let Ok(id) = id.parse::<u32>() else { continue };
-        if file.contains('/') || !kept.worlds.iter().any(|w| w.id == id) {
-            continue;
-        }
-        let dir = world_dir(paths, profile_id, id);
-        fs::create_dir_all(&dir)?;
-        fs::write(dir.join(file), data)?;
-    }
+    slots::unpack(&dir(paths, profile_id), ARCHIVE_DIR, files, |key| {
+        kept.worlds.iter().any(|w| w.id.to_string() == key)
+    })?;
     {
         let conn = db.conn();
         for w in &kept.worlds {

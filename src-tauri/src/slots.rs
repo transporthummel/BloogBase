@@ -11,7 +11,10 @@ use std::path::{Path, PathBuf};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+use crate::catalog::Game;
+use crate::db::Db;
 use crate::error::{Error, Result};
+use crate::{profiles, saves};
 
 pub(crate) const JOURNAL: &str = "swap.json";
 
@@ -24,14 +27,29 @@ pub struct Swap<K> {
     pub parked: bool,
 }
 
+/// What slots need of their profile: the game as it plays, and `state/`.
+pub struct Owner {
+    pub game: &'static Game,
+    pub upper: PathBuf,
+}
+
+impl Owner {
+    pub fn of(db: &Db, profile_id: &str) -> Result<Self> {
+        let (profile, layers) = profiles::get(db, profile_id)?;
+        Ok(Owner {
+            game: saves::profile_game(&profile.game_id, &layers)?,
+            upper: layers.upper,
+        })
+    }
+}
+
 /// What switching needs to know of the slots of one profile.
 pub trait Slots {
     type Key: Serialize + DeserializeOwned + PartialEq + Debug + ToString;
 
     /// Where the slots not played wait, and the journal lies.
     fn dir(&self) -> &Path;
-    /// The profile's `state/`.
-    fn upper(&self) -> &Path;
+    fn owner(&self) -> &Owner;
     /// Whether a file in `state/` belongs to the slot played.
     fn belongs(&self, name: &str) -> bool;
     fn active(&self) -> Result<Option<Self::Key>>;
@@ -47,9 +65,21 @@ pub trait Slots {
         self.dir().join(key.to_string())
     }
 
+    /// The saves of slot `key`, in `state/` if it's played.
+    fn save_count(&self, key: &Self::Key, active: bool) -> Result<u32> {
+        let names = match active {
+            true => file_names(&self.owner().upper)?,
+            false => file_names(&self.slot_dir(key))?,
+        };
+        Ok(names
+            .iter()
+            .filter(|n| saves::is_save(self.owner().game, n))
+            .count() as u32)
+    }
+
     /// The files of the slot played, in `state/`.
     fn in_state(&self) -> Result<Vec<String>> {
-        Ok(file_names(self.upper())?
+        Ok(file_names(&self.owner().upper)?
             .into_iter()
             .filter(|n| self.belongs(n))
             .collect())
@@ -59,7 +89,7 @@ pub trait Slots {
     fn park(&self, from: Option<&Self::Key>) -> Result<()> {
         let names = self.in_state()?;
         match from {
-            Some(key) => move_files(self.upper(), &self.slot_dir(key), &names),
+            Some(key) => move_files(&self.owner().upper, &self.slot_dir(key), &names),
             None => self.park_none(&names),
         }
     }
@@ -68,7 +98,7 @@ pub trait Slots {
     fn unpark(&self, to: Option<&Self::Key>) -> Result<()> {
         let Some(key) = to else { return Ok(()) };
         let dir = self.slot_dir(key);
-        move_files(&dir, self.upper(), &file_names(&dir)?)?;
+        move_files(&dir, &self.owner().upper, &file_names(&dir)?)?;
         let _ = fs::remove_dir(&dir);
         Ok(())
     }
@@ -163,6 +193,61 @@ pub fn move_files(from: &Path, to: &Path, names: &[String]) -> Result<()> {
             fs::remove_file(&dest)?;
         }
         fs::rename(from.join(name), dest)?;
+    }
+    Ok(())
+}
+
+/// Archive entries: path inside the archive, content.
+pub type ArchiveFiles = Vec<(String, Vec<u8>)>;
+
+/// For the backup made when a mod is removed: the files of the slots in
+/// `dir` whose key `keep` takes, as archive entries `<prefix>/<key>/<file>`.
+pub fn pack(dir: &Path, prefix: &str, keep: impl Fn(&str) -> bool) -> Result<ArchiveFiles> {
+    let mut files = Vec::new();
+    let entries = match fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(files),
+        Err(e) => return Err(e.into()),
+    };
+    for e in entries {
+        let e = e?;
+        let key = e.file_name().to_string_lossy().into_owned();
+        if !e.file_type()?.is_dir() || !keep(&key) {
+            continue;
+        }
+        for name in file_names(&e.path())? {
+            files.push((
+                format!("{prefix}/{key}/{name}"),
+                fs::read(e.path().join(&name))?,
+            ));
+        }
+    }
+    files.sort_by(|a, b| a.0.cmp(&b.0));
+    Ok(files)
+}
+
+/// Writes the archive entries under `prefix` ([`pack`]) whose key `keep`
+/// takes back into their slot folders in `dir`; others are left out.
+pub fn unpack(
+    dir: &Path,
+    prefix: &str,
+    files: &[(String, Vec<u8>)],
+    keep: impl Fn(&str) -> bool,
+) -> Result<()> {
+    for (name, data) in files {
+        let Some((key, file)) = name
+            .strip_prefix(prefix)
+            .and_then(|r| r.strip_prefix('/'))
+            .and_then(|r| r.split_once('/'))
+        else {
+            continue;
+        };
+        if file.contains('/') || key.is_empty() || key.contains(['.', '\\']) || !keep(key) {
+            continue;
+        }
+        let dir = dir.join(key);
+        fs::create_dir_all(&dir)?;
+        fs::write(dir.join(file), data)?;
     }
     Ok(())
 }

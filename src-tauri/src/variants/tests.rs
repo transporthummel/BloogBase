@@ -5,6 +5,7 @@ use crate::backups::{self, Contents};
 use crate::library;
 use crate::mod_index::IndexEntry;
 use crate::mods::{self, Curated};
+use crate::profiles;
 use crate::saves::tests::keen4_save;
 use crate::slots::{JOURNAL, Swap, write_journal};
 use crate::source::testutil::*;
