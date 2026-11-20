@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, Info } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, events, type WorldStart } from "../bindings";
 import { useGames } from "../catalog";
@@ -10,9 +10,8 @@ import { unwrap } from "../ipc";
 import { scroller } from "../library/scroll";
 import { profilesKey, useProfiles } from "../library/queries";
 import { useRuntimeStatus } from "../runtime/queries";
-import { Badge } from "../ui/Badge";
 import { Notice } from "../ui/Notice";
-import { Tabs } from "../ui/Tabs";
+import { Tabs, type TabItem } from "../ui/Tabs";
 import { ConfigPanel } from "./ConfigPanel";
 import { ControlsSheet } from "./Controls";
 import { useControlsGate } from "./controlsGate";
@@ -127,13 +126,14 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
     );
   }
 
-  const tabs: { id: Tab; label: ReactNode }[] = [
+  const tabs: TabItem<Tab>[] = [
     // What to play comes first for a mod with worlds or variants.
     ...(profile?.worlds
       ? [
           {
             id: "worlds" as const,
-            label: <Counted label={t("profile.tabWorlds")} items={worlds.data?.worlds} />,
+            label: t("profile.tabWorlds"),
+            count: worlds.data?.worlds?.length,
           },
         ]
       : []),
@@ -141,7 +141,8 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
       ? [
           {
             id: "variants" as const,
-            label: <Counted label={t("variants.tab")} items={variants.data?.variants} />,
+            label: t("variants.tab"),
+            count: variants.data?.variants?.length,
           },
         ]
       : []),
@@ -150,12 +151,13 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
     ...(game && !profile?.modId
       ? [{ id: "controls" as const, label: t("profile.tabControls") }]
       : []),
-    { id: "saves", label: <Counted label={t("profile.tabSaves")} items={saves.data} /> },
+    { id: "saves", label: t("profile.tabSaves"), count: saves.data?.length },
     {
       id: "screenshots",
-      label: <Counted label={t("profile.tabScreenshots")} items={shots.data} />,
+      label: t("profile.tabScreenshots"),
+      count: shots.data?.length,
     },
-    { id: "videos", label: <Counted label={t("profile.tabVideos")} items={videos.data} /> },
+    { id: "videos", label: t("profile.tabVideos"), count: videos.data?.length },
     ...(game && profile?.modId
       ? [{ id: "controls" as const, label: t("profile.tabControls") }]
       : []),
@@ -248,21 +250,6 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
             {tab === "config" && <ConfigPanel profileId={profile.id} />}
           </div>
         </Tabs>
-      )}
-    </>
-  );
-}
-
-/** A tab's name with how many there are, if any. */
-function Counted({ label, items }: { label: string; items?: unknown[] }) {
-  return (
-    <>
-      {label}
-      {!!items?.length && (
-        <>
-          {" "}
-          <Badge>{items.length}</Badge>
-        </>
       )}
     </>
   );

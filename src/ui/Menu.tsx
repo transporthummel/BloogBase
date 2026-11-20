@@ -18,6 +18,8 @@ export type MenuItem = {
   danger?: boolean;
   /** Starts a new group with a line above. */
   separated?: boolean;
+  /** After the label, at the end of the line, e.g. a count. */
+  aside?: ReactNode;
 };
 
 /**
@@ -32,6 +34,7 @@ export function Menu({
   items,
   className = "",
   variant,
+  bare = false,
   disabled = false,
 }: {
   /** The button's accessible name. */
@@ -41,6 +44,8 @@ export function Menu({
   className?: string;
   /** Styled as that kind of button, e.g. next to a primary one. */
   variant?: Variant;
+  /** Only `className`, for a button that looks like what it sits among (a tab). */
+  bare?: boolean;
   disabled?: boolean;
 }) {
   const id = useId();
@@ -122,9 +127,11 @@ export function Menu({
         disabled={disabled}
         onClick={() => (open ? close() : setOpen(true))}
         className={
-          variant
-            ? buttonClass(variant, className)
-            : `inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-ink shadow-key transition hover:border-muted active:translate-y-px active:shadow-key-down active:duration-0 ${className}`
+          bare
+            ? className
+            : variant
+              ? buttonClass(variant, className)
+              : `inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm font-semibold text-ink shadow-key transition hover:border-muted active:translate-y-px active:shadow-key-down active:duration-0 ${className}`
         }
       >
         {trigger}
@@ -162,6 +169,12 @@ export function Menu({
                   {item.icon}
                 </span>
                 {item.label}
+                {item.aside && (
+                  <>
+                    {" "}
+                    <span className="ml-auto pl-3">{item.aside}</span>
+                  </>
+                )}
               </button>
             </div>
           ))}
