@@ -32,7 +32,8 @@ export function usePlayChoices(
     ? (variants.data?.variants ?? [])
         .filter((v) => !v.active)
         .map((v) => ({
-          label: t("variants.playAs", { name: variantName(v.variant, i18n.language) }),
+          // Just the name: the arrow is "Other variants", the icon says it plays.
+          label: variantName(v.variant, i18n.language),
           icon: <Play className="size-4" />,
           onSelect: () => onPlay(null, v.variant.id),
         }))

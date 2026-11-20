@@ -1223,7 +1223,7 @@
     "pickIntro": "{{name}} can be played in more than one way. Each variant keeps its own saves; you can switch any time on the mod's page.",
     "playedBefore": "Played so far",
     "play": "Play",
-    "playAs": "Play as {{name}}",
+    "playNamed": "Play: {{name}}",
     "more": "Other variants",
     "intro": "Each variant keeps its own saves. Settings, such as keys and sound, are the same for all of them.",
     "current": "Current",

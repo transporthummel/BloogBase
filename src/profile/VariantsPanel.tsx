@@ -103,7 +103,7 @@ export function VariantsPanel({
                     variant="secondary"
                     disabled={!canPlay || locked}
                     onClick={() => onPlay(v.id)}
-                    aria-label={t("variants.playAs", { name })}
+                    aria-label={t("variants.playNamed", { name })}
                   >
                     <Play className="size-4" aria-hidden />
                     {t("variants.play")}

@@ -834,7 +834,7 @@ test("once chosen, the arrow beside Play starts the other variants", async () =>
   await userEvent.click(
     await screen.findByRole("button", { name: "Other variants of Clouds Unseen" }),
   );
-  await userEvent.click(await screen.findByRole("menuitem", { name: "Play as Hard" }));
+  await userEvent.click(await screen.findByRole("menuitem", { name: "Hard" }));
   await vi.waitFor(() =>
     expect(commands.launchProfile).toHaveBeenCalledWith("clouds", null, "hard", "en"),
   );

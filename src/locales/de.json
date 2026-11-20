@@ -1223,7 +1223,7 @@
     "pickIntro": "{{name}} lässt sich auf mehrere Arten spielen. Jede Variante hat eigene Spielstände; wechseln kannst du jederzeit auf der Seite der Mod.",
     "playedBefore": "Bisher gespielt",
     "play": "Spielen",
-    "playAs": "Als {{name}} spielen",
+    "playNamed": "Spielen: {{name}}",
     "more": "Andere Varianten",
     "intro": "Jede Variante hat eigene Spielstände. Einstellungen wie Tasten und Sound gelten für alle.",
     "current": "Aktuell",

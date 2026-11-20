@@ -1743,7 +1743,7 @@ test("a mod with variants plays the one chosen, or another from the arrow", asyn
     expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", null, null, "en"),
   );
   await userEvent.click(screen.getByRole("button", { name: "Other variants" }));
-  await userEvent.click(screen.getByRole("menuitem", { name: "Play as Hard" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Hard" }));
   await vi.waitFor(() =>
     expect(commands.launchProfile).toHaveBeenLastCalledWith("keen4-1", null, "hard", "en"),
   );
