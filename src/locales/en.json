@@ -163,7 +163,7 @@
     "displayHint": {
       "crt": "Shows the games as on a monitor of the time, with scanlines and soft pixels. Turned off, pixels stay sharp.",
       "vsync": "Helps if the picture tears horizontally while moving. Controls then react a tiny bit later; not needed on FreeSync or G-Sync monitors.",
-      "all": "Fullscreen, the CRT effect and VSync can differ for individual games, on their page under “DOSBox & patches”."
+      "all": "Fullscreen, the CRT effect and VSync can differ for individual games, on their page under “Settings”."
     },
     "displayOverridden": "Set by your DOSBox settings for all games (below).",
     "inactive": "In the background",
@@ -641,8 +641,7 @@
     "notFound": "This game isn’t in the library any more.",
     "tabReadme": "Readme",
     "tabSaves": "Saves",
-    "tabConfig": "DOSBox & patches",
-    "tabConfigMod": "DOSBox settings",
+    "tabConfig": "Settings",
     "tabs": "Sections",
     "tabScreenshots": "Screenshots",
     "tabVideos": "Videos",

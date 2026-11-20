@@ -159,11 +159,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
     ...(game && profile?.modId
       ? [{ id: "controls" as const, label: t("profile.tabControls") }]
       : []),
-    // A mod's patches are its game's, edited there.
-    {
-      id: "config",
-      label: t(profile?.modId ? "profile.tabConfigMod" : "profile.tabConfig"),
-    },
+    { id: "config", label: t("profile.tabConfig") },
   ];
   // Opens on the worlds or variants, else the README, else the saves, as
   // before there was a Controls tab.
