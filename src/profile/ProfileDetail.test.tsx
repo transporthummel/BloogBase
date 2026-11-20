@@ -1449,6 +1449,18 @@ function withWorlds(activeWorld: number | null = 2) {
   setControlsShown("galaxy");
 }
 
+test("a mod with worlds opens on them, the first tab", async () => {
+  withWorlds();
+  vi.mocked(commands.modReadmes).mockResolvedValue(
+    ok([{ file: "README.TXT", text: "Hello.", html: false, pdf: false, word: false }]),
+  );
+  renderDetail();
+  const tab = await screen.findByRole("tab", { name: "Worlds 2" });
+  expect(tab).toHaveAttribute("aria-selected", "true");
+  expect(screen.getAllByRole("tab")[0]).toBe(tab);
+  expect(screen.getAllByRole("tab")[1]).toHaveTextContent("Readme");
+});
+
 test("a mod with worlds continues the one played last, or starts a new one with a seed", async () => {
   withWorlds();
   renderDetail();
