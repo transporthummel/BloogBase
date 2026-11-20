@@ -1490,6 +1490,87 @@ pub fn link_installed(app: &AppHandle) {
     ) {
         tracing::warn!("could not have installed mods follow their entry: {e}");
     }
+    convert_variants(app);
+}
+
+/// Turns installed mods into ones with their entry's variants, in the
+/// background: it may download archives (§9.7). Without a network they
+/// stay as they are until the next index check; one run at a time.
+fn convert_variants(app: &AppHandle) {
+    static BUSY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    let todo = match mod_index::variants_to_convert(&app.state::<ModIndex>(), &app.state::<Db>()) {
+        Ok(t) if !t.is_empty() => t,
+        Ok(_) => return,
+        Err(e) => {
+            tracing::warn!("could not look for mods to get variants: {e}");
+            return;
+        }
+    };
+    if BUSY.swap(true, std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        for t in todo {
+            if let Err(e) = convert_one(&app, &t).await {
+                tracing::warn!("mod {} keeps its files until the next check: {e}", t.mod_id);
+            }
+        }
+        BUSY.store(false, std::sync::atomic::Ordering::SeqCst);
+    });
+}
+
+/// [`convert_variants`] for one mod: its kept archive, or the download,
+/// and the parts.
+async fn convert_one(app: &AppHandle, t: &mod_index::ToConvert) -> Result<()> {
+    let paths = app.state::<AppPaths>().inner().clone();
+    let mut c = Curated::new(&t.entry, 0);
+    let kept = mods::kept_archive(&paths, &t.mod_id, &c.url).filter(|p| {
+        std::fs::read(p)
+            .is_ok_and(|d| crate::detect::sha256_hex(&d).eq_ignore_ascii_case(&c.sha256))
+    });
+    let quiet = |_, _| {};
+    let downloaded = match kept {
+        Some(_) => None,
+        None => Some(mod_index::archive(&paths.cache, &t.entry, None, &quiet).await?),
+    };
+    let parts = mod_index::parts(&paths.cache, &t.entry, &quiet).await?;
+    c.part_files = parts.clone();
+    // A copy: the kept one's folder gets replaced while it's read.
+    let main = paths.cache.join(format!("mod-{}-variants.zip", t.mod_id));
+    let from = kept
+        .clone()
+        .or_else(|| downloaded.as_ref().map(|a| a.path.clone()))
+        .expect("one of them");
+    std::fs::copy(&from, &main)?;
+    let a = app.clone();
+    let (mod_id, archive) = (t.mod_id.clone(), main.clone());
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        mods::convert_to_variants(
+            &a.state::<AppPaths>(),
+            &a.state::<Db>(),
+            &a.state::<Running>(),
+            &mod_id,
+            &c,
+            &archive,
+        )
+    })
+    .await
+    .map_err(Error::from)
+    .and_then(|r| r);
+    let _ = std::fs::remove_file(&main);
+    for path in parts.values() {
+        let _ = std::fs::remove_file(path);
+    }
+    drop(downloaded);
+    match result? {
+        true => {
+            // The UI reads profiles and mods again.
+            let _ = mod_index::IndexUpdated(app.state::<ModIndex>().status()).emit(app);
+        }
+        false => tracing::info!("mod {} runs; it gets its variants later", t.mod_id),
+    }
+    Ok(())
 }
 
 /// The mods in the index, with what's installed already.

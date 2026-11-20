@@ -130,6 +130,26 @@ fn recipe_root(source: &Source, recipes: &[&Recipe]) -> Result<Option<String>> {
         })
 }
 
+/// The variant of `c` whose folder of the download `main` a mod installed
+/// before the entry had variants holds: the one the app found then.
+pub(super) fn found_before(c: &Curated, main: &Path) -> Option<String> {
+    let source = Source::open(main).ok()?;
+    let found = analyze_in(&source, main, Some(&c.game_id), c.root.as_deref())
+        .ok()?
+        .root;
+    c.variants
+        .iter()
+        .filter(|v| v.archive.is_none())
+        .find(|v| {
+            let root = match v.root.as_deref().or(c.root.as_deref()) {
+                Some(r) => Some(r.to_string()),
+                None => recipe_root(&source, &recipes_of(c, v)).ok().flatten(),
+            };
+            root.is_some_and(|r| r.eq_ignore_ascii_case(&found))
+        })
+        .map(|v| v.id.clone())
+}
+
 /// Checks that the files the recipes of each variant run are in its root.
 pub(super) fn check_recipes(c: &Curated, variants: &[VariantFiles]) -> Result<()> {
     for (v, files) in c.variants.iter().zip(variants) {

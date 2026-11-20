@@ -2620,3 +2620,68 @@ fn an_update_keeps_the_variant_played_or_finds_it_by_its_files() {
     assert_eq!(active_variant(&db).0.as_deref(), Some("hard"));
     assert!(!paths.mods.join(&old.id).join("variants/green").exists());
 }
+
+#[test]
+fn installed_mods_get_their_entrys_variants_and_keep_playing_theirs() {
+    let (tmp, paths, db) = setup();
+    let (zip, c) = with_variants(tmp.path());
+    let old = install_curated(&paths, &db, &zip, &c.without_variants(), None, false).unwrap();
+    let state = paths.profiles.join(&old.id).join("state");
+    fs::write(state.join("SAVEGAM0.CK4"), b"easy save").unwrap();
+    let files = paths.mod_files(&old.id, None);
+    let running = crate::launcher::Running::default();
+
+    // Without the part (no network), nothing changes.
+    let mut offline = c.clone();
+    offline.part_files.clear();
+    assert!(convert_to_variants(&paths, &db, &running, &old.id, &offline, &zip).is_err());
+    assert!(files.is_dir());
+    assert_eq!(active_variant(&db), (None, false));
+    // Nor while it runs.
+    let claim = running.claim(&old.profile_id).unwrap();
+    assert!(!convert_to_variants(&paths, &db, &running, &old.id, &c, &zip).unwrap());
+    drop(claim);
+    assert!(files.is_dir());
+
+    // No fingerprints: the folder found then, EASY.
+    assert!(convert_to_variants(&paths, &db, &running, &old.id, &c, &zip).unwrap());
+    assert_eq!(active_variant(&db), (Some("easy".into()), false));
+    assert!(!files.exists());
+    assert_eq!(
+        fs::read(paths.mod_files(&old.id, Some("green")).join("LEVEL01.CK4")).unwrap(),
+        b"green"
+    );
+    assert_eq!(fs::read(state.join("SAVEGAM0.CK4")).unwrap(), b"easy save");
+
+    // An entry's new variant comes along; the one played stays.
+    let mut more = c.clone();
+    more.variants.push(variant(
+        r#"{"id": "hard2", "name": "Hard 2", "root": "HARD"}"#,
+    ));
+    assert!(convert_to_variants(&paths, &db, &running, &old.id, &more, &zip).unwrap());
+    assert!(paths.mod_files(&old.id, Some("hard2")).is_dir());
+    assert_eq!(active_variant(&db).0.as_deref(), Some("easy"));
+}
+
+#[test]
+fn the_variant_played_so_far_is_known_by_its_files() {
+    let (tmp, paths, db) = setup();
+    let (zip, mut c) = with_variants(tmp.path());
+    let old = install_curated(&paths, &db, &zip, &c.without_variants(), None, false).unwrap();
+    // Its files are Hard's now, e.g. from the player's own folder.
+    let files = paths.mod_files(&old.id, None);
+    fs::write(files.join("LEVEL01.CK4"), b"hard").unwrap();
+    let staged = tmp.path().join("hard");
+    write_folder(
+        &staged,
+        &[
+            ("CK4PATCH.EXE", b"patcher"),
+            ("x.pat", b"%ext ck4\n%version 1.4\n"),
+            ("LEVEL01.CK4", b"hard"),
+        ],
+    );
+    c.variants[0].fingerprint = variant_files::fingerprint_of(&staged, "keen4").unwrap();
+    let running = crate::launcher::Running::default();
+    assert!(convert_to_variants(&paths, &db, &running, &old.id, &c, &zip).unwrap());
+    assert_eq!(active_variant(&db).0.as_deref(), Some("hard"));
+}

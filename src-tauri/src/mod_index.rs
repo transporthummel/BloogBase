@@ -905,7 +905,7 @@ fn download_for_files(
             })
             .collect::<Option<Vec<(String, String)>>>()
     };
-    entry.downloads.iter().position(|d| {
+    let by_download = entry.downloads.iter().position(|d| {
         let first = match &d.fingerprint {
             Some(f) => f.files.first(),
             None => d.programs.keys().next(),
@@ -929,6 +929,27 @@ fn download_for_files(
                     }),
                 }
             })
+    });
+    // Or one variant's files, which are the newest download's (§9.7).
+    by_download.or_else(|| {
+        entry
+            .variants
+            .iter()
+            .filter_map(|v| v.fingerprint.as_ref())
+            .any(|fp| {
+                let Some(first) = fp.files.first() else {
+                    return false;
+                };
+                files
+                    .iter()
+                    .filter(|f| split_dir(f).1.eq_ignore_ascii_case(first))
+                    .any(|f| {
+                        in_dir(split_dir(f).0, &mut fp.files.iter()).is_some_and(|h| {
+                            fingerprint_sha256(&h).eq_ignore_ascii_case(&fp.sha256)
+                        })
+                    })
+            })
+            .then_some(0)
     })
 }
 
@@ -965,7 +986,11 @@ pub fn link_installed(index: &ModIndex, db: &Db, paths: &AppPaths) -> Result<()>
     for (mod_id, game_id) in untied {
         let candidates: Vec<&IndexEntry> = entries
             .iter()
-            .filter(|e| e.game == game_id && e.downloads.iter().any(Download::known_by_files))
+            .filter(|e| {
+                e.game == game_id
+                    && (e.downloads.iter().any(Download::known_by_files)
+                        || e.variants.iter().any(|v| v.fingerprint.is_some()))
+            })
             .collect();
         if candidates.is_empty() {
             continue;
@@ -1035,9 +1060,56 @@ pub fn follow_roots(index: &ModIndex, db: &Db, paths: &AppPaths, running: &Runni
     Ok(())
 }
 
+/// An installed mod whose entry has variants it hasn't, or other ones:
+/// its id, and the entry.
+pub struct ToConvert {
+    pub mod_id: String,
+    pub entry: IndexEntry,
+}
+
+/// The installed index mods to turn into ones with their entry's variants
+/// (§9.7, [`mods::convert_to_variants`]): those of the newest download, as
+/// variants describe it; older ones get them with their update. Mods still
+/// waiting to move to their entry's `root` wait for that.
+pub fn variants_to_convert(index: &ModIndex, db: &Db) -> Result<Vec<ToConvert>> {
+    let mut out = Vec::new();
+    for e in index.entries() {
+        if e.variants.is_empty() {
+            continue;
+        }
+        let want = serde_json::to_string(&e.variants).expect("variants serialize");
+        // Id, download, root, variants as installed.
+        type Row = (String, Option<String>, Option<String>, Option<String>);
+        let found: Vec<Row> = db
+            .conn()
+            .prepare(
+                "SELECT id, archive_sha256, root, variants_json FROM mods WHERE index_id = ?1",
+            )?
+            .query_map([&e.id], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))
+            })?
+            .collect::<rusqlite::Result<_>>()?;
+        for (mod_id, sha, root, have) in found {
+            let newest = sha
+                .as_deref()
+                .is_some_and(|s| s.eq_ignore_ascii_case(&e.downloads[0].sha256));
+            if !newest || (e.root.is_some() && root != e.root) || have.as_deref() == Some(&want) {
+                continue;
+            }
+            out.push(ToConvert {
+                mod_id,
+                entry: e.clone(),
+            });
+        }
+    }
+    Ok(out)
+}
+
 /// Makes the installed index mods follow their entry's recipe and details,
 /// for the download they are ([`mods::follow_entry`]). Mods still waiting
-/// to move to their entry's `root` wait for that ([`follow_roots`]).
+/// to move to their entry's `root` wait for that ([`follow_roots`]), and
+/// those waiting for their entry's variants for those
+/// ([`variants_to_convert`]): its recipe is the default's, not theirs.
 pub fn follow_entries(
     index: &ModIndex,
     db: &Db,
@@ -1045,13 +1117,18 @@ pub fn follow_entries(
     running: &Running,
 ) -> Result<()> {
     for e in index.entries() {
-        let found: Vec<(String, Option<String>, Option<String>)> = db
+        let found: Vec<(String, Option<String>, Option<String>, bool)> = db
             .conn()
-            .prepare("SELECT id, archive_sha256, root FROM mods WHERE index_id = ?1")?
-            .query_map([&e.id], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))?
+            .prepare(
+                "SELECT id, archive_sha256, root, variants_json IS NOT NULL
+                 FROM mods WHERE index_id = ?1",
+            )?
+            .query_map([&e.id], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))
+            })?
             .collect::<rusqlite::Result<_>>()?;
-        for (mod_id, sha, root) in found {
-            if e.root.is_some() && root != e.root {
+        for (mod_id, sha, root, has_variants) in found {
+            if (e.root.is_some() && root != e.root) || (!e.variants.is_empty() && !has_variants) {
                 continue;
             }
             let download = e.downloads.iter().position(|d| {
@@ -1993,6 +2070,42 @@ mod tests {
             )
             .unwrap();
         assert_eq!((install, flag), (None, true));
+    }
+
+    #[test]
+    fn mods_of_the_newest_download_get_their_entrys_variants() {
+        let (tmp, paths) = setup();
+        let k = keys();
+        let with = SAMPLE.replace(
+            r#""id": "sample-patch","#,
+            r#""id": "sample-patch", "variants": [
+                {"id": "a", "default": true, "name": "A"}, {"id": "b", "name": "B"}],"#,
+        );
+        let url = publish(tmp.path(), &k, &with);
+        let index = ModIndex::with_keys(&paths, url, &[&k.pk]);
+        tauri::async_runtime::block_on(index.refresh(false));
+        let entry = index.entry("sample-patch").unwrap();
+        let db = Db::open_in_memory().unwrap();
+        db.conn()
+            .execute_batch(&format!(
+                "INSERT INTO mods (id, game_id, index_id, name, authors, recipe_json, path,
+                                   source, added_at, archive_sha256)
+                 VALUES ('new', 'keen4', 'sample-patch', 'x', '[]', '{{}}', '/x', 'index', 0,
+                         '{0}'),
+                        ('old', 'keen4', 'sample-patch', 'x', '[]', '{{}}', '/x', 'index', 0,
+                         'beef'),
+                        ('done', 'keen4', 'sample-patch', 'x', '[]', '{{}}', '/x', 'index', 0,
+                         '{0}');
+                 UPDATE mods SET variants_json = '{1}' WHERE id = 'done';",
+                entry.downloads[0].sha256,
+                serde_json::to_string(&entry.variants).unwrap()
+            ))
+            .unwrap();
+        let todo = variants_to_convert(&index, &db).unwrap();
+        assert_eq!(
+            todo.iter().map(|t| t.mod_id.as_str()).collect::<Vec<_>>(),
+            ["new"]
+        );
     }
 
     fn sample_entry(sha256: &str) -> IndexEntry {

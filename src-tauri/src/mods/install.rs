@@ -645,7 +645,7 @@ pub fn follow_root(
 
 /// The archive mod `mod_id` keeps of the download at `url`: named after it,
 /// else the only one it keeps.
-pub(super) fn kept_archive(paths: &AppPaths, mod_id: &str, url: &str) -> Option<PathBuf> {
+pub fn kept_archive(paths: &AppPaths, mod_id: &str, url: &str) -> Option<PathBuf> {
     let dir = paths.mods.join(mod_id).join("source");
     let named = dir.join(crate::downloads::url_file_name(url));
     if named.is_file() && !crate::downloads::url_file_name(url).is_empty() {
@@ -1492,6 +1492,72 @@ fn active_after_update(
             .unwrap_or_default()
             .to_string(),
     }))
+}
+
+/// Turns the installed index mod `mod_id` into one with the variants of
+/// its entry `c` (§9.7), or stages the variants its entry has now: as an
+/// update to the same download, from `main`, its archive, and the parts in
+/// `c.part_files`. A mod installed before its entry had variants plays the
+/// one whose files it had (by fingerprint, else the folder found then, else
+/// the default), and its saves stay in `state/`, as that one's; the picker
+/// comes at the next "Play" all the same. Never while the mod runs: then
+/// it's `false`, to try again at the next index check. A failure changes
+/// nothing.
+pub fn convert_to_variants(
+    paths: &AppPaths,
+    db: &Db,
+    running: &Running,
+    mod_id: &str,
+    c: &Curated,
+    main: &Path,
+) -> Result<bool> {
+    let (profile_id, converted): (String, bool) = db.conn().query_row(
+        "SELECT p.id, m.variants_json IS NOT NULL
+         FROM mods m JOIN profiles p ON p.mod_id = m.id WHERE m.id = ?1",
+        [mod_id],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    )?;
+    let Ok(_claim) = running.claim(&profile_id) else {
+        return Ok(false);
+    };
+    if !converted {
+        let files = paths.mod_files(mod_id, None);
+        let (played, how) = match played_variant(&files, &c.variants) {
+            Some(v) => (v.to_string(), "its files"),
+            None => match variant_files::found_before(c, main) {
+                Some(v) => (v, "the folder found before"),
+                None => (
+                    c.variants
+                        .iter()
+                        .find(|v| v.default)
+                        .map(|v| v.id.clone())
+                        .unwrap_or_default(),
+                    "the default",
+                ),
+            },
+        };
+        tracing::info!("mod {mod_id} played variant {played} so far, by {how}");
+        let before: Option<String> = db.conn().query_row(
+            "SELECT active_variant FROM profiles WHERE id = ?1",
+            [&profile_id],
+            |r| r.get(0),
+        )?;
+        db.conn().execute(
+            "UPDATE profiles SET active_variant = ?2, variant_chosen = 0 WHERE id = ?1",
+            params![profile_id, played],
+        )?;
+        if let Err(e) = install_curated(paths, db, main, c, None, true) {
+            db.conn().execute(
+                "UPDATE profiles SET active_variant = ?2 WHERE id = ?1",
+                params![profile_id, before],
+            )?;
+            return Err(e);
+        }
+    } else {
+        install_curated(paths, db, main, c, None, true)?;
+    }
+    tracing::info!("mod {mod_id} has the variants of its entry {}", c.index_id);
+    Ok(true)
 }
 
 /// The variant whose files `dir` holds, by their fingerprints.
