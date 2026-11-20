@@ -155,6 +155,9 @@ pub struct QuitRequested {
 pub struct GameLaunch {
     pub profile_id: String,
     pub phase: LaunchPhase,
+    /// The variant asked for (§9.7); `None` plays the one chosen. Sent as
+    /// it starts, before the switch, so the overlay shows its cover.
+    pub variant: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]

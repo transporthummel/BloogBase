@@ -177,10 +177,12 @@ pub async fn launch_profile(
 ) -> CommandResult<()> {
     let runtime = runtime::active(&app.state::<Db>())?;
     let claim = app.state::<Running>().claim(&profile_id)?;
+    let asked = variant.clone();
     let launch = |phase| {
         let _ = GameLaunch {
             profile_id: profile_id.clone(),
             phase,
+            variant: asked.clone(),
         }
         .emit(&app);
     };
@@ -191,12 +193,13 @@ pub async fn launch_profile(
     let id = profile_id.clone();
     let started = blocking(move || {
         let on_log = {
-            let (app, profile_id) = (a.clone(), id.clone());
+            let (app, profile_id, asked) = (a.clone(), id.clone(), variant.clone());
             move |event| match event {
                 LogEvent::Shown => {
                     let _ = GameLaunch {
                         profile_id: profile_id.clone(),
                         phase: LaunchPhase::Shown,
+                        variant: asked.clone(),
                     }
                     .emit(&app);
                 }

@@ -629,6 +629,11 @@ export type GameKeys = {
 export type GameLaunch = {
 	profileId: string,
 	phase: LaunchPhase,
+	/**
+	 *  The variant asked for (§9.7); `None` plays the one chosen. Sent as
+	 *  it starts, before the switch, so the overlay shows its cover.
+	 */
+	variant: string | null,
 };
 
 export type GameSettings = {

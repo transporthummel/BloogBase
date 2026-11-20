@@ -9,6 +9,8 @@ const listeners: {
   ended?: (e: { payload: PlaySessionEnded }) => void;
 } = {};
 
+vi.mock("@tauri-apps/api/core", () => ({ convertFileSrc: (p: string) => `asset://${p}` }));
+
 vi.mock("../bindings", () => ({
   commands: { listProfiles: vi.fn(), listGames: vi.fn(), profileCover: vi.fn() },
   events: {
@@ -37,8 +39,8 @@ beforeEach(() => {
   vi.mocked(commands.profileCover).mockResolvedValue({ status: "ok", data: null });
 });
 
-function launch(phase: LaunchPhase) {
-  act(() => listeners.launch!({ payload: { profileId: "pak-een", phase } }));
+function launch(phase: LaunchPhase, variant: string | null = null) {
+  act(() => listeners.launch!({ payload: { profileId: "pak-een", phase, variant } }));
 }
 
 function renderOverlay() {
@@ -55,6 +57,32 @@ test("covers the start until the window is up", async () => {
   expect(await screen.findByRole("status")).toHaveTextContent("Starting Pak Een…");
   launch("shown");
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
+});
+
+test("shows the cover of the variant starting, not of the one played before", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue({
+    status: "ok",
+    data: [
+      {
+        id: "pak-een",
+        label: "Pak Een",
+        gameId: "keen4",
+        installId: "keen4-1",
+        activeVariant: { id: "easy" },
+      },
+    ],
+  } as never);
+  vi.mocked(commands.profileCover).mockImplementation(async (_, variant) => ({
+    status: "ok",
+    data: { path: `C:/covers/${variant}.png`, scrambled: false },
+  }));
+  renderOverlay();
+  launch("starting", "hard");
+  const status = await screen.findByRole("status");
+  // Nothing until the cover is there: no placeholder flashes up before it.
+  expect(status).not.toHaveTextContent(/^4/);
+  await vi.waitFor(() => expect(status.querySelector("img")?.src).toContain("hard.png"));
+  expect(commands.profileCover).not.toHaveBeenCalledWith("pak-een", "easy");
 });
 
 test("a source mod shows its own placeholder, not its game's episode", async () => {
@@ -74,7 +102,7 @@ test("a source mod shows its own placeholder, not its game's episode", async () 
   renderOverlay();
   launch("starting");
   const status = await screen.findByRole("status");
-  expect(status.querySelector(".bg-source")).toHaveTextContent("+");
+  await vi.waitFor(() => expect(status.querySelector(".bg-source")).toHaveTextContent("+"));
   expect(status).not.toHaveTextContent(/^D/);
 });
 

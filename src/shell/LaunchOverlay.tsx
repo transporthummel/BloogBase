@@ -15,13 +15,16 @@ const GIVE_UP_MS = 15_000;
  * setup) with the game's title screen. A click takes it away early.
  */
 export function LaunchOverlay() {
-  const [starting, setStarting] = useState<string | null>(null);
+  // With the variant asked for: the profile list names the one played
+  // before until the start has switched it.
+  const [starting, setStarting] = useState<{ id: string; variant: string | null } | null>(null);
   const profiles = useProfiles();
 
   useEffect(() => {
-    const done = (id: string) => setStarting((s) => (s === id ? null : s));
+    const done = (id: string) => setStarting((s) => (s?.id === id ? null : s));
     const launches = events.gameLaunch.listen(({ payload }) => {
-      if (payload.phase === "starting") setStarting(payload.profileId);
+      if (payload.phase === "starting")
+        setStarting({ id: payload.profileId, variant: payload.variant });
       else done(payload.profileId);
     });
     const ends = events.playSessionEnded.listen(({ payload }) => done(payload.profileId));
@@ -37,15 +40,29 @@ export function LaunchOverlay() {
     return () => clearTimeout(timer);
   }, [starting]);
 
-  const profile = profiles.data?.find((p) => p.id === starting);
+  const profile = profiles.data?.find((p) => p.id === starting?.id);
   if (!profile) return null;
-  return <Starting profile={profile} onClose={() => setStarting(null)} />;
+  return (
+    <Starting
+      profile={profile}
+      variant={starting?.variant ?? profile.activeVariant?.id ?? null}
+      onClose={() => setStarting(null)}
+    />
+  );
 }
 
-function Starting({ profile, onClose }: { profile: Profile; onClose: () => void }) {
+function Starting({
+  profile,
+  variant,
+  onClose,
+}: {
+  profile: Profile;
+  variant: string | null;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
   const games = useGames();
-  const cover = useCover(profile.id, profile.installId, profile.activeVariant?.id ?? null);
+  const cover = useCover(profile.id, profile.installId, variant);
   const game = games.data?.find((g) => g.id === profile.gameId);
   return (
     <div
@@ -54,14 +71,20 @@ function Starting({ profile, onClose }: { profile: Profile; onClose: () => void 
       onMouseDown={onClose}
     >
       <div className="bb-rise w-[min(32rem,80vw,90vh)] overflow-hidden rounded-xl border border-border bg-surface shadow-2xl">
-        <Cover
-          gameId={profile.gameId}
-          game={game}
-          src={cover.data?.src}
-          onError={cover.onError}
-          standalone={profile.sourceMod}
-          className="block aspect-[4/3] w-full text-6xl"
-        />
+        {cover.isPending ? (
+          // A variant's cover may still be read from its files; empty until
+          // then, so the placeholder doesn't flash up before it.
+          <div className="aspect-[4/3] w-full" />
+        ) : (
+          <Cover
+            gameId={profile.gameId}
+            game={game}
+            src={cover.data?.src}
+            onError={cover.onError}
+            standalone={profile.sourceMod}
+            className="block aspect-[4/3] w-full text-6xl"
+          />
+        )}
         <div className="h-0.5 overflow-hidden bg-surface-raised">
           <div className="bb-sweep h-full w-1/3 bg-accent" />
         </div>
