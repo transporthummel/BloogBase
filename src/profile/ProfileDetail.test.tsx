@@ -1726,8 +1726,11 @@ test("a mod with variants plays the one chosen, or another from the arrow", asyn
   withVariants();
   renderDetail();
   expect(await screen.findByText("2 variants")).toBeInTheDocument();
-  expect(screen.getByText("Variant:")).toBeInTheDocument();
-  expect(screen.getAllByText("Fewer enemies.").length).toBeGreaterThan(0);
+  // The variant played leads what it runs on; its description is in the tab.
+  expect(screen.getByRole("button", { name: "Easy" }).parentElement).toHaveTextContent(
+    /^Variant: Easy · Runs on/,
+  );
+  expect(screen.getAllByText("Fewer enemies.")).toHaveLength(1);
   await userEvent.click(await screen.findByRole("button", { name: "Play" }));
   await vi.waitFor(() =>
     expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", null, null),

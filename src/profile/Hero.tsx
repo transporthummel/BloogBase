@@ -20,7 +20,7 @@ import { usePageTitle } from "../ui/usePageTitle";
 import { screenshotSrc, useScreenshots } from "./captures";
 import { usePictureWidth } from "./heroPicture";
 import { ProfileActions } from "./ProfileActions";
-import { variantDescription, variantName } from "./variants";
+import { variantName } from "./variants";
 
 /** Picture, title, credits, description, links and stats; Play, and the rest in a menu. */
 export function Hero({
@@ -159,43 +159,41 @@ function Credits({
   const { t, i18n } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
   const links = modLinks(t, mod, entry);
+  const runsOn =
+    profile.missingGame !== null ? (
+      t("mods.waitsFor", { game: profile.missingGame })
+    ) : profile.standalone && (profile.sourceMod || !game) ? (
+      t("mods.standalone")
+    ) : profile.modId !== null && !profile.sourceMod && game ? (
+      <RunsOn
+        profile={profile}
+        game={game.title}
+        version={version?.label ?? t("library.unknownVersion")}
+      />
+    ) : null;
   return (
     <div className="grid gap-2">
       <h1 className="font-pixel text-lg leading-relaxed">{profile.label}</h1>
-      {profile.activeVariant && (
-        // The way it's played (§9.7), as the title goes on.
-        <p className="grid gap-0.5 text-sm">
-          <span>
-            <span className="text-muted">{t("variants.variant")}</span>{" "}
-            {/* Leads to it among the others, as the mods played over it lead to theirs. */}
-            <button
-              type="button"
-              onClick={onShowVariant}
-              title={t("variants.showAll")}
-              className="font-semibold underline-offset-2 hover:text-accent hover:underline"
-            >
-              {variantName(profile.activeVariant, i18n.language)}
-            </button>
-          </span>
-          {variantDescription(profile.activeVariant, i18n.language) && (
-            <span className="text-muted">
-              {variantDescription(profile.activeVariant, i18n.language)}
-            </span>
-          )}
-        </p>
-      )}
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-        {profile.missingGame !== null && (
-          <span>{t("mods.waitsFor", { game: profile.missingGame })}</span>
-        )}
-        {profile.standalone && (profile.sourceMod || !game) && <span>{t("mods.standalone")}</span>}
-        {profile.modId !== null && profile.missingGame === null && !profile.sourceMod && game && (
+        {(profile.activeVariant || runsOn) && (
+          // The way it's played (§9.7), then what it runs on, in one line.
           <span>
-            <RunsOn
-              profile={profile}
-              game={game.title}
-              version={version?.label ?? t("library.unknownVersion")}
-            />
+            {profile.activeVariant && (
+              <>
+                {t("variants.variant")}{" "}
+                {/* Leads to it among the others, as the mods played over it lead to theirs. */}
+                <button
+                  type="button"
+                  onClick={onShowVariant}
+                  title={t("variants.showAll")}
+                  className="font-semibold text-ink underline-offset-2 hover:text-accent hover:underline"
+                >
+                  {variantName(profile.activeVariant, i18n.language)}
+                </button>
+                {runsOn && " · "}
+              </>
+            )}
+            {runsOn}
           </span>
         )}
         {profile.modId !== null && !profile.sourceMod && <Badge>{t("mods.badge")}</Badge>}
