@@ -9,10 +9,10 @@ released: 2004-02-06
 updated: 2012-09-07
 added: 2026-10-30
 type: episode
-description: "Keen studies the magic planet Dune and runs into an old enemy. Two halves with their own graphics and levels, made from Apogee classics; the first part of the Shadow Keen trilogy. This is Captainkeen's remake from 2012."
+description: "Keen studies the magic planet Dune and runs into an old enemy. Two halves with their own graphics and levels, made from Apogee classics; the first part of the Shadow Keen trilogy. Captainkeen's remake from 2012 covers only the first half."
 translations:
   de:
-    description: "Keen erforscht den magischen Planeten Dune und trifft auf einen alten Feind. Zwei Hälften mit eigenen Grafiken und Leveln, zusammengesetzt aus Apogee-Klassikern; der erste Teil der Shadow-Keen-Trilogie. Dies ist Captainkeens Remake von 2012."
+    description: "Keen erforscht den magischen Planeten Dune und trifft auf einen alten Feind. Zwei Hälften mit eigenen Grafiken und Leveln, zusammengesetzt aus Apogee-Klassikern; der erste Teil der Shadow-Keen-Trilogie. Captainkeens Remake von 2012 umfasst nur die erste Hälfte."
 links:
   keenwiki: https://keenwiki.shikadi.net/wiki/ShadowKeen1
   homepage: https://web.archive.org/web/20050527181106/http://www.freewebs.com/levellord_keen/keenstuff.htm
@@ -77,11 +77,11 @@ variants:
   - id: remake-2012
     default: true
     name: "2012 Remake"
-    description: "Captainkeen's remake of both halves."
+    description: "Captainkeen's remake of the first half, A Shadow Over Dune."
     translations:
       de:
         name: "Remake 2012"
-        description: "Captainkeens Remake beider Hälften."
+        description: "Captainkeens Remake der ersten Hälfte, A Shadow Over Dune."
     fingerprint:
       sha256: 1688f1d785550a331dd232e72c6db5e3ed330da1a5b975bcd2b7cb13490c64ec
       files:
