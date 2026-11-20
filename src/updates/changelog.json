@@ -22,7 +22,8 @@
       "Mods with several variants, like difficulty levels, install all of them, each with its own saves.",
       "The top of a game's or mod's page no longer jitters at some window widths.",
       "The \"DOSBox & patches\" tab is called \"Settings\".",
-      "Tabs that don't fit in a narrow window go into a \"More\" menu."
+      "Tabs that don't fit in a narrow window go into a \"More\" menu.",
+      "A mod's readme no longer shows up twice."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -46,7 +47,8 @@
       "Mods mit mehreren Varianten, etwa Schwierigkeitsstufen, bringen alle mit, jede mit eigenen Spielständen.",
       "Der obere Teil einer Spiel- oder Mod-Seite zittert bei manchen Fensterbreiten nicht mehr.",
       "Der Tab „DOSBox & Patches“ heißt jetzt „Einstellungen“.",
-      "Tabs, die in einem schmalen Fenster nicht passen, landen in einem Menü „Mehr“."
+      "Tabs, die in einem schmalen Fenster nicht passen, landen in einem Menü „Mehr“.",
+      "Die Readme einer Mod erscheint nicht mehr doppelt."
     ]
   },
   "releases": [

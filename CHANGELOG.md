@@ -36,6 +36,7 @@
 - Keen 1–3 mods whose level files are 64 KB or larger because a level editor left old data after the level (Keen 0: Part 1 April Fools, Robot Rebellion, Hiding from the Sky) no longer crash DOSBox after quitting to DOS. The game read the whole file and wrote past its memory; the copy the game runs from now ends where the level does.
 - The top of a game's or mod's page no longer jitters at some window widths, where its picture kept switching between two sizes.
 - In the dark theme, the arrow beside "Play" or "Continue world" no longer casts a shadow onto the button's left half.
+- A document that a mod variant copies into its folder, such as the readme of Shadow Keen 1's original part 1, is listed once instead of twice.
 
 ### Misc
 

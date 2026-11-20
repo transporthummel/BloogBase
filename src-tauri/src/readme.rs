@@ -211,11 +211,19 @@ fn find_documents(source: &Source, keep: Documents) -> Result<Vec<Readme>> {
         .collect();
     candidates.sort();
     let mut found = Vec::new();
+    // A variant's folder may hold a document twice, once copied into its
+    // root (`copyToRoot`); the shallower copy, sorted first, is kept.
+    let mut seen = std::collections::HashSet::new();
     for ((_, outside, _), file) in candidates {
         if found.len() == MAX_FILES {
             break;
         }
         if outside {
+            if let Ok(bytes) = source.read(&file)
+                && !seen.insert(sha256_hex(&bytes))
+            {
+                continue;
+            }
             let pdf = is_pdf_name(&file);
             found.push(Readme {
                 file,
@@ -233,7 +241,7 @@ fn find_documents(source: &Source, keep: Documents) -> Result<Vec<Readme>> {
                 continue;
             }
         };
-        if bytes.len() > MAX_BYTES {
+        if bytes.len() > MAX_BYTES || !seen.insert(sha256_hex(&bytes)) {
             continue;
         }
         // Some `.doc` files are plain text, shown as such.
@@ -972,7 +980,7 @@ mod tests {
         write_folder(
             tmp.path(),
             &[
-                ("Bananasauros Instruction Manual.pdf", b"%PDF-1.4"),
+                ("Bananasauros Instruction Manual.pdf", b"%PDF-1.4 manual"),
                 ("tsrmusic.txt", b"music"),
                 ("readme.pdf", b"%PDF-1.4"),
                 ("readme.txt", b"readme"),
@@ -1296,6 +1304,23 @@ mod tests {
     }
 
     #[test]
+    fn lists_a_document_copied_into_the_root_once() {
+        let tmp = tempfile::tempdir().unwrap();
+        write_folder(
+            tmp.path(),
+            &[
+                ("README.HTM", b"<html>page</html>"),
+                ("part1/README.HTM", b"<html>page</html>"),
+                ("story.txt", b"once"),
+                ("part1/story.txt", b"once"),
+                ("part2/story.txt", b"twice"),
+            ],
+        );
+        let found = names(&Source::Folder(tmp.path().into()));
+        assert_eq!(found, ["README.HTM", "story.txt", "part2/story.txt"]);
+    }
+
+    #[test]
     fn game_documents_are_sha256_hashes() {
         let mut hashes = GAME_DOCUMENTS.to_vec();
         assert!(hashes.iter().all(|h| {
@@ -1314,7 +1339,10 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let huge = vec![b'x'; MAX_BYTES + 1];
         let mut files: Vec<(String, &[u8])> = vec![("README.TXT".into(), &huge)];
-        files.extend((0..MAX_FILES + 5).map(|i| (format!("doc{i:02}.txt"), &b"text"[..])));
+        let texts: Vec<String> = (0..MAX_FILES + 5)
+            .map(|i| format!("doc{i:02}.txt"))
+            .collect();
+        files.extend(texts.iter().map(|n| (n.clone(), n.as_bytes())));
         let files: Vec<(&str, &[u8])> = files.iter().map(|(n, d)| (n.as_str(), *d)).collect();
         write_folder(tmp.path(), &files);
         let found = names(&Source::Folder(tmp.path().into()));
