@@ -1750,6 +1750,7 @@ test("the Readme tab follows the variant played", async () => {
     ok([{ file: "CLOUDS.TXT", text, html: false, pdf: false, word: false }]);
   vi.mocked(commands.modReadmes).mockResolvedValue(readme("Easy and hard, in black and white."));
   renderDetail();
+  await userEvent.click(await screen.findByRole("tab", { name: "Readme" }));
   expect(await screen.findByText("Easy and hard, in black and white.")).toBeInTheDocument();
 
   // Hard is made current: the variant has its own documents.
@@ -1767,6 +1768,18 @@ test("the Readme tab follows the variant played", async () => {
   );
   await userEvent.click(screen.getByRole("tab", { name: "Readme" }));
   expect(await screen.findByText("Now in green.")).toBeInTheDocument();
+});
+
+test("a mod with variants opens on them, the first tab", async () => {
+  withVariants();
+  vi.mocked(commands.modReadmes).mockResolvedValue(
+    ok([{ file: "README.TXT", text: "Hello.", html: false, pdf: false, word: false }]),
+  );
+  renderDetail();
+  const tab = await screen.findByRole("tab", { name: "Variants 2" });
+  expect(tab).toHaveAttribute("aria-selected", "true");
+  expect(screen.getAllByRole("tab")[0]).toBe(tab);
+  expect(screen.getAllByRole("tab")[1]).toHaveTextContent("Readme");
 });
 
 test("the Variants tab lists them and makes one current without playing", async () => {

@@ -128,11 +128,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   }
 
   const tabs: { id: Tab; label: ReactNode }[] = [
-    ...(readmes.data?.length ? [{ id: "readme" as const, label: t("profile.tabReadme") }] : []),
-    // A game's keys are what its page is read for; a mod's own README comes first.
-    ...(game && !profile?.modId
-      ? [{ id: "controls" as const, label: t("profile.tabControls") }]
-      : []),
+    // What to play comes first for a mod with worlds or variants.
     ...(profile?.worlds
       ? [
           {
@@ -149,6 +145,11 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
           },
         ]
       : []),
+    ...(readmes.data?.length ? [{ id: "readme" as const, label: t("profile.tabReadme") }] : []),
+    // A game's keys are what its page is read for; a mod's own README comes first.
+    ...(game && !profile?.modId
+      ? [{ id: "controls" as const, label: t("profile.tabControls") }]
+      : []),
     { id: "saves", label: <Counted label={t("profile.tabSaves")} items={saves.data} /> },
     {
       id: "screenshots",
@@ -164,9 +165,10 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
       label: t(profile?.modId ? "profile.tabConfigMod" : "profile.tabConfig"),
     },
   ];
-  // Opens on the README, else on the saves, as before there was a Controls tab.
-  const tab =
-    tabs.find((x) => x.id === picked)?.id ?? (tabs[0].id === "readme" ? "readme" : "saves");
+  // Opens on the worlds or variants, else the README, else the saves, as
+  // before there was a Controls tab.
+  const opening = ["worlds", "variants", "readme"].includes(tabs[0].id) ? tabs[0].id : "saves";
+  const tab = tabs.find((x) => x.id === picked)?.id ?? opening;
   // Wait for the README so the first tab doesn't change under the player.
   const tabsReady = !(readmes.isEnabled && readmes.isPending);
 
