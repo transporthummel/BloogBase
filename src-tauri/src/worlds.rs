@@ -25,6 +25,7 @@ use crate::profiles;
 use crate::recipe::Recipe;
 use crate::saves;
 use crate::settings;
+use crate::slots::{Slots, file_names};
 
 /// How a mod keeps its worlds, from its index entry.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
@@ -265,61 +266,6 @@ pub fn dir(paths: &AppPaths, profile_id: &str) -> PathBuf {
 fn world_dir(paths: &AppPaths, profile_id: &str, id: u32) -> PathBuf {
     dir(paths, profile_id).join(id.to_string())
 }
-
-const JOURNAL: &str = "swap.json";
-
-/// A switch under way: from one world (or none) to another (or none).
-#[derive(Debug, Serialize, Deserialize)]
-struct Swap {
-    from: Option<u32>,
-    to: Option<u32>,
-    /// The files of `from` are out of `state/` already.
-    parked: bool,
-}
-
-fn write_journal(paths: &AppPaths, profile_id: &str, swap: &Swap) -> Result<()> {
-    let dir = dir(paths, profile_id);
-    fs::create_dir_all(&dir)?;
-    let tmp = dir.join(format!("{JOURNAL}.part"));
-    fs::write(&tmp, serde_json::to_vec(swap).expect("swap serializes"))?;
-    fs::rename(tmp, dir.join(JOURNAL))?;
-    Ok(())
-}
-
-/// The names of the files right in `dir`.
-fn file_names(dir: &Path) -> Result<Vec<String>> {
-    let mut out = Vec::new();
-    let entries = match fs::read_dir(dir) {
-        Ok(e) => e,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(out),
-        Err(e) => return Err(e.into()),
-    };
-    for entry in entries {
-        let entry = entry?;
-        if entry.file_type()?.is_file() {
-            out.push(entry.file_name().to_string_lossy().into_owned());
-        }
-    }
-    out.sort();
-    Ok(out)
-}
-
-/// Moves `names` from `from` to `to`, replacing what's there.
-fn move_files(from: &Path, to: &Path, names: &[String]) -> Result<()> {
-    if names.is_empty() {
-        return Ok(());
-    }
-    fs::create_dir_all(to)?;
-    for name in names {
-        let dest = to.join(name);
-        if dest.exists() {
-            fs::remove_file(&dest)?;
-        }
-        fs::rename(from.join(name), dest)?;
-    }
-    Ok(())
-}
-
 /// What a profile's worlds are about: the game as it plays and `state/`.
 struct Ctx<'a> {
     paths: &'a AppPaths,
@@ -328,6 +274,7 @@ struct Ctx<'a> {
     def: &'a Worlds,
     game: &'static Game,
     upper: PathBuf,
+    dir: PathBuf,
 }
 
 impl<'a> Ctx<'a> {
@@ -341,115 +288,8 @@ impl<'a> Ctx<'a> {
             def,
             game,
             upper: layers.upper,
+            dir: dir(paths, profile_id),
         })
-    }
-
-    /// Whether a file in `state/` belongs to the world played.
-    fn belongs(&self, name: &str) -> bool {
-        self.def.holds(name) || saves::is_save(self.game, name)
-    }
-
-    /// The files of the world played, in `state/`.
-    fn in_state(&self) -> Result<Vec<String>> {
-        Ok(file_names(&self.upper)?
-            .into_iter()
-            .filter(|n| self.belongs(n))
-            .collect())
-    }
-
-    /// Takes the world played out of `state/`: into its folder, or, when
-    /// none is recorded as played, saves made before worlds (or in a world
-    /// never recorded) into a backup, and the rest away.
-    fn park(&self, from: Option<u32>) -> Result<()> {
-        let names = self.in_state()?;
-        match from {
-            Some(id) => move_files(
-                &self.upper,
-                &world_dir(self.paths, self.profile_id, id),
-                &names,
-            ),
-            None => {
-                let saves: Vec<String> = names
-                    .iter()
-                    .filter(|n| saves::is_save(self.game, n))
-                    .cloned()
-                    .collect();
-                if !saves.is_empty() {
-                    backups::create(
-                        self.paths,
-                        self.db,
-                        self.profile_id,
-                        Contents::Files(&saves),
-                        Reason::BeforeWorlds,
-                    )?;
-                    tracing::info!(
-                        "{} saves of {} from before worlds backed up",
-                        saves.len(),
-                        self.profile_id
-                    );
-                }
-                for name in &names {
-                    fs::remove_file(self.upper.join(name))?;
-                }
-                Ok(())
-            }
-        }
-    }
-
-    /// Puts a world's files and saves into `state/`.
-    fn unpark(&self, to: Option<u32>) -> Result<()> {
-        let Some(id) = to else { return Ok(()) };
-        let dir = world_dir(self.paths, self.profile_id, id);
-        move_files(&dir, &self.upper, &file_names(&dir)?)?;
-        let _ = fs::remove_dir(&dir);
-        Ok(())
-    }
-
-    /// Finishes a switch cut short, e.g. by a crash.
-    fn recover(&self) -> Result<()> {
-        let journal = dir(self.paths, self.profile_id).join(JOURNAL);
-        let swap: Swap = match fs::read(&journal) {
-            Ok(data) => serde_json::from_slice(&data)
-                .map_err(|e| Error::NotFound(format!("readable {}: {e}", journal.display())))?,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
-            Err(e) => return Err(e.into()),
-        };
-        tracing::warn!(
-            "finishing the switch of {} to world {:?}",
-            self.profile_id,
-            swap.to
-        );
-        self.finish(swap)
-    }
-
-    fn finish(&self, mut swap: Swap) -> Result<()> {
-        if !swap.parked {
-            self.park(swap.from)?;
-            swap.parked = true;
-            write_journal(self.paths, self.profile_id, &swap)?;
-        }
-        self.unpark(swap.to)?;
-        set_active(self.db, self.profile_id, swap.to)?;
-        fs::remove_file(dir(self.paths, self.profile_id).join(JOURNAL))?;
-        Ok(())
-    }
-
-    /// Makes `to` the world played; with `None`, none.
-    fn switch(&self, to: Option<u32>) -> Result<()> {
-        self.recover()?;
-        let from = active(self.db, self.profile_id)?;
-        if from == to && from.is_some() {
-            return Ok(());
-        }
-        let swap = Swap {
-            from,
-            to,
-            parked: false,
-        };
-        write_journal(self.paths, self.profile_id, &swap)?;
-        self.finish(swap)?;
-        tracing::info!("{} switched from world {from:?} to {to:?}", self.profile_id);
-        Ok(())
     }
 
     /// The saves of a world.
@@ -463,6 +303,59 @@ impl<'a> Ctx<'a> {
             .iter()
             .filter(|n| saves::is_save(self.game, n))
             .count() as u32)
+    }
+}
+
+impl Slots for Ctx<'_> {
+    type Key = u32;
+
+    fn dir(&self) -> &Path {
+        &self.dir
+    }
+
+    fn upper(&self) -> &Path {
+        &self.upper
+    }
+
+    /// Whether a file in `state/` belongs to the world played.
+    fn belongs(&self, name: &str) -> bool {
+        self.def.holds(name) || saves::is_save(self.game, name)
+    }
+
+    fn active(&self) -> Result<Option<u32>> {
+        active(self.db, self.profile_id)
+    }
+
+    fn set_active(&self, key: Option<&u32>) -> Result<()> {
+        set_active(self.db, self.profile_id, key.copied())
+    }
+
+    /// When no world is recorded as played: saves made before worlds (or in
+    /// a world never recorded) go into a backup, and the rest away.
+    fn park_none(&self, names: &[String]) -> Result<()> {
+        let saves: Vec<String> = names
+            .iter()
+            .filter(|n| saves::is_save(self.game, n))
+            .cloned()
+            .collect();
+        if !saves.is_empty() {
+            backups::create(
+                self.paths,
+                self.db,
+                self.profile_id,
+                Contents::Files(&saves),
+                Reason::BeforeWorlds,
+            )?;
+            tracing::info!(
+                "{} saves of {} from before worlds backed up",
+                saves.len(),
+                self.profile_id
+            );
+        }
+        for name in names {
+            fs::remove_file(self.upper.join(name))?;
+        }
+        Ok(())
     }
 }
 

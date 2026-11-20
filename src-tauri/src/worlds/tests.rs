@@ -5,6 +5,7 @@ use super::*;
 use crate::backups;
 use crate::library;
 use crate::saves::tests::keen4_save;
+use crate::slots::{JOURNAL, Swap, write_journal};
 use crate::source::testutil::*;
 
 const WORLDS: &str = r#"{
@@ -281,8 +282,7 @@ fn a_switch_cut_short_is_finished_next_time() {
     fs::create_dir_all(&to_dir).unwrap();
     fs::rename(t.state.join("WORLD.PAT"), to_dir.join("WORLD.PAT")).unwrap();
     write_journal(
-        &t.paths,
-        &t.profile,
+        &dir(&t.paths, &t.profile),
         &Swap {
             from: Some(second),
             to: Some(first),

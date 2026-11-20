@@ -36,6 +36,7 @@ mod runtime;
 mod saves;
 mod session;
 mod settings;
+mod slots;
 mod source;
 mod storage;
 mod stores;
