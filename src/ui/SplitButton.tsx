@@ -34,7 +34,10 @@ export function SplitButton({
         label={menuLabel}
         variant={variant}
         disabled={disabled}
-        className="rounded-l-none border-l border-accent-ink/25 px-2.5"
+        // Its drop shadow would fall left onto the main half, a dark smudge
+        // in the dark theme: cut off there, except while the focus ring
+        // needs that side.
+        className="rounded-l-none border-l border-accent-ink/25 px-2.5 [clip-path:inset(-2rem_-2rem_-2rem_0)] focus-visible:[clip-path:none] pad-focus:[clip-path:none]"
         trigger={<ChevronDown className="size-4" aria-hidden />}
         items={items}
       />
