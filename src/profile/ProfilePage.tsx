@@ -49,6 +49,8 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   const profiles = useProfiles();
   // Until the player picks one: the README if the mod has one, else saves.
   const [picked, setTab] = useState<Tab | null>(null);
+  // The Variants tab scrolls to the variant played, once, when asked to.
+  const [seekVariant, setSeekVariant] = useState(false);
 
   // The page shares its scrolling area with the library, which may have been far down.
   useLayoutEffect(() => {
@@ -177,6 +179,10 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
           game={game}
           canPlay={!!runtime.data?.active && !launch.isPending}
           onPlay={play}
+          onShowVariant={() => {
+            setTab("variants");
+            setSeekVariant(true);
+          }}
           modCount={
             profiles.data?.filter((p) => p.modId !== null && p.installId === profile.installId)
               .length ?? 0
@@ -227,6 +233,8 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
                 profile={profile}
                 canPlay={!!runtime.data?.active && !launch.isPending}
                 onPlay={(v) => play(null, v)}
+                seekActive={seekVariant}
+                onSought={() => setSeekVariant(false)}
               />
             )}
             {tab === "saves" && (

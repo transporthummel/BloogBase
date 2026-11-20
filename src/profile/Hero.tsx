@@ -28,11 +28,14 @@ export function Hero({
   game,
   canPlay,
   onPlay,
+  onShowVariant,
   modCount,
 }: {
   profile: Profile;
   game?: Game;
   canPlay: boolean;
+  /** Goes to the variant played in the Variants tab. */
+  onShowVariant: () => void;
   /** With the world to play, for a mod that keeps worlds. */
   onPlay: (world: WorldStart | null, variant?: string) => void;
   /** For a game: the mods played on it. */
@@ -93,7 +96,14 @@ export function Hero({
       {/* About it on top, playing it at the bottom. */}
       <div ref={textRef} className="flex min-w-0 flex-1 flex-col justify-between gap-5 p-5">
         <div className="grid content-start gap-4 select-text">
-          <Credits profile={profile} game={game} mod={mod} entry={entry} extensions={extensions} />
+          <Credits
+            profile={profile}
+            game={game}
+            mod={mod}
+            entry={entry}
+            extensions={extensions}
+            onShowVariant={onShowVariant}
+          />
           {description && (
             <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line">{description}</p>
           )}
@@ -137,12 +147,14 @@ function Credits({
   mod,
   entry,
   extensions,
+  onShowVariant,
 }: {
   profile: Profile;
   game?: Game;
   mod?: Mod;
   entry?: IndexEntry;
   extensions: Mod[];
+  onShowVariant: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
@@ -155,9 +167,15 @@ function Credits({
         <p className="grid gap-0.5 text-sm">
           <span>
             <span className="text-muted">{t("variants.variant")}</span>{" "}
-            <span className="font-semibold">
+            {/* Leads to it among the others, as the mods played over it lead to theirs. */}
+            <button
+              type="button"
+              onClick={onShowVariant}
+              title={t("variants.showAll")}
+              className="font-semibold underline-offset-2 hover:text-accent hover:underline"
+            >
               {variantName(profile.activeVariant, i18n.language)}
-            </span>
+            </button>
           </span>
           {variantDescription(profile.activeVariant, i18n.language) && (
             <span className="text-muted">

@@ -1727,6 +1727,23 @@ test("a mod with variants plays the one chosen, or another from the arrow", asyn
   );
 });
 
+test("the variant's name under the title leads to it in the Variants tab", async () => {
+  withVariants();
+  const scrolled: Element[] = [];
+  Element.prototype.scrollIntoView = vi.fn(function (this: Element) {
+    scrolled.push(this);
+  });
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "Easy" }));
+  expect(await screen.findByRole("tab", { name: "Variants 2" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await vi.waitFor(() => expect(scrolled).toHaveLength(1));
+  expect(scrolled[0]).toHaveTextContent("Current");
+  expect(scrolled[0]).toHaveTextContent("Easy");
+});
+
 test("the Variants tab lists them and makes one current without playing", async () => {
   withVariants();
   renderDetail();

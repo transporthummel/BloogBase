@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, Play } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Profile } from "../bindings";
 import { errorMessage } from "../errors";
@@ -25,10 +25,15 @@ export function VariantsPanel({
   profile,
   canPlay,
   onPlay,
+  seekActive = false,
+  onSought,
 }: {
   profile: Profile;
   canPlay: boolean;
   onPlay: (variant: string) => void;
+  /** Scrolls to the variant played once the list is there, then says so. */
+  seekActive?: boolean;
+  onSought?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -49,6 +54,14 @@ export function VariantsPanel({
   const data = variants.data;
   const error = variants.error ?? choose.error;
   const locked = profile.running;
+  const activeRow = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    if (!seekActive || !data) return;
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    activeRow.current?.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
+    onSought?.();
+  }, [seekActive, data, onSought]);
 
   return (
     <div className="grid gap-4">
@@ -61,7 +74,7 @@ export function VariantsPanel({
           const name = variantName(v, i18n.language);
           const description = variantDescription(v, i18n.language);
           return (
-            <li key={v.id}>
+            <li key={v.id} ref={active ? activeRow : undefined}>
               <Card className="flex flex-wrap items-center gap-3 p-3">
                 {!data.sameCovers && (
                   // Large enough to see the artwork, yet a row.
