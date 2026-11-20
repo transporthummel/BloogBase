@@ -74,6 +74,7 @@ vi.mock("../bindings", () => {
       profileFiring: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
       gameSettings: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
       indexMods: vi.fn(() => Promise.resolve({ status: "ok", data: [] })),
+      listVariants: vi.fn(),
     },
     events: { playSessionEnded: event, jobUpdated: event },
   };
@@ -666,4 +667,66 @@ test("the add dialog stops offering the store search once everything sold is her
   renderLibrary();
   await user.click(await screen.findByRole("button", { name: "Add game or mod" }));
   expect(screen.queryByText("offers the store search")).toBeNull();
+});
+
+test("a mod with variants asks which one until the player chose", async () => {
+  const hard = {
+    id: "hard",
+    default: true,
+    name: "Hard",
+    translations: { de: { name: "Schwer" } },
+  };
+  const easy = { id: "easy", default: false, name: "Easy", description: "Fewer enemies." };
+  const variant = (v: typeof hard | typeof easy) => ({
+    description: null,
+    translations: {},
+    archive: null,
+    root: null,
+    recipe: null,
+    copyToRoot: null,
+    files: {},
+    cover: null,
+    fingerprint: null,
+    ...v,
+  });
+  const mod: Profile = {
+    ...profile,
+    id: "clouds",
+    modId: "clouds",
+    label: "Clouds Unseen",
+    variantCount: 2,
+    activeVariant: variant(easy),
+    variantChosen: false,
+  };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [mod] });
+  vi.mocked(commands.listVariants).mockResolvedValue({
+    status: "ok",
+    data: {
+      variants: [
+        { variant: variant(hard), active: false, saves: 0, lastPlayedAt: null },
+        { variant: variant(easy), active: true, saves: 2, lastPlayedAt: 1_700_000_000 },
+      ],
+      active: "easy",
+      chosen: false,
+      sameCovers: true,
+    },
+  });
+  vi.mocked(commands.launchProfile).mockResolvedValue({ status: "ok", data: null });
+  localStorage.setItem("bloogbase.controlsShown", JSON.stringify(["galaxy"]));
+  renderLibrary();
+  // The variant played, beside the count.
+  expect(await screen.findByText("Easy · 2 variants")).toBeInTheDocument();
+  const play = await screen.findByRole("button", { name: "Play Clouds Unseen" });
+  await vi.waitFor(() => expect(play).toBeEnabled());
+  await userEvent.click(play);
+  const dialog = await screen.findByRole("dialog", { name: "Which variant?" });
+  // Played before it had variants: that one is preselected and marked.
+  const easyRadio = await within(dialog).findByRole("radio", { name: /Easy/ });
+  expect(easyRadio).toBeChecked();
+  expect(within(dialog).getByText("Played so far")).toBeInTheDocument();
+  expect(within(dialog).getByText("Fewer enemies.")).toBeInTheDocument();
+  await userEvent.click(within(dialog).getByRole("radio", { name: /Hard/ }));
+  await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));
+  expect(commands.launchProfile).toHaveBeenCalledWith("clouds", null, "hard");
+  localStorage.removeItem("bloogbase.controlsShown");
 });

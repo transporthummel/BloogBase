@@ -5,9 +5,19 @@ import type { ReactNode } from "react";
  * the player's own state (installed, update) apart from descriptive labels;
  * `warning` a label to heed, e.g. an abandoned mod.
  */
-export function Badge({ children, tone }: { children: ReactNode; tone?: "status" | "warning" }) {
+export function Badge({
+  children,
+  tone,
+  title,
+}: {
+  children: ReactNode;
+  tone?: "status" | "warning";
+  /** Says more on hover, e.g. the names behind a count. */
+  title?: string;
+}) {
   return (
     <span
+      title={title}
       className={`inline-block rounded border px-1.5 py-1 font-pixel text-[0.55rem] leading-none uppercase ${
         tone === "status"
           ? "border-accent/50 bg-accent/10 text-accent"

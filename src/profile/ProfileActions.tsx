@@ -53,6 +53,7 @@ import { oneButtonFiringKey, profileFiringKey } from "./firing";
 import { NewWorldDialog } from "./NewWorldDialog";
 import { RemoveGameDialog } from "./RemoveGameDialog";
 import { asksFirst, useWorlds, worldName } from "./worlds";
+import { useVariants, variantName } from "./variants";
 
 /** How many other worlds the arrow beside Continue offers. */
 const RECENT_WORLDS = 5;
@@ -72,12 +73,12 @@ export function ProfileActions({
   game?: Game;
   mod?: Mod;
   canPlay: boolean;
-  /** With the world to play, for a mod that keeps worlds. */
-  onPlay: (world: WorldStart | null) => void;
+  /** With the world to play, for a mod that keeps worlds, or a variant. */
+  onPlay: (world: WorldStart | null, variant?: string) => void;
   /** For a game: the mods played on it. */
   modCount: number;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState<Open>(null);
@@ -100,6 +101,17 @@ export function ProfileActions({
   const blocked = profile.missingGame !== null || noDosbox;
   const check = useModUpdateCheck(mod);
   const worlds = useWorlds(profile);
+  const variants = useVariants(profile);
+  // Once chosen, Play starts the variant played; the arrow the others (§9.7).
+  const otherVariants: MenuItem[] = profile.variantChosen
+    ? (variants.data?.variants ?? [])
+        .filter((v) => !v.active)
+        .map((v) => ({
+          label: t("variants.playAs", { name: variantName(v.variant, i18n.language) }),
+          icon: <Play className="size-4" />,
+          onSelect: () => onPlay(null, v.variant.id),
+        }))
+    : [];
   // A new world asks for its seed and options first, where the mod has any.
   const newWorld = () => {
     if (worlds.data && asksFirst(worlds.data.definition)) setOpen("newWorld");
@@ -184,7 +196,17 @@ export function ProfileActions({
   return (
     <div className="grid gap-3">
       <div className="flex items-stretch gap-2">
-        {profile.worlds && !blocked && !profile.running && startItems.length > 0 ? (
+        {otherVariants.length > 0 && !blocked && !profile.running ? (
+          <SplitButton
+            onClick={() => onPlay(null)}
+            disabled={!canPlay}
+            className="min-w-44 px-8 py-3 text-base"
+            menuLabel={t("variants.more")}
+            items={otherVariants}
+          >
+            {t("library.play")}
+          </SplitButton>
+        ) : profile.worlds && !blocked && !profile.running && startItems.length > 0 ? (
           // Says what it does: the world played last goes on, else a new one
           // begins; the arrow offers the other ways to start (§9.6).
           <SplitButton

@@ -24,10 +24,14 @@ import { ScreenshotsPanel } from "./ScreenshotsPanel";
 import { VideosPanel } from "./VideosPanel";
 import { WorldsPanel } from "./WorldsPanel";
 import { useWorlds, worldsKey } from "./worlds";
+import { useVariants, variantsKey } from "./variants";
+import { useVariantGate } from "./variantGate";
+import { VariantsPanel } from "./VariantsPanel";
 import { screenshotsKey, useScreenshots, useVideos, videosKey } from "./captures";
 import { backupsKey, savesKey, useSaves } from "./saves";
 
-type Tab = "readme" | "controls" | "worlds" | "saves" | "screenshots" | "videos" | "config";
+type Tab =
+  "readme" | "controls" | "worlds" | "variants" | "saves" | "screenshots" | "videos" | "config";
 
 export function ProfileRoute() {
   const { profileId } = useParams({ from: "/profiles/$profileId" });
@@ -62,6 +66,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
       queryClient.invalidateQueries({ queryKey: screenshotsKey(profileId) });
       queryClient.invalidateQueries({ queryKey: videosKey(profileId) });
       queryClient.invalidateQueries({ queryKey: worldsKey(profileId) });
+      queryClient.invalidateQueries({ queryKey: variantsKey(profileId) });
     });
     return () => {
       unlisten.then((f) => f());
@@ -69,32 +74,45 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   }, [queryClient, profileId]);
 
   const launch = useMutation({
-    mutationFn: (world: WorldStart | null) => unwrap(commands.launchProfile(profileId, world, null)),
+    mutationFn: ({ world, variant }: { world: WorldStart | null; variant: string | null }) =>
+      unwrap(commands.launchProfile(profileId, world, variant)),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: profilesKey });
       queryClient.invalidateQueries({ queryKey: backupsKey(profileId) });
       // Starting a world swaps the saves the game sees.
       queryClient.invalidateQueries({ queryKey: savesKey(profileId) });
       queryClient.invalidateQueries({ queryKey: worldsKey(profileId) });
+      // Starting another variant swaps them too.
+      queryClient.invalidateQueries({ queryKey: variantsKey(profileId) });
     },
   });
-  // The world to start once the controls have been shown, if they are.
+  // The world and variant to start once the controls have been shown, if they are.
   const world = useRef<WorldStart | null>(null);
+  const variant = useRef<string | null>(null);
 
   const profile = profiles.data?.find((p) => p.id === profileId);
   const game = games.data?.find((g) => g.id === profile?.gameId);
   // The first start of a series shows its keys first.
-  const gate = useControlsGate(() => launch.mutate(world.current));
+  const gate = useControlsGate(() =>
+    launch.mutate({ world: world.current, variant: variant.current }),
+  );
+  // A mod with variants asks which one until the player has chosen (§9.7).
+  const variantGate = useVariantGate((p, picked) => {
+    variant.current = picked;
+    gate.play(p, game);
+  });
   const readmes = useReadmes(profile);
   const saves = useSaves(profileId);
   const shots = useScreenshots(profileId);
   const videos = useVideos(profileId);
   const worlds = useWorlds({ id: profileId, worlds: !!profile?.worlds });
+  const variants = useVariants({ id: profileId, variantCount: profile?.variantCount ?? 0 });
 
-  function play(start: WorldStart | null) {
+  /** With `pick`, that variant; without, the one chosen, or the picker. */
+  function play(start: WorldStart | null, pick?: string) {
     if (!profile) return;
     world.current = start;
-    gate.play(profile, game);
+    variantGate.play(profile, pick);
   }
 
   // A mod just installed opens before the list has been fetched again.
@@ -118,6 +136,14 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
           {
             id: "worlds" as const,
             label: <Counted label={t("profile.tabWorlds")} items={worlds.data?.worlds} />,
+          },
+        ]
+      : []),
+    ...(profile && profile.variantCount > 0
+      ? [
+          {
+            id: "variants" as const,
+            label: <Counted label={t("variants.tab")} items={variants.data?.variants} />,
           },
         ]
       : []),
@@ -158,6 +184,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
         />
       )}
       {gate.dialog}
+      {variantGate.dialog}
       {launch.error && (
         <div className="mb-4">
           <Notice tone="error">{errorMessage(t, launch.error)}</Notice>
@@ -195,8 +222,20 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
                 onPlay={play}
               />
             )}
+            {tab === "variants" && (
+              <VariantsPanel
+                profile={profile}
+                canPlay={!!runtime.data?.active && !launch.isPending}
+                onPlay={(v) => play(null, v)}
+              />
+            )}
             {tab === "saves" && (
-              <SavesPanel profile={profile} game={game} onShowWorlds={() => setTab("worlds")} />
+              <SavesPanel
+                profile={profile}
+                game={game}
+                onShowWorlds={() => setTab("worlds")}
+                onShowVariants={() => setTab("variants")}
+              />
             )}
             {tab === "screenshots" && <ScreenshotsPanel profile={profile} />}
             {tab === "videos" && <VideosPanel profile={profile} />}

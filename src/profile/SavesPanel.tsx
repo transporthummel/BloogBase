@@ -23,6 +23,7 @@ import { RelativeTime } from "../ui/RelativeTime";
 import { FolderRestoreDialog, RestoreDialog } from "./RestoreDialog";
 import { VersionsDialog } from "./VersionsDialog";
 import { useWorlds, worldName, worldsKey } from "./worlds";
+import { useVariants, variantName, variantsKey } from "./variants";
 import {
   backupContents,
   backupTitle,
@@ -43,11 +44,14 @@ export function SavesPanel({
   profile,
   game,
   onShowWorlds,
+  onShowVariants,
 }: {
   profile: Profile;
   game?: Game;
   /** Goes to the Worlds tab. */
   onShowWorlds?: () => void;
+  /** Goes to the Variants tab. */
+  onShowVariants?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -60,6 +64,14 @@ export function SavesPanel({
     if (!profile.worlds || b.world === null) return null;
     const w = worldOf(b.world);
     return w ? worldName(t, w) : t("worlds.deletedWorld");
+  };
+  const variants = useVariants(profile);
+  const variantOf = (id: string) => variants.data?.variants.find((v) => v.variant.id === id);
+  /** Which variant a backup's saves are of, for a mod with variants (§9.7). */
+  const backupVariant = (b: Backup) => {
+    if (profile.variantCount === 0 || b.variant === null) return null;
+    const v = variantOf(b.variant);
+    return v ? variantName(v.variant, i18n.language) : t("variants.removedVariant");
   };
   const backups = useQuery({
     queryKey: backupsKey(profile.id),
@@ -86,8 +98,9 @@ export function SavesPanel({
     queryClient.invalidateQueries({ queryKey: savesKey(profile.id) });
     queryClient.invalidateQueries({ queryKey: backupsKey(profile.id) });
     queryClient.invalidateQueries({ queryKey: profilesKey });
-    // Restoring a backup of another world plays that world again.
+    // Restoring a backup of another world or variant plays that one again.
     queryClient.invalidateQueries({ queryKey: worldsKey(profile.id) });
+    queryClient.invalidateQueries({ queryKey: variantsKey(profile.id) });
   };
 
   const backup = useMutation({
@@ -245,6 +258,7 @@ export function SavesPanel({
               <p className="text-xs text-muted">
                 {formatDateTime(i18n.language, b.createdAt)} · {backupContents(t, b)}
                 {backupWorld(b) && <> · {t("worlds.ofWorld", { name: backupWorld(b) })}</>}
+                {backupVariant(b) && <> · {t("variants.ofVariant", { name: backupVariant(b) })}</>}
               </p>
             </div>
             <div className="flex gap-1">
@@ -331,6 +345,26 @@ export function SavesPanel({
                   onClick={onShowWorlds}
                 >
                   {t("worlds.showAll")}
+                </button>
+              </>
+            )}
+          </p>
+        )}
+        {profile.activeVariant && (
+          <p className="text-sm text-muted">
+            {t("variants.savesOf")}{" "}
+            <span className="font-semibold text-ink">
+              {variantName(profile.activeVariant, i18n.language)}
+            </span>
+            {onShowVariants && (
+              <>
+                {" · "}
+                <button
+                  type="button"
+                  className="text-ink underline underline-offset-2"
+                  onClick={onShowVariants}
+                >
+                  {t("variants.showAll")}
                 </button>
               </>
             )}
@@ -481,9 +515,21 @@ export function SavesPanel({
               restoring.world !== null &&
               restoring.world !== profile.activeWorld &&
               worldOf(restoring.world);
+            const otherVariant =
+              restoring.variant !== null &&
+              restoring.variant !== profile.activeVariant?.id &&
+              variantOf(restoring.variant);
             setRestoring(null);
             const done = restoredText(t("backups.restored"), backedUp);
-            say(other ? `${done} ${t("worlds.switchedFor", { name: worldName(t, other) })}` : done);
+            say(
+              other
+                ? `${done} ${t("worlds.switchedFor", { name: worldName(t, other) })}`
+                : otherVariant
+                  ? `${done} ${t("variants.switchedFor", {
+                      name: variantName(otherVariant.variant, i18n.language),
+                    })}`
+                  : done,
+            );
             refresh();
           }}
         />

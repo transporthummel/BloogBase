@@ -108,6 +108,8 @@ vi.mock("../bindings", () => {
     "setWorldFavourite",
     "deleteWorld",
     "activateWorld",
+    "listVariants",
+    "setVariant",
   ];
   return {
     commands: Object.fromEntries(names.map((n) => [n, vi.fn()])),
@@ -1661,4 +1663,86 @@ test("the Saves tab names the world whose saves it shows", async () => {
   expect(screen.getByText(/world Hard one/)).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "All worlds" }));
   expect(screen.getByRole("tab", { name: /^Worlds/ })).toHaveAttribute("aria-selected", "true");
+});
+
+function withVariants() {
+  const variant = (id: string, name: string, de: string) => ({
+    id,
+    default: id === "hard",
+    name,
+    description: id === "easy" ? "Fewer enemies." : null,
+    translations: { de: { name: de, description: null } },
+    archive: null,
+    root: null,
+    recipe: null,
+    copyToRoot: null,
+    files: {},
+    cover: null,
+    fingerprint: null,
+  });
+  const hard = variant("hard", "Hard", "Schwer");
+  const easy = variant("easy", "Easy", "Leicht");
+  vi.mocked(commands.listProfiles).mockResolvedValue(
+    ok([
+      {
+        ...profile,
+        modId: "clouds",
+        label: "Clouds Unseen",
+        variantCount: 2,
+        activeVariant: easy,
+        variantChosen: true,
+      },
+    ]),
+  );
+  vi.mocked(commands.listVariants).mockResolvedValue(
+    ok({
+      variants: [
+        { variant: hard, active: false, saves: 1, lastPlayedAt: null },
+        { variant: easy, active: true, saves: 2, lastPlayedAt: 1_700_000_000 },
+      ],
+      active: "easy",
+      chosen: true,
+      sameCovers: false,
+    }),
+  );
+  vi.mocked(commands.launchProfile).mockResolvedValue(ok(null));
+  vi.mocked(commands.setVariant).mockResolvedValue(ok(null));
+  setControlsShown("galaxy");
+}
+
+test("a mod with variants plays the one chosen, or another from the arrow", async () => {
+  withVariants();
+  renderDetail();
+  expect(await screen.findByText("2 variants")).toBeInTheDocument();
+  expect(screen.getByText("Variant:")).toBeInTheDocument();
+  expect(screen.getAllByText("Fewer enemies.").length).toBeGreaterThan(0);
+  await userEvent.click(await screen.findByRole("button", { name: "Play" }));
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", null, null),
+  );
+  await userEvent.click(screen.getByRole("button", { name: "Other variants" }));
+  await userEvent.click(screen.getByRole("menuitem", { name: "Play as Hard" }));
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenLastCalledWith("keen4-1", null, "hard"),
+  );
+});
+
+test("the Variants tab lists them and makes one current without playing", async () => {
+  withVariants();
+  renderDetail();
+  await userEvent.click(await screen.findByRole("tab", { name: "Variants 2" }));
+  const rows = await screen.findAllByRole("listitem");
+  expect(rows[0]).toHaveTextContent("Hard");
+  expect(rows[0]).toHaveTextContent("Not played yet");
+  expect(rows[1]).toHaveTextContent("Current");
+  expect(rows[1]).toHaveTextContent("2 saves");
+  expect(screen.getByRole("button", { name: "Easy is already current" })).toBeDisabled();
+  await userEvent.click(screen.getByRole("button", { name: "Make Hard current without playing" }));
+  expect(commands.setVariant).toHaveBeenCalledWith("keen4-1", "hard");
+  expect(await screen.findByText(/“Hard” is current now/)).toBeInTheDocument();
+  expect(commands.launchProfile).not.toHaveBeenCalled();
+
+  // The Saves tab says whose saves they are.
+  await userEvent.click(screen.getByRole("tab", { name: /^Saves/ }));
+  expect(await screen.findByText(/Saves of the variant/)).toHaveTextContent("Easy");
 });

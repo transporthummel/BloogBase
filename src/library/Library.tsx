@@ -37,6 +37,8 @@ import { PageHeader } from "../ui/PageHeader";
 import { RelativeTime } from "../ui/RelativeTime";
 import { PlayButton } from "../ui/PlayButton";
 import { useControlsGate } from "../profile/controlsGate";
+import { useVariantGate } from "../profile/variantGate";
+import { variantName } from "../profile/variants";
 
 /** The games sold on Steam and GOG. */
 const SOLD_GAMES = ["keen1", "keen2", "keen3", "keen4", "keen5", "kdreams"];
@@ -87,11 +89,24 @@ export function Library() {
   }, [queryClient]);
 
   const launch = useMutation({
-    mutationFn: (profileId: string) => unwrap(commands.launchProfile(profileId, null, null)),
+    mutationFn: ({ profileId, variant }: { profileId: string; variant: string | null }) =>
+      unwrap(commands.launchProfile(profileId, null, variant)),
     onSettled: () => queryClient.invalidateQueries({ queryKey: profilesKey }),
   });
+  // The variant picked, for once the controls have been shown.
+  const variant = useRef<string | null>(null);
   // The first start of a series shows its keys first.
-  const gate = useControlsGate(launch.mutate);
+  const gate = useControlsGate((profileId) =>
+    launch.mutate({ profileId, variant: variant.current }),
+  );
+  // A mod with variants asks which one until the player has chosen (§9.7).
+  const variants = useVariantGate((profile, picked) => {
+    variant.current = picked;
+    gate.play(
+      profile,
+      games.data?.find((g) => g.id === profile.gameId),
+    );
+  });
 
   /** A single game imported opens right away; several are counted. */
   async function showImported(installs: Install[]) {
@@ -168,6 +183,7 @@ export function Library() {
         </aside>
       )}
       {gate.dialog}
+      {variants.dialog}
       {adding && (
         <AddModDialog
           onClose={() => setAdding(false)}
@@ -325,7 +341,7 @@ export function Library() {
                       heading={grouped ? "h3" : "h2"}
                       sharedLabel={shared.has(profile.label)}
                       canPlay={!!runtime.data?.active && !launch.isPending}
-                      onPlay={() => gate.play(profile, gameById.get(profile.gameId))}
+                      onPlay={() => variants.play(profile)}
                     />
                   </li>
                 ))}
@@ -359,13 +375,13 @@ const ProfileCard = memo(function ProfileCard({
   canPlay: boolean;
   onPlay: (profileId: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
   const versionLabel = version?.label ?? t("library.unknownVersion");
   // The badge tells copies apart on screen; screen readers hear the version
   // with the name.
   const name = sharedLabel ? `${profile.label} (${versionLabel})` : profile.label;
-  const cover = useCover(profile.id, profile.installId);
+  const cover = useCover(profile.id, profile.installId, profile.activeVariant?.id ?? null);
   // Alpha, beta or abandoned, as the index says now, else the KeenWiki page.
   const status =
     useIndexMods().data?.find((m) => profile.modId !== null && m.modId === profile.modId)?.entry
@@ -426,6 +442,15 @@ const ProfileCard = memo(function ProfileCard({
           {profile.modId !== null && !profile.sourceMod && <Badge>{t("mods.badge")}</Badge>}
           {profile.sourceMod && <Badge>{t("mods.sourceMod")}</Badge>}
           {profile.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
+          {profile.activeVariant && (
+            // The variant played, in the badges rather than a line of its own.
+            <Badge>
+              {t("variants.badgeActive", {
+                name: variantName(profile.activeVariant, i18n.language),
+                count: profile.variantCount,
+              })}
+            </Badge>
+          )}
           <StatusBadge status={status} />
           {profile.modId === null && <Badge>{versionLabel}</Badge>}
         </div>

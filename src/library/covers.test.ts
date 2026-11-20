@@ -40,7 +40,7 @@ test("a cover that fails to show is asked for once more, then left to the placeh
   // Each extraction gets its own URL.
   let now = 1;
   vi.spyOn(Date, "now").mockImplementation(() => now++);
-  const { result } = renderHook(() => useCover("keen4-1", "keen4-1"), { wrapper });
+  const { result } = renderHook(() => useCover("keen4-1", "keen4-1", null), { wrapper });
   await waitFor(() => expect(result.current.data).toBeTruthy());
   const first = result.current.data!.src;
 

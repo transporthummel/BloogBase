@@ -38,8 +38,12 @@ export async function forgetRemovedCovers(client: QueryClient) {
 
 type CoverData = { src: string; scrambled: boolean; retried?: boolean } | null;
 
-async function loadCover(profileId: string, retried = false): Promise<CoverData> {
-  const cover = await unwrap(commands.profileCover(profileId, null));
+async function loadCover(
+  profileId: string,
+  variant: string | null,
+  retried = false,
+): Promise<CoverData> {
+  const cover = await unwrap(commands.profileCover(profileId, variant));
   if (cover === null) return null;
   // A new extraction keeps the file name, so the URL has to change.
   return {
@@ -59,12 +63,12 @@ async function loadCover(profileId: string, retried = false): Promise<CoverData>
  * happened in many ways) is asked for once more, which extracts it again;
  * if that one fails too, the placeholder stays.
  */
-export function useCover(profileId: string, installId: string | null) {
+export function useCover(profileId: string, installId: string | null, variant: string | null) {
   const client = useQueryClient();
-  const queryKey = [...coverKey(profileId), installId];
+  const queryKey = [...coverKey(profileId), installId, variant];
   const query = useQuery({
     queryKey,
-    queryFn: () => loadCover(profileId),
+    queryFn: () => loadCover(profileId, variant),
     staleTime: Infinity,
     retry: false,
   });
@@ -76,7 +80,11 @@ export function useCover(profileId: string, installId: string | null) {
       client.setQueryData<CoverData>(queryKey, null);
     } else {
       client
-        .fetchQuery({ queryKey, queryFn: () => loadCover(profileId, true), staleTime: 0 })
+        .fetchQuery({
+          queryKey,
+          queryFn: () => loadCover(profileId, variant, true),
+          staleTime: 0,
+        })
         .catch(() => client.setQueryData<CoverData>(queryKey, null));
     }
   };

@@ -29,6 +29,7 @@ import { useSetupStatus } from "./queries";
 import { StoreLinks, StoreScanList } from "./StoreScanList";
 import { useStoreScan } from "./storeScan";
 import { usePageTitle } from "../ui/usePageTitle";
+import { VariantsBadge } from "../discover/VariantsBadge";
 
 export type StepProps = {
   next: () => void;
@@ -487,6 +488,7 @@ export function ModsStep({ next, back }: StepProps) {
                     <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
                     {isSourceMod(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
                     {entry.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
+                    <VariantsBadge entry={entry} />
                   </span>
                   <span className="text-xs text-muted">
                     {isSourceMod(entry) ? t("mods.standalone") : gameTitle(games, entry.game)}

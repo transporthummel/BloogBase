@@ -21,6 +21,7 @@ import { useEnterAction } from "../ui/useEnterAction";
 import { fitting, freeFit, isSourceMod, needsNoGame, requiredLabels } from "./fit";
 import { useFreeGames, useIndexMods } from "./queries";
 import { StatusBadge } from "./StatusBadge";
+import { VariantsBadge } from "./VariantsBadge";
 
 /** A mod from the index with everything needed to install it. */
 export function ModCard({
@@ -94,6 +95,7 @@ export function ModCard({
           <StatusBadge status={entry.status} />
           {isSourceMod(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
           {entry.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
+          <VariantsBadge entry={entry} />
           {mod.new && <Badge>{t("mods.new")}</Badge>}
           {entry.featured && <Badge>{t("discover.featured")}</Badge>}
         </div>

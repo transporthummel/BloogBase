@@ -45,7 +45,7 @@ export function LaunchOverlay() {
 function Starting({ profile, onClose }: { profile: Profile; onClose: () => void }) {
   const { t } = useTranslation();
   const games = useGames();
-  const cover = useCover(profile.id, profile.installId);
+  const cover = useCover(profile.id, profile.installId, profile.activeVariant?.id ?? null);
   const game = games.data?.find((g) => g.id === profile.gameId);
   return (
     <div

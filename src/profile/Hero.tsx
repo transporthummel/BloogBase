@@ -20,6 +20,7 @@ import { usePageTitle } from "../ui/usePageTitle";
 import { screenshotSrc, useScreenshots } from "./captures";
 import { usePictureWidth } from "./heroPicture";
 import { ProfileActions } from "./ProfileActions";
+import { variantDescription, variantName } from "./variants";
 
 /** Picture, title, credits, description, links and stats; Play, and the rest in a menu. */
 export function Hero({
@@ -33,7 +34,7 @@ export function Hero({
   game?: Game;
   canPlay: boolean;
   /** With the world to play, for a mod that keeps worlds. */
-  onPlay: (world: WorldStart | null) => void;
+  onPlay: (world: WorldStart | null, variant?: string) => void;
   /** For a game: the mods played on it. */
   modCount: number;
 }) {
@@ -42,7 +43,7 @@ export function Hero({
   const mods = useMods({ enabled: profile.modId !== null });
   const index = useIndexMods();
   const shots = useScreenshots(profile.id);
-  const cover = useCover(profile.id, profile.installId);
+  const cover = useCover(profile.id, profile.installId, profile.activeVariant?.id ?? null);
   const cardRef = useRef<HTMLElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const pictureWidth = usePictureWidth(cardRef, textRef);
@@ -149,6 +150,22 @@ function Credits({
   return (
     <div className="grid gap-2">
       <h1 className="font-pixel text-lg leading-relaxed">{profile.label}</h1>
+      {profile.activeVariant && (
+        // The way it's played (§9.7), as the title goes on.
+        <p className="grid gap-0.5 text-sm">
+          <span>
+            <span className="text-muted">{t("variants.variant")}</span>{" "}
+            <span className="font-semibold">
+              {variantName(profile.activeVariant, i18n.language)}
+            </span>
+          </span>
+          {variantDescription(profile.activeVariant, i18n.language) && (
+            <span className="text-muted">
+              {variantDescription(profile.activeVariant, i18n.language)}
+            </span>
+          )}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
         {profile.missingGame !== null && (
           <span>{t("mods.waitsFor", { game: profile.missingGame })}</span>
@@ -166,6 +183,9 @@ function Credits({
         {profile.modId !== null && !profile.sourceMod && <Badge>{t("mods.badge")}</Badge>}
         {profile.sourceMod && <Badge>{t("mods.sourceMod")}</Badge>}
         {profile.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
+        {profile.variantCount > 0 && (
+          <Badge>{t("variants.badge", { count: profile.variantCount })}</Badge>
+        )}
         <StatusBadge status={entry?.status ?? mod?.status} />
         {profile.modId === null && <Badge>{version?.label ?? t("library.unknownVersion")}</Badge>}
         {profile.modId === null && version?.shareware && <Badge>{t("profile.shareware")}</Badge>}
