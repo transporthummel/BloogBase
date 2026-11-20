@@ -286,9 +286,11 @@ function Stats({ profile, added }: { profile: Profile; added?: number }) {
     [t("library.saveCountLabel"), String(profile.saveCount)],
   ];
   if (added !== undefined) stats.push([t("profile.added"), formatDate(i18n.language, added)]);
-  // Columns, so the second row lines up with the first.
+  // Columns, so the second row lines up with the first. auto-fit, not
+  // auto-fill: an empty column would narrow the others as the text widens,
+  // a label would wrap, and the picture beside it would never settle.
   return (
-    <dl className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-x-4 gap-y-2">
+    <dl className="grid grid-cols-[repeat(auto-fit,minmax(5.5rem,1fr))] gap-x-4 gap-y-2">
       {stats.map(([label, value]) => (
         <div key={label} className="grid gap-1">
           <dt className="text-xs text-muted">{label}</dt>

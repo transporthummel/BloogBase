@@ -33,6 +33,7 @@
 - A game folder with a mod's levels copied into it, without a patch file, is added as a mod instead of as the game, and its game isn't offered for the library.
 - "Undo" after deleting a save is no longer offered once the backup holding it has been deleted.
 - Keen 1–3 mods whose level files are 64 KB or larger because a level editor left old data after the level (Keen 0: Part 1 April Fools, Robot Rebellion, Hiding from the Sky) no longer crash DOSBox after quitting to DOS. The game read the whole file and wrote past its memory; the copy the game runs from now ends where the level does.
+- The top of a game's or mod's page no longer jitters at some window widths, where its picture kept switching between two sizes.
 
 ### Misc
 

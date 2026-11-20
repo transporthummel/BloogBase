@@ -19,7 +19,8 @@
       "Text fields no longer underline words as misspelled.",
       "Revival of Bliss starts its own menu: play as Keen or Craig, and the epilogue.",
       "Mods from the mod list take over corrected names, details and start settings from it.",
-      "Mods with several variants, like difficulty levels, install all of them, each with its own saves."
+      "Mods with several variants, like difficulty levels, install all of them, each with its own saves.",
+      "The top of a game's or mod's page no longer jitters at some window widths."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -40,7 +41,8 @@
       "Textfelder unterstreichen keine Wörter mehr als falsch geschrieben.",
       "Revival of Bliss startet mit seinem eigenen Menü: als Keen oder Craig spielen, dazu der Epilog.",
       "Mods aus der Modliste übernehmen von ihr korrigierte Namen, Angaben und Starteinstellungen.",
-      "Mods mit mehreren Varianten, etwa Schwierigkeitsstufen, bringen alle mit, jede mit eigenen Spielständen."
+      "Mods mit mehreren Varianten, etwa Schwierigkeitsstufen, bringen alle mit, jede mit eigenen Spielständen.",
+      "Der obere Teil einer Spiel- oder Mod-Seite zittert bei manchen Fensterbreiten nicht mehr."
     ]
   },
   "releases": [
