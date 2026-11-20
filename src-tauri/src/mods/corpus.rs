@@ -268,9 +268,93 @@ fn index_fingerprints_are_those_of_the_downloads() {
             fs::write(&yaml_path, with_fingerprint(&yaml, &d.sha256, &found)).unwrap();
             written += 1;
         }
+        // Each variant's, over its root as installed (§9.7).
+        if entry.variants.is_empty() {
+            continue;
+        }
+        let mut c = super::Curated::new(&entry, 0);
+        c.part_files = entry.downloads[0]
+            .parts
+            .iter()
+            .map(|(key, p)| {
+                let path = cache.join(format!("{}.zip", p.sha256.to_ascii_lowercase()));
+                (key.clone(), path)
+            })
+            .collect();
+        let main = cache.join(format!(
+            "{}.zip",
+            entry.downloads[0].sha256.to_ascii_lowercase()
+        ));
+        let tmp = tempfile::tempdir().unwrap();
+        let staged = super::variant_files::analyze_variants(&c, &main)
+            .and_then(|v| super::variant_files::stage(&v, tmp.path()));
+        if let Err(err) = staged {
+            wrong.push(format!("{}: variants: {err}", entry.id));
+            continue;
+        }
+        for v in &entry.variants {
+            let dir = tmp.path().join("variants").join(&v.id);
+            let found = match super::variant_files::fingerprint_of(&dir, &entry.game) {
+                Ok(Some(f)) => f,
+                Ok(None) => {
+                    wrong.push(format!("{}: variant {} has no files", entry.id, v.id));
+                    continue;
+                }
+                Err(err) => {
+                    wrong.push(format!("{}: variant {}: {err}", entry.id, v.id));
+                    continue;
+                }
+            };
+            if v.fingerprint.as_ref() == Some(&found) {
+                continue;
+            }
+            if !write {
+                wrong.push(format!(
+                    "{}: variant {} has fingerprint {}",
+                    entry.id, v.id, found.sha256
+                ));
+                continue;
+            }
+            let yaml_path = root.join("index/mods").join(format!("{}.yaml", entry.id));
+            let yaml = fs::read_to_string(&yaml_path).unwrap();
+            fs::write(&yaml_path, with_variant_fingerprint(&yaml, &v.id, &found)).unwrap();
+            written += 1;
+        }
     }
     assert!(wrong.is_empty(), "{}", wrong.join("\n"));
     eprintln!("{written} fingerprints written");
+}
+
+/// `yaml` with `f` as the fingerprint of the variant `id`, last in its
+/// fields, in place of the one it had.
+fn with_variant_fingerprint(yaml: &str, id: &str, f: &crate::mod_index::Fingerprint) -> String {
+    let lines: Vec<&str> = yaml.lines().collect();
+    let list = lines
+        .iter()
+        .position(|l| *l == "variants:")
+        .expect("a variants list");
+    let at = (list + 1..lines.len())
+        .find(|&i| lines[i].trim() == format!("- id: {id}"))
+        .expect("the variant's id line");
+    let end = (at + 1..lines.len())
+        .find(|&i| !lines[i].starts_with("    "))
+        .unwrap_or(lines.len());
+    let mut out: Vec<String> = Vec::new();
+    let mut i = 0;
+    while i < end {
+        if i > at && lines[i].starts_with("    fingerprint:") {
+            i += 1;
+            while i < end && lines[i].starts_with("      ") {
+                i += 1;
+            }
+            continue;
+        }
+        out.push(lines[i].to_string());
+        i += 1;
+    }
+    out.push(super::index_add::fingerprint_yaml(f).trim_end().to_string());
+    out.extend(lines[end..].iter().map(|l| l.to_string()));
+    out.join("\n") + "\n"
 }
 
 /// `yaml` with `f` as the fingerprint of the download `sha256`, right
@@ -308,6 +392,31 @@ fn with_fingerprint(yaml: &str, sha256: &str, f: &crate::mod_index::Fingerprint)
     }
     out.extend(lines[end..].iter().map(|l| l.to_string()));
     out.join("\n") + "\n"
+}
+
+#[test]
+fn variant_fingerprints_go_last_in_place_of_the_old() {
+    let f = crate::mod_index::Fingerprint {
+        files: vec!["LEVEL01.CK1".into()],
+        sha256: "ab".repeat(32),
+    };
+    let yaml = "variants:\n  - id: hard\n    name: Hard\n    fingerprint: { sha256: old, files: [X] }\n    root: HARD\n  - id: easy\n    name: Easy\nminAppVersion: 1.0.0\n";
+    let fp = format!(
+        "    fingerprint:\n      sha256: {}\n      files: [LEVEL01.CK1]\n",
+        "ab".repeat(32)
+    );
+    assert_eq!(
+        with_variant_fingerprint(yaml, "hard", &f),
+        format!(
+            "variants:\n  - id: hard\n    name: Hard\n    root: HARD\n{fp}  - id: easy\n    name: Easy\nminAppVersion: 1.0.0\n"
+        )
+    );
+    assert_eq!(
+        with_variant_fingerprint(yaml, "easy", &f),
+        format!(
+            "variants:\n  - id: hard\n    name: Hard\n    fingerprint: {{ sha256: old, files: [X] }}\n    root: HARD\n  - id: easy\n    name: Easy\n{fp}minAppVersion: 1.0.0\n"
+        )
+    );
 }
 
 #[test]

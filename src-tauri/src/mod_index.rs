@@ -1107,8 +1107,11 @@ pub fn list(index: &ModIndex, db: &Db) -> Result<Vec<IndexMod>> {
 /// this is dropped; the player's own copy stays.
 pub struct Archive {
     pub path: PathBuf,
-    /// In bytes, as the index tells.
+    /// In bytes, as the index tells, with its parts.
     pub size: u64,
+    /// Key → the further archives of the download, which variants come
+    /// from.
+    pub parts: BTreeMap<String, PathBuf>,
     downloaded: bool,
 }
 
@@ -1117,7 +1120,47 @@ impl Drop for Archive {
         if self.downloaded {
             let _ = std::fs::remove_file(&self.path);
         }
+        for path in self.parts.values() {
+            let _ = std::fs::remove_file(path);
+        }
     }
+}
+
+/// Downloads the `parts` of `entry`'s newest download into `cache`, which
+/// its variants come from: key → file. Deleted when the archive is dropped.
+pub async fn parts(
+    cache: &Path,
+    entry: &IndexEntry,
+    progress: &impl Fn(u64, u64),
+) -> Result<BTreeMap<String, PathBuf>> {
+    let Some(download) = entry.downloads.first() else {
+        return Ok(BTreeMap::new());
+    };
+    let total: u64 = download.parts.values().map(|p| u64::from(p.size)).sum();
+    let mut done = 0;
+    let mut out = BTreeMap::new();
+    for (key, part) in &download.parts {
+        let path = cache
+            .join("downloads")
+            .join(format!("index-{}-{key}.zip", entry.id));
+        let fetched = downloads::fetch(
+            &part.url,
+            &part.sha256,
+            u64::from(part.size),
+            &path,
+            &|r, _| progress(done + r, total),
+        )
+        .await;
+        if let Err(e) = fetched {
+            for path in out.values() {
+                let _ = std::fs::remove_file(path);
+            }
+            return Err(e);
+        }
+        done += u64::from(part.size);
+        out.insert(key.clone(), path);
+    }
+    Ok(out)
 }
 
 /// The player's own copy of `entry`'s download if they picked one (it must
@@ -1142,6 +1185,7 @@ pub async fn archive(
             path,
             size: u64::from(download.size),
             downloaded: false,
+            parts: BTreeMap::new(),
         });
     }
     let path = cache
@@ -1159,6 +1203,7 @@ pub async fn archive(
         path,
         size: u64::from(download.size),
         downloaded: true,
+        parts: BTreeMap::new(),
     })
 }
 

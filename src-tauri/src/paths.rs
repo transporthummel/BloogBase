@@ -157,6 +157,12 @@ impl AppPaths {
         }
     }
 
+    /// The files of mod `id`, those of its `variant` for a mod with
+    /// variants ([`mod_files_in`]).
+    pub fn mod_files(&self, id: &str, variant: Option<&str>) -> PathBuf {
+        mod_files_in(&self.mods.join(id), variant)
+    }
+
     /// Shipped per-engine defaults, written out so DOSBox can read them.
     pub fn default_conf(&self, engine: &str) -> PathBuf {
         self.configs.join("defaults").join(format!("{engine}.conf"))
@@ -211,6 +217,15 @@ impl AppPaths {
         // Not empty when it holds the app's own settings.
         let _ = std::fs::remove_dir(&self.root);
         Ok(removed)
+    }
+}
+
+/// The files of the mod in `mod_dir`: `files/`, or for a mod with variants
+/// (PLAN.md §9.7) `variants/<variant>/`, each a whole mod root.
+pub fn mod_files_in(mod_dir: &Path, variant: Option<&str>) -> PathBuf {
+    match variant {
+        Some(v) => mod_dir.join("variants").join(v),
+        None => mod_dir.join("files"),
     }
 }
 

@@ -295,6 +295,22 @@ pub fn index_suggestion(db: &Db, mod_id: &str) -> Result<String> {
     Ok(url.to_string())
 }
 
+/// The files of mod `mod_id` as played: `files/`, or its active variant's.
+pub fn active_files(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<std::path::PathBuf> {
+    let variant: Option<String> = db
+        .conn()
+        .query_row(
+            "SELECT p.active_variant FROM profiles p
+             JOIN mods m ON m.id = p.mod_id AND m.variants_json IS NOT NULL
+             WHERE p.mod_id = ?1",
+            [mod_id],
+            |r| r.get(0),
+        )
+        .optional()?
+        .flatten();
+    Ok(paths.mod_files(mod_id, variant.as_deref()))
+}
+
 /// The program whose title screen is the mod's cover, if its index entry
 /// names one.
 pub fn cover_program(db: &Db, mod_id: &str) -> Result<Option<String>> {

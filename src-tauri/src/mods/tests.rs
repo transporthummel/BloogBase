@@ -626,6 +626,9 @@ fn curated(recipe: Recipe) -> Curated {
         root: None,
         save_dirs: Vec::new(),
         cover_from: None,
+        variants: Vec::new(),
+        parts: BTreeMap::new(),
+        part_files: BTreeMap::new(),
     }
 }
 
@@ -2466,4 +2469,154 @@ fn installed_index_mods_follow_their_entrys_recipe_and_details() {
     drop(claim);
     follow_entry(&paths, &db, &running, &m.id, &back).unwrap();
     assert!(stored(&db, &m.id).1.contains("ABIATHAR.PAT"));
+}
+
+const LEVELS: &[(&str, &[u8])] = &[
+    ("EASY/CK4PATCH.EXE", b"patcher"),
+    ("EASY/x.pat", b"%ext ck4\n%version 1.4\n"),
+    ("EASY/LEVEL01.CK4", b"easy"),
+    ("EASY/README.TXT", b"Difficulty is now implemented"),
+    ("HARD/CK4PATCH.EXE", b"patcher"),
+    ("HARD/x.pat", b"%ext ck4\n%version 1.4\n"),
+    ("HARD/LEVEL01.CK4", b"hard"),
+    ("HARD/LE.COG", b"swapped"),
+    ("sf/SHARED.CK4", b"shared"),
+];
+
+const GREEN: &[(&str, &[u8])] = &[
+    ("CK4PATCH.EXE", b"patcher"),
+    ("x.pat", b"%ext ck4\n%version 1.4\n"),
+    ("LEVEL01.CK4", b"green"),
+];
+
+fn variant(json: &str) -> crate::mod_index::Variant {
+    serde_json::from_str(json).unwrap()
+}
+
+/// A mod with variants Hard (default), Easy, Green (a part) and Swap.
+fn with_variants(tmp: &Path) -> (std::path::PathBuf, Curated) {
+    let zip = tmp.join("index-clouds.zip");
+    write_zip(&zip, LEVELS);
+    let part = tmp.join("index-clouds-green.zip");
+    write_zip(&part, GREEN);
+    let mut c = curated(Recipe::Patch {
+        patcher: "CK4PATCH.EXE".into(),
+        patch: "x.pat".into(),
+        args: Vec::new(),
+    });
+    c.index_id = "clouds".into();
+    c.name = "Clouds".into();
+    c.url = "https://example.com/clouds.zip".into();
+    c.variants = vec![
+        variant(r#"{"id": "hard", "default": true, "name": "Hard", "root": "HARD"}"#),
+        variant(r#"{"id": "easy", "name": "Easy", "root": "EASY"}"#),
+        variant(r#"{"id": "green", "name": "Green", "archive": "green"}"#),
+        variant(
+            r#"{"id": "swap", "name": "Swap", "root": "", "copyToRoot": ["sf", "HARD"],
+                "files": {"LEVEL80.CK4": "HARD/LE.COG"}}"#,
+        ),
+    ];
+    c.parts.insert(
+        "green".into(),
+        crate::mod_index::Part {
+            url: "https://example.com/clouds-green.zip".into(),
+            sha256: sha256_hex(&fs::read(&part).unwrap()),
+            size: 1,
+        },
+    );
+    c.part_files.insert("green".into(), part);
+    (zip, c)
+}
+
+fn active_variant(db: &Db) -> (Option<String>, bool) {
+    db.conn()
+        .query_row(
+            "SELECT active_variant, variant_chosen FROM profiles WHERE mod_id IS NOT NULL",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap()
+}
+
+#[test]
+fn variants_are_installed_each_in_its_folder() {
+    let (tmp, paths, db) = setup();
+    let (zip, c) = with_variants(tmp.path());
+    let m = install_curated(&paths, &db, &zip, &c, None, false).unwrap();
+    let dir = paths.mods.join(&m.id);
+    let read = |p: &str| fs::read(dir.join(p)).unwrap();
+    assert_eq!(read("variants/hard/LEVEL01.CK4"), b"hard");
+    assert_eq!(read("variants/easy/LEVEL01.CK4"), b"easy");
+    assert_eq!(read("variants/green/LEVEL01.CK4"), b"green");
+    // A shared folder and a renamed file.
+    assert_eq!(read("variants/swap/SHARED.CK4"), b"shared");
+    assert_eq!(read("variants/swap/LEVEL01.CK4"), b"hard");
+    assert_eq!(read("variants/swap/LEVEL80.CK4"), b"swapped");
+    assert!(!dir.join("files").exists());
+    assert!(dir.join("source/clouds.zip").is_file());
+    assert!(dir.join("source/clouds-green.zip").is_file());
+    assert_eq!(active_variant(&db), (Some("hard".into()), false));
+    let (profile, layers) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!(profile.variant_count, 4);
+    assert_eq!(profile.active_variant.unwrap().name, "Hard");
+    assert!(!profile.variant_chosen);
+    assert_eq!(
+        layers.mod_layer.unwrap().files,
+        paths.mod_files(&m.id, Some("hard"))
+    );
+    assert_eq!(
+        active_files(&paths, &db, &m.id).unwrap(),
+        dir.join("variants/hard")
+    );
+
+    // A part that's missing, or a variant whose recipe isn't there.
+    let (tmp2, paths2, db2) = setup();
+    let (zip2, mut bad) = with_variants(tmp2.path());
+    bad.part_files.clear();
+    assert!(install_curated(&paths2, &db2, &zip2, &bad, None, false).is_err());
+    let (_, mut bad) = with_variants(tmp2.path());
+    bad.variants[1].recipe = Some(Recipe::Batch {
+        file: "EASY.BAT".into(),
+    });
+    let err = install_curated(&paths2, &db2, &zip2, &bad, None, false).unwrap_err();
+    assert!(err.to_string().contains("EASY.BAT"), "{err}");
+    assert!(list(&db2).unwrap().is_empty());
+}
+
+#[test]
+fn an_update_keeps_the_variant_played_or_finds_it_by_its_files() {
+    let (tmp, paths, db) = setup();
+    let (zip, c) = with_variants(tmp.path());
+    // Installed before the entry had variants: the folder found, EASY.
+    let old = install_curated(&paths, &db, &zip, &c.without_variants(), None, false).unwrap();
+    assert_eq!(
+        fs::read(paths.mods.join(&old.id).join("files/LEVEL01.CK4")).unwrap(),
+        b"easy"
+    );
+    assert_eq!(active_variant(&db), (None, false));
+    let state = paths.profiles.join(&old.id).join("state/SAVEGAM0.CK4");
+    fs::write(&state, b"easy save").unwrap();
+
+    let mut c = c.clone();
+    let files = paths.mods.join(&old.id).join("files");
+    c.variants[1].fingerprint = variant_files::fingerprint_of(&files, "keen4").unwrap();
+    assert!(c.variants[1].fingerprint.is_some());
+    install_curated(&paths, &db, &zip, &c, None, false).unwrap();
+    assert_eq!(active_variant(&db), (Some("easy".into()), false));
+    assert!(!files.exists());
+    assert_eq!(fs::read(&state).unwrap(), b"easy save");
+
+    // The one played stays; one the entry dropped gives way to the default.
+    db.conn()
+        .execute(
+            "UPDATE profiles SET active_variant = 'green' WHERE mod_id IS NOT NULL",
+            [],
+        )
+        .unwrap();
+    install_curated(&paths, &db, &zip, &c, None, false).unwrap();
+    assert_eq!(active_variant(&db).0.as_deref(), Some("green"));
+    c.variants.retain(|v| v.id != "green");
+    install_curated(&paths, &db, &zip, &c, None, false).unwrap();
+    assert_eq!(active_variant(&db).0.as_deref(), Some("hard"));
+    assert!(!paths.mods.join(&old.id).join("variants/green").exists());
 }

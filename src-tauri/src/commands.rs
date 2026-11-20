@@ -558,7 +558,7 @@ pub fn open_mod_folder(
     if !mods::list(&db)?.iter().any(|m| m.id == mod_id) {
         return Err(Error::NotFound(format!("mod {mod_id}")).into());
     }
-    open_path(&app, &paths.mods.join(&mod_id).join("files"))
+    open_path(&app, &mods::active_files(&paths, &db, &mod_id)?)
 }
 
 /// Opens the folder with a game's files in the library, for a full game,
@@ -1097,7 +1097,7 @@ fn find_base_mods(app: &AppHandle, info: &mut ModInfo) {
                 .into_iter()
                 .filter(|m| m.game_id == info.game_id && m.extends.is_none())
                 .map(|m| mods::BaseCandidate {
-                    files: Some(paths.mods.join(&m.id).join("files")),
+                    files: mods::active_files(&paths, &db, &m.id).ok(),
                     standalone: mods::standalone(&db, &m.id).unwrap_or(false),
                     name: m.name,
                     mod_id: Some(m.id),
@@ -1530,13 +1530,18 @@ async fn install_entry(
             (PathBuf::from(own), None)
         }
         (_, own) => {
-            let archive = mod_index::archive(
-                &a.state::<AppPaths>().cache,
-                &entry,
-                own.map(PathBuf::from),
-                &|r, t| report.progress(JobPhase::Downloading, r, t),
-            )
+            let cache = &a.state::<AppPaths>().cache;
+            let mut archive = mod_index::archive(cache, &entry, own.map(PathBuf::from), &|r, t| {
+                report.progress(JobPhase::Downloading, r, t)
+            })
             .await?;
+            // The variants' further archives (§9.7).
+            if !entry.variants.is_empty() {
+                archive.parts = mod_index::parts(cache, &entry, &|r, t| {
+                    report.progress(JobPhase::Downloading, r, t)
+                })
+                .await?;
+            }
             report.progress(JobPhase::Installing, archive.size, archive.size);
             (archive.path.clone(), Some(archive))
         }
@@ -1550,7 +1555,14 @@ async fn install_entry(
         tokio::time::sleep(std::time::Duration::from_millis(500)).await;
     }
 
-    let curated = Curated::new(&entry, players.unwrap_or(0));
+    let mut curated = Curated::new(&entry, players.unwrap_or(0));
+    match (&players, &_archive) {
+        // The player's own files are one variant's: they become variants
+        // at the next index check, as an installed mod would.
+        (Some(_), _) => curated = curated.without_variants(),
+        (None, Some(archive)) => curated.part_files = archive.parts.clone(),
+        (None, None) => {}
+    }
     let b = a.clone();
     let path = file.clone();
     let result = tauri::async_runtime::spawn_blocking(move || {

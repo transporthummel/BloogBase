@@ -228,6 +228,7 @@ mod index_add;
 mod install;
 mod metadata;
 mod queries;
+pub(crate) mod variant_files;
 
 pub use analyze::*;
 pub use fit::*;

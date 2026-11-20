@@ -31,6 +31,7 @@ const MIGRATIONS_SLICE: &[M<'_>] = &[
     M::up(include_str!("../migrations/0018_worlds.sql")),
     M::up(include_str!("../migrations/0019_status.sql")),
     M::up(include_str!("../migrations/0020_root.sql")),
+    M::up(include_str!("../migrations/0021_variants.sql")),
 ];
 const MIGRATIONS: Migrations<'_> = Migrations::from_slice(MIGRATIONS_SLICE);
 

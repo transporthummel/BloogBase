@@ -151,6 +151,9 @@ const profile: Profile = {
   worlds: false,
   activeWorld: null,
   modStatus: null,
+  variantCount: 0,
+  activeVariant: null,
+  variantChosen: false,
 };
 
 const save = (file: string, slot: number, name: string | null): SaveFile => ({

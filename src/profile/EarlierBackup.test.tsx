@@ -56,6 +56,9 @@ const old: Profile = {
   worlds: false,
   activeWorld: null,
   modStatus: null,
+  variantCount: 0,
+  activeVariant: null,
+  variantChosen: false,
 };
 
 const added: Profile = {

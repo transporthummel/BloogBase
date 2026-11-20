@@ -455,6 +455,13 @@ fn authors<'a>(facts: &'a Facts, found: &'a Found) -> &'a [String] {
 /// A YAML string; JSON's are valid YAML.
 /// Documents and archives, by extension; no game reads them, and players
 /// may well delete them.
+/// Whether `name` is a document (readme, order form), which a
+/// fingerprint leaves out.
+#[cfg(test)]
+pub(super) fn is_document(name: &str) -> bool {
+    DOCUMENTS.iter().any(|ext| has_ext(name, ext))
+}
+
 const DOCUMENTS: &[&str] = &[
     "TXT", "DOC", "DOCX", "RTF", "WRI", "PDF", "HTM", "HTML", "MD", "NFO", "DIZ", "JPG", "JPEG",
     "PNG", "GIF", "CHM", "HLP", "ZIP", "RAR", "7Z", "ARJ", "LZH",

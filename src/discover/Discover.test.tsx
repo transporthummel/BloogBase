@@ -678,6 +678,9 @@ test("offers shareware episodes and demos on their own tabs", async () => {
         worlds: false,
         activeWorld: null,
         modStatus: null,
+        variantCount: 0,
+        activeVariant: null,
+        variantChosen: false,
       },
     ],
   });

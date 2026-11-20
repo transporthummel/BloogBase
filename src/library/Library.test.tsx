@@ -117,6 +117,9 @@ const profile: Profile = {
   worlds: false,
   activeWorld: null,
   modStatus: null,
+  variantCount: 0,
+  activeVariant: null,
+  variantChosen: false,
 };
 
 const runtime = { id: "dosbox-staging-0.83.0", version: "0.83.0", path: "/x", managed: true };

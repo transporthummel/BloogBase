@@ -1127,6 +1127,12 @@ export type Profile = {
 	 *  the Saves tab groups them under (the index entry's `saveDirs`).
 	 */
 	saveDirs: SaveDir[],
+	/**  How many ways to play an index mod has (§9.7); 0 for most. */
+	variantCount: number,
+	/**  The variant played, whose saves are in its state. */
+	activeVariant: Variant | null,
+	/**  The player chose `active_variant`; until then "Play" asks. */
+	variantChosen: boolean,
 };
 
 export type ProfileConfig = {

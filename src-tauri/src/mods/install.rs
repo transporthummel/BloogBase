@@ -15,7 +15,7 @@ use crate::error::{Error, Result};
 use crate::launcher::Running;
 use crate::library::{self, Install, now};
 use crate::mod_index::ModStatus;
-use crate::mod_index::{CoverFrom, IndexEntry, SaveDir};
+use crate::mod_index::{CoverFrom, IndexEntry, Part, SaveDir, Variant};
 use crate::paths::AppPaths;
 use crate::recipe::{Recipe, VersionRecipes};
 use crate::source::{Source, split_dir};
@@ -24,6 +24,7 @@ use crate::worlds::Worlds;
 use super::analyze::{Analysis, analyze, analyze_in};
 use super::fit::{best_install, fits, needed_game, parse_requires, rehome, requires};
 use super::queries::list;
+use super::variant_files::{self, VariantFiles};
 use super::{InstallModRequest, Mod, ModInfo, ModSource, RecipeOption};
 
 /// What gets stored for a mod, whatever its source.
@@ -64,6 +65,8 @@ struct Stored<'a> {
     /// The folder of the archive the files are from, as the index entry
     /// names it; `None` where the app found it.
     root: Option<&'a str>,
+    /// The ways to play it, each in `variants/<id>/` instead of `files/`.
+    variants: &'a [Variant],
 }
 
 impl<'a> Stored<'a> {
@@ -95,6 +98,7 @@ impl<'a> Stored<'a> {
             archive_name: Some(crate::downloads::url_file_name(&c.url)).filter(|n| !n.is_empty()),
             archive_sha256: Some(&c.sha256),
             root: c.root.as_deref(),
+            variants: &c.variants,
         }
     }
 
@@ -144,6 +148,7 @@ impl<'a> Stored<'a> {
             archive_name: None,
             archive_sha256: None,
             root: None,
+            variants: &[],
         }
     }
 
@@ -214,14 +219,19 @@ pub fn install(paths: &AppPaths, db: &Db, req: &InstallModRequest) -> Result<Mod
     if base.is_none() {
         stored.own_files = analysis.info.complete;
     }
+    let layout = Layout {
+        analysis: &analysis,
+        variants: &[],
+        parts: Vec::new(),
+    };
     match &replaced {
-        None => store(paths, db, &source, &analysis, &stored, target.as_ref()),
+        None => store(paths, db, &source, &layout, &stored, target.as_ref()),
         Some(old) => update(
             paths,
             db,
             &old.id,
             &source,
-            &analysis,
+            &layout,
             &stored.keeping(old),
             target.as_ref(),
         ),
@@ -334,6 +344,12 @@ pub struct Curated {
     pub save_dirs: Vec<SaveDir>,
     /// The folder and patch whose title screen is the cover.
     pub cover_from: Option<CoverFrom>,
+    /// The ways to play it, with the newest download; empty for most mods.
+    pub variants: Vec<Variant>,
+    /// Key → further archives of the download, which variants come from.
+    pub parts: BTreeMap<String, Part>,
+    /// Key → where each of `parts` lies, downloaded by the caller.
+    pub part_files: BTreeMap<String, PathBuf>,
 }
 
 impl Curated {
@@ -372,6 +388,24 @@ impl Curated {
             root: entry.root.clone(),
             save_dirs: entry.save_dirs.clone(),
             cover_from: entry.cover_from.clone(),
+            // They describe the newest version; an older one gets them
+            // with its update.
+            variants: match download {
+                0 => entry.variants.clone(),
+                _ => Vec::new(),
+            },
+            parts: d.parts.clone(),
+            part_files: BTreeMap::new(),
+        }
+    }
+
+    /// The same without its variants: installed as it was before them.
+    pub fn without_variants(&self) -> Self {
+        Curated {
+            variants: Vec::new(),
+            parts: BTreeMap::new(),
+            part_files: BTreeMap::new(),
+            ..self.clone()
         }
     }
 }
@@ -410,6 +444,8 @@ pub fn tie_to_index(db: &Db, mod_id: &str, c: &Curated) -> Result<()> {
         archive_sha256,
         // Its files stay as installed; `follow_root` moves them.
         root: _,
+        // Its files become variants at the next index check (`follow_variants`).
+        variants: _,
     } = Stored::curated(c, None);
     db.conn().execute(
         "UPDATE mods SET name = ?2, authors = ?3, author_links = ?4,
@@ -452,7 +488,15 @@ pub fn install_curated(
     without_game: bool,
 ) -> Result<Mod> {
     let source = Source::open(archive)?;
-    let mut analysis = analyze_in(&source, archive, Some(&c.game_id), c.root.as_deref())?;
+    let variants = match c.variants.is_empty() {
+        true => Vec::new(),
+        false => variant_files::analyze_variants(c, archive)?,
+    };
+    let mut analysis = match variants.iter().zip(&c.variants).find(|(_, v)| v.default) {
+        // What the mod is, as the default variant tells.
+        Some((d, _)) => analyze_in(&d.source, archive, Some(&c.game_id), Some(&d.analysis.root))?,
+        None => analyze_in(&source, archive, Some(&c.game_id), c.root.as_deref())?,
+    };
     if analysis.info.game_id != c.game_id {
         return Err(Error::UnexpectedContent(format!(
             "the download looks like a mod for {}, not {}",
@@ -465,8 +509,27 @@ pub fn install_curated(
         }
         None => None,
     };
-    check_recipe_files(paths, &analysis, c, base_id.as_deref())?;
-    analysis.copies = copies_to_root(&analysis, &c.copy_to_root)?;
+    if variants.is_empty() {
+        check_recipe_files(paths, &analysis, c, base_id.as_deref())?;
+        analysis.copies = copies_to_root(&analysis, &c.copy_to_root)?;
+    } else {
+        variant_files::check_recipes(c, &variants)?;
+    }
+    let layout = Layout {
+        analysis: &analysis,
+        variants: &variants,
+        parts: c
+            .part_files
+            .iter()
+            .filter_map(|(key, path)| {
+                let part = c.parts.get(key)?;
+                Some((
+                    path.clone(),
+                    crate::downloads::url_file_name(&part.url).to_string(),
+                ))
+            })
+            .collect(),
+    };
 
     // A mod over a standalone one plays without the game too.
     let on_its_own = match &base_id {
@@ -487,7 +550,7 @@ pub fn install_curated(
             db,
             &mod_id,
             &source,
-            &analysis,
+            &layout,
             &stored,
             target.as_ref(),
         )?;
@@ -510,7 +573,7 @@ pub fn install_curated(
             target => target,
         },
     };
-    let m = store(paths, db, &source, &analysis, &stored, target.as_ref())?;
+    let m = store(paths, db, &source, &layout, &stored, target.as_ref())?;
     set_worlds(db, &c.index_id, c.worlds.as_ref())?;
     set_save_dirs(db, &c.index_id, &c.save_dirs)?;
     set_cover_from(db, &c.index_id, c.cover_from.as_ref())?;
@@ -540,14 +603,10 @@ pub fn follow_root(
     let Ok(_claim) = running.claim(&profile_id) else {
         return Ok(false);
     };
-    let kept = fs::read_dir(paths.mods.join(mod_id).join("source"))
-        .ok()
-        .into_iter()
-        .flatten()
-        .flatten()
-        .map(|e| e.path())
-        .find(|p| p.is_file())
+    let kept = kept_archive(paths, mod_id, &c.url)
         .ok_or_else(|| Error::NotFound(format!("the archive of mod {mod_id}")))?;
+    // Variants come once it's in its root (`follow_variants`).
+    let c = &c.without_variants();
     // A copy: the folder it's in gets replaced while it's read.
     let archive = paths.cache.join(format!("mod-{mod_id}-root.zip"));
     fs::copy(&kept, &archive)?;
@@ -581,6 +640,26 @@ pub fn follow_root(
             }
             Err(e)
         }
+    }
+}
+
+/// The archive mod `mod_id` keeps of the download at `url`: named after it,
+/// else the only one it keeps.
+pub(super) fn kept_archive(paths: &AppPaths, mod_id: &str, url: &str) -> Option<PathBuf> {
+    let dir = paths.mods.join(mod_id).join("source");
+    let named = dir.join(crate::downloads::url_file_name(url));
+    if named.is_file() && !crate::downloads::url_file_name(url).is_empty() {
+        return Some(named);
+    }
+    let files: Vec<PathBuf> = fs::read_dir(&dir)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.is_file())
+        .collect();
+    match files.as_slice() {
+        [only] => Some(only.clone()),
+        _ => None,
     }
 }
 
@@ -667,7 +746,17 @@ pub fn follow_entry(
         tracing::info!("mod {mod_id} runs; it takes its entry's recipe later");
         return Ok(details);
     };
-    let in_root: Vec<String> = fs::read_dir(paths.mods.join(mod_id).join("files"))?
+    // The entry's recipe is the default variant's.
+    let default: Option<String> = db.conn().query_row(
+        "SELECT variants_json FROM mods WHERE id = ?1",
+        [mod_id],
+        |r| r.get(0),
+    )?;
+    let default = default
+        .and_then(|j| serde_json::from_str::<Vec<Variant>>(&j).ok())
+        .and_then(|vs| vs.into_iter().find(|v| v.default))
+        .map(|v| v.id);
+    let in_root: Vec<String> = fs::read_dir(paths.mod_files(mod_id, default.as_deref()))?
         .flatten()
         .map(|e| e.file_name().to_string_lossy().into_owned())
         .collect();
@@ -721,6 +810,7 @@ fn follow_details(db: &Db, mod_id: &str, c: &Curated) -> Result<bool> {
         archive_name: _,
         archive_sha256: _,
         root: _,
+        variants: _,
     } = Stored::curated(c, None);
     let changed = db.conn().execute(
         "UPDATE mods SET name = ?2, authors = ?3, author_links = ?4, description = ?5,
@@ -809,7 +899,7 @@ pub fn install_players_files(
 fn keep_players_state(paths: &AppPaths, db: &Db, m: &Mod) -> Result<()> {
     let (_, layers) = crate::profiles::get(db, &m.profile_id)?;
     let game = crate::saves::profile_game(&m.game_id, &layers)?;
-    let files = paths.mods.join(&m.id).join("files");
+    let files = super::active_files(paths, db, &m.id)?;
     let kept: Vec<String> = fs::read_dir(&layers.upper)?
         .filter_map(|e| Some(e.ok()?.file_name().to_string_lossy().into_owned()))
         .collect();
@@ -959,18 +1049,23 @@ pub fn set_standalone(db: &Db, index_id: &str, standalone: bool, own_files: bool
 /// it (Bounty Hunting Brouhaha), so it can't play from its own files.
 /// Source mods run a program of their own instead.
 fn installed_of(db: &Db, index_id: &str) -> Result<Vec<(String, bool)>> {
-    let rows: Vec<(String, String, String, String)> = db
+    let rows: Vec<(String, String, String, String, Option<String>)> = db
         .conn()
-        .prepare("SELECT id, game_id, path, recipe_json FROM mods WHERE index_id = ?1")?
+        .prepare(
+            "SELECT m.id, m.game_id, m.path, m.recipe_json,
+                    CASE WHEN m.variants_json IS NOT NULL THEN p.active_variant END
+             FROM mods m JOIN profiles p ON p.mod_id = m.id WHERE m.index_id = ?1",
+        )?
         .query_map([index_id], |r| {
-            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
         })?
         .collect::<rusqlite::Result<_>>()?;
     Ok(rows
         .into_iter()
-        .map(|(id, game_id, path, recipe)| {
+        .map(|(id, game_id, path, recipe, variant)| {
             let own_program = matches!(serde_json::from_str(&recipe), Ok(Recipe::Program { .. }));
-            let names: Vec<String> = fs::read_dir(db.resolve(&path).join("files"))
+            let dir = crate::paths::mod_files_in(&db.resolve(&path), variant.as_deref());
+            let names: Vec<String> = fs::read_dir(dir)
                 .map(|d| {
                     d.filter_map(|e| Some(e.ok()?.file_name().to_string_lossy().into_owned()))
                         .collect()
@@ -1018,14 +1113,50 @@ pub fn find_by_index(db: &Db, index_id: &str) -> Result<Option<String>> {
         .optional()?)
 }
 
-/// Copies the mod's files (and the archive) into `staging`.
+/// What a mod's folder gets: its files, or its variants' (then
+/// `analysis` is the default's, for what the mod is), and the further
+/// archives to keep beside its own: path → name.
+struct Layout<'a> {
+    analysis: &'a Analysis,
+    variants: &'a [VariantFiles],
+    parts: Vec<(PathBuf, String)>,
+}
+
+/// Copies the mod's files (and the archives) into `staging`.
 fn stage(
     source: &Source,
-    analysis: &Analysis,
+    layout: &Layout,
     staging: &Path,
     archive_name: Option<&str>,
 ) -> Result<()> {
     let _ = fs::remove_dir_all(staging);
+    fs::create_dir_all(staging)?;
+    if layout.variants.is_empty() {
+        stage_files(source, layout.analysis, staging)?;
+    } else {
+        variant_files::stage(layout.variants, staging)?;
+    }
+    if let Source::Zip(zip, _) = source {
+        fs::create_dir_all(staging.join("source"))?;
+        // The name ends the download's URL; only its last part, so a `\..\`
+        // in it can't leave the folder on Windows.
+        let name = archive_name
+            .and_then(|n| Path::new(n).file_name())
+            .unwrap_or_else(|| zip.file_name().expect("a file"));
+        fs::copy(zip, staging.join("source").join(name))?;
+    }
+    for (path, name) in &layout.parts {
+        let name = Path::new(name)
+            .file_name()
+            .ok_or_else(|| Error::NotFound(format!("a name for {}", path.display())))?;
+        fs::create_dir_all(staging.join("source"))?;
+        fs::copy(path, staging.join("source").join(name))?;
+    }
+    Ok(())
+}
+
+/// Copies the files of a mod without variants into `staging/files/`.
+fn stage_files(source: &Source, analysis: &Analysis, staging: &Path) -> Result<()> {
     fs::create_dir_all(staging.join("files"))?;
     for rel in &analysis.files {
         let inner = if analysis.root.is_empty() {
@@ -1037,15 +1168,6 @@ fn stage(
     }
     for (rel, inner) in &analysis.copies {
         source.copy_to(rel, &staging.join("files").join(inner))?;
-    }
-    if let Source::Zip(zip, _) = source {
-        fs::create_dir_all(staging.join("source"))?;
-        // The name ends the download's URL; only its last part, so a `\..\`
-        // in it can't leave the folder on Windows.
-        let name = archive_name
-            .and_then(|n| Path::new(n).file_name())
-            .unwrap_or_else(|| zip.file_name().expect("a file"));
-        fs::copy(zip, staging.join("source").join(name))?;
     }
     Ok(())
 }
@@ -1071,7 +1193,10 @@ fn version_recipes_json(s: &Stored) -> Option<String> {
 
 /// Where the files of `folders` (in the mod's root) go when also copied into
 /// the root: source path → path in the mod.
-fn copies_to_root(analysis: &Analysis, folders: &[String]) -> Result<Vec<(String, String)>> {
+pub(super) fn copies_to_root(
+    analysis: &Analysis,
+    folders: &[String],
+) -> Result<Vec<(String, String)>> {
     let mut out = Vec::new();
     for folder in folders {
         let dir = if analysis.root.is_empty() {
@@ -1096,6 +1221,20 @@ fn copies_to_root(analysis: &Analysis, folders: &[String]) -> Result<Vec<(String
     Ok(out)
 }
 
+/// The variants as stored with the mod, `None` for a mod without.
+fn variants_json(s: &Stored) -> Option<String> {
+    (!s.variants.is_empty()).then(|| serde_json::to_string(s.variants).expect("variants serialize"))
+}
+
+/// The default variant's id.
+fn default_variant<'a>(s: &Stored<'a>) -> Option<&'a str> {
+    s.variants
+        .iter()
+        .find(|v| v.default)
+        .or(s.variants.first())
+        .map(|v| v.id.as_str())
+}
+
 fn requires_json(s: &Stored) -> Option<String> {
     s.requires
         .as_ref()
@@ -1107,17 +1246,18 @@ fn store(
     paths: &AppPaths,
     db: &Db,
     source: &Source,
-    analysis: &Analysis,
+    layout: &Layout,
     s: &Stored,
     target: Option<&Install>,
 ) -> Result<Mod> {
+    let analysis = layout.analysis;
     let id = reserve_id(paths, &s.name)?;
     let mod_dir = paths.mods.join(&id);
     let profile_dir = paths.profiles.join(&id);
     let staging = paths.cache.join(format!("mod-{id}"));
 
     let result = (|| {
-        stage(source, analysis, &staging, s.archive_name)?;
+        stage(source, layout, &staging, s.archive_name)?;
         fs::create_dir_all(profile_dir.join("state"))?;
         for entry in fs::read_dir(&staging)? {
             let entry = entry?;
@@ -1152,9 +1292,10 @@ fn store(
                                recipe_json, path, source, source_url, archive_sha256, added_at,
                                description, released, author_links, requires_json,
                                version_recipes_json, extends, homepage, pckf,
-                               keenmodding, cover, standalone, own_files, status, root)
+                               keenmodding, cover, standalone, own_files, status, root,
+                               variants_json)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17,
-                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27)",
+                     ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28)",
             params![
                 m.id,
                 m.game_id,
@@ -1182,17 +1323,19 @@ fn store(
                 s.standalone,
                 s.own_files,
                 s.status.and_then(ModStatus::as_str),
-                s.root
+                s.root,
+                variants_json(s)
             ],
         )?;
         tx.execute(
-            "INSERT INTO profiles (id, install_id, mod_id, state_path, created_at)
-             VALUES (?1, ?2, ?1, ?3, ?4)",
+            "INSERT INTO profiles (id, install_id, mod_id, state_path, created_at, active_variant)
+             VALUES (?1, ?2, ?1, ?3, ?4, ?5)",
             params![
                 m.id,
                 target.map(|t| &t.id),
                 db.store(&profile_dir.join("state")),
-                m.added_at
+                m.added_at,
+                default_variant(s)
             ],
         )?;
         tx.commit()?;
@@ -1226,7 +1369,7 @@ fn update(
     db: &Db,
     mod_id: &str,
     source: &Source,
-    analysis: &Analysis,
+    layout: &Layout,
     s: &Stored,
     target: Option<&Install>,
 ) -> Result<Mod> {
@@ -1235,8 +1378,10 @@ fn update(
     // The parts moved aside so far, put back when a later step fails.
     let mut swapped: Vec<&str> = Vec::new();
     let result: Result<()> = (|| {
-        stage(source, analysis, &staging, s.archive_name)?;
-        for part in ["files", "source"] {
+        stage(source, layout, &staging, s.archive_name)?;
+        // The variant played before, found by its files while they're there.
+        let active = active_after_update(db, mod_id, &mod_dir, s)?;
+        for part in ["files", "variants", "source"] {
             let live = mod_dir.join(part);
             let old = staging.join(format!("old-{part}"));
             let new = staging.join(part);
@@ -1257,7 +1402,8 @@ fn update(
                              name = ?12, source = ?13, index_id = ?14,
                              version_recipes_json = ?15, extends = ?16, homepage = ?17,
                              pckf = ?18, keenmodding = ?19, cover = ?20, standalone = ?21,
-                             own_files = ?22, status = ?23, root = ?24
+                             own_files = ?22, status = ?23, root = ?24,
+                             variants_json = ?25
              WHERE id = ?1",
             params![
                 mod_id,
@@ -1283,12 +1429,14 @@ fn update(
                 s.standalone,
                 s.own_files,
                 s.status.and_then(ModStatus::as_str),
-                s.root
+                s.root,
+                variants_json(s)
             ],
         )?;
         tx.execute(
-            "UPDATE profiles SET install_id = ?2, composed_hash = NULL WHERE mod_id = ?1",
-            params![mod_id, target.map(|t| &t.id)],
+            "UPDATE profiles SET install_id = ?2, composed_hash = NULL, active_variant = ?3
+             WHERE mod_id = ?1",
+            params![mod_id, target.map(|t| &t.id), active],
         )?;
         tx.commit()?;
         Ok(())
@@ -1312,6 +1460,50 @@ fn update(
         .into_iter()
         .find(|m| m.id == mod_id)
         .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))
+}
+
+/// The variant mod `mod_id` plays after an update to `s`: the one played
+/// before, if `s` has it still; for a mod that had none yet, the one whose
+/// files it has (its saves are theirs), else the default. `None` without
+/// variants.
+fn active_after_update(
+    db: &Db,
+    mod_id: &str,
+    mod_dir: &Path,
+    s: &Stored,
+) -> Result<Option<String>> {
+    if s.variants.is_empty() {
+        return Ok(None);
+    }
+    let before: Option<String> = db.conn().query_row(
+        "SELECT active_variant FROM profiles WHERE mod_id = ?1",
+        [mod_id],
+        |r| r.get(0),
+    )?;
+    let has = |id: &str| s.variants.iter().any(|v| v.id == id);
+    Ok(Some(match before {
+        Some(v) if has(&v) => v,
+        Some(v) => {
+            tracing::warn!("mod {mod_id} lost its variant {v}; its saves go to the default");
+            default_variant(s).unwrap_or_default().to_string()
+        }
+        None => played_variant(&mod_dir.join("files"), s.variants)
+            .or(default_variant(s))
+            .unwrap_or_default()
+            .to_string(),
+    }))
+}
+
+/// The variant whose files `dir` holds, by their fingerprints.
+pub(super) fn played_variant<'a>(dir: &Path, variants: &'a [Variant]) -> Option<&'a str> {
+    variants
+        .iter()
+        .find(|v| {
+            v.fingerprint
+                .as_ref()
+                .is_some_and(|f| variant_files::matches(dir, f))
+        })
+        .map(|v| v.id.as_str())
 }
 
 /// An installed mod another one is played over.

@@ -149,7 +149,10 @@ pub fn identify_requirements(paths: &AppPaths, db: &Db) -> Result<()> {
         let Some(text) = serde_json::from_str::<Recipe>(&recipe)
             .ok()
             .and_then(|r| r.patch_file().map(str::to_string))
-            .and_then(|p| fs::read(paths.mods.join(&mod_id).join("files").join(p)).ok())
+            .and_then(|p| {
+                let files = super::active_files(paths, db, &mod_id).ok()?;
+                fs::read(files.join(p)).ok()
+            })
         else {
             continue;
         };

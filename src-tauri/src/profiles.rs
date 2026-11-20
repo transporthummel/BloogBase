@@ -11,7 +11,7 @@ use specta::Type;
 use crate::catalog::{self, Game, glob_match};
 use crate::db::Db;
 use crate::error::{Error, Result};
-use crate::mod_index::SaveDir;
+use crate::mod_index::{SaveDir, Variant};
 use crate::mods;
 use crate::overlay_view;
 use crate::recipe::{self, Recipe, VersionRecipes};
@@ -63,6 +63,12 @@ pub struct Profile {
     /// Folders the game keeps saves in besides the root, with the names
     /// the Saves tab groups them under (the index entry's `saveDirs`).
     pub save_dirs: Vec<SaveDir>,
+    /// How many ways to play an index mod has (§9.7); 0 for most.
+    pub variant_count: u32,
+    /// The variant played, whose saves are in its state.
+    pub active_variant: Option<Variant>,
+    /// The player chose `active_variant`; until then "Play" asks.
+    pub variant_chosen: bool,
 }
 
 /// The mod another one is played over.
@@ -135,7 +141,8 @@ const SELECT: &str = "
            COALESCE(m.standalone, 0),
            (SELECT gp.id FROM profiles gp
             WHERE p.mod_id IS NOT NULL AND gp.install_id = p.install_id AND gp.mod_id IS NULL),
-           m.worlds_json IS NOT NULL, p.active_world, m.status, m.save_dirs_json
+           m.worlds_json IS NOT NULL, p.active_world, m.status, m.save_dirs_json,
+           m.variants_json, p.active_variant, p.variant_chosen
     FROM profiles p
     LEFT JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id
@@ -182,14 +189,25 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
         .and_then(|j| serde_json::from_str(&j).ok())
         .unwrap_or_default();
     let profile_dirs = save_dirs.clone();
+    let variants: Vec<Variant> = r
+        .get::<_, Option<String>>(26)?
+        .and_then(|j| serde_json::from_str(&j).ok())
+        .unwrap_or_default();
+    let active_id: Option<String> = r.get(27)?;
+    let variant = active_id.and_then(|id| variants.iter().find(|v| v.id == id).cloned());
     let mod_layer = mod_path.zip(recipe).map(|(path, recipe)| {
         // Written by `mods::install`; an unreadable one falls back to the episode.
         let recipe = serde_json::from_str(&recipe).unwrap_or(Recipe::Episode);
+        let recipe = match variant.as_ref().and_then(|v| v.recipe.as_ref()) {
+            Some(own) => own.clone(),
+            None => {
+                recipe::for_version(&recipe, &by_version, &game_id, version_id.as_deref()).clone()
+            }
+        };
         ModLayer {
-            files: path.join("files"),
+            files: crate::paths::mod_files_in(&path, variant.as_ref().map(|v| v.id.as_str())),
             base: base_path.map(|b| b.join("files")),
-            recipe: recipe::for_version(&recipe, &by_version, &game_id, version_id.as_deref())
-                .clone(),
+            recipe,
             save_dirs,
         }
     });
@@ -236,6 +254,9 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
                 .get::<_, Option<String>>(24)?
                 .and_then(|s| crate::mod_index::ModStatus::stored(Some(&s))),
             save_dirs: profile_dirs,
+            variant_count: variants.len() as u32,
+            active_variant: variant,
+            variant_chosen: r.get(28)?,
         },
         layers: Layers {
             lower: install_path.map(|p| p.join("base")),

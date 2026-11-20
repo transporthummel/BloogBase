@@ -144,9 +144,26 @@ fn mod_source(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Option<Source>>
         .optional()?
         .ok_or_else(|| Error::NotFound(format!("mod {mod_id}")))?;
     let dir = paths.mods.join(mod_id);
-    Ok(match archive(&dir.join("source")) {
+    // A variant's own documents, else those of the download.
+    let files = crate::mods::active_files(paths, db, mod_id)?;
+    if files.parent() != Some(dir.as_path()) && files.is_dir() {
+        let own = Source::Folder(files.clone());
+        if !find(&own)?.is_empty() {
+            return Ok(Some(own));
+        }
+    }
+    let url: Option<String> =
+        db.conn()
+            .query_row("SELECT source_url FROM mods WHERE id = ?1", [mod_id], |r| {
+                r.get(0)
+            })?;
+    let named = url
+        .map(|u| crate::downloads::url_file_name(&u).to_string())
+        .map(|n| dir.join("source").join(n))
+        .filter(|p| p.is_file());
+    Ok(match named.or_else(|| archive(&dir.join("source"))) {
         Some(zip) => Some(Source::Zip(zip, Default::default())),
-        None if dir.join("files").is_dir() => Some(Source::Folder(dir.join("files"))),
+        None if files.is_dir() => Some(Source::Folder(files)),
         None => None,
     })
 }
