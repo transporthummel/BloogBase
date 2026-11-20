@@ -104,6 +104,11 @@ pub struct Entry {
     /// apps before 1.4.0 read that as a string and would drop the entry.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cover_from: Option<CoverFrom>,
+    /// Ways to play the mod the player chooses from, e.g. difficulty
+    /// levels or a second part. Older apps ignore it and install what they
+    /// find, with `recipe`, which stays the default variant's.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub variants: Vec<Variant>,
     /// Oldest app version that can install this entry.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min_app_version: Option<String>,
@@ -142,6 +147,67 @@ pub struct SaveDirTranslation {
 pub struct CoverFrom {
     pub dir: String,
     pub patch: String,
+}
+
+/// One way to play a mod (`variants`): a folder of its archive, or of a
+/// further archive of the same version (`archive`), with what's started.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields, rename_all = "camelCase")]
+pub struct Variant {
+    /// Stable: the app keeps saves and backups by it.
+    pub id: String,
+    /// Preselected and played until the player picks another; exactly one.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub default: bool,
+    /// In English.
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Language code → the texts in that language; `de` is required.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub translations: BTreeMap<String, VariantTranslation>,
+    /// A key of the newest download's `parts`; left out: the main archive.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub archive: Option<String>,
+    /// The folder of its archive, `""` for the archive's root; left out:
+    /// the entry's `root` for the main archive, else the folder holding the
+    /// recipe's files.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub root: Option<String>,
+    /// In place of the entry's `recipe` and `versionRecipes`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recipe: Option<Recipe>,
+    /// In place of the entry's `copyToRoot`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub copy_to_root: Option<Vec<String>>,
+    /// Name in the game → the file of the root it's a copy of, as a setup
+    /// batch renames them.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub files: BTreeMap<String, String>,
+    /// In place of the entry's `cover`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover: Option<String>,
+    /// As a download's, over the variant's root as installed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fingerprint: Option<Fingerprint>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct VariantTranslation {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+
+/// A further archive of a download's version (`parts`), downloaded with it.
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Part {
+    pub url: String,
+    pub sha256: String,
+    /// Bytes.
+    pub size: u64,
 }
 
 /// The languages of the app besides English, which entries are written in.
@@ -221,6 +287,10 @@ pub struct Download {
     /// one; `pnpm index:add` fills it in.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fingerprint: Option<Fingerprint>,
+    /// Key → further archives of this version, which `variants` are
+    /// installed from; only on the newest download.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub parts: BTreeMap<String, Part>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
@@ -618,6 +688,7 @@ pub fn problems(entry: &Entry, file_stem: &str, catalog: &Catalog) -> Vec<String
         worlds_problems(w, &mut fail);
     }
     folder_problems(entry, &mut fail);
+    variants_problems(entry, &mut fail);
     if entry.requires_game {
         fail(
             "requiresGame: the app decides it, by whether the game's shareware is free; take it out"
@@ -701,6 +772,168 @@ fn folder_problems(entry: &Entry, fail: &mut impl FnMut(String)) {
         && entry.min_app_version.is_none()
     {
         fail("root, saveDirs and coverFrom need a minAppVersion".into());
+    }
+}
+
+/// What's wrong with an entry's `variants` and its downloads' `parts`.
+fn variants_problems(entry: &Entry, fail: &mut impl FnMut(String)) {
+    for (i, d) in entry.downloads.iter().enumerate() {
+        if i > 0 && !d.parts.is_empty() {
+            fail(format!("{}: only the newest download has parts", d.url));
+        }
+        for (key, p) in &d.parts {
+            if !is_slug(key) {
+                fail(format!("parts: key `{key}` must be a slug"));
+            }
+            if !p.url.starts_with("https://") && !p.url.starts_with("http://") {
+                fail(format!("parts.{key}: {} is not a web address", p.url));
+            }
+            if !is_sha256(&p.sha256) {
+                fail(format!("parts.{key}: sha256 must be 64 hex digits"));
+            }
+            if p.size == 0 {
+                fail(format!("parts.{key}: size is missing"));
+            }
+            if i == 0
+                && !entry
+                    .variants
+                    .iter()
+                    .any(|v| v.archive.as_ref() == Some(key))
+            {
+                fail(format!("parts.{key}: no variant is installed from it"));
+            }
+        }
+    }
+    if entry.variants.is_empty() {
+        return;
+    }
+    let parts = entry.downloads.first().map(|d| &d.parts);
+    if entry.variants.len() < 2 {
+        fail("variants: lists fewer than two".into());
+    }
+    if entry.variants.iter().filter(|v| v.default).count() != 1 {
+        fail("variants: exactly one is the default".into());
+    }
+    let mut ids = BTreeSet::new();
+    let mut names = BTreeSet::new();
+    for v in &entry.variants {
+        let at = format!("variants.{}", v.id);
+        if !is_slug(&v.id) {
+            fail(format!(
+                "{at}: id must be lower-case letters, digits and single dashes"
+            ));
+        }
+        if !ids.insert(&v.id) {
+            fail(format!("{at}: id comes twice"));
+        }
+        if v.name.trim().is_empty() {
+            fail(format!("{at}: name is empty"));
+        } else if !names.insert(&v.name) {
+            fail(format!("{at}: name `{}` comes twice", v.name));
+        }
+        if v.description.as_ref().is_some_and(|d| d.trim().is_empty()) {
+            fail(format!("{at}: description is empty"));
+        }
+        for lang in LANGUAGES {
+            if !v.translations.contains_key(*lang) {
+                fail(format!("{at}: translations.{lang}.name is missing"));
+            }
+        }
+        for (lang, t) in &v.translations {
+            if !LANGUAGES.contains(&lang.as_str()) {
+                fail(format!(
+                    "{at}: translations.{lang} is no language of the app"
+                ));
+            }
+            if t.name.trim().is_empty() {
+                fail(format!("{at}: translations.{lang}.name is empty"));
+            }
+            match &t.description {
+                Some(d) if d.trim().is_empty() => {
+                    fail(format!("{at}: translations.{lang}.description is empty"))
+                }
+                Some(_) if v.description.is_none() => fail(format!(
+                    "{at}: translations.{lang}.description translates a missing description"
+                )),
+                _ => {}
+            }
+        }
+        if let Some(key) = &v.archive
+            && !parts.is_some_and(|p| p.contains_key(key))
+        {
+            fail(format!(
+                "{at}: archive `{key}` is none of the newest download's parts"
+            ));
+        }
+        if let Some(root) = &v.root
+            && !(root.is_empty()
+                || root
+                    .split('/')
+                    .all(|s| is_plain_name(s) && s != "." && s != ".."))
+        {
+            fail(format!(
+                "{at}: root `{root}` must be \"\" or a folder of the archive, with `/`"
+            ));
+        }
+        if let Some(r) = &v.recipe {
+            for file in r.files() {
+                if !is_plain_name(file) {
+                    fail(format!(
+                        "{at}: recipe file `{file}` must be a plain DOS file name"
+                    ));
+                }
+            }
+        }
+        for folder in v.copy_to_root.iter().flatten() {
+            if !is_plain_name(folder) || folder == "." || folder == ".." {
+                fail(format!(
+                    "{at}: copyToRoot `{folder}` must be a folder right in the root"
+                ));
+            }
+        }
+        for (name, from) in &v.files {
+            if !is_plain_name(name) {
+                fail(format!(
+                    "{at}: files: `{name}` must be a plain DOS file name"
+                ));
+            }
+            if from.is_empty() || from.contains('\\') || from.split('/').any(|s| s == "..") {
+                fail(format!(
+                    "{at}: files.{name}: `{from}` must be a file below the root"
+                ));
+            }
+        }
+        if let Some(file) = &v.cover
+            && !(is_plain_name(file) && is_program(file))
+        {
+            fail(format!(
+                "{at}: cover `{file}` must be a plain name of a program"
+            ));
+        }
+        match &v.fingerprint {
+            None => fail(format!(
+                "{at}: lacks its fingerprint (BLOOGBASE_WRITE_FINGERPRINTS; index/README.md)"
+            )),
+            Some(f) if !is_sha256(&f.sha256) || f.files.is_empty() => {
+                fail(format!("{at}: fingerprint needs a sha256 and files"))
+            }
+            Some(_) => {}
+        }
+    }
+    if entry.worlds.is_some() || entry.extends.is_some() {
+        fail("variants: not together with worlds or extends".into());
+    }
+    if !entry.save_dirs.is_empty() || entry.cover_from.is_some() {
+        fail("variants: not together with saveDirs or coverFrom".into());
+    }
+    if entry.downloads.iter().any(|d| d.recipe.is_some()) {
+        fail("variants: downloads can't have recipes of their own".into());
+    }
+    // Older apps install with `recipe`: it has to be the default's.
+    if let Some(d) = entry.variants.iter().find(|v| v.default)
+        && d.recipe.is_some()
+    {
+        fail("variants: the default starts with the entry's `recipe`; leave its own out".into());
     }
 }
 
@@ -903,6 +1136,10 @@ pub fn extends_problems(entries: &[Entry]) -> Vec<String> {
             Some(b) if b.standalone => {
                 out.push(format!("{}: extends `{base_id}`, a standalone mod", e.id))
             }
+            Some(b) if !b.variants.is_empty() => out.push(format!(
+                "{}: extends `{base_id}`, a mod with variants",
+                e.id
+            )),
             Some(_) => {}
         }
     }
@@ -1221,6 +1458,110 @@ minAppVersion: 1.4.0
         old.worlds = parse(&format!("{AURORA}{WORLDS}")).unwrap().worlds;
         let p = problems(&old, "aurora-bliss", &catalog());
         assert_eq!(p.len(), 2, "{p:#?}");
+    }
+
+    const VARIANTS: &str = r#"variants:
+  - id: hard
+    default: true
+    name: Hard
+    description: The full challenge.
+    translations: { de: { name: Schwer, description: Die volle Herausforderung. } }
+    root: HARD
+    fingerprint: { sha256: 2222222222222222222222222222222222222222222222222222222222222222, files: [LEVEL01.CK4] }
+  - id: green
+    name: Green
+    translations: { de: { name: Grün } }
+    archive: green
+    recipe: { type: patch, patcher: CK4PATCH.EXE, patch: green.pat }
+    copyToRoot: [shared]
+    files: { LEVEL80.CK4: sub/LEVEL80.GRN }
+    cover: TITLE.EXE
+    fingerprint: { sha256: 3333333333333333333333333333333333333333333333333333333333333333, files: [LEVEL01.CK4] }
+"#;
+
+    fn with_variants() -> Entry {
+        let mut e = parse(&format!("{AURORA}{VARIANTS}")).unwrap();
+        e.downloads[0].parts.insert(
+            "green".into(),
+            Part {
+                url: "https://files.shikadi.net/keenwiki/green.zip".into(),
+                sha256: "4".repeat(64),
+                size: 5,
+            },
+        );
+        e
+    }
+
+    #[test]
+    fn variants_name_their_archive_root_and_recipe() {
+        let e = with_variants();
+        assert_eq!(e.variants.len(), 2);
+        assert!(e.variants[0].default);
+        assert_eq!(e.variants[1].files["LEVEL80.CK4"], "sub/LEVEL80.GRN");
+        assert_eq!(
+            problems(&e, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+        // Older apps ignore them; no minAppVersion needed.
+        assert!(e.min_app_version.is_none());
+        let json = serde_json::to_value(&e).unwrap();
+        assert_eq!(json["variants"][1]["archive"], "green");
+        assert_eq!(json["downloads"][0]["parts"]["green"]["size"], 5);
+        assert!(json["variants"][1].get("default").is_none());
+
+        // A part no variant uses, one missing, a part on an older download.
+        let mut bad = e.clone();
+        let green = bad.downloads[0].parts["green"].clone();
+        bad.downloads[0].parts.insert("blue".into(), green);
+        bad.variants[1].archive = Some("red".into());
+        let mut older = bad.downloads[0].clone();
+        older.parts.clear();
+        older
+            .parts
+            .insert("x".into(), bad.downloads[0].parts["blue"].clone());
+        bad.downloads.push(older);
+        let p = problems(&bad, "aurora-bliss", &catalog());
+        // blue and green unused, red unknown, x on an older download.
+        assert_eq!(p.len(), 4, "{p:#?}");
+
+        let mut bad = e.clone();
+        bad.variants[1].id = "Hard".into();
+        bad.variants[1].name = "Hard".into();
+        bad.variants[1].default = true;
+        bad.variants[1].translations.clear();
+        bad.variants[1].root = Some("../x".into());
+        bad.variants[1].files.insert("a/b".into(), "..\\x".into());
+        bad.variants[1].cover = Some("TITLE.TXT".into());
+        bad.variants[1].fingerprint = None;
+        bad.variants[0].recipe = Some(bad.recipe.clone());
+        let p = problems(&bad, "aurora-bliss", &catalog());
+        // Two defaults, id, name twice, de missing, root, a/b, ..\x, cover,
+        // fingerprint, the default's recipe.
+        assert_eq!(p.len(), 10, "{p:#?}");
+
+        let mut bad = e.clone();
+        bad.variants.truncate(1);
+        bad.variants[0].default = false;
+        bad.worlds = parse(&format!("{AURORA}{WORLDS}")).unwrap().worlds;
+        bad.cover_from = Some(CoverFrom {
+            dir: "HARD".into(),
+            patch: "x.pat".into(),
+        });
+        bad.min_app_version = Some("1.4.0".into());
+        bad.downloads[0].parts.clear();
+        let p = problems(&bad, "aurora-bliss", &catalog());
+        // Fewer than two, no default, worlds, coverFrom.
+        assert_eq!(p.len(), 4, "{p:#?}");
+    }
+
+    #[test]
+    fn nothing_extends_a_mod_with_variants() {
+        let base = with_variants();
+        let mut pack = parse(AURORA).unwrap();
+        pack.id = "pack".into();
+        pack.extends = Some(base.id.clone());
+        let p = extends_problems(&[base, pack]);
+        assert_eq!(p.len(), 1, "{p:#?}");
     }
 
     #[test]

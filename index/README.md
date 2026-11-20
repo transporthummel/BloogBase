@@ -60,6 +60,7 @@ By hand:
    | `root`           | Folder of the archive to install from, `""` for its root (see below)                        |
    | `saveDirs`       | Folders in the mod's root the game keeps saves and settings in (see below)                  |
    | `coverFrom`      | `dir` and `patch` whose title screen is the cover (see below)                               |
+   | `variants`       | Ways to play the mod the player chooses from: difficulty, second part, … (see below)        |
    | `featured`       | `true` to suggest it in the setup wizard (keep it to a handful per game)                    |
    | `minAppVersion`  | Oldest BloogBase that can install it, if it needs something new                             |
 
@@ -242,6 +243,71 @@ By hand:
        translations: { de: { name: Epilog } }
    coverFrom: { dir: CRAIG, patch: abiathar.pat }
    ```
+
+   **Variants.** Some mods ship several ways to play them: difficulty
+   levels in folders (Clouds Unseen `EASY/`, `HARD/`), one patch or batch
+   file each (Episode Dash), files a setup batch renames (Shadow Keen 2),
+   or further archives of the same version on KeenWiki (Clouds Unseen
+   Verdant). Without `variants` the app installs one of them and nobody
+   chooses. With them, the player picks one at the first start and can
+   switch on the mod page; each keeps its own saves, settings stay shared.
+   Each variant has:
+
+   | Field         | Meaning                                                                               |
+   | ------------- | ------------------------------------------------------------------------------------- |
+   | `id`          | Lower case with dashes; never changes once published (saves are kept by it)           |
+   | `default`     | `true` on exactly one: preselected, and what older apps install                       |
+   | `name`        | In English; `translations.de.name` is required, `description` (both) optional         |
+   | `archive`     | A key of the newest download's `parts`; left out: the download itself                 |
+   | `root`        | Folder of its archive, `""` for its root; left out: the entry's `root`, else found    |
+   | `recipe`      | In place of the entry's `recipe` and `versionRecipes`; never on the default           |
+   | `copyToRoot`  | In place of the entry's: folders below the root whose files go into the root          |
+   | `files`       | Name in the game: file below the root it's a copy of (`LEVEL80.CK2: Files/LE.COG`)    |
+   | `cover`       | In place of the entry's `cover`                                                       |
+   | `fingerprint` | As a download's, over the root as installed: `BLOOGBASE_WRITE_FINGERPRINTS` writes it |
+
+   Further archives go into the newest download as `parts` (key: `url`,
+   `sha256`, `size`); the app downloads them with it, and they share its
+   version. Only the newest download has parts, and each part is used by a
+   variant. The entry's `recipe` is the default's, so older apps, which
+   ignore `variants` and `parts`, keep installing what they always did; no
+   `minAppVersion` needed. A mod with variants can't have `worlds`,
+   `extends`, `saveDirs` or `coverFrom`, no entry can extend it, and its
+   downloads have no recipes of their own. Folders next to the root that a
+   setup batch copies in: root `""` and `copyToRoot` with the shared
+   folder first, then the variant's own (Shadow Keen 1 2004: `[sf, part1]`).
+
+   ```yaml
+   downloads:
+     - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.stupidbunny.clouds_unseen.k1.2010-05-20.zip
+       sha256: …
+       size: 333850
+       fingerprint: { … } # the folder older apps install
+       parts:
+         verdant:
+           url: https://files.shikadi.net/keenwiki/mods/Keen1/m.stupidbunny.clouds_unseen_verdant.k1.2010-05-20.zip
+           sha256: …
+           size: 137823
+   variants:
+     - id: hard
+       default: true
+       name: Hard
+       translations: { de: { name: Schwer } }
+       root: HARD
+     - id: easy
+       name: Easy
+       translations: { de: { name: Leicht } }
+       root: EASY
+     - id: verdant
+       name: Verdant
+       description: Hard, with green skies.
+       translations: { de: { name: Verdant, description: Schwer, mit grünem Himmel. } }
+       archive: verdant
+   ```
+
+   Write the variants' fingerprints with `pnpm index:build`, then
+   `BLOOGBASE_WRITE_FINGERPRINTS=1 cargo test index_fingerprints -- --ignored`
+   in `src-tauri` (it reads the archives `pnpm index:check` cached).
 
 3. Check it, including the download:
 

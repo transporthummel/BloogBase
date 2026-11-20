@@ -8,7 +8,9 @@ use std::time::Duration;
 
 use sha2::{Digest, Sha256};
 
-use crate::entry::{Download, Entry, Recipe};
+use std::collections::BTreeMap;
+
+use crate::entry::{Download, Entry, Part, Recipe, Variant};
 
 const USER_AGENT: &str = concat!(
     "BloogBase-index/",
@@ -71,19 +73,39 @@ pub fn reachable(download: &Download) -> Result<(), String> {
 /// The cached file for `download`, fetched first if missing. Cached files
 /// are named by their hash, so a changed URL with the same file is free.
 pub fn fetch(download: &Download, cache: &Path) -> Result<PathBuf, String> {
-    let path = cache.join(format!("{}.zip", download.sha256.to_ascii_lowercase()));
+    fetch_file(&download.url, &download.sha256, cache)
+}
+
+/// [`fetch`] for a further archive of a download.
+pub fn fetch_part(part: &Part, cache: &Path) -> Result<PathBuf, String> {
+    fetch_file(&part.url, &part.sha256, cache)
+}
+
+/// Whether the server still has a further archive.
+pub fn reachable_part(part: &Part) -> Result<(), String> {
+    reachable(&Download {
+        version: None,
+        url: part.url.clone(),
+        sha256: part.sha256.clone(),
+        size: part.size,
+        recipe: None,
+        programs: BTreeMap::new(),
+        fingerprint: None,
+        parts: BTreeMap::new(),
+    })
+}
+
+fn fetch_file(url: &str, sha256: &str, cache: &Path) -> Result<PathBuf, String> {
+    let path = cache.join(format!("{}.zip", sha256.to_ascii_lowercase()));
     if path.is_file() {
         return Ok(path);
     }
     fs::create_dir_all(cache).map_err(|e| e.to_string())?;
-    eprintln!("  downloading {}", download.url);
+    eprintln!("  downloading {url}");
     let client = client()?;
-    let resp = client
-        .get(&download.url)
-        .send()
-        .map_err(|e| format!("{}: {e}", download.url))?;
+    let resp = client.get(url).send().map_err(|e| format!("{url}: {e}"))?;
     if !resp.status().is_success() {
-        return Err(format!("{}: HTTP {}", download.url, resp.status()));
+        return Err(format!("{url}: HTTP {}", resp.status()));
     }
     let bytes = resp.bytes().map_err(|e| e.to_string())?;
     let part = path.with_extension("part");
@@ -262,6 +284,171 @@ fn folder_problems(entry: &Entry, url: &str, names: &[String], root: &str) -> Ve
         let path = format!("{}/{}", c.dir, c.patch);
         if !inner.iter().any(|n| n.eq_ignore_ascii_case(&path)) {
             out.push(format!("{url}: lacks `{path}` (coverFrom)"));
+        }
+    }
+    out
+}
+
+/// Problems with the archives the variants of `entry` are installed from:
+/// `main`, its newest download, and `parts` (key → data), checked already.
+pub fn variant_problems(
+    entry: &Entry,
+    main: &[u8],
+    parts: &BTreeMap<String, Vec<u8>>,
+) -> Vec<String> {
+    let mut out = Vec::new();
+    for v in &entry.variants {
+        let at = format!("variants.{}", v.id);
+        let data = match &v.archive {
+            None => main,
+            Some(key) => match parts.get(key) {
+                Some(d) => d.as_slice(),
+                // Reported with the part.
+                None => continue,
+            },
+        };
+        let names = match zip_files(data) {
+            Ok(n) => n,
+            Err(e) => {
+                out.push(format!("{at}: not a readable ZIP file ({e})"));
+                continue;
+            }
+        };
+        match variant_view(entry, v, &names) {
+            Ok(view) => out.extend(view_problems(entry, v, &at, data, &view)),
+            Err(e) => out.push(format!("{at}: {e}")),
+        }
+    }
+    out
+}
+
+/// The files right in a variant's root as the app installs it: name →
+/// path in its archive (`names`).
+fn variant_view(
+    entry: &Entry,
+    v: &Variant,
+    names: &[String],
+) -> Result<BTreeMap<String, String>, String> {
+    let root = match v
+        .root
+        .as_ref()
+        .or(entry.root.as_ref().filter(|_| v.archive.is_none()))
+    {
+        Some(r) => folder(names, r)
+            .ok_or_else(|| format!("its archive has no folder `{r}` (root)"))?
+            .to_string(),
+        None => {
+            let wanted = variant_recipes(entry, v)
+                .into_iter()
+                .flat_map(Recipe::files)
+                .collect::<Vec<_>>();
+            names
+                .iter()
+                .map(|n| dir_of(n))
+                .find(|d| {
+                    wanted.iter().all(|w| {
+                        names
+                            .iter()
+                            .any(|n| dir_of(n) == *d && file_of(n).eq_ignore_ascii_case(w))
+                    })
+                })
+                .ok_or_else(|| format!("no folder holds all of {}", wanted.join(", ")))?
+                .to_string()
+        }
+    };
+    let below = |dir: &str| -> String {
+        if root.is_empty() {
+            dir.to_string()
+        } else if dir.is_empty() {
+            root.clone()
+        } else {
+            format!("{root}/{dir}")
+        }
+    };
+    let mut view: BTreeMap<String, String> = BTreeMap::new();
+    let mut put = |name: &str, path: &str| {
+        view.retain(|k, _| !k.eq_ignore_ascii_case(name));
+        view.insert(name.to_string(), path.to_string());
+    };
+    for n in names.iter().filter(|n| dir_of(n) == root) {
+        put(file_of(n), n);
+    }
+    let copies = v.copy_to_root.as_ref().unwrap_or(&entry.copy_to_root);
+    for f in copies {
+        let dir = below(f);
+        let inside: Vec<&String> = names
+            .iter()
+            .filter(|n| dir_of(n).eq_ignore_ascii_case(&dir))
+            .collect();
+        if inside.is_empty() {
+            return Err(format!("lacks the folder `{f}` (copyToRoot)"));
+        }
+        for n in inside {
+            put(file_of(n), n);
+        }
+    }
+    for (name, from) in &v.files {
+        let path = below(from);
+        let found = names
+            .iter()
+            .find(|n| n.eq_ignore_ascii_case(&path))
+            .ok_or_else(|| format!("lacks `{from}` (files.{name})"))?;
+        put(name, found);
+    }
+    Ok(view)
+}
+
+/// The recipes a variant starts with: its own, else the entry's.
+fn variant_recipes<'a>(entry: &'a Entry, v: &'a Variant) -> Vec<&'a Recipe> {
+    match &v.recipe {
+        Some(r) => vec![r],
+        None => entry.recipes().collect(),
+    }
+}
+
+/// What a variant's root (`view`, in `data`) lacks of its recipe and cover,
+/// and whether its files hash to its fingerprint.
+fn view_problems(
+    entry: &Entry,
+    v: &Variant,
+    at: &str,
+    data: &[u8],
+    view: &BTreeMap<String, String>,
+) -> Vec<String> {
+    let mut out = Vec::new();
+    let path = |name: &str| {
+        view.iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case(name))
+            .map(|(_, p)| p.as_str())
+    };
+    let wanted = variant_recipes(entry, v)
+        .into_iter()
+        .flat_map(Recipe::files)
+        .chain(v.cover.as_deref().or(entry.cover.as_deref()));
+    for file in wanted {
+        if path(file).is_none() {
+            out.push(format!("{at}: its root lacks `{file}`"));
+        }
+    }
+    if let Some(f) = &v.fingerprint {
+        let hashes: Result<Vec<(String, String)>, String> = f
+            .files
+            .iter()
+            .map(|file| {
+                let p = path(file)
+                    .ok_or_else(|| format!("{at}: fingerprint file `{file}` isn't in its root"))?;
+                let bytes = zip_read(data, p).map_err(|e| format!("{at}: {p}: {e}"))?;
+                Ok((file.clone(), sha256_hex(&bytes)))
+            })
+            .collect();
+        match hashes {
+            Ok(h) => {
+                let sha = fingerprint_sha256(&h);
+                if !sha.eq_ignore_ascii_case(&f.sha256) {
+                    out.push(format!("{at}: fingerprint sha256 is {sha}"));
+                }
+            }
+            Err(e) => out.push(e),
         }
     }
     out
@@ -522,6 +709,67 @@ mod tests {
             p.len() == 1 && p[0].contains("no folder `Revival`"),
             "{p:?}"
         );
+    }
+
+    #[test]
+    fn variants_are_checked_in_their_archive_and_root() {
+        let main = zip(&[
+            ("EASY/CK4PATCH.EXE", b"p"),
+            ("EASY/x.pat", b"x"),
+            ("EASY/LEVEL01.CK4", b"easy"),
+            ("HARD/CK4PATCH.EXE", b"p"),
+            ("HARD/x.pat", b"x"),
+            ("HARD/LEVEL01.CK4", b"hard"),
+            ("HARD/LE.COG", b"swapped"),
+            ("sf/KEEN4E.EXE", b"k"),
+        ]);
+        let green = zip(&[
+            ("CK4PATCH.EXE", b"p"),
+            ("x.pat", b"x"),
+            ("LEVEL01.CK4", b"g"),
+        ]);
+        let fp = |files: &[(&str, &[u8])]| {
+            let h: Vec<(String, String)> = files
+                .iter()
+                .map(|(n, d)| (n.to_string(), sha256_hex(d)))
+                .collect();
+            crate::entry::Fingerprint {
+                sha256: fingerprint_sha256(&h),
+                files: files.iter().map(|(n, _)| n.to_string()).collect(),
+            }
+        };
+        let mut e = entry_for(&main);
+        e.variants = serde_yaml_ng::from_str(
+            "[{id: hard, default: true, name: Hard, root: HARD},
+              {id: easy, name: Easy},
+              {id: green, name: Green, archive: green},
+              {id: swap, name: Swap, root: \"\", copyToRoot: [sf, HARD],
+               files: {LEVEL01.CK4: HARD/LE.COG}}]",
+        )
+        .unwrap();
+        e.variants[0].fingerprint = Some(fp(&[("LEVEL01.CK4", b"hard")]));
+        // Without a root: the first folder holding the recipe's files.
+        e.variants[1].fingerprint = Some(fp(&[("LEVEL01.CK4", b"easy"), ("x.pat", b"x")]));
+        e.variants[2].fingerprint = Some(fp(&[("LEVEL01.CK4", b"g")]));
+        e.variants[3].fingerprint = Some(fp(&[("LEVEL01.CK4", b"swapped"), ("KEEN4E.EXE", b"k")]));
+        let parts = BTreeMap::from([("green".to_string(), green)]);
+        assert_eq!(variant_problems(&e, &main, &parts), Vec::<String>::new());
+
+        let mut bad = e.clone();
+        bad.variants[0].root = Some("MEDIUM".into());
+        bad.variants[1].fingerprint = Some(fp(&[("LEVEL01.CK4", b"hard")]));
+        bad.variants[2].recipe =
+            serde_yaml_ng::from_str("{type: patch, patcher: CK4PATCH.EXE, patch: other.pat}")
+                .unwrap();
+        bad.variants[3]
+            .files
+            .insert("A.CK4".into(), "NONE.COG".into());
+        let p = variant_problems(&bad, &main, &parts);
+        assert_eq!(p.len(), 4, "{p:#?}");
+        assert!(p[0].contains("no folder `MEDIUM`"), "{p:?}");
+        assert!(p[1].contains("fingerprint sha256"), "{p:?}");
+        assert!(p[2].contains("other.pat"), "{p:?}");
+        assert!(p[3].contains("lacks `NONE.COG`"), "{p:?}");
     }
 
     #[test]

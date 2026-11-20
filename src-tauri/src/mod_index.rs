@@ -135,8 +135,69 @@ pub struct IndexEntry {
     /// The cover is the title screen of a folder of the mod, with its patch.
     #[serde(default)]
     pub cover_from: Option<CoverFrom>,
+    /// Ways to play the mod, the player chooses one; empty for most.
+    #[serde(default)]
+    pub variants: Vec<Variant>,
     #[serde(default)]
     pub min_app_version: Option<String>,
+}
+
+/// One way to play an index mod (PLAN.md §9.7): a folder of its archive or
+/// of one of the download's `parts`, with what's started.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct Variant {
+    /// Stable: saves, backups and the profile keep it.
+    pub id: String,
+    /// Preselected and played until the player picks another.
+    #[serde(default)]
+    pub default: bool,
+    /// In English.
+    pub name: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    /// Language code → the texts in that language.
+    #[serde(default)]
+    pub translations: BTreeMap<String, VariantTranslation>,
+    /// A key of the newest download's `parts`; `None`: the main archive.
+    #[serde(default)]
+    pub archive: Option<String>,
+    /// The folder of its archive, `""` for its root; `None`: the entry's
+    /// `root` for the main archive, else the one holding the recipe's files.
+    #[serde(default)]
+    pub root: Option<String>,
+    /// In place of the entry's recipe and version recipes.
+    #[serde(default)]
+    pub recipe: Option<Recipe>,
+    /// In place of the entry's `copyToRoot`.
+    #[serde(default)]
+    pub copy_to_root: Option<Vec<String>>,
+    /// Name in the game → the file below the root it's a copy of.
+    #[serde(default)]
+    pub files: BTreeMap<String, String>,
+    /// In place of the entry's cover program.
+    #[serde(default)]
+    pub cover: Option<String>,
+    /// The files of its root as installed, as a download's.
+    #[serde(default)]
+    pub fingerprint: Option<Fingerprint>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+pub struct VariantTranslation {
+    pub name: String,
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
+/// A further archive of a download's version, which variants are
+/// installed from; downloaded with it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+pub struct Part {
+    pub url: String,
+    pub sha256: String,
+    /// Bytes.
+    pub size: u32,
 }
 
 /// A folder right in a mod's root the game keeps saves and settings in.
@@ -268,6 +329,9 @@ pub struct Download {
     /// player's own folder or ZIP and among the mods installed by hand.
     #[serde(default)]
     pub fingerprint: Option<Fingerprint>,
+    /// Key → further archives of this version (the newest download's).
+    #[serde(default)]
+    pub parts: BTreeMap<String, Part>,
 }
 
 /// The files of a download's mod root that make its version (levels,
@@ -1170,6 +1234,28 @@ mod tests {
         assert_eq!(e.save_dirs[1].translations["de"].name, "Schwer");
         let c = e.cover_from.unwrap();
         assert_eq!((c.dir.as_str(), c.patch.as_str()), ("EASY", "EASY.PAT"));
+    }
+
+    #[test]
+    fn reads_variants_and_the_parts_they_come_from() {
+        let index: serde_json::Value = serde_json::from_str(SAMPLE).unwrap();
+        let e: IndexEntry = serde_json::from_value(index["mods"][0].clone()).unwrap();
+        assert_eq!(e.downloads[0].parts["green"].size, 77);
+        let [easy, green] = &e.variants[..] else {
+            panic!("{:?}", e.variants)
+        };
+        assert!(easy.default && !green.default);
+        assert_eq!(easy.root.as_deref(), Some("Levels/EASY"));
+        assert_eq!(easy.recipe, None);
+        assert_eq!(green.archive.as_deref(), Some("green"));
+        assert_eq!(green.translations["de"].name, "Grün");
+        assert_eq!(
+            green.copy_to_root.as_deref(),
+            Some(&["shared".to_string()][..])
+        );
+        assert_eq!(green.files["LEVEL80.CK1"], "alt/LEVEL80.GRN");
+        assert_eq!(green.cover.as_deref(), Some("TITLE.EXE"));
+        assert!(green.fingerprint.is_some());
     }
 
     #[test]

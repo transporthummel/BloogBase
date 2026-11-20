@@ -17,7 +17,14 @@
         {
           "url": "https://example.com/levels.zip",
           "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
-          "size": 99
+          "size": 99,
+          "parts": {
+            "green": {
+              "url": "https://example.com/levels-green.zip",
+              "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+              "size": 77
+            }
+          }
         }
       ],
       "recipe": {
@@ -46,6 +53,57 @@
         "dir": "EASY",
         "patch": "EASY.PAT"
       },
+      "variants": [
+        {
+          "id": "easy",
+          "default": true,
+          "name": "Easy",
+          "translations": {
+            "de": {
+              "name": "Leicht"
+            }
+          },
+          "root": "Levels/EASY",
+          "fingerprint": {
+            "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+            "files": [
+              "LEVEL01.CK1"
+            ]
+          }
+        },
+        {
+          "id": "green",
+          "name": "Green",
+          "description": "Green skies.",
+          "translations": {
+            "de": {
+              "name": "Grün",
+              "description": "Grüner Himmel."
+            }
+          },
+          "archive": "green",
+          "root": "",
+          "recipe": {
+            "type": "patch",
+            "patcher": "CK1PATCH.EXE",
+            "patch": "GREEN.PAT",
+            "args": []
+          },
+          "copyToRoot": [
+            "shared"
+          ],
+          "files": {
+            "LEVEL80.CK1": "alt/LEVEL80.GRN"
+          },
+          "cover": "TITLE.EXE",
+          "fingerprint": {
+            "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+            "files": [
+              "LEVEL01.CK1"
+            ]
+          }
+        }
+      ],
       "minAppVersion": "9.0.0"
     },
     {

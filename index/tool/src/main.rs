@@ -163,11 +163,21 @@ fn check(mut args: Args) -> Result<(), String> {
                 }
             };
             match found {
-                Ok(data) => problems.extend(
-                    archive::problems(e, d, &data, &inherited)
-                        .into_iter()
-                        .map(|p| format!("{}: {p}", e.id)),
-                ),
+                Ok(data) => {
+                    problems.extend(
+                        archive::problems(e, d, &data, &inherited)
+                            .into_iter()
+                            .map(|p| format!("{}: {p}", e.id)),
+                    );
+                    if std::ptr::eq(d, &e.downloads[0]) && !e.variants.is_empty() {
+                        let parts = fetch_parts(e, d, &cache, links, &mut problems);
+                        problems.extend(
+                            archive::variant_problems(e, &data, &parts)
+                                .into_iter()
+                                .map(|p| format!("{}: {p}", e.id)),
+                        );
+                    }
+                }
                 Err(err) => problems.push(format!("{}: {err}", e.id)),
             }
         }
@@ -182,6 +192,40 @@ fn check(mut args: Args) -> Result<(), String> {
             problems.join("\n  ")
         ))
     }
+}
+
+/// The further archives of the download `d` of `e` that check out, by key;
+/// what's wrong with the others goes into `problems`.
+fn fetch_parts(
+    e: &Entry,
+    d: &entry::Download,
+    cache: &Path,
+    links: bool,
+    problems: &mut Vec<String>,
+) -> std::collections::BTreeMap<String, Vec<u8>> {
+    let mut out = std::collections::BTreeMap::new();
+    for (key, part) in &d.parts {
+        if links && let Err(err) = archive::reachable_part(part) {
+            problems.push(format!("{}: {err}", e.id));
+        }
+        let data = archive::fetch_part(part, cache).and_then(|path| {
+            std::fs::read(&path).map_err(|err| format!("{}: {err}", path.display()))
+        });
+        match data {
+            Ok(data) => {
+                let hash = archive::sha256_hex(&data);
+                if !hash.eq_ignore_ascii_case(&part.sha256) {
+                    problems.push(format!("{}: parts.{key}: sha256 is {hash}", e.id));
+                } else if data.len() as u64 != part.size {
+                    problems.push(format!("{}: parts.{key}: size is {}", e.id, data.len()));
+                } else {
+                    out.insert(key.clone(), data);
+                }
+            }
+            Err(err) => problems.push(format!("{}: parts.{key}: {err}", e.id)),
+        }
+    }
+    out
 }
 
 /// The file names in the newest download of the entry `e` extends.

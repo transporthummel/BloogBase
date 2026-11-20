@@ -487,6 +487,8 @@ export type Download = {
 	 *  player's own folder or ZIP and among the mods installed by hand.
 	 */
 	fingerprint?: Fingerprint | null,
+	/**  Key → further archives of this version (the newest download's). */
+	parts?: { [key in string]: Part },
 };
 
 /**  What a folder or ZIP dropped on the window holds. */
@@ -736,6 +738,8 @@ export type IndexEntry = {
 	saveDirs?: SaveDir[],
 	/**  The cover is the title screen of a folder of the mod, with its patch. */
 	coverFrom?: CoverFrom | null,
+	/**  Ways to play the mod, the player chooses one; empty for most. */
+	variants?: Variant[],
 	minAppVersion?: string | null,
 };
 
@@ -1027,6 +1031,17 @@ export type OptionKind =
 
 /**  What a mod's KeenWiki page says about it. */
 export type PageDetail = "authors" | "description" | "released" | "homepage" | "pckf" | "keenmodding" | "status";
+
+/**
+ *  A further archive of a download's version, which variants are
+ *  installed from; downloaded with it.
+ */
+export type Part = {
+	url: string,
+	sha256: string,
+	/**  Bytes. */
+	size: number,
+};
 
 export type PlaySessionEnded = {
 	profileId: string,
@@ -1394,6 +1409,44 @@ export type UpdateStatus = "upToDate" | "newer" |
 "unknown" | 
 /**  The page has nothing to download. */
 "noDownload";
+
+/**
+ *  One way to play an index mod (PLAN.md §9.7): a folder of its archive or
+ *  of one of the download's `parts`, with what's started.
+ */
+export type Variant = {
+	/**  Stable: saves, backups and the profile keep it. */
+	id: string,
+	/**  Preselected and played until the player picks another. */
+	default?: boolean,
+	/**  In English. */
+	name: string,
+	description?: string | null,
+	/**  Language code → the texts in that language. */
+	translations?: { [key in string]: VariantTranslation },
+	/**  A key of the newest download's `parts`; `None`: the main archive. */
+	archive?: string | null,
+	/**
+	 *  The folder of its archive, `""` for its root; `None`: the entry's
+	 *  `root` for the main archive, else the one holding the recipe's files.
+	 */
+	root?: string | null,
+	/**  In place of the entry's recipe and version recipes. */
+	recipe?: Recipe | null,
+	/**  In place of the entry's `copyToRoot`. */
+	copyToRoot?: string[] | null,
+	/**  Name in the game → the file below the root it's a copy of. */
+	files?: { [key in string]: string },
+	/**  In place of the entry's cover program. */
+	cover?: string | null,
+	/**  The files of its root as installed, as a download's. */
+	fingerprint?: Fingerprint | null,
+};
+
+export type VariantTranslation = {
+	name: string,
+	description?: string | null,
+};
 
 export type VersionKind = "release" | "beta" | 
 /**  Only part of the game. */
