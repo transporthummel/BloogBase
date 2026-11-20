@@ -421,36 +421,38 @@ const ProfileCard = memo(function ProfileCard({
               {keepSeriesTogether(profile.label)}
             </Link>
           </Heading>
-          {profile.missingGame !== null ? (
-            <p className="text-xs text-muted">
-              {t("mods.waitsFor", { game: profile.missingGame })}
-            </p>
-          ) : (
-            profile.modId !== null &&
-            game && (
-              <p className="text-xs text-muted">
-                {profile.sourceMod ? (
+          {(() => {
+            // What it runs on, then the variant played, in one line; the
+            // variant's name wraps as a whole.
+            const runsOn =
+              profile.missingGame !== null ? (
+                t("mods.waitsFor", { game: profile.missingGame })
+              ) : profile.modId !== null && game ? (
+                profile.sourceMod ? (
                   t("mods.standalone")
                 ) : (
                   <RunsOn profile={profile} game={game.shortTitle} version={versionLabel} />
+                )
+              ) : null;
+            if (!runsOn && !profile.activeVariant) return null;
+            return (
+              <p className="text-xs text-muted">
+                {runsOn}
+                {runsOn && profile.activeVariant && " · "}
+                {profile.activeVariant && (
+                  <span className="inline-block">
+                    <span className="sr-only">{t("variants.variant")} </span>
+                    {variantName(profile.activeVariant, i18n.language)}
+                  </span>
                 )}
               </p>
-            )
-          )}
+            );
+          })()}
         </div>
         <div className="flex flex-wrap gap-1">
           {profile.modId !== null && !profile.sourceMod && <Badge>{t("mods.badge")}</Badge>}
           {profile.sourceMod && <Badge>{t("mods.sourceMod")}</Badge>}
           {profile.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
-          {profile.activeVariant && (
-            // The variant played, in the badges rather than a line of its own.
-            <Badge>
-              {t("variants.badgeActive", {
-                name: variantName(profile.activeVariant, i18n.language),
-                count: profile.variantCount,
-              })}
-            </Badge>
-          )}
           <StatusBadge status={status} />
           {profile.modId === null && <Badge>{versionLabel}</Badge>}
         </div>

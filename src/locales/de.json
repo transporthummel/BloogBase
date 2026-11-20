@@ -1214,8 +1214,6 @@
   "variants": {
     "badge_one": "{{count}} Variante",
     "badge_other": "{{count}} Varianten",
-    "badgeActive_one": "{{name}} · {{count}} Variante",
-    "badgeActive_other": "{{name}} · {{count}} Varianten",
     "variant": "Variante:",
     "tab": "Varianten",
     "pickTitle": "Welche Variante?",
