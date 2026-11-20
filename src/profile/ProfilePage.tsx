@@ -49,7 +49,7 @@ export function ProfileDetail({
   /** Opens on the Variants tab, at the variant played (the library card's link). */
   showVariant?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const games = useGames();
   const runtime = useRuntimeStatus();
@@ -84,7 +84,7 @@ export function ProfileDetail({
 
   const launch = useMutation({
     mutationFn: ({ world, variant }: { world: WorldStart | null; variant: string | null }) =>
-      unwrap(commands.launchProfile(profileId, world, variant)),
+      unwrap(commands.launchProfile(profileId, world, variant, i18n.language)),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: profilesKey });
       queryClient.invalidateQueries({ queryKey: backupsKey(profileId) });

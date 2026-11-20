@@ -109,7 +109,7 @@ export function Library() {
       profileId: string;
       world: WorldStart | null;
       variant: string | null;
-    }) => unwrap(commands.launchProfile(profileId, world, variant)),
+    }) => unwrap(commands.launchProfile(profileId, world, variant, i18n.language)),
     onSettled: (_, __, { profileId }) => {
       queryClient.invalidateQueries({ queryKey: profilesKey });
       // The arrow beside Play lists the other worlds and variants.

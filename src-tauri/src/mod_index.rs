@@ -183,6 +183,16 @@ pub struct Variant {
     pub fingerprint: Option<Fingerprint>,
 }
 
+impl Variant {
+    /// Its name in `language` (`de`, `de-DE`, …) where translated, else in
+    /// English.
+    pub fn name_in(&self, language: Option<&str>) -> &str {
+        language
+            .and_then(|l| self.translations.get(l.split('-').next().unwrap_or(l)))
+            .map_or(&self.name, |t| &t.name)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 pub struct VariantTranslation {
     pub name: String,
@@ -1294,6 +1304,18 @@ mod tests {
     use super::*;
 
     const SAMPLE: &str = include_str!("../tests/index-sample.json");
+
+    #[test]
+    fn variant_names_in_the_apps_language() {
+        let v: Variant = serde_json::from_str(
+            r#"{"id": "hard", "name": "Hard", "translations": {"de": {"name": "Schwer"}}}"#,
+        )
+        .unwrap();
+        assert_eq!(v.name_in(Some("de")), "Schwer");
+        assert_eq!(v.name_in(Some("de-DE")), "Schwer");
+        assert_eq!(v.name_in(Some("fr")), "Hard");
+        assert_eq!(v.name_in(None), "Hard");
+    }
 
     struct Keys {
         sk: minisign::SecretKey,

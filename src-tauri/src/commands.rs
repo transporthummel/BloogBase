@@ -174,6 +174,8 @@ pub async fn launch_profile(
     profile_id: String,
     world: Option<crate::worlds::WorldStart>,
     variant: Option<String>,
+    // The app's, which names the variant in DOSBox's window.
+    language: String,
 ) -> CommandResult<()> {
     let runtime = runtime::active(&app.state::<Db>())?;
     let claim = app.state::<Running>().claim(&profile_id)?;
@@ -217,6 +219,7 @@ pub async fn launch_profile(
             variant.as_deref(),
             fullscreen,
             &letters,
+            &language,
             on_log,
         )
     })

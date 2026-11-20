@@ -1471,6 +1471,7 @@ test("a mod with worlds continues the one played last, or starts a new one with 
       "keen4-1",
       { type: "continue", id: 2 },
       null,
+      "en",
     ),
   );
 
@@ -1499,6 +1500,7 @@ test("a mod with worlds continues the one played last, or starts a new one with 
         options: { startpogo: 1, startammo: 20 },
       },
       null,
+      "en",
     ),
   );
 });
@@ -1535,6 +1537,7 @@ test("the arrow beside Continue offers five worlds, favourites first, each by la
       "keen4-1",
       { type: "continue", id: 10 },
       null,
+      "en",
     ),
   );
 });
@@ -1558,6 +1561,7 @@ test("without a world going on, the arrow beside New world offers the others", a
       "keen4-1",
       { type: "continue", id: 1 },
       null,
+      "en",
     ),
   );
   await userEvent.click(screen.getByRole("button", { name: "New world…" }));
@@ -1586,6 +1590,7 @@ test("a new world with a seed and options already played continues that one", as
       "keen4-1",
       { type: "continue", id: 1 },
       null,
+      "en",
     ),
   );
 });
@@ -1605,6 +1610,7 @@ test("without a world played, Play begins one", async () => {
         options: { startpogo: 1, startammo: 15 },
       },
       null,
+      "en",
     ),
   );
 });
@@ -1649,6 +1655,7 @@ test("the Worlds tab lists the worlds and plays, renames and deletes them", asyn
       "keen4-1",
       { type: "continue", id: 1 },
       null,
+      "en",
     ),
   );
   await userEvent.click(screen.getByRole("button", { name: "Favourite: Hard one" }));
@@ -1733,12 +1740,12 @@ test("a mod with variants plays the one chosen, or another from the arrow", asyn
   expect(screen.getAllByText("Fewer enemies.")).toHaveLength(1);
   await userEvent.click(await screen.findByRole("button", { name: "Play" }));
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", null, null),
+    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", null, null, "en"),
   );
   await userEvent.click(screen.getByRole("button", { name: "Other variants" }));
   await userEvent.click(screen.getByRole("menuitem", { name: "Play as Hard" }));
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenLastCalledWith("keen4-1", null, "hard"),
+    expect(commands.launchProfile).toHaveBeenLastCalledWith("keen4-1", null, "hard", "en"),
   );
 });
 

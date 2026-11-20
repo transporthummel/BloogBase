@@ -39,6 +39,7 @@ pub fn start(
     variant: Option<&str>,
     fullscreen: bool,
     letters: &[(char, u16)],
+    language: &str,
     on_log: impl FnMut(launcher::LogEvent) + Send + 'static,
 ) -> Result<Started> {
     // Left by a session that ended without us, e.g. in a crash.
@@ -54,7 +55,7 @@ pub fn start(
     // First, so the backup sees the saves of the world played.
     let run = worlds::prepare(paths, db, profile_id, world)?;
     let backup = backups::before_launch(paths, db, profile_id);
-    let spec = launcher::prepare(paths, db, profile_id, fullscreen, run.as_ref())?;
+    let spec = launcher::prepare(paths, db, profile_id, fullscreen, run.as_ref(), language)?;
     if let Err(e) = game_settings::apply(paths, db, profile_id) {
         tracing::warn!("could not apply global settings to {profile_id}: {e}");
     }
@@ -262,6 +263,7 @@ mod tests {
                 None,
                 false,
                 &[],
+                "en",
                 |_| {}
             )
             .is_err()

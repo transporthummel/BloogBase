@@ -23,7 +23,7 @@ export const commands = {
 	 *  Starts a profile in DOSBox. Returns once the process is running; emits
 	 *  `GameLaunch` as it gets going and `PlaySessionEnded` when it exits.
 	 */
-	launchProfile: (profileId: string, world: WorldStart | null, variant: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("launch_profile", { profileId, world, variant })),
+	launchProfile: (profileId: string, world: WorldStart | null, variant: string | null, language: string) => typedError<null, CommandError>(__TAURI_INVOKE("launch_profile", { profileId, world, variant, language })),
 	/**  The worlds of a profile whose mod keeps them (§9.6), else `None`. */
 	profileWorlds: (profileId: string) => typedError<ProfileWorlds | null, CommandError>(__TAURI_INVOKE("profile_worlds", { profileId })),
 	/**  Names a world; without a name it gets its default back. */

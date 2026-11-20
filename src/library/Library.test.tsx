@@ -370,7 +370,12 @@ test("the arrow beside Continue world starts another world or a new one", async 
   );
   await userEvent.click(await screen.findByRole("menuitem", { name: "Hard one" }));
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenCalledWith("rnd", { type: "continue", id: 1 }, null),
+    expect(commands.launchProfile).toHaveBeenCalledWith(
+      "rnd",
+      { type: "continue", id: 1 },
+      null,
+      "en",
+    ),
   );
   // A seed to choose: the new world asks first, outside the card.
   await userEvent.click(screen.getByRole("button", { name: "More ways to start Randomiser" }));
@@ -416,7 +421,7 @@ test("play launches the profile", async () => {
   expect(within(dialog).getByRole("checkbox", { name: "Don't show this again" })).toBeChecked();
   expect(commands.launchProfile).not.toHaveBeenCalled();
   await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));
-  expect(commands.launchProfile).toHaveBeenCalledWith("keen5-1", null, null);
+  expect(commands.launchProfile).toHaveBeenCalledWith("keen5-1", null, null, "en");
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   // Remembered: the next start goes straight ahead.
   await userEvent.click(play);
@@ -782,7 +787,7 @@ test("a mod with variants asks which one until the player chose", async () => {
   expect(within(dialog).getByText("Fewer enemies.")).toBeInTheDocument();
   await userEvent.click(within(dialog).getByRole("radio", { name: /Hard/ }));
   await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));
-  expect(commands.launchProfile).toHaveBeenCalledWith("clouds", null, "hard");
+  expect(commands.launchProfile).toHaveBeenCalledWith("clouds", null, "hard", "en");
   localStorage.removeItem("bloogbase.controlsShown");
 });
 
@@ -831,7 +836,7 @@ test("once chosen, the arrow beside Play starts the other variants", async () =>
   );
   await userEvent.click(await screen.findByRole("menuitem", { name: "Play as Hard" }));
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenCalledWith("clouds", null, "hard"),
+    expect(commands.launchProfile).toHaveBeenCalledWith("clouds", null, "hard", "en"),
   );
   // Play itself starts the variant played, without asking.
   await vi.waitFor(() =>
@@ -839,7 +844,7 @@ test("once chosen, the arrow beside Play starts the other variants", async () =>
   );
   await userEvent.click(screen.getByRole("button", { name: "Play Clouds Unseen" }));
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenLastCalledWith("clouds", null, null),
+    expect(commands.launchProfile).toHaveBeenLastCalledWith("clouds", null, null, "en"),
   );
   expect(screen.queryByRole("dialog")).toBeNull();
   localStorage.removeItem("bloogbase.controlsShown");

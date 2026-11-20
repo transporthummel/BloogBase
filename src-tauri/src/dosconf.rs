@@ -261,12 +261,18 @@ fn capture_dir() -> String {
     Path::new("..").join("capture").display().to_string()
 }
 
-/// What the DOSBox window is named after: the mod's name for a mod, else
-/// the game's title.
-pub fn window_title<'a>(profile: &'a profiles::Profile, game: &'a catalog::Game) -> &'a str {
-    match profile.mod_id {
-        Some(_) => &profile.label,
-        None => &game.title,
+/// What the DOSBox window is named after: the mod's name for a mod, with
+/// the variant played in brackets (in `language`, the app's, else in
+/// English), else the game's title.
+pub fn window_title(
+    profile: &profiles::Profile,
+    game: &catalog::Game,
+    language: Option<&str>,
+) -> String {
+    match (&profile.mod_id, &profile.active_variant) {
+        (Some(_), Some(v)) => format!("{} ({})", profile.label, v.name_in(language)),
+        (Some(_), None) => profile.label.clone(),
+        (None, _) => game.title.clone(),
     }
 }
 
@@ -513,7 +519,9 @@ pub fn view(paths: &AppPaths, db: &Db, profile_id: Option<&str>) -> Result<Confi
             let defaults = &profile_defaults(engine, mod_defaults(&layers));
             let dirs = paths.profile(id);
             let text = read_or(&dirs.override_conf, PROFILE_TEMPLATE)?;
-            let launch = launch_conf(window_title(&profile, game), false);
+            // Which language the app shows isn't known here; the title
+            // only names the window.
+            let launch = launch_conf(&window_title(&profile, game, None), false);
             let options = options_conf(&options(db)?);
             let effective = merge(&[
                 (defaults, ConfigLayer::Defaults),
