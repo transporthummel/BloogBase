@@ -745,10 +745,10 @@ export function KeenwikiCacheSection() {
 }
 
 function GlobalConfigSection() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const view = useQuery({
     queryKey: configKey(null),
-    queryFn: () => unwrap(commands.configView(null)),
+    queryFn: () => unwrap(commands.configView(null, i18n.language)),
   });
   return (
     <Group title={t("config.globalTitle")}>

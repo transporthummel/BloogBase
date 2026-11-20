@@ -16,10 +16,10 @@ import { CustomPatchesSection } from "./CustomPatches";
  * players need.
  */
 export function ConfigPanel({ profileId }: { profileId: string }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const view = useQuery({
     queryKey: configKey(profileId),
-    queryFn: () => unwrap(commands.configView(profileId)),
+    queryFn: () => unwrap(commands.configView(profileId, i18n.language)),
   });
   const p = view.data?.profile;
 

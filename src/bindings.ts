@@ -146,7 +146,7 @@ export const commands = {
 	 *  The DOSBox config layers: the global override, and with `profile_id`
 	 *  that profile's layers and the effective result.
 	 */
-	configView: (profileId: string | null) => typedError<ConfigView, CommandError>(__TAURI_INVOKE("config_view", { profileId })),
+	configView: (profileId: string | null, language: string) => typedError<ConfigView, CommandError>(__TAURI_INVOKE("config_view", { profileId, language })),
 	/**  Saves the global override, or a profile's with `profile_id`. */
 	saveConfig: (profileId: string | null, text: string) => typedError<ConfigWarning[], CommandError>(__TAURI_INVOKE("save_config", { profileId, text })),
 	resetConfig: (profileId: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("reset_config", { profileId })),

@@ -507,7 +507,13 @@ pub struct ProfileConfig {
     pub effective: Vec<Setting>,
 }
 
-pub fn view(paths: &AppPaths, db: &Db, profile_id: Option<&str>) -> Result<ConfigView> {
+/// `language`: the app's, see [`window_title`].
+pub fn view(
+    paths: &AppPaths,
+    db: &Db,
+    profile_id: Option<&str>,
+    language: &str,
+) -> Result<ConfigView> {
     let global = read_or(&paths.global_override_conf(), GLOBAL_TEMPLATE)?;
     let profile = match profile_id {
         None => None,
@@ -519,9 +525,7 @@ pub fn view(paths: &AppPaths, db: &Db, profile_id: Option<&str>) -> Result<Confi
             let defaults = &profile_defaults(engine, mod_defaults(&layers));
             let dirs = paths.profile(id);
             let text = read_or(&dirs.override_conf, PROFILE_TEMPLATE)?;
-            // Which language the app shows isn't known here; the title
-            // only names the window.
-            let launch = launch_conf(&window_title(&profile, game, None), false);
+            let launch = launch_conf(&window_title(&profile, game, Some(language)), false);
             let options = options_conf(&options(db)?);
             let effective = merge(&[
                 (defaults, ConfigLayer::Defaults),
@@ -671,7 +675,7 @@ mod tests {
     #[test]
     fn view_save_and_reset_layers() {
         let (_tmp, paths, db) = crate::saves::tests::setup();
-        let v = view(&paths, &db, Some("keen4-1")).unwrap();
+        let v = view(&paths, &db, Some("keen4-1"), "en").unwrap();
         assert_eq!(v.global, GLOBAL_TEMPLATE);
         let p = v.profile.unwrap();
         assert_eq!(p.text, PROFILE_TEMPLATE);
@@ -697,7 +701,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(warnings[0].kind, WarningKind::Autoexec);
-        let v = view(&paths, &db, Some("keen4-1")).unwrap();
+        let v = view(&paths, &db, Some("keen4-1"), "en").unwrap();
         let cycles = v
             .profile
             .unwrap()
@@ -711,7 +715,7 @@ mod tests {
         );
 
         reset(&paths, &db, Some("keen4-1")).unwrap();
-        let v = view(&paths, &db, Some("keen4-1")).unwrap();
+        let v = view(&paths, &db, Some("keen4-1"), "en").unwrap();
         assert_eq!(v.profile.unwrap().text, PROFILE_TEMPLATE);
         assert_eq!(v.global, "[cpu]\ncpu_cycles = 5\n");
         assert!(matches!(
@@ -768,7 +772,7 @@ mod tests {
         assert!(overridden_options(&paths).unwrap().is_empty());
         save(&paths, &db, None, "[SDL]\nFullscreen = off\n").unwrap();
         assert_eq!(overridden_options(&paths).unwrap(), ["fullscreen"]);
-        let effective = view(&paths, &db, Some("keen4-1"))
+        let effective = view(&paths, &db, Some("keen4-1"), "en")
             .unwrap()
             .profile
             .unwrap()

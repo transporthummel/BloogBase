@@ -1051,8 +1051,15 @@ pub fn config_view(
     paths: State<'_, AppPaths>,
     db: State<'_, Db>,
     profile_id: Option<String>,
+    // The app's, which names the variant in the window title.
+    language: String,
 ) -> CommandResult<ConfigView> {
-    Ok(dosconf::view(&paths, &db, profile_id.as_deref())?)
+    Ok(dosconf::view(
+        &paths,
+        &db,
+        profile_id.as_deref(),
+        &language,
+    )?)
 }
 
 /// Saves the global override, or a profile's with `profile_id`.
