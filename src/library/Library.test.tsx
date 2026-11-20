@@ -75,6 +75,7 @@ vi.mock("../bindings", () => {
       gameSettings: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
       indexMods: vi.fn(() => Promise.resolve({ status: "ok", data: [] })),
       listVariants: vi.fn(),
+      profileWorlds: vi.fn(),
     },
     events: { playSessionEnded: event, jobUpdated: event },
   };
@@ -325,6 +326,58 @@ test("a mod that keeps worlds is marked and its card says what Play does", async
   expect(screen.getByRole("button", { name: "Play Randomiser" })).toHaveTextContent(
     "Continue world",
   );
+});
+
+test("the arrow beside Continue world starts another world or a new one", async () => {
+  const randomiser: Profile = {
+    ...profile,
+    id: "rnd",
+    modId: "rnd",
+    label: "Randomiser",
+    worlds: true,
+    activeWorld: 2,
+  };
+  const world = (id: number, name: string | null, active: boolean) => ({
+    id,
+    name,
+    seed: id * 10,
+    options: {},
+    createdAt: 1_690_000_000,
+    lastPlayedAt: 1_690_000_000 + id,
+    favourite: false,
+    active,
+    saves: 0,
+  });
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [randomiser] });
+  vi.mocked(commands.profileWorlds).mockResolvedValue({
+    status: "ok",
+    data: {
+      definition: {
+        new: { type: "batch", file: "RNDKEEN1.BAT" },
+        play: { type: "patch", patcher: "CK1PATCH.EXE", patch: "RNDKEEN1.PAT", args: [] },
+        files: ["RNDLV*.CK1", "RNDKEEN1.PAT"],
+        seed: { arg: "/SEED", max: 65535, read: null },
+        options: [],
+      },
+      worlds: [world(2, null, true), world(1, "Hard one", false)],
+      active: 2,
+      lastOptions: {},
+    },
+  });
+  vi.mocked(commands.launchProfile).mockResolvedValue({ status: "ok", data: null });
+  localStorage.setItem("bloogbase.controlsShown", JSON.stringify(["galaxy"]));
+  renderLibrary();
+  await userEvent.click(
+    await screen.findByRole("button", { name: "More ways to start Randomiser" }),
+  );
+  await userEvent.click(await screen.findByRole("menuitem", { name: "Hard one" }));
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenCalledWith("rnd", { type: "continue", id: 1 }, null),
+  );
+  // A seed to choose: the new world asks first, outside the card.
+  await userEvent.click(screen.getByRole("button", { name: "More ways to start Randomiser" }));
+  await userEvent.click(await screen.findByRole("menuitem", { name: "New world…" }));
+  expect(await screen.findByRole("dialog")).toBeInTheDocument();
 });
 
 test("coming back from a details page keeps the place and shows the card", async () => {
@@ -731,5 +784,64 @@ test("a mod with variants asks which one until the player chose", async () => {
   await userEvent.click(within(dialog).getByRole("radio", { name: /Hard/ }));
   await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));
   expect(commands.launchProfile).toHaveBeenCalledWith("clouds", null, "hard");
+  localStorage.removeItem("bloogbase.controlsShown");
+});
+
+test("once chosen, the arrow beside Play starts the other variants", async () => {
+  const variant = (id: string, name: string) => ({
+    id,
+    default: id === "hard",
+    name,
+    description: null,
+    translations: {},
+    archive: null,
+    root: null,
+    recipe: null,
+    copyToRoot: null,
+    files: {},
+    cover: null,
+    fingerprint: null,
+  });
+  const mod: Profile = {
+    ...profile,
+    id: "clouds",
+    modId: "clouds",
+    label: "Clouds Unseen",
+    variantCount: 2,
+    activeVariant: variant("easy", "Easy"),
+    variantChosen: true,
+  };
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [mod] });
+  vi.mocked(commands.listVariants).mockResolvedValue({
+    status: "ok",
+    data: {
+      variants: [
+        { variant: variant("hard", "Hard"), active: false, saves: 0, lastPlayedAt: null },
+        { variant: variant("easy", "Easy"), active: true, saves: 2, lastPlayedAt: 1_700_000_000 },
+      ],
+      active: "easy",
+      chosen: true,
+      sameCovers: true,
+    },
+  });
+  vi.mocked(commands.launchProfile).mockResolvedValue({ status: "ok", data: null });
+  localStorage.setItem("bloogbase.controlsShown", JSON.stringify(["galaxy"]));
+  renderLibrary();
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Other variants of Clouds Unseen" }),
+  );
+  await userEvent.click(await screen.findByRole("menuitem", { name: "Play as Hard" }));
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenCalledWith("clouds", null, "hard"),
+  );
+  // Play itself starts the variant played, without asking.
+  await vi.waitFor(() =>
+    expect(screen.getByRole("button", { name: "Play Clouds Unseen" })).toBeEnabled(),
+  );
+  await userEvent.click(screen.getByRole("button", { name: "Play Clouds Unseen" }));
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenLastCalledWith("clouds", null, null),
+  );
+  expect(screen.queryByRole("dialog")).toBeNull();
   localStorage.removeItem("bloogbase.controlsShown");
 });

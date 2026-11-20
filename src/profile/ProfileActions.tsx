@@ -11,7 +11,6 @@ import {
   Keyboard,
   MonitorCog,
   PackagePlus,
-  Play,
   RefreshCw,
   Trash2,
 } from "lucide-react";
@@ -50,15 +49,10 @@ import { Notice } from "../ui/Notice";
 import { PlayButton } from "../ui/PlayButton";
 import { SplitButton } from "../ui/SplitButton";
 import { oneButtonFiringKey, profileFiringKey } from "./firing";
-import { NewWorldDialog } from "./NewWorldDialog";
 import { RemoveGameDialog } from "./RemoveGameDialog";
-import { asksFirst, useWorlds, worldName } from "./worlds";
-import { useVariants, variantName } from "./variants";
+import { usePlayChoices } from "./playChoices";
 
-/** How many other worlds the arrow beside Continue offers. */
-const RECENT_WORLDS = 5;
-
-type Open = "removing" | "replacing" | "reporting" | "picking" | "newWorld" | null;
+type Open = "removing" | "replacing" | "reporting" | "picking" | null;
 
 /** Play, the More menu with its dialogs, and what the player should know before playing. */
 export function ProfileActions({
@@ -78,7 +72,7 @@ export function ProfileActions({
   /** For a game: the mods played on it. */
   modCount: number;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState<Open>(null);
@@ -100,41 +94,7 @@ export function ProfileActions({
   const noDosbox = !!runtime.data && !runtime.data.active;
   const blocked = profile.missingGame !== null || noDosbox;
   const check = useModUpdateCheck(mod);
-  const worlds = useWorlds(profile);
-  const variants = useVariants(profile);
-  // Once chosen, Play starts the variant played; the arrow the others (§9.7).
-  const otherVariants: MenuItem[] = profile.variantChosen
-    ? (variants.data?.variants ?? [])
-        .filter((v) => !v.active)
-        .map((v) => ({
-          label: t("variants.playAs", { name: variantName(v.variant, i18n.language) }),
-          icon: <Play className="size-4" />,
-          onSelect: () => onPlay(null, v.variant.id),
-        }))
-    : [];
-  // A new world asks for its seed and options first, where the mod has any.
-  const newWorld = () => {
-    if (worlds.data && asksFirst(worlds.data.definition)) setOpen("newWorld");
-    else onPlay({ type: "new", seed: null, options: {} });
-  };
-  const newLabel =
-    worlds.data && asksFirst(worlds.data.definition) ? t("worlds.newEllipsis") : t("worlds.new");
-  // Up to five worlds but the one Continue starts; beside Continue, a new
-  // one too. Without a world going on, a new one is the main action.
-  const active = profile.activeWorld;
-  const recent: MenuItem[] = (worlds.data?.worlds ?? [])
-    .filter((w) => !w.active)
-    // Favourites first, each group by last start.
-    .sort((a, b) => Number(b.favourite) - Number(a.favourite) || b.lastPlayedAt - a.lastPlayedAt)
-    .slice(0, RECENT_WORLDS)
-    .map((w, i) => ({
-      label: worldName(t, w),
-      icon: <Play className="size-4" />,
-      onSelect: () => onPlay({ type: "continue", id: w.id }),
-      separated: active !== null && i === 0,
-    }));
-  const startItems: MenuItem[] =
-    active !== null ? [{ label: t("worlds.newEllipsis"), onSelect: newWorld }, ...recent] : recent;
+  const choices = usePlayChoices(profile, onPlay);
   // A KeenWiki mod's page may have a newer version; the index's shows by itself.
   const checkable = checksKeenwiki(mod);
 
@@ -196,33 +156,19 @@ export function ProfileActions({
   return (
     <div className="grid gap-3">
       <div className="flex items-stretch gap-2">
-        {otherVariants.length > 0 && !blocked && !profile.running ? (
+        {choices.split && !blocked && !profile.running ? (
           <SplitButton
-            onClick={() => onPlay(null)}
+            onClick={choices.split.play}
             disabled={!canPlay}
             className="min-w-44 px-8 py-3 text-base"
-            menuLabel={t("variants.more")}
-            items={otherVariants}
+            menuLabel={t(`${choices.split.kind}.more`)}
+            items={choices.split.items}
           >
-            {t("library.play")}
-          </SplitButton>
-        ) : profile.worlds && !blocked && !profile.running && startItems.length > 0 ? (
-          // Says what it does: the world played last goes on, else a new one
-          // begins; the arrow offers the other ways to start (§9.6).
-          <SplitButton
-            onClick={() =>
-              active !== null ? onPlay({ type: "continue", id: active }) : newWorld()
-            }
-            disabled={!canPlay}
-            className="min-w-44 px-8 py-3 text-base"
-            menuLabel={t("worlds.more")}
-            items={startItems}
-          >
-            {active !== null ? t("worlds.continue") : newLabel}
+            {choices.split.label}
           </SplitButton>
         ) : (
           <PlayButton
-            onClick={() => (profile.worlds ? newWorld() : onPlay(null))}
+            onClick={() => (profile.worlds ? choices.newWorld() : onPlay(null))}
             disabled={!canPlay || profile.running || blocked}
             // Red while something is missing: the notice below says what.
             variant={blocked ? "danger" : "primary"}
@@ -235,7 +181,7 @@ export function ProfileActions({
                 : profile.running
                   ? t("library.running")
                   : profile.worlds
-                    ? newLabel
+                    ? choices.newLabel
                     : t("library.play")}
           </PlayButton>
         )}
@@ -307,18 +253,7 @@ export function ProfileActions({
           }}
         />
       )}
-      {open === "newWorld" && worlds.data && (
-        <NewWorldDialog
-          definition={worlds.data.definition}
-          lastOptions={worlds.data.lastOptions}
-          worlds={worlds.data.worlds}
-          onClose={close}
-          onStart={(start) => {
-            close();
-            onPlay(start);
-          }}
-        />
-      )}
+      {choices.dialog}
       {open === "reporting" && (
         <ModReportDialog profileId={profile.id} name={profile.label} onClose={close} />
       )}

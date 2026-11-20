@@ -2,8 +2,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { Compass, PackagePlus, Search } from "lucide-react";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { commands, events, type Game, type Install, type Profile } from "../bindings";
+import {
+  commands,
+  events,
+  type Game,
+  type Install,
+  type Profile,
+  type WorldStart,
+} from "../bindings";
 import { useGames } from "../catalog";
 import { errorMessage } from "../errors";
 import { formatPlayTime } from "../format";
@@ -39,6 +47,10 @@ import { PlayButton } from "../ui/PlayButton";
 import { useControlsGate } from "../profile/controlsGate";
 import { useVariantGate } from "../profile/variantGate";
 import { variantName } from "../profile/variants";
+import { usePlayChoices } from "../profile/playChoices";
+import { variantsKey } from "../profile/variants";
+import { worldsKey } from "../profile/worlds";
+import { SplitButton } from "../ui/SplitButton";
 
 /** The games sold on Steam and GOG. */
 const SOLD_GAMES = ["keen1", "keen2", "keen3", "keen4", "keen5", "kdreams"];
@@ -89,15 +101,28 @@ export function Library() {
   }, [queryClient]);
 
   const launch = useMutation({
-    mutationFn: ({ profileId, variant }: { profileId: string; variant: string | null }) =>
-      unwrap(commands.launchProfile(profileId, null, variant)),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: profilesKey }),
+    mutationFn: ({
+      profileId,
+      world,
+      variant,
+    }: {
+      profileId: string;
+      world: WorldStart | null;
+      variant: string | null;
+    }) => unwrap(commands.launchProfile(profileId, world, variant)),
+    onSettled: (_, __, { profileId }) => {
+      queryClient.invalidateQueries({ queryKey: profilesKey });
+      // The arrow beside Play lists the other worlds and variants.
+      queryClient.invalidateQueries({ queryKey: worldsKey(profileId) });
+      queryClient.invalidateQueries({ queryKey: variantsKey(profileId) });
+    },
   });
-  // The variant picked, for once the controls have been shown.
+  // The world and variant picked, for once the controls have been shown.
+  const world = useRef<WorldStart | null>(null);
   const variant = useRef<string | null>(null);
   // The first start of a series shows its keys first.
   const gate = useControlsGate((profileId) =>
-    launch.mutate({ profileId, variant: variant.current }),
+    launch.mutate({ profileId, world: world.current, variant: variant.current }),
   );
   // A mod with variants asks which one until the player has chosen (§9.7).
   const variants = useVariantGate((profile, picked) => {
@@ -341,7 +366,10 @@ export function Library() {
                       heading={grouped ? "h3" : "h2"}
                       sharedLabel={shared.has(profile.label)}
                       canPlay={!!runtime.data?.active && !launch.isPending}
-                      onPlay={() => variants.play(profile)}
+                      onPlay={(start, pick) => {
+                        world.current = start;
+                        variants.play(profile, pick);
+                      }}
                     />
                   </li>
                 ))}
@@ -373,7 +401,8 @@ const ProfileCard = memo(function ProfileCard({
   /** Another card has the same name. */
   sharedLabel: boolean;
   canPlay: boolean;
-  onPlay: (profileId: string) => void;
+  /** With the world to play, for a mod that keeps worlds, or a variant. */
+  onPlay: (world: WorldStart | null, variant?: string) => void;
 }) {
   const { t, i18n } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
@@ -382,6 +411,8 @@ const ProfileCard = memo(function ProfileCard({
   // with the name.
   const name = sharedLabel ? `${profile.label} (${versionLabel})` : profile.label;
   const cover = useCover(profile.id, profile.installId, profile.activeVariant?.id ?? null);
+  // Variants or worlds offer other ways to start beside Play, as on the page.
+  const choices = usePlayChoices(profile, onPlay);
   // Alpha, beta or abandoned, as the index says now, else the KeenWiki page.
   const status =
     useIndexMods().data?.find((m) => profile.modId !== null && m.modId === profile.modId)?.entry
@@ -495,23 +526,38 @@ const ProfileCard = memo(function ProfileCard({
           </dd>
         </dl>
         <div className="mt-auto flex gap-2 pt-1.5">
-          <PlayButton
-            variant="card"
-            className="flex-1"
-            onClick={() => onPlay(profile.id)}
-            disabled={!canPlay || profile.running || profile.missingGame !== null}
-            aria-label={t("library.playGame", { game: name })}
-          >
-            {profile.missingGame !== null
-              ? t("mods.gameMissing")
-              : profile.running
-                ? t("library.running")
-                : profile.worlds
-                  ? // Without a choice the world played last goes on, else a
-                    // new one begins with the last options (§9.6).
-                    t(profile.activeWorld !== null ? "worlds.continue" : "worlds.new")
-                  : t("library.play")}
-          </PlayButton>
+          {choices.split && !profile.running && profile.missingGame === null ? (
+            <SplitButton
+              variant="card"
+              wrapperClassName="flex-1"
+              className="flex-1"
+              onClick={choices.split.play}
+              disabled={!canPlay}
+              aria-label={t("library.playGame", { game: name })}
+              menuLabel={t(`library.${choices.split.kind}More`, { game: name })}
+              items={choices.split.items}
+            >
+              {choices.split.label}
+            </SplitButton>
+          ) : (
+            <PlayButton
+              variant="card"
+              className="flex-1"
+              onClick={() => (profile.worlds ? choices.newWorld() : onPlay(null))}
+              disabled={!canPlay || profile.running || profile.missingGame !== null}
+              aria-label={t("library.playGame", { game: name })}
+            >
+              {profile.missingGame !== null
+                ? t("mods.gameMissing")
+                : profile.running
+                  ? t("library.running")
+                  : profile.worlds
+                    ? choices.newLabel
+                    : t("library.play")}
+            </PlayButton>
+          )}
+          {/* Out of the card, whose containment would clip a fixed dialog. */}
+          {choices.dialog && createPortal(choices.dialog, document.body)}
         </div>
       </div>
     </Card>

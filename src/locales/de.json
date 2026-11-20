@@ -44,6 +44,8 @@
     "unknownVersion": "Unbekannte Version",
     "play": "Spielen",
     "playGame": "{{game}} spielen",
+    "variantsMore": "Andere Varianten von {{game}}",
+    "worldsMore": "Weitere Startmöglichkeiten für {{game}}",
     "running": "Läuft…",
     "playTime": "Spielzeit",
     "neverPlayed": "Noch nicht gespielt",

@@ -14,6 +14,7 @@ export function SplitButton({
   items,
   variant = "primary",
   className = "",
+  wrapperClassName = "",
   disabled,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -21,9 +22,11 @@ export function SplitButton({
   menuLabel: string;
   items: MenuItem[];
   variant?: Variant;
+  /** Sizes both halves together, e.g. `flex-1` on a card. */
+  wrapperClassName?: string;
 }) {
   return (
-    <div className="flex items-stretch">
+    <div className={`flex items-stretch ${wrapperClassName}`}>
       <PlayButton
         variant={variant}
         disabled={disabled}
@@ -37,7 +40,8 @@ export function SplitButton({
         // Its drop shadow would fall left onto the main half, a dark smudge
         // in the dark theme: cut off there, except while the focus ring
         // needs that side.
-        className="rounded-l-none border-l border-accent-ink/25 px-2.5 [clip-path:inset(-2rem_-2rem_-2rem_0)] focus-visible:[clip-path:none] pad-focus:[clip-path:none]"
+        // A card's outlined halves share the main half's right border.
+        className={`rounded-l-none ${variant === "card" ? "border-l-0" : "border-l border-accent-ink/25"} px-2.5 [clip-path:inset(-2rem_-2rem_-2rem_0)] focus-visible:[clip-path:none] pad-focus:[clip-path:none]`}
         trigger={<ChevronDown className="size-4" aria-hidden />}
         items={items}
       />
