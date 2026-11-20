@@ -491,6 +491,9 @@ const ProfileCard = memo(function ProfileCard({
           {profile.modId !== null && !profile.sourceMod && <Badge>{t("mods.badge")}</Badge>}
           {profile.sourceMod && <Badge>{t("mods.sourceMod")}</Badge>}
           {profile.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
+          {profile.variantCount > 0 && (
+            <Badge>{t("variants.badge", { count: profile.variantCount })}</Badge>
+          )}
           <StatusBadge status={status} />
           {profile.modId === null && <Badge>{versionLabel}</Badge>}
         </div>

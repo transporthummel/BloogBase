@@ -770,6 +770,7 @@ test("a mod with variants asks which one until the player chose", async () => {
     "title",
     "All variants",
   );
+  expect(screen.getByText("2 variants")).toBeInTheDocument();
   const play = await screen.findByRole("button", { name: "Play Clouds Unseen" });
   await vi.waitFor(() => expect(play).toBeEnabled());
   await userEvent.click(play);
