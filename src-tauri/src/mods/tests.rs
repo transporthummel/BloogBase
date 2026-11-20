@@ -2685,3 +2685,44 @@ fn the_variant_played_so_far_is_known_by_its_files() {
     assert!(convert_to_variants(&paths, &db, &running, &old.id, &c, &zip).unwrap());
     assert_eq!(active_variant(&db).0.as_deref(), Some("hard"));
 }
+
+#[test]
+fn variants_of_the_same_files_are_told_apart_by_the_recipe_played() {
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("dash.zip");
+    let files: &[(&str, &[u8])] = &[
+        ("CK4PATCH.EXE", b"patcher"),
+        ("NORMAL.PAT", b"%ext ck4\n%version 1.4\n"),
+        ("EASY.PAT", b"%ext ck4\n%version 1.4\n#easy"),
+        ("LEVEL01.CK4", b"levels"),
+    ];
+    write_zip(&zip, files);
+    let staged = tmp.path().join("staged");
+    write_folder(&staged, files);
+    let fp = variant_files::fingerprint_of(&staged, "keen4").unwrap();
+    let patch = |p: &str| Recipe::Patch {
+        patcher: "CK4PATCH.EXE".into(),
+        patch: p.into(),
+        args: Vec::new(),
+    };
+    let mut c = curated(patch("NORMAL.PAT"));
+    c.variants = vec![
+        variant(r#"{"id": "normal", "default": true, "name": "Normal"}"#),
+        variant(r#"{"id": "easy", "name": "Easy"}"#),
+    ];
+    c.variants[1].recipe = Some(patch("EASY.PAT"));
+    for v in &mut c.variants {
+        v.fingerprint = fp.clone();
+    }
+    // Installed before, with the entry's recipe of then: Easy's.
+    let old = Curated {
+        recipe: patch("EASY.PAT"),
+        ..c.without_variants()
+    };
+    let m = install_curated(&paths, &db, &zip, &old, None, false).unwrap();
+    let running = crate::launcher::Running::default();
+    assert!(convert_to_variants(&paths, &db, &running, &m.id, &c, &zip).unwrap());
+    assert_eq!(active_variant(&db).0.as_deref(), Some("easy"));
+    let (_, layers) = profiles::get(&db, &m.profile_id).unwrap();
+    assert_eq!(layers.mod_layer.unwrap().recipe, patch("EASY.PAT"));
+}

@@ -1487,7 +1487,7 @@ fn active_after_update(
             tracing::warn!("mod {mod_id} lost its variant {v}; its saves go to the default");
             default_variant(s).unwrap_or_default().to_string()
         }
-        None => played_variant(&mod_dir.join("files"), s.variants)
+        None => played_variant(db, mod_id, &mod_dir.join("files"), s.variants, &s.recipe)?
             .or(default_variant(s))
             .unwrap_or_default()
             .to_string(),
@@ -1522,7 +1522,7 @@ pub fn convert_to_variants(
     };
     if !converted {
         let files = paths.mod_files(mod_id, None);
-        let (played, how) = match played_variant(&files, &c.variants) {
+        let (played, how) = match played_variant(db, mod_id, &files, &c.variants, &c.recipe)? {
             Some(v) => (v.to_string(), "its files"),
             None => match variant_files::found_before(c, main) {
                 Some(v) => (v, "the folder found before"),
@@ -1561,15 +1561,42 @@ pub fn convert_to_variants(
 }
 
 /// The variant whose files `dir` holds, by their fingerprints.
-pub(super) fn played_variant<'a>(dir: &Path, variants: &'a [Variant]) -> Option<&'a str> {
-    variants
+/// Variants with the same files that start differently (Episode Dash's
+/// patches) are told apart by the recipe mod `mod_id` was started with;
+/// `entry` is the one of variants without their own.
+pub(super) fn played_variant<'a>(
+    db: &Db,
+    mod_id: &str,
+    dir: &Path,
+    variants: &'a [Variant],
+    entry: &Recipe,
+) -> Result<Option<&'a str>> {
+    let found: Vec<&Variant> = variants
         .iter()
-        .find(|v| {
+        .filter(|v| {
             v.fingerprint
                 .as_ref()
                 .is_some_and(|f| variant_files::matches(dir, f))
         })
-        .map(|v| v.id.as_str())
+        .collect();
+    if found.len() < 2 {
+        return Ok(found.first().map(|v| v.id.as_str()));
+    }
+    let stored: Option<String> = db
+        .conn()
+        .query_row(
+            "SELECT recipe_json FROM mods WHERE id = ?1",
+            [mod_id],
+            |r| r.get(0),
+        )
+        .optional()?;
+    let stored: Option<Recipe> = stored.and_then(|j| serde_json::from_str(&j).ok());
+    let started = |v: &Variant| Some(v.recipe.as_ref().unwrap_or(entry)) == stored.as_ref();
+    Ok(found
+        .iter()
+        .find(|v| started(v))
+        .or(found.first())
+        .map(|v| v.id.as_str()))
 }
 
 /// An installed mod another one is played over.
