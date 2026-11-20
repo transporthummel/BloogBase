@@ -7,6 +7,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { buttonClass, type Variant } from "./buttonClass";
 
 export type MenuItem = {
@@ -25,7 +26,9 @@ export type MenuItem = {
 /**
  * A button opening a list of actions, after the WAI-ARIA menu button
  * pattern: arrow keys, Home and End move, Escape and Tab close. The list
- * floats over the page, so a parent's overflow can't cut it off; scrolling
+ * floats over the page from the end of the body, so neither a parent's
+ * overflow nor its containment (a library card's `content-visibility`,
+ * which would make `fixed` relative to the card) can cut it off; scrolling
  * closes it.
  */
 export function Menu({
@@ -103,7 +106,8 @@ export function Menu({
       e.preventDefault();
       return close();
     }
-    if (e.key === "Tab") return hide();
+    // From the button, so Tab moves on from there, not from the end of the body.
+    if (e.key === "Tab") return close();
     const all = [
       ...(list.current?.querySelectorAll<HTMLElement>("[role=menuitem]:not([disabled])") ?? []),
     ];
@@ -136,50 +140,52 @@ export function Menu({
       >
         {trigger}
       </button>
-      {open && (
-        <div
-          ref={list}
-          id={id}
-          role="menu"
-          aria-label={label}
-          onKeyDown={onKeyDown}
-          style={{ ...place, visibility: place ? undefined : "hidden" }}
-          className="bb-menu-in fixed z-40 grid min-w-56 rounded-lg border border-border bg-surface py-1 shadow-card"
-        >
-          {items.map((item) => (
-            <div key={item.label} className="grid">
-              {item.separated && <hr className="my-1 border-border" />}
-              <button
-                type="button"
-                role="menuitem"
-                tabIndex={-1}
-                disabled={item.disabled}
-                onClick={() => {
-                  close();
-                  item.onSelect();
-                }}
-                className={`flex items-center gap-3 px-3 py-2 text-left text-sm outline-none hover:bg-surface-raised focus-visible:bg-surface-raised pad-focus:bg-surface-raised disabled:pointer-events-none disabled:opacity-50 ${
-                  item.danger ? "text-danger" : "text-ink"
-                }`}
-              >
-                <span
-                  className={`flex size-4 shrink-0 items-center ${item.danger ? "" : "text-muted"}`}
-                  aria-hidden
+      {open &&
+        createPortal(
+          <div
+            ref={list}
+            id={id}
+            role="menu"
+            aria-label={label}
+            onKeyDown={onKeyDown}
+            style={{ ...place, visibility: place ? undefined : "hidden" }}
+            className="bb-menu-in fixed z-40 grid min-w-56 rounded-lg border border-border bg-surface py-1 shadow-card"
+          >
+            {items.map((item) => (
+              <div key={item.label} className="grid">
+                {item.separated && <hr className="my-1 border-border" />}
+                <button
+                  type="button"
+                  role="menuitem"
+                  tabIndex={-1}
+                  disabled={item.disabled}
+                  onClick={() => {
+                    close();
+                    item.onSelect();
+                  }}
+                  className={`flex items-center gap-3 px-3 py-2 text-left text-sm outline-none hover:bg-surface-raised focus-visible:bg-surface-raised pad-focus:bg-surface-raised disabled:pointer-events-none disabled:opacity-50 ${
+                    item.danger ? "text-danger" : "text-ink"
+                  }`}
                 >
-                  {item.icon}
-                </span>
-                {item.label}
-                {item.aside && (
-                  <>
-                    {" "}
-                    <span className="ml-auto pl-3">{item.aside}</span>
-                  </>
-                )}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+                  <span
+                    className={`flex size-4 shrink-0 items-center ${item.danger ? "" : "text-muted"}`}
+                    aria-hidden
+                  >
+                    {item.icon}
+                  </span>
+                  {item.label}
+                  {item.aside && (
+                    <>
+                      {" "}
+                      <span className="ml-auto pl-3">{item.aside}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
