@@ -65,7 +65,7 @@ export function VariantsPanel({
               <Card className="flex flex-wrap items-center gap-3 p-3">
                 {!data.sameCovers && (
                   // As large as a library cover, so the artwork can be seen.
-                  <VariantCover profile={profile} variant={v.id} className="w-56" />
+                  <VariantCover profile={profile} variant={v.id} className="mr-3 w-56" />
                 )}
                 <div className="grid min-w-0 flex-1 gap-0.5">
                   <h3 className="flex flex-wrap items-center gap-2 text-sm font-semibold">
