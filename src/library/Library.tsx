@@ -422,7 +422,7 @@ const ProfileCard = memo(function ProfileCard({
             </Link>
           </Heading>
           {(() => {
-            // What it runs on, then the variant played, in one line; the
+            // The variant played, then what it runs on, in one line; the
             // variant's name wraps as a whole.
             const runsOn =
               profile.missingGame !== null ? (
@@ -437,14 +437,14 @@ const ProfileCard = memo(function ProfileCard({
             if (!runsOn && !profile.activeVariant) return null;
             return (
               <p className="text-xs text-muted">
-                {runsOn}
-                {runsOn && profile.activeVariant && " · "}
                 {profile.activeVariant && (
                   <span className="inline-block">
                     <span className="sr-only">{t("variants.variant")} </span>
                     {variantName(profile.activeVariant, i18n.language)}
                   </span>
                 )}
+                {runsOn && profile.activeVariant && " · "}
+                {runsOn}
               </p>
             );
           })()}
