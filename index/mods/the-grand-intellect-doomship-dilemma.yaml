@@ -60,7 +60,108 @@ downloads:
           SOUNDS.MM1,
           STORYTXT.MM1,
         ]
+    parts:
+      full:
+        url: https://files.shikadi.net/keenwiki/mods/Keen1/m.dr_villain_levellass_et_al_.doomship_dilemma.k1.2009-07-15.zip
+        sha256: 9831d39e8ff20f7cac29b52c40600f423e2e30dbca401c3ddcff7205098dc8db
+        size: 142567
 recipe:
   type: patch
   patcher: CK1PATCH.EXE
   patch: Mort1.pat
+variants:
+  - id: ultimate
+    default: true
+    name: "Ultimate"
+    description: "The version from 2014."
+    translations:
+      de:
+        name: "Ultimate"
+        description: "Die Fassung von 2014."
+    fingerprint:
+      sha256: e2c4bdab5ac90c10299490cd8c29c0e52c4363db6d4c6b4e069aa7abf4a60754
+      files:
+        [
+          CK1PATCH.EXE,
+          CTLPANEL.MM1,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.MM1,
+          FINALE.MM1,
+          HELPTEXT.MM1,
+          KEEN1.EXE,
+          LEVEL01.MM1,
+          LEVEL02.MM1,
+          LEVEL03.MM1,
+          LEVEL04.MM1,
+          LEVEL05.MM1,
+          LEVEL06.MM1,
+          LEVEL07.MM1,
+          LEVEL08.MM1,
+          LEVEL09.MM1,
+          LEVEL10.MM1,
+          LEVEL11.MM1,
+          LEVEL12.MM1,
+          LEVEL13.MM1,
+          LEVEL14.MM1,
+          LEVEL15.MM1,
+          LEVEL16.MM1,
+          LEVEL80.MM1,
+          LEVEL81.MM1,
+          LEVEL90.MM1,
+          Mort1.bat,
+          Mort1.pat,
+          Mort1.tli,
+          PREVIEWS.MM1,
+          SOUNDS.MM1,
+          STORYTXT.MM1,
+        ]
+  - id: full
+    name: "Full Version"
+    description: "The version from 2009."
+    translations:
+      de:
+        name: "Vollversion"
+        description: "Die Fassung von 2009."
+    archive: full
+    recipe: { type: patch, patcher: CK1PATCH.EXE, patch: MORT.PAT }
+    fingerprint:
+      sha256: ab35f7d00c862211bd7faa3e9caeacfdc1af08b776fb7079278fcc4d87ad074d
+      files:
+        [
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          Endtext.CK1,
+          Finale.CK1,
+          Helptext.CK1,
+          KEEN1.EXE,
+          keen1.tli,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL14.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          MORT.bat,
+          MORT.PAT,
+          Mort1.ico,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          Previews.CK1,
+          Sounds.CK1,
+          STATUS.CK1,
+          Storytxt.CK1,
+        ]

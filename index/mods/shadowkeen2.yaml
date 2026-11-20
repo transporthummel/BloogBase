@@ -90,3 +90,242 @@ standalone: true
 recipe:
   type: batch
   file: duk3.bat
+variants:
+  - id: hard
+    default: true
+    name: "Hard"
+    description: "Difficult, but all the graphics are there."
+    translations:
+      de:
+        name: "Schwer"
+        description: "Schwierig, dafür sind alle Grafiken da."
+    fingerprint:
+      sha256: ed13f10be74530175c19cfd73958ab71fd0076188646a8670b5615782ee9b8a5
+      files:
+        [
+          BE.COG,
+          blockinf.dkb,
+          BM.COG,
+          DE.COG,
+          DM.COG,
+          duk3.bat,
+          dune3.CK2,
+          dunepatch.EXE,
+          EE.COG,
+          EGAHEAD.CK2,
+          EGALATCH.CK2,
+          EGASPRIT.CK2,
+          EM.COG,
+          FINALE.CK2,
+          KEEN2.EXE,
+          LE.COG,
+          LEVEL01.CK2,
+          LEVEL02.CK2,
+          LEVEL03.CK2,
+          LEVEL04.CK2,
+          LEVEL05.CK2,
+          LEVEL06.CK2,
+          LEVEL07.CK2,
+          LEVEL08.CK2,
+          LEVEL09.CK2,
+          LEVEL10.CK2,
+          LEVEL11.CK2,
+          LEVEL12.CK2,
+          LEVEL13.CK2,
+          LEVEL14.CK2,
+          LEVEL15.CK2,
+          LEVEL16.CK2,
+          LEVEL200.CK2,
+          LEVEL203.CK2,
+          LEVEL206.CK2,
+          LEVEL208.CK2,
+          LEVEL211.CK2,
+          LEVEL214.CK2,
+          LEVEL215.CK2,
+          LEVEL216.CK2,
+          LEVEL217.CK2,
+          LEVEL218.CK2,
+          LEVEL219.CK2,
+          LEVEL220.CK2,
+          LEVEL221.CK2,
+          LEVEL224.CK2,
+          LEVEL225.CK2,
+          LEVEL226.CK2,
+          LEVEL228.CK2,
+          LEVEL229.CK2,
+          LEVEL230.CK2,
+          LEVEL232.CK2,
+          LEVEL233.CK2,
+          LEVEL80.CK2,
+          LEVEL81.CK2,
+          LEVEL90.CK2,
+          LEVEL95.CK2,
+          LEVEL96.CK2,
+          LM.COG,
+          MORR.COG,
+          SCE.COG,
+          SCM.COG,
+          SE3.COG,
+        ]
+  - id: medium
+    name: "Medium"
+    description: "Harder, but most of the graphics are there."
+    translations:
+      de:
+        name: "Mittel"
+        description: "Schwerer, aber die meisten Grafiken sind da."
+    files:
+      LEVEL16.CK2: MORR.COG
+      LEVEL80.CK2: LM.COG
+      EGALATCH.CK2: EM.COG
+      blockinf.dkb: BM.COG
+      dune3.CK2: DM.COG
+    fingerprint:
+      sha256: 235cb872d5016c46b1b4c97f20be3ace5b7360a9dd93f2a9140413c3854f9199
+      files:
+        [
+          BE.COG,
+          blockinf.dkb,
+          BM.COG,
+          DE.COG,
+          DM.COG,
+          duk3.bat,
+          dune3.CK2,
+          dunepatch.EXE,
+          EE.COG,
+          EGAHEAD.CK2,
+          EGALATCH.CK2,
+          EGASPRIT.CK2,
+          EM.COG,
+          FINALE.CK2,
+          KEEN2.EXE,
+          LE.COG,
+          LEVEL01.CK2,
+          LEVEL02.CK2,
+          LEVEL03.CK2,
+          LEVEL04.CK2,
+          LEVEL05.CK2,
+          LEVEL06.CK2,
+          LEVEL07.CK2,
+          LEVEL08.CK2,
+          LEVEL09.CK2,
+          LEVEL10.CK2,
+          LEVEL11.CK2,
+          LEVEL12.CK2,
+          LEVEL13.CK2,
+          LEVEL14.CK2,
+          LEVEL15.CK2,
+          LEVEL16.CK2,
+          LEVEL200.CK2,
+          LEVEL203.CK2,
+          LEVEL206.CK2,
+          LEVEL208.CK2,
+          LEVEL211.CK2,
+          LEVEL214.CK2,
+          LEVEL215.CK2,
+          LEVEL216.CK2,
+          LEVEL217.CK2,
+          LEVEL218.CK2,
+          LEVEL219.CK2,
+          LEVEL220.CK2,
+          LEVEL221.CK2,
+          LEVEL224.CK2,
+          LEVEL225.CK2,
+          LEVEL226.CK2,
+          LEVEL228.CK2,
+          LEVEL229.CK2,
+          LEVEL230.CK2,
+          LEVEL232.CK2,
+          LEVEL233.CK2,
+          LEVEL80.CK2,
+          LEVEL81.CK2,
+          LEVEL90.CK2,
+          LEVEL95.CK2,
+          LEVEL96.CK2,
+          LM.COG,
+          MORR.COG,
+          SCE.COG,
+          SCM.COG,
+          SE3.COG,
+        ]
+  - id: easy
+    name: "Easy"
+    description: "A piece of cake, but a lot of graphics are missing."
+    translations:
+      de:
+        name: "Leicht"
+        description: "Ein Kinderspiel, aber viele Grafiken fehlen."
+    files:
+      LEVEL16.CK2: MORR.COG
+      LEVEL80.CK2: LE.COG
+      EGALATCH.CK2: EE.COG
+      blockinf.dkb: BE.COG
+      dune3.CK2: DE.COG
+    fingerprint:
+      sha256: f50bce6486cf33d1212dd8d33c5a7eb237314eca1c2d8dda55f14e77f9a2e5d3
+      files:
+        [
+          BE.COG,
+          blockinf.dkb,
+          BM.COG,
+          DE.COG,
+          DM.COG,
+          duk3.bat,
+          dune3.CK2,
+          dunepatch.EXE,
+          EE.COG,
+          EGAHEAD.CK2,
+          EGALATCH.CK2,
+          EGASPRIT.CK2,
+          EM.COG,
+          FINALE.CK2,
+          KEEN2.EXE,
+          LE.COG,
+          LEVEL01.CK2,
+          LEVEL02.CK2,
+          LEVEL03.CK2,
+          LEVEL04.CK2,
+          LEVEL05.CK2,
+          LEVEL06.CK2,
+          LEVEL07.CK2,
+          LEVEL08.CK2,
+          LEVEL09.CK2,
+          LEVEL10.CK2,
+          LEVEL11.CK2,
+          LEVEL12.CK2,
+          LEVEL13.CK2,
+          LEVEL14.CK2,
+          LEVEL15.CK2,
+          LEVEL16.CK2,
+          LEVEL200.CK2,
+          LEVEL203.CK2,
+          LEVEL206.CK2,
+          LEVEL208.CK2,
+          LEVEL211.CK2,
+          LEVEL214.CK2,
+          LEVEL215.CK2,
+          LEVEL216.CK2,
+          LEVEL217.CK2,
+          LEVEL218.CK2,
+          LEVEL219.CK2,
+          LEVEL220.CK2,
+          LEVEL221.CK2,
+          LEVEL224.CK2,
+          LEVEL225.CK2,
+          LEVEL226.CK2,
+          LEVEL228.CK2,
+          LEVEL229.CK2,
+          LEVEL230.CK2,
+          LEVEL232.CK2,
+          LEVEL233.CK2,
+          LEVEL80.CK2,
+          LEVEL81.CK2,
+          LEVEL90.CK2,
+          LEVEL95.CK2,
+          LEVEL96.CK2,
+          LM.COG,
+          MORR.COG,
+          SCE.COG,
+          SCM.COG,
+          SE3.COG,
+        ]

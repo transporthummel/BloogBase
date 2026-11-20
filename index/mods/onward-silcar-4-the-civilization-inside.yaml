@@ -68,3 +68,157 @@ recipe:
   type: patch
   patcher: CK1PATCH.EXE
   patch: Silcar4n.pat
+variants:
+  - id: normal
+    default: true
+    name: "Normal"
+    translations:
+      de:
+        name: "Normal"
+    fingerprint:
+      sha256: 5bfe1a9a06e56444fddd5f7665d1e50c14ede68e9185b049657033466fcc2628
+      files:
+        [
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          Level06.ck1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          Level14.ck1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          S4easy.bat,
+          S4hard.bat,
+          S4normal.bat,
+          Silcar4e.pat,
+          Silcar4h.pat,
+          Silcar4n.pat,
+          SOUNDS.CK1,
+          STORYTXT.CK1,
+          tilesb.tli,
+        ]
+  - id: easy
+    name: "Easy"
+    translations:
+      de:
+        name: "Leicht"
+    recipe: { type: patch, patcher: CK1PATCH.EXE, patch: Silcar4e.pat }
+    fingerprint:
+      sha256: 5bfe1a9a06e56444fddd5f7665d1e50c14ede68e9185b049657033466fcc2628
+      files:
+        [
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          Level06.ck1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          Level14.ck1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          S4easy.bat,
+          S4hard.bat,
+          S4normal.bat,
+          Silcar4e.pat,
+          Silcar4h.pat,
+          Silcar4n.pat,
+          SOUNDS.CK1,
+          STORYTXT.CK1,
+          tilesb.tli,
+        ]
+  - id: hard
+    name: "Hard"
+    translations:
+      de:
+        name: "Schwer"
+    recipe: { type: patch, patcher: CK1PATCH.EXE, patch: Silcar4h.pat }
+    fingerprint:
+      sha256: 5bfe1a9a06e56444fddd5f7665d1e50c14ede68e9185b049657033466fcc2628
+      files:
+        [
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          Level06.ck1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          Level14.ck1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          S4easy.bat,
+          S4hard.bat,
+          S4normal.bat,
+          Silcar4e.pat,
+          Silcar4h.pat,
+          Silcar4n.pat,
+          SOUNDS.CK1,
+          STORYTXT.CK1,
+          tilesb.tli,
+        ]

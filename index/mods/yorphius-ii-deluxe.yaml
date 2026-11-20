@@ -71,8 +71,122 @@ downloads:
           Yorphius.BAT,
           Yorphius.tli,
         ]
+    parts:
+      standard:
+        url: https://files.shikadi.net/keenwiki/mods/Keen1/m.keenrush.yorphius_ii.k1.2002-06-25.zip
+        sha256: ea5b81c91ff9562c5af24c808e40221c18f01c12912965f6153ff5dc2540f546
+        size: 181678
 # Brings an executable and all of the game's files: plays without a copy of it.
 standalone: true
 recipe:
   type: batch
   file: Yorphius.BAT
+variants:
+  - id: deluxe
+    default: true
+    name: "Deluxe"
+    description: "Tulip's remake for Keen Day 2014."
+    translations:
+      de:
+        name: "Deluxe"
+        description: "Tulips Neuauflage zum Keen Day 2014."
+    fingerprint:
+      sha256: d3d9200a2e0fb332ce0d6953d89689ead5adecce44883d23a90dbd94f549f544
+      files:
+        [
+          "01_yorp.imf",
+          "02_yorp.imf",
+          "03_yorp.imf",
+          carnival.imf,
+          CK1PATCH.EXE,
+          crappyso.imf,
+          DUMP.BEH,
+          egahead.ck1,
+          egalatch.ck1,
+          egasprit.ck1,
+          ENDTEXT.CK1,
+          finale.ck1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          para_lol.imf,
+          preview2.ck1,
+          preview3.ck1,
+          previews.ck1,
+          shmaynor.imf,
+          songlist.lst,
+          SOUNDS.CK1,
+          STATUS.CK1,
+          STORYTXT.CK1,
+          testoshm.imf,
+          tsrmusic.com,
+          yorp.pat,
+          Yorphius.BAT,
+          Yorphius.tli,
+        ]
+  - id: standard
+    name: "Standard"
+    description: "KeenRush's original from 2002."
+    translations:
+      de:
+        name: "Standard"
+        description: "KeenRushs Original von 2002."
+    archive: standard
+    fingerprint:
+      sha256: 4a08af792f43e0335a24bf39c55bdabf70c52e4491a7d8d546590bff616e0851
+      files:
+        [
+          CK1PATCH.EXE,
+          DUMP.BEH,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STATUS.CK1,
+          STORYTXT.CK1,
+          yorp.pat,
+          Yorphius.BAT,
+        ]

@@ -52,3 +52,78 @@ recipe:
   type: patch
   patcher: CK6PATCH.EXE
   patch: AAMBA.PAT
+variants:
+  - id: recoloured
+    default: true
+    name: "Recoloured"
+    description: "The mod's own colours."
+    translations:
+      de:
+        name: "Umgefärbt"
+        description: "Die eigenen Farben der Mod."
+    fingerprint:
+      sha256: c6ddc833573c6cc4255efa32a6bdca1bf493d533f95cf286d52b09c8c21eaa9f
+      files:
+        [
+          AAMBA.BAT,
+          AAMBA.PAT,
+          AAMBA_O.BAT,
+          AAMBA_O.PAT,
+          AUDIO.CK6,
+          AUDIODCT.CK6,
+          AUDIOHHD.CK6,
+          CK6LOAD.BIN,
+          CK6PATCH.EXE,
+          EGADICT.CK6,
+          EGADICTO.CK6,
+          EGAGRAPH.CK6,
+          EGAGRPHO.CK6,
+          EGAHEAD.CK6,
+          EGAHEADO.CK6,
+          GAMEMAPS.CK6,
+          MOD.CK6,
+          MOD_C.CK6,
+          MOD_O.CK6,
+          MTEMP.TMP,
+          play.bat,
+          STORY.CK6,
+          STORY_O.CK6,
+          TILEINFO.CK6,
+        ]
+  - id: original-graphics
+    name: "Original Keen 6 graphics"
+    description: "With Keen 6's original graphics."
+    translations:
+      de:
+        name: "Originalgrafik von Keen 6"
+        description: "Mit der Originalgrafik von Keen 6."
+    recipe: { type: patch, patcher: CK6PATCH.EXE, patch: AAMBA_O.PAT }
+    fingerprint:
+      sha256: c6ddc833573c6cc4255efa32a6bdca1bf493d533f95cf286d52b09c8c21eaa9f
+      files:
+        [
+          AAMBA.BAT,
+          AAMBA.PAT,
+          AAMBA_O.BAT,
+          AAMBA_O.PAT,
+          AUDIO.CK6,
+          AUDIODCT.CK6,
+          AUDIOHHD.CK6,
+          CK6LOAD.BIN,
+          CK6PATCH.EXE,
+          EGADICT.CK6,
+          EGADICTO.CK6,
+          EGAGRAPH.CK6,
+          EGAGRPHO.CK6,
+          EGAHEAD.CK6,
+          EGAHEADO.CK6,
+          GAMEMAPS.CK6,
+          MOD.CK6,
+          MOD_C.CK6,
+          MOD_O.CK6,
+          MTEMP.TMP,
+          play.bat,
+          STORY.CK6,
+          STORY_O.CK6,
+          TILEINFO.CK6,
+        ]

@@ -59,8 +59,274 @@ downloads:
           SOUNDS.CK1,
           STORYTXT.CK1,
         ]
+    parts:
+      original:
+        url: https://files.shikadi.net/keenwiki/mods/Keen1/m.levellord.shadow_keen_1.k1.2004-07-04.zip
+        sha256: 80d2bc13541781f5df4e7265c1620a16bca9a67deb80cfc115a3e3e57ff7c909
+        size: 357160
+      remake-2005:
+        url: https://files.shikadi.net/keenwiki/mods/Keen1/m.levellord.shadow_keen_1_remake.k1.2005-09-25.zip
+        sha256: 3f1e7dfcc8c182d165013dcc96e94a0d6af399366721771e7c9f92d1694d41bf
+        size: 362836
 recipe:
   type: patch
   patcher: CK1PATCH.EXE
   patch: sk.pat
 featured: true
+variants:
+  - id: remake-2012
+    default: true
+    name: "2012 Remake"
+    description: "Captainkeen's remake of both halves."
+    translations:
+      de:
+        name: "Remake 2012"
+        description: "Captainkeens Remake beider Hälften."
+    fingerprint:
+      sha256: 1688f1d785550a331dd232e72c6db5e3ed330da1a5b975bcd2b7cb13490c64ec
+      files:
+        [
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SHADOW1.BAT,
+          sk.pat,
+          sk.tli,
+          SOUNDS.CK1,
+          STORYTXT.CK1,
+        ]
+  - id: remake-2005-1
+    name: "2005 Remake, Part 1"
+    description: "A Shadow Over Dune."
+    translations:
+      de:
+        name: "Remake 2005, Teil 1"
+        description: "A Shadow Over Dune."
+    archive: remake-2005
+    root: part1
+    recipe: { type: patch, patcher: CK1PATCH.EXE, patch: bin.pat }
+    fingerprint:
+      sha256: 537b5555f12e0d987fdbc547995860762aa09163cfb4b9b312b0194477a25bd7
+      files:
+        [
+          bat.ck1,
+          bin.pat,
+          CK1PATCH.EXE,
+          COMM.CK1,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL18.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STORYTXT.CK1,
+          "~ShadowKeen.BAT",
+        ]
+  - id: remake-2005-2
+    name: "2005 Remake, Part 2"
+    description: "Spaceman Spiff in Rabbit Rescue, the Spleen birthday edition."
+    translations:
+      de:
+        name: "Remake 2005, Teil 2"
+        description: "Spaceman Spiff in Rabbit Rescue, die Spleen-Geburtstagsausgabe."
+    archive: remake-2005
+    root: part2
+    recipe: { type: patch, patcher: CK1PATCH.EXE, patch: ben.pat }
+    fingerprint:
+      sha256: 8a79ef0a0c94ed2c1962c4f45eb163b07720d0bf698c58a321f96d66b58d37af
+      files:
+        [
+          ball.CK1,
+          ben.pat,
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL15.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STORYTXT.CK1,
+          "~ShadowKeen.BAT",
+        ]
+  - id: original-1
+    name: "Original 2004, Part 1"
+    description: "Episode A: A Shadow Over Dune."
+    translations:
+      de:
+        name: "Original 2004, Teil 1"
+        description: "Episode A: A Shadow Over Dune."
+    archive: original
+    root: ""
+    copyToRoot: [sf, part1]
+    recipe: { type: patch, patcher: CK1PATCH.EXE, patch: bin.pat }
+    fingerprint:
+      sha256: 92ea3017b878e80b7ffcff814a971cc2fc9a502636573400f5fd9aa4da6854dc
+      files:
+        [
+          bat.ck1,
+          bin.pat,
+          CK1PATCH.EXE,
+          COMM.BAT,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL28.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          LEVEL91.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          Readme.BAT,
+          setup.BAT,
+          Setup.dll,
+          setup2.dll,
+          SOUNDS.CK1,
+          status.ck1,
+          STORYTXT.CK1,
+          "~ShadowKeen.BAT",
+        ]
+  - id: original-2
+    name: "Original 2004, Part 2"
+    description: "Episode B: Twilight."
+    translations:
+      de:
+        name: "Original 2004, Teil 2"
+        description: "Episode B: Twilight."
+    archive: original
+    root: ""
+    copyToRoot: [sf, part2]
+    recipe: { type: patch, patcher: CK1PATCH.EXE, patch: ben.pat }
+    fingerprint:
+      sha256: 79d6878ca1448c631394e3bb3fd3610f52c1315be479ceb8dba68195cc7b06ed
+      files:
+        [
+          ball.CK1,
+          ben.pat,
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL10.CK1,
+          LEVEL17.CK1,
+          LEVEL18.CK1,
+          LEVEL19.CK1,
+          LEVEL21.CK1,
+          LEVEL22.CK1,
+          LEVEL23.CK1,
+          LEVEL24.CK1,
+          LEVEL25.CK1,
+          LEVEL26.CK1,
+          LEVEL27.CK1,
+          LEVEL29.CK1,
+          LEVEL30.CK1,
+          LEVEL31.CK1,
+          LEVEL32.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          LEVEL91.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          Readme.BAT,
+          setup.BAT,
+          Setup.dll,
+          setup2.dll,
+          SOUNDS.CK1,
+          status.ck1,
+          STORYTXT.CK1,
+          "~ShadowKeen.BAT",
+        ]
