@@ -37,6 +37,7 @@
 - The top of a game's or mod's page no longer jitters at some window widths, where its picture kept switching between two sizes.
 - In the dark theme, the arrow beside "Play" or "Continue world" no longer casts a shadow onto the button's left half.
 - A document that a mod variant copies into its folder, such as the readme of Shadow Keen 1's original part 1, is listed once instead of twice.
+- A mod variant from an archive of its own, such as Shadow Keen 1's 2005 remake, no longer shows the readme of the mod's main download, which belongs to another release.
 
 ### Misc
 

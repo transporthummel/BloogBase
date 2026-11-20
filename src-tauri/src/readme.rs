@@ -54,11 +54,20 @@ const EXTENSIONS: &[&str] = &[
     "txt", "md", "markdown", "nfo", "doc", "docx", "rtf", "asc", "htm", "html", "pdf",
 ];
 
+/// The file name of a further archive of an index entry's newest download:
+/// entry id and part key → the name it's kept under in `source/`.
+pub type PartName<'a> = &'a dyn Fn(&str, &str) -> Option<String>;
+
 /// The documents of an installed mod, the README first; empty when it has
 /// none. The kept archive is searched, so files outside the installed mod
 /// folder count too.
-pub fn for_mod(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Vec<Readme>> {
-    match mod_source(paths, db, mod_id)? {
+pub fn for_mod(
+    paths: &AppPaths,
+    db: &Db,
+    part_name: PartName,
+    mod_id: &str,
+) -> Result<Vec<Readme>> {
+    match mod_source(paths, db, part_name, mod_id)? {
         Some(source) => find_documents(&source, Documents::OfMod),
         None => Ok(Vec::new()),
     }
@@ -82,9 +91,15 @@ pub fn at(path: &Path) -> Result<Vec<Readme>> {
 /// The web page, Word or PDF document `file` of a mod on disk, for the
 /// browser or its app. From an archive, it is copied to the cache, a web page with
 /// the files in its folder (pictures, style sheets).
-pub fn file_path(paths: &AppPaths, db: &Db, mod_id: &str, file: &str) -> Result<PathBuf> {
+pub fn file_path(
+    paths: &AppPaths,
+    db: &Db,
+    part_name: PartName,
+    mod_id: &str,
+    file: &str,
+) -> Result<PathBuf> {
     let not_found = || Error::NotFound(format!("{file} of mod {mod_id}"));
-    let source = mod_source(paths, db, mod_id)?.ok_or_else(not_found)?;
+    let source = mod_source(paths, db, part_name, mod_id)?.ok_or_else(not_found)?;
     page(&source, file, &paths.cache.join("readmes").join(mod_id))
 }
 
@@ -137,8 +152,15 @@ fn page(source: &Source, file: &str, dest: &Path) -> Result<PathBuf> {
     }
 }
 
-/// The kept archive of a mod, else its installed files.
-fn mod_source(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Option<Source>> {
+/// The kept archive of a mod, else its installed files. A variant from a
+/// further archive has only that one's documents, not those of another
+/// release in the main archive.
+fn mod_source(
+    paths: &AppPaths,
+    db: &Db,
+    part_name: PartName,
+    mod_id: &str,
+) -> Result<Option<Source>> {
     db.conn()
         .query_row("SELECT 1 FROM mods WHERE id = ?1", [mod_id], |_| Ok(()))
         .optional()?
@@ -152,11 +174,22 @@ fn mod_source(paths: &AppPaths, db: &Db, mod_id: &str) -> Result<Option<Source>>
             return Ok(Some(own));
         }
     }
-    let url: Option<String> =
-        db.conn()
-            .query_row("SELECT source_url FROM mods WHERE id = ?1", [mod_id], |r| {
-                r.get(0)
-            })?;
+    let (url, index_id): (Option<String>, Option<String>) = db.conn().query_row(
+        "SELECT source_url, index_id FROM mods WHERE id = ?1",
+        [mod_id],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    )?;
+    if let Some(key) = variant_archive(db, mod_id)? {
+        return Ok(index_id
+            .and_then(|id| part_name(&id, &key))
+            .and_then(|n| {
+                Path::new(&n)
+                    .file_name()
+                    .map(|n| dir.join("source").join(n))
+            })
+            .filter(|p| p.is_file())
+            .map(|zip| Source::Zip(zip, Default::default())));
+    }
     let named = url
         .map(|u| crate::downloads::url_file_name(&u).to_string())
         .map(|n| dir.join("source").join(n))
@@ -178,6 +211,28 @@ fn game_source(paths: &AppPaths, db: &Db, install_id: &str) -> Result<Option<Sou
         .ok_or_else(|| Error::NotFound(format!("install {install_id}")))?;
     let base = paths.library.join(install_id).join("base");
     Ok(base.is_dir().then_some(Source::Folder(base)))
+}
+
+/// The key of the further archive the active variant comes from; `None` for
+/// the main archive or a mod without variants.
+fn variant_archive(db: &Db, mod_id: &str) -> Result<Option<String>> {
+    let row: Option<(Option<String>, Option<String>)> = db
+        .conn()
+        .query_row(
+            "SELECT m.variants_json, p.active_variant FROM mods m
+             JOIN profiles p ON p.mod_id = m.id WHERE m.id = ?1",
+            [mod_id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .optional()?;
+    let Some((Some(json), Some(active))) = row else {
+        return Ok(None);
+    };
+    let variants: Vec<crate::mod_index::Variant> = serde_json::from_str(&json).unwrap_or_default();
+    Ok(variants
+        .into_iter()
+        .find(|v| v.id == active)
+        .and_then(|v| v.archive))
 }
 
 fn archive(dir: &Path) -> Option<std::path::PathBuf> {
@@ -1154,7 +1209,7 @@ mod tests {
         let dir = paths.mods.join("shadow");
         write_folder(&dir.join("files"), &[("README.HTM", b"<p>hi")]);
         assert_eq!(
-            file_path(&paths, &db, "shadow", "README.HTM").unwrap(),
+            file_path(&paths, &db, &|_, _| None, "shadow", "README.HTM").unwrap(),
             dir.join("files/README.HTM")
         );
 
@@ -1170,28 +1225,28 @@ mod tests {
                 ("Menu.exe", b"MZ"),
             ],
         );
-        let page = file_path(&paths, &db, "shadow", "Files/README.HTM").unwrap();
+        let page = file_path(&paths, &db, &|_, _| None, "shadow", "Files/README.HTM").unwrap();
         let copy = paths.cache.join("readmes/shadow/Files");
         assert_eq!(page, copy.join("README.HTM"));
         assert_eq!(fs::read(copy.join("README_files/a.gif")).unwrap(), b"GIF");
         assert!(!paths.cache.join("readmes/shadow/Menu.exe").exists());
 
-        let story = file_path(&paths, &db, "shadow", "Files/Story.DOC").unwrap();
+        let story = file_path(&paths, &db, &|_, _| None, "shadow", "Files/Story.DOC").unwrap();
         assert_eq!(story, copy.join("Story.DOC"));
         assert!(!copy.join("README_files").exists());
-        let manual = file_path(&paths, &db, "shadow", "Files/Manual.pdf").unwrap();
+        let manual = file_path(&paths, &db, &|_, _| None, "shadow", "Files/Manual.pdf").unwrap();
         assert_eq!(manual, copy.join("Manual.pdf"));
         assert_eq!(fs::read(&manual).unwrap(), b"%PDF-1.4");
 
         // Only the mod's web pages, Word and PDF documents open.
         for file in ["Files/README.TXT", "Menu.exe", "README.HTM", "../x.htm"] {
             assert!(matches!(
-                file_path(&paths, &db, "shadow", file),
+                file_path(&paths, &db, &|_, _| None, "shadow", file),
                 Err(Error::NotFound(_))
             ));
         }
         assert!(matches!(
-            file_path(&paths, &db, "other", "README.HTM"),
+            file_path(&paths, &db, &|_, _| None, "other", "README.HTM"),
             Err(Error::NotFound(_))
         ));
     }
@@ -1356,7 +1411,7 @@ mod tests {
         let paths = AppPaths::new(tmp.path().join("data"));
         let db = Db::open_in_memory().unwrap();
         assert!(matches!(
-            for_mod(&paths, &db, "aurora"),
+            for_mod(&paths, &db, &|_, _| None, "aurora"),
             Err(Error::NotFound(_))
         ));
         db.conn()
@@ -1366,13 +1421,13 @@ mod tests {
                 [],
             )
             .unwrap();
-        assert_eq!(for_mod(&paths, &db, "aurora").unwrap(), []);
+        assert_eq!(for_mod(&paths, &db, &|_, _| None, "aurora").unwrap(), []);
 
         // The installed files only, without an archive.
         let dir = paths.mods.join("aurora");
         write_folder(&dir.join("files"), &[("README.TXT", b"installed")]);
         let texts = |db: &Db| -> Vec<String> {
-            for_mod(&paths, db, "aurora")
+            for_mod(&paths, db, &|_, _| None, "aurora")
                 .unwrap()
                 .into_iter()
                 .map(|r| r.text)
@@ -1391,6 +1446,51 @@ mod tests {
             ],
         );
         assert_eq!(texts(&db), ["archived", "story"]);
+    }
+
+    #[test]
+    fn a_variant_from_a_further_archive_reads_only_that_one() {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = AppPaths::new(tmp.path().join("data"));
+        let db = Db::open_in_memory().unwrap();
+        db.conn()
+            .execute_batch(
+                r#"INSERT INTO mods (id, game_id, name, authors, recipe_json, path, source,
+                       added_at, index_id, source_url, variants_json)
+                   VALUES ('sk', 'keen1', 'SK', '[]', '{}', '/x', 'index', 0, 'sk',
+                       'https://x/new.zip',
+                       '[{"id":"new","default":true,"name":"New"},
+                         {"id":"old","name":"Old","archive":"old"}]');
+                   INSERT INTO profiles (id, mod_id, state_path, created_at, active_variant)
+                   VALUES ('sk', 'sk', '/x/state', 0, 'old');"#,
+            )
+            .unwrap();
+        let dir = paths.mods.join("sk");
+        fs::create_dir_all(dir.join("variants/old")).unwrap();
+        fs::create_dir_all(dir.join("source")).unwrap();
+        write_zip(&dir.join("source/new.zip"), &[("README.TXT", b"new")]);
+        let texts = |part: Option<&str>| -> Vec<String> {
+            let name = |id: &str, key: &str| {
+                (id == "sk" && key == "old")
+                    .then(|| part.map(String::from))
+                    .flatten()
+            };
+            for_mod(&paths, &db, &name, "sk")
+                .unwrap()
+                .into_iter()
+                .map(|r| r.text)
+                .collect()
+        };
+        // Not the main archive's README, of another release.
+        assert_eq!(texts(None), Vec::<String>::new());
+        assert_eq!(texts(Some("old.zip")), Vec::<String>::new());
+        write_zip(&dir.join("source/old.zip"), &[("part1/README.TXT", b"old")]);
+        assert_eq!(texts(Some("old.zip")), ["old"]);
+
+        db.conn()
+            .execute("UPDATE profiles SET active_variant = 'new'", [])
+            .unwrap();
+        assert_eq!(texts(Some("old.zip")), ["new"]);
     }
 
     #[test]

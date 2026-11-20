@@ -23,7 +23,8 @@
       "The top of a game's or mod's page no longer jitters at some window widths.",
       "The \"DOSBox & patches\" tab is called \"Settings\".",
       "Tabs that don't fit in a narrow window go into a \"More\" menu.",
-      "A mod's readme no longer shows up twice."
+      "A mod's readme no longer shows up twice.",
+      "A variant of a mod no longer shows the readme of another release."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -48,7 +49,8 @@
       "Der obere Teil einer Spiel- oder Mod-Seite zittert bei manchen Fensterbreiten nicht mehr.",
       "Der Tab „DOSBox & Patches“ heißt jetzt „Einstellungen“.",
       "Tabs, die in einem schmalen Fenster nicht passen, landen in einem Menü „Mehr“.",
-      "Die Readme einer Mod erscheint nicht mehr doppelt."
+      "Die Liesmich einer Mod erscheint nicht mehr doppelt.",
+      "Eine Variante einer Mod zeigt nicht mehr die Liesmich eines anderen Release."
     ]
   },
   "releases": [

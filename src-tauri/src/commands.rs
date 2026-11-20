@@ -633,7 +633,13 @@ pub async fn open_mod_readme(app: AppHandle, mod_id: String, file: String) -> Co
     let path = {
         let app = app.clone();
         blocking(move || {
-            readme::file_path(&app.state::<AppPaths>(), &app.state::<Db>(), &mod_id, &file)
+            readme::file_path(
+                &app.state::<AppPaths>(),
+                &app.state::<Db>(),
+                &part_name(&app),
+                &mod_id,
+                &file,
+            )
         })
         .await?
     };
@@ -1250,7 +1256,25 @@ pub fn list_mods(db: State<'_, Db>) -> CommandResult<Vec<Mod>> {
 #[tauri::command]
 #[specta::specta]
 pub async fn mod_readmes(app: AppHandle, mod_id: String) -> CommandResult<Vec<Readme>> {
-    blocking(move || readme::for_mod(&app.state::<AppPaths>(), &app.state::<Db>(), &mod_id)).await
+    blocking(move || {
+        readme::for_mod(
+            &app.state::<AppPaths>(),
+            &app.state::<Db>(),
+            &part_name(&app),
+            &mod_id,
+        )
+    })
+    .await
+}
+
+/// The name a further archive of an index entry is kept under, for
+/// [`readme::PartName`].
+fn part_name(app: &AppHandle) -> impl Fn(&str, &str) -> Option<String> + '_ {
+    move |entry, key| {
+        let entry = app.state::<ModIndex>().entry(entry)?;
+        let url = &entry.downloads.first()?.parts.get(key)?.url;
+        Some(crate::downloads::url_file_name(url).to_string())
+    }
 }
 
 /// The documents of a game in the library, the README first; empty when it
