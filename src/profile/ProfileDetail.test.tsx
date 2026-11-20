@@ -189,6 +189,7 @@ const backup: Backup = {
   auto: true,
   size: 300,
   world: null,
+  variant: null,
 };
 
 const ready: RuntimeStatus = {
@@ -1452,7 +1453,11 @@ test("a mod with worlds continues the one played last, or starts a new one with 
   expect(await screen.findByText("Random worlds")).toBeInTheDocument();
   await userEvent.click(await screen.findByRole("button", { name: "Continue world" }));
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 2 }),
+    expect(commands.launchProfile).toHaveBeenCalledWith(
+      "keen4-1",
+      { type: "continue", id: 2 },
+      null,
+    ),
   );
 
   await userEvent.click(screen.getByRole("button", { name: "More ways to start" }));
@@ -1472,11 +1477,15 @@ test("a mod with worlds continues the one played last, or starts a new one with 
   await userEvent.type(ammo, "20");
   await userEvent.click(within(dialog).getByRole("button", { name: "Start" }));
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenLastCalledWith("keen4-1", {
-      type: "new",
-      seed: 12345,
-      options: { startpogo: 1, startammo: 20 },
-    }),
+    expect(commands.launchProfile).toHaveBeenLastCalledWith(
+      "keen4-1",
+      {
+        type: "new",
+        seed: 12345,
+        options: { startpogo: 1, startammo: 20 },
+      },
+      null,
+    ),
   );
 });
 
@@ -1508,7 +1517,11 @@ test("the arrow beside Continue offers five worlds, favourites first, each by la
   ]);
   await userEvent.click(items[2]);
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 10 }),
+    expect(commands.launchProfile).toHaveBeenCalledWith(
+      "keen4-1",
+      { type: "continue", id: 10 },
+      null,
+    ),
   );
 });
 
@@ -1527,7 +1540,11 @@ test("without a world going on, the arrow beside New world offers the others", a
   expect(items.map((i) => i.textContent)).toEqual(["Seed 4711", "Hard one"]);
   await userEvent.click(items[1]);
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 1 }),
+    expect(commands.launchProfile).toHaveBeenCalledWith(
+      "keen4-1",
+      { type: "continue", id: 1 },
+      null,
+    ),
   );
   await userEvent.click(screen.getByRole("button", { name: "New world…" }));
   expect(await screen.findByRole("dialog", { name: "Start new world" })).toBeInTheDocument();
@@ -1551,7 +1568,11 @@ test("a new world with a seed and options already played continues that one", as
   expect(within(dialog).getByText(/is “Hard one”, which you already have/)).toBeInTheDocument();
   await userEvent.click(within(dialog).getByRole("button", { name: "Continue world" }));
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 1 }),
+    expect(commands.launchProfile).toHaveBeenCalledWith(
+      "keen4-1",
+      { type: "continue", id: 1 },
+      null,
+    ),
   );
 });
 
@@ -1562,11 +1583,15 @@ test("without a world played, Play begins one", async () => {
   const dialog = await screen.findByRole("dialog", { name: "Start new world" });
   await userEvent.click(within(dialog).getByRole("button", { name: "Start" }));
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", {
-      type: "new",
-      seed: null,
-      options: { startpogo: 1, startammo: 15 },
-    }),
+    expect(commands.launchProfile).toHaveBeenCalledWith(
+      "keen4-1",
+      {
+        type: "new",
+        seed: null,
+        options: { startpogo: 1, startammo: 15 },
+      },
+      null,
+    ),
   );
 });
 
@@ -1606,7 +1631,11 @@ test("the Worlds tab lists the worlds and plays, renames and deletes them", asyn
 
   await userEvent.click(screen.getByRole("button", { name: "Play Hard one" }));
   await vi.waitFor(() =>
-    expect(commands.launchProfile).toHaveBeenCalledWith("keen4-1", { type: "continue", id: 1 }),
+    expect(commands.launchProfile).toHaveBeenCalledWith(
+      "keen4-1",
+      { type: "continue", id: 1 },
+      null,
+    ),
   );
   await userEvent.click(screen.getByRole("button", { name: "Favourite: Hard one" }));
   expect(commands.setWorldFavourite).toHaveBeenCalledWith("keen4-1", 1, true);

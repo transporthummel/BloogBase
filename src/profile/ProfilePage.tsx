@@ -69,7 +69,7 @@ export function ProfileDetail({ profileId }: { profileId: string }) {
   }, [queryClient, profileId]);
 
   const launch = useMutation({
-    mutationFn: (world: WorldStart | null) => unwrap(commands.launchProfile(profileId, world)),
+    mutationFn: (world: WorldStart | null) => unwrap(commands.launchProfile(profileId, world, null)),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: profilesKey });
       queryClient.invalidateQueries({ queryKey: backupsKey(profileId) });

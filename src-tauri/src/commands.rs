@@ -173,6 +173,7 @@ pub async fn launch_profile(
     app: AppHandle,
     profile_id: String,
     world: Option<crate::worlds::WorldStart>,
+    variant: Option<String>,
 ) -> CommandResult<()> {
     let runtime = runtime::active(&app.state::<Db>())?;
     let claim = app.state::<Running>().claim(&profile_id)?;
@@ -210,6 +211,7 @@ pub async fn launch_profile(
             &runtime,
             &id,
             world,
+            variant.as_deref(),
             fullscreen,
             &letters,
             on_log,
@@ -351,6 +353,32 @@ pub async fn set_world_favourite(
 ) -> CommandResult<()> {
     blocking(move || {
         crate::worlds::set_favourite(&app.state::<Db>(), &profile_id, world_id, favourite)
+    })
+    .await
+}
+
+/// The variants of a profile's mod (§9.7), or `None` if it has none.
+#[tauri::command]
+#[specta::specta]
+pub async fn list_variants(
+    app: AppHandle,
+    profile_id: String,
+) -> CommandResult<Option<crate::variants::ProfileVariants>> {
+    // Without holding the profile: that would show it as running.
+    blocking(move || {
+        crate::variants::list(&app.state::<AppPaths>(), &app.state::<Db>(), &profile_id)
+    })
+    .await
+}
+
+/// Makes a variant the one played without starting it, so its saves show,
+/// and counts as the player's choice; not while the game runs.
+#[tauri::command]
+#[specta::specta]
+pub async fn set_variant(app: AppHandle, profile_id: String, variant: String) -> CommandResult<()> {
+    with_profile_locked(&app, &profile_id.clone(), move |paths, db| {
+        crate::variants::switch(paths, db, &profile_id, &variant)?;
+        crate::variants::set_chosen(db, &profile_id)
     })
     .await
 }

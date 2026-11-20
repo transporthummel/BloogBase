@@ -87,7 +87,7 @@ export function Library() {
   }, [queryClient]);
 
   const launch = useMutation({
-    mutationFn: (profileId: string) => unwrap(commands.launchProfile(profileId, null)),
+    mutationFn: (profileId: string) => unwrap(commands.launchProfile(profileId, null, null)),
     onSettled: () => queryClient.invalidateQueries({ queryKey: profilesKey }),
   });
   // The first start of a series shows its keys first.

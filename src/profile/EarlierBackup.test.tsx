@@ -84,6 +84,7 @@ const backup: Backup = {
   auto: true,
   size: 300,
   world: null,
+  variant: null,
 };
 
 beforeEach(() => {

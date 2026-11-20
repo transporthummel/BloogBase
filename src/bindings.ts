@@ -23,7 +23,7 @@ export const commands = {
 	 *  Starts a profile in DOSBox. Returns once the process is running; emits
 	 *  `GameLaunch` as it gets going and `PlaySessionEnded` when it exits.
 	 */
-	launchProfile: (profileId: string, world: WorldStart | null) => typedError<null, CommandError>(__TAURI_INVOKE("launch_profile", { profileId, world })),
+	launchProfile: (profileId: string, world: WorldStart | null, variant: string | null) => typedError<null, CommandError>(__TAURI_INVOKE("launch_profile", { profileId, world, variant })),
 	/**  The worlds of a profile whose mod keeps them (§9.6), else `None`. */
 	profileWorlds: (profileId: string) => typedError<ProfileWorlds | null, CommandError>(__TAURI_INVOKE("profile_worlds", { profileId })),
 	/**  Names a world; without a name it gets its default back. */
@@ -34,6 +34,13 @@ export const commands = {
 	 *  not while the game runs.
 	 */
 	activateWorld: (profileId: string, worldId: number) => typedError<null, CommandError>(__TAURI_INVOKE("activate_world", { profileId, worldId })),
+	/**  The variants of a profile's mod (§9.7), or `None` if it has none. */
+	listVariants: (profileId: string) => typedError<ProfileVariants | null, CommandError>(__TAURI_INVOKE("list_variants", { profileId })),
+	/**
+	 *  Makes a variant the one played without starting it, so its saves show,
+	 *  and counts as the player's choice; not while the game runs.
+	 */
+	setVariant: (profileId: string, variant: string) => typedError<null, CommandError>(__TAURI_INVOKE("set_variant", { profileId, variant })),
 	/**
 	 *  Copies the screenshots and videos of profiles into a folder the player
 	 *  chose, one folder per profile named after it; with `kind`, only those.
@@ -327,6 +334,8 @@ export type Backup = {
 	size: number,
 	/**  The world it was made of, for mods with worlds (§9.6). */
 	world: number | null,
+	/**  The variant it was made of, for mods with variants (§9.7). */
+	variant: string | null,
 };
 
 export type BackupSettings = {
@@ -1085,7 +1094,7 @@ export type Profile = {
 	lastPlayedAt: number | null,
 	/**  Unix epoch seconds. */
 	addedAt: number,
-	/**  For a mod with worlds, the saves of all of them. */
+	/**  For a mod with worlds or variants, the saves of all of them. */
 	saveCount: number,
 	running: boolean,
 	/**  The game a mod waits for, e.g. `Commander Keen 4 (v1.4 EGA)`. */
@@ -1166,6 +1175,20 @@ export type ProfilePatches =
  *  game profile they're set in.
  */
 { kind: "mod"; status: CustomStatus; gameProfileId: string; gameLabel: string };
+
+/**  What a profile of a mod with variants plays. */
+export type ProfileVariants = {
+	/**  In the entry's order. */
+	variants: VariantState[],
+	active: string | null,
+	/**  The player chose `active`; until then "Play" asks. */
+	chosen: boolean,
+	/**
+	 *  The cover of every variant is the same, so the picker leaves out
+	 *  thumbnails; set by the command, which knows the covers.
+	 */
+	sameCovers: boolean,
+};
 
 /**  What the Worlds tab and the "Start new world" dialog show. */
 export type ProfileWorlds = {
@@ -1447,6 +1470,16 @@ export type Variant = {
 	cover?: string | null,
 	/**  The files of its root as installed, as a download's. */
 	fingerprint?: Fingerprint | null,
+};
+
+/**  A variant as the Variants tab and the picker show it. */
+export type VariantState = {
+	variant: Variant,
+	/**  Its saves are in `state/`. */
+	active: boolean,
+	saves: number,
+	/**  Its last start, Unix epoch seconds. */
+	lastPlayedAt: number | null,
 };
 
 export type VariantTranslation = {

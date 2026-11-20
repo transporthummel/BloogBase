@@ -40,6 +40,7 @@ mod slots;
 mod source;
 mod storage;
 mod stores;
+mod variants;
 mod worlds;
 
 pub use crate::mods::index_add;
@@ -82,6 +83,8 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::rename_world,
             commands::set_world_favourite,
             commands::activate_world,
+            commands::list_variants,
+            commands::set_variant,
             commands::copy_captures,
             commands::delete_world,
             commands::list_saves,

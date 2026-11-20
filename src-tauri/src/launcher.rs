@@ -368,8 +368,14 @@ fn mod_setup(db: &Db, profile: &profiles::Profile, recipe: &Recipe) -> Result<St
         [&profile.mod_id],
         |r| Ok((r.get(0)?, r.get(1)?)),
     )?;
+    // A variant's first session is a first session too (§9.7).
+    let variant = profile
+        .active_variant
+        .as_ref()
+        .map(|v| crate::variants::setup_suffix(&v.id))
+        .unwrap_or_default();
     Ok(format!(
-        "install={};mod={};base={};recipe={}",
+        "install={};mod={};base={};recipe={}{variant}",
         profile.install_id.as_deref().unwrap_or_default(),
         archive.unwrap_or_default(),
         base.unwrap_or_default(),

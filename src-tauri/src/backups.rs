@@ -135,6 +135,8 @@ pub struct Backup {
     pub size: u32,
     /// The world it was made of, for mods with worlds (§9.6).
     pub world: Option<u32>,
+    /// The variant it was made of, for mods with variants (§9.7).
+    pub variant: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -156,6 +158,13 @@ struct Manifest {
     /// come back with it (§9.6).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     worlds: Option<crate::worlds::KeptWorlds>,
+    /// The variant it was made of.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    variant: Option<String>,
+    /// In the backup made when a mod is removed: the variant played, with
+    /// the saves of the others under `bloogbase-variants/` (§9.7).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    variants: Option<crate::variants::KeptVariants>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -286,16 +295,38 @@ pub fn create<'a>(
     let (_, layers) = profiles::get(db, profile_id)?;
     let mut files = collect(&layers, contents)?;
     let world = crate::worlds::active_world(db, profile_id)?;
+    let variant = crate::variants::active_variant(db, profile_id)?;
     let origin = origin.into();
     let mut kept = None;
-    if matches!(origin, Origin::Auto(Reason::ModRemoved))
-        && let Some((worlds, parked)) = crate::worlds::for_removal(paths, db, profile_id)?
-    {
-        files.extend(parked);
+    let mut kept_variants = None;
+    if matches!(origin, Origin::Auto(Reason::ModRemoved)) {
+        if let Some((worlds, parked)) = crate::worlds::for_removal(paths, db, profile_id)? {
+            files.extend(parked);
+            kept = Some(worlds);
+        }
+        if let Some((variants, parked)) = crate::variants::for_removal(paths, db, profile_id)? {
+            files.extend(parked);
+            kept_variants = Some(variants);
+        }
         files.sort_by(|a, b| a.0.cmp(&b.0));
-        kept = Some(worlds);
     }
-    store(paths, db, profile_id, files, origin, world, kept)
+    let of = Of {
+        world,
+        worlds: kept,
+        variant,
+        variants: kept_variants,
+    };
+    store(paths, db, profile_id, files, origin, of)
+}
+
+/// What a backup was made of, besides the profile: its world or variant,
+/// and when its mod is removed, all of them.
+#[derive(Default)]
+struct Of {
+    world: Option<u32>,
+    worlds: Option<crate::worlds::KeptWorlds>,
+    variant: Option<String>,
+    variants: Option<crate::variants::KeptVariants>,
 }
 
 /// Archives the files and saves of a world that isn't played: they aren't
@@ -315,8 +346,10 @@ pub fn create_of_world(
         profile_id,
         files,
         Origin::Auto(reason),
-        Some(world),
-        None,
+        Of {
+            world: Some(world),
+            ..Of::default()
+        },
     )
 }
 
@@ -327,8 +360,7 @@ fn store(
     profile_id: &str,
     files: Files,
     origin: Origin<'_>,
-    world: Option<u32>,
-    worlds: Option<crate::worlds::KeptWorlds>,
+    of: Of,
 ) -> Result<Option<Backup>> {
     let (profile, _) = profiles::get(db, profile_id)?;
     if files.is_empty() {
@@ -385,8 +417,10 @@ fn store(
         label: label.clone(),
         created_at,
         files: names.clone(),
-        world,
-        worlds,
+        world: of.world,
+        worlds: of.worlds,
+        variant: of.variant.clone(),
+        variants: of.variants,
     };
     let archive = new_archive_path(paths, profile_id, created_at)?;
     write_zip(&archive, &files, &manifest)?;
@@ -396,8 +430,8 @@ fn store(
         conn.execute(
             "INSERT INTO save_backups
                  (profile_id, label, archive_path, created_at, files_json, auto, content_hash,
-                  world_id)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                  world_id, variant)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![
                 profile_id,
                 label,
@@ -406,7 +440,8 @@ fn store(
                 serde_json::to_string(&names).expect("strings serialize"),
                 auto,
                 hash,
-                world
+                of.world,
+                of.variant
             ],
         )?;
         let id = conn.last_insert_rowid() as u32;
@@ -538,7 +573,7 @@ fn remove(db: &Db, id: u32, archive: &str) -> Result<()> {
 }
 
 const SELECT: &str = "SELECT id, profile_id, label, created_at, files_json, auto, archive_path,
-                             world_id
+                             world_id, variant
                       FROM save_backups";
 
 /// Where a backup's archive is, from its stored path.
@@ -565,6 +600,7 @@ fn from_row(db: &Db, r: &rusqlite::Row<'_>) -> rusqlite::Result<(Backup, String)
             auto: r.get(5)?,
             size: fs::metadata(&archive).map_or(0, |m| m.len() as u32),
             world: r.get(7)?,
+            variant: r.get(8)?,
         },
         archive,
     ))
@@ -800,15 +836,27 @@ pub fn restore(
 ) -> Result<bool> {
     let (backup, archive) = get_with_archive(db, id)?;
     let (mut files, manifest) = read_zip(Path::new(&archive))?;
-    // The worlds of a removed mod come back with all of the backup.
-    if let Some(kept) = manifest.and_then(|m| m.worlds)
-        && file.is_none()
-        && include_other
-    {
+    // The worlds and variants of a removed mod come back with all of the
+    // backup.
+    let whole = file.is_none() && include_other;
+    let (worlds, variants) = manifest.map_or((None, None), |m| (m.worlds, m.variants));
+    if let Some(kept) = worlds.filter(|_| whole) {
         crate::worlds::bring_back(paths, db, &backup.profile_id, &kept, &files)?;
     }
+    if let Some(kept) = variants.filter(|_| whole) {
+        crate::variants::bring_back(paths, db, &backup.profile_id, &kept, &files)?;
+    }
     let parked = format!("{}/", crate::worlds::ARCHIVE_DIR);
-    files.retain(|(name, _)| !name.starts_with(&parked));
+    let parked_variants = format!("{}/", crate::variants::ARCHIVE_DIR);
+    files.retain(|(name, _)| !name.starts_with(&parked) && !name.starts_with(&parked_variants));
+    // A variant's saves are played in it: it's played again first, if the
+    // mod still has it.
+    if let Some(variant) = &backup.variant
+        && crate::variants::active_variant(db, &backup.profile_id)?.as_ref() != Some(variant)
+        && let Err(e) = crate::variants::switch(paths, db, &backup.profile_id, variant)
+    {
+        tracing::warn!("restoring backup {id} in the variant played: {e}");
+    }
     let mut files = as_kept_now(game_of_profile(db, &backup.profile_id)?, files);
     // A world's saves fit only that world: it's played again first, if
     // it's still there. Another world's files never replace the ones of
@@ -1057,6 +1105,8 @@ pub fn import(paths: &AppPaths, db: &Db, profile_id: &str, src: &Path) -> Result
         files: names.clone(),
         world: None,
         worlds: None,
+        variant: None,
+        variants: None,
     };
     let archive = new_archive_path(paths, profile_id, created_at)?;
     write_zip(&archive, &files, &manifest)?;
@@ -1666,6 +1716,8 @@ mod tests {
                 files: vec!["SAVED1.CK1".into()],
                 world: None,
                 worlds: None,
+                variant: None,
+                variants: None,
             },
         )
         .unwrap();

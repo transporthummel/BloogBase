@@ -13,6 +13,7 @@ use crate::keymap;
 use crate::launcher::{self, LaunchSpec};
 use crate::paths::AppPaths;
 use crate::runtime::Runtime;
+use crate::variants;
 use crate::worlds::{self, NewWorld, WorldStart};
 
 /// A game that has started.
@@ -35,12 +36,21 @@ pub fn start(
     runtime: &Runtime,
     profile_id: &str,
     world: Option<WorldStart>,
+    variant: Option<&str>,
     fullscreen: bool,
     letters: &[(char, u16)],
     on_log: impl FnMut(launcher::LogEvent) + Send + 'static,
 ) -> Result<Started> {
     // Left by a session that ended without us, e.g. in a crash.
     merge_settings(paths, db, profile_id);
+    // The variant the player chose; its saves come into `state/` first.
+    match variant {
+        Some(id) => {
+            variants::switch(paths, db, profile_id, id)?;
+            variants::set_chosen(db, profile_id)?;
+        }
+        None => variants::recover(paths, db, profile_id)?,
+    }
     // First, so the backup sees the saves of the world played.
     let run = worlds::prepare(paths, db, profile_id, world)?;
     let backup = backups::before_launch(paths, db, profile_id);
@@ -242,7 +252,20 @@ mod tests {
             managed: false,
         };
 
-        assert!(start(&paths, &db, &runtime, "keen4-1", None, false, &[], |_| {}).is_err());
+        assert!(
+            start(
+                &paths,
+                &db,
+                &runtime,
+                "keen4-1",
+                None,
+                None,
+                false,
+                &[],
+                |_| {}
+            )
+            .is_err()
+        );
         assert_eq!(std::fs::read(&file).unwrap(), original);
     }
 }
