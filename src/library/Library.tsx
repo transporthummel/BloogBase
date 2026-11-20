@@ -438,10 +438,17 @@ const ProfileCard = memo(function ProfileCard({
             return (
               <p className="text-xs text-muted">
                 {profile.activeVariant && (
-                  <span className="inline-block">
+                  // Leads to it in the Variants tab, as the game links to its page.
+                  <Link
+                    to="/profiles/$profileId"
+                    params={{ profileId: profile.id }}
+                    search={{ show: "variant" }}
+                    title={t("variants.showAll")}
+                    className="inline-block underline-offset-2 hover:text-accent hover:underline"
+                  >
                     <span className="sr-only">{t("variants.variant")} </span>
                     {variantName(profile.activeVariant, i18n.language)}
-                  </span>
+                  </Link>
                 )}
                 {runsOn && profile.activeVariant && " · "}
                 {runsOn}

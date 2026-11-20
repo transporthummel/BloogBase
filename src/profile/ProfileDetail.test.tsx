@@ -1759,6 +1759,27 @@ test("the variant's name under the title leads to it in the Variants tab", async
   expect(scrolled[0]).toHaveTextContent("Easy");
 });
 
+test("the library card's link opens the Variants tab at the variant played", async () => {
+  withVariants();
+  const scrolled: Element[] = [];
+  Element.prototype.scrollIntoView = vi.fn(function (this: Element) {
+    scrolled.push(this);
+  });
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <ProfileDetail profileId="keen4-1" showVariant />
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByRole("tab", { name: "Variants 2" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await vi.waitFor(() => expect(scrolled).toHaveLength(1));
+  expect(scrolled[0]).toHaveTextContent("Easy");
+});
+
 test("the Readme tab follows the variant played", async () => {
   withVariants();
   const readme = (text: string) =>

@@ -714,8 +714,11 @@ test("a mod with variants asks which one until the player chose", async () => {
   vi.mocked(commands.launchProfile).mockResolvedValue({ status: "ok", data: null });
   localStorage.setItem("bloogbase.controlsShown", JSON.stringify(["galaxy"]));
   renderLibrary();
-  // The variant played, before what the mod runs on.
-  expect(await screen.findByText("Easy")).toBeInTheDocument();
+  // The variant played, before what the mod runs on, leading to it in the Variants tab.
+  expect(await screen.findByRole("link", { name: /Easy/ })).toHaveAttribute(
+    "title",
+    "All variants",
+  );
   const play = await screen.findByRole("button", { name: "Play Clouds Unseen" });
   await vi.waitFor(() => expect(play).toBeEnabled());
   await userEvent.click(play);

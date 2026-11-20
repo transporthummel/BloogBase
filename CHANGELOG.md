@@ -15,6 +15,7 @@
 - Restoring saves (from a backup, an earlier version or a folder) makes the automatic backup only if there are saves to replace; restoring settings and high scores only if there are settings or high scores. The message says whether the previous state was backed up.
 - Discover's filters are buttons instead of drop-downs: the games as the tiles of the cards and the types as chips, several of each at once, "I can play" (with a tooltip saying what it means) and "Not installed" as toggles, with "Clear filters" next to the count whenever a filter is set. Only the sort is still a drop-down, next to the search.
 - "Runs on Keen 4 v1.4 EGA" under a mod, in the library and on its page, links the game's page, as the mod it's played over already was.
+- The name of the variant played on a library card links to it in the mod's Variants tab, as it does on the mod's page.
 - The "DOSBox & patches" tab of a game's or mod's page is called "Settings".
 - The tabs of a game's or mod's page stay in one line in a narrow window: those that don't fit go into a "More" menu at the end, and the one picked there takes its place in the line.
 - A folder or ZIP holding a mod and its game offers to add the game only while the library has no copy of that game; another release of it is enough for the mod.

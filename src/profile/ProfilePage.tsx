@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useParams, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, Info } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -34,22 +34,30 @@ type Tab =
 
 export function ProfileRoute() {
   const { profileId } = useParams({ from: "/profiles/$profileId" });
+  const { show } = useSearch({ from: "/profiles/$profileId" });
   // Keyed, so going from one profile straight to another (a mod played over
   // another links to it) starts on its first tab again.
-  return <ProfileDetail key={profileId} profileId={profileId} />;
+  return <ProfileDetail key={profileId} profileId={profileId} showVariant={show === "variant"} />;
 }
 
 /** One game or mod: play it, read about it, manage saves, screenshots, videos and settings (§8.3). */
-export function ProfileDetail({ profileId }: { profileId: string }) {
+export function ProfileDetail({
+  profileId,
+  showVariant = false,
+}: {
+  profileId: string;
+  /** Opens on the Variants tab, at the variant played (the library card's link). */
+  showVariant?: boolean;
+}) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const games = useGames();
   const runtime = useRuntimeStatus();
   const profiles = useProfiles();
   // Until the player picks one: the README if the mod has one, else saves.
-  const [picked, setTab] = useState<Tab | null>(null);
+  const [picked, setTab] = useState<Tab | null>(showVariant ? "variants" : null);
   // The Variants tab scrolls to the variant played, once, when asked to.
-  const [seekVariant, setSeekVariant] = useState(false);
+  const [seekVariant, setSeekVariant] = useState(showVariant);
 
   // The page shares its scrolling area with the library, which may have been far down.
   useLayoutEffect(() => {
