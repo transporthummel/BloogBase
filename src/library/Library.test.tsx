@@ -323,9 +323,7 @@ test("a mod that keeps worlds is marked and its card says what Play does", async
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [randomiser] });
   renderLibrary();
   expect(await screen.findByText("Random worlds")).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Play Randomiser" })).toHaveTextContent(
-    "Continue world",
-  );
+  expect(screen.getByRole("button", { name: "Play Randomiser" })).toHaveTextContent("Continue");
 });
 
 test("the arrow beside Continue world starts another world or a new one", async () => {

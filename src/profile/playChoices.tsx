@@ -14,12 +14,14 @@ const RECENT_WORLDS = 5;
  * What Play does for a mod with variants or worlds, and the other ways to
  * start it for the arrow beside it (§9.6, §9.7); the page's and the library
  * card's. `split` is null where there is nothing to offer beside Play.
+ * `short` names Continue without "world", for the narrow library card.
  * Render `dialog` somewhere on the page.
  */
 export function usePlayChoices(
   profile: Profile,
   /** With the world to play, for a mod that keeps worlds, or a variant. */
   onPlay: (world: WorldStart | null, variant?: string) => void,
+  { short = false }: { short?: boolean } = {},
 ) {
   const { t, i18n } = useTranslation();
   const [asking, setAsking] = useState(false);
@@ -72,7 +74,8 @@ export function usePlayChoices(
             kind: "worlds" as const,
             // Says what it does: the world played last goes on, else a new
             // one begins.
-            label: active !== null ? t("worlds.continue") : newLabel,
+            label:
+              active !== null ? t(short ? "worlds.continueShort" : "worlds.continue") : newLabel,
             play: () => (active !== null ? onPlay({ type: "continue", id: active }) : newWorld()),
             items: startItems,
           }

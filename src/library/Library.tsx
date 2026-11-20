@@ -412,7 +412,7 @@ const ProfileCard = memo(function ProfileCard({
   const name = sharedLabel ? `${profile.label} (${versionLabel})` : profile.label;
   const cover = useCover(profile.id, profile.installId, profile.activeVariant?.id ?? null);
   // Variants or worlds offer other ways to start beside Play, as on the page.
-  const choices = usePlayChoices(profile, onPlay);
+  const choices = usePlayChoices(profile, onPlay, { short: true });
   // Alpha, beta or abandoned, as the index says now, else the KeenWiki page.
   const status =
     useIndexMods().data?.find((m) => profile.modId !== null && m.modId === profile.modId)?.entry
@@ -529,8 +529,9 @@ const ProfileCard = memo(function ProfileCard({
           {choices.split && !profile.running && profile.missingGame === null ? (
             <SplitButton
               variant="card"
-              wrapperClassName="flex-1"
-              className="flex-1"
+              // Narrow cards: both halves fit inside, the label on one line.
+              wrapperClassName="min-w-0 flex-1"
+              className="min-w-0 flex-1 px-2! whitespace-nowrap"
               onClick={choices.split.play}
               disabled={!canPlay}
               aria-label={t("library.playGame", { game: name })}

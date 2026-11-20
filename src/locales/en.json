@@ -1161,6 +1161,7 @@
   },
   "worlds": {
     "continue": "Continue world",
+    "continueShort": "Continue",
     "new": "New world",
     "newEllipsis": "New world…",
     "more": "More ways to start",
