@@ -12,7 +12,12 @@ const listeners: {
 vi.mock("@tauri-apps/api/core", () => ({ convertFileSrc: (p: string) => `asset://${p}` }));
 
 vi.mock("../bindings", () => ({
-  commands: { listProfiles: vi.fn(), listGames: vi.fn(), profileCover: vi.fn() },
+  commands: {
+    listProfiles: vi.fn(),
+    listGames: vi.fn(),
+    profileCover: vi.fn(),
+    listVariants: vi.fn(),
+  },
   events: {
     gameLaunch: {
       listen: vi.fn((f) => {
@@ -83,6 +88,43 @@ test("shows the cover of the variant starting, not of the one played before", as
   expect(status).not.toHaveTextContent(/^4/);
   await vi.waitFor(() => expect(status.querySelector("img")?.src).toContain("hard.png"));
   expect(commands.profileCover).not.toHaveBeenCalledWith("pak-een", "easy");
+});
+
+test("names the variant starting in brackets", async () => {
+  const variant = (id: string, name: string, de: string) => ({
+    id,
+    name,
+    translations: { de: { name: de, description: null } },
+  });
+  vi.mocked(commands.listProfiles).mockResolvedValue({
+    status: "ok",
+    data: [
+      {
+        id: "pak-een",
+        label: "Pak Een",
+        gameId: "keen4",
+        installId: "keen4-1",
+        variantCount: 2,
+        activeVariant: variant("easy", "Easy", "Leicht"),
+      },
+    ],
+  } as never);
+  vi.mocked(commands.listVariants).mockResolvedValue({
+    status: "ok",
+    data: {
+      variants: [
+        { variant: variant("hard", "Hard", "Schwer"), active: false },
+        { variant: variant("easy", "Easy", "Leicht"), active: true },
+      ],
+    },
+  } as never);
+  renderOverlay();
+  launch("starting");
+  expect(await screen.findByRole("status")).toHaveTextContent("Starting Pak Een (Easy)…");
+  launch("shown");
+  // Asked for another: that one, before the profile list knows it's played.
+  launch("starting", "hard");
+  expect(await screen.findByText("Starting Pak Een (Hard)…")).toBeInTheDocument();
 });
 
 test("a source mod shows its own placeholder, not its game's episode", async () => {

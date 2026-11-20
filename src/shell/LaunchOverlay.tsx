@@ -5,6 +5,7 @@ import { useGames } from "../catalog";
 import { Cover } from "../library/Cover";
 import { useCover } from "../library/covers";
 import { useProfiles } from "../library/queries";
+import { useVariants, variantName } from "../profile/variants";
 import { Bloog } from "../ui/Bloog";
 
 /** Should DOSBox never say its window is up, the overlay goes anyway. */
@@ -60,10 +61,19 @@ function Starting({
   variant: string | null;
   onClose: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const games = useGames();
   const cover = useCover(profile.id, profile.installId, variant);
   const game = games.data?.find((g) => g.id === profile.gameId);
+  // The variant starting in brackets, as in DOSBox's window title.
+  const variants = useVariants(profile);
+  const starting =
+    variant === profile.activeVariant?.id
+      ? profile.activeVariant
+      : variants.data?.variants.find((v) => v.variant.id === variant)?.variant;
+  const name = starting
+    ? `${profile.label} (${variantName(starting, i18n.language)})`
+    : profile.label;
   return (
     <div
       role="status"
@@ -90,9 +100,7 @@ function Starting({
         </div>
         <div className="flex items-center gap-3 px-4 py-3">
           <Bloog className="bb-hop size-6 shrink-0" />
-          <span className="line-clamp-2 text-sm text-muted">
-            {t("launch.starting", { name: profile.label })}
-          </span>
+          <span className="line-clamp-2 text-sm text-muted">{t("launch.starting", { name })}</span>
         </div>
       </div>
     </div>
