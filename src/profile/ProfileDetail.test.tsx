@@ -260,7 +260,7 @@ const aurora: Mod = {
 
 /** Picks one of the actions in the hero's menu. */
 async function pick(action: string) {
-  await userEvent.click(await screen.findByRole("button", { name: "More" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Options" }));
   await userEvent.click(screen.getByRole("menuitem", { name: action }));
 }
 
@@ -322,7 +322,7 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   await pick("Open mod folder");
   expect(commands.openModFolder).toHaveBeenCalledWith("aurora-bliss");
   // The game's folder is on the game's own page.
-  await userEvent.click(screen.getByRole("button", { name: "More" }));
+  await userEvent.click(screen.getByRole("button", { name: "Options" }));
   expect(screen.queryByRole("menuitem", { name: "Open game folder" })).not.toBeInTheDocument();
 });
 
@@ -506,7 +506,7 @@ test("a mod can be replaced with a local copy, unless it runs", async () => {
   cleanup();
   vi.mocked(commands.listProfiles).mockResolvedValue(ok([{ ...mine, running: true }]));
   renderDetail();
-  await userEvent.click(await screen.findByRole("button", { name: "More" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Options" }));
   expect(screen.getByRole("menuitem", { name: "Replace with a local copy…" })).toBeDisabled();
 });
 
@@ -515,7 +515,7 @@ test("a mod from the index can't be replaced with a local copy", async () => {
   vi.mocked(commands.listProfiles).mockResolvedValue(ok([mine]));
   vi.mocked(commands.listMods).mockResolvedValue(ok([{ ...aurora, indexId: "aurora-bliss" }]));
   renderDetail();
-  await userEvent.click(await screen.findByRole("button", { name: "More" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Options" }));
   expect(screen.getByRole("menuitem", { name: "Open mod folder" })).toBeInTheDocument();
   expect(screen.queryByRole("menuitem", { name: "Replace with a local copy…" })).toBeNull();
 });
@@ -535,7 +535,7 @@ test("a mod's More menu reports that it won't start, once it has been started", 
   cleanup();
   vi.mocked(commands.listProfiles).mockResolvedValue(ok([{ ...mine, sessionCount: 0 }]));
   renderDetail();
-  await userEvent.click(await screen.findByRole("button", { name: "More" }));
+  await userEvent.click(await screen.findByRole("button", { name: "Options" }));
   expect(screen.queryByRole("menuitem", { name: "Mod won’t start?" })).not.toBeInTheDocument();
 });
 
@@ -577,7 +577,7 @@ test("a game's page opens the folder with its files", async () => {
   await pick("Open game folder");
   expect(commands.openGameFolder).toHaveBeenCalledWith("keen4-1");
   // No mod folder for a game.
-  await userEvent.click(screen.getByRole("button", { name: "More" }));
+  await userEvent.click(screen.getByRole("button", { name: "Options" }));
   expect(screen.queryByRole("menuitem", { name: "Open mod folder" })).not.toBeInTheDocument();
 });
 
@@ -615,7 +615,7 @@ test("a game is removed from its page, with its mods if asked", async () => {
   );
   renderDetail(client);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "More" }));
+  await user.click(await screen.findByRole("button", { name: "Options" }));
   // The game's own entry, not also the one for a mod.
   expect(screen.getAllByRole("menuitem", { name: "Remove" })).toHaveLength(1);
   await user.click(screen.getByRole("menuitem", { name: "Remove" }));
@@ -674,7 +674,7 @@ test("a mod waiting for its game says which one and can't be played", async () =
   ).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Game missing" })).toBeDisabled();
   expect(screen.queryByText(/^Runs on/)).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: "More" }));
+  await userEvent.click(screen.getByRole("button", { name: "Options" }));
   // The mod's own entry, not also the one for a game.
   expect(screen.getAllByRole("menuitem", { name: "Remove" })).toHaveLength(1);
 
