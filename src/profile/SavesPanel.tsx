@@ -18,6 +18,7 @@ import { profilesKey } from "../library/queries";
 import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { EmptyState } from "../ui/EmptyState";
 import { Notice } from "../ui/Notice";
 import { RelativeTime } from "../ui/RelativeTime";
 import { FolderRestoreDialog, RestoreDialog } from "./RestoreDialog";
@@ -299,6 +300,17 @@ export function SavesPanel({
   // Only while the backup holding the deleted save is still there.
   const canUndo = !!undo && !!backups.data?.some((b) => b.id === undo.backupId);
 
+  const importButton = (
+    <Button
+      variant="secondary"
+      onClick={() => importFolder.mutate()}
+      disabled={locked || importFolder.isPending}
+    >
+      <FolderOpen className="size-4" aria-hidden />
+      {t("saves.importFolder")}
+    </Button>
+  );
+
   return (
     <div className="grid gap-6">
       {locked && <Notice>{t("saves.locked")}</Notice>}
@@ -370,7 +382,17 @@ export function SavesPanel({
             )}
           </p>
         )}
-        {saves.data?.length === 0 && <p className="text-sm text-muted">{t("saves.empty")}</p>}
+        {saves.data?.length === 0 && (
+          <EmptyState title={t("saves.emptyTitle")} level={3} compact>
+            <p className="max-w-md text-sm text-muted">{t("saves.empty")}</p>
+            {game && (
+              <>
+                {importButton}
+                <p className="max-w-md text-xs text-muted">{t("saves.importFolderHint")}</p>
+              </>
+            )}
+          </EmptyState>
+        )}
         {saves.data &&
           groupSaves(saves.data, profile.saveDirs, i18n.language).map((g) =>
             g.name === null ? (
@@ -384,16 +406,10 @@ export function SavesPanel({
               </section>
             ),
           )}
-        {game && (
+        {/* Empty, the panel above offers it. */}
+        {game && saves.data?.length !== 0 && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <Button
-              variant="secondary"
-              onClick={() => importFolder.mutate()}
-              disabled={locked || importFolder.isPending}
-            >
-              <FolderOpen className="size-4" aria-hidden />
-              {t("saves.importFolder")}
-            </Button>
+            {importButton}
             <p className="min-w-0 flex-1 text-xs text-muted">{t("saves.importFolderHint")}</p>
           </div>
         )}

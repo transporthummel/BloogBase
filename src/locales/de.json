@@ -703,7 +703,8 @@
   },
   "saves": {
     "title": "Spielstände",
-    "empty": "Noch keine Spielstände. Speichere im Spiel, dann erscheinen sie hier.",
+    "emptyTitle": "Noch keine Spielstände",
+    "empty": "Speichere im Spiel, dann erscheinen sie hier.",
     "locked": "Das Spiel läuft. Beende es, um Spielstände zu ändern oder eine Sicherung wiederherzustellen.",
     "slot": "Platz {{slot}}",
     "slotFile": "Platz {{slot}} ({{file}})",
