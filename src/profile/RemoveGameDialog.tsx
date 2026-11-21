@@ -33,8 +33,8 @@ export function RemoveGameDialog({
   const modsOnIt = (profiles.data ?? []).filter(
     (p) => p.installId === installId && p.modId !== null,
   );
-  // Named, so the player knows which ones it's about.
-  const names = modsOnIt.map((p) => p.label).join(", ");
+  // A single one is named; a list of many (Keen 1 has over 150) wouldn't help.
+  const name = modsOnIt.length === 1 ? modsOnIt[0].label : "";
   // With its mods, theirs go too.
   const modProfiles = withMods ? modsOnIt : [];
   const remove = useMutation({
@@ -54,7 +54,7 @@ export function RemoveGameDialog({
               checked={withMods}
               onChange={(e) => setWithMods(e.target.checked)}
             />
-            {t("profile.removeGameMods", { count: modCount, names })}
+            {t("profile.removeGameMods", { count: modCount, name })}
           </label>
           {!withMods && (
             <p className="pl-6 text-sm text-muted">
