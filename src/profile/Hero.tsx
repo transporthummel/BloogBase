@@ -127,11 +127,11 @@ export function Hero({
 }
 
 /** Lines shown of a long description, so Play stays in view... */
-const DESCRIPTION_LINES = 4;
+const DESCRIPTION_LINES = 3;
 /** ...if that hides more than one: "Read more" takes a line of its own. */
 const DESCRIPTION_CUT_FROM = DESCRIPTION_LINES + 2;
 
-/** The description, cut after a word in its fourth line when long; "Read more" shows the rest. */
+/** The description, cut after a word in its last line shown when long; "Read more" shows the rest. */
 function Description({ text }: { text: string }) {
   const { t } = useTranslation();
   const ruler = useRef<HTMLParagraphElement>(null);
