@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CircleCheck, Copy, Pencil, Play, Star, Trash2 } from "lucide-react";
+import { CircleCheck, Copy, Dices, Pencil, Play, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { commands, type Profile, type World, type WorldStart } from "../bindings";
@@ -12,8 +12,10 @@ import { Button } from "../ui/Button";
 import { Card } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { Dialog } from "../ui/Dialog";
+import { EmptyState } from "../ui/EmptyState";
 import { Notice } from "../ui/Notice";
 import { RelativeTime } from "../ui/RelativeTime";
+import { usePlayChoices } from "./playChoices";
 import { backupsKey, savesKey } from "./saves";
 import { optionsSummary, useWorlds, worldName, worldsKey } from "./worlds";
 
@@ -36,6 +38,8 @@ export function WorldsPanel({
   const [renaming, setRenaming] = useState<World | null>(null);
   const [deleting, setDeleting] = useState<World | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  // The first world starts from here too, asking for its seed and options as Play does.
+  const choices = usePlayChoices(profile, (w) => w && onPlay(w));
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: worldsKey(profile.id) });
     queryClient.invalidateQueries({ queryKey: profilesKey });
@@ -93,10 +97,18 @@ export function WorldsPanel({
       {locked && <Notice>{t("worlds.locked")}</Notice>}
       {message && !error && <Notice>{message}</Notice>}
       {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
-      <p className="text-sm text-muted">{t("worlds.intro")}</p>
-      {data && data.worlds.length === 0 && (
-        <p className="text-sm text-muted">{t("worlds.empty")}</p>
+      {data && data.worlds.length === 0 ? (
+        <EmptyState title={t("worlds.emptyTitle")}>
+          <p className="max-w-md text-sm text-muted">{t("worlds.empty")}</p>
+          <Button variant="secondary" onClick={choices.newWorld} disabled={!canPlay || locked}>
+            <Dices className="size-4" aria-hidden />
+            {choices.newLabel}
+          </Button>
+        </EmptyState>
+      ) : (
+        <p className="text-sm text-muted">{t("worlds.intro")}</p>
       )}
+      {choices.dialog}
       <ul className="grid gap-2">
         {data?.worlds.map((w) => {
           const name = worldName(t, w);

@@ -1615,6 +1615,28 @@ test("without a world played, Play begins one", async () => {
   );
 });
 
+test("without worlds, the Worlds tab begins the first one", async () => {
+  withWorlds(null);
+  vi.mocked(commands.profileWorlds).mockResolvedValue(
+    ok({ ...randomiser, worlds: [], active: null }),
+  );
+  renderDetail();
+  const empty = (await screen.findByRole("heading", { name: "No worlds yet" })).parentElement!;
+  const start = within(empty).getByRole("button", { name: "New world…" });
+  await vi.waitFor(() => expect(start).toBeEnabled());
+  await userEvent.click(start);
+  const dialog = await screen.findByRole("dialog", { name: "Start new world" });
+  await userEvent.click(within(dialog).getByRole("button", { name: "Start" }));
+  await vi.waitFor(() =>
+    expect(commands.launchProfile).toHaveBeenCalledWith(
+      "keen4-1",
+      expect.objectContaining({ type: "new" }),
+      null,
+      "en",
+    ),
+  );
+});
+
 test("a world can be made current without playing it", async () => {
   withWorlds();
   vi.mocked(commands.activateWorld).mockResolvedValue(ok(null));
