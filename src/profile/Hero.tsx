@@ -131,37 +131,61 @@ const DESCRIPTION_LINES = 4;
 /** ...if that hides more than one: "Read more" takes a line of its own. */
 const DESCRIPTION_CUT_FROM = DESCRIPTION_LINES + 2;
 
-/** Four lines of a long description; "Read more" shows the rest. */
+/** The description, cut after a word in its fourth line when long; "Read more" shows the rest. */
 function Description({ text }: { text: string }) {
   const { t } = useTranslation();
-  const ref = useRef<HTMLParagraphElement>(null);
+  const ruler = useRef<HTMLParagraphElement>(null);
   const [open, setOpen] = useState(false);
-  const [cut, setCut] = useState(false);
+  // The text up to where it's cut; null when it's shown whole.
+  const [short, setShort] = useState<string | null>(null);
 
   useLayoutEffect(() => {
-    const p = ref.current;
-    if (!p || open || typeof ResizeObserver === "undefined") return;
-    // Clamped, its scroll height is still that of the whole text.
+    const p = ruler.current;
+    if (!p || typeof ResizeObserver === "undefined") return;
+    // Words with the spaces and line breaks after them.
+    const words = text.match(/\S+\s*/g) ?? [];
+    // Measuring changes its height; only a new width calls for it again.
+    let width = 0;
     const measure = () => {
+      if (!p.clientWidth || p.clientWidth === width) return;
+      width = p.clientWidth;
       const line = parseFloat(getComputedStyle(p).lineHeight);
-      setCut(!!line && p.scrollHeight > line * (DESCRIPTION_CUT_FROM - 0.5));
+      const height = (s: string) => {
+        p.textContent = s;
+        return p.scrollHeight;
+      };
+      if (!line || height(text) < line * (DESCRIPTION_CUT_FROM - 0.5)) return setShort(null);
+      // The most words that fit, with the ellipsis, in the lines shown.
+      const fits = (n: number) =>
+        height(`${words.slice(0, n).join("").trimEnd()}…`) < line * (DESCRIPTION_LINES + 0.5);
+      let lo = 1;
+      let hi = words.length - 1;
+      while (lo < hi) {
+        const mid = Math.ceil((lo + hi) / 2);
+        if (fits(mid)) lo = mid;
+        else hi = mid - 1;
+      }
+      setShort(`${words.slice(0, lo).join("").trimEnd()}…`);
     };
     const observer = new ResizeObserver(measure);
     observer.observe(p);
     measure();
     return () => observer.disconnect();
-  }, [open, text]);
+  }, [text]);
 
+  const cut = short !== null && !open;
   return (
-    <div className="grid max-w-prose justify-items-start gap-1">
+    <div className="relative grid max-w-prose justify-items-start gap-1">
+      {/* The same paragraph out of sight, to measure where to cut. */}
       <p
-        ref={ref}
-        id="hero-description"
-        className={`text-sm leading-relaxed whitespace-pre-line ${cut && !open ? "line-clamp-4" : ""}`}
-      >
-        {text}
+        ref={ruler}
+        aria-hidden
+        className="pointer-events-none invisible absolute inset-x-0 top-0 text-sm leading-relaxed whitespace-pre-line"
+      />
+      <p id="hero-description" className="text-sm leading-relaxed whitespace-pre-line">
+        {cut ? short : text}
       </p>
-      {(cut || open) && (
+      {short !== null && (
         <button
           type="button"
           aria-expanded={open}
