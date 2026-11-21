@@ -657,6 +657,8 @@
     "scrambled": "Die Grafikdateien passen nicht zusammen, deshalb zeigt das Spiel verstümmelte Grafik.",
     "links": "Links",
     "more": "Optionen",
+    "readMore": "Mehr lesen",
+    "readLess": "Weniger",
     "playOn": "Mit anderer Spielkopie spielen…",
     "openModFolder": "Mod-Ordner öffnen",
     "openGameFolder": "Spielordner öffnen",

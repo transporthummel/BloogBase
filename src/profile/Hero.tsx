@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ExternalLink, TriangleAlert } from "lucide-react";
-import { Fragment, useRef, type ReactNode } from "react";
+import { Fragment, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { type TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { type Game, type IndexEntry, type Mod, type Profile, type WorldStart } from "../bindings";
@@ -104,9 +104,7 @@ export function Hero({
             extensions={extensions}
             onShowVariant={onShowVariant}
           />
-          {description && (
-            <p className="max-w-prose text-sm leading-relaxed whitespace-pre-line">{description}</p>
-          )}
+          {description && <Description key={profile.id} text={description} />}
           {cover.data?.scrambled && (
             <p className="flex max-w-prose items-start gap-2 text-sm">
               <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
@@ -125,6 +123,47 @@ export function Hero({
         />
       </div>
     </Card>
+  );
+}
+
+/** Four lines at most, so Play stays in view; "Read more" shows the rest. */
+function Description({ text }: { text: string }) {
+  const { t } = useTranslation();
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [open, setOpen] = useState(false);
+  const [cut, setCut] = useState(false);
+
+  useLayoutEffect(() => {
+    const p = ref.current;
+    if (!p || open || typeof ResizeObserver === "undefined") return;
+    const measure = () => setCut(p.scrollHeight > p.clientHeight + 1);
+    const observer = new ResizeObserver(measure);
+    observer.observe(p);
+    measure();
+    return () => observer.disconnect();
+  }, [open, text]);
+
+  return (
+    <div className="grid max-w-prose justify-items-start gap-1">
+      <p
+        ref={ref}
+        id="hero-description"
+        className={`text-sm leading-relaxed whitespace-pre-line ${open ? "" : "line-clamp-4"}`}
+      >
+        {text}
+      </p>
+      {(cut || open) && (
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls="hero-description"
+          onClick={() => setOpen(!open)}
+          className="text-sm cursor-pointer font-semibold text-accent underline-offset-2 select-none hover:underline"
+        >
+          {open ? t("profile.readLess") : t("profile.readMore")}
+        </button>
+      )}
+    </div>
   );
 }
 
