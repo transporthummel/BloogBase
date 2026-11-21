@@ -865,11 +865,14 @@ fn variants_problems(entry: &Entry, fail: &mut impl FnMut(String)) {
                 "{at}: archive `{key}` is none of the newest download's parts"
             ));
         }
+        // Unlike the entry's root, which saveDirs name on DOS command lines,
+        // a variant's root is staged as the mod's root and never reaches DOS,
+        // so it may have spaces (Crash on Gobo III's `keen crash on gobo III`).
         if let Some(root) = &v.root
             && !(root.is_empty()
-                || root
-                    .split('/')
-                    .all(|s| is_plain_name(s) && s != "." && s != ".."))
+                || root.split('/').all(|s| {
+                    !s.is_empty() && !s.contains('\\') && s.trim() == s && s != "." && s != ".."
+                }))
         {
             fail(format!(
                 "{at}: root `{root}` must be \"\" or a folder of the archive, with `/`"
@@ -1500,6 +1503,13 @@ minAppVersion: 1.4.0
         assert_eq!(e.variants[1].files["LEVEL80.CK4"], "sub/LEVEL80.GRN");
         assert_eq!(
             problems(&e, "aurora-bliss", &catalog()),
+            Vec::<String>::new()
+        );
+        // A variant's root may have spaces; it never reaches DOS.
+        let mut spaced = e.clone();
+        spaced.variants[1].root = Some("keen crash on gobo III".into());
+        assert_eq!(
+            problems(&spaced, "aurora-bliss", &catalog()),
             Vec::<String>::new()
         );
         // Older apps ignore them; no minAppVersion needed.
