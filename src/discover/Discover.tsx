@@ -261,8 +261,9 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
               value={kinds}
               onChange={setKinds}
             />
-            <FilterLabel>{t("discover.only")}</FilterLabel>
-            <div role="group" aria-label={t("discover.only")} className="flex flex-wrap gap-x-4">
+            {/* Two checkboxes need no name for their row. */}
+            <span />
+            <div className="flex flex-wrap gap-x-4">
               <Toggle on={playable} onChange={setPlayable} hint={t("discover.playableHint")}>
                 {t("discover.playable")}
               </Toggle>

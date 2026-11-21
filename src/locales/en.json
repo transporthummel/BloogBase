@@ -545,7 +545,6 @@
     "all": "All",
     "noGame": "Standalone",
     "type": "Type",
-    "only": "Only",
     "sort": "Sort by",
     "sortBy": {
       "featured": "Recommended",
