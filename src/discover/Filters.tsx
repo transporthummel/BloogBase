@@ -1,4 +1,3 @@
-import { Check } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { gameTitle } from "../catalog";
@@ -36,7 +35,10 @@ function Chip({
   );
 }
 
-/** A setting that's on or off, e.g. "Not installed". */
+/**
+ * A setting that's on or off, e.g. "Not installed": a checkbox, as in the
+ * rest of the app, so it doesn't look like one of the choices above it.
+ */
 export function Toggle({
   on,
   onChange,
@@ -50,10 +52,21 @@ export function Toggle({
   children: ReactNode;
 }) {
   return (
-    <Chip on={on} onClick={() => onChange(!on)} hint={hint}>
-      {on && <Check className="-ml-0.5 size-3.5" aria-hidden />}
+    <label
+      title={hint}
+      className={`inline-flex cursor-pointer items-center gap-2 py-1.5 pr-2 text-sm font-semibold ${
+        on ? "text-ink" : "text-muted hover:text-ink"
+      }`}
+    >
+      <input
+        type="checkbox"
+        checked={on}
+        onChange={(e) => onChange(e.target.checked)}
+        aria-description={hint}
+        className="size-4 accent-[var(--bb-accent)]"
+      />
       {children}
-    </Chip>
+    </label>
   );
 }
 

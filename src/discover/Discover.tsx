@@ -262,7 +262,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
               onChange={setKinds}
             />
             <FilterLabel>{t("discover.only")}</FilterLabel>
-            <div role="group" aria-label={t("discover.only")} className="flex flex-wrap gap-1.5">
+            <div role="group" aria-label={t("discover.only")} className="flex flex-wrap gap-x-4">
               <Toggle on={playable} onChange={setPlayable} hint={t("discover.playableHint")}>
                 {t("discover.playable")}
               </Toggle>

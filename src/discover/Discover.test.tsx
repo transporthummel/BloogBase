@@ -281,7 +281,7 @@ test("installs the free shareware along with a mod made for it", async () => {
   // Keen 6 has no free version.
   expect(within(card("Fribbulus")).getByRole("status")).toHaveTextContent("Needs Commander Keen 6");
   // Playable: the shareware comes along.
-  await user.click(screen.getByRole("button", { name: "I can play" }));
+  await user.click(screen.getByRole("checkbox", { name: "I can play" }));
   expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
     "Aurora",
     "Krodacia",
@@ -292,7 +292,7 @@ test("installs the free shareware along with a mod made for it", async () => {
   // Without a copy yet: the mod's job waits for the shareware and goes on it.
   expect(commands.installIndexMod).toHaveBeenCalledWith("Aurora", null, true, null);
   // Discover keeps its filters; the next test starts without.
-  await user.click(screen.getByRole("button", { name: "I can play" }));
+  await user.click(screen.getByRole("checkbox", { name: "I can play" }));
 });
 
 test("asks before installing a mod without its game", async () => {
@@ -352,12 +352,12 @@ test("filters by text, type and what the library can play", async () => {
   await user.click(choice("Game", "Commander Keen 4"));
   expect(choice("Game", "All")).toHaveAttribute("aria-pressed", "true");
 
-  const playable = screen.getByRole("button", { name: "I can play" });
+  const playable = screen.getByRole("checkbox", { name: "I can play" });
   expect(playable).toHaveAccessibleDescription(/for one of your games/i);
   await user.click(playable);
   expect(screen.queryByRole("heading", { name: "Fribbulus" })).not.toBeInTheDocument();
   expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(3);
-  await user.click(screen.getByRole("button", { name: "I can play" }));
+  await user.click(screen.getByRole("checkbox", { name: "I can play" }));
 });
 
 test("clears the filters once one is set", async () => {
@@ -379,7 +379,7 @@ test("hides the mods installed when the filter was turned on", async () => {
   renderDiscover();
   const user = userEvent.setup();
   await screen.findByRole("heading", { name: "Aurora" });
-  const filter = () => screen.getByRole("button", { name: "Not installed" });
+  const filter = () => screen.getByRole("checkbox", { name: "Not installed" });
   const names = () => screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
 
   await user.click(filter());
@@ -447,9 +447,9 @@ test("standalone mods are under no game and install on none", async () => {
   expect(foray.getByText("Standalone")).toBeInTheDocument();
   expect(foray.getByText("Source mod")).toBeInTheDocument();
   const heading = () => screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-  await user.click(screen.getByRole("button", { name: "I can play" }));
+  await user.click(screen.getByRole("checkbox", { name: "I can play" }));
   expect(heading()).toEqual(["Foray"]);
-  await user.click(screen.getByRole("button", { name: "I can play" }));
+  await user.click(screen.getByRole("checkbox", { name: "I can play" }));
   await user.click(choice("Game", "Commander Keen 4"));
   expect(heading()).toEqual(["Aurora"]);
   await user.click(choice("Game", "Commander Keen 4"));
@@ -485,9 +485,9 @@ test("source mods that require their game are listed like other mods", async () 
   expect(pack.queryByText("Standalone")).not.toBeInTheDocument();
   expect(pack.queryByText("Source mod")).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Standalone" })).not.toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "I can play" }));
+  await user.click(screen.getByRole("checkbox", { name: "I can play" }));
   expect(screen.queryByRole("heading", { name: "Pack" })).not.toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "I can play" }));
+  await user.click(screen.getByRole("checkbox", { name: "I can play" }));
   await user.click(choice("Game", "Commander Keen 4"));
   expect(screen.getByRole("heading", { name: "Pack" })).toBeInTheDocument();
   await user.click(choice("Game", "All"));
@@ -499,8 +499,8 @@ async function chooseAll(user: ReturnType<typeof userEvent.setup>) {
   await user.click(choice("Game", "Commander Keen 4"));
   await user.click(choice("Type", "Adventure"));
   await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "name");
-  await user.click(screen.getByRole("button", { name: "I can play" }));
-  await user.click(screen.getByRole("button", { name: "Not installed" }));
+  await user.click(screen.getByRole("checkbox", { name: "I can play" }));
+  await user.click(screen.getByRole("checkbox", { name: "Not installed" }));
 }
 
 function expectAllChosen() {
@@ -508,14 +508,8 @@ function expectAllChosen() {
   expect(choice("Game", "Commander Keen 4")).toHaveAttribute("aria-pressed", "true");
   expect(choice("Type", "Adventure")).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("combobox", { name: "Sort by" })).toHaveValue("name");
-  expect(screen.getByRole("button", { name: "I can play" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  expect(screen.getByRole("button", { name: "Not installed" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  expect(screen.getByRole("checkbox", { name: "I can play" })).toBeChecked();
+  expect(screen.getByRole("checkbox", { name: "Not installed" })).toBeChecked();
 }
 
 async function resetChoices(user: ReturnType<typeof userEvent.setup>) {
@@ -523,10 +517,10 @@ async function resetChoices(user: ReturnType<typeof userEvent.setup>) {
   await user.click(choice("Game", "All"));
   await user.click(choice("Type", "All"));
   await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "featured");
-  const playable = screen.getByRole("button", { name: "I can play" });
-  if (playable.getAttribute("aria-pressed") === "true") await user.click(playable);
-  const installed = screen.getByRole("button", { name: "Not installed" });
-  if (installed.getAttribute("aria-pressed") === "true") await user.click(installed);
+  const playable = screen.getByRole("checkbox", { name: "I can play" });
+  if ((playable as HTMLInputElement).checked) await user.click(playable);
+  const installed = screen.getByRole("checkbox", { name: "Not installed" });
+  if ((installed as HTMLInputElement).checked) await user.click(installed);
 }
 
 test("keeps filters and sort across other pages and tabs, but not in storage", async () => {
