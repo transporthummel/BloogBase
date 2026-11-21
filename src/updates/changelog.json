@@ -26,7 +26,8 @@
       "The \"DOSBox & patches\" tab is called \"Settings\".",
       "Tabs that don't fit in a narrow window go into a \"More\" menu.",
       "A mod's readme no longer shows up twice.",
-      "A variant of a mod no longer shows the readme of another release."
+      "A variant of a mod no longer shows the readme of another release.",
+      "Typing in the library's search no longer lags."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -54,7 +55,8 @@
       "Der Tab „DOSBox & Patches“ heißt jetzt „Einstellungen“.",
       "Tabs, die in einem schmalen Fenster nicht passen, landen in einem Menü „Mehr“.",
       "Die Liesmich einer Mod erscheint nicht mehr doppelt.",
-      "Eine Variante einer Mod zeigt nicht mehr die Liesmich eines anderen Release."
+      "Eine Variante einer Mod zeigt nicht mehr die Liesmich eines anderen Release.",
+      "Tippen in der Suche der Bibliothek hakt nicht mehr."
     ]
   },
   "releases": [

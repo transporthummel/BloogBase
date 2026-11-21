@@ -1,7 +1,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "@tanstack/react-router";
 import { Compass, PackagePlus, Search } from "lucide-react";
-import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -75,6 +83,8 @@ export function Library() {
   const [added, setAdded] = useState<Outcome | null>(null);
   const [sort, setSort] = useState(getLibrarySort);
   const [query, setQuery] = useState(lastQuery);
+  // Filtered a moment behind the typing, so the field keeps up with the keys.
+  const searched = useDeferredValue(query);
   // Games and mods arrive from many places; an old search shouldn't hide a new one.
   const known = knownProfiles;
   if (query && known && profiles.data?.some((p) => !known.has(p.id))) setQuery("");
@@ -132,6 +142,23 @@ export function Library() {
       games.data?.find((g) => g.id === profile.gameId),
     );
   });
+  // The same function on every render, so typing in the search doesn't redraw
+  // every card: the memo below only holds with it.
+  const playLatest = useRef((profile: Profile, start: WorldStart | null, pick?: string) => {
+    world.current = start;
+    variants.play(profile, pick);
+  });
+  useLayoutEffect(() => {
+    playLatest.current = (profile, start, pick) => {
+      world.current = start;
+      variants.play(profile, pick);
+    };
+  });
+  const playCard = useCallback(
+    (profile: Profile, start: WorldStart | null, pick?: string) =>
+      playLatest.current(profile, start, pick),
+    [],
+  );
 
   /** A single game imported opens right away; several are counted. */
   async function showImported(installs: Install[]) {
@@ -178,7 +205,7 @@ export function Library() {
   const error = launch.error ?? profiles.error;
   const empty = profiles.data?.length === 0;
   const needsRuntime = !empty && runtime.data && !runtime.data.active;
-  const needle = query.trim().toLowerCase();
+  const needle = searched.trim().toLowerCase();
   const shown = (profiles.data ?? []).filter((p) => {
     if (!needle) return true;
     const game = gameById.get(p.gameId);
@@ -366,10 +393,7 @@ export function Library() {
                       heading={grouped ? "h3" : "h2"}
                       sharedLabel={shared.has(profile.label)}
                       canPlay={!!runtime.data?.active && !launch.isPending}
-                      onPlay={(start, pick) => {
-                        world.current = start;
-                        variants.play(profile, pick);
-                      }}
+                      onPlay={playCard}
                     />
                   </li>
                 ))}
@@ -402,9 +426,13 @@ const ProfileCard = memo(function ProfileCard({
   sharedLabel: boolean;
   canPlay: boolean;
   /** With the world to play, for a mod that keeps worlds, or a variant. */
-  onPlay: (world: WorldStart | null, variant?: string) => void;
+  onPlay: (profile: Profile, world: WorldStart | null, variant?: string) => void;
 }) {
   const { t, i18n } = useTranslation();
+  const play = useCallback(
+    (world: WorldStart | null, variant?: string) => onPlay(profile, world, variant),
+    [onPlay, profile],
+  );
   const version = game?.versions.find((v) => v.id === profile.versionId);
   const versionLabel = version?.label ?? t("library.unknownVersion");
   // The badge tells copies apart on screen; screen readers hear the version
@@ -412,7 +440,7 @@ const ProfileCard = memo(function ProfileCard({
   const name = sharedLabel ? `${profile.label} (${versionLabel})` : profile.label;
   const cover = useCover(profile.id, profile.installId, profile.activeVariant?.id ?? null);
   // Variants or worlds offer other ways to start beside Play, as on the page.
-  const choices = usePlayChoices(profile, onPlay, { short: true });
+  const choices = usePlayChoices(profile, play, { short: true });
   // Alpha, beta or abandoned, as the index says now, else the KeenWiki page.
   const status =
     useIndexMods().data?.find((m) => profile.modId !== null && m.modId === profile.modId)?.entry
@@ -547,7 +575,7 @@ const ProfileCard = memo(function ProfileCard({
             <PlayButton
               variant="card"
               className="flex-1"
-              onClick={() => (profile.worlds ? choices.newWorld() : onPlay(null))}
+              onClick={() => (profile.worlds ? choices.newWorld() : play(null))}
               disabled={!canPlay || profile.running || profile.missingGame !== null}
               aria-label={t("library.playGame", { game: name })}
             >
