@@ -32,6 +32,7 @@
 - Mods from the mod list follow their entry at every start and index check, without an update: a fixed name, description, authors, links or cover, and a new way to start them (when their files have what it runs, and not while they run). Commander Cool 1 thus starts without the "Use 2-Button Firing?" question, and Yorphius II Deluxe is called Yorphius II.
 - Typing in the library's search keeps up in a big library: the cards are filtered just behind the keys, and only the cards that change are redrawn.
 - The menu beside Play on a game's or mod's page is called "Options" instead of "More", which the tabs' menu for those that don't fit is called.
+- With one-button firing on, a mod's or game's page says why it stays off there: the mod changes the controls itself, or the copy's program isn't the one it's made for.
 - A long description on a game's or mod's page shows three lines, cut after a word, with "Read more" for the rest, so Play stays in view.
 
 ### Bug Fixes

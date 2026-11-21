@@ -223,7 +223,7 @@ export function ProfileActions({
           <SuggestToIndex modId={mod.id} />
         </p>
       )}
-      <FiringNote profileId={profile.id} />
+      <FiringNote profileId={profile.id} mod={profile.modId !== null} />
       <MachineNote profileId={profile.id} />
       {openFolder.error && <Notice tone="error">{errorMessage(t, openFolder.error)}</Notice>}
 
@@ -423,7 +423,7 @@ function GamePicker({
 }
 
 /** How Keen 1-3 shoot here, where it isn't the usual Ctrl and Alt or can't be changed. */
-function FiringNote({ profileId }: { profileId: string }) {
+function FiringNote({ profileId, mod }: { profileId: string; mod: boolean }) {
   const { t } = useTranslation();
   const enabled = useQuery({
     queryKey: oneButtonFiringKey,
@@ -439,7 +439,9 @@ function FiringNote({ profileId }: { profileId: string }) {
   return (
     <p className="flex items-start gap-1.5 text-sm text-muted">
       <Keyboard className="mt-0.5 size-4 shrink-0" aria-hidden />
-      {t(`profile.firing.${s === "patchable" ? "on" : s}`, { context: keysContext() })}
+      {s === "unavailable"
+        ? t(mod ? "profile.firing.unavailableMod" : "profile.firing.unavailableGame")
+        : t(`profile.firing.${s === "patchable" ? "on" : s}`, { context: keysContext() })}
     </p>
   );
 }
