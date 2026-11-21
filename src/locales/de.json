@@ -678,9 +678,10 @@
     "removeGame": "Entfernen",
     "removeGameTitle": "{{name}} entfernen?",
     "removeGameHint": "BloogBase löscht seine Kopie des Spiels. Der Ordner oder das Archiv, aus dem du es hinzugefügt hast, bleibt unberührt.",
-    "removeGameMods_one": "Auch die Mod für dieses Spiel entfernen",
-    "removeGameMods_other": "Auch die {{count}} Mods für dieses Spiel entfernen",
-    "removeGameModsKept": "Sonst wechseln sie auf eine andere Kopie des Spiels oder warten, bis es wieder da ist.",
+    "removeGameMods_one": "Auch die Mod {{names}} entfernen",
+    "removeGameMods_other": "Auch die {{count}} Mods für dieses Spiel entfernen ({{names}})",
+    "removeGameModsKept_one": "Sonst wechselt sie auf eine andere Kopie des Spiels oder wartet, bis es wieder da ist.",
+    "removeGameModsKept_other": "Sonst wechseln sie auf eine andere Kopie des Spiels oder warten, bis es wieder da ist.",
     "tabControls": "Steuerung",
     "tabWorlds": "Welten"
   },

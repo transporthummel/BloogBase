@@ -33,6 +33,7 @@
 - Typing in the library's search keeps up in a big library: the cards are filtered just behind the keys, and only the cards that change are redrawn.
 - The menu beside Play on a game's or mod's page is called "Options" instead of "More", which the tabs' menu for those that don't fit is called.
 - With one-button firing on, a mod's or game's page says why it stays off there: the mod changes the controls itself, or the copy's program isn't the one it's made for.
+- Removing a game names the mods played on it in "Also remove …", and says of a single one "it" instead of "they".
 - A long description on a game's or mod's page shows three lines, cut after a word, with "Read more" for the rest, so Play stays in view.
 
 ### Bug Fixes

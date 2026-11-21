@@ -30,10 +30,13 @@ export function RemoveGameDialog({
   const [keepSaves, setKeepSaves] = useState(true);
   const [withMods, setWithMods] = useState(false);
   const profiles = useProfiles();
+  const modsOnIt = (profiles.data ?? []).filter(
+    (p) => p.installId === installId && p.modId !== null,
+  );
+  // Named, so the player knows which ones it's about.
+  const names = modsOnIt.map((p) => p.label).join(", ");
   // With its mods, theirs go too.
-  const modProfiles = withMods
-    ? (profiles.data ?? []).filter((p) => p.installId === installId && p.modId !== null)
-    : [];
+  const modProfiles = withMods ? modsOnIt : [];
   const remove = useMutation({
     mutationFn: () => unwrap(commands.removeGame(installId, keepSaves, withMods)),
     onSuccess: onRemoved,
@@ -51,10 +54,12 @@ export function RemoveGameDialog({
               checked={withMods}
               onChange={(e) => setWithMods(e.target.checked)}
             />
-            {t("profile.removeGameMods", { count: modCount })}
+            {t("profile.removeGameMods", { count: modCount, names })}
           </label>
           {!withMods && (
-            <p className="pl-6 text-sm text-muted">{t("profile.removeGameModsKept")}</p>
+            <p className="pl-6 text-sm text-muted">
+              {t("profile.removeGameModsKept", { count: modCount })}
+            </p>
           )}
         </div>
       )}

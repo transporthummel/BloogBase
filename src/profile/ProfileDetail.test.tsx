@@ -622,9 +622,9 @@ test("a game is removed from its page, with its mods if asked", async () => {
   const dialog = screen.getByRole("dialog");
   // Only the mod on this copy of the game counts.
   const withMods = within(dialog).getByRole("checkbox", {
-    name: "Also remove the mod played on it",
+    name: /^Also remove .+, the mod played on it$/,
   });
-  expect(dialog).toHaveTextContent("Otherwise they move to another copy");
+  expect(dialog).toHaveTextContent("Otherwise it moves to another copy");
   // Screenshots and videos go without a backup: the game's, and with its
   // mods theirs.
   expect(await within(dialog).findByText(/This also deletes 2 screenshots\./)).toBeInTheDocument();
