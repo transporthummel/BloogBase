@@ -158,7 +158,7 @@ function Description({ text }: { text: string }) {
           aria-expanded={open}
           aria-controls="hero-description"
           onClick={() => setOpen(!open)}
-          className="text-sm cursor-pointer font-semibold text-accent underline-offset-2 select-none hover:underline"
+          className="cursor-pointer text-sm text-muted underline underline-offset-2 select-none hover:text-ink"
         >
           {open ? t("profile.readLess") : t("profile.readMore")}
         </button>
