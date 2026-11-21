@@ -1224,6 +1224,7 @@
     "pickTitle": "Welche Variante?",
     "pickIntro": "{{name}} lässt sich auf mehrere Arten spielen. Jede Variante hat eigene Spielstände; wechseln kannst du jederzeit auf der Seite der Mod.",
     "playedBefore": "Bisher gespielt",
+    "default": "Standard",
     "play": "Spielen",
     "playNamed": "Spielen: {{name}}",
     "more": "Andere Varianten",

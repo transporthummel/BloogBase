@@ -108,6 +108,8 @@ function VariantChoice({
       <span className="grid min-w-0 flex-1 gap-0.5">
         <span className="flex flex-wrap items-center gap-2 text-sm font-semibold">
           {variantName(v, language)}
+          {/* The mod's own way to play, for one who doesn't know the others. */}
+          {v.default && <Badge>{t("variants.default")}</Badge>}
           {playedBefore && <Badge tone="status">{t("variants.playedBefore")}</Badge>}
         </span>
         {description && <span className="text-xs text-muted">{description}</span>}

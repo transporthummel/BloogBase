@@ -784,6 +784,8 @@ test("a mod with variants asks which one until the player chose", async () => {
   const easyRadio = await within(dialog).findByRole("radio", { name: /Easy/ });
   expect(easyRadio).toBeChecked();
   expect(within(dialog).getByText("Played so far")).toBeInTheDocument();
+  // The mod's own default is marked too.
+  expect(within(dialog).getByRole("radio", { name: /Hard.*Default/ })).toBeInTheDocument();
   expect(within(dialog).getByText("Fewer enemies.")).toBeInTheDocument();
   await userEvent.click(within(dialog).getByRole("radio", { name: /Hard/ }));
   await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));

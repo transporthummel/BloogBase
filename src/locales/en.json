@@ -1224,6 +1224,7 @@
     "pickTitle": "Which variant?",
     "pickIntro": "{{name}} can be played in more than one way. Each variant keeps its own saves; you can switch any time on the mod's page.",
     "playedBefore": "Played so far",
+    "default": "Default",
     "play": "Play",
     "playNamed": "Play: {{name}}",
     "more": "Other variants",
