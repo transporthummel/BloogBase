@@ -244,25 +244,27 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
               ))}
             </select>
           </label>
-          {/* A row per filter, named, so the two "All" don't read as one. */}
-          <div className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-3">
-            <FilterLabel>{t("discover.game")}</FilterLabel>
-            <GameChoice
-              games={games}
-              ids={gamesInIndex.map((g) => g.id)}
-              noGame={all.some((m) => needsNoGame(m.entry))}
-              value={chosenGames}
-              onChange={setChosenGames}
-            />
-            <FilterLabel>{t("discover.type")}</FilterLabel>
-            <Choice
-              label={t("discover.type")}
-              options={KINDS.map((k) => ({ value: k, label: t(`discover.kind.${k}`) }))}
-              value={kinds}
-              onChange={setKinds}
-            />
-            {/* Two checkboxes need no name for their row. */}
-            <span />
+          {/* Side by side as they fit, each named, so the two "All" don't read as one. */}
+          <div className="flex w-full flex-wrap items-center gap-x-8 gap-y-3">
+            <div className="flex items-center gap-3">
+              <FilterLabel>{t("discover.game")}</FilterLabel>
+              <GameChoice
+                games={games}
+                ids={gamesInIndex.map((g) => g.id)}
+                noGame={all.some((m) => needsNoGame(m.entry))}
+                value={chosenGames}
+                onChange={setChosenGames}
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <FilterLabel>{t("discover.type")}</FilterLabel>
+              <Choice
+                label={t("discover.type")}
+                options={KINDS.map((k) => ({ value: k, label: t(`discover.kind.${k}`) }))}
+                value={kinds}
+                onChange={setKinds}
+              />
+            </div>
             <div className="flex flex-wrap gap-x-4">
               <Toggle on={playable} onChange={setPlayable} hint={t("discover.playableHint")}>
                 {t("discover.playable")}
