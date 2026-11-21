@@ -751,7 +751,7 @@
   },
   "backups": {
     "title": "Backups",
-    "empty": "No backups yet.",
+    "empty": "No backups yet. “Back up all” makes the first; BloogBase also makes one itself before restoring or deleting.",
     "autoGroup": "Automatic backups ({{count}})",
     "autoGroupHint": "Made by BloogBase: before restoring and deleting, and before playing when a save got overwritten.",
     "label": "Label for the backup",

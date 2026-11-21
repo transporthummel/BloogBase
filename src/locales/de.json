@@ -751,7 +751,7 @@
   },
   "backups": {
     "title": "Sicherungen",
-    "empty": "Noch keine Sicherungen.",
+    "empty": "Noch keine Sicherungen. „Alles sichern“ legt die erste an; vor dem Wiederherstellen und Löschen sichert BloogBase auch selbst.",
     "autoGroup": "Automatische Sicherungen ({{count}})",
     "autoGroupHint": "Von BloogBase angelegt: vor dem Wiederherstellen und Löschen, und vor dem Spielen, wenn dabei ein Spielstand überschrieben wurde.",
     "label": "Bezeichnung der Sicherung",
