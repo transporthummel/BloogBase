@@ -668,7 +668,7 @@
       "on_mac": "Die Leertaste schießt, ↩ Return öffnet das Statusfenster.",
       "builtIn": "Diese Mod schießt schon mit der Leertaste.",
       "unavailableMod": "Diese Mod ändert die Steuerung selbst, darum bleibt Schießen mit einer Taste hier aus.",
-      "unavailableGame": "Das Programm dieser Spielkopie ist nicht das, für das Schießen mit einer Taste gemacht ist, darum bleibt es hier aus.",
+      "unavailableGame": "Schießen mit einer Taste funktioniert mit dieser Spielversion nicht, darum bleibt es hier aus.",
       "otherVersion": "Schießen mit einer Taste gibt es nur für Version 1.31 des Spiels, und diese Spielkopie ist eine andere."
     },
     "machine": {

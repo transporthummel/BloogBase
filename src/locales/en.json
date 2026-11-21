@@ -668,7 +668,7 @@
       "on_mac": "Space shoots, ↩ return opens the status window.",
       "builtIn": "This mod already shoots with Space.",
       "unavailableMod": "This mod changes the controls itself, so one-button firing stays off here.",
-      "unavailableGame": "This copy’s program isn’t the one one-button firing is made for, so it stays off here.",
+      "unavailableGame": "One-button firing doesn’t work with this version of the game, so it stays off here.",
       "otherVersion": "One-button firing is only available for version 1.31 of the game, and this copy is a different one."
     },
     "machine": {
