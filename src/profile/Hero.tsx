@@ -126,7 +126,12 @@ export function Hero({
   );
 }
 
-/** Four lines at most, so Play stays in view; "Read more" shows the rest. */
+/** Lines shown of a long description, so Play stays in view... */
+const DESCRIPTION_LINES = 4;
+/** ...if that hides more than one: "Read more" takes a line of its own. */
+const DESCRIPTION_CUT_FROM = DESCRIPTION_LINES + 2;
+
+/** Four lines of a long description; "Read more" shows the rest. */
 function Description({ text }: { text: string }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLParagraphElement>(null);
@@ -136,7 +141,11 @@ function Description({ text }: { text: string }) {
   useLayoutEffect(() => {
     const p = ref.current;
     if (!p || open || typeof ResizeObserver === "undefined") return;
-    const measure = () => setCut(p.scrollHeight > p.clientHeight + 1);
+    // Clamped, its scroll height is still that of the whole text.
+    const measure = () => {
+      const line = parseFloat(getComputedStyle(p).lineHeight);
+      setCut(!!line && p.scrollHeight > line * (DESCRIPTION_CUT_FROM - 0.5));
+    };
     const observer = new ResizeObserver(measure);
     observer.observe(p);
     measure();
@@ -148,7 +157,7 @@ function Description({ text }: { text: string }) {
       <p
         ref={ref}
         id="hero-description"
-        className={`text-sm leading-relaxed whitespace-pre-line ${open ? "" : "line-clamp-4"}`}
+        className={`text-sm leading-relaxed whitespace-pre-line ${cut && !open ? "line-clamp-4" : ""}`}
       >
         {text}
       </p>
