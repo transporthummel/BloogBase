@@ -1,0 +1,158 @@
+id: keen-t
+name: "Keen T"
+game: keen3
+authors: ["shikadi"]
+authorLinks:
+  "shikadi": https://keenwiki.shikadi.net/wiki/User:Shikadi
+released: 2010-11-17
+added: 2026-11-21
+type: episode
+description: "Keen breaks up a Shikadi alliance, teleporting from an asteroid to two moons and a planet. There is no oxygen, so every level runs against the clock; each set of levels builds on its first with new hazards."
+translations:
+  de:
+    description: "Keen sprengt eine Shikadi-Allianz und teleportiert sich von einem Asteroiden zu zwei Monden und einem Planeten. Dort gibt es keinen Sauerstoff, also läuft jedes Level gegen die Uhr; jeder Levelsatz baut mit neuen Gefahren auf seinem ersten auf."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_T
+  pckf: https://pckf.com/viewtopic.php?t=1651
+  keenmodding: https://keenmodding.org/viewtopic.php?t=1450
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.shikadi.keen_t.k3.2010-11-17.zip
+    sha256: e283e21d79ca0b6c4eda3a30b46e80223c3549db8bc37defa96a22b3c833f963
+    size: 135150
+    fingerprint:
+      sha256: c77e82f3c34d12ada9a287be484fc6be1f49c6ccb91bb66c8bb59547a019390a
+      files:
+        [
+          cdtile.tli,
+          cdtilesh.tli,
+          cg3.bin,
+          Ck3patch.exe,
+          EGAHEAD.CK3,
+          EGALATCH.CK3,
+          EGASPRIT.CK3,
+          FINALE.CK3,
+          hard.bat,
+          hardhomejack.bin,
+          hardp.pat,
+          homejack.bin,
+          KEEN3.EXE,
+          LEVEL01.CK3,
+          LEVEL02.CK3,
+          LEVEL03.CK3,
+          LEVEL04.CK3,
+          LEVEL05.CK3,
+          LEVEL06.CK3,
+          LEVEL07.CK3,
+          LEVEL08.CK3,
+          LEVEL09.CK3,
+          LEVEL10.CK3,
+          LEVEL11.CK3,
+          LEVEL12.CK3,
+          LEVEL13.CK3,
+          LEVEL14.CK3,
+          LEVEL15.CK3,
+          LEVEL16.CK3,
+          LEVEL80.CK3,
+          LEVEL81.CK3,
+          LEVEL90.CK3,
+          normal.bat,
+          patch.pat,
+        ]
+# Brings an executable and all of the game's files: plays on any copy of it.
+standalone: true
+recipe:
+  type: patch
+  patcher: Ck3patch.exe
+  patch: patch.pat
+minAppVersion: 1.4.0
+variants:
+  - id: normal
+    default: true
+    name: "Normal"
+    translations:
+      de:
+        name: "Normal"
+    fingerprint:
+      sha256: c77e82f3c34d12ada9a287be484fc6be1f49c6ccb91bb66c8bb59547a019390a
+      files:
+        [
+          cdtile.tli,
+          cdtilesh.tli,
+          cg3.bin,
+          Ck3patch.exe,
+          EGAHEAD.CK3,
+          EGALATCH.CK3,
+          EGASPRIT.CK3,
+          FINALE.CK3,
+          hard.bat,
+          hardhomejack.bin,
+          hardp.pat,
+          homejack.bin,
+          KEEN3.EXE,
+          LEVEL01.CK3,
+          LEVEL02.CK3,
+          LEVEL03.CK3,
+          LEVEL04.CK3,
+          LEVEL05.CK3,
+          LEVEL06.CK3,
+          LEVEL07.CK3,
+          LEVEL08.CK3,
+          LEVEL09.CK3,
+          LEVEL10.CK3,
+          LEVEL11.CK3,
+          LEVEL12.CK3,
+          LEVEL13.CK3,
+          LEVEL14.CK3,
+          LEVEL15.CK3,
+          LEVEL16.CK3,
+          LEVEL80.CK3,
+          LEVEL81.CK3,
+          LEVEL90.CK3,
+          normal.bat,
+          patch.pat,
+        ]
+  - id: hard
+    name: "Hard"
+    translations:
+      de:
+        name: "Schwer"
+    recipe: { type: patch, patcher: Ck3patch.exe, patch: hardp.pat }
+    fingerprint:
+      sha256: c77e82f3c34d12ada9a287be484fc6be1f49c6ccb91bb66c8bb59547a019390a
+      files:
+        [
+          cdtile.tli,
+          cdtilesh.tli,
+          cg3.bin,
+          Ck3patch.exe,
+          EGAHEAD.CK3,
+          EGALATCH.CK3,
+          EGASPRIT.CK3,
+          FINALE.CK3,
+          hard.bat,
+          hardhomejack.bin,
+          hardp.pat,
+          homejack.bin,
+          KEEN3.EXE,
+          LEVEL01.CK3,
+          LEVEL02.CK3,
+          LEVEL03.CK3,
+          LEVEL04.CK3,
+          LEVEL05.CK3,
+          LEVEL06.CK3,
+          LEVEL07.CK3,
+          LEVEL08.CK3,
+          LEVEL09.CK3,
+          LEVEL10.CK3,
+          LEVEL11.CK3,
+          LEVEL12.CK3,
+          LEVEL13.CK3,
+          LEVEL14.CK3,
+          LEVEL15.CK3,
+          LEVEL16.CK3,
+          LEVEL80.CK3,
+          LEVEL81.CK3,
+          LEVEL90.CK3,
+          normal.bat,
+          patch.pat,
+        ]

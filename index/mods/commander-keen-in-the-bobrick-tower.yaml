@@ -1,0 +1,55 @@
+id: commander-keen-in-the-bobrick-tower
+name: "Commander Keen in the Bobrick Tower"
+game: keen3
+requires: [keen3-1.31]
+authors: ["StupidBunny"]
+authorLinks:
+  "StupidBunny": https://keenwiki.shikadi.net/wiki/User:StupidBunny
+released: 2012-03-14
+added: 2026-11-21
+type: episode
+description: "One huge level for Keen Day 2012: Keen repels an invasion of the Ziraxi, evil aliens led by a mysterious human called Bobrick. With music."
+translations:
+  de:
+    description: "Ein riesiges Level zum Keen Day 2012: Keen wehrt eine Invasion der Ziraxi ab, böser Aliens unter einem rätselhaften Menschen namens Bobrick. Mit Musik."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Commander_Keen_in_the_Bobrick_Tower
+  pckf: https://pckf.com/viewtopic.php?t=2309
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen3/m.stupidbunny.bobrick_tower.k3.2012-03-14.zip
+    sha256: 8c68bed9421e02f5559d6fff30901c1e5521e4e404a40b7eeaa7c68c40b88da1
+    size: 183195
+    fingerprint:
+      sha256: c648a5d969eb4945062015aa640981cf6e627278c88dd26e3ed9cb5c430e8685
+      files:
+        [
+          btli.tli,
+          BTOWER.BAT,
+          btower.pat,
+          BTRNOMUS.bat,
+          btrnomus.pat,
+          CK3PATCH.exe,
+          DOSbox.lnk,
+          EGAHEAD.CK3,
+          EGALATCH.CK3,
+          EGASPRIT.CK3,
+          ENDTXT.CK3,
+          FINALE.CK3,
+          HELPTXT.CK3,
+          LEVEL16.CK3,
+          LEVEL80.CK3,
+          LEVEL81.CK3,
+          LEVEL90.CK3,
+          PREVIEWS.CK3,
+          SONG01.imf,
+          SONG16.imf,
+          SONG80.imf,
+          SONG81.imf,
+          SONG90.imf,
+          songlist.lst,
+          STORYTXT.CK3,
+          TSRMUSIC.com,
+        ]
+recipe:
+  type: batch
+  file: BTOWER.BAT

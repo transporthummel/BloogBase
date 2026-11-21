@@ -72,12 +72,12 @@ recipe:
 variants:
   - id: ultimate
     default: true
-    name: "Ultimate"
-    description: "The version from 2014."
+    name: "Ultimate Version"
+    description: "The ultimate version by Szemigi from 2014. Includes new levels, enemies and additional story."
     translations:
       de:
-        name: "Ultimate"
-        description: "Die Fassung von 2014."
+        name: "Ultimate Version"
+        description: "Die ultimative Fassung von Szemigi aus 2014. Beinhaltet neue Levels, Gegner und zusätzliche Story."
     fingerprint:
       sha256: e2c4bdab5ac90c10299490cd8c29c0e52c4363db6d4c6b4e069aa7abf4a60754
       files:
@@ -118,12 +118,12 @@ variants:
           STORYTXT.MM1,
         ]
   - id: full
-    name: "Full Version"
-    description: "The version from 2009."
+    name: "Original full version"
+    description: "The version from 2009 by Levellass, Levellord and Calvin."
     translations:
       de:
-        name: "Vollversion"
-        description: "Die Fassung von 2009."
+        name: "Originale Vollversion"
+        description: "Die Vollversion aus 2009 von Levellass, Levellord und Calvin."
     archive: full
     recipe: { type: patch, patcher: CK1PATCH.EXE, patch: MORT.PAT }
     fingerprint:

@@ -1,0 +1,171 @@
+id: keen-1-gold-edition
+name: "Keen 1 Gold Edition"
+game: keen1
+requires: [keen1-1.31]
+authors: ["szemigi"]
+authorLinks:
+  "szemigi": https://keenwiki.shikadi.net/wiki/User:Szemigi
+released: 2017-11-20
+updated: 2017-11-21
+added: 2026-11-21
+type: episode
+description: 'Szemigi''s tribute to Keen 1, a "version 1.35" with bug fixes and touched-up graphics. Part A plays the original levels, slightly changed; Part B has sixteen new ones on the same map.'
+translations:
+  de:
+    description: "Szemigis Hommage an Keen 1, eine „Version 1.35“ mit Fehlerkorrekturen und aufgefrischter Grafik. Teil A spielt die Originallevel, leicht verändert; Teil B hat sechzehn neue auf derselben Karte."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_1_Gold_Edition
+  pckf: https://pckf.com/viewtopic.php?f=4&t=4171
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.szemigi.keen_1_gold_edition.k1.2017-11-21.zip
+    sha256: 021d5a15c24b25efdd6c4a8ab5d9b22b5128c6efd6bb0a3b5b7dd2cbe2c08c47
+    size: 260764
+    fingerprint:
+      sha256: 6e4118a6d600bc357cc2e28ef4d2ed75b6c003e92b29b1d14486df5fe77fdef5
+      files:
+        [
+          CK1GOLD.BAT,
+          CK1GOLD.BIN,
+          CK1GOLD.PAT,
+          CK1GOLD.TLI,
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          INITSCR.CK1,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STATUS.CK1,
+          STORYTXT.CK1,
+        ]
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: CK1GOLD.PAT
+minAppVersion: 1.4.0
+variants:
+  - id: part-a
+    default: true
+    name: "Part A"
+    description: "The original levels, fixed and slightly changed."
+    translations:
+      de:
+        name: "Teil A"
+        description: "Die Originallevel, korrigiert und leicht verändert."
+    root: "CK1GoldA"
+    fingerprint:
+      sha256: 6e4118a6d600bc357cc2e28ef4d2ed75b6c003e92b29b1d14486df5fe77fdef5
+      files:
+        [
+          CK1GOLD.BAT,
+          CK1GOLD.BIN,
+          CK1GOLD.PAT,
+          CK1GOLD.TLI,
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          INITSCR.CK1,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STATUS.CK1,
+          STORYTXT.CK1,
+        ]
+  - id: part-b
+    name: "Part B"
+    description: "Sixteen new levels."
+    translations:
+      de:
+        name: "Teil B"
+        description: "Sechzehn neue Level."
+    root: "CK1GoldB"
+    fingerprint:
+      sha256: e0e513a7acf8393be580c8e7bed0f892f4af5e17f7f2ddc3fb2b25bb0a656c33
+      files:
+        [
+          CK1GOLD.BAT,
+          CK1GOLD.BIN,
+          CK1GOLD.PAT,
+          CK1GOLD.TLI,
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          INITSCR.CK1,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STATUS.CK1,
+          STORYTXT.CK1,
+        ]

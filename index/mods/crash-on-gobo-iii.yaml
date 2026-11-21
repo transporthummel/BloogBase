@@ -1,0 +1,235 @@
+id: crash-on-gobo-iii
+name: "Crash on Gobo III"
+game: keen1
+authors: ["Ceilick", "Unfleexable"]
+authorLinks:
+  "Ceilick": https://keenwiki.shikadi.net/wiki/User:Ceilick
+released: 2002-09-24
+updated: 2015-03-14
+added: 2026-11-21
+type: episode
+description: "Ceilick's first mod, from 2002, the start of his Invasion of the Yorps series, built mostly from recoloured Keen 1 tiles. UnFleexable remastered it in 2003, and Tulip made the Ultra version in 2015, with music."
+translations:
+  de:
+    description: "Ceilicks erste Mod von 2002, der Anfang seiner Reihe Invasion of the Yorps, größtenteils aus umgefärbten Keen-1-Grafiken gebaut. UnFleexable überarbeitete sie 2003, Tulip machte 2015 die Ultra-Version mit Musik daraus."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Crash_on_Gobo_III
+  pckf: https://pckf.com/viewtopic.php?t=3226
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.ceilick_unfleexable_tulip.crash_on_gobo_iii_ultra.k1.2015-03-14.zip
+    sha256: a26026d39b77217bdecec2486c0bacfde673a1dbaeccb0f635911b969bcba4f6
+    size: 161150
+    fingerprint:
+      sha256: 2f0b8196f7c1bd3cf8e606f6300e399b7b4a8b9ad16f79d79d5675f508892cbb
+      files:
+        [
+          apache.imf,
+          CK1PATCH.EXE,
+          cog3u.bat,
+          cog3u.pat,
+          cripple.imf,
+          EGAHEAD.ck1,
+          EGALATCH.ck1,
+          EGASPRIT.ck1,
+          ENDTEXT.ck1,
+          FINALE.ck1,
+          hallowee.imf,
+          HELPTEXT.ck1,
+          Keen1.exe,
+          LEVEL01.CK1,
+          Level02.ck1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.ck1,
+          Level08.ck1,
+          LEVEL09.ck1,
+          LEVEL10.ck1,
+          LEVEL11.ck1,
+          LEVEL12.ck1,
+          LEVEL13.ck1,
+          LEVEL14.ck1,
+          Level15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.ck1,
+          LEVEL81.ck1,
+          LEVEL90.ck1,
+          musforst.imf,
+          PREVIEW2.ck1,
+          PREVIEW3.ck1,
+          PREVIEWS.ck1,
+          Song001.imf,
+          Song003.imf,
+          Song011.imf,
+          songlist.lst,
+          SOUNDS.ck1,
+          STORYTXT.ck1,
+          tobacco1.imf,
+          tsrmusic.com,
+        ]
+    parts:
+      remastered:
+        url: https://files.shikadi.net/keenwiki/mods/Keen1/m.ceilick_unfleexable.crash_on_gobo_iii_remastered.k1.2003-03-15.zip
+        sha256: e44c4a711959a251d5c65e30de5ef5afaeeff703d6f9351a91d1a92e794a9772
+        size: 125054
+      original:
+        url: https://files.shikadi.net/keenwiki/mods/Keen1/m.ceilick.crash_on_gobo_iii.k1.2002-09-24.zip
+        sha256: da09aeb60d5664f4539bda953d4e426c23adca8153bfb838e02055e31f0b5f8d
+        size: 174717
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
+recipe:
+  type: batch
+  file: cog3u.bat
+minAppVersion: 1.4.0
+variants:
+  - id: ultra
+    default: true
+    name: "Ultra Version"
+    description: "Tulip's remake from 2015, with music."
+    translations:
+      de:
+        name: "Ultra Version"
+        description: "Tulips Neuauflage von 2015, mit Musik."
+    fingerprint:
+      sha256: 2f0b8196f7c1bd3cf8e606f6300e399b7b4a8b9ad16f79d79d5675f508892cbb
+      files:
+        [
+          apache.imf,
+          CK1PATCH.EXE,
+          cog3u.bat,
+          cog3u.pat,
+          cripple.imf,
+          EGAHEAD.ck1,
+          EGALATCH.ck1,
+          EGASPRIT.ck1,
+          ENDTEXT.ck1,
+          FINALE.ck1,
+          hallowee.imf,
+          HELPTEXT.ck1,
+          Keen1.exe,
+          LEVEL01.CK1,
+          Level02.ck1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.ck1,
+          Level08.ck1,
+          LEVEL09.ck1,
+          LEVEL10.ck1,
+          LEVEL11.ck1,
+          LEVEL12.ck1,
+          LEVEL13.ck1,
+          LEVEL14.ck1,
+          Level15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.ck1,
+          LEVEL81.ck1,
+          LEVEL90.ck1,
+          musforst.imf,
+          PREVIEW2.ck1,
+          PREVIEW3.ck1,
+          PREVIEWS.ck1,
+          Song001.imf,
+          Song003.imf,
+          Song011.imf,
+          songlist.lst,
+          SOUNDS.ck1,
+          STORYTXT.ck1,
+          tobacco1.imf,
+          tsrmusic.com,
+        ]
+  - id: remastered
+    name: "Remastered Version"
+    description: "UnFleexable's version from 2003."
+    translations:
+      de:
+        name: "Remastered Version"
+        description: "UnFleexables Fassung von 2003."
+    archive: remastered
+    root: ""
+    recipe: { type: patch, patcher: CK1PATCH.EXE, patch: cog3se.pat }
+    fingerprint:
+      sha256: ed722a52ea4918bf779b9361714b0c14f806490e30a6dad91b5736c736bba1d1
+      files:
+        [
+          CK1PATCH.EXE,
+          cog3se.bat,
+          cog3se.pat,
+          EGAHEAD.ck1,
+          EGALATCH.ck1,
+          EGASPRIT.ck1,
+          ENDTEXT.ck1,
+          FINALE.ck1,
+          HELPTEXT.ck1,
+          Keen1.exe,
+          LEVEL01.ck1,
+          Level02.ck1,
+          LEVEL03.ck1,
+          LEVEL04.ck1,
+          LEVEL05.ck1,
+          LEVEL06.ck1,
+          LEVEL07.ck1,
+          LEVEL10.ck1,
+          LEVEL11.ck1,
+          LEVEL16.ck1,
+          LEVEL80.ck1,
+          LEVEL81.ck1,
+          LEVEL90.ck1,
+          PREVIEW2.ck1,
+          PREVIEW3.ck1,
+          PREVIEWS.ck1,
+          SOUNDS.ck1,
+          STORYTXT.ck1,
+        ]
+  - id: original
+    name: "Original Version"
+    description: "Ceilick's first release from 2002, never finished."
+    translations:
+      de:
+        name: "Originalversion"
+        description: "Ceilicks erste Veröffentlichung von 2002, nie fertiggestellt."
+    archive: original
+    root: "keen crash on gobo III"
+    recipe: { type: episode }
+    fingerprint:
+      sha256: 94932f8b4bc0c3a8bb521c76cf19c27645c2618b0c9aba38d9eedddda831e86a
+      files:
+        [
+          EGAHEAD.CK1,
+          EGAHEAD.~K1,
+          EGALATCH.CK1,
+          EGALATCH.~K1,
+          EGASPRIT.CK1,
+          EGASPRIT.~K1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          Level02.ck1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STORYTXT.CK1,
+        ]

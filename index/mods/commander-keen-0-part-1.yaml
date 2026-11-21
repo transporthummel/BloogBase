@@ -1,0 +1,171 @@
+id: commander-keen-0-part-1
+name: "Commander Keen 0: Part 1"
+game: keen1
+authors: ["entropicdecay"]
+authorLinks:
+  "entropicdecay": https://keenwiki.shikadi.net/wiki/User:Entropicdecay
+released: 2004-02-26
+updated: 2023-04-29
+added: 2026-11-21
+type: episode
+description: 'Sixteen levels in a row on a bare map, with blocky enemies and crosses strewn through the graphics; the story is "Keen goes to a place". Keen 0 Plus from 2023 tidies it up and starts Keen with the pogo stick.'
+translations:
+  de:
+    description: "Sechzehn Level hintereinander auf einer kargen Karte, mit klotzigen Gegnern und Kreuzen überall in der Grafik; die Story lautet „Keen geht an einen Ort“. Keen 0 Plus von 2023 räumt sie auf und lässt Keen mit dem Pogo-Stick starten."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Commander_Keen_0:_Part_1
+  pckf: https://pckf.com/viewtopic.php?t=222
+  keenmodding: https://keenmodding.org/viewtopic.php?t=1577
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.elecdude33.keen_0_plus.k1.2023-04-29.zip
+    sha256: 54c8d472d50e1466750db3203aeedf22ac410271d8a420ec48348ded5b4cf0dd
+    size: 127708
+    fingerprint:
+      sha256: 3613dfad144e4c1a3298416a34d14f2513ccf503963e12c6093e3e95cdaf6b7f
+      files:
+        [
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          patch.pat,
+          play.bat,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STORYTXT.CK1,
+        ]
+    parts:
+      april-fools:
+        url: https://files.shikadi.net/keenwiki/mods/Keen1/m.elecdude33.keen_0_april_fools_edition.k1.2004-04-01.zip
+        sha256: b120c1bf8a444350e4ade3ccd406d7c9de9819528b417d3b3ea02e79d5558846
+        size: 123346
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: patch.pat
+minAppVersion: 1.4.0
+variants:
+  - id: plus
+    default: true
+    name: "Keen 0 Plus"
+    description: "The improved version from 2023."
+    translations:
+      de:
+        name: "Keen 0 Plus"
+        description: "Die verbesserte Fassung von 2023."
+    fingerprint:
+      sha256: 3613dfad144e4c1a3298416a34d14f2513ccf503963e12c6093e3e95cdaf6b7f
+      files:
+        [
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          patch.pat,
+          play.bat,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STORYTXT.CK1,
+        ]
+  - id: april-fools
+    name: "April Fools Edition"
+    description: "From 2004: inverted colours, and most exits right next to the start."
+    translations:
+      de:
+        name: "Aprilscherz-Ausgabe"
+        description: "Von 2004: umgekehrte Farben, und die meisten Ausgänge gleich neben dem Start."
+    archive: april-fools
+    root: ""
+    recipe: { type: patch, patcher: CK1PATCH.EXE, patch: Keen0.pat }
+    fingerprint:
+      sha256: 31b1adf09a2835d33511961f2cf88f0ddc7c3712ed66a43fa76ec6736271ba63
+      files:
+        [
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          Keen0.bat,
+          Keen0.pat,
+          Keen0.tli,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STORYTXT.CK1,
+        ]

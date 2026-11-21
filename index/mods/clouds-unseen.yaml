@@ -148,11 +148,11 @@ variants:
           unseen.pat,
         ]
   - id: verdant
-    name: "Verdant"
+    name: "Verdant Version"
     description: "Hard, with a green instead of a white background, for a Game Boy look."
     translations:
       de:
-        name: "Verdant"
+        name: "Verdant Version"
         description: "Schwer, mit grünem statt weißem Hintergrund, im Look des Game Boy."
     archive: verdant
     fingerprint:

@@ -1,0 +1,181 @@
+id: bad-dreams
+name: "Bad Dreams"
+game: keen1
+authors: ["Levellord"]
+authorLinks:
+  "Levellord": https://keenwiki.shikadi.net/wiki/Levellord
+released: 2004-09-25
+added: 2026-11-21
+type: episode
+description: "Levellord's birthday tribute to Commander Spleen in Keen Dreams' graphics, with the roles turned around: the sweets are the enemies now. Keen gets through walls by pushing against them and shooting."
+translations:
+  de:
+    description: "Levellords Geburtstagsgruß an Commander Spleen in der Grafik von Keen Dreams, mit vertauschten Rollen: Jetzt sind die Süßigkeiten die Gegner. Keen kommt durch Wände, wenn er dagegen drückt und schießt."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Bad_Dreams
+  # pckf: http://archive.shikadi.net/pckf/misc/1746.htm
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.levellord.bad_dreams.k1.2004-09-25.zip
+    sha256: 7340c97e7b188e9b93fdb6fcff37828da8b65597075c2ff56d501ae133975e91
+    size: 337443
+    fingerprint:
+      sha256: 2c74028264818a8f57cfea3f64a3e39e3fc28c08235fccd22cf458d59d80e186
+      files:
+        [
+          bong.PAT,
+          CK1PATCH.EXE,
+          Cookie.PAT,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL04.CK2,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          LEVEL94.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          set.tli,
+          Setup.BAT,
+          SOUNDS.CK1,
+          STATUS.CK1,
+          STORYTXT.CK1,
+        ]
+    parts:
+      birthday:
+        url: https://files.shikadi.net/keenwiki/mods/Keen1/m.levellord.bad_dreams_spleens_birthday_edition.k1.2004-09-25.zip
+        sha256: 1061732a8aef57338650e42d649d01b15c845a10091be024eff5038c34860909
+        size: 417113
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: Cookie.PAT
+minAppVersion: 1.4.0
+variants:
+  - id: normal
+    default: true
+    name: "Normal"
+    translations:
+      de:
+        name: "Normal"
+    fingerprint:
+      sha256: 2c74028264818a8f57cfea3f64a3e39e3fc28c08235fccd22cf458d59d80e186
+      files:
+        [
+          bong.PAT,
+          CK1PATCH.EXE,
+          Cookie.PAT,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL04.CK2,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          LEVEL94.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          set.tli,
+          Setup.BAT,
+          SOUNDS.CK1,
+          STATUS.CK1,
+          STORYTXT.CK1,
+        ]
+  - id: birthday
+    name: "Spleen's Birthday Edition"
+    description: "The edition for Commander Spleen's birthday, with an extra level and other previews."
+    translations:
+      de:
+        name: "Spleen's Birthday Edition"
+        description: "Die Ausgabe zu Commander Spleens Geburtstag, mit einem zusätzlichen Level und anderen Vorschauen."
+    archive: birthday
+    root: ""
+    fingerprint:
+      sha256: 992f6f119c4cbabb6baad8c24480406dacdab01efc1cc910f3e2b6039110d6e9
+      files:
+        [
+          bong.PAT,
+          CK1PATCH.EXE,
+          Cookie.PAT,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDTEXT.CK1,
+          FINALE.CK1,
+          HELPTEXT.CK1,
+          KEEN1.EXE,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL04.CK2,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL07.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL13.CK1,
+          LEVEL14.CK1,
+          LEVEL15.CK1,
+          LEVEL16.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          LEVEL94.CK1,
+          LEVEL95.CK1,
+          PREVIEW2.CK1,
+          PREVIEW3.CK1,
+          PREVIEWS.CK1,
+          set.tli,
+          Setup.BAT,
+          SOUNDS.CK1,
+          STATUS.CK1,
+          STORYTXT.CK1,
+        ]

@@ -1,0 +1,146 @@
+id: rescue-of-the-last
+name: "Rescue Of The Last"
+game: keen4
+authors: ["Bubzrulz"]
+authorLinks:
+  "Bubzrulz": https://keenwiki.shikadi.net/wiki/User:Bubzrulz
+released: 2017-01-03
+updated: 2021-04-16
+added: 2026-11-21
+type: episode
+status: alpha
+description: "Demos of an unfinished Keen 4 mod set right after the original game, with recoloured creatures, a machine-gun raygun and tangled levels full of doors. Three demos of four levels each."
+translations:
+  de:
+    description: "Demos einer unfertigen Keen-4-Mod, die direkt nach dem Originalspiel spielt, mit umgefärbten Kreaturen, einer Maschinengewehr-Strahlenpistole und verschlungenen Leveln voller Türen. Drei Demos mit je vier Leveln."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Rescue_Of_The_Last
+  pckf: https://pckf.com/viewtopic.php?t=4035
+  keenmodding: https://keenmodding.org/viewtopic.php?t=2055
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen4/m.bubzrulz.rescue_of_the_last_demos.k4.2021-04-16.zip
+    sha256: 1892b4b15b094f60bd5887c834ed5e3a23619712ac1c489d1add5e6335077833
+    size: 1571654
+    fingerprint:
+      sha256: e3e6c9bde543dd480aabdc4fe9fe89e5ad013c2e0454b31ef2415acba74c0e0b
+      files:
+        [
+          AUDIO.CK4,
+          CK4LOAD.BIN,
+          CK4PATCH.EXE,
+          CONFIG.ROL,
+          door.PAT,
+          EGAGRAPH.CK4,
+          EGAHEAD.CK4,
+          GAMEMAPS.CK4,
+          go.bat,
+          KEEN4E.EXE,
+          MAPHEAD.CK4,
+          RESCUE.ROL,
+        ]
+# Brings an executable and all of the game's files: plays without a copy of it.
+standalone: true
+recipe:
+  type: patch
+  patcher: CK4PATCH.EXE
+  patch: new.PAT
+minAppVersion: 1.4.0
+variants:
+  - id: new
+    default: true
+    name: "New Demo"
+    description: "The newest demo, with recoloured graphics and the machine gun."
+    translations:
+      de:
+        name: "Neue Demo"
+        description: "Die neueste Demo, mit umgefärbter Grafik und dem Maschinengewehr."
+    root: ""
+    fingerprint:
+      sha256: 72edc206007a2a39631687ab3f712ad8d5a6a0af4fa7020b8e6643fd443ded9a
+      files:
+        [
+          AUDIO.RES,
+          AUDIO.ROL,
+          CK4LOAD.BIN,
+          CK4PATCH.EXE,
+          CONFIG.RES,
+          CONFIG.ROL,
+          door.bat,
+          EGAGRAPH.RES,
+          EGAGRAPH.ROL,
+          EGAHEAD.RES,
+          EGAHEAD.ROL,
+          GAMEMAPS.RES,
+          GAMEMAPS.ROL,
+          KEEN4E.EXE,
+          MAPHEAD.RES,
+          MAPHEAD.ROL,
+          new.bat,
+          new.PAT,
+          old.bat,
+          old.PAT,
+          RESCUE.BIN,
+          RESCUE.ROL,
+        ]
+  - id: old
+    name: "Old Demo"
+    description: "The first demo, mostly with the original graphics."
+    translations:
+      de:
+        name: "Alte Demo"
+        description: "Die erste Demo, größtenteils mit der Originalgrafik."
+    root: ""
+    recipe: { type: patch, patcher: CK4PATCH.EXE, patch: old.PAT }
+    fingerprint:
+      sha256: 72edc206007a2a39631687ab3f712ad8d5a6a0af4fa7020b8e6643fd443ded9a
+      files:
+        [
+          AUDIO.RES,
+          AUDIO.ROL,
+          CK4LOAD.BIN,
+          CK4PATCH.EXE,
+          CONFIG.RES,
+          CONFIG.ROL,
+          door.bat,
+          EGAGRAPH.RES,
+          EGAGRAPH.ROL,
+          EGAHEAD.RES,
+          EGAHEAD.ROL,
+          GAMEMAPS.RES,
+          GAMEMAPS.ROL,
+          KEEN4E.EXE,
+          MAPHEAD.RES,
+          MAPHEAD.ROL,
+          new.bat,
+          new.PAT,
+          old.bat,
+          old.PAT,
+          RESCUE.BIN,
+          RESCUE.ROL,
+        ]
+  - id: door
+    name: "Door Demo"
+    description: "Shows switchable doors and spikes, and a pogo stick Keen has to find first."
+    translations:
+      de:
+        name: "Tür-Demo"
+        description: "Zeigt schaltbare Türen und Stacheln, und einen Pogo-Stick, den Keen erst finden muss."
+    root: "door"
+    recipe: { type: patch, patcher: CK4PATCH.EXE, patch: door.PAT }
+    fingerprint:
+      sha256: e3e6c9bde543dd480aabdc4fe9fe89e5ad013c2e0454b31ef2415acba74c0e0b
+      files:
+        [
+          AUDIO.CK4,
+          CK4LOAD.BIN,
+          CK4PATCH.EXE,
+          CONFIG.ROL,
+          door.PAT,
+          EGAGRAPH.CK4,
+          EGAHEAD.CK4,
+          GAMEMAPS.CK4,
+          go.bat,
+          KEEN4E.EXE,
+          MAPHEAD.CK4,
+          RESCUE.ROL,
+        ]

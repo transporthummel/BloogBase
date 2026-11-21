@@ -1,0 +1,189 @@
+id: aliens-vs-keen
+name: "Aliens vs. Keen"
+game: keen1
+authors: ["DivoKeen", "Levellord", "Levellass", "Djaser"]
+authorLinks:
+  "Djaser": https://keenwiki.shikadi.net/wiki/User:Djaser
+  "Levellass": https://keenwiki.shikadi.net/wiki/User:Levellass
+  "Levellord": https://keenwiki.shikadi.net/wiki/Levellord
+released: 2005-01-10
+updated: 2006-06-07
+added: 2026-11-21
+type: episode
+description: "Full-screen artwork by DivoKeen and levels by Levellord, who finished DivoKeen's abandoned demo with Levellass; Djaser translated it into German."
+translations:
+  de:
+    description: "Vollbild-Artwork von DivoKeen und Level von Levellord, der DivoKeens aufgegebene Demo mit Levellass fertigstellte; Djaser übersetzte sie ins Deutsche."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Aliens_vs._Keen
+  # pckf: http://publiccommanderkeenforum.yuku.com/topic/889/t/Aliens-vs-Keen.html
+  # keenmodding: http://keenmodding.org/viewtopic.php?t=817
+  # homepage: http://web.archive.org/web/20050507103508/http://www.avk.frac.dk/
+downloads:
+  - url: https://files.shikadi.net/keenwiki/mods/Keen1/m.divokeen_et_al_.aliens_vs_keen.k1.2006-06-07.zip
+    sha256: 8f84f2614a38f11320c9604c60eff3c3733d05ab381e22ce85e80ad4226ee791
+    size: 193244
+    fingerprint:
+      sha256: 2e31a168f733c61e69e554843004203768d67b389c7fa004d287c6f25049915a
+      files:
+        [
+          "AvkTheme[English].mid",
+          "AvKTheme[German].mid",
+          "AvK[English].bat",
+          "AvK[German].BAT",
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDETXT.CK1,
+          ENDTEXT.CK1,
+          error.BAT,
+          FINALE.CK1,
+          flecken.pat,
+          HELPTEXT.CK1,
+          HILFTEXT.CK1,
+          INDEXTXT.CK1,
+          KEEN1.EXE,
+          KERBEN.CK1,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL15.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          patch.pat,
+          PREVIEW2.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STATUS.CK1,
+          STATUS.KE1,
+          STORYTXT.CK1,
+          tileset.tli,
+          VORBETRA.CK1,
+          zerror.pat,
+        ]
+recipe:
+  type: patch
+  patcher: CK1PATCH.EXE
+  patch: patch.pat
+minAppVersion: 1.4.0
+variants:
+  - id: english
+    default: true
+    name: "English"
+    translations:
+      de:
+        name: "Englisch"
+    fingerprint:
+      sha256: 2e31a168f733c61e69e554843004203768d67b389c7fa004d287c6f25049915a
+      files:
+        [
+          "AvkTheme[English].mid",
+          "AvKTheme[German].mid",
+          "AvK[English].bat",
+          "AvK[German].BAT",
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDETXT.CK1,
+          ENDTEXT.CK1,
+          error.BAT,
+          FINALE.CK1,
+          flecken.pat,
+          HELPTEXT.CK1,
+          HILFTEXT.CK1,
+          INDEXTXT.CK1,
+          KEEN1.EXE,
+          KERBEN.CK1,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL15.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          patch.pat,
+          PREVIEW2.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STATUS.CK1,
+          STATUS.KE1,
+          STORYTXT.CK1,
+          tileset.tli,
+          VORBETRA.CK1,
+          zerror.pat,
+        ]
+  - id: german
+    name: "German"
+    description: "Djaser's German translation."
+    translations:
+      de:
+        name: "Deutsch"
+        description: "Djasers deutsche Übersetzung."
+    recipe: { type: patch, patcher: CK1PATCH.EXE, patch: flecken.pat }
+    fingerprint:
+      sha256: 2e31a168f733c61e69e554843004203768d67b389c7fa004d287c6f25049915a
+      files:
+        [
+          "AvkTheme[English].mid",
+          "AvKTheme[German].mid",
+          "AvK[English].bat",
+          "AvK[German].BAT",
+          CK1PATCH.EXE,
+          EGAHEAD.CK1,
+          EGALATCH.CK1,
+          EGASPRIT.CK1,
+          ENDETXT.CK1,
+          ENDTEXT.CK1,
+          error.BAT,
+          FINALE.CK1,
+          flecken.pat,
+          HELPTEXT.CK1,
+          HILFTEXT.CK1,
+          INDEXTXT.CK1,
+          KEEN1.EXE,
+          KERBEN.CK1,
+          LEVEL01.CK1,
+          LEVEL02.CK1,
+          LEVEL03.CK1,
+          LEVEL04.CK1,
+          LEVEL05.CK1,
+          LEVEL06.CK1,
+          LEVEL08.CK1,
+          LEVEL09.CK1,
+          LEVEL10.CK1,
+          LEVEL11.CK1,
+          LEVEL12.CK1,
+          LEVEL15.CK1,
+          LEVEL80.CK1,
+          LEVEL81.CK1,
+          LEVEL90.CK1,
+          patch.pat,
+          PREVIEW2.CK1,
+          PREVIEWS.CK1,
+          SOUNDS.CK1,
+          STATUS.CK1,
+          STATUS.KE1,
+          STORYTXT.CK1,
+          tileset.tli,
+          VORBETRA.CK1,
+          zerror.pat,
+        ]

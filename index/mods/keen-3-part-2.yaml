@@ -1,0 +1,134 @@
+id: keen-3-part-2
+name: "Keen III, Part 2"
+game: keen3
+authors: ["Dibodo"]
+released: 2010-10-16
+added: 2026-11-21
+type: levelpack
+description: "Sixteen new levels for Keen 3 by Dibodo, also in an easier version."
+translations:
+  de:
+    description: "Sechzehn neue Level für Keen 3 von Dibodo, auch in einer leichteren Fassung."
+links:
+  keenwiki: https://keenwiki.shikadi.net/wiki/Keen_3_Part_2
+  pckf: https://pckf.com/viewtopic.php?t=1544
+downloads:
+  - url: https://files.shikadi.net/keenwiki/Packs/Keen3/l.dibodo.k3.2010-10-16.01.zip
+    sha256: b893c77a193eff5808ada1bfb07972dc93ae271d33ccd02c6a0d860d8151f7a2
+    size: 94272
+    fingerprint:
+      sha256: afccad2d15bc50d1cbda95e9c668bfa45e809974e22a96337d772ac6bb8a129d
+      files:
+        [
+          Ck3patch.exe,
+          content.xml,
+          egahead.ck3,
+          egalatch.ck3,
+          egasprit.ck3,
+          finale.ck3,
+          level01.ck3,
+          level02.ck3,
+          level03.ck3,
+          level04.ck3,
+          level05.ck3,
+          level06.ck3,
+          level07.ck3,
+          level08.ck3,
+          level09.ck3,
+          level10.ck3,
+          level11.ck3,
+          level12.ck3,
+          level13.ck3,
+          level14.ck3,
+          level15.ck3,
+          level16.ck3,
+          level80.ck3,
+          level81.ck3,
+          level90.ck3,
+          start.bat,
+        ]
+    parts:
+      easy:
+        url: https://files.shikadi.net/keenwiki/Packs/Keen3/l.dibodo.k3.2010-10-16.02.zip
+        sha256: 4cd3f81fdfb7539fb91bdf2788717ebddc46f1fc3832fa2904f924a347aded01
+        size: 103946
+recipe:
+  type: episode
+minAppVersion: 1.4.0
+variants:
+  - id: normal
+    default: true
+    name: "Normal"
+    translations:
+      de:
+        name: "Normal"
+    fingerprint:
+      sha256: afccad2d15bc50d1cbda95e9c668bfa45e809974e22a96337d772ac6bb8a129d
+      files:
+        [
+          Ck3patch.exe,
+          content.xml,
+          egahead.ck3,
+          egalatch.ck3,
+          egasprit.ck3,
+          finale.ck3,
+          level01.ck3,
+          level02.ck3,
+          level03.ck3,
+          level04.ck3,
+          level05.ck3,
+          level06.ck3,
+          level07.ck3,
+          level08.ck3,
+          level09.ck3,
+          level10.ck3,
+          level11.ck3,
+          level12.ck3,
+          level13.ck3,
+          level14.ck3,
+          level15.ck3,
+          level16.ck3,
+          level80.ck3,
+          level81.ck3,
+          level90.ck3,
+          start.bat,
+        ]
+  - id: easy
+    name: "Easy"
+    translations:
+      de:
+        name: "Leicht"
+    archive: easy
+    root: "Easy"
+    fingerprint:
+      sha256: 2c40473e4a617c04a449d01732e42daba9b866470afee0cc5c572510606f0afb
+      files:
+        [
+          Ck3patch.exe,
+          content.xml,
+          egahead.ck3,
+          egalatch.ck3,
+          egasprit.ck3,
+          finale.ck3,
+          level01.ck3,
+          level02.ck3,
+          level03.ck3,
+          level04.ck3,
+          level05.ck3,
+          level06.ck3,
+          level07.ck3,
+          level08.ck3,
+          level09.ck3,
+          level10.ck3,
+          level11.ck3,
+          level12.ck3,
+          level13.ck3,
+          level14.ck3,
+          level15.ck3,
+          level16.ck3,
+          level80.ck3,
+          level81.ck3,
+          level90.ck3,
+          start.bat,
+          UNLZEXE.EXE,
+        ]

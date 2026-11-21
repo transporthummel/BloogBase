@@ -84,12 +84,12 @@ recipe:
 variants:
   - id: deluxe
     default: true
-    name: "Deluxe"
-    description: "Tulip's remake for Keen Day 2014."
+    name: "Deluxe Version"
+    description: "Tulip's remake for Keen Day 2014, with music by Paramultart."
     translations:
       de:
-        name: "Deluxe"
-        description: "Tulips Neuauflage zum Keen Day 2014."
+        name: "Deluxe Version"
+        description: "Tulips Neuauflage zum Keen Day 2014, mit Musik von Paramultart."
     fingerprint:
       sha256: d3d9200a2e0fb332ce0d6953d89689ead5adecce44883d23a90dbd94f549f544
       files:
@@ -143,11 +143,11 @@ variants:
           Yorphius.tli,
         ]
   - id: standard
-    name: "Standard"
+    name: "Standard Version"
     description: "KeenRush's original from 2002."
     translations:
       de:
-        name: "Standard"
+        name: "Standard-Version"
         description: "KeenRushs Original von 2002."
     archive: standard
     fingerprint:
