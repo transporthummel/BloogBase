@@ -119,10 +119,11 @@ export function WorldsPanel({
                   <Star className={`size-4 ${w.favourite ? "fill-current" : ""}`} aria-hidden />
                 </button>
                 <div className="grid min-w-0 flex-1 gap-0.5">
-                  <h3 className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                  {/* Next below the page's title: the tab has no heading of its own. */}
+                  <h2 className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                     <span className="select-text">{name}</span>
                     {w.active && <Badge>{t("worlds.playing")}</Badge>}
-                  </h3>
+                  </h2>
                   {(seed !== null || options.length > 0) && (
                     <p className="text-xs text-muted">
                       {seed !== null && (

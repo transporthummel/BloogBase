@@ -81,10 +81,11 @@ export function VariantsPanel({
                   <VariantCover profile={profile} variant={v.id} className="mr-3 w-40" />
                 )}
                 <div className="grid min-w-0 flex-1 gap-0.5">
-                  <h3 className="flex flex-wrap items-center gap-2 text-sm font-semibold">
+                  {/* Next below the page's title: the tab has no heading of its own. */}
+                  <h2 className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                     <span className="select-text">{name}</span>
                     {active && <Badge>{t("variants.current")}</Badge>}
-                  </h3>
+                  </h2>
                   {description && <p className="text-xs text-muted select-text">{description}</p>}
                   <p className="text-xs text-muted">
                     {lastPlayedAt !== null ? (
