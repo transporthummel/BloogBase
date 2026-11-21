@@ -94,8 +94,7 @@ export function VariantsPanel({
                     ) : (
                       t("variants.notPlayed")
                     )}
-                    {" · "}
-                    {t("variants.saves", { count: saves })}
+                    {saves > 0 && ` · ${t("variants.saves", { count: saves })}`}
                   </p>
                 </div>
                 <div className="flex gap-1">

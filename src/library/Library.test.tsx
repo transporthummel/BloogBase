@@ -787,6 +787,9 @@ test("a mod with variants asks which one until the player chose", async () => {
   // The mod's own default is marked too.
   expect(within(dialog).getByRole("radio", { name: /Hard.*Default/ })).toBeInTheDocument();
   expect(within(dialog).getByText("Fewer enemies.")).toBeInTheDocument();
+  // Saves only where there are some.
+  expect(within(dialog).getByText("2 saves")).toBeInTheDocument();
+  expect(within(dialog).queryByText("0 saves")).not.toBeInTheDocument();
   await userEvent.click(within(dialog).getByRole("radio", { name: /Hard/ }));
   await userEvent.click(within(dialog).getByRole("button", { name: "Play" }));
   expect(commands.launchProfile).toHaveBeenCalledWith("clouds", null, "hard", "en");

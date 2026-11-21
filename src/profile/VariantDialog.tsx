@@ -113,7 +113,9 @@ function VariantChoice({
           {playedBefore && <Badge tone="status">{t("variants.playedBefore")}</Badge>}
         </span>
         {description && <span className="text-xs text-muted">{description}</span>}
-        <span className="text-xs text-muted">{t("variants.saves", { count: state.saves })}</span>
+        {state.saves > 0 && (
+          <span className="text-xs text-muted">{t("variants.saves", { count: state.saves })}</span>
+        )}
       </span>
     </label>
   );
