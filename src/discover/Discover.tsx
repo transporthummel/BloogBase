@@ -14,7 +14,7 @@ import { RelativeTime } from "../ui/RelativeTime";
 import { Tabs } from "../ui/Tabs";
 import { entryDescription } from "./description";
 import { compare, listedUnder, needsNoGame, playable as isPlayable, SORTS, type Sort } from "./fit";
-import { Choice, GameChoice, Toggle } from "./Filters";
+import { Choice, FilterLabel, GameChoice, Toggle } from "./Filters";
 import { FreeGames } from "./FreeGames";
 import { IndexError } from "./IndexError";
 import { ModCard } from "./ModCard";
@@ -244,7 +244,9 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
               ))}
             </select>
           </label>
-          <div className="flex w-full flex-wrap items-center gap-x-6 gap-y-3">
+          {/* A row per filter, named, so the two "All" don't read as one. */}
+          <div className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-3">
+            <FilterLabel>{t("discover.game")}</FilterLabel>
             <GameChoice
               games={games}
               ids={gamesInIndex.map((g) => g.id)}
@@ -252,13 +254,15 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
               value={chosenGames}
               onChange={setChosenGames}
             />
+            <FilterLabel>{t("discover.type")}</FilterLabel>
             <Choice
               label={t("discover.type")}
               options={KINDS.map((k) => ({ value: k, label: t(`discover.kind.${k}`) }))}
               value={kinds}
               onChange={setKinds}
             />
-            <div className="flex flex-wrap gap-1.5">
+            <FilterLabel>{t("discover.only")}</FilterLabel>
+            <div role="group" aria-label={t("discover.only")} className="flex flex-wrap gap-1.5">
               <Toggle on={playable} onChange={setPlayable} hint={t("discover.playableHint")}>
                 {t("discover.playable")}
               </Toggle>

@@ -545,6 +545,7 @@
     "all": "Alle",
     "noGame": "Allein lauffähig",
     "type": "Art",
+    "only": "Nur",
     "sort": "Sortieren nach",
     "sortBy": {
       "featured": "Empfohlen",

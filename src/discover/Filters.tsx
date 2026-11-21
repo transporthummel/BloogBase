@@ -57,6 +57,15 @@ export function Toggle({
   );
 }
 
+/** A filter row's name; the group beside it carries it for screen readers. */
+export function FilterLabel({ children }: { children: ReactNode }) {
+  return (
+    <span aria-hidden className="text-xs font-semibold text-muted">
+      {children}
+    </span>
+  );
+}
+
 /** `value` with `item` added, or taken out when it's in. */
 function flip<T>(value: T[], item: T): T[] {
   return value.includes(item) ? value.filter((v) => v !== item) : [...value, item];
