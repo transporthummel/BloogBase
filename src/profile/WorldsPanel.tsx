@@ -106,10 +106,10 @@ export function WorldsPanel({
           </Button>
         </EmptyState>
       ) : (
-        <p className="text-sm text-muted">{t("worlds.intro")}</p>
+        <p className="max-w-prose text-sm text-muted">{t("worlds.intro")}</p>
       )}
       {choices.dialog}
-      <ul className="grid gap-2">
+      <ul className="grid gap-2 @6xl:grid-cols-2">
         {data?.worlds.map((w) => {
           const name = worldName(t, w);
           const options = optionsSummary(data.definition, w, i18n.language);

@@ -207,7 +207,11 @@ export function ProfileDetail({
 
       {profile && tabsReady && (
         <Tabs tabs={tabs} selected={tab} onSelect={setTab} label={t("profile.tabs")}>
-          <div className={tab === "screenshots" || tab === "videos" ? "" : "max-w-3xl"}>
+          {/* Text and lists of rows stay narrow to be read; keys, variants,
+              worlds and captures take the width beside the picture above. */}
+          <div
+            className={`@container ${["readme", "saves", "config"].includes(tab) ? "max-w-3xl" : ""}`}
+          >
             {readmes.data && tab === "readme" && (
               <>
                 {/* Readmes tell players of their time to run batch files and set up DOSBox. */}

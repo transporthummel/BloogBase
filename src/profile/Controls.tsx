@@ -286,7 +286,7 @@ function KeyboardSheet({
   const { t } = useTranslation();
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 @6xl:grid-cols-4">
         <Group title={t("controls.moving")} heading={heading}>
           <div className="flex flex-wrap items-center gap-4">
             <ArrowCluster moving={sheet.moving} />
@@ -384,7 +384,10 @@ function ControllerSheet({
             ]}
           />
         </div>
-        <PadDrawing callouts={callouts} layout={layout} />
+        {/* Wide enough for its labels, not so tall it pushes the notes away. */}
+        <div className="mx-auto w-full max-w-4xl">
+          <PadDrawing callouts={callouts} layout={layout} />
+        </div>
         <ul className="sr-only">
           {callouts.map((c) => (
             <li key={c.input}>

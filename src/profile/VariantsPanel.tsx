@@ -68,8 +68,8 @@ export function VariantsPanel({
       {locked && <Notice>{t("variants.locked")}</Notice>}
       {message && !error && <Notice>{message}</Notice>}
       {error && <Notice tone="error">{errorMessage(t, error)}</Notice>}
-      <p className="text-sm text-muted">{t("variants.intro")}</p>
-      <ul className="grid gap-2">
+      <p className="max-w-prose text-sm text-muted">{t("variants.intro")}</p>
+      <ul className="grid gap-2 @6xl:grid-cols-2">
         {data?.variants.map(({ variant: v, active, saves, lastPlayedAt }) => {
           const name = variantName(v, i18n.language);
           const description = variantDescription(v, i18n.language);
