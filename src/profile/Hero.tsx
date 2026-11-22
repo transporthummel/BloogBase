@@ -67,7 +67,7 @@ export function Hero({
         entry?.description);
 
   return (
-    <Card ref={cardRef} className="mb-6 flex flex-col md:flex-row">
+    <Card ref={cardRef} className="mb-6 flex flex-col md:flex-row short:mb-4">
       {/* As tall as the text, at 4:3. Where the width limits get in the way,
           pictures keep 4:3 centred on the card's own colour, not on black
           bars like a misfit video; only the placeholder fills the box. */}
@@ -94,8 +94,11 @@ export function Hero({
         )}
       </div>
       {/* About it on top, playing it at the bottom. */}
-      <div ref={textRef} className="flex min-w-0 flex-1 flex-col justify-between gap-5 p-5">
-        <div className="grid content-start gap-4 select-text">
+      <div
+        ref={textRef}
+        className="flex min-w-0 flex-1 flex-col justify-between gap-5 p-5 short:gap-3 short:p-4"
+      >
+        <div className="grid content-start gap-4 select-text short:gap-3">
           <Credits
             profile={profile}
             game={game}
@@ -231,6 +234,7 @@ function Credits({
   const { t, i18n } = useTranslation();
   const version = game?.versions.find((v) => v.id === profile.versionId);
   const links = modLinks(t, mod, entry);
+  const released = profile.modId === null ? version?.released : mod?.released;
   const runsOn =
     profile.missingGame !== null ? (
       t("mods.waitsFor", { game: profile.missingGame })
@@ -244,7 +248,7 @@ function Credits({
       />
     ) : null;
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2 short:gap-1.5">
       <h1 className="font-pixel text-lg leading-relaxed">{profile.label}</h1>
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
         {(profile.activeVariant || runsOn) && (
@@ -282,26 +286,21 @@ function Credits({
           <Badge>{/^\d/.test(mod.version) ? `v${mod.version}` : mod.version}</Badge>
         )}
       </div>
-      {profile.modId === null && game && (
-        <p className="text-sm">
-          <Authors authors={[DEVELOPER]} links={{ [DEVELOPER]: DEVELOPER_URL }} />
-        </p>
-      )}
-      {profile.modId === null && version?.released && (
-        <p className="text-sm text-muted">
-          {looseDateText(t, i18n.language, "mods.releasedOn", version.released)}
-        </p>
-      )}
-      {mod && mod.authors.length > 0 && (
-        <p className="text-sm">
-          <Authors authors={mod.authors} links={{ ...mod.authorLinks, ...entry?.authorLinks }} />
-        </p>
-      )}
-      {mod?.released && (
-        <p className="text-sm text-muted">
-          {looseDateText(t, i18n.language, "mods.releasedOn", mod.released)}
-        </p>
-      )}
+      {/* Who made it and when, in one line, so the tabs stay in view in a small window. */}
+      <ByLine
+        authors={
+          profile.modId === null
+            ? game && <Authors authors={[DEVELOPER]} links={{ [DEVELOPER]: DEVELOPER_URL }} />
+            : mod &&
+              mod.authors.length > 0 && (
+                <Authors
+                  authors={mod.authors}
+                  links={{ ...mod.authorLinks, ...entry?.authorLinks }}
+                />
+              )
+        }
+        released={released && looseDateText(t, i18n.language, "mods.releasedOn", released)}
+      />
       {extensions.length > 0 && (
         <p className="text-sm">
           <span className="text-muted">
@@ -341,6 +340,18 @@ function Credits({
   );
 }
 
+/** Authors, then the release date in muted text; wraps only between the two. */
+function ByLine({ authors, released }: { authors: ReactNode; released: ReactNode }) {
+  if (!authors && !released) return null;
+  return (
+    <p className="text-sm">
+      {authors}
+      {authors && released && <span className="text-muted"> · </span>}
+      {released && <span className="whitespace-nowrap text-muted">{released}</span>}
+    </p>
+  );
+}
+
 /** Play time, sessions, last played, saves and, for a mod, when it was added. */
 function Stats({ profile, added }: { profile: Profile; added?: number }) {
   const { t, i18n } = useTranslation();
@@ -377,12 +388,18 @@ function Stats({ profile, added }: { profile: Profile; added?: number }) {
   // Columns, so the second row lines up with the first. auto-fit, not
   // auto-fill: an empty column would narrow the others as the text widens,
   // a label would wrap, and the picture beside it would never settle.
+  // In a short window they run on as a line, like the one before the first
+  // game, so the tabs stay in view; it breaks only after a " · ".
   return (
-    <dl className="grid grid-cols-[repeat(auto-fit,minmax(5.5rem,1fr))] gap-x-4 gap-y-2">
+    <dl className="grid grid-cols-[repeat(auto-fit,minmax(5.5rem,1fr))] gap-x-4 gap-y-2 short:block short:text-sm short:text-muted">
       {stats.map(([label, value]) => (
-        <div key={label} className="grid gap-1">
-          <dt className="text-xs text-muted">{label}</dt>
-          <dd className="text-sm font-semibold">{value}</dd>
+        <div key={label} className="grid gap-1 short:inline short:not-last:after:content-['_·_']">
+          <dt className="text-xs text-muted short:mr-1 short:inline short:text-sm short:whitespace-nowrap">
+            {label}
+          </dt>
+          <dd className="text-sm font-semibold short:inline short:whitespace-nowrap short:text-ink">
+            {value}
+          </dd>
         </div>
       ))}
     </dl>

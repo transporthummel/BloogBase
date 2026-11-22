@@ -294,7 +294,7 @@ test("a mod's page shows its credits, description, links and stats", async () =>
   renderDetail();
   expect(await screen.findByRole("heading", { name: "Aurora Bliss" })).toBeInTheDocument();
   const author = await screen.findByRole("button", { name: "Dave216" });
-  expect(author.parentElement).toHaveTextContent(/^by Dave216, Ceilick$/);
+  expect(author.parentElement).toHaveTextContent(/^by Dave216, Ceilick · Released on May 1, 2012$/);
   // Without a page, a name is plain text.
   expect(screen.queryByRole("button", { name: "Ceilick" })).toBeNull();
   await userEvent.click(author);
@@ -556,7 +556,7 @@ test("a game's page credits id Software, with the version's release date and tex
   );
   const { unmount } = renderDetail();
   const developer = await screen.findByRole("button", { name: "id Software" });
-  expect(developer.parentElement).toHaveTextContent(/^by id Software$/);
+  expect(developer.parentElement).toHaveTextContent(/^by id Software · Released on Feb 27, 1992$/);
   await userEvent.click(developer);
   expect(openUrl).toHaveBeenCalledWith("https://www.idsoftware.com");
   expect(screen.getByText("Released on Feb 27, 1992")).toBeInTheDocument();

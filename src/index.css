@@ -8,6 +8,9 @@
 @custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
 /* Focused by the controller, which `:focus-visible` misses once the mouse was used. */
 @custom-variant pad-focus (&:where([data-input="pad"] *):focus);
+/* Windows near the smallest (about 600px tall): the detail page's hero
+   tightens there, so the tabs below it stay in view. */
+@custom-variant short (@media (max-height: 44rem));
 
 /*
  * Design tokens (PLAN.md §8.1). Dark is the default theme; `data-theme` on
