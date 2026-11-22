@@ -243,7 +243,7 @@ function Credits({
     ) : profile.modId !== null && !profile.sourceMod && game ? (
       <RunsOn
         profile={profile}
-        game={game.title}
+        game={game.shortTitle}
         version={version?.label ?? t("library.unknownVersion")}
       />
     ) : null;

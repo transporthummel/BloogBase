@@ -305,7 +305,7 @@ test("a mod's page shows its credits, description, links and stats", async () =>
     /^Played over it: Pack$/,
   );
   expect(screen.getByText("Lego Keen").parentElement).toHaveTextContent(
-    `Runs on ${keen4.title} Unknown version and Lego Keen`,
+    `Runs on ${keen4.shortTitle} Unknown version and Lego Keen`,
   );
   await userEvent.click(screen.getByRole("button", { name: "KeenWiki" }));
   expect(openUrl).toHaveBeenCalledWith(aurora.keenwikiUrl);
