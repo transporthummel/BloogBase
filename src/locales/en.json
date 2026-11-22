@@ -546,6 +546,10 @@
     "noGame": "Standalone",
     "type": "Type",
     "sort": "Sort by",
+    "group": {
+      "featured": "Recommended",
+      "others": "More mods"
+    },
     "sortBy": {
       "featured": "Recommended",
       "newest": "Newest",

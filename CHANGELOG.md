@@ -42,6 +42,7 @@
 - In a wide window the Controls, Variants and Worlds tabs of a game's or mod's page use the whole width, with the variants and worlds two side by side; the readme, saves and settings stay as wide as they read well.
 - Discover names a source mod once, beside its tile ("Source mod · Standalone"), instead of again as a badge.
 - A game's page without a README lists Saves before Controls, so it opens on its first tab.
+- Sorted by "Recommended", Discover shows the recommended mods under a heading of their own and the rest under "More mods", instead of a "Recommended" badge on each; sorted otherwise the badge stays.
 
 ### Bug Fixes
 

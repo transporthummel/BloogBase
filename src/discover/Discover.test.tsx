@@ -723,3 +723,30 @@ test("a mod played over another says so and counts its download too", async () =
   expect(pack.getByText("Played over Aurora, which is installed with it")).toBeInTheDocument();
   expect(pack.getByRole("button", { name: "Install (4.0 MB)" })).toBeInTheDocument();
 });
+
+test("sorted by recommendation, the recommended mods get a heading instead of a badge each", async () => {
+  vi.mocked(commands.indexMods).mockResolvedValue({
+    status: "ok",
+    data: [mod(entry("Aurora", { featured: true })), mod(entry("Oblivion"))],
+  });
+  renderDiscover();
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { name: "Aurora" });
+
+  const featured = screen.getByRole("region", { name: "Recommended" });
+  expect(within(featured).getByRole("heading", { level: 2 })).toHaveTextContent("Recommended1");
+  expect(within(featured).getByRole("heading", { level: 3 })).toHaveTextContent("Aurora");
+  expect(within(card("Aurora")).queryByText("Recommended")).not.toBeInTheDocument();
+  const others = screen.getByRole("region", { name: "More mods" });
+  expect(within(others).getByRole("heading", { level: 3 })).toHaveTextContent("Oblivion");
+
+  // Sorted otherwise, one list, the badge on the card.
+  await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "name");
+  expect(screen.queryByRole("region", { name: "Recommended" })).not.toBeInTheDocument();
+  expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
+    "Aurora",
+    "Oblivion",
+  ]);
+  expect(within(card("Aurora")).getByText("Recommended")).toBeInTheDocument();
+  await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "featured");
+});

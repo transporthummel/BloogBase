@@ -546,6 +546,10 @@
     "noGame": "Allein lauffähig",
     "type": "Art",
     "sort": "Sortieren nach",
+    "group": {
+      "featured": "Empfohlen",
+      "others": "Weitere Mods"
+    },
     "sortBy": {
       "featured": "Empfohlen",
       "newest": "Neueste",

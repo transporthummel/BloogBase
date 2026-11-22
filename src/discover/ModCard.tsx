@@ -29,6 +29,8 @@ export function ModCard({
   games,
   archive,
   enterInstalls = false,
+  heading: Heading = "h2",
+  featuredBadge = true,
 }: {
   mod: IndexMod;
   installs: Install[];
@@ -37,6 +39,10 @@ export function ModCard({
   archive?: string;
   /** Enter installs or updates it, unless there's a warning to read. */
   enterInstalls?: boolean;
+  /** Its name's heading: h3 under a group's. */
+  heading?: "h2" | "h3";
+  /** Off under the "Recommended" group's heading, which says it already. */
+  featuredBadge?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const actions = useRef<HTMLDivElement>(null);
@@ -69,7 +75,7 @@ export function ModCard({
         <div className="flex gap-3">
           <GameTile gameId={entry.game} game={game} standalone={isSourceMod(entry)} />
           <div className="grid min-w-0 content-start gap-1">
-            <h2 className="leading-tight font-semibold">{entry.name}</h2>
+            <Heading className="leading-tight font-semibold">{entry.name}</Heading>
             <p className="text-xs text-muted">
               {/* A source mod is named here once, not again as a badge. */}
               {isSourceMod(entry)
@@ -95,7 +101,7 @@ export function ModCard({
           <StatusBadge status={entry.status} />
           {entry.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
           {mod.new && <Badge>{t("mods.new")}</Badge>}
-          {entry.featured && <Badge>{t("discover.featured")}</Badge>}
+          {entry.featured && featuredBadge && <Badge>{t("discover.featured")}</Badge>}
         </div>
         {description && <p className="text-sm">{description}</p>}
         {details.length > 0 && (

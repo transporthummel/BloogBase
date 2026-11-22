@@ -167,6 +167,19 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
     })
     .sort((a, b) => compare(sort)(a.entry, b.entry));
 
+  const featured = shown.filter((m) => m.entry.featured);
+  const grouped = sort === "featured" && featured.length > 0 && featured.length < shown.length;
+  const groups = grouped
+    ? [
+        { key: "featured", title: t("discover.group.featured"), mods: featured },
+        {
+          key: "others",
+          title: t("discover.group.others"),
+          mods: shown.filter((m) => !m.entry.featured),
+        },
+      ]
+    : [{ key: "all", title: "", mods: shown }];
+
   const st = status.data;
   return (
     <>
@@ -288,13 +301,35 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
         <Notice>{t("discover.noMatch")}</Notice>
       )}
 
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
-        {shown.map((mod) => (
-          <li key={mod.entry.id}>
-            <ModCard mod={mod} installs={owned} games={games} />
-          </li>
+      {/* Sorted by recommendation, the recommended ones get a heading of
+          their own instead of the same badge on every card. */}
+      <div className="grid gap-8">
+        {groups.map((group) => (
+          <section key={group.key} aria-label={grouped ? group.title : undefined}>
+            {grouped && (
+              <h2 className="mb-3 flex items-center gap-2 font-semibold">
+                {group.title}
+                <span className="min-w-6 rounded-full border border-border bg-surface-raised px-2 text-center font-pixel text-[0.6rem] leading-5 text-muted">
+                  {group.mods.length}
+                </span>
+              </h2>
+            )}
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
+              {group.mods.map((mod) => (
+                <li key={mod.entry.id}>
+                  <ModCard
+                    mod={mod}
+                    installs={owned}
+                    games={games}
+                    heading={grouped ? "h3" : "h2"}
+                    featuredBadge={!grouped}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
+      </div>
     </>
   );
 }
