@@ -133,12 +133,15 @@ test("a connected controller opens the controller view", async () => {
   expect(padSays("A")).toEqual(["A: Jump"]);
   expect(padSays("LB")).toEqual(["LB: Pogo on and off"]);
   expect(padSays("RT")).toEqual(["RT: Shoot"]);
-  // The window keys are the keyboard's in both views; no cheats here.
-  expect(keysFor("Window or full screen")).toBe("Alt+Enter");
+  // The window keys are the controller's here; no cheats.
+  expect(keysFor("Window or full screen")).toBe("View+RT");
+  expect(keysFor("Screenshot")).toBe("R3");
+  expect(keysFor("Start or stop a video")).toBe("View+LT");
   expect(screen.queryByText("Cheat codes")).not.toBeInTheDocument();
 
   await userEvent.click(screen.getByRole("button", { name: "Keyboard" }));
   expect(keysFor("Shoot")).toBe("Space");
+  expect(keysFor("Window or full screen")).toBe("Alt+Enter");
 });
 
 test("a PlayStation controller gets its own names", async () => {
@@ -148,6 +151,7 @@ test("a PlayStation controller gets its own names", async () => {
   expect(padSays("L1")).toEqual(["L1: Pogo on and off"]);
   expect(padSays("R2")).toEqual(["R2: Shoot"]);
   expect(padSays("Share")).toEqual(["Share: Hold: menu keys"]);
+  expect(keysFor("Start or stop a video")).toBe("Share+L2");
   await userEvent.click(screen.getByRole("button", { name: "Menus (hold Share)" }));
   expect(padSays("D-pad")).toEqual(["D-pad: Letters A–D, with L1: O–R"]);
   expect(screen.getByText("With Share held, you type:")).toBeInTheDocument();

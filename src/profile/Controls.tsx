@@ -26,6 +26,7 @@ import {
   type PadKeys,
   type PadSheet,
   padFor,
+  padWindow,
   type Sheet,
   sheetFor,
   spaceFires,
@@ -78,6 +79,32 @@ function Bindings({ items, prefix }: { items: Binding[]; prefix: "action" | "che
               </span>
             )}
           </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** DOSBox's hotkeys as the controller's buttons, named for its layout. */
+function PadBindings({ layout }: { layout: Controller }) {
+  const { t } = useTranslation();
+  return (
+    <ul className="grid grid-cols-[max-content_1fr] items-center gap-x-3 gap-y-2.5">
+      {padWindow.map((b) => (
+        <li key={b.action} className="contents">
+          <span className="flex shrink-0 items-center gap-1">
+            {b.buttons.map((button, i) => (
+              <Fragment key={button}>
+                {i > 0 && (
+                  <span className="text-xs text-muted" aria-hidden>
+                    +
+                  </span>
+                )}
+                <Keycap id={button} label={buttonName(layout, button)} />
+              </Fragment>
+            ))}
+          </span>
+          <span className="text-sm">{t(`controls.action.${b.action}`)}</span>
         </li>
       ))}
     </ul>
@@ -220,7 +247,11 @@ export function ControlsSheet({
   const ready = (chosen !== undefined || !connected.isPending) && !chosenLayout.isPending;
   const windowGroup = (
     <Group title={t("controls.window")} heading={heading}>
-      <Bindings items={sheet.window} prefix="action" />
+      {view === "controller" ? (
+        <PadBindings layout={layout} />
+      ) : (
+        <Bindings items={sheet.window} prefix="action" />
+      )}
     </Group>
   );
 

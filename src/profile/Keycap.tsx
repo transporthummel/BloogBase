@@ -1,11 +1,19 @@
 import { useTranslation } from "react-i18next";
 import { arrows, keyLabel } from "./keyLabel";
 
-/** One key, drawn as a keycap. */
-export function Keycap({ id, changed = false }: { id: string; changed?: boolean }) {
+/** One key, drawn as a keycap; `label` names a controller's button instead. */
+export function Keycap({
+  id,
+  changed = false,
+  label: named,
+}: {
+  id: string;
+  changed?: boolean;
+  label?: string;
+}) {
   const { t } = useTranslation();
-  const arrow = arrows[id];
-  const label = keyLabel(id, t);
+  const arrow = named === undefined ? arrows[id] : undefined;
+  const label = named ?? keyLabel(id, t);
   return (
     <kbd
       aria-label={arrow ? t(`controls.key.${id}`) : undefined}

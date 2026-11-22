@@ -1,4 +1,5 @@
 import type { Engine, Firing, Game, GameKeys } from "../bindings";
+import type { NamedButton } from "../gamepad/buttons";
 import { keyId } from "../settings/scancodes";
 
 /** Keys pressed together, e.g. `["ctrl", "alt"]`. Letters and digits stand for themselves. */
@@ -277,3 +278,13 @@ export function padFor(engine: Engine, space: boolean): PadSheet {
     ],
   };
 }
+
+/**
+ * DOSBox's window and recording hotkeys on the controller, the same in
+ * every series (`HOTKEYS` in `src-tauri/src/keymap.rs`).
+ */
+export const padWindow: { buttons: NamedButton[]; action: string }[] = [
+  { buttons: ["view", "rt"], action: "fullscreen" },
+  { buttons: ["r3"], action: "screenshot" },
+  { buttons: ["view", "lt"], action: "video" },
+];
