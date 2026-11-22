@@ -745,7 +745,7 @@
     "restoreVersionNamed": "Version vom {{date}} wiederherstellen",
     "versionRestored": "Frühere Version wiederhergestellt.",
     "importFolder": "Aus Ordner importieren…",
-    "importFolderHint": "Spielstände aus einer alten Kopie des Spiels oder der Mod: Wähle den Ordner, in dem ihr Programm liegt.",
+    "importFolderHint": "Spielstände aus einer alten Kopie des Spiels oder der Mod: Wähle den Ordner mit der EXE-Datei, mit der du gespielt hast.",
     "importFolderTitle": "Spielstände aus „{{name}}“ importieren",
     "importedFromFolder": "Spielstände importiert."
   },

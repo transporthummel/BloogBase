@@ -745,7 +745,7 @@
     "restoreVersionNamed": "Restore the version from {{date}}",
     "versionRestored": "Earlier version restored.",
     "importFolder": "Import from folder…",
-    "importFolderHint": "Saves from an old copy of the game or mod: pick the folder its program is in.",
+    "importFolderHint": "Saves from an old copy of the game or mod: pick the folder with the EXE file you played it with.",
     "importFolderTitle": "Import saves from “{{name}}”",
     "importedFromFolder": "Saves imported."
   },
