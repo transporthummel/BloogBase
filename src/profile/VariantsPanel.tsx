@@ -86,7 +86,7 @@ export function VariantsPanel({
                     <span className="select-text">{name}</span>
                     {/* As in the dialog of the first Play: the mod's own way to play. */}
                     {v.default && <Badge>{t("variants.default")}</Badge>}
-                    {active && <Badge>{t("variants.current")}</Badge>}
+                    {active && <Badge tone="status">{t("variants.current")}</Badge>}
                   </h2>
                   {description && <p className="text-xs text-muted select-text">{description}</p>}
                   <p className="text-xs text-muted">
