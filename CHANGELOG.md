@@ -41,6 +41,7 @@
 - A game's or mod's page names the authors and the release date in one line, and in a window about 600 pixels tall tightens its top and runs play time and the other figures on as a line, so the tabs stay in view.
 - In a wide window the Controls, Variants and Worlds tabs of a game's or mod's page use the whole width, with the variants and worlds two side by side; the readme, saves and settings stay as wide as they read well.
 - Discover names a source mod once, beside its tile ("Source mod · Standalone"), instead of again as a badge.
+- A game's page without a README lists Saves before Controls, so it opens on its first tab.
 
 ### Bug Fixes
 

@@ -134,6 +134,9 @@ export function ProfileDetail({
     );
   }
 
+  const readme = !!readmes.data?.length;
+  const gameKeys = !!game && !profile?.modId;
+  const controls = { id: "controls" as const, label: t("profile.tabControls") };
   const tabs: TabItem<Tab>[] = [
     // What to play comes first for a mod with worlds or variants.
     ...(profile?.worlds
@@ -154,27 +157,24 @@ export function ProfileDetail({
           },
         ]
       : []),
-    ...(readmes.data?.length ? [{ id: "readme" as const, label: t("profile.tabReadme") }] : []),
-    // A game's keys are what its page is read for; a mod's own README comes first.
-    ...(game && !profile?.modId
-      ? [{ id: "controls" as const, label: t("profile.tabControls") }]
-      : []),
+    ...(readme ? [{ id: "readme" as const, label: t("profile.tabReadme") }] : []),
+    // A game's keys are what its page is read for, after its README; without
+    // one after the saves, so the page opens on its first tab. A mod's own
+    // README comes first.
+    ...(gameKeys && readme ? [controls] : []),
     { id: "saves", label: t("profile.tabSaves"), count: saves.data?.length },
+    ...(gameKeys && !readme ? [controls] : []),
     {
       id: "screenshots",
       label: t("profile.tabScreenshots"),
       count: shots.data?.length,
     },
     { id: "videos", label: t("profile.tabVideos"), count: videos.data?.length },
-    ...(game && profile?.modId
-      ? [{ id: "controls" as const, label: t("profile.tabControls") }]
-      : []),
+    ...(game && profile?.modId ? [controls] : []),
     { id: "config", label: t("profile.tabConfig") },
   ];
-  // Opens on the worlds or variants, else the README, else the saves, as
-  // before there was a Controls tab.
-  const opening = ["worlds", "variants", "readme"].includes(tabs[0].id) ? tabs[0].id : "saves";
-  const tab = tabs.find((x) => x.id === picked)?.id ?? opening;
+  // Opens on the first: the worlds or variants, else the README, else the saves.
+  const tab = tabs.find((x) => x.id === picked)?.id ?? tabs[0].id;
   // Wait for the README so the first tab doesn't change under the player.
   const tabsReady = !(readmes.isEnabled && readmes.isPending);
 

@@ -972,9 +972,18 @@ test("no placeholder flashes up while the title screen is read", async () => {
 test("tabs follow the arrow keys", async () => {
   vi.mocked(commands.listScreenshots).mockResolvedValue(ok([]));
   renderDetail();
+  // A game without a README opens on its first tab, the saves, its keys next.
   const saves = await screen.findByRole("tab", { name: /^Saves/ });
+  expect(screen.getAllByRole("tab").map((x) => x.textContent)).toEqual([
+    "Saves 2",
+    "Controls",
+    "Screenshots",
+    "Videos",
+    "Settings",
+  ]);
+  expect(saves).toHaveAttribute("aria-selected", "true");
   saves.focus();
-  await userEvent.keyboard("{ArrowRight}");
+  await userEvent.keyboard("{ArrowRight}{ArrowRight}");
   const shots = screen.getByRole("tab", { name: /^Screenshots/ });
   expect(shots).toHaveFocus();
   expect(shots).toHaveAttribute("aria-selected", "true");
@@ -982,7 +991,7 @@ test("tabs follow the arrow keys", async () => {
   await userEvent.keyboard("{End}");
   expect(screen.getByRole("tab", { name: "Settings" })).toHaveFocus();
   await userEvent.keyboard("{ArrowRight}");
-  expect(screen.getByRole("tab", { name: "Controls" })).toHaveFocus();
+  expect(screen.getByRole("tab", { name: /^Saves/ })).toHaveFocus();
 });
 
 test("screenshots open in a viewer and delete after a second click", async () => {
