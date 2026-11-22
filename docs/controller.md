@@ -105,7 +105,11 @@ Keen 4-6 and Keen Dreams:
 LB pressed with View held is DOSBox's first modifier (`mod_1`), a second
 layer of letters for save names, and doesn't pogo. In every engine,
 View+RT toggles window and full screen (DOSBox's `hand_fullscr`, as
-Alt+Enter).
+Alt+Enter) and View+LT starts or stops a video (`hand_video`, as Ctrl+F7).
+Pressing the right stick takes a screenshot (`hand_scrshot`, as Ctrl+F5)
+without View; Keen doesn't use it while playing, and with View held it
+types its menu key instead. A stray press only costs a picture, so it needs
+no modifier; a stray recording would run on unnoticed, so it does.
 
 ### The mapper file
 

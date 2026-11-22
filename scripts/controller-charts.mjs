@@ -203,13 +203,17 @@ function games(layout) {
     dpad: [L("Bewegen", "Move"), L("auch schräg", "diagonals too")],
     menu: [L("Menü (Esc)", "Menu (Esc)")],
     view: [L("Halten: Menütasten", "Hold: menu keys")],
+    rs: [L("Drücken: Screenshot", "Press: screenshot")],
   };
   const answers = {
     a: [L("Bestätigen (Enter)", "Confirm (Enter)")],
     x: [L("Nein (N)", "No (N)")],
     y: [L("Ja (Y)", "Yes (Y)")],
   };
-  const full = { rt: [L("Fenster oder Vollbild", "Window or full screen")] };
+  const full = {
+    lt: [L("Video starten oder beenden", "Start or stop a video")],
+    rt: [L("Fenster oder Vollbild", "Window or full screen")],
+  };
   const hold = { view: [L("Gedrückt halten", "Hold down")] };
   const letters = {
     dpad: [

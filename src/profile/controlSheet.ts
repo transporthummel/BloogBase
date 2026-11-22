@@ -206,6 +206,7 @@ export function padFor(engine: Engine, space: boolean): PadSheet {
     { input: "dpad", label: "pad.move", more: "diagonal" },
     { input: "menu", label: "action.menu" },
     { input: "view", label: "pad.menuKeys" },
+    { input: "rs", label: "pad.screenshot" },
   ];
   const fire = (label: string): PadBinding[] =>
     (["x", "lt", "rt"] as const).map((input) => ({ input, label }));
@@ -233,6 +234,7 @@ export function padFor(engine: Engine, space: boolean): PadSheet {
         { input: "menu", label: "pad.dos" },
         { input: "rb", label: "pad.save" },
         { input: "lb", label: "pad.sound" },
+        { input: "lt", label: "action.video" },
         { input: "rt", label: "pad.fullscreen" },
         { input: "rs", label: "pad.slots", values: { from: "1", to: "4" }, more: "slot9" },
         { input: "dpad", label: "pad.slots", values: { from: "5", to: "8" } },
@@ -261,6 +263,7 @@ export function padFor(engine: Engine, space: boolean): PadSheet {
       ...answers,
       { input: "b", label: "pad.back" },
       { input: "lb", label: "pad.moreLetters" },
+      { input: "lt", label: "action.video" },
       { input: "rt", label: "pad.fullscreen" },
       letters("A", "D", "O–R"),
       { ...letters("E", "I", "S–W"), input: "rs" },

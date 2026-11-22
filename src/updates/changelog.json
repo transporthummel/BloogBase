@@ -3,6 +3,7 @@
     "en": [
       "Saves can be imported from a folder, e.g. an old copy of the game.",
       "Games and demos have a description, their release date and id Software as the author.",
+      "On the controller, R3 takes a screenshot and View+LT records a video.",
       "Discover can hide the mods you have installed.",
       "Discover's filters are buttons now, the games as tiles, and can choose several games and types.",
       "The game a mod runs on links to the game's page.",
@@ -35,6 +36,7 @@
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
       "Spiele und Demos haben eine Beschreibung, ihr Erscheinungsdatum und id Software als Autor.",
+      "Am Controller macht R3 einen Screenshot und View+LT ein Video.",
       "Entdecken kann installierte Mods ausblenden.",
       "Die Filter in Entdecken sind jetzt Knöpfe, die Spiele als Kacheln, mit mehreren Spielen und Arten zugleich.",
       "Das Spiel, mit dem eine Mod läuft, verlinkt auf seine Seite.",

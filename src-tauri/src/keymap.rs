@@ -495,9 +495,19 @@ fn menu(engine: Engine) -> Pad {
     }
 }
 
-/// DOSBox's own hotkeys on the controller, with View held, in every engine.
-/// View+RT: window or full screen (Alt+Enter).
-const WINDOW: Pad = &[("hand_fullscr", &[(Input::Rt, V)])];
+/// DOSBox's own hotkeys on the controller, in every engine. View+RT: window
+/// or full screen (Alt+Enter); View+LT: start or stop a video (Ctrl+F7), both
+/// free with View held. Pressing the right stick: a screenshot (Ctrl+F5),
+/// free while playing; with View held it types a menu key instead. A stray
+/// press only costs a picture, so it needs no View.
+const HOTKEYS: Pad = {
+    use Input::*;
+    &[
+        ("hand_fullscr", &[(Rt, V)]),
+        ("hand_video", &[(Lt, V)]),
+        ("hand_scrshot", &[(RsClick, "")]),
+    ]
+};
 
 /// The mapper file for a layout, engine and the game's controls, given the
 /// host key (SDL scancode) of each letter that has one and the controller's
@@ -543,7 +553,7 @@ pub fn mapper(
         .map(|(event, inputs)| (event, inputs.into_iter().map(|i| (i, "")).collect()));
     let menu = menu(engine)
         .iter()
-        .chain(WINDOW)
+        .chain(HOTKEYS)
         .map(|(event, binds)| (event.to_string(), binds.to_vec()));
     for (event, binds) in playing.chain(menu) {
         out.push_str(&event);
@@ -658,11 +668,12 @@ mod tests {
         assert_eq!(unique.len(), hosts.len());
     }
 
-    /// The lines for playing: those without View.
+    /// The game's keys for playing: those without View.
     fn playing(engine: Engine, controls: &Controls) -> Vec<String> {
         mapper(&[], engine, controls, Controller::Xbox, Numbering::Windows)
             .lines()
             .filter(|l| l.contains("\"stick_0 ") && !l.contains("mod3"))
+            .filter(|l| !l.starts_with("hand_"))
             .map(str::to_string)
             .collect()
     }
@@ -773,6 +784,42 @@ mod tests {
                 1,
                 "{engine:?}"
             );
+        }
+    }
+
+    #[test]
+    fn view_and_lt_record_and_r3_takes_a_screenshot_in_every_engine() {
+        for engine in [Engine::Vorticons, Engine::Galaxy, Engine::Dreams] {
+            for (numbering, lt, r3) in [
+                (Numbering::Windows, "stick_0 axis 4 1", "stick_0 button 9"),
+                (Numbering::Linux, "stick_0 axis 2 1", "stick_0 button 10"),
+            ] {
+                let map = mapper(&[], engine, &default(engine), Controller::Xbox, numbering);
+                let lines = |event: &str| {
+                    map.lines()
+                        .filter(|l| l.starts_with(&format!("{event} ")))
+                        .collect::<Vec<_>>()
+                };
+                // DOSBox's Ctrl+F7 and Ctrl+F5 stay, the controller adds to them.
+                assert_eq!(
+                    lines("hand_video"),
+                    [
+                        "hand_video \"key 64 mod1\"",
+                        &format!("hand_video \"{lt} mod3\"")
+                    ]
+                );
+                assert_eq!(
+                    lines("hand_scrshot"),
+                    [
+                        "hand_scrshot \"key 62 mod1\"",
+                        &format!("hand_scrshot \"{r3}\"")
+                    ]
+                );
+                // Nothing else uses LT with View held, or R3 without it.
+                let what = format!("{engine:?} {numbering:?}");
+                assert_eq!(map.matches(&format!("\"{lt} mod3\"")).count(), 1, "{what}");
+                assert_eq!(map.matches(&format!("\"{r3}\"")).count(), 1, "{what}");
+            }
         }
     }
 

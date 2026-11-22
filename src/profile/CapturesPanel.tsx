@@ -23,6 +23,7 @@ export function CapturesPanel<T extends Capture>({
   profile,
   kind,
   hotkey,
+  padHotkey,
   captures,
   queryKey,
   remove: removeFile,
@@ -32,6 +33,8 @@ export function CapturesPanel<T extends Capture>({
   profile: Profile;
   kind: "screenshots" | "videos";
   hotkey: string;
+  /** The same on the controller. */
+  padHotkey: string;
   captures: UseQueryResult<T[]>;
   queryKey: readonly unknown[];
   remove: (file: string) => Promise<unknown>;
@@ -73,7 +76,9 @@ export function CapturesPanel<T extends Capture>({
       {list.length > 0 && (
         // The buttons keep their place on the right; the hint wraps beside them.
         <div className="flex items-center gap-3">
-          <p className="mr-auto text-sm text-muted">{t(`${kind}.hint`, { key: hotkey })}</p>
+          <p className="mr-auto text-sm text-muted">
+            {t(`${kind}.hint`, { key: hotkey, pad: padHotkey })}
+          </p>
           <div className="flex shrink-0 gap-2">
             {copy.button}
             <Button variant="secondary" onClick={() => openFolder.mutate()}>
@@ -88,7 +93,9 @@ export function CapturesPanel<T extends Capture>({
       {captures.isPending && <Loading />}
       {captures.data?.length === 0 && (
         <EmptyState title={t(`${kind}.emptyTitle`)}>
-          <p className="max-w-md text-sm text-muted">{t(`${kind}.empty`, { key: hotkey })}</p>
+          <p className="max-w-md text-sm text-muted">
+            {t(`${kind}.empty`, { key: hotkey, pad: padHotkey })}
+          </p>
         </EmptyState>
       )}
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-3">

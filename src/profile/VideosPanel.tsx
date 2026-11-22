@@ -4,6 +4,8 @@ import { useTranslation } from "react-i18next";
 import { commands, type Profile, type Video } from "../bindings";
 import { unwrap } from "../ipc";
 import { CapturesPanel } from "./CapturesPanel";
+import { buttonName } from "../gamepad/buttons";
+import { usePadLayout } from "./controller";
 import { keyLabel } from "./keyLabel";
 import { formatDuration, useVideos, videosKey } from "./captures";
 import { VideoPlayer } from "./VideoPlayer";
@@ -32,11 +34,15 @@ function Poster({ video }: { video: Video }) {
 /** Videos the player recorded in DOSBox, played in the app (§8.3). */
 export function VideosPanel({ profile }: { profile: Profile }) {
   const { t } = useTranslation();
+  // keymap.rs: View+LT.
+  const layout = usePadLayout();
+  const pad = `${buttonName(layout, "view")} + ${buttonName(layout, "lt")}`;
   return (
     <CapturesPanel
       profile={profile}
       kind="videos"
       hotkey={hotkey(t)}
+      padHotkey={pad}
       captures={useVideos(profile.id)}
       queryKey={videosKey(profile.id)}
       remove={(file) => unwrap(commands.deleteVideo(profile.id, file))}

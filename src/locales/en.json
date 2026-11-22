@@ -871,10 +871,10 @@
     "openInApp": "Open in default app"
   },
   "screenshots": {
-    "hint": "Press {{key}} while playing to take a screenshot.",
+    "hint": "Press {{key}} while playing, or {{pad}} on the controller, to take a screenshot.",
     "openFolder": "Open folder",
     "emptyTitle": "No screenshots yet",
-    "empty": "Press {{key}} while playing to keep a moment. Your screenshots show up here.",
+    "empty": "Press {{key}} while playing, or {{pad}} on the controller, to keep a moment. Your screenshots show up here.",
     "view": "Screenshot from {{date}}",
     "alt": "Screenshot of {{game}}",
     "newer": "Newer screenshot",
@@ -884,9 +884,9 @@
     "confirmDelete": "Really delete?"
   },
   "videos": {
-    "hint": "Press {{key}} while playing to start or stop recording.",
+    "hint": "Press {{key}} while playing, or {{pad}} on the controller, to start or stop recording.",
     "emptyTitle": "No videos yet",
-    "empty": "Press {{key}} while playing to start recording and again to stop. Your videos show up here.",
+    "empty": "Press {{key}} while playing, or {{pad}} on the controller, to start recording and again to stop. Your videos show up here.",
     "view": "Video from {{date}}",
     "newer": "Newer video",
     "older": "Older video",
@@ -1100,6 +1100,7 @@
       "move": "Move",
       "diagonal": "diagonals too",
       "menuKeys": "Hold: menu keys",
+      "screenshot": "Press: screenshot",
       "fireBoth": "Shoot (Jump + Pogo)",
       "confirm": "Confirm (Enter)",
       "confirm_mac": "Confirm (↩ return)",

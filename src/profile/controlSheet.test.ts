@@ -108,3 +108,13 @@ test("each input has one job per layout", () => {
     }
   }
 });
+
+test("pressing the right stick takes a screenshot, View+LT records, in every series", () => {
+  // keymap.rs: HOTKEYS.
+  for (const engine of ["vorticons", "galaxy", "dreams"] as const) {
+    const sheet = padFor(engine, true);
+    expect(pad(sheet.play, "rs")).toEqual(["pad.screenshot"]);
+    expect(pad(sheet.menu, "lt")).toEqual(["action.video"]);
+    expect(pad(sheet.menu, "rt")).toEqual(["pad.fullscreen"]);
+  }
+});

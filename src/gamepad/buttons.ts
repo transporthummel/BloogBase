@@ -2,11 +2,11 @@ import type { Controller } from "../bindings";
 import { padId } from "./usePad";
 
 /** The buttons named by text, not drawn. */
-export type NamedButton = "lb" | "rb" | "lt" | "rt" | "view" | "menu" | "l3";
+export type NamedButton = "lb" | "rb" | "lt" | "rt" | "view" | "menu" | "l3" | "r3";
 
 /** What's printed on them (or next to them). */
 const NAMES: Record<Controller, Record<NamedButton, string>> = {
-  xbox: { lb: "LB", rb: "RB", lt: "LT", rt: "RT", view: "View", menu: "Menu", l3: "L3" },
+  xbox: { lb: "LB", rb: "RB", lt: "LT", rt: "RT", view: "View", menu: "Menu", l3: "L3", r3: "R3" },
   playstation: {
     lb: "L1",
     rb: "R1",
@@ -15,6 +15,7 @@ const NAMES: Record<Controller, Record<NamedButton, string>> = {
     view: "Share",
     menu: "Options",
     l3: "L3",
+    r3: "R3",
   },
 };
 

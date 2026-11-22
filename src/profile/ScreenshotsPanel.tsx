@@ -2,6 +2,8 @@ import { useTranslation } from "react-i18next";
 import { commands, type Profile } from "../bindings";
 import { unwrap } from "../ipc";
 import { CapturesPanel } from "./CapturesPanel";
+import { buttonName } from "../gamepad/buttons";
+import { usePadLayout } from "./controller";
 import { keyLabel } from "./keyLabel";
 import { screenshotSrc, screenshotsKey, useScreenshots } from "./captures";
 
@@ -13,11 +15,14 @@ function hotkey(t: (key: string) => string): string {
 /** Screenshots the player took in DOSBox, with a viewer (§8.3). */
 export function ScreenshotsPanel({ profile }: { profile: Profile }) {
   const { t } = useTranslation();
+  // keymap.rs: pressing the right stick.
+  const pad = buttonName(usePadLayout(), "r3");
   return (
     <CapturesPanel
       profile={profile}
       kind="screenshots"
       hotkey={hotkey(t)}
+      padHotkey={pad}
       captures={useScreenshots(profile.id)}
       queryKey={screenshotsKey(profile.id)}
       remove={(file) => unwrap(commands.deleteScreenshot(profile.id, file))}

@@ -871,10 +871,10 @@
     "openInApp": "Im Standardprogramm öffnen"
   },
   "screenshots": {
-    "hint": "Drücke beim Spielen {{key}}, um einen Screenshot zu machen.",
+    "hint": "Drücke beim Spielen {{key}} oder am Controller {{pad}}, um einen Screenshot zu machen.",
     "openFolder": "Ordner öffnen",
     "emptyTitle": "Noch keine Screenshots",
-    "empty": "Drücke beim Spielen {{key}}, um einen Moment festzuhalten. Deine Screenshots erscheinen dann hier.",
+    "empty": "Drücke beim Spielen {{key}} oder am Controller {{pad}}, um einen Moment festzuhalten. Deine Screenshots erscheinen dann hier.",
     "view": "Screenshot vom {{date}}",
     "alt": "Screenshot von {{game}}",
     "newer": "Neuerer Screenshot",
@@ -884,9 +884,9 @@
     "confirmDelete": "Wirklich löschen?"
   },
   "videos": {
-    "hint": "Drücke beim Spielen {{key}}, um eine Aufnahme zu starten oder zu beenden.",
+    "hint": "Drücke beim Spielen {{key}} oder am Controller {{pad}}, um eine Aufnahme zu starten oder zu beenden.",
     "emptyTitle": "Noch keine Videos",
-    "empty": "Drücke beim Spielen {{key}}, um eine Aufnahme zu starten, und noch einmal, um sie zu beenden. Deine Videos erscheinen dann hier.",
+    "empty": "Drücke beim Spielen {{key}} oder am Controller {{pad}}, um eine Aufnahme zu starten, und noch einmal, um sie zu beenden. Deine Videos erscheinen dann hier.",
     "view": "Video vom {{date}}",
     "newer": "Neueres Video",
     "older": "Älteres Video",
@@ -1100,6 +1100,7 @@
       "move": "Bewegen",
       "diagonal": "auch schräg",
       "menuKeys": "Halten: Menütasten",
+      "screenshot": "Drücken: Screenshot",
       "fireBoth": "Schießen (Springen + Pogo)",
       "confirm": "Bestätigen (Enter)",
       "confirm_mac": "Bestätigen (↩ Return)",
