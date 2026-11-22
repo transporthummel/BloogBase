@@ -84,6 +84,8 @@ export function VariantsPanel({
                   {/* Next below the page's title: the tab has no heading of its own. */}
                   <h2 className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                     <span className="select-text">{name}</span>
+                    {/* As in the dialog of the first Play: the mod's own way to play. */}
+                    {v.default && <Badge>{t("variants.default")}</Badge>}
                     {active && <Badge>{t("variants.current")}</Badge>}
                   </h2>
                   {description && <p className="text-xs text-muted select-text">{description}</p>}

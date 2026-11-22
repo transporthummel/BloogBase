@@ -37,6 +37,7 @@
 - With one-button firing on, a mod's or game's page says why it stays off there: the mod changes the controls itself, or it doesn't work with the game's version.
 - Removing a game names the mod played on it in "Also remove …" when there's one, and says of a single one "it" instead of "they".
 - A long description on a game's or mod's page shows three lines, cut after a word, with "Read more" for the rest, so Play stays in view.
+- The Variants tab of a mod's page marks the mod's default variant as "Default", as the dialog of the first Play does.
 - A game's or mod's page names the authors and the release date in one line, and in a window about 600 pixels tall tightens its top and runs play time and the other figures on as a line, so the tabs stay in view.
 - In a wide window the Controls, Variants and Worlds tabs of a game's or mod's page use the whole width, with the variants and worlds two side by side; the readme, saves and settings stay as wide as they read well.
 

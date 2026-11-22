@@ -1853,8 +1853,10 @@ test("the Variants tab lists them and makes one current without playing", async 
   await userEvent.click(await screen.findByRole("tab", { name: "Variants 2" }));
   const rows = await screen.findAllByRole("listitem");
   expect(rows[0]).toHaveTextContent("Hard");
+  expect(rows[0]).toHaveTextContent("Default");
   expect(rows[0]).toHaveTextContent("Not played yet");
   expect(rows[1]).toHaveTextContent("Current");
+  expect(rows[1]).not.toHaveTextContent("Default");
   expect(rows[1]).toHaveTextContent("2 saves");
   expect(screen.getByRole("button", { name: "Easy is already current" })).toBeDisabled();
   await userEvent.click(screen.getByRole("button", { name: "Make Hard current without playing" }));
