@@ -71,8 +71,9 @@ export function ModCard({
           <div className="grid min-w-0 content-start gap-1">
             <h2 className="leading-tight font-semibold">{entry.name}</h2>
             <p className="text-xs text-muted">
+              {/* A source mod is named here once, not again as a badge. */}
               {isSourceMod(entry)
-                ? t("mods.standalone")
+                ? `${t("mods.sourceMod")} · ${t("mods.standalone")}`
                 : needsNoGame(entry)
                   ? `${gameTitle(games, entry.game)} · ${t("mods.standalone")}`
                   : gameTitle(games, entry.game)}
@@ -92,7 +93,6 @@ export function ModCard({
           {mod.updateAvailable && <Badge tone="status">{t("discover.updateBadge")}</Badge>}
           <Badge>{t(`discover.kind.${entry.type}`)}</Badge>
           <StatusBadge status={entry.status} />
-          {isSourceMod(entry) && <Badge>{t("mods.sourceMod")}</Badge>}
           {entry.worlds && <Badge>{t("mods.randomWorlds")}</Badge>}
           {mod.new && <Badge>{t("mods.new")}</Badge>}
           {entry.featured && <Badge>{t("discover.featured")}</Badge>}

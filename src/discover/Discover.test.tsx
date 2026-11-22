@@ -444,8 +444,9 @@ test("standalone mods are under no game and install on none", async () => {
   await screen.findByRole("heading", { name: "Foray" });
 
   const foray = within(card("Foray"));
-  expect(foray.getByText("Standalone")).toBeInTheDocument();
-  expect(foray.getByText("Source mod")).toBeInTheDocument();
+  // Named once, beside the tile, not again as a badge.
+  expect(foray.getByText("Source mod · Standalone")).toBeInTheDocument();
+  expect(foray.queryByText("Source mod")).not.toBeInTheDocument();
   const heading = () => screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
   await user.click(screen.getByRole("checkbox", { name: "I can play" }));
   expect(heading()).toEqual(["Foray"]);

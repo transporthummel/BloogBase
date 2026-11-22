@@ -35,7 +35,8 @@
       "Down from a tab with the controller no longer jumps to the sidebar.",
       "Up from inside a tab with the controller goes to the tab first.",
       "Up from a tab with the controller goes to Play, and back down to the tab.",
-      "The Variants tab marks the default variant."
+      "The Variants tab marks the default variant.",
+      "Discover names source mods once instead of twice."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -72,7 +73,8 @@
       "Mit dem Controller springt der Fokus von einem Tab nach unten nicht mehr in die Seitenleiste.",
       "Mit dem Controller geht es aus einem Tab nach oben zuerst zum Tab.",
       "Mit dem Controller geht es vom Tab nach oben zu „Spielen“ und wieder zurück zum Tab.",
-      "Der Tab „Varianten“ kennzeichnet die Standard-Variante."
+      "Der Tab „Varianten“ kennzeichnet die Standard-Variante.",
+      "Entdecken nennt Source-Mods einmal statt doppelt."
     ]
   },
   "releases": [
