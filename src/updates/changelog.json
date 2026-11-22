@@ -38,7 +38,8 @@
       "The Variants tab marks the default variant.",
       "Discover names source mods once instead of twice.",
       "A game's page opens on its first tab, the saves.",
-      "Discover shows recommended mods under their own heading."
+      "Discover shows recommended mods under their own heading.",
+      "In a narrow window, the Options button beside Play is no longer cut off."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -78,7 +79,8 @@
       "Der Tab „Varianten“ kennzeichnet die Standard-Variante.",
       "Entdecken nennt Source-Mods einmal statt doppelt.",
       "Die Seite eines Spiels öffnet auf ihrem ersten Tab, den Spielständen.",
-      "Entdecken zeigt empfohlene Mods unter einer eigenen Überschrift."
+      "Entdecken zeigt empfohlene Mods unter einer eigenen Überschrift.",
+      "Im schmalen Fenster wird der Knopf „Optionen“ neben „Spielen“ nicht mehr abgeschnitten."
     ]
   },
   "releases": [

@@ -155,12 +155,15 @@ export function ProfileActions({
 
   return (
     <div className="grid gap-3">
-      <div className="flex items-stretch gap-2">
+      {/* Wraps in a narrow hero (800 px window, split button) rather than clip "Options". */}
+      <div className="flex flex-wrap items-stretch gap-2">
         {choices.split && !blocked && !profile.running ? (
           <SplitButton
             onClick={choices.split.play}
             disabled={!canPlay}
-            className="min-w-44 px-8 py-3 text-base"
+            // min-w-40: with its menu half and "Options" beside it, the row
+            // fits the hero's text column from 1024 px up.
+            className="min-w-40 px-8 py-3 text-base"
             menuLabel={t(`${choices.split.kind}.more`)}
             items={choices.split.items}
           >

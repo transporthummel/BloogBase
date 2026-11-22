@@ -56,6 +56,7 @@
 - In the dark theme, the arrow beside "Play" or "Continue world" no longer casts a shadow onto the button's left half.
 - A document that a mod variant copies into its folder, such as the readme of Shadow Keen 1's original part 1, is listed once instead of twice.
 - A mod variant from an archive of its own, such as Shadow Keen 1's 2005 remake, no longer shows the readme of the mod's main download, which belongs to another release.
+- In a narrow window (800 px), a mod page's Options button no longer gets cut off beside a Play button with a menu; the row wraps.
 
 ### Misc
 
