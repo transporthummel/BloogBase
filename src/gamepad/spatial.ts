@@ -5,7 +5,9 @@ import type { Direction } from "./pad";
  * one in a direction, like Edge on the Xbox (PLAN.md §15). What lies in line
  * with the focus (overlaps it across the direction) comes first, as on
  * Android: down from a link above the tabs goes to the tabs, not to the
- * sidebar beside it that is nearer as the crow flies.
+ * sidebar beside it that is nearer as the crow flies. Up and down stay in
+ * the page or the sidebar while it has something there: the sidebar is a
+ * column of its own, reached sideways.
  */
 
 const FOCUSABLE =
@@ -106,14 +108,20 @@ function gaps(f: DOMRect, r: DOMRect, dir: Direction) {
   return { along, across, inLine: overlap > 0, centres };
 }
 
+/** The part of the window an element is in: the page (`<main>`), the sidebar, or neither. */
+function region(el: Element): Element | null {
+  return el.closest("main") ?? el.closest("nav");
+}
+
 /**
- * The nearest candidate in `dir` from `from` inside `scope`, if any: in line
- * with it the nearest along the direction, else the nearest at all, a step
- * across counting twice.
+ * The nearest candidate in `dir` from `from` inside `scope`, if any: up and
+ * down in its own region first; in line with it the nearest along the
+ * direction, else the nearest at all, a step across counting twice.
  */
 export function nextFocus(from: Element, dir: Direction, scope: Element): HTMLElement | null {
   const f = from.getBoundingClientRect();
   const p = exitPoint(f, dir);
+  const home = dir === "up" || dir === "down" ? region(from) : null;
   let best: HTMLElement | null = null;
   let bestScore: number[] = [];
   for (const el of candidates(scope)) {
@@ -121,9 +129,10 @@ export function nextFocus(from: Element, dir: Direction, scope: Element): HTMLEl
     const r = el.getBoundingClientRect();
     if (!inDirection(r, dir, p)) continue;
     const g = gaps(f, r, dir);
+    const away = home && region(el) !== home ? 1 : 0;
     const score = g.inLine
-      ? [0, g.along, g.centres]
-      : [1, Math.hypot(g.along, g.across) + g.across, g.centres];
+      ? [away, 0, g.along, g.centres]
+      : [away, 1, Math.hypot(g.along, g.across) + g.across, g.centres];
     if (!best || before(score, bestScore)) {
       best = el;
       bestScore = score;

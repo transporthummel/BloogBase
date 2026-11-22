@@ -47,6 +47,25 @@ describe("nextFocus", () => {
     expect(nextFocus(get("from"), "down", document.body)?.id).toBe("nav");
   });
 
+  it("stays in the page going down, though the sidebar is nearer", () => {
+    // A tab with the tab's own buttons far to the right (Controls).
+    const get = page(`
+      <nav><button id="nav">fullscreen</button></nav>
+      <main><button id="from">tab</button><button id="right">keyboard</button></main>`);
+    at(get("nav"), 8, 680, 230, 48);
+    at(get("from"), 395, 450, 95, 38);
+    at(get("right"), 1345, 505, 80, 38);
+    expect(nextFocus(get("from"), "down", document.body)?.id).toBe("right");
+    // Sideways and with nothing left in the page, the sidebar.
+    expect(nextFocus(get("from"), "left", document.body)?.id).toBe("nav");
+    at(get("right"), 1345, 300, 80, 38);
+    expect(nextFocus(get("from"), "down", document.body)?.id).toBe("nav");
+    // And down in the sidebar stays there.
+    at(get("right"), 8, 750, 80, 38);
+    get("nav").after(get("right"));
+    expect(nextFocus(get("nav"), "down", document.body)?.id).toBe("right");
+  });
+
   it("goes straight down into a nearer section, not to its top", () => {
     // tv-lrud-spatial would land on #top: a section is a container there.
     const get = page(`
