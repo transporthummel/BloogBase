@@ -126,10 +126,14 @@ function panelTab(el: Element, scope: Element): HTMLElement | null {
  * The nearest candidate in `dir` from `from` inside `scope`, if any: up and
  * down in its own region first; in line with it the nearest along the
  * direction, else the nearest at all, a step across counting twice. Up out
- * of a tab panel, its tab.
+ * of a tab panel, its tab. Up and down, a tab stands for its whole row,
+ * as the place left and as a target: what lies above or below the row is
+ * in line with it, not only what's above or below the one tab.
  */
 export function nextFocus(from: Element, dir: Direction, scope: Element): HTMLElement | null {
-  const f = from.getBoundingClientRect();
+  const vertical = dir === "up" || dir === "down";
+  const row = vertical ? from.closest('[role="tablist"]') : null;
+  const f = (row ?? from).getBoundingClientRect();
   const p = exitPoint(f, dir);
   const home = dir === "up" || dir === "down" ? region(from) : null;
   // Up from a tab panel: its own elements, then its tab.
@@ -137,8 +141,9 @@ export function nextFocus(from: Element, dir: Direction, scope: Element): HTMLEl
   let best: HTMLElement | null = null;
   let bestScore: number[] = [];
   for (const el of candidates(scope)) {
-    if (el === from || el.contains(from)) continue;
-    const r = el.getBoundingClientRect();
+    if (el === from || el.contains(from) || row?.contains(el)) continue;
+    const tabs = vertical ? el.closest('[role="tablist"]') : null;
+    const r = (tabs ?? el).getBoundingClientRect();
     if (!inDirection(r, dir, p)) continue;
     const g = gaps(f, r, dir);
     const away = (home && region(el) !== home) || (panel && !panel.contains(el)) ? 1 : 0;

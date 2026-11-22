@@ -69,11 +69,12 @@ describe("nextFocus", () => {
   it("goes up out of a tab panel to its tab, not to what's above the tabs", () => {
     const get = page(`
       <button id="play">play</button>
-      <div role="tablist"><button role="tab" id="tab-controls">controls</button></div>
+      <div role="tablist" id="list"><button role="tab" id="tab-controls">controls</button></div>
       <div role="tabpanel" aria-labelledby="tab-controls">
         <button id="first">keyboard</button><button id="below">playing</button>
       </div>`);
     at(get("play"), 1240, 360, 180, 44);
+    at(get("list"), 306, 450, 700, 38);
     at(get("tab-controls"), 395, 450, 95, 38);
     at(get("first"), 1330, 505, 90, 38);
     at(get("below"), 1240, 575, 85, 38);
@@ -82,6 +83,22 @@ describe("nextFocus", () => {
     expect(nextFocus(get("below"), "up", document.body)?.id).toBe("first");
     // And from the tab on, up as usual.
     expect(nextFocus(get("tab-controls"), "up", document.body)?.id).toBe("play");
+  });
+
+  it("goes up from a tab as from the whole row of tabs", () => {
+    // The back link above the tab, the hero's Play button above the row.
+    const get = page(`
+      <a id="back" href="#">back</a><button id="play">play</button>
+      <div role="tablist" id="row"><button role="tab" id="tab">tab</button></div>`);
+    at(get("back"), 306, 32, 90, 20);
+    at(get("play"), 813, 361, 176, 44);
+    at(get("row"), 306, 450, 600, 38);
+    at(get("tab"), 395, 450, 95, 38);
+    expect(nextFocus(get("tab"), "up", document.body)?.id).toBe("play");
+    // And down from Play to the tab, before a button further right.
+    document.body.insertAdjacentHTML("beforeend", `<button id="right">right</button>`);
+    at(get("right"), 1240, 505, 90, 38);
+    expect(nextFocus(get("play"), "down", document.body)?.id).toBe("tab");
   });
 
   it("goes straight down into a nearer section, not to its top", () => {

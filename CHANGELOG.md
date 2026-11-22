@@ -44,6 +44,7 @@
 
 - Moving up or down with the controller stays in the page while there is something there, instead of jumping to the sidebar when it is nearer (down from the Controls tab).
 - Up with the controller from inside a tab goes to the tab first, not to what lies above the tabs.
+- Up with the controller from a tab goes to the buttons right above the tab row, such as Play, not to the back link that happens to sit above the tab; down from them goes to the tab.
 - A game folder with a mod's levels copied into it, without a patch file, is added as a mod instead of as the game, and its game isn't offered for the library.
 - "Undo" after deleting a save is no longer offered once the backup holding it has been deleted.
 - Keen 1–3 mods whose level files are 64 KB or larger because a level editor left old data after the level (Keen 0: Part 1 April Fools, Robot Rebellion, Hiding from the Sky) no longer crash DOSBox after quitting to DOS. The game read the whole file and wrote past its memory; the copy the game runs from now ends where the level does.
