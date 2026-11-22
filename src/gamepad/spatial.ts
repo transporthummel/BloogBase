@@ -7,7 +7,8 @@ import type { Direction } from "./pad";
  * Android: down from a link above the tabs goes to the tabs, not to the
  * sidebar beside it that is nearer as the crow flies. Up and down stay in
  * the page or the sidebar while it has something there: the sidebar is a
- * column of its own, reached sideways.
+ * column of its own, reached sideways. Up out of a tab panel goes to its
+ * tab first, wherever the tab sits in the row.
  */
 
 const FOCUSABLE =
@@ -113,15 +114,26 @@ function region(el: Element): Element | null {
   return el.closest("main") ?? el.closest("nav");
 }
 
+/** The tab of the panel `el` is in, where it can take the focus. */
+function panelTab(el: Element, scope: Element): HTMLElement | null {
+  const panel = el.closest('[role="tabpanel"]');
+  const id = panel?.getAttribute("aria-labelledby");
+  const tab = id ? el.ownerDocument.getElementById(id) : null;
+  return tab && scope.contains(tab) && isCandidate(tab) ? tab : null;
+}
+
 /**
  * The nearest candidate in `dir` from `from` inside `scope`, if any: up and
  * down in its own region first; in line with it the nearest along the
- * direction, else the nearest at all, a step across counting twice.
+ * direction, else the nearest at all, a step across counting twice. Up out
+ * of a tab panel, its tab.
  */
 export function nextFocus(from: Element, dir: Direction, scope: Element): HTMLElement | null {
   const f = from.getBoundingClientRect();
   const p = exitPoint(f, dir);
   const home = dir === "up" || dir === "down" ? region(from) : null;
+  // Up from a tab panel: its own elements, then its tab.
+  const panel = dir === "up" ? from.closest('[role="tabpanel"]') : null;
   let best: HTMLElement | null = null;
   let bestScore: number[] = [];
   for (const el of candidates(scope)) {
@@ -129,7 +141,7 @@ export function nextFocus(from: Element, dir: Direction, scope: Element): HTMLEl
     const r = el.getBoundingClientRect();
     if (!inDirection(r, dir, p)) continue;
     const g = gaps(f, r, dir);
-    const away = home && region(el) !== home ? 1 : 0;
+    const away = (home && region(el) !== home) || (panel && !panel.contains(el)) ? 1 : 0;
     const score = g.inLine
       ? [away, 0, g.along, g.centres]
       : [away, 1, Math.hypot(g.along, g.across) + g.across, g.centres];
@@ -138,5 +150,6 @@ export function nextFocus(from: Element, dir: Direction, scope: Element): HTMLEl
       bestScore = score;
     }
   }
+  if (panel && !(best && panel.contains(best))) return panelTab(from, scope) ?? best;
   return best;
 }

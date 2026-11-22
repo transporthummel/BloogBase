@@ -32,7 +32,8 @@
       "In a wide window, controls, variants and worlds use the page's whole width.",
       "In a small window the tabs of a game's or mod's page stay in view.",
       "A mod's page names the game it runs on briefly, like \"Keen 6 v1.4 EGA\".",
-      "Down from a tab with the controller no longer jumps to the sidebar."
+      "Down from a tab with the controller no longer jumps to the sidebar.",
+      "Up from inside a tab with the controller goes to the tab first."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -66,7 +67,8 @@
       "In einem breiten Fenster nutzen Steuerung, Varianten und Welten die ganze Breite der Seite.",
       "In einem kleinen Fenster bleiben die Tabs einer Spiel- oder Mod-Seite sichtbar.",
       "Die Seite einer Mod nennt das Spiel, mit dem sie läuft, kurz, etwa „Keen 6 v1.4 EGA“.",
-      "Mit dem Controller springt der Fokus von einem Tab nach unten nicht mehr in die Seitenleiste."
+      "Mit dem Controller springt der Fokus von einem Tab nach unten nicht mehr in die Seitenleiste.",
+      "Mit dem Controller geht es aus einem Tab nach oben zuerst zum Tab."
     ]
   },
   "releases": [

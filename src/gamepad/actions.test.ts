@@ -66,6 +66,24 @@ describe("nextFocus", () => {
     expect(nextFocus(get("nav"), "down", document.body)?.id).toBe("right");
   });
 
+  it("goes up out of a tab panel to its tab, not to what's above the tabs", () => {
+    const get = page(`
+      <button id="play">play</button>
+      <div role="tablist"><button role="tab" id="tab-controls">controls</button></div>
+      <div role="tabpanel" aria-labelledby="tab-controls">
+        <button id="first">keyboard</button><button id="below">playing</button>
+      </div>`);
+    at(get("play"), 1240, 360, 180, 44);
+    at(get("tab-controls"), 395, 450, 95, 38);
+    at(get("first"), 1330, 505, 90, 38);
+    at(get("below"), 1240, 575, 85, 38);
+    expect(nextFocus(get("first"), "up", document.body)?.id).toBe("tab-controls");
+    // Inside the panel, up stays there.
+    expect(nextFocus(get("below"), "up", document.body)?.id).toBe("first");
+    // And from the tab on, up as usual.
+    expect(nextFocus(get("tab-controls"), "up", document.body)?.id).toBe("play");
+  });
+
   it("goes straight down into a nearer section, not to its top", () => {
     // tv-lrud-spatial would land on #top: a section is a container there.
     const get = page(`
