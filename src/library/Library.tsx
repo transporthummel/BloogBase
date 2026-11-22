@@ -439,8 +439,6 @@ const ProfileCard = memo(function ProfileCard({
   // with the name.
   const name = sharedLabel ? `${profile.label} (${versionLabel})` : profile.label;
   const cover = useCover(profile.id, profile.installId, profile.activeVariant?.id ?? null);
-  // Variants or worlds offer other ways to start beside Play, as on the page.
-  const choices = usePlayChoices(profile, play, { short: true });
   // Alpha, beta or abandoned, as the index says now, else the KeenWiki page.
   const status =
     useIndexMods().data?.find((m) => profile.modId !== null && m.modId === profile.modId)?.entry
@@ -557,25 +555,13 @@ const ProfileCard = memo(function ProfileCard({
           </dd>
         </dl>
         <div className="mt-auto flex gap-2 pt-1.5">
-          {choices.split && !profile.running && profile.missingGame === null ? (
-            <SplitButton
-              variant="card"
-              // Narrow cards: both halves fit inside, the label on one line.
-              wrapperClassName="min-w-0 flex-1"
-              className="min-w-0 flex-1 px-2! whitespace-nowrap"
-              onClick={choices.split.play}
-              disabled={!canPlay}
-              aria-label={t("library.playGame", { game: name })}
-              menuLabel={t(`library.${choices.split.kind}More`, { game: name })}
-              items={choices.split.items}
-            >
-              {choices.split.label}
-            </SplitButton>
+          {profile.variantCount > 0 || profile.worlds ? (
+            <CardChoices profile={profile} name={name} canPlay={canPlay} play={play} />
           ) : (
             <PlayButton
               variant="card"
               className="flex-1"
-              onClick={() => (profile.worlds ? choices.newWorld() : play(null))}
+              onClick={() => play(null)}
               disabled={!canPlay || profile.running || profile.missingGame !== null}
               aria-label={t("library.playGame", { game: name })}
             >
@@ -583,18 +569,71 @@ const ProfileCard = memo(function ProfileCard({
                 ? t("mods.gameMissing")
                 : profile.running
                   ? t("library.running")
-                  : profile.worlds
-                    ? choices.newLabel
-                    : t("library.play")}
+                  : t("library.play")}
             </PlayButton>
           )}
-          {/* Out of the card, whose containment would clip a fixed dialog. */}
-          {choices.dialog && createPortal(choices.dialog, document.body)}
         </div>
       </div>
     </Card>
   );
 });
+
+/**
+ * Play with the other variants and worlds beside it, as on the page. Only
+ * for cards that have any: the queries and labels behind it cost every one
+ * of hundreds of cards.
+ */
+function CardChoices({
+  profile,
+  name,
+  canPlay,
+  play,
+}: {
+  profile: Profile;
+  name: string;
+  canPlay: boolean;
+  play: (world: WorldStart | null, variant?: string) => void;
+}) {
+  const { t } = useTranslation();
+  const choices = usePlayChoices(profile, play, { short: true });
+  return (
+    <>
+      {choices.split && !profile.running && profile.missingGame === null ? (
+        <SplitButton
+          variant="card"
+          // Narrow cards: both halves fit inside, the label on one line.
+          wrapperClassName="min-w-0 flex-1"
+          className="min-w-0 flex-1 px-2! whitespace-nowrap"
+          onClick={choices.split.play}
+          disabled={!canPlay}
+          aria-label={t("library.playGame", { game: name })}
+          menuLabel={t(`library.${choices.split.kind}More`, { game: name })}
+          items={choices.split.items}
+        >
+          {choices.split.label}
+        </SplitButton>
+      ) : (
+        <PlayButton
+          variant="card"
+          className="flex-1"
+          onClick={() => (profile.worlds ? choices.newWorld() : play(null))}
+          disabled={!canPlay || profile.running || profile.missingGame !== null}
+          aria-label={t("library.playGame", { game: name })}
+        >
+          {profile.missingGame !== null
+            ? t("mods.gameMissing")
+            : profile.running
+              ? t("library.running")
+              : profile.worlds
+                ? choices.newLabel
+                : t("library.play")}
+        </PlayButton>
+      )}
+      {/* Out of the card, whose containment would clip a fixed dialog. */}
+      {choices.dialog && createPortal(choices.dialog, document.body)}
+    </>
+  );
+}
 
 /**
  * "Commander Keen 5:" stays on one line, so a narrow card wraps after the
