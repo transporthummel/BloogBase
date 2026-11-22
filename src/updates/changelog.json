@@ -37,7 +37,7 @@
       "Up from a tab with the controller goes to Play, and back down to the tab.",
       "The Variants tab marks the default variant.",
       "Discover names source mods once instead of twice.",
-      "A game's page opens on its first tab, the saves.",
+      "A game's page without a readme opens on its first tab, the saves.",
       "Discover shows recommended mods under their own heading.",
       "In a narrow window, the Options button beside Play is no longer cut off."
     ],
@@ -78,7 +78,7 @@
       "Mit dem Controller geht es vom Tab nach oben zu „Spielen“ und wieder zurück zum Tab.",
       "Der Tab „Varianten“ kennzeichnet die Standard-Variante.",
       "Entdecken nennt Source-Mods einmal statt doppelt.",
-      "Die Seite eines Spiels öffnet auf ihrem ersten Tab, den Spielständen.",
+      "Die Seite eines Spiels ohne Liesmich öffnet auf ihrem ersten Tab, den Spielständen.",
       "Entdecken zeigt empfohlene Mods unter einer eigenen Überschrift.",
       "Im schmalen Fenster wird der Knopf „Optionen“ neben „Spielen“ nicht mehr abgeschnitten."
     ]
