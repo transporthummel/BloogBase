@@ -1,7 +1,8 @@
 # Screenshots and videos
 
 Players take screenshots (Ctrl+F5) and videos (Ctrl+F7) with DOSBox's own
-hotkeys. BloogBase points DOSBox at the profile's capture folder and shows
+hotkeys, or on the controller with R3 and View+LT (Share+L2), which the
+mapper file binds to the same ([controller.md](controller.md)). BloogBase points DOSBox at the profile's capture folder and shows
 what lands there on the profile page, videos included, without a codec the
 system would need: DOSBox's AVI files are read and decoded by the app
 itself. The code is in `src-tauri/src/captures.rs` and, for playback,
@@ -13,6 +14,12 @@ The launch config sets `capture_dir` to `profiles/<id>/capture/`
 ([dosbox.md](dosbox.md)). Screenshots are PNG files, videos AVI files; the
 profile page lists each kind newest first, by modification time. Deleting
 checks that the name stays inside the capture folder.
+
+No backup keeps them. So removing a game or mod says how many go with it
+(with a game's mods, theirs too) and can copy them first, and the
+Screenshots and Videos tabs can copy theirs too (`copy_to`): into a folder
+named after the game or mod in the folder the player picks, one per profile,
+with a number added to a name that's taken.
 
 ## Reading an AVI
 
