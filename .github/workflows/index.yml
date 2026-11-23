@@ -100,7 +100,7 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy.outputs.page_url || steps.deploy-retry.outputs.page_url }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -135,18 +135,17 @@ jobs:
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site-out
-      # The run's artifact list sometimes lags behind the upload, and
-      # deploy-pages looks only once ("No artifacts named github-pages").
-      - name: Wait for the artifact
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          for _ in $(seq 30); do
-            n=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?name=github-pages" --jq .total_count)
-            [ "$n" -gt 0 ] && exit 0
-            sleep 2
-          done
-          echo "::error::The github-pages artifact did not show up in the run's list"
-          exit 1
+      # deploy-pages looks up the artifact once, in the Actions runtime's
+      # artifact service, which sometimes lags behind the upload ("No
+      # artifacts named github-pages") although the REST API already lists
+      # it. So a failed first try waits and tries again. (Rerunning the job
+      # doesn't help: the rerun finds both attempts' artifacts.)
       - id: deploy
+        continue-on-error: true
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      - name: Wait before trying again
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 60
+      - id: deploy-retry
+        if: steps.deploy.outcome == 'failure'
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
