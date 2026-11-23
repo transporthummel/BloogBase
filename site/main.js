@@ -153,7 +153,11 @@ function moveWalker() {
   last = p;
 }
 
-new ResizeObserver(layoutTrail).observe(journey);
+// The screenshots too: a dialog shot is as wide as its picture, which is 0
+// until the lazy image loads, and the trail passes beside it.
+const resized = new ResizeObserver(layoutTrail);
+resized.observe(journey);
+journey.querySelectorAll(".screen").forEach((screen) => resized.observe(screen));
 narrow.addEventListener("change", layoutTrail);
 reduceMotion.addEventListener("change", () => {
   stops.forEach((stop) => stop.classList.remove("lit"));
