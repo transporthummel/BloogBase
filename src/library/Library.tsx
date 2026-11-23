@@ -30,6 +30,7 @@ import { FindOwnedDialog } from "./FindOwnedDialog";
 import { AddModDialog } from "../mods/AddModDialog";
 import { RunsOn } from "../mods/RunsOn";
 import { useIndexMods } from "../discover/queries";
+import { useUpdatingMods } from "../jobs/queries";
 import { StatusBadge } from "../discover/StatusBadge";
 import { Cover } from "./Cover";
 import { useCover } from "./covers";
@@ -76,6 +77,8 @@ export function Library() {
   const setup = useSetupStatus();
   const profiles = useProfiles();
   const runtime = useRuntimeStatus();
+  // Once for all cards: each gets a yes or no.
+  const updating = useUpdatingMods();
   const [adding, setAdding] = useState(false);
   const [finding, setFinding] = useState(false);
   const [imported, setImported] = useState<number | null>(null);
@@ -393,6 +396,7 @@ export function Library() {
                       heading={grouped ? "h3" : "h2"}
                       sharedLabel={shared.has(profile.label)}
                       canPlay={!!runtime.data?.active && !launch.isPending}
+                      updating={profile.modId !== null && updating.has(profile.modId)}
                       onPlay={playCard}
                     />
                   </li>
@@ -416,6 +420,7 @@ const ProfileCard = memo(function ProfileCard({
   heading: Heading,
   sharedLabel,
   canPlay,
+  updating,
   onPlay,
 }: {
   profile: Profile;
@@ -425,6 +430,8 @@ const ProfileCard = memo(function ProfileCard({
   /** Another card has the same name. */
   sharedLabel: boolean;
   canPlay: boolean;
+  /** An update is swapping the mod's files. */
+  updating: boolean;
   /** With the world to play, for a mod that keeps worlds, or a variant. */
   onPlay: (profile: Profile, world: WorldStart | null, variant?: string) => void;
 }) {
@@ -562,20 +569,28 @@ const ProfileCard = memo(function ProfileCard({
         </dl>
         <div className="mt-auto flex gap-2 pt-1.5">
           {profile.variantCount > 0 || profile.worlds ? (
-            <CardChoices profile={profile} name={name} canPlay={canPlay} play={play} />
+            <CardChoices
+              profile={profile}
+              name={name}
+              canPlay={canPlay}
+              updating={updating}
+              play={play}
+            />
           ) : (
             <PlayButton
               variant="card"
               className="flex-1"
               onClick={() => play(null)}
-              disabled={!canPlay || profile.running || profile.missingGame !== null}
+              disabled={!canPlay || profile.running || updating || profile.missingGame !== null}
               aria-label={t("library.playGame", { game: name })}
             >
               {profile.missingGame !== null
                 ? t("mods.gameMissing")
-                : profile.running
-                  ? t("library.running")
-                  : t("library.play")}
+                : updating
+                  ? t("library.updating")
+                  : profile.running
+                    ? t("library.running")
+                    : t("library.play")}
             </PlayButton>
           )}
         </div>
@@ -593,18 +608,20 @@ function CardChoices({
   profile,
   name,
   canPlay,
+  updating,
   play,
 }: {
   profile: Profile;
   name: string;
   canPlay: boolean;
+  updating: boolean;
   play: (world: WorldStart | null, variant?: string) => void;
 }) {
   const { t } = useTranslation();
   const choices = usePlayChoices(profile, play, { short: true });
   return (
     <>
-      {choices.split && !profile.running && profile.missingGame === null ? (
+      {choices.split && !profile.running && !updating && profile.missingGame === null ? (
         <SplitButton
           variant="card"
           // Narrow cards: both halves fit inside, the label on one line.
@@ -623,16 +640,18 @@ function CardChoices({
           variant="card"
           className="flex-1"
           onClick={() => (profile.worlds ? choices.newWorld() : play(null))}
-          disabled={!canPlay || profile.running || profile.missingGame !== null}
+          disabled={!canPlay || profile.running || updating || profile.missingGame !== null}
           aria-label={t("library.playGame", { game: name })}
         >
           {profile.missingGame !== null
             ? t("mods.gameMissing")
-            : profile.running
-              ? t("library.running")
-              : profile.worlds
-                ? choices.newLabel
-                : t("library.play")}
+            : updating
+              ? t("library.updating")
+              : profile.running
+                ? t("library.running")
+                : profile.worlds
+                  ? choices.newLabel
+                  : t("library.play")}
         </PlayButton>
       )}
       {/* Out of the card, whose containment would clip a fixed dialog. */}

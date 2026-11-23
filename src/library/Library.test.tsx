@@ -252,7 +252,9 @@ test("a mod in beta or abandoned says so", async () => {
   renderLibrary();
   const card = async (name: string) =>
     (await screen.findByRole("link", { name })).closest("article") as HTMLElement;
-  expect(await within(await card("Beta")).findByText("Beta")).toBeInTheDocument();
+  // The badge, not the title.
+  const badge = { ignore: "a, script, style" };
+  expect(await within(await card("Beta")).findByText("Beta", badge)).toBeInTheDocument();
   expect(within(await card("Gone")).getByText("Abandoned")).toHaveClass("text-warning");
   expect(within(await card("Done")).queryByText(/complete/i)).not.toBeInTheDocument();
   // Installed from its KeenWiki page, not the index.
@@ -532,6 +534,31 @@ test("a mod waiting for its game can't be played", async () => {
   const play = screen.getByRole("button", { name: "Play Galactic" });
   expect(play).toHaveTextContent("Game missing");
   expect(play).toBeDisabled();
+});
+
+test("a mod whose update swaps its files can't be played meanwhile", async () => {
+  const mod = (id: string): Profile => ({ ...profile, id, modId: id, label: id });
+  vi.mocked(commands.listProfiles).mockResolvedValue({
+    status: "ok",
+    data: [mod("Aurora"), mod("Bliss")],
+  });
+  vi.mocked(commands.indexMods).mockResolvedValue({
+    status: "ok",
+    data: [indexed("Aurora", "complete"), indexed("Bliss", "complete")],
+  });
+  const job = { kind: "mod", received: 0, total: 0, error: null } as const;
+  vi.mocked(commands.listJobs).mockResolvedValueOnce([
+    { ...job, id: 1, subject: "Aurora", phase: "installing" },
+    // Downloading or waiting for the game: still playable.
+    { ...job, id: 2, subject: "Bliss", phase: "downloading" },
+  ]);
+  renderLibrary();
+  const aurora = await screen.findByRole("button", { name: "Play Aurora" });
+  await vi.waitFor(() => expect(aurora).toHaveTextContent("Updating…"));
+  expect(aurora).toBeDisabled();
+  const bliss = screen.getByRole("button", { name: "Play Bliss" });
+  expect(bliss).toHaveTextContent("Play");
+  expect(bliss).toBeEnabled();
 });
 
 test("a mod gets its title screen once its game is there", async () => {

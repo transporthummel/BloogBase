@@ -39,6 +39,7 @@ import { checksKeenwiki, useModUpdateCheck } from "../mods/modUpdateCheck";
 import { WhyExactVersion } from "../mods/OtherVersion";
 import { useOwnedVersions } from "../mods/ownedVersions";
 import { RemoveModDialog } from "../mods/RemoveModDialog";
+import { useUpdatingMods } from "../jobs/queries";
 import { InstallRuntimeButton } from "../runtime/InstallRuntimeButton";
 import { useRuntimeStatus } from "../runtime/queries";
 import { Button } from "../ui/Button";
@@ -93,6 +94,8 @@ export function ProfileActions({
   // No DOSBox to start it with; until the status is known, nothing to say.
   const noDosbox = !!runtime.data && !runtime.data.active;
   const blocked = profile.missingGame !== null || noDosbox;
+  // Its update is swapping the files: Play waits for it.
+  const updating = useUpdatingMods().has(profile.modId ?? "");
   const check = useModUpdateCheck(mod);
   const choices = usePlayChoices(profile, onPlay);
   // A KeenWiki mod's page may have a newer version; the index's shows by itself.
@@ -157,7 +160,7 @@ export function ProfileActions({
     <div className="grid gap-3">
       {/* Wraps in a narrow hero (800 px window, split button) rather than clip "Options". */}
       <div className="flex flex-wrap items-stretch gap-2">
-        {choices.split && !blocked && !profile.running ? (
+        {choices.split && !blocked && !profile.running && !updating ? (
           <SplitButton
             onClick={choices.split.play}
             disabled={!canPlay}
@@ -172,7 +175,7 @@ export function ProfileActions({
         ) : (
           <PlayButton
             onClick={() => (profile.worlds ? choices.newWorld() : onPlay(null))}
-            disabled={!canPlay || profile.running || blocked}
+            disabled={!canPlay || profile.running || updating || blocked}
             // Red while something is missing: the notice below says what.
             variant={blocked ? "danger" : "primary"}
             className={`min-w-44 px-8 py-3 text-base ${blocked ? "disabled:opacity-100" : ""}`}
@@ -181,11 +184,13 @@ export function ProfileActions({
               ? t("mods.gameMissing")
               : noDosbox
                 ? t("runtime.missing")
-                : profile.running
-                  ? t("library.running")
-                  : profile.worlds
-                    ? choices.newLabel
-                    : t("library.play")}
+                : updating
+                  ? t("library.updating")
+                  : profile.running
+                    ? t("library.running")
+                    : profile.worlds
+                      ? choices.newLabel
+                      : t("library.play")}
           </PlayButton>
         )}
         <Menu

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { commands, events, type IndexMod, type Job, type JobKind } from "../bindings";
-import { freeGamesKey, indexModsKey } from "../discover/queries";
+import { freeGamesKey, indexModsKey, useIndexMods } from "../discover/queries";
 import { coverKey, coverKeys } from "../library/covers";
 import { installsKey, modsKey, profilesKey } from "../library/queries";
 import { readmeKey, readmeKeys } from "../profile/readme";
@@ -16,6 +16,24 @@ export function useJobs() {
 /** The latest job doing this work, if any. */
 export function useJob(kind: JobKind, subject: string | null = null) {
   return useJobs().data?.find((j) => j.kind === kind && j.subject === subject);
+}
+
+/**
+ * The mods (by id) whose update is swapping their files right now: they
+ * can't start until it's done. Not while it downloads or waits for the game.
+ */
+export function useUpdatingMods(): ReadonlySet<string> {
+  const jobs = useJobs().data;
+  const index = useIndexMods().data;
+  return useMemo(() => {
+    const installing = new Set(
+      jobs?.filter((j) => j.kind === "mod" && j.phase === "installing").map((j) => j.subject),
+    );
+    const ids = (index ?? [])
+      .filter((m) => m.modId !== null && installing.has(m.entry.id))
+      .map((m) => m.modId!);
+    return new Set(ids);
+  }, [jobs, index]);
 }
 
 export function isFinished(job: Job) {

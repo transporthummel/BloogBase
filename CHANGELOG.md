@@ -45,6 +45,7 @@
 - A game's page without a README lists Saves before Controls, so it opens on its first tab.
 - Sorted by "Recommended", Discover shows the recommended mods under a heading of their own and the rest under "More mods", instead of a "Recommended" badge on each; sorted otherwise the badge stays.
 - Updating a mod from the mod list while it runs, from its page, Discover or "What's new", waits for the game to end and then installs, instead of failing with "This game is already running"; the job says "Waiting for the game to end…". The Update buttons are no longer greyed out while the mod runs.
+- While a mod's update installs its files, Play on its library card and page says "Updating…" and waits, instead of being offered and failing; while the update downloads or waits for the game to end, the mod can still be played.
 
 ### Bug Fixes
 
