@@ -1807,7 +1807,7 @@ test("the library card's link opens the Variants tab at the variant played", asy
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
-      <ProfileDetail profileId="keen4-1" showVariant />
+      <ProfileDetail profileId="keen4-1" show="variant" />
     </QueryClientProvider>,
   );
   expect(await screen.findByRole("tab", { name: "Variants 2" })).toHaveAttribute(
@@ -1816,6 +1816,21 @@ test("the library card's link opens the Variants tab at the variant played", asy
   );
   await vi.waitFor(() => expect(scrolled).toHaveLength(1));
   expect(scrolled[0]).toHaveTextContent("Easy");
+});
+
+test("the library card's saves link opens the Saves tab, also beside variants", async () => {
+  withVariants();
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <ProfileDetail profileId="keen4-1" show="saves" />
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByRole("tab", { name: /^Saves/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
 });
 
 test("the Readme tab follows the variant played", async () => {

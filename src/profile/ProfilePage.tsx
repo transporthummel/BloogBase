@@ -37,17 +37,20 @@ export function ProfileRoute() {
   const { show } = useSearch({ from: "/profiles/$profileId" });
   // Keyed, so going from one profile straight to another (a mod played over
   // another links to it) starts on its first tab again.
-  return <ProfileDetail key={profileId} profileId={profileId} showVariant={show === "variant"} />;
+  return <ProfileDetail key={profileId} profileId={profileId} show={show} />;
 }
 
 /** One game or mod: play it, read about it, manage saves, screenshots, videos and settings (§8.3). */
 export function ProfileDetail({
   profileId,
-  showVariant = false,
+  show,
 }: {
   profileId: string;
-  /** Opens on the Variants tab, at the variant played (the library card's link). */
-  showVariant?: boolean;
+  /**
+   * The library card's links: `variant` opens on the Variants tab, at the
+   * variant played; `saves` on the Saves tab.
+   */
+  show?: "variant" | "saves";
 }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -55,9 +58,11 @@ export function ProfileDetail({
   const runtime = useRuntimeStatus();
   const profiles = useProfiles();
   // Until the player picks one: the README if the mod has one, else saves.
-  const [picked, setTab] = useState<Tab | null>(showVariant ? "variants" : null);
+  const [picked, setTab] = useState<Tab | null>(
+    show === "variant" ? "variants" : show === "saves" ? "saves" : null,
+  );
   // The Variants tab scrolls to the variant played, once, when asked to.
-  const [seekVariant, setSeekVariant] = useState(showVariant);
+  const [seekVariant, setSeekVariant] = useState(show === "variant");
 
   // The page shares its scrolling area with the library, which may have been far down.
   useLayoutEffect(() => {

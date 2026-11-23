@@ -547,6 +547,7 @@ const ProfileCard = memo(function ProfileCard({
             <Link
               to="/profiles/$profileId"
               params={{ profileId: profile.id }}
+              search={{ show: "saves" }}
               tabIndex={-1}
               className="underline-offset-2 hover:underline"
             >

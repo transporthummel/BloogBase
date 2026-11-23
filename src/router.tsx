@@ -31,9 +31,10 @@ const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/profiles/$profileId",
   component: ProfileRoute,
-  // `show=variant`: the Variants tab, at the variant played.
-  validateSearch: (search: Record<string, unknown>): { show?: "variant" } => ({
-    ...(search.show === "variant" && { show: "variant" as const }),
+  // `show=variant`: the Variants tab, at the variant played; `show=saves`:
+  // the Saves tab.
+  validateSearch: (search: Record<string, unknown>): { show?: "variant" | "saves" } => ({
+    ...((search.show === "variant" || search.show === "saves") && { show: search.show }),
   }),
 });
 

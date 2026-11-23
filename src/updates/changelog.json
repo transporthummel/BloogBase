@@ -39,7 +39,8 @@
       "Discover names source mods once instead of twice.",
       "A game's page without a readme opens on its first tab, the saves.",
       "Discover shows recommended mods under their own heading.",
-      "In a narrow window, the Options button beside Play is no longer cut off."
+      "In a narrow window, the Options button beside Play is no longer cut off.",
+    "The saved games on a library card open the Saves tab."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -80,7 +81,8 @@
       "Entdecken nennt Source-Mods einmal statt doppelt.",
       "Die Seite eines Spiels ohne Liesmich öffnet auf ihrem ersten Tab, den Spielständen.",
       "Entdecken zeigt empfohlene Mods unter einer eigenen Überschrift.",
-      "Im schmalen Fenster wird der Knopf „Optionen“ neben „Spielen“ nicht mehr abgeschnitten."
+      "Im schmalen Fenster wird der Knopf „Optionen“ neben „Spielen“ nicht mehr abgeschnitten.",
+    "Die Spielstände auf einer Karte der Bibliothek öffnen den Tab „Spielstände“."
     ]
   },
   "releases": [
