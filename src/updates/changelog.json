@@ -1,29 +1,34 @@
 {
   "unreleased": {
-    "en": [
-      "Added support for randomised mods: Keep and replay seeds, with their own saves.",
-      "Mods with several variants, like difficulty levels, install all of them, each with its own saves.",
-      "Saves can be imported from a folder, e.g. an old copy of the game.",
-      "On the controller, R3 takes a screenshot and View+LT records a video.",
-      "Discover's filters are buttons now, choose several games and types at once and can hide installed mods.",
-      "Games and demos have a description with their release date.",
-      "Screenshots and videos can be copied to a folder, also before removing a mod or game.",
-      "Discover, the library and mod pages mark mods that are in alpha, beta or abandoned.",
-      "Revival of Bliss starts its own menu: play as Keen or Craig, and the epilogue."
-    ],
-    "de": [
-      "Unterstützung für Zufalls-Mods: Behalte und spiele Seeds erneut spielen, mit eigenen Spielständen.",
-      "Mods mit mehreren Varianten, etwa Schwierigkeitsstufen, bringen alle mit, jede mit eigenen Spielständen.",
-      "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
-      "Am Controller macht R3 einen Screenshot und View+LT ein Video.",
-      "Die Filter in Entdecken sind jetzt Knöpfe, wählen mehrere Spiele und Arten zugleich und blenden installierte Mods aus.",
-      "Spiele und Demos haben eine Beschreibung mit ihrem Erscheinungsdatum.",
-      "Screenshots und Videos lassen sich in einen Ordner kopieren, auch vor dem Entfernen einer Mod oder eines Spiels.",
-      "Entdecken, die Bibliothek und Mod-Seiten kennzeichnen Mods in Alpha oder Beta und aufgegebene Mods.",
-      "Revival of Bliss startet mit seinem eigenen Menü: als Keen oder Craig spielen, dazu der Epilog."
-    ]
+    "en": [],
+    "de": []
   },
   "releases": [
+    {
+      "version": "1.4.0",
+      "en": [
+        "Added support for randomised mods: Keep and replay seeds, with their own saves.",
+        "Mods with several variants, like difficulty levels, install all of them, each with its own saves.",
+        "Saves can be imported from a folder, e.g. an old copy of the game.",
+        "On the controller, R3 takes a screenshot and View+LT records a video.",
+        "Discover's filters are buttons now, choose several games and types at once and can hide installed mods.",
+        "Games and demos have a description with their release date.",
+        "Screenshots and videos can be copied to a folder, also before removing a mod or game.",
+        "Discover, the library and mod pages mark mods that are in alpha, beta or abandoned.",
+        "Revival of Bliss starts its own menu: play as Keen or Craig, and the epilogue."
+      ],
+      "de": [
+        "Unterstützung für Zufalls-Mods: Behalte und spiele Seeds erneut spielen, mit eigenen Spielständen.",
+        "Mods mit mehreren Varianten, etwa Schwierigkeitsstufen, bringen alle mit, jede mit eigenen Spielständen.",
+        "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
+        "Am Controller macht R3 einen Screenshot und View+LT ein Video.",
+        "Die Filter in Entdecken sind jetzt Knöpfe, wählen mehrere Spiele und Arten zugleich und blenden installierte Mods aus.",
+        "Spiele und Demos haben eine Beschreibung mit ihrem Erscheinungsdatum.",
+        "Screenshots und Videos lassen sich in einen Ordner kopieren, auch vor dem Entfernen einer Mod oder eines Spiels.",
+        "Entdecken, die Bibliothek und Mod-Seiten kennzeichnen Mods in Alpha oder Beta und aufgegebene Mods.",
+        "Revival of Bliss startet mit seinem eigenen Menü: als Keen oder Craig spielen, dazu der Epilog."
+      ]
+    },
     {
       "version": "1.3.0",
       "en": [

@@ -4,6 +4,16 @@
 
 ### Features
 
+### Improvements
+
+### Bug Fixes
+
+### Misc
+
+## 1.4.0 (2026-11-23)
+
+### Features
+
 - Mods with several ways to play, such as difficulty levels, a second part or other graphics, install all of them and are marked "N variants" on their library card and page. The first Play asks which one, with the default marked as such and (or for a mod installed before, the one played so far) preselected; after that Play starts the one chosen, the arrow beside it the others, and the new Variants tab shows each with its cover, description, saves and last start, the default marked "Default". Each variant keeps its own saves (backups made before, those of the one played so far), settings stay shared, and the library card and page show the cover, name and readme of the one played, its name linking to it in the Variants tab; the DOSBox window and the screen shown while it starts put its name in brackets after the mod's. The index lists them in `variants`, with further archives of a version in `parts`; installed mods get them at the next index check, a mod imported from the player's own folder as part of the import.
 - Mods that generate their levels at every start (Keen 1 Randomiser, Simulator Keen) are marked "Random worlds" and keep each set as a world with its own saves: "Continue world" plays the last one again, the arrow beside it offers "New world" (a seed and the randomiser's options; a seed and options already played continue that world) and up to five favourite or recent worlds, and the new Worlds tab lists every world with its seed, options and saves, to play again, make current without playing, star, rename, copy the seed or delete. Saves from before worlds go into a backup.
 - Discover's filters are buttons instead of drop-downs, side by side as they fit, those of the game and the type named: the games as the tiles of the cards and the types as chips, several of each at once, "I can play" (with a tooltip saying what it means) and "Not installed" as checkboxes, with "Clear filters" next to the count whenever a filter is set. Only the sort is still a drop-down, next to the search. "Not installed" hides installed mods; a mod installed while it is on stays in the list until the filter is turned on again or the page is opened again.
