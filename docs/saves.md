@@ -196,8 +196,9 @@ world deleted is backed up first.
 ## Variants
 
 A mod with variants (an index entry's `variants`, `index/README.md`) keeps
-saves per variant the same way (`variants.rs`, on `slots.rs`, which worlds
-use too): the variant played has its saves in `state/`, the others' wait in
+saves per variant the way a mod with worlds keeps them per world
+(`variants.rs`, both built on `slots.rs`). The variant played has its saves
+in `state/`, the others' wait in
 `variants/<id>/` next to it, and a switch moves them file by file with the
 journal `variants/swap.json`. Settings, high scores and the DOSBox settings
 stay with the mod. Saves a variant comes with count as its own until the
