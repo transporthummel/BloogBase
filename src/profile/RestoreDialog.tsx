@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Info } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -83,7 +84,13 @@ export function FolderRestoreDialog({
         unwrap(commands.restoreFolder(profileId, path, part, file, target, all))
       }
     >
-      {into && <Notice>{into}</Notice>}
+      {into && (
+        // Stands out: saves of another variant or world don't fit.
+        <p role="status" className="flex items-start gap-2 text-sm">
+          <Info className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden />
+          {into}
+        </p>
+      )}
       {found.loose && (
         <div className="grid gap-1">
           <label className="flex items-center gap-2 text-sm">
