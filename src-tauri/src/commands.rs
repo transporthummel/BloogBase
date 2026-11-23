@@ -1588,31 +1588,48 @@ fn convert_variants(app: &AppHandle) {
     });
 }
 
-/// [`convert_variants`] for one mod: its kept archive, or the download,
-/// and the parts.
+/// [`convert_variants`] for one mod.
 async fn convert_one(app: &AppHandle, t: &mod_index::ToConvert) -> Result<()> {
+    match convert_mod(app, &t.mod_id, &t.entry, &|_, _| {}).await? {
+        true => {
+            // The UI reads profiles and mods again.
+            let _ = mod_index::IndexUpdated(app.state::<ModIndex>().status()).emit(app);
+        }
+        false => tracing::info!("mod {} runs; it gets its variants later", t.mod_id),
+    }
+    Ok(())
+}
+
+/// Turns `mod_id` into a mod with the variants of `entry`
+/// ([`mods::convert_to_variants`]), from its kept archive, or the download,
+/// and the parts, downloaded with `progress`. `false` while it runs.
+async fn convert_mod(
+    app: &AppHandle,
+    mod_id: &str,
+    entry: &mod_index::IndexEntry,
+    progress: &impl Fn(u64, u64),
+) -> Result<bool> {
     let paths = app.state::<AppPaths>().inner().clone();
-    let mut c = Curated::new(&t.entry, 0);
-    let kept = mods::kept_archive(&paths, &t.mod_id, &c.url).filter(|p| {
+    let mut c = Curated::new(entry, 0);
+    let kept = mods::kept_archive(&paths, mod_id, &c.url).filter(|p| {
         std::fs::read(p)
             .is_ok_and(|d| crate::detect::sha256_hex(&d).eq_ignore_ascii_case(&c.sha256))
     });
-    let quiet = |_, _| {};
     let downloaded = match kept {
         Some(_) => None,
-        None => Some(mod_index::archive(&paths.cache, &t.entry, None, &quiet).await?),
+        None => Some(mod_index::archive(&paths.cache, entry, None, progress).await?),
     };
-    let parts = mod_index::parts(&paths.cache, &t.entry, &quiet).await?;
+    let parts = mod_index::parts(&paths.cache, entry, progress).await?;
     c.part_files = parts.clone();
     // A copy: the kept one's folder gets replaced while it's read.
-    let main = paths.cache.join(format!("mod-{}-variants.zip", t.mod_id));
+    let main = paths.cache.join(format!("mod-{mod_id}-variants.zip"));
     let from = kept
         .clone()
         .or_else(|| downloaded.as_ref().map(|a| a.path.clone()))
         .expect("one of them");
     std::fs::copy(&from, &main)?;
     let a = app.clone();
-    let (mod_id, archive) = (t.mod_id.clone(), main.clone());
+    let (mod_id, archive) = (mod_id.to_string(), main.clone());
     let result = tauri::async_runtime::spawn_blocking(move || {
         mods::convert_to_variants(
             &a.state::<AppPaths>(),
@@ -1631,14 +1648,7 @@ async fn convert_one(app: &AppHandle, t: &mod_index::ToConvert) -> Result<()> {
         let _ = std::fs::remove_file(path);
     }
     drop(downloaded);
-    match result? {
-        true => {
-            // The UI reads profiles and mods again.
-            let _ = mod_index::IndexUpdated(app.state::<ModIndex>().status()).emit(app);
-        }
-        false => tracing::info!("mod {} runs; it gets its variants later", t.mod_id),
-    }
-    Ok(())
+    result
 }
 
 /// The mods in the index, with what's installed already.
@@ -1742,7 +1752,6 @@ async fn install_entry(
     }
     let b = a.clone();
     let path = file.clone();
-    let entry_has_no_variants = entry.variants.is_empty();
     let result = tauri::async_runtime::spawn_blocking(move || {
         let (paths, db) = (b.state::<AppPaths>(), b.state::<Db>());
         // An update must not swap files under a running game.
@@ -1752,28 +1761,31 @@ async fn install_entry(
             Some(_) => mods::install_players_files,
             None => mods::install_curated,
         };
-        let m = install(
+        install(
             &paths,
             &db,
             &path,
             &curated,
             install_id.as_deref(),
             without_game,
-        )?;
-        drop(_claim);
-        // The player's files get their variants now, not at the next check.
-        if players.is_some() && !entry_has_no_variants {
-            link_installed(&b);
-        }
-        Ok(m)
+        )
     })
     .await
     .map_err(Error::from)
     .and_then(|r| r);
-    if let Ok(m) = &result {
-        warn_if_damaged(a, &file, &m.name);
+    let m = result?;
+    warn_if_damaged(a, &file, &m.name);
+    // The player's files, the newest download's, get their variants as part
+    // of the install, so the mod is ready once it's done.
+    if players == Some(0) && !entry.variants.is_empty() {
+        let progress = |r, t| report.progress(JobPhase::Downloading, r, t);
+        match convert_mod(a, &m.id, &entry, &progress).await {
+            Ok(_) => {}
+            // It's installed; the next index check tries again.
+            Err(e) => tracing::warn!("mod {} gets its variants later: {e}", m.id),
+        }
     }
-    result.map(drop)
+    Ok(())
 }
 
 #[tauri::command]
