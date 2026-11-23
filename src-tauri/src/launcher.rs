@@ -1092,7 +1092,10 @@ mod tests {
             },
         )
         .unwrap();
-        assert_eq!(profiles::list(&db, |_| false).unwrap()[1].label, "My Mod");
+        assert_eq!(
+            profiles::list(&db, |_| false, |_| false).unwrap()[1].label,
+            "My Mod"
+        );
 
         let spec = prepare(&paths, &db, &m.profile_id, false, None, "en").unwrap();
         let setup = spec.setup.as_deref().unwrap();
@@ -1243,7 +1246,7 @@ machine = svga_paradise
         let (_tmp, _paths, db) = setup();
         let id = start_session(&db, "keen4-1", None, 100).unwrap();
         assert_eq!(end_session(&db, id, 160, Some(0)).unwrap(), 60);
-        let p = &profiles::list(&db, |_| false).unwrap()[0];
+        let p = &profiles::list(&db, |_| false, |_| false).unwrap()[0];
         assert_eq!(
             (p.session_count, p.play_seconds, p.last_played_at),
             (1, 60, Some(100))
@@ -1308,7 +1311,7 @@ machine = svga_paradise
         playing.abandon_all(&db);
         assert!(playing.profile_ids().is_empty());
         assert!(left.try_recv().is_err());
-        let p = &profiles::list(&db, |_| false).unwrap()[0];
+        let p = &profiles::list(&db, |_| false, |_| false).unwrap()[0];
         assert_eq!(p.session_count, 1);
 
         let mut stopped = playing.add("b", 2);

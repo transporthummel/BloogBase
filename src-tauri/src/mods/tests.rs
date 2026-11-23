@@ -322,7 +322,7 @@ fn takes_over_what_the_keenwiki_page_now_says() {
     let m = install(&paths, &db, &req).unwrap();
     assert_eq!(list(&db).unwrap()[0].status, Some(ModStatus::Beta));
     // The game's profile comes first when the mod's was made a second later.
-    let profiles = crate::profiles::list(&db, |_| false).unwrap();
+    let profiles = crate::profiles::list(&db, |_| false, |_| false).unwrap();
     let profile = profiles.iter().find(|p| p.id == m.profile_id).unwrap();
     assert_eq!(profile.mod_status, Some(ModStatus::Beta));
 
@@ -842,6 +842,15 @@ fn a_players_source_mod_keeps_its_files_and_saves() {
     assert_eq!(fs::read(state.join("CONFIG.CK5")).unwrap(), b"my settings");
     // The player's folder stays as it was.
     assert!(folder.join("SAVEGAM0.CK5").is_file());
+    // A source mod if the index says so; profiles of other entries aren't.
+    let source_mod = |entry: &'static str| {
+        profiles::list(&db, |_| false, |id| id == entry)
+            .unwrap()
+            .into_iter()
+            .any(|p| p.id == m.profile_id && p.source_mod)
+    };
+    assert!(source_mod("operation-station-infiltration"));
+    assert!(!source_mod("other"));
     // It counts as that download, so the newest one is an update.
     let sha: String = db
         .conn()
@@ -2293,7 +2302,7 @@ fn saves_in_a_launchers_folders_count_and_come_back() {
             ("CRAIG/SAVEGAM4.CK4", Some(5))
         ]
     );
-    let listed = profiles::list(&db, |_| false).unwrap();
+    let listed = profiles::list(&db, |_| false, |_| false).unwrap();
     assert_eq!(
         listed
             .iter()

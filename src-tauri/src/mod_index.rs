@@ -246,6 +246,14 @@ impl IndexEntry {
     pub fn needs_no_game(&self) -> bool {
         self.standalone && crate::free_games::has_shareware(&self.game)
     }
+
+    /// A standalone mod that shares nothing with its game but the engine,
+    /// known by the programs its downloads list (`isSourceMod` in
+    /// `src/discover/fit.ts`). One with all of Keen 4's files is a Keen 4
+    /// mod that needs no copy of it.
+    pub fn is_source_mod(&self) -> bool {
+        self.needs_no_game() && self.downloads.iter().any(|d| !d.programs.is_empty())
+    }
 }
 
 /// An entry's texts in another language.
@@ -1519,6 +1527,19 @@ mod tests {
         std::fs::write(tmp.path().join("other.zip"), b"other").unwrap();
         assert_eq!(found(&tmp.path().join("other.zip"), "keen4"), None);
         assert_eq!(found(tmp.path(), "keen4"), None);
+    }
+
+    #[test]
+    fn a_source_mod_is_standalone_with_programs_of_its_own() {
+        let mut entry = sample_entry(&"ab".repeat(32));
+        entry.game = "keen4".into();
+        entry.standalone = true;
+        // All of Keen 4's files, renamed ones too: a Keen 4 mod (Rescue Of The Last).
+        assert!(!entry.is_source_mod());
+        entry.downloads[0].programs = [("GAME.EXE".to_string(), "cd".repeat(32))].into();
+        assert!(entry.is_source_mod());
+        entry.standalone = false;
+        assert!(!entry.is_source_mod());
     }
 
     #[test]

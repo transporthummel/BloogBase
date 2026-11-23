@@ -86,8 +86,9 @@ A mod played over one that needs no copy of its game (Lego Levels over Lego
 Keen, xky1rooms over Episode X; [recipes.md](recipes.md)) needs none either:
 it goes on no copy, and the shareware isn't installed for it. It follows the
 mod below as installed, also when that one's index entry changes
-(`set_standalone`), and counts as a mod of its game, not a source mod, when
-the two together have all of the game's files. Its page reads "Keen 1 · Runs
+(`set_standalone`), and counts as a mod of its game, not a source mod: only
+a mod whose own index entry is a source mod (standalone, with `programs`;
+`IndexEntry::is_source_mod`) gets that badge. Its page reads "Keen 1 · Runs
 on Lego Keen".
 
 ## A new version of an installed mod

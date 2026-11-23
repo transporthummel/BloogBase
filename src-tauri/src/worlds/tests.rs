@@ -231,7 +231,7 @@ fn worlds_switch_with_their_saves() {
     assert_eq!(l.active, Some(first));
     assert_eq!(l.worlds.iter().map(|w| w.saves).collect::<Vec<_>>(), [1, 1]);
     // The library counts the saves of all of them, e.g. for removing the mod.
-    let p = profiles::list(&t.db, |_| false).unwrap();
+    let p = profiles::list(&t.db, |_| false, |_| false).unwrap();
     let p = p.iter().find(|p| p.id == t.profile).unwrap();
     assert_eq!(p.save_count, 2);
 

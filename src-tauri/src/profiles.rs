@@ -44,9 +44,10 @@ pub struct Profile {
     /// A mod that ships its whole game and plays without a copy of
     /// `game_id`, the game it's built on.
     pub standalone: bool,
-    /// Standalone, and with nothing of the game's own files but its
-    /// engine: shown apart from the episode (a mod with all of Keen 4's
-    /// files is still a Keen 4 mod).
+    /// From the index, and a source mod there: standalone with programs of
+    /// its own, sharing nothing with its game but the engine; shown apart
+    /// from the episode. Others, such as a Keen 4 mod with all of the
+    /// game's files, are mods of their game. Only set by [`list`].
     pub source_mod: bool,
     /// The mod a mod is played over, e.g. Lego Keen.
     pub played_over: Option<PlayedOver>,
@@ -142,7 +143,7 @@ const SELECT: &str = "
            (SELECT gp.id FROM profiles gp
             WHERE p.mod_id IS NOT NULL AND gp.install_id = p.install_id AND gp.mod_id IS NULL),
            m.worlds_json IS NOT NULL, p.active_world, m.status, m.save_dirs_json,
-           m.variants_json, p.active_variant, p.variant_chosen
+           m.variants_json, p.active_variant, p.variant_chosen, m.index_id
     FROM profiles p
     LEFT JOIN installs i ON i.id = p.install_id
     LEFT JOIN mods m ON m.id = p.mod_id
@@ -151,6 +152,8 @@ const SELECT: &str = "
 struct ProfileRow {
     profile: Profile,
     layers: Layers,
+    /// The mod's index entry, if it has one.
+    index_id: Option<String>,
 }
 
 fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
@@ -211,20 +214,6 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             save_dirs,
         }
     });
-    // With the files of the mod it's played over (xky1rooms over Episode X).
-    let source_mod = standalone
-        && !mod_layer
-            .as_ref()
-            .zip(catalog::game(&game_id))
-            .is_some_and(|(m, game)| {
-                let mut names = file_names(&m.files);
-                names.extend(m.base.iter().flat_map(|b| file_names(b)));
-                // A launcher's root starts folders that each hold the game.
-                game.all_in(&names)
-                    || m.save_dirs
-                        .iter()
-                        .any(|d| game.all_in(&file_names(&m.files.join(&d.dir))))
-            });
     Ok(ProfileRow {
         profile: Profile {
             id: r.get(0)?,
@@ -242,7 +231,8 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             missing_game,
             missing_versions,
             standalone,
-            source_mod,
+            // `list` knows, from the index.
+            source_mod: false,
             played_over: r
                 .get::<_, Option<String>>(18)?
                 .zip(r.get::<_, Option<String>>(19)?)
@@ -263,6 +253,7 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
             upper: state_path,
             mod_layer,
         },
+        index_id: r.get(29)?,
     })
 }
 
@@ -277,8 +268,13 @@ fn file_names(dir: &Path) -> Vec<String> {
 }
 
 /// All profiles, most recently played first. `is_running` marks the ones that
-/// have a DOSBox process right now.
-pub fn list(db: &Db, is_running: impl Fn(&str) -> bool) -> Result<Vec<Profile>> {
+/// have a DOSBox process right now, `is_source_mod` the index entries that
+/// are source mods ([`crate::mod_index::IndexEntry::is_source_mod`]).
+pub fn list(
+    db: &Db,
+    is_running: impl Fn(&str) -> bool,
+    is_source_mod: impl Fn(&str) -> bool,
+) -> Result<Vec<Profile>> {
     let rows: Vec<ProfileRow> = {
         let conn = db.conn();
         let mut stmt = conn.prepare(&format!(
@@ -292,6 +288,7 @@ pub fn list(db: &Db, is_running: impl Fn(&str) -> bool) -> Result<Vec<Profile>> 
             .map(|row| {
                 let mut p = row.profile;
                 p.running = is_running(&p.id);
+                p.source_mod = row.index_id.as_deref().is_some_and(&is_source_mod);
                 if let Ok(game) = crate::saves::profile_game(&p.game_id, &row.layers) {
                     p.save_count = count_saves(game, &row.layers)
                         .and_then(|n| {
@@ -419,7 +416,7 @@ mod tests {
         fs::write(state.join("DBOVERLAY_DEL_SAVEGAM1.CK4"), b"empty").unwrap();
         fs::write(state.join("savegam2.ck4"), b"s").unwrap();
 
-        let list = list(&db, |id| id == "keen4-1").unwrap();
+        let list = list(&db, |id| id == "keen4-1", |_| false).unwrap();
         assert_eq!(list.len(), 1);
         let p = &list[0];
         assert_eq!(

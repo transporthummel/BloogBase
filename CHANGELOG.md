@@ -60,6 +60,7 @@
 - In a narrow window (800 px), a mod page's Options button no longer gets cut off beside a Play button with a menu; the row wraps.
 - The saved games on a library card open the Saves tab of the game's or mod's page, instead of its first tab (the readme, variants or worlds).
 - A mod with variants, such as Rescue Of The Last, installed again after removing it, shows its cover on its library card right away instead of the placeholder until its page was opened: two requests for the same cover could write it at once, and one of them failed.
+- A standalone mod that patches its game's own program, such as Rescue Of The Last with its renamed data files, is no longer marked "Source mod" in the library and on its page, but as a mod of its game, as Discover shows it. The "Source mod" badge, the "+" cover and the library's own group now go only to mods whose index entry is a source mod (standalone, with programs of its own).
 
 ### Misc
 

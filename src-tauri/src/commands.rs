@@ -153,7 +153,18 @@ pub async fn list_profiles(app: AppHandle) -> CommandResult<Vec<Profile>> {
     // Counting saves reads every profile's folders: not on the main thread.
     blocking(move || {
         let running = app.state::<Running>();
-        profiles::list(&app.state::<Db>(), |id| running.contains(id))
+        let source_mods: std::collections::HashSet<String> = app
+            .state::<ModIndex>()
+            .entries()
+            .into_iter()
+            .filter(|e| e.is_source_mod())
+            .map(|e| e.id)
+            .collect();
+        profiles::list(
+            &app.state::<Db>(),
+            |id| running.contains(id),
+            |index_id| source_mods.contains(index_id),
+        )
     })
     .await
 }
@@ -1344,7 +1355,7 @@ pub async fn remove_game(
     with_mods: bool,
 ) -> CommandResult<()> {
     // None of the profiles on it may start or run meanwhile.
-    let affected: Vec<String> = profiles::list(&app.state::<Db>(), |_| false)?
+    let affected: Vec<String> = profiles::list(&app.state::<Db>(), |_| false, |_| false)?
         .into_iter()
         .filter(|p| p.install_id.as_deref() == Some(install_id.as_str()))
         .map(|p| p.id)

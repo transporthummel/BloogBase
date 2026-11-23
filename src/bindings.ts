@@ -1115,9 +1115,10 @@ export type Profile = {
 	 */
 	standalone: boolean,
 	/**
-	 *  Standalone, and with nothing of the game's own files but its
-	 *  engine: shown apart from the episode (a mod with all of Keen 4's
-	 *  files is still a Keen 4 mod).
+	 *  From the index, and a source mod there: standalone with programs of
+	 *  its own, sharing nothing with its game but the engine; shown apart
+	 *  from the episode. Others, such as a Keen 4 mod with all of the
+	 *  game's files, are mods of their game. Only set by [`list`].
 	 */
 	sourceMod: boolean,
 	/**  The mod a mod is played over, e.g. Lego Keen. */

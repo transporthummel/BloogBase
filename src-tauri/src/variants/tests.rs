@@ -150,7 +150,7 @@ fn saves_belong_to_a_variant_and_settings_to_the_mod() {
         [(false, 1), (true, 0)]
     );
     // The library card counts the saves of all of them.
-    let p = profiles::list(&t.db, |_| false).unwrap();
+    let p = profiles::list(&t.db, |_| false, |_| false).unwrap();
     assert_eq!(p.iter().find(|p| p.id == t.profile).unwrap().save_count, 1);
 
     t.save("easy save");
@@ -168,7 +168,7 @@ fn saves_belong_to_a_variant_and_settings_to_the_mod() {
 fn saves_a_variant_comes_with_count_as_its_own() {
     let t = setup_with(SHIPPED);
     let counts = |t: &T| {
-        let card = profiles::list(&t.db, |_| false)
+        let card = profiles::list(&t.db, |_| false, |_| false)
             .unwrap()
             .into_iter()
             .find(|p| p.id == t.profile)
