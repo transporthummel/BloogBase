@@ -159,9 +159,9 @@
     },
     {
       "name": "variants",
-      "description": "Mods with variants: Shadow Keen 1's Variants tab, each release with its cover, description and saves.",
+      "description": "Mods with variants: Shadow Keen 1's Variants tab, scrolled to the tab row so several variants show with their covers, descriptions and saves.",
       "route": "/profiles/{profile:shadowkeen1}",
-      "height": 1000,
+      "height": 920,
       "steps": [
         {
           "clickText": {
@@ -169,6 +169,12 @@
             "de": "Varianten"
           },
           "selector": "[role=tab]"
+        },
+        {
+          "eval": "document.querySelector('[role=tablist]').scrollIntoView({ block: 'start' })"
+        },
+        {
+          "wait": 300
         },
         {
           "eval": "document.body.style.pointerEvents = 'none'"
