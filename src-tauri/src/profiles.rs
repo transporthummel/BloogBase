@@ -156,7 +156,8 @@ struct ProfileRow {
     index_id: Option<String>,
 }
 
-fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
+/// With `as_variant`, that variant of the mod stands in for the one played.
+fn from_row(db: &Db, r: &Row<'_>, as_variant: Option<&str>) -> rusqlite::Result<ProfileRow> {
     let at = |stored: Option<String>| stored.map(|s| db.resolve(&s));
     let install_path = at(r.get(10)?);
     let game_id: String = r.get(2)?;
@@ -196,7 +197,10 @@ fn from_row(db: &Db, r: &Row<'_>) -> rusqlite::Result<ProfileRow> {
         .get::<_, Option<String>>(26)?
         .and_then(|j| serde_json::from_str(&j).ok())
         .unwrap_or_default();
-    let active_id: Option<String> = r.get(27)?;
+    let active_id: Option<String> = match as_variant {
+        Some(id) => Some(id.to_string()),
+        None => r.get(27)?,
+    };
     let variant = active_id.and_then(|id| variants.iter().find(|v| v.id == id).cloned());
     let mod_layer = mod_path.zip(recipe).map(|(path, recipe)| {
         // Written by `mods::install`; an unreadable one falls back to the episode.
@@ -280,7 +284,7 @@ pub fn list(
         let mut stmt = conn.prepare(&format!(
             "{SELECT} ORDER BY s.last_played_at IS NULL, s.last_played_at DESC, p.created_at, p.id"
         ))?;
-        stmt.query_map([], |r| from_row(db, r))?
+        stmt.query_map([], |r| from_row(db, r, None))?
             .collect::<rusqlite::Result<_>>()?
     };
     crate::saves::for_all_profiles(|| {
@@ -297,7 +301,8 @@ pub fn list(
                                 (_, true) => match &p.active_variant {
                                     // Those they came with count too.
                                     Some(v) => crate::variants::others_save_count(
-                                        game,
+                                        db,
+                                        &p.id,
                                         &row.layers,
                                         &v.id,
                                     )?,
@@ -319,10 +324,20 @@ pub fn list(
 }
 
 pub fn get(db: &Db, id: &str) -> Result<(Profile, Layers)> {
+    get_row(db, id, None)
+}
+
+/// A profile of a mod with variants as it plays variant `variant`: its
+/// files and recipe stand in for those of the variant played.
+pub(crate) fn get_as_variant(db: &Db, id: &str, variant: &str) -> Result<(Profile, Layers)> {
+    get_row(db, id, Some(variant))
+}
+
+fn get_row(db: &Db, id: &str, as_variant: Option<&str>) -> Result<(Profile, Layers)> {
     let row = db
         .conn()
         .query_row(&format!("{SELECT} WHERE p.id = ?1"), [id], |r| {
-            from_row(db, r)
+            from_row(db, r, as_variant)
         })
         .optional()?
         .ok_or_else(|| Error::NotFound(format!("profile {id}")))?;

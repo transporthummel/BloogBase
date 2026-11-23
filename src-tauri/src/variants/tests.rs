@@ -264,3 +264,51 @@ fn removing_the_mod_with_its_saves_keeps_every_variant() {
     t.switch("hard");
     assert!(t.saved().unwrap().contains("hard save"));
 }
+
+/// Like [`SHIPPED`], with Easy's program saving as `.EZ4`.
+const OWN_EXTENSION: &[(&str, &[u8])] = &[
+    ("EASY/CK4PATCH.EXE", b"patcher"),
+    (
+        "EASY/x.pat",
+        b"%ext ck4
+%version 1.4
+",
+    ),
+    ("EASY/EASY.EXE", b"...SAVEGAM0.EZ4..."),
+    ("EASY/LEVEL01.CK4", b"easy"),
+    ("EASY/SAVEGAM1.EZ4", b"the author's save"),
+    ("HARD/CK4PATCH.EXE", b"patcher"),
+    (
+        "HARD/x.pat",
+        b"%ext ck4
+%version 1.4
+",
+    ),
+    ("HARD/LEVEL01.CK4", b"hard"),
+];
+
+#[test]
+fn a_variant_naming_its_saves_its_own_way_counts_them() {
+    let t = setup_with(OWN_EXTENSION);
+    t.save("hard save");
+    let rows = |t: &T| -> Vec<(bool, u32)> {
+        t.list()
+            .variants
+            .iter()
+            .map(|v| (v.active, v.saves))
+            .collect()
+    };
+    let card = |t: &T| {
+        profiles::list(&t.db, |_| false, |_| false)
+            .unwrap()
+            .into_iter()
+            .find(|p| p.id == t.profile)
+            .unwrap()
+            .save_count
+    };
+    assert_eq!(rows(&t), vec![(true, 1), (false, 1)]);
+    assert_eq!(card(&t), 2);
+    t.switch("easy");
+    assert_eq!(rows(&t), vec![(false, 1), (true, 1)]);
+    assert_eq!(card(&t), 2);
+}

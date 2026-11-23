@@ -111,9 +111,21 @@ fn save_count(game: &Game, files: &Path, saved: &Path) -> Result<u32> {
         .count() as u32)
 }
 
+/// The game as variant `id` plays it: variants may name their saves each
+/// their own way (Rescue of the Last's `.ROL` and `.RES`).
+fn variant_game(db: &Db, profile_id: &str, id: &str) -> Result<&'static Game> {
+    let (profile, layers) = profiles::get_as_variant(db, profile_id, id)?;
+    saves::profile_game(&profile.game_id, &layers)
+}
+
 /// For the library card: the saves of the variants not played, those
 /// they came with included.
-pub(crate) fn others_save_count(game: &Game, layers: &Layers, active: &str) -> Result<u32> {
+pub(crate) fn others_save_count(
+    db: &Db,
+    profile_id: &str,
+    layers: &Layers,
+    active: &str,
+) -> Result<u32> {
     let (Some(all), Some(profile)) = (installed(layers), layers.upper.parent()) else {
         return Ok(0);
     };
@@ -122,6 +134,7 @@ pub(crate) fn others_save_count(game: &Game, layers: &Layers, active: &str) -> R
         let entry = entry?;
         let id = entry.file_name().to_string_lossy().into_owned();
         if entry.file_type()?.is_dir() && id != active {
+            let game = variant_game(db, profile_id, &id)?;
             count += save_count(game, &entry.path(), &profile.join("variants").join(&id))?;
         }
     }
@@ -171,15 +184,18 @@ impl Slots for Ctx<'_> {
     }
 
     fn save_count(&self, key: &String, active: bool) -> Result<u32> {
-        let saved = match active {
-            true => self.owner.upper.clone(),
-            false => self.slot_dir(key),
+        let (saved, game) = match active {
+            true => (self.owner.upper.clone(), self.owner.game),
+            false => (
+                self.slot_dir(key),
+                variant_game(self.db, self.profile_id, key)?,
+            ),
         };
         match &self.installed {
-            Some(all) => save_count(self.owner.game, &all.join(key), &saved),
+            Some(all) => save_count(game, &all.join(key), &saved),
             None => Ok(slots::file_names(&saved)?
                 .iter()
-                .filter(|n| saves::is_save(self.owner.game, n))
+                .filter(|n| saves::is_save(game, n))
                 .count() as u32),
         }
     }
