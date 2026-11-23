@@ -28,6 +28,8 @@ pub enum JobKind {
 #[serde(rename_all = "camelCase")]
 pub enum JobPhase {
     Downloading,
+    /// Waiting for the game it changes to end.
+    Waiting,
     Installing,
     Done,
     Failed,

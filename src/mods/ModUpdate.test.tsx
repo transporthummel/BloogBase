@@ -272,7 +272,7 @@ test("dismissing an offered update hides it", async () => {
 function renderIndexUpdate(m = indexMod) {
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <IndexModUpdate mod={m} disabled={false} />
+      <IndexModUpdate mod={m} />
     </QueryClientProvider>,
   );
   return userEvent.setup();

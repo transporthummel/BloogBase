@@ -269,6 +269,7 @@
     "starting": "Download startet…",
     "progress": "{{received}} von {{total}}",
     "installing": "Wird installiert…",
+    "waiting": "Wartet, bis das Spiel beendet ist…",
     "done": "{{label}} ist bereit.",
     "failed": "{{label}} hat nicht geklappt.",
     "retry": "Noch einmal versuchen",

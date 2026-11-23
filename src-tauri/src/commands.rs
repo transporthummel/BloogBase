@@ -1695,6 +1695,9 @@ pub fn install_index_mod(
     })
 }
 
+/// How often an update waiting for its mod's game to end looks again.
+const UPDATE_WAITS: std::time::Duration = std::time::Duration::from_secs(1);
+
 /// Downloads (unless `own` is the player's copy) and installs one index
 /// mod for [`install_index_mod`]. `own` may also be the player's own folder
 /// or ZIP of the mod, known by its files: then they are installed as they
@@ -1750,13 +1753,25 @@ async fn install_entry(
         (None, Some(archive)) => curated.part_files = archive.parts.clone(),
         (None, None) => {}
     }
+    // An update must not swap files under a running game: it waits for the
+    // game to end, or for BloogBase to finish changing the mod's files.
+    let existing = mods::find_by_index(&a.state::<Db>(), &curated.index_id)?;
+    let claim = loop {
+        match a.state::<Running>().claim_all(existing.clone()) {
+            Ok(claim) => break claim,
+            Err(Error::AlreadyRunning | Error::ChangingFiles) => {
+                report.progress(JobPhase::Waiting, 0, 0);
+                tokio::time::sleep(UPDATE_WAITS).await;
+            }
+            Err(e) => return Err(e),
+        }
+    };
+    report.progress(JobPhase::Installing, 1, 1);
     let b = a.clone();
     let path = file.clone();
     let result = tauri::async_runtime::spawn_blocking(move || {
         let (paths, db) = (b.state::<AppPaths>(), b.state::<Db>());
-        // An update must not swap files under a running game.
-        let existing = mods::find_by_index(&db, &curated.index_id)?;
-        let _claim = b.state::<Running>().claim_all(existing)?;
+        let _claim = claim;
         let install = match players {
             Some(_) => mods::install_players_files,
             None => mods::install_curated,

@@ -269,6 +269,7 @@
     "starting": "Starting download…",
     "progress": "{{received}} of {{total}}",
     "installing": "Installing…",
+    "waiting": "Waiting for the game to end…",
     "done": "{{label}} is ready.",
     "failed": "{{label}} didn't work.",
     "retry": "Try again",

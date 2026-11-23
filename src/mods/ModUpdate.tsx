@@ -111,7 +111,7 @@ export function ModUpdate({
  * from Discover. Shows by itself: the index is checked at every start and
  * every few hours.
  */
-export function IndexModUpdate({ mod, disabled }: { mod: Mod; disabled: boolean }) {
+export function IndexModUpdate({ mod }: { mod: Mod }) {
   const { t } = useTranslation();
   const found = useIndexMods().data?.find((m) => m.entry.id === mod.indexId);
   const job = useJob("mod", mod.indexId ?? "");
@@ -130,7 +130,7 @@ export function IndexModUpdate({ mod, disabled }: { mod: Mod; disabled: boolean 
           context: entry.version ? "version" : undefined,
         })}
       </Notice>
-      <Button onClick={() => start.mutate()} disabled={disabled || start.isPending}>
+      <Button onClick={() => start.mutate()} disabled={start.isPending}>
         <RefreshCw className="size-4" aria-hidden />
         {t("modUpdate.update")}
       </Button>

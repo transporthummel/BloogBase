@@ -220,7 +220,7 @@ export function ProfileActions({
         </div>
       )}
       {checkable && <ModUpdate mod={mod} check={check} disabled={profile.running} />}
-      {mod?.indexId && <IndexModUpdate mod={mod} disabled={profile.running} />}
+      {mod?.indexId && <IndexModUpdate mod={mod} />}
       {mod?.source === "keenwiki" && !mod.indexId && (
         <p className="text-sm">
           <SuggestToIndex modId={mod.id} />

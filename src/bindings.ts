@@ -864,7 +864,9 @@ export type JobKind =
 /**  Installing or updating a mod from the index; the subject is its index id. */
 "mod";
 
-export type JobPhase = "downloading" | "installing" | "done" | "failed";
+export type JobPhase = "downloading" | 
+/**  Waiting for the game it changes to end. */
+"waiting" | "installing" | "done" | "failed";
 
 /**  Sent whenever a job starts, makes progress or finishes. */
 export type JobUpdated = Job;

@@ -44,7 +44,8 @@
       "A newly installed mod with variants shows its cover on the library card right away.",
       "Rescue Of The Last and similar Keen 4 mods are no longer marked as source mods in the library.",
       "Library cards no longer say \"No saved games\".",
-      "Starting a game while BloogBase changes its files no longer says it's already running."
+      "Starting a game while BloogBase changes its files no longer says it's already running.",
+      "A mod can be updated while it runs; the update waits for the game to end."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -90,7 +91,8 @@
       "Eine neu installierte Mod mit Varianten zeigt ihr Cover sofort auf der Karte der Bibliothek.",
       "Rescue Of The Last und ähnliche Keen-4-Mods gelten in der Bibliothek nicht mehr als Source-Mod.",
       "Karten der Bibliothek zeigen „Keine Spielstände“ nicht mehr an.",
-      "Startet man ein Spiel, während BloogBase seine Dateien ändert, heißt es nicht mehr, es laufe bereits."
+      "Startet man ein Spiel, während BloogBase seine Dateien ändert, heißt es nicht mehr, es laufe bereits.",
+      "Eine Mod lässt sich auch während des Spielens aktualisieren; das Update wartet, bis das Spiel beendet ist."
     ]
   },
   "releases": [

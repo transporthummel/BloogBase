@@ -53,9 +53,11 @@ export function JobRow({ job, label }: { job: Job; label: string }) {
       <p role="status" className="text-xs text-muted">
         {job.phase === "installing"
           ? t("jobs.installing")
-          : downloading
-            ? t("jobs.progress", formatDownloadProgress(i18n.language, job.received, job.total))
-            : t("jobs.starting")}
+          : job.phase === "waiting"
+            ? t("jobs.waiting")
+            : downloading
+              ? t("jobs.progress", formatDownloadProgress(i18n.language, job.received, job.total))
+              : t("jobs.starting")}
       </p>
     </>
   );

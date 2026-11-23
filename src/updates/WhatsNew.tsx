@@ -12,7 +12,6 @@ import { errorMessage } from "../errors";
 import { unwrap } from "../ipc";
 import { JobRow } from "../jobs/JobList";
 import { isFinished, useJob, useStartJob } from "../jobs/queries";
-import { useProfiles } from "../library/queries";
 import { getLastVersion, setLastVersion } from "../preferences";
 import { Button } from "../ui/Button";
 import { buttonClass } from "../ui/buttonClass";
@@ -50,7 +49,6 @@ export function WhatsNew() {
   const status = useIndexStatus().data;
   const indexMods = useIndexMods();
   const games = useGames().data;
-  const profiles = useProfiles();
   // Kept with the library: what it knows about the mod list.
   const known = useQuery({
     queryKey: ["indexNews"],
@@ -129,8 +127,6 @@ export function WhatsNew() {
       offered: [...offered].filter((k) => waiting.has(k)),
     });
   };
-  const running = (mod: IndexMod) =>
-    profiles.data?.some((p) => p.modId === mod.modId && p.running) ?? false;
 
   return (
     <Dialog
@@ -168,7 +164,7 @@ export function WhatsNew() {
           <h3 className="font-semibold">{t("news.updates", { count: news.updates.length })}</h3>
           <ul className="grid gap-3">
             {news.updates.map((m) => (
-              <UpdateRow key={m.entry.id} mod={m} disabled={running(m)} />
+              <UpdateRow key={m.entry.id} mod={m} />
             ))}
           </ul>
         </section>
@@ -220,7 +216,7 @@ function Releases({ releases, lang }: { releases: Release[]; lang: string }) {
 }
 
 /** An installed index mod's update, installed over the old one like from Discover. */
-function UpdateRow({ mod, disabled }: { mod: IndexMod; disabled: boolean }) {
+function UpdateRow({ mod }: { mod: IndexMod }) {
   const { t } = useTranslation();
   const { entry } = mod;
   const job = useJob("mod", entry.id);
@@ -246,11 +242,7 @@ function UpdateRow({ mod, disabled }: { mod: IndexMod; disabled: boolean }) {
             })}
           </p>
         </div>
-        <Button
-          variant="secondary"
-          onClick={() => start.mutate()}
-          disabled={disabled || start.isPending}
-        >
+        <Button variant="secondary" onClick={() => start.mutate()} disabled={start.isPending}>
           <RefreshCw className="size-4" aria-hidden />
           {t("modUpdate.update")}
         </Button>
