@@ -14,6 +14,11 @@ the panel in `src/profile/ReadmePanel.tsx`.
   outside the installed mod folder count too, like a readme next to the
   folder the mod was zipped in. Without an archive (a mod added from a
   folder), the installed files.
+- **Mods with variants:** the documents of the variant played, in its own
+  folder, if it has any; else those of the archive it comes from, so a
+  variant from a further archive (`parts`, Shadow Keen 1's 2005 remake)
+  shows only that one's, not those of the main download's release. A
+  document a variant copies into its root (`copyToRoot`) is listed once.
 - **Before installing:** the folder or ZIP the player picked or downloaded.
 - **Games:** their files in the library (`library/<install>/base`), which
   hold everything that was next to the game when it was added.
