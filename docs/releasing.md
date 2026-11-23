@@ -25,6 +25,10 @@ them:
   field in the library."). The app shows it once after updating ("What's new");
   the update card before updating shows no notes.
 
+`src/updates/changelog.test.ts` checks the layout the release relies on with
+every push: the headings (a typo in "## Unreleased" or a category stops the
+release), the same versions in both files, and each entry in both languages.
+
 ## Version numbers
 
 BloogBase has no API others build on; what it promises is to the players:
