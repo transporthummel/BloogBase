@@ -13,7 +13,6 @@
 
 ### Improvements
 
-- In the Variants and Worlds tabs, the saves of the current variant or the world played link the Saves tab, which holds theirs.
 - Library cards no longer say "No saved games"; the line shows only when there are saves.
 - Restoring saves (from a backup, an earlier version or a folder) makes the automatic backup only if there are saves to replace; restoring settings and high scores only if there are settings or high scores. The message says whether the previous state was backed up.
 - Discover's filters are buttons instead of drop-downs, side by side as they fit, those of the game and the type named: the games as the tiles of the cards and the types as chips, several of each at once, "I can play" (with a tooltip saying what it means) and "Not installed" as checkboxes, with "Clear filters" next to the count whenever a filter is set. Only the sort is still a drop-down, next to the search.

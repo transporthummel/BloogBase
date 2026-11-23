@@ -27,7 +27,6 @@ export function VariantsPanel({
   onPlay,
   seekActive = false,
   onSought,
-  onShowSaves,
 }: {
   profile: Profile;
   canPlay: boolean;
@@ -35,8 +34,6 @@ export function VariantsPanel({
   /** Scrolls to the variant played once the list is there, then says so. */
   seekActive?: boolean;
   onSought?: () => void;
-  /** Goes to the Saves tab, which holds the current variant's saves. */
-  onShowSaves?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -100,23 +97,7 @@ export function VariantsPanel({
                     ) : (
                       t("variants.notPlayed")
                     )}
-                    {saves > 0 && (
-                      <>
-                        {" · "}
-                        {/* The Saves tab holds the current variant's saves only. */}
-                        {active && onShowSaves ? (
-                          <button
-                            type="button"
-                            className="text-ink underline underline-offset-2"
-                            onClick={onShowSaves}
-                          >
-                            {t("variants.saves", { count: saves })}
-                          </button>
-                        ) : (
-                          t("variants.saves", { count: saves })
-                        )}
-                      </>
-                    )}
+                    {saves > 0 && ` · ${t("variants.saves", { count: saves })}`}
                   </p>
                 </div>
                 <div className="flex gap-1">

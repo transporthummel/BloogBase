@@ -1892,19 +1892,3 @@ test("the Variants tab lists them and makes one current without playing", async 
   await userEvent.click(screen.getByRole("tab", { name: /^Saves/ }));
   expect(await screen.findByText(/Saves of the variant/)).toHaveTextContent("Easy");
 });
-
-test("the saves of the current variant link the Saves tab, those of others don't", async () => {
-  withVariants();
-  renderDetail();
-  expect(await screen.findByText(/1 save$/)).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "1 save" })).not.toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: "2 saves" }));
-  expect(screen.getByRole("tab", { name: /^Saves/ })).toHaveAttribute("aria-selected", "true");
-});
-
-test("the saves of the world played link the Saves tab", async () => {
-  withWorlds();
-  renderDetail();
-  await userEvent.click(await screen.findByRole("button", { name: "2 saves" }));
-  expect(screen.getByRole("tab", { name: /^Saves/ })).toHaveAttribute("aria-selected", "true");
-});

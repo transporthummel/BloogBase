@@ -243,7 +243,6 @@ export function ProfileDetail({
                 profile={profile}
                 canPlay={!!runtime.data?.active && !launch.isPending}
                 onPlay={play}
-                onShowSaves={() => setTab("saves")}
               />
             )}
             {tab === "variants" && (
@@ -253,7 +252,6 @@ export function ProfileDetail({
                 onPlay={(v) => play(null, v)}
                 seekActive={seekVariant}
                 onSought={() => setSeekVariant(false)}
-                onShowSaves={() => setTab("saves")}
               />
             )}
             {tab === "saves" && (

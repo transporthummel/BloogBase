@@ -27,13 +27,10 @@ export function WorldsPanel({
   profile,
   canPlay,
   onPlay,
-  onShowSaves,
 }: {
   profile: Profile;
   canPlay: boolean;
   onPlay: (world: WorldStart) => void;
-  /** Goes to the Saves tab, which holds the saves of the world played. */
-  onShowSaves?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -157,18 +154,7 @@ export function WorldsPanel({
                       {(date) => t("worlds.lastStart", { date })}
                     </RelativeTime>
                     {" · "}
-                    {/* The Saves tab holds the saves of the world played only. */}
-                    {w.active && w.saves > 0 && onShowSaves ? (
-                      <button
-                        type="button"
-                        className="text-ink underline underline-offset-2"
-                        onClick={onShowSaves}
-                      >
-                        {t("worlds.saves", { count: w.saves })}
-                      </button>
-                    ) : (
-                      t("worlds.saves", { count: w.saves })
-                    )}
+                    {t("worlds.saves", { count: w.saves })}
                   </p>
                 </div>
                 <div className="flex gap-1">
