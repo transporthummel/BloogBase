@@ -274,7 +274,8 @@ of a profile, to restore from there:
 - A BloogBase export keeps everything, if its manifest names the same game.
 - Any other archive contributes the files that look like this game's saves,
   config or high scores, wherever they are inside, one per name. Its file
-  name becomes the label.
+  name becomes the label. In a folder named like one of a mod's `saveDirs`,
+  a file keeps that folder; the others restore like an older backup's.
 
 ### Import from a folder
 

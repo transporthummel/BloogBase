@@ -2419,6 +2419,36 @@ fn saves_from_a_folder_go_into_a_launchers_part() {
 }
 
 #[test]
+fn a_zip_of_saves_keeps_a_launchers_folders() {
+    use crate::saves::tests::keen4_save;
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("revival.zip");
+    write_zip(&zip, REVIVAL);
+    let m = install_curated(&paths, &db, &zip, &revival(&zip, Some("")), None, false).unwrap();
+    let saves = tmp.path().join("saves.zip");
+    let (keen, craig, loose) = (keen4_save("keen"), keen4_save("craig"), keen4_save("loose"));
+    write_zip(
+        &saves,
+        &[
+            ("Revival/keen/SAVEGAM0.CK4", &keen),
+            ("Revival/CRAIG/SAVEGAM0.CK4", &craig),
+            ("SAVEGAM3.CK4", &loose),
+        ],
+    );
+    let b = backups::import(&paths, &db, &m.profile_id, &saves).unwrap();
+    assert_eq!(
+        b.files,
+        ["CRAIG/SAVEGAM0.CK4", "KEEN/SAVEGAM0.CK4", "SAVEGAM3.CK4"]
+    );
+    backups::restore(&paths, &db, b.id, None, None, false).unwrap();
+    let state = paths.profiles.join(&m.profile_id).join("state");
+    assert_eq!(fs::read(state.join("KEEN/SAVEGAM0.CK4")).unwrap(), keen);
+    assert_eq!(fs::read(state.join("CRAIG/SAVEGAM0.CK4")).unwrap(), craig);
+    // One without a folder goes where older backups' do.
+    assert_eq!(fs::read(state.join("CRAIG/SAVEGAM3.CK4")).unwrap(), loose);
+}
+
+#[test]
 fn saves_of_backups_from_before_the_root_go_to_its_old_folder() {
     let (_tmp, paths, db, m, zip) = old_revival();
     let old = backups::create(

@@ -1194,11 +1194,21 @@ pub fn import(paths: &AppPaths, db: &Db, profile_id: &str, src: &Path) -> Result
         None => {
             let mut picked: Vec<(String, Vec<u8>)> = Vec::new();
             for (name, data) in files {
-                let base = name.rsplit('/').next().unwrap_or(&name).to_string();
-                if game.is_state_file(&base)
-                    && !picked.iter().any(|(n, _)| n.eq_ignore_ascii_case(&base))
+                let mut parts = name.rsplit('/');
+                let base = parts.next().unwrap_or(&name);
+                // In a folder the game keeps saves in (a launcher's part),
+                // a file stays there.
+                let dir = parts
+                    .next()
+                    .and_then(|p| game.save_dirs.iter().find(|d| d.eq_ignore_ascii_case(p)));
+                let rel = match dir {
+                    Some(d) => format!("{d}/{base}"),
+                    None => base.to_string(),
+                };
+                if game.is_state_file(&rel)
+                    && !picked.iter().any(|(n, _)| n.eq_ignore_ascii_case(&rel))
                 {
-                    picked.push((base, data));
+                    picked.push((rel, data));
                 }
             }
             let stem = src.file_stem().map(|s| s.to_string_lossy().into_owned());
