@@ -1742,6 +1742,7 @@ async fn install_entry(
     }
     let b = a.clone();
     let path = file.clone();
+    let entry_has_no_variants = entry.variants.is_empty();
     let result = tauri::async_runtime::spawn_blocking(move || {
         let (paths, db) = (b.state::<AppPaths>(), b.state::<Db>());
         // An update must not swap files under a running game.
@@ -1751,14 +1752,20 @@ async fn install_entry(
             Some(_) => mods::install_players_files,
             None => mods::install_curated,
         };
-        install(
+        let m = install(
             &paths,
             &db,
             &path,
             &curated,
             install_id.as_deref(),
             without_game,
-        )
+        )?;
+        drop(_claim);
+        // The player's files get their variants now, not at the next check.
+        if players.is_some() && !entry_has_no_variants {
+            link_installed(&b);
+        }
+        Ok(m)
     })
     .await
     .map_err(Error::from)
