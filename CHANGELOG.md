@@ -47,6 +47,8 @@
 
 ### Misc
 
+- Updated url and cookie for security fixes (RUSTSEC-2026-0592, RUSTSEC-2026-0594).
+
 ## 1.3.0 (2026-11-14)
 
 ### Features
