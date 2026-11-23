@@ -1395,6 +1395,17 @@ fn update(
         }
         let mut conn = db.conn();
         let tx = conn.transaction()?;
+        // Backups made before the mod had variants hold the saves of the
+        // one it played so far.
+        if let Some(active) = &active {
+            tx.execute(
+                "UPDATE save_backups SET variant = ?2
+                 WHERE variant IS NULL AND profile_id IN
+                     (SELECT p.id FROM profiles p JOIN mods m ON m.id = p.mod_id
+                      WHERE m.id = ?1 AND m.variants_json IS NULL)",
+                params![mod_id, active],
+            )?;
+        }
         tx.execute(
             "UPDATE mods SET authors = ?2, version = ?3, recipe_json = ?4, keenwiki_url = ?5,
                              source_url = ?6, archive_sha256 = ?7, description = ?8,

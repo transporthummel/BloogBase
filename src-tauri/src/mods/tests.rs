@@ -2723,6 +2723,16 @@ fn an_update_keeps_the_variant_played_or_finds_it_by_its_files() {
     assert_eq!(active_variant(&db), (None, false));
     let state = paths.profiles.join(&old.id).join("state/SAVEGAM0.CK4");
     fs::write(&state, b"easy save").unwrap();
+    let backup = backups::create(
+        &paths,
+        &db,
+        &old.profile_id,
+        Contents::State,
+        backups::Origin::User(None),
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(backup.variant, None);
 
     let mut c = c.clone();
     let files = paths.mods.join(&old.id).join("files");
@@ -2732,6 +2742,9 @@ fn an_update_keeps_the_variant_played_or_finds_it_by_its_files() {
     assert_eq!(active_variant(&db), (Some("easy".into()), false));
     assert!(!files.exists());
     assert_eq!(fs::read(&state).unwrap(), b"easy save");
+    // Its backup holds Easy's saves.
+    let variant_of = |id| backups::get(&db, id).unwrap().variant;
+    assert_eq!(variant_of(backup.id).as_deref(), Some("easy"));
 
     // The one played stays; one the entry dropped gives way to the default.
     db.conn()
@@ -2755,6 +2768,15 @@ fn installed_mods_get_their_entrys_variants_and_keep_playing_theirs() {
     let old = install_curated(&paths, &db, &zip, &c.without_variants(), None, false).unwrap();
     let state = paths.profiles.join(&old.id).join("state");
     fs::write(state.join("SAVEGAM0.CK4"), b"easy save").unwrap();
+    let backup = backups::create(
+        &paths,
+        &db,
+        &old.profile_id,
+        Contents::State,
+        backups::Origin::User(None),
+    )
+    .unwrap()
+    .unwrap();
     let files = paths.mod_files(&old.id, None);
     let running = crate::launcher::Running::default();
 
@@ -2779,6 +2801,10 @@ fn installed_mods_get_their_entrys_variants_and_keep_playing_theirs() {
         b"green"
     );
     assert_eq!(fs::read(state.join("SAVEGAM0.CK4")).unwrap(), b"easy save");
+    assert_eq!(
+        backups::get(&db, backup.id).unwrap().variant.as_deref(),
+        Some("easy")
+    );
 
     // An entry's new variant comes along; the one played stays.
     let mut more = c.clone();
