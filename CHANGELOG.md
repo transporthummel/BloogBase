@@ -12,7 +12,6 @@
 - Library cards of mods with variants or random worlds have the arrow beside Play too, with the other variants, a new world and the recent worlds, as on the mod's page.
 - A game's page shows, like a mod's, a description in English and German, "by id Software" with a link to their website and the release date of its version (from KeenWiki); demos and betas have descriptions of their own.
 
-
 ### Improvements
 
 - Removing a mod or game says how many screenshots and videos go with it (with its mods, theirs too), as no backup keeps them, and can copy them to a folder first, one folder per game or mod. The Screenshots and Videos tabs can copy them to a folder too, named after the game or mod.
