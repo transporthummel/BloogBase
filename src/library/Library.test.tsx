@@ -209,6 +209,16 @@ test("lists profiles with version and play stats", async () => {
   expect(screen.getAllByText("1 saved game")).toHaveLength(2);
 });
 
+test("a card without saves leaves them out", async () => {
+  vi.mocked(commands.listProfiles).mockResolvedValue({
+    status: "ok",
+    data: [{ ...profile, saveCount: 0 }],
+  });
+  renderLibrary();
+  expect(await screen.findByText(keen5.title)).toBeInTheDocument();
+  expect(screen.queryByText("No saved games")).not.toBeInTheDocument();
+});
+
 /** An index entry of `modId` with `status`. */
 const indexed = (modId: string, status: IndexEntry["status"]): IndexMod => ({
   entry: {

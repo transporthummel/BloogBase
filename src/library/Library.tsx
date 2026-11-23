@@ -540,20 +540,25 @@ const ProfileCard = memo(function ProfileCard({
               </dd>
             </>
           )}
-          <dt className="sr-only">{t("library.saveCountLabel")}</dt>
-          <dd>
-            {/* Leads where the title does: for the mouse only, so keyboards
-                stop once per card before Play. */}
-            <Link
-              to="/profiles/$profileId"
-              params={{ profileId: profile.id }}
-              search={{ show: "saves" }}
-              tabIndex={-1}
-              className="underline-offset-2 hover:underline"
-            >
-              {t("library.saveCount", { count: profile.saveCount })}
-            </Link>
-          </dd>
+          {/* No line for no saves: the card says enough without it. */}
+          {profile.saveCount > 0 && (
+            <>
+              <dt className="sr-only">{t("library.saveCountLabel")}</dt>
+              <dd>
+                {/* Leads where the title does: for the mouse only, so keyboards
+                    stop once per card before Play. */}
+                <Link
+                  to="/profiles/$profileId"
+                  params={{ profileId: profile.id }}
+                  search={{ show: "saves" }}
+                  tabIndex={-1}
+                  className="underline-offset-2 hover:underline"
+                >
+                  {t("library.saveCount", { count: profile.saveCount })}
+                </Link>
+              </dd>
+            </>
+          )}
         </dl>
         <div className="mt-auto flex gap-2 pt-1.5">
           {profile.variantCount > 0 || profile.worlds ? (
