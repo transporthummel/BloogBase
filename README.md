@@ -127,7 +127,8 @@ settings and high scores. The original game files are never changed, and a
 save is in its final place the moment the game writes it. When a session
 overwrites a save, BloogBase keeps the earlier one; any save can go back to an
 earlier version, and removed games and mods offer their saves back when you
-add them again.
+add them again. Saves from an old copy of a game or mod come over from its
+folder.
 
 ### A fan museum for your collection
 
@@ -191,6 +192,10 @@ Midnight Galaxy; above it is in Vintage Beige. In English and German.
   any version of it, and for Keen 1, Keen 4 and Keen Dreams without one.
 - Level packs made for another mod are played over it, each with its own
   saves.
+- Mods with several ways to play, like difficulty levels or a second part,
+  install all of them: pick one, switch any time, each with its own saves.
+- Mods that make new levels at every start, like Keen 1 Randomiser, keep
+  each set as a world you can play again by its seed.
 - Runs DOSBox as the machine a mod needs: a composite CGA for the Composite
   CGA editions, an SVGA for 640x480 mods.
 - Checks installed mods for updates in the mod list and on KeenWiki; updating
@@ -238,7 +243,7 @@ request.
 bugs, _About → Diagnostics_ in BloogBase collects what helps (versions, your
 games, the end of the logs, with personal paths taken out) and opens a new
 issue with it; nothing is sent by itself. For a mod that won't start, _Mod
-won't start?_ in its _More_ menu does the same with what's needed for that
+won't start?_ in its _Options_ menu does the same with what's needed for that
 mod; BloogBase offers it by itself when a mod quits right away the first
 time.
 
