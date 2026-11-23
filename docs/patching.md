@@ -13,7 +13,8 @@ A profile gets one when it plays a mod, or for Keen 1–3 when one-button
 firing is on. It lives in `cache/composed/<profile>/`.
 
 1. **Layers.** The install's game files, then the files of the mod it's
-   played over (`extends`), then the mod's own, all with their folders.
+   played over (`extends`), then the mod's own (of a mod with variants,
+   the variant played's folder), all with their folders.
    Names compare case-insensitively, as in DOS, so a mod's `level01.ck1`
    replaces the game's `LEVEL01.CK1`.
 2. **Left out.** Archives inside a mod (`.zip`, `.rar`, `.7z`: extras,
@@ -21,7 +22,7 @@ firing is on. It lives in `cache/composed/<profile>/`.
    left out too: they're for the levels this mod replaces.
 3. **Up to date?** A hash of every input's path, size, modification time
    and source, the recipe, whether firing is on, and a version string
-   (`composed v6`) is stored with the profile. Files are never changed in
+   (`composed v7`) is stored with the profile. Files are never changed in
    place, so that identifies them without reading them. If the hash matches
    and the folder exists, it's used as it is.
 4. **Building.** The files are copied into a temporary folder, the steps

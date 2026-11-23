@@ -89,8 +89,8 @@ one wins for every setting it sets:
   to, with the layer each setting comes from.
 - **Launch** settings belong to the launch itself and come last so they
   can't be broken by accident: `automount = off`, `startup_verbosity =
-quiet`, the window title ("<game or mod> – BloogBase", without cycles and
-  mouse hints), `capture_dir` and the profile's mapper file (below). DOSBox
+quiet`, the window title ("<game or mod> – BloogBase", with the variant
+  played in brackets after a mod's name, without cycles and mouse hints), `capture_dir` and the profile's mapper file (below). DOSBox
   resolves a relative `capture_dir` and `mapperfile` against the config
   file's folder, so they are `../capture` and `keyboard.map`. While BloogBase's
   own window is in fullscreen, the launch also sets `fullscreen = on`, over
@@ -196,7 +196,10 @@ end of the last played profile's log, next to the end of `logs/bloogbase.log`.
 ## While it runs
 
 - **One at a time per profile.** Starting a profile that's already running
-  is refused. Different profiles may run side by side.
+  is refused, and so is starting one while BloogBase changes its files (an
+  update, a variant switch, a move to the entry's folder); the message says
+  which. Different profiles may run side by side. An update from the mod
+  list waits for the game to end instead of failing.
 - **Startup.** The app shows the launch until DOSBox's log reports the
   first video mode it presents (`DISPLAY: … mode … scaled to …`). Then, on
   Windows, the DOSBox window gets BloogBase's terminal icon, so the taskbar

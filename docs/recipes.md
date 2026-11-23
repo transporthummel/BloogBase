@@ -179,3 +179,12 @@ with the seed and options as arguments (`launcher::runnable` appends them,
 also to a batch file copied to drive X), continuing one runs `play`. The
 recipe still decides everything else (composition, cover, one-button
 firing, the setup a mod report names).
+
+## Variants
+
+A mod with an index entry's `variants` (`index/README.md`) is installed once
+per variant, each in its own folder (`mods/<id>/variants/<variant>/`
+instead of `files/`), and the variant played is the one composed. Its
+recipe is the variant's own, else the entry's, which is the default's. A
+variant's first session counts as a first session of the mod too: the
+variant is part of the setup the launcher compares (`launcher.rs`).
