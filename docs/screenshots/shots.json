@@ -26,7 +26,8 @@
       "shadowkeen1",
       "aurora-bliss",
       "commander-keen-and-the-electromagnet",
-      "keen-rescue"
+      "keen-rescue",
+      "keen-1-randomiser"
     ],
     "sessions": [
       {
@@ -155,6 +156,59 @@
       "route": "/profiles/{profile:the-alphamatic}",
       "height": 1000,
       "languages": ["en", "de"]
+    },
+    {
+      "name": "variants",
+      "description": "Mods with variants: Shadow Keen 1's Variants tab, each release with its cover, description and saves.",
+      "route": "/profiles/{profile:shadowkeen1}",
+      "height": 1000,
+      "steps": [
+        {
+          "clickText": {
+            "en": "Variants",
+            "de": "Varianten"
+          },
+          "selector": "[role=tab]"
+        },
+        {
+          "eval": "document.body.style.pointerEvents = 'none'"
+        }
+      ],
+      "languages": ["en", "de"]
+    },
+    {
+      "name": "worlds",
+      "description": "Random worlds: Keen 1 Randomiser's New world dialog with a seed and the randomiser's options.",
+      "route": "/profiles/{profile:keen-1-randomiser}",
+      "steps": [
+        {
+          "clickText": {
+            "en": "New world",
+            "de": "Neue Welt"
+          },
+          "selector": "button"
+        },
+        {
+          "waitFor": "[role=dialog]"
+        },
+        {
+          "fill": "[role=dialog] input[id$=-seed]",
+          "value": "19901214"
+        },
+        {
+          "click": "[role=dialog] input[type=checkbox]"
+        },
+        {
+          "fill": "[role=dialog] input[id$=-startammo]",
+          "value": "5"
+        },
+        {
+          "eval": "document.activeElement.blur()"
+        }
+      ],
+      "languages": ["en", "de"],
+      "clip": "[role=dialog]",
+      "clipPadding": 24
     },
     {
       "name": "library-light",
