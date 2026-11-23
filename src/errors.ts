@@ -16,6 +16,7 @@ const translated: ErrorKind[] = [
   "runtimeTooOld",
   "busy",
   "alreadyRunning",
+  "changingFiles",
   "invalidLocation",
   "invalidSetting",
   "noModFound",

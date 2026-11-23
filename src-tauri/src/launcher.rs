@@ -13,7 +13,7 @@
 //!   program or batch file of a mod can `mount` a host folder, and
 //!   `config -r` (a restart that could leave secure mode) is refused.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -44,32 +44,59 @@ use crate::recipe::Recipe;
 use crate::runtime::{self, Runtime};
 use crate::worlds;
 
-/// Profiles with a running DOSBox process; one instance per profile (§6.2).
+/// Profiles with a running DOSBox process, one instance per profile (§6.2),
+/// or whose files BloogBase is changing: either keeps out the other.
 #[derive(Default)]
-pub struct Running(Arc<Mutex<HashSet<String>>>);
+pub struct Running(Arc<Mutex<HashMap<String, Use>>>);
+
+/// What a profile is claimed for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Use {
+    Playing,
+    Changing,
+}
 
 impl Running {
+    /// Whether the profile is playing or its files are being changed.
     pub fn contains(&self, id: &str) -> bool {
-        lock(&self.0).contains(id)
+        lock(&self.0).contains_key(id)
     }
 
-    /// Marks `id` as running until the claim is dropped, failing if it
-    /// already is.
+    /// Marks `id` as playing until the claim is dropped, failing if it
+    /// already is or its files are being changed.
+    pub fn play(&self, id: &str) -> Result<Claim> {
+        self.claim_for(Use::Playing, [id])
+    }
+
+    /// Marks `id` as having its files changed until the claim is dropped,
+    /// failing if it's playing or being changed already.
     pub fn claim(&self, id: &str) -> Result<Claim> {
         self.claim_all([id])
     }
 
-    /// Marks all of `ids` as running until the claim is dropped, or none
-    /// if one of them already is.
+    /// Marks all of `ids` as having their files changed until the claim is
+    /// dropped, or none if one of them is claimed already.
     pub fn claim_all<S: Into<String>>(&self, ids: impl IntoIterator<Item = S>) -> Result<Claim> {
+        self.claim_for(Use::Changing, ids)
+    }
+
+    fn claim_for<S: Into<String>>(
+        &self,
+        how: Use,
+        ids: impl IntoIterator<Item = S>,
+    ) -> Result<Claim> {
         let mut ids: Vec<String> = ids.into_iter().map(Into::into).collect();
         ids.sort();
         ids.dedup();
         let mut set = lock(&self.0);
-        if ids.iter().any(|id| set.contains(id)) {
+        let held: Vec<Use> = ids.iter().filter_map(|id| set.get(id).copied()).collect();
+        if held.contains(&Use::Playing) {
             return Err(Error::AlreadyRunning);
         }
-        set.extend(ids.iter().cloned());
+        if !held.is_empty() {
+            return Err(Error::ChangingFiles);
+        }
+        set.extend(ids.iter().map(|id| (id.clone(), how)));
         Ok(Claim {
             set: Arc::clone(&self.0),
             ids,
@@ -80,7 +107,7 @@ impl Running {
 /// Profiles marked as running; dropping it releases them.
 #[must_use = "the profiles are released when the claim is dropped"]
 pub struct Claim {
-    set: Arc<Mutex<HashSet<String>>>,
+    set: Arc<Mutex<HashMap<String, Use>>>,
     ids: Vec<String>,
 }
 
@@ -93,7 +120,7 @@ impl Drop for Claim {
     }
 }
 
-fn lock(set: &Mutex<HashSet<String>>) -> std::sync::MutexGuard<'_, HashSet<String>> {
+fn lock(set: &Mutex<HashMap<String, Use>>) -> std::sync::MutexGuard<'_, HashMap<String, Use>> {
     set.lock().unwrap_or_else(|e| e.into_inner())
 }
 
@@ -1271,19 +1298,31 @@ machine = svga_paradise
     #[test]
     fn one_instance_per_profile() {
         let running = Running::default();
-        let a = running.claim("a").unwrap();
+        let a = running.play("a").unwrap();
+        assert!(matches!(running.play("a"), Err(Error::AlreadyRunning)));
         assert!(matches!(running.claim("a"), Err(Error::AlreadyRunning)));
-        let _b = running.claim("b").unwrap();
+        let _b = running.play("b").unwrap();
         assert!(running.contains("a"));
         drop(a);
         assert!(!running.contains("a"));
-        let _a = running.claim("a").unwrap();
+        let _a = running.play("a").unwrap();
+    }
+
+    #[test]
+    fn changing_files_keeps_the_game_from_starting() {
+        let running = Running::default();
+        let changing = running.claim("a").unwrap();
+        assert!(running.contains("a"));
+        assert!(matches!(running.play("a"), Err(Error::ChangingFiles)));
+        assert!(matches!(running.claim("a"), Err(Error::ChangingFiles)));
+        drop(changing);
+        let _a = running.play("a").unwrap();
     }
 
     #[test]
     fn claims_all_or_none() {
         let running = Running::default();
-        let b = running.claim("b").unwrap();
+        let b = running.play("b").unwrap();
         assert!(matches!(
             running.claim_all(["a", "b", "c"]),
             Err(Error::AlreadyRunning)

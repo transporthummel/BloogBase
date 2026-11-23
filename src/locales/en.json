@@ -243,6 +243,7 @@
     "runtimeTooOld": "BloogBase needs DOSBox Staging 0.82 or newer. This one is version {{message}}.",
     "busy": "That's already in progress.",
     "alreadyRunning": "This game is already running.",
+    "changingFiles": "BloogBase is changing this game's files right now. Try again in a moment.",
     "invalidLocation": "BloogBase can't keep its data there ({{message}}).",
     "invalidSetting": "This setting can't be saved ({{message}}).",
     "noModFound": "No Commander Keen mod was found there.",

@@ -63,6 +63,7 @@
 - A standalone mod that patches its game's own program, such as Rescue Of The Last with its renamed data files, is no longer marked "Source mod" in the library and on its page, but as a mod of its game, as Discover shows it. The "Source mod" badge, the "+" cover and the library's own group now go only to mods whose index entry is a source mod (standalone, with programs of its own).
 - A mod with variants imported from the player's own folder, such as an unpacked Clouds Unseen, gets its variants as part of the import, which finishes once they are installed, instead of only at the next mod list check.
 - The offer to restore a re-added mod's earlier saves no longer keeps its Restore button greyed out for good when the mod was still being set up as it opened (e.g. getting its variants); it says why it waits and turns on once the mod is ready.
+- Starting a game while BloogBase changes its files (an update, a variant or a move to the entry's folder) says so instead of "This game is already running".
 
 ### Misc
 

@@ -519,7 +519,7 @@ export type EarlierBackup = {
 export type Engine = "vorticons" | "galaxy" | "dreams";
 
 /**  Error category the frontend can branch on (e.g. to pick a translated message). */
-export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "alreadyInLibrary" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "runtimeTooOld" | "busy" | "alreadyRunning" | "notFound" | "invalidLocation" | "invalidSetting" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "olderIndex" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload" | "noSavesFound" | "otherGame" | "worldIncomplete";
+export type ErrorKind = "database" | "io" | "internal" | "archive" | "unsupportedSource" | "noGamesFound" | "alreadyInLibrary" | "network" | "checksumMismatch" | "unsupportedPlatform" | "runtimeMissing" | "invalidRuntime" | "runtimeTooOld" | "busy" | "alreadyRunning" | "changingFiles" | "notFound" | "invalidLocation" | "invalidSetting" | "noModFound" | "incompatibleInstall" | "missingGame" | "badSignature" | "olderIndex" | "notKeenWikiLink" | "notAModPage" | "deadLink" | "tooLarge" | "webPage" | "unsupportedDownload" | "noSavesFound" | "otherGame" | "worldIncomplete";
 
 /**
  *  The files of a download's mod root that make its version (levels,

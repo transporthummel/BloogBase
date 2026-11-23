@@ -45,6 +45,8 @@ pub enum Error {
     Busy,
     #[error("this game is already running")]
     AlreadyRunning,
+    #[error("BloogBase is changing this game's files")]
+    ChangingFiles,
     #[error("not found: {0}")]
     NotFound(String),
     #[error("can't store data there: {0}")]
@@ -122,6 +124,7 @@ impl Error {
             Error::RuntimeTooOld(_) => ErrorKind::RuntimeTooOld,
             Error::Busy => ErrorKind::Busy,
             Error::AlreadyRunning => ErrorKind::AlreadyRunning,
+            Error::ChangingFiles => ErrorKind::ChangingFiles,
             Error::NotFound(_) => ErrorKind::NotFound,
             Error::InvalidLocation(_) => ErrorKind::InvalidLocation,
             Error::InvalidSetting(_) => ErrorKind::InvalidSetting,
@@ -162,6 +165,7 @@ pub enum ErrorKind {
     RuntimeTooOld,
     Busy,
     AlreadyRunning,
+    ChangingFiles,
     NotFound,
     InvalidLocation,
     InvalidSetting,

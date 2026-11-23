@@ -189,7 +189,7 @@ pub async fn launch_profile(
     language: String,
 ) -> CommandResult<()> {
     let runtime = runtime::active(&app.state::<Db>())?;
-    let claim = app.state::<Running>().claim(&profile_id)?;
+    let claim = app.state::<Running>().play(&profile_id)?;
     let asked = variant.clone();
     let launch = |phase| {
         let _ = GameLaunch {
