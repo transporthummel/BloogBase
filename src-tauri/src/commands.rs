@@ -824,13 +824,15 @@ pub async fn folder_saves(
     blocking(move || backups::folder_saves(&app.state::<Db>(), &profile_id, Path::new(&path))).await
 }
 
-/// Restores saves from a folder, as [`restore_backup`] does from a backup.
+/// Restores saves from a folder, as [`restore_backup`] does from a backup;
+/// files the folder doesn't place go into the game's folder `part`.
 #[tauri::command]
 #[specta::specta]
 pub async fn restore_folder(
     app: AppHandle,
     profile_id: String,
     path: String,
+    part: Option<String>,
     file: Option<String>,
     target: Option<String>,
     include_other: bool,
@@ -842,6 +844,7 @@ pub async fn restore_folder(
             db,
             &profile_id,
             Path::new(&path),
+            part.as_deref(),
             file.as_deref(),
             target.as_deref(),
             include_other,

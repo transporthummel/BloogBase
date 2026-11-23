@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   commands,
@@ -14,7 +14,7 @@ import { unwrap } from "../ipc";
 import { Button } from "../ui/Button";
 import { Dialog } from "../ui/Dialog";
 import { Notice } from "../ui/Notice";
-import { backupTitle, placedSaveTitle, saveSummary, slotFiles } from "./saves";
+import { backupTitle, folderName, placedSaveTitle, saveSummary, slotFiles } from "./saves";
 
 type Shared = {
   game: Game;
@@ -47,7 +47,9 @@ export function RestoreDialog({ backup, ...shared }: Shared & { backup: Backup }
 
 /**
  * Restores the saves lying in a folder, such as an old copy of the game,
- * all or one into a chosen slot, without keeping them as a backup.
+ * all or one into a chosen slot, without keeping them as a backup. Where
+ * the mod keeps saves in folders and this one doesn't say which, the
+ * player picks the part first.
  */
 export function FolderRestoreDialog({
   profileId,
@@ -55,19 +57,46 @@ export function FolderRestoreDialog({
   found,
   ...shared
 }: Shared & { profileId: string; path: string; found: FolderSaves }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const name = path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+  const [part, setPart] = useState<string | null>(null);
+  // Loose files go into the part chosen, as the backend puts them.
+  const saves = found.saves.map((s) =>
+    part !== null && !s.file.includes("/") ? { ...s, file: `${part}/${s.file}` } : s,
+  );
   return (
     <RestoreFrom
       {...shared}
       title={t("saves.importFolderTitle", { name })}
-      saves={found.saves}
+      saves={saves}
       error={null}
       hasOther={found.settings > 0}
+      blocked={found.loose && part === null}
       restore={(file, target, all) =>
-        unwrap(commands.restoreFolder(profileId, path, file, target, all))
+        unwrap(commands.restoreFolder(profileId, path, part, file, target, all))
       }
-    />
+    >
+      {found.loose && (
+        <div className="grid gap-1">
+          <label className="flex items-center gap-2 text-sm">
+            {t("saves.importPart")}
+            <select
+              className="rounded-lg border border-border bg-surface-raised px-2 py-1 text-sm"
+              value={part ?? ""}
+              onChange={(e) => setPart(e.target.value || null)}
+            >
+              <option value="">{t("saves.importPartPick")}</option>
+              {shared.saveDirs.map((d) => (
+                <option key={d.dir} value={d.dir}>
+                  {folderName(shared.saveDirs, d.dir, i18n.language)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="text-xs text-muted">{t("saves.importPartHint")}</p>
+        </div>
+      )}
+    </RestoreFrom>
   );
 }
 
@@ -80,7 +109,9 @@ function RestoreFrom({
   saves,
   error,
   hasOther,
+  blocked = false,
   restore: put,
+  children,
   game,
   saveDirs,
   current,
@@ -92,6 +123,10 @@ function RestoreFrom({
   error: Error | null;
   /** Settings or high scores to restore too, if asked. */
   hasOther: boolean;
+  /** Nothing can be restored yet. */
+  blocked?: boolean;
+  /** Above the saves. */
+  children?: ReactNode;
   restore: (file: string | null, target: string | null, all: boolean) => Promise<boolean>;
 }) {
   const { t, i18n } = useTranslation();
@@ -123,6 +158,7 @@ function RestoreFrom({
     <Dialog title={title} onClose={onClose}>
       {inBackup.error && <Notice tone="error">{errorMessage(t, inBackup.error)}</Notice>}
       {restore.error && <Notice tone="error">{errorMessage(t, restore.error)}</Notice>}
+      {children}
       <ul className="grid gap-3">
         {inBackup.data?.map((s) => {
           const target = targets[s.file] ?? s.file;
@@ -150,7 +186,7 @@ function RestoreFrom({
                 </label>
                 <Button
                   variant="secondary"
-                  disabled={restore.isPending}
+                  disabled={blocked || restore.isPending}
                   onClick={() =>
                     restore.mutate({ file: s.file, target: target === s.file ? null : target })
                   }
@@ -195,7 +231,7 @@ function RestoreFrom({
               {t("common.cancel")}
             </Button>
             <Button
-              disabled={restore.isPending}
+              disabled={blocked || restore.isPending}
               onClick={() =>
                 restore.mutate({ file: null, target: null, all: onlyOther || includeOther })
               }

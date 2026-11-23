@@ -751,7 +751,10 @@
     "importFolder": "Aus Ordner importieren…",
     "importFolderHint": "Spielstände aus einer alten Kopie des Spiels oder der Mod: Wähle den Ordner mit der EXE-Datei, mit der du gespielt hast.",
     "importFolderTitle": "Spielstände aus „{{name}}“ importieren",
-    "importedFromFolder": "Spielstände importiert."
+    "importedFromFolder": "Spielstände importiert.",
+    "importPart": "Teil",
+    "importPartPick": "Wählen…",
+    "importPartHint": "Der Ordner verrät nicht, zu welchem Teil diese Dateien gehören. Wähle ihn, um sie zu importieren."
   },
   "backups": {
     "title": "Sicherungen",

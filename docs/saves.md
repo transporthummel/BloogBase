@@ -280,7 +280,11 @@ of a profile, to restore from there:
 
 The saves tab also imports from a folder, such as an old copy of the game or
 a mod: the files lying directly in it that look like this game's saves,
-config or high scores. They are restored straight from the folder in the
+config or high scores. A mod with `saveDirs` takes them from those folders
+of a whole copy (the copy's root, where the game doesn't look, is left
+out); a folder named like one of them is that part; for any other folder
+the dialog asks which part its files go into, and nothing is restored
+before. They are restored straight from the folder in the
 same dialog as a backup, never kept as a backup of their own: the backups
 list shows only what the player backed up. As with every restore, what the
 profile had before is backed up first, if it is of the kind restored.

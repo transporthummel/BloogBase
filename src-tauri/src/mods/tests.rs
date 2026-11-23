@@ -2331,6 +2331,94 @@ fn saves_in_a_launchers_folders_count_and_come_back() {
 }
 
 #[test]
+fn saves_from_a_folder_go_into_a_launchers_part() {
+    use crate::saves::tests::keen4_save;
+    let (tmp, paths, db) = setup();
+    let zip = tmp.path().join("revival.zip");
+    write_zip(&zip, REVIVAL);
+    let m = install_curated(&paths, &db, &zip, &revival(&zip, Some("")), None, false).unwrap();
+    let state = paths.profiles.join(&m.profile_id).join("state");
+    let put = |dir: &Path, files: &[(&str, Vec<u8>)]| {
+        for (name, data) in files {
+            let path = dir.join(name);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, data).unwrap();
+        }
+    };
+
+    // A whole copy: each folder's saves go into its part, the root's nowhere.
+    let copy = tmp.path().join("Revival");
+    put(
+        &copy,
+        &[
+            ("play.bat", b"x".to_vec()),
+            ("SAVEGAM5.CK4", keen4_save("root")),
+            ("keen/SAVEGAM0.CK4", keen4_save("keen")),
+            ("CRAIG/SAVEGAM0.CK4", keen4_save("craig")),
+            ("CRAIG/CONFIG.CK4", b"config".to_vec()),
+        ],
+    );
+    let found = backups::folder_saves(&db, &m.profile_id, &copy).unwrap();
+    let names: Vec<_> = found.saves.iter().map(|s| s.file.as_str()).collect();
+    assert_eq!(names, ["CRAIG/SAVEGAM0.CK4", "KEEN/SAVEGAM0.CK4"]);
+    assert_eq!((found.settings, found.loose), (1, false));
+    backups::restore_folder(&paths, &db, &m.profile_id, &copy, None, None, None, true).unwrap();
+    assert_eq!(
+        fs::read(state.join("KEEN/SAVEGAM0.CK4")).unwrap(),
+        keen4_save("keen")
+    );
+    assert_eq!(fs::read(state.join("CRAIG/CONFIG.CK4")).unwrap(), b"config");
+    assert!(!state.join("SAVEGAM5.CK4").exists());
+
+    // One part's folder, by its name.
+    let part = tmp.path().join("old/future");
+    put(&part, &[("SAVEGAM1.CK4", keen4_save("future"))]);
+    let found = backups::folder_saves(&db, &m.profile_id, &part).unwrap();
+    assert_eq!(found.saves[0].file, "FUTURE/SAVEGAM1.CK4");
+    assert!(!found.loose);
+
+    // Any other folder: the player says which part, into a slot of it.
+    let loose = tmp.path().join("forum");
+    put(&loose, &[("SAVEGAM2.CK4", keen4_save("loose"))]);
+    let found = backups::folder_saves(&db, &m.profile_id, &loose).unwrap();
+    assert_eq!(found.saves[0].file, "SAVEGAM2.CK4");
+    assert!(found.loose);
+    assert!(
+        backups::restore_folder(&paths, &db, &m.profile_id, &loose, None, None, None, false)
+            .is_err()
+    );
+    assert!(
+        backups::restore_folder(
+            &paths,
+            &db,
+            &m.profile_id,
+            &loose,
+            Some("OTHER"),
+            None,
+            None,
+            false
+        )
+        .is_err()
+    );
+    backups::restore_folder(
+        &paths,
+        &db,
+        &m.profile_id,
+        &loose,
+        Some("craig"),
+        Some("CRAIG/SAVEGAM2.CK4"),
+        Some("CRAIG/SAVEGAM4.CK4"),
+        false,
+    )
+    .unwrap();
+    assert_eq!(
+        fs::read(state.join("CRAIG/SAVEGAM4.CK4")).unwrap(),
+        keen4_save("loose")
+    );
+    assert!(!state.join("SAVEGAM2.CK4").exists());
+}
+
+#[test]
 fn saves_of_backups_from_before_the_root_go_to_its_old_folder() {
     let (_tmp, paths, db, m, zip) = old_revival();
     let old = backups::create(

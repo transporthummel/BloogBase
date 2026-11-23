@@ -751,7 +751,10 @@
     "importFolder": "Import from folder…",
     "importFolderHint": "Saves from an old copy of the game or mod: pick the folder with the EXE file you played it with.",
     "importFolderTitle": "Import saves from “{{name}}”",
-    "importedFromFolder": "Saves imported."
+    "importedFromFolder": "Saves imported.",
+    "importPart": "Part",
+    "importPartPick": "Choose…",
+    "importPartHint": "This folder doesn’t say which part these files belong to. Choose it to import them."
   },
   "backups": {
     "title": "Backups",

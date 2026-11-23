@@ -1052,21 +1052,53 @@ pub struct FolderSaves {
     pub saves: Vec<SaveFile>,
     /// Settings and high scores.
     pub settings: u32,
+    /// Whether files lie there without a folder of the game's
+    /// ([`Game::save_dirs`]) to go into: the player picks the part.
+    pub loose: bool,
 }
 
 /// A file read from a folder, with its modification time.
 type TimedFile = (String, Vec<u8>, Option<u32>);
 
 /// The files directly in `dir` that look like `game`'s saves, config or
-/// scores: an old copy keeps them next to its program.
-fn read_folder(game: &Game, dir: &Path) -> Result<Vec<TimedFile>> {
+/// scores: an old copy keeps them next to its program. A game that keeps
+/// them in folders ([`Game::save_dirs`]) finds them in those folders of a
+/// whole copy; a folder named like one of them is that part; files in any
+/// other go into `part`, if given.
+fn read_folder(game: &Game, dir: &Path, part: Option<&str>) -> Result<Vec<TimedFile>> {
+    let part = match part {
+        Some(p) => Some(
+            game.save_dirs
+                .iter()
+                .find(|d| d.eq_ignore_ascii_case(p))
+                .ok_or_else(|| Error::NotFound(format!("save folder {p}")))?
+                .as_str(),
+        ),
+        None => None,
+    };
+    let save_dir = |name: &str| {
+        game.save_dirs
+            .iter()
+            .find(|d| d.eq_ignore_ascii_case(name))
+            .map(String::as_str)
+    };
     let mut files = Vec::new();
-    for entry in fs::read_dir(dir)?.flatten() {
-        let name = entry.file_name().to_string_lossy().into_owned();
-        if entry.file_type().is_ok_and(|t| t.is_file()) && game.is_state_file(&name) {
-            let path = entry.path();
-            files.push((name, fs::read(&path)?, saves::modified(&path)));
+    let mut whole_copy = false;
+    if !game.save_dirs.is_empty() {
+        for entry in fs::read_dir(dir)?.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if entry.file_type().is_ok_and(|t| t.is_dir())
+                && let Some(d) = save_dir(&name)
+            {
+                whole_copy = true;
+                read_files(game, &entry.path(), Some(d), &mut files)?;
+            }
         }
+    }
+    // The game doesn't look in a whole copy's root.
+    if !whole_copy {
+        let own = dir.file_name().and_then(|n| save_dir(&n.to_string_lossy()));
+        read_files(game, dir, own.or(part), &mut files)?;
     }
     if files.is_empty() {
         return Err(Error::NoSavesFound);
@@ -1075,10 +1107,32 @@ fn read_folder(game: &Game, dir: &Path) -> Result<Vec<TimedFile>> {
     Ok(files)
 }
 
+/// Adds the state files lying directly in `dir`, into the game's folder
+/// `into` if given.
+fn read_files(
+    game: &Game,
+    dir: &Path,
+    into: Option<&str>,
+    files: &mut Vec<TimedFile>,
+) -> Result<()> {
+    for entry in fs::read_dir(dir)?.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if entry.file_type().is_ok_and(|t| t.is_file()) && game.is_state_file(&name) {
+            let path = entry.path();
+            let rel = match into {
+                Some(d) => format!("{d}/{name}"),
+                None => name,
+            };
+            files.push((rel, fs::read(&path)?, saves::modified(&path)));
+        }
+    }
+    Ok(())
+}
+
 /// What [`restore_folder`] can take from `dir`.
 pub fn folder_saves(db: &Db, profile_id: &str, dir: &Path) -> Result<FolderSaves> {
     let game = game_of_profile(db, profile_id)?;
-    let files = read_folder(game, dir)?;
+    let files = read_folder(game, dir, None)?;
     let mut saves: Vec<SaveFile> = files
         .iter()
         .filter(|(name, ..)| saves::is_save(game, name))
@@ -1086,25 +1140,37 @@ pub fn folder_saves(db: &Db, profile_id: &str, dir: &Path) -> Result<FolderSaves
         .collect();
     saves.sort_by(|a, b| (a.slot, &a.file).cmp(&(b.slot, &b.file)));
     let settings = (files.len() - saves.len()) as u32;
-    Ok(FolderSaves { saves, settings })
+    let loose = !game.save_dirs.is_empty() && files.iter().any(|(n, ..)| !n.contains('/'));
+    Ok(FolderSaves {
+        saves,
+        settings,
+        loose,
+    })
 }
 
 /// Puts saves from a folder into a profile as [`restore`] does from a
 /// backup; only what the profile has now is backed up. Whether it was.
+/// Files the folder doesn't place go into the game's folder `part`.
+#[allow(clippy::too_many_arguments)]
 pub fn restore_folder(
     paths: &AppPaths,
     db: &Db,
     profile_id: &str,
     dir: &Path,
+    part: Option<&str>,
     file: Option<&str>,
     target: Option<&str>,
     include_other: bool,
 ) -> Result<bool> {
     let game = game_of_profile(db, profile_id)?;
-    let files: Files = read_folder(game, dir)?
+    let files: Files = read_folder(game, dir, part)?
         .into_iter()
         .map(|(name, data, _)| (name, data))
         .collect();
+    // In the root, the game wouldn't see them.
+    if !game.save_dirs.is_empty() && files.iter().any(|(n, _)| !n.contains('/')) {
+        return Err(Error::NotFound("save folder".into()));
+    }
     let backed_up = put_back(paths, db, profile_id, &files, file, target, include_other)?;
     tracing::info!("restored saves from {} into {profile_id}", dir.display());
     Ok(backed_up)
@@ -1441,11 +1507,11 @@ mod tests {
         fs::write(old.join("CONFIG.CK4"), b"old").unwrap();
 
         // Saves over settings only: nothing to keep.
-        restore_folder(&paths, &db, "keen4-1", &old, None, None, false).unwrap();
+        restore_folder(&paths, &db, "keen4-1", &old, None, None, None, false).unwrap();
         assert_eq!(before_restore(&db), 0);
         // Saves over saves, and settings over settings, are backed up.
         fs::write(st.join("SAVEGAM1.CK4"), b"newer").unwrap();
-        restore_folder(&paths, &db, "keen4-1", &old, None, None, false).unwrap();
+        restore_folder(&paths, &db, "keen4-1", &old, None, None, None, false).unwrap();
         assert_eq!(before_restore(&db), 1);
         fs::write(st.join("config.ck4"), b"changed").unwrap();
         restore_folder(
@@ -1453,6 +1519,7 @@ mod tests {
             &db,
             "keen4-1",
             &old,
+            None,
             Some("CONFIG.CK4"),
             None,
             false,
@@ -1468,6 +1535,7 @@ mod tests {
             &db,
             "keen4-1",
             &old,
+            None,
             Some("CONFIG.CK4"),
             None,
             false,
@@ -1807,7 +1875,7 @@ mod tests {
 
         let state = paths.profiles.join("keen4-1/state");
         fs::write(state.join("CONFIG.CK4"), b"mine").unwrap();
-        restore_folder(&paths, &db, "keen4-1", &old, None, None, false).unwrap();
+        restore_folder(&paths, &db, "keen4-1", &old, None, None, None, false).unwrap();
         assert_eq!(fs::read(state.join("savegam2.ck4")).unwrap(), b"a");
         assert_eq!(fs::read(state.join("CONFIG.CK4")).unwrap(), b"mine");
         restore_folder(
@@ -1815,6 +1883,7 @@ mod tests {
             &db,
             "keen4-1",
             &old,
+            None,
             Some("savegam2.ck4"),
             Some("SAVEGAM7.CK4"),
             false,

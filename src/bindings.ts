@@ -94,8 +94,11 @@ export const commands = {
 	importBackup: (profileId: string, path: string) => typedError<Backup, CommandError>(__TAURI_INVOKE("import_backup", { profileId, path })),
 	/**  The saves lying in a folder, such as an old copy of the game. */
 	folderSaves: (profileId: string, path: string) => typedError<FolderSaves, CommandError>(__TAURI_INVOKE("folder_saves", { profileId, path })),
-	/**  Restores saves from a folder, as [`restore_backup`] does from a backup. */
-	restoreFolder: (profileId: string, path: string, file: string | null, target: string | null, includeOther: boolean) => typedError<boolean, CommandError>(__TAURI_INVOKE("restore_folder", { profileId, path, file, target, includeOther })),
+	/**
+	 *  Restores saves from a folder, as [`restore_backup`] does from a backup;
+	 *  files the folder doesn't place go into the game's folder `part`.
+	 */
+	restoreFolder: (profileId: string, path: string, part: string | null, file: string | null, target: string | null, includeOther: boolean) => typedError<boolean, CommandError>(__TAURI_INVOKE("restore_folder", { profileId, path, part, file, target, includeOther })),
 	backupSettings: () => typedError<BackupSettings, CommandError>(__TAURI_INVOKE("backup_settings")),
 	setBackupSettings: (settings: BackupSettings) => typedError<null, CommandError>(__TAURI_INVOKE("set_backup_settings", { settings })),
 	/**  The simple display options on the settings page. */
@@ -554,6 +557,11 @@ export type FolderSaves = {
 	saves: SaveFile[],
 	/**  Settings and high scores. */
 	settings: number,
+	/**
+	 *  Whether files lie there without a folder of the game's
+	 *  ([`Game::save_dirs`]) to go into: the player picks the part.
+	 */
+	loose: boolean,
 };
 
 export type FoundGame = {

@@ -1264,7 +1264,7 @@ test("imports the saves of an old copy straight from a folder, not as a backup",
   const folder = String.raw`C:\Games\KEEN4`;
   vi.mocked(openDialog).mockResolvedValue(folder);
   vi.mocked(commands.folderSaves).mockResolvedValue(
-    ok({ saves: [save("SAVEGAM3.CK4", 4, "old")], settings: 1 }),
+    ok({ saves: [save("SAVEGAM3.CK4", 4, "old")], settings: 1, loose: false }),
   );
   // Only settings to replace: nothing was backed up.
   vi.mocked(commands.restoreFolder).mockResolvedValue(ok(false));
@@ -1274,11 +1274,47 @@ test("imports the saves of an old copy straight from a folder, not as a backup",
   expect(commands.folderSaves).toHaveBeenCalledWith("keen4-1", folder);
   const dialog = await screen.findByRole("dialog", { name: "Import saves from “KEEN4”" });
   expect(within(dialog).getByText("Slot 4 · old")).toBeInTheDocument();
+  expect(within(dialog).queryByLabelText("Part")).not.toBeInTheDocument();
   expect(within(dialog).getByLabelText(/Also reset settings and high scores/)).not.toBeChecked();
   await userEvent.click(within(dialog).getByRole("button", { name: "Restore all saves" }));
-  expect(commands.restoreFolder).toHaveBeenCalledWith("keen4-1", folder, null, null, false);
+  expect(commands.restoreFolder).toHaveBeenCalledWith("keen4-1", folder, null, null, null, false);
   expect(await screen.findByText("Saves imported.")).toBeInTheDocument();
   expect(commands.importBackup).not.toHaveBeenCalled();
+});
+
+test("saves from a folder that names no part of a launcher go into the part chosen", async () => {
+  const saveDirs: SaveDir[] = [
+    { dir: "KEEN", name: "Keen" },
+    { dir: "CRAIG", name: "Craig", oldRoot: true },
+  ];
+  vi.mocked(commands.listProfiles).mockResolvedValue(ok([{ ...profile, saveDirs }]));
+  vi.mocked(commands.listSaves).mockResolvedValue(ok([save("CRAIG/SAVEGAM0.CK4", 1, "mine")]));
+  const folder = String.raw`C:\Downloads\saves`;
+  vi.mocked(openDialog).mockResolvedValue(folder);
+  vi.mocked(commands.folderSaves).mockResolvedValue(
+    ok({ saves: [save("SAVEGAM0.CK4", 1, "forum")], settings: 0, loose: true }),
+  );
+  vi.mocked(commands.restoreFolder).mockResolvedValue(ok(true));
+  renderDetail();
+  await userEvent.click(await screen.findByRole("button", { name: "Import from folder…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Import saves from “saves”" });
+  // Nothing goes anywhere before the part is chosen.
+  expect(within(dialog).getByRole("button", { name: "Restore all saves" })).toBeDisabled();
+  expect(within(dialog).getByRole("button", { name: "Restore this save" })).toBeDisabled();
+  await userEvent.selectOptions(within(dialog).getByLabelText("Part"), "CRAIG");
+  expect(within(dialog).getByText("Craig · Slot 1 · forum")).toBeInTheDocument();
+  expect(
+    within(dialog).getByText("Replaces Craig · Slot 1 · mine; it’s backed up first."),
+  ).toBeVisible();
+  await userEvent.click(within(dialog).getByRole("button", { name: "Restore all saves" }));
+  expect(commands.restoreFolder).toHaveBeenCalledWith(
+    "keen4-1",
+    folder,
+    "CRAIG",
+    null,
+    null,
+    false,
+  );
 });
 
 test("save actions are locked while the game runs", async () => {
