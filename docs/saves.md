@@ -193,6 +193,25 @@ Saves from before a mod had worlds belong to none: the first new world takes
 them out of `state/` into an automatic backup ("from before worlds"). A
 world deleted is backed up first.
 
+## Variants
+
+A mod with variants (an index entry's `variants`, `index/README.md`) keeps
+saves per variant the same way (`variants.rs`, on `slots.rs`, which worlds
+use too): the variant played has its saves in `state/`, the others' wait in
+`variants/<id>/` next to it, and a switch moves them file by file with the
+journal `variants/swap.json`. Settings, high scores and the DOSBox settings
+stay with the mod. Saves a variant comes with count as its own until the
+player deletes them. Each variant may name its saves its own way (Rescue of
+the Last's `.ROL` and `.RES`), so its saves are counted, in the Variants tab
+and in its backups, by the names it uses.
+
+Backups record the variant they were made of (manifest `variant`).
+Restoring one of another variant plays that variant again first. When a mod
+gains variants, the backups made before get the variant it played so far. A
+mod's removal backup keeps the saves of the variants not played under
+`bloogbase-variants/<id>/` and the variant played in the manifest
+(`variants`), so restoring it brings them back.
+
 ## Backups
 
 A backup is a ZIP in `backups/<profile>/` with a manifest
