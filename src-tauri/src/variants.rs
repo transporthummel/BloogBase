@@ -113,7 +113,7 @@ fn save_count(game: &Game, files: &Path, saved: &Path) -> Result<u32> {
 
 /// The game as variant `id` plays it: variants may name their saves each
 /// their own way (Rescue of the Last's `.ROL` and `.RES`).
-fn variant_game(db: &Db, profile_id: &str, id: &str) -> Result<&'static Game> {
+pub(crate) fn variant_game(db: &Db, profile_id: &str, id: &str) -> Result<&'static Game> {
     let (profile, layers) = profiles::get_as_variant(db, profile_id, id)?;
     saves::profile_game(&profile.game_id, &layers)
 }

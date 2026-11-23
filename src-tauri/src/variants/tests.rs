@@ -312,3 +312,23 @@ fn a_variant_naming_its_saves_its_own_way_counts_them() {
     assert_eq!(rows(&t), vec![(false, 1), (true, 1)]);
     assert_eq!(card(&t), 2);
 }
+
+#[test]
+fn removal_backups_offer_saves_named_by_any_variant() {
+    for played in ["easy", "hard"] {
+        let t = setup_with(OWN_EXTENSION);
+        t.switch("easy");
+        fs::write(t.state.join("SAVEGAM0.EZ4"), keen4_save("easy save")).unwrap();
+        t.switch(played);
+        let mod_id = profiles::get(&t.db, &t.profile).unwrap().0.mod_id.unwrap();
+        mods::delete(&t.paths, &t.db, &mod_id, true).unwrap();
+
+        assert_eq!(t.install(OWN_EXTENSION), t.profile);
+        assert_eq!(t.list().active.as_deref(), Some("hard"));
+        let offer = backups::earlier(&t.db, &t.profile).unwrap().unwrap();
+        assert_eq!(offer.backup.saves, 1, "played {played}");
+        backups::answer_earlier(&t.paths, &t.db, &t.profile, offer.backup.id, true).unwrap();
+        t.switch("easy");
+        assert!(t.state.join("SAVEGAM0.EZ4").is_file(), "played {played}");
+    }
+}

@@ -606,13 +606,62 @@ fn from_row(db: &Db, r: &rusqlite::Row<'_>) -> rusqlite::Result<(Backup, String)
     ))
 }
 
-/// Fills in what kinds of files a backup holds.
-fn tally(game: &Game, mut b: Backup) -> Backup {
+/// The game a profile's backed-up files are counted by: a mod's variants
+/// may name their saves each their own way (Rescue of the Last's `.ROL`
+/// and `.RES`).
+struct Games<'a> {
+    db: &'a Db,
+    profile_id: &'a str,
+    played: &'static Game,
+    active: Option<String>,
+    others: std::cell::RefCell<std::collections::HashMap<String, &'static Game>>,
+}
+
+impl<'a> Games<'a> {
+    fn of_profile(db: &'a Db, profile_id: &'a str) -> Result<Self> {
+        Ok(Games {
+            db,
+            profile_id,
+            played: game_of_profile(db, profile_id)?,
+            active: crate::variants::active_variant(db, profile_id)?,
+            others: Default::default(),
+        })
+    }
+
+    /// The game as `variant` plays it; one the mod no longer has counts
+    /// as the variant played.
+    fn of(&self, variant: Option<&str>) -> &'static Game {
+        let Some(id) = variant.filter(|v| self.active.as_deref() != Some(*v)) else {
+            return self.played;
+        };
+        self.others
+            .borrow_mut()
+            .entry(id.to_string())
+            .or_insert_with(|| {
+                crate::variants::variant_game(self.db, self.profile_id, id).unwrap_or(self.played)
+            })
+    }
+}
+
+/// Fills in what kinds of files a backup holds. The saves of the worlds
+/// and variants not played, kept when a mod is removed, count too.
+fn tally(games: &Games<'_>, mut b: Backup) -> Backup {
+    let worlds = format!("{}/", crate::worlds::ARCHIVE_DIR);
+    let variants = format!("{}/", crate::variants::ARCHIVE_DIR);
     for file in &b.files {
         let name = file.rsplit('/').next().unwrap_or(file);
         if overlay_view::is_marker(name) {
             continue;
         }
+        let (game, file) = if let Some(rest) = file.strip_prefix(&variants) {
+            let (id, rest) = rest.split_once('/').unwrap_or(("", rest));
+            (games.of(Some(id)), rest)
+        } else if let Some(rest) = file.strip_prefix(&worlds) {
+            let rest = rest.split_once('/').map_or(rest, |(_, r)| r);
+            (games.of(b.variant.as_deref()), rest)
+        } else {
+            (games.of(b.variant.as_deref()), file.as_str())
+        };
         if saves::is_save(game, file) {
             b.saves += 1;
         } else if game.is_state_file(file) {
@@ -640,7 +689,8 @@ fn get_with_archive(db: &Db, id: u32) -> Result<(Backup, String)> {
 
 pub fn get(db: &Db, id: u32) -> Result<Backup> {
     let b = get_with_archive(db, id)?.0;
-    Ok(tally(game_of_profile(db, &b.profile_id)?, b))
+    let profile_id = b.profile_id.clone();
+    Ok(tally(&Games::of_profile(db, &profile_id)?, b))
 }
 
 /// The backup made when this mod or game was removed before, offered when
@@ -663,7 +713,7 @@ fn offered_key(profile_id: &str) -> String {
 /// unless the player already answered for this profile. A profile added
 /// again later is asked again.
 pub fn earlier(db: &Db, profile_id: &str) -> Result<Option<EarlierBackup>> {
-    let (profile, layers) = profiles::get(db, profile_id)?;
+    let (profile, _) = profiles::get(db, profile_id)?;
     if profile.session_count > 0 {
         return Ok(None);
     }
@@ -683,7 +733,7 @@ pub fn earlier(db: &Db, profile_id: &str) -> Result<Option<EarlierBackup>> {
             .collect::<rusqlite::Result<_>>()?
     };
     let answered = settings::get(db, &offered_key(profile_id))?;
-    let game = saves::profile_game(&profile.game_id, &layers)?;
+    let games = Games::of_profile(db, profile_id)?;
     for (backup, archive) in candidates {
         // A mod is the same mod by its id; a copy there before isn't added again.
         if backup.reason != Some(reason)
@@ -707,7 +757,7 @@ pub fn earlier(db: &Db, profile_id: &str) -> Result<Option<EarlierBackup>> {
             return Ok(None);
         }
         return Ok(Some(EarlierBackup {
-            backup: tally(game, backup),
+            backup: tally(&games, backup),
             version_id: manifest.version_id,
         }));
     }
@@ -744,16 +794,17 @@ pub fn answer_earlier(
 
 /// A profile's backups, newest first.
 pub fn list(db: &Db, profile_id: &str) -> Result<Vec<Backup>> {
-    let game = game_of_profile(db, profile_id)?;
-    let conn = db.conn();
-    let mut stmt = conn.prepare(&format!(
-        "{SELECT} WHERE profile_id = ?1 ORDER BY created_at DESC, id DESC"
-    ))?;
-    let rows = stmt
-        .query_map([profile_id], |r| from_row(db, r))?
-        .map(|r| r.map(|(b, _)| tally(game, b)))
-        .collect::<rusqlite::Result<_>>()?;
-    Ok(rows)
+    let games = Games::of_profile(db, profile_id)?;
+    let rows: Vec<Backup> = {
+        let conn = db.conn();
+        let mut stmt = conn.prepare(&format!(
+            "{SELECT} WHERE profile_id = ?1 ORDER BY created_at DESC, id DESC"
+        ))?;
+        stmt.query_map([profile_id], |r| from_row(db, r))?
+            .map(|r| r.map(|(b, _)| b))
+            .collect::<rusqlite::Result<_>>()?
+    };
+    Ok(rows.into_iter().map(|b| tally(&games, b)).collect())
 }
 
 pub fn delete(db: &Db, id: u32) -> Result<()> {
