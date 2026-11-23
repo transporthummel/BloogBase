@@ -4,7 +4,7 @@
 
 ### Features
 
-- The saves tab imports saves from a folder, such as an old copy of the game or a mod: the files lying in it that look like the game's saves, settings or high scores are restored from there, all or one into a chosen slot, without becoming a backup of their own. For a mod that saves in folders of its own (Revival of Bliss), the saves of a whole copy or of one part's folder go into their part; for any other folder the dialog asks which part.
+- The saves tab imports saves from a folder, such as an old copy of the game or a mod: the files lying in it that look like the game's saves, settings or high scores are restored from there, all or one into a chosen slot, without becoming a backup of their own. For a mod that saves in folders of its own (Revival of Bliss), the saves of a whole copy or of one part's folder go into their part; for any other folder the dialog asks which part. For a mod with variants or worlds, the dialog says that the saves go into the variant or world played and have to be from it.
 - A game's page shows, like a mod's, a description in English and German, "by id Software" with a link to their website and the release date of its version (from KeenWiki); demos and betas have descriptions of their own.
 - On the controller, pressing the right stick (R3) takes a screenshot and View+LT (Share+L2) starts or stops a video, in every game; the Controls tab (its drawing and, in the controller view, "Window and recordings"), the Screenshots and Videos tabs and the controller charts show them.
 - Discover can hide installed mods. A mod installed while the filter is on stays in the list until the filter is turned on again or the page is opened again.

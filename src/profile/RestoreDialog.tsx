@@ -55,8 +55,15 @@ export function FolderRestoreDialog({
   profileId,
   path,
   found,
+  into,
   ...shared
-}: Shared & { profileId: string; path: string; found: FolderSaves }) {
+}: Shared & {
+  profileId: string;
+  path: string;
+  found: FolderSaves;
+  /** Says which variant or world the saves go into, as they must fit it. */
+  into?: string;
+}) {
   const { t, i18n } = useTranslation();
   const name = path.split(/[\\/]/).filter(Boolean).pop() ?? path;
   const [part, setPart] = useState<string | null>(null);
@@ -76,6 +83,7 @@ export function FolderRestoreDialog({
         unwrap(commands.restoreFolder(profileId, path, part, file, target, all))
       }
     >
+      {into && <Notice>{into}</Notice>}
       {found.loose && (
         <div className="grid gap-1">
           <label className="flex items-center gap-2 text-sm">

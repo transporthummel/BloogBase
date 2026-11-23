@@ -288,7 +288,9 @@ the dialog asks which part its files go into, and nothing is restored
 before. They are restored straight from the folder in the
 same dialog as a backup, never kept as a backup of their own: the backups
 list shows only what the player backed up. As with every restore, what the
-profile had before is backed up first, if it is of the kind restored.
+profile had before is backed up first, if it is of the kind restored. For a mod with
+variants or worlds, the saves go into the variant or world played, which
+the dialog says, as they only fit their own.
 
 ### Removed
 

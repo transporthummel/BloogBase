@@ -1928,3 +1928,30 @@ test("the Variants tab lists them and makes one current without playing", async 
   await userEvent.click(screen.getByRole("tab", { name: /^Saves/ }));
   expect(await screen.findByText(/Saves of the variant/)).toHaveTextContent("Easy");
 });
+
+test("saves imported from a folder go into the variant or world played, as the dialog says", async () => {
+  vi.mocked(openDialog).mockResolvedValue(String.raw`C:\Games\OLD`);
+  vi.mocked(commands.folderSaves).mockResolvedValue(
+    ok({ saves: [save("SAVEGAM0.CK4", 1, "old")], settings: 0, loose: false }),
+  );
+  withVariants();
+  const { unmount } = renderDetail();
+  await userEvent.click(await screen.findByRole("tab", { name: /^Saves/ }));
+  await userEvent.click(await screen.findByRole("button", { name: "Import from folder…" }));
+  const dialog = await screen.findByRole("dialog", { name: "Import saves from “OLD”" });
+  expect(
+    within(dialog).getByText(
+      "The saves go into the variant you’re playing, “Easy”. They have to be from that variant.",
+    ),
+  ).toBeInTheDocument();
+  unmount();
+
+  withWorlds();
+  renderDetail();
+  await userEvent.click(await screen.findByRole("tab", { name: /^Saves/ }));
+  await userEvent.click(await screen.findByRole("button", { name: "Import from folder…" }));
+  const worldDialog = await screen.findByRole("dialog", { name: "Import saves from “OLD”" });
+  expect(
+    within(worldDialog).getByText(/^The saves go into the world you’re playing, “.+”\./),
+  ).toBeInTheDocument();
+});

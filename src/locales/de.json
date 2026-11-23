@@ -754,7 +754,9 @@
     "importedFromFolder": "Spielstände importiert.",
     "importPart": "Teil",
     "importPartPick": "Wählen…",
-    "importPartHint": "Der Ordner verrät nicht, zu welchem Teil diese Dateien gehören. Wähle ihn, um sie zu importieren."
+    "importPartHint": "Der Ordner verrät nicht, zu welchem Teil diese Dateien gehören. Wähle ihn, um sie zu importieren.",
+    "importIntoVariant": "Die Spielstände kommen in die Variante „{{name}}“, die du gerade spielst. Sie müssen von dieser Variante stammen.",
+    "importIntoWorld": "Die Spielstände kommen in die Welt „{{name}}“, die du gerade spielst. Sie müssen aus dieser Welt stammen."
   },
   "backups": {
     "title": "Sicherungen",

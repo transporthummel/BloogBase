@@ -754,7 +754,9 @@
     "importedFromFolder": "Saves imported.",
     "importPart": "Part",
     "importPartPick": "Choose…",
-    "importPartHint": "This folder doesn’t say which part these files belong to. Choose it to import them."
+    "importPartHint": "This folder doesn’t say which part these files belong to. Choose it to import them.",
+    "importIntoVariant": "The saves go into the variant you’re playing, “{{name}}”. They have to be from that variant.",
+    "importIntoWorld": "The saves go into the world you’re playing, “{{name}}”. They have to be from that world."
   },
   "backups": {
     "title": "Backups",

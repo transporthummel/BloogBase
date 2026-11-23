@@ -508,6 +508,15 @@ export function SavesPanel({
           profileId={profile.id}
           path={fromFolder.path}
           found={fromFolder.found}
+          into={
+            profile.activeVariant
+              ? t("saves.importIntoVariant", {
+                  name: variantName(profile.activeVariant, i18n.language),
+                })
+              : played
+                ? t("saves.importIntoWorld", { name: worldName(t, played) })
+                : undefined
+          }
           game={game}
           saveDirs={profile.saveDirs}
           current={saves.data ?? []}
