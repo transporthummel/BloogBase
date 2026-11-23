@@ -641,7 +641,8 @@
     "text_other": "When it was removed on {{date}}, {{count}} saves were backed up.",
     "otherVersion": "Backed up from {{version}}.",
     "restore": "Restore",
-    "decline": "Start fresh"
+    "decline": "Start fresh",
+    "running": "Restoring works once {{name}} is no longer running or being set up."
   },
   "profile": {
     "back": "Library",

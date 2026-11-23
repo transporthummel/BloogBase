@@ -140,6 +140,25 @@ test("starting fresh declines it", async () => {
   expect(commands.answerEarlierBackup).toHaveBeenCalledWith("keen4-2", 7, false);
 });
 
+test("waits while the added mod is still being set up, and says so", async () => {
+  const client = renderPrompt();
+  await vi.waitFor(() => expect(client.getQueryData(profilesKey)).toBeDefined());
+  // Its variants are installed right after it's added (§9.7).
+  vi.mocked(commands.listProfiles).mockReturnValue(ok([old, { ...added, running: true }]));
+  await act(() => client.invalidateQueries({ queryKey: profilesKey }));
+
+  const restore = await screen.findByRole("button", { name: "Restore" });
+  expect(restore).toBeDisabled();
+  expect(screen.getByRole("dialog")).toHaveTextContent(
+    `Restoring works once ${keen4.title} is no longer running or being set up.`,
+  );
+
+  vi.mocked(commands.listProfiles).mockReturnValue(ok([old, added]));
+  await act(() => client.invalidateQueries({ queryKey: profilesKey }));
+  await vi.waitFor(() => expect(restore).toBeEnabled());
+  expect(screen.getByRole("dialog")).not.toHaveTextContent("no longer running");
+});
+
 test("says nothing without a backup of saves", async () => {
   vi.mocked(commands.earlierBackup).mockReturnValue(
     ok({ backup: { ...backup, saves: 0, settings: 1 }, versionId: null }),

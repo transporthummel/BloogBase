@@ -641,7 +641,8 @@
     "text_other": "Beim Entfernen am {{date}} wurden {{count}} Spielstände gesichert.",
     "otherVersion": "Gesichert aus {{version}}.",
     "restore": "Wiederherstellen",
-    "decline": "Neu anfangen"
+    "decline": "Neu anfangen",
+    "running": "Wiederherstellen geht, sobald {{name}} nicht mehr läuft oder eingerichtet wird."
   },
   "profile": {
     "back": "Bibliothek",

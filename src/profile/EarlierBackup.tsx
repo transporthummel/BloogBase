@@ -52,8 +52,11 @@ function OfferDialog({ offer, onDone }: { offer: Offer; onDone: () => void }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const games = useGames();
-  const { profile, earlier } = offer;
+  const profiles = useProfiles();
+  const { earlier } = offer;
   const { backup, versionId } = earlier;
+  // As it is now: a mod added gets its variants right after, while it counts as running.
+  const profile = profiles.data?.find((p) => p.id === offer.profile.id) ?? offer.profile;
   const answer = useMutation({
     mutationFn: (restore: boolean) =>
       unwrap(commands.answerEarlierBackup(profile.id, backup.id, restore)),
@@ -79,6 +82,9 @@ function OfferDialog({ offer, onDone }: { offer: Offer; onDone: () => void }) {
         })}
         {otherVersion && <> {t("earlierBackup.otherVersion", { version: otherVersion })}</>}
       </p>
+      {profile.running && (
+        <p className="text-sm text-muted">{t("earlierBackup.running", { name: profile.label })}</p>
+      )}
       {answer.error && <Notice tone="error">{errorMessage(t, answer.error)}</Notice>}
       <div className="flex justify-end gap-2">
         <Button
