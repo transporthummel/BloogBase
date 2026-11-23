@@ -59,6 +59,7 @@
 - A mod variant from an archive of its own, such as Shadow Keen 1's 2005 remake, no longer shows the readme of the mod's main download, which belongs to another release.
 - In a narrow window (800 px), a mod page's Options button no longer gets cut off beside a Play button with a menu; the row wraps.
 - The saved games on a library card open the Saves tab of the game's or mod's page, instead of its first tab (the readme, variants or worlds).
+- A mod with variants, such as Rescue Of The Last, installed again after removing it, shows its cover on its library card right away instead of the placeholder until its page was opened: two requests for the same cover could write it at once, and one of them failed.
 
 ### Misc
 

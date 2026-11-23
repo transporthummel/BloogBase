@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::UNIX_EPOCH;
 
@@ -774,8 +775,11 @@ fn write_png(image: &Image, colors: &Colors, path: &Path) -> Result<()> {
 }
 
 pub fn write_rgb_png(width: u32, height: u32, rgb: &[u8], path: &Path) -> Result<()> {
-    let tmp = path.with_extension("tmp");
-    {
+    // Its own file: two callers may write the same image at once, and the
+    // second rename would find the shared one gone.
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+    let tmp = path.with_extension(format!("{}.tmp", NEXT.fetch_add(1, Ordering::Relaxed)));
+    let written = (|| -> Result<()> {
         let file = io::BufWriter::new(fs::File::create(&tmp)?);
         let mut encoder = png::Encoder::new(file, width, height);
         encoder.set_color(png::ColorType::Rgb);
@@ -785,9 +789,12 @@ pub fn write_rgb_png(width: u32, height: u32, rgb: &[u8], path: &Path) -> Result
             .write_image_data(rgb)
             .and_then(|()| writer.finish())
             .map_err(io::Error::other)?;
+        Ok(fs::rename(&tmp, path)?)
+    })();
+    if written.is_err() {
+        let _ = fs::remove_file(&tmp);
     }
-    fs::rename(&tmp, path)?;
-    Ok(())
+    written
 }
 
 #[cfg(test)]
@@ -843,6 +850,24 @@ mod tests {
         assert_eq!(patched(&text, "CK2").palette, None);
         let short = "%patch $21850 00 00 00 63 63 63\n%patch $1 $00\n";
         assert_eq!(patched(short, "CK1").palette, None);
+    }
+
+    #[test]
+    fn writes_the_same_png_from_several_threads_at_once() {
+        // The library card and the variant menu may ask for one cover together.
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("cover.png");
+        let rgb = vec![0u8; 320 * 200 * 3];
+        std::thread::scope(|s| {
+            let writers: Vec<_> = (0..8)
+                .map(|_| s.spawn(|| write_rgb_png(320, 200, &rgb, &path)))
+                .collect();
+            for w in writers {
+                w.join().unwrap().unwrap();
+            }
+        });
+        assert!(path.is_file());
+        assert_eq!(fs::read_dir(tmp.path()).unwrap().count(), 1);
     }
 
     #[test]

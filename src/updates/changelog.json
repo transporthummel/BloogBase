@@ -40,8 +40,9 @@
       "A game's page without a readme opens on its first tab, the saves.",
       "Discover shows recommended mods under their own heading.",
       "In a narrow window, the Options button beside Play is no longer cut off.",
-    "The saved games on a library card open the Saves tab.",
-    "Library cards no longer say \"No saved games\"."
+      "The saved games on a library card open the Saves tab.",
+      "A newly installed mod with variants shows its cover on the library card right away.",
+      "Library cards no longer say \"No saved games\"."
     ],
     "de": [
       "Spielstände lassen sich aus einem Ordner importieren, z. B. aus einer alten Kopie des Spiels.",
@@ -83,8 +84,9 @@
       "Die Seite eines Spiels ohne Liesmich öffnet auf ihrem ersten Tab, den Spielständen.",
       "Entdecken zeigt empfohlene Mods unter einer eigenen Überschrift.",
       "Im schmalen Fenster wird der Knopf „Optionen“ neben „Spielen“ nicht mehr abgeschnitten.",
-    "Die Spielstände auf einer Karte der Bibliothek öffnen den Tab „Spielstände“.",
-    "Karten der Bibliothek zeigen „Keine Spielstände“ nicht mehr an."
+      "Die Spielstände auf einer Karte der Bibliothek öffnen den Tab „Spielstände“.",
+      "Eine neu installierte Mod mit Varianten zeigt ihr Cover sofort auf der Karte der Bibliothek.",
+      "Karten der Bibliothek zeigen „Keine Spielstände“ nicht mehr an."
     ]
   },
   "releases": [
