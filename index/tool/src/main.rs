@@ -2,7 +2,7 @@
 //!
 //! ```text
 //! bbindex check [--download [--links]] [--only ID] [--cache DIR]
-//!                                                 validate index/mods/*.yaml
+//!                                   validate index/mods/*.yaml and series/*.yaml
 //! bbindex build --out DIR [--key FILE|--unsigned] [--generated-at SECS]
 //! bbindex keygen --out DIR                        new minisign key pair
 //! ```
@@ -13,12 +13,14 @@
 mod archive;
 mod entry;
 mod publish;
+mod series;
 
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use entry::Entry;
+use series::Series;
 
 const CRATE_DIR: &str = env!("CARGO_MANIFEST_DIR");
 
@@ -79,9 +81,10 @@ fn main() -> ExitCode {
     }
 }
 
-/// Reads and checks all entries; fails with every problem found.
-fn load(args: &mut Args) -> Result<Vec<Entry>, String> {
+/// Reads and checks all entries and series; fails with every problem found.
+fn load(args: &mut Args) -> Result<(Vec<Entry>, Vec<Series>), String> {
     let mods = args.path("--mods", "../mods")?;
+    let series_dir = args.path("--series", "../series")?;
     let catalog =
         entry::load_catalog(&args.path("--catalog", "../../src-tauri/catalog/games.json")?)?;
     let mut files: Vec<PathBuf> = std::fs::read_dir(&mods)
@@ -111,8 +114,9 @@ fn load(args: &mut Args) -> Result<Vec<Entry>, String> {
     }
     problems.extend(entry::extends_problems(&entries));
     problems.extend(entry::provides_problems(&entries));
+    let series = load_series(&series_dir, &entries, &catalog, &mut problems)?;
     if problems.is_empty() {
-        Ok(entries)
+        Ok((entries, series))
     } else {
         Err(format!(
             "{} problem(s):\n  {}",
@@ -122,6 +126,48 @@ fn load(args: &mut Args) -> Result<Vec<Entry>, String> {
     }
 }
 
+/// Reads `dir/*.yaml` (none when `dir` doesn't exist) and adds what's
+/// wrong with them to `problems`.
+fn load_series(
+    dir: &Path,
+    entries: &[Entry],
+    catalog: &entry::Catalog,
+    problems: &mut Vec<String>,
+) -> Result<Vec<Series>, String> {
+    let mut files: Vec<PathBuf> = match std::fs::read_dir(dir) {
+        Ok(read) => read
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .filter(|p| p.extension().is_some_and(|e| e == "yaml"))
+            .collect(),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Vec::new(),
+        Err(e) => return Err(format!("{}: {e}", dir.display())),
+    };
+    files.sort();
+    let mut out = Vec::new();
+    for file in &files {
+        let name = file.file_name().unwrap_or_default().to_string_lossy();
+        let label = format!("series/{name}");
+        let text = std::fs::read_to_string(file).map_err(|e| format!("{label}: {e}"))?;
+        match series::parse(&text, name.trim_end_matches(".yaml")) {
+            Ok(s) => {
+                problems.extend(
+                    series::problems(&s, entries, catalog)
+                        .into_iter()
+                        .map(|p| format!("{label}: {p}")),
+                );
+                out.push(s);
+            }
+            Err(e) => problems.push(format!("{label}: {e}")),
+        }
+    }
+    problems.extend(
+        series::overlap_problems(&out)
+            .into_iter()
+            .map(|p| format!("series/{p}")),
+    );
+    Ok(out)
+}
+
 fn check(mut args: Args) -> Result<(), String> {
     let download = args.flag("--download");
     // Also ask the servers about files that are cached already.
@@ -129,9 +175,13 @@ fn check(mut args: Args) -> Result<(), String> {
     let cache = args.path("--cache", "../../.local/mods/index-cache")?;
     // Downloads of this entry alone; all entries are still validated.
     let only = args.value("--only")?;
-    let entries = load(&mut args)?;
+    let (entries, series) = load(&mut args)?;
     args.done()?;
-    eprintln!("{} entries are valid", entries.len());
+    eprintln!(
+        "{} entries and {} series are valid",
+        entries.len(),
+        series.len()
+    );
     if let Some(id) = &only
         && !entries.iter().any(|e| e.id == *id)
     {
@@ -264,11 +314,11 @@ fn build(mut args: Args) -> Result<(), String> {
     let shareware = entry::load_shareware(
         &args.path("--free-games", "../../src-tauri/catalog/free-games.json")?,
     )?;
-    let mut entries = load(&mut args)?;
+    let (mut entries, series) = load(&mut args)?;
     args.done()?;
     entry::set_requires_game(&mut entries, &shareware);
 
-    let json = publish::index_json(&entries, generated_at);
+    let json = publish::index_json(&entries, &series, generated_at);
     std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;
     let target = out.join("index.json");
     std::fs::write(&target, &json).map_err(|e| e.to_string())?;

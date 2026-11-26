@@ -7,6 +7,7 @@ use minisign::{KeyPair, PublicKey, SecretKey, SecretKeyBox};
 use serde::Serialize;
 
 use crate::entry::Entry;
+use crate::series::{self, Series};
 
 /// Bumped only for changes old apps would misread; additions don't need it.
 pub const SCHEMA_VERSION: u32 = 1;
@@ -18,15 +19,18 @@ struct Index<'a> {
     /// Unix seconds; apps never go back to an older index.
     generated_at: u64,
     mods: &'a [Entry],
+    /// Apps before series ignore it.
+    series: Vec<Series>,
 }
 
-pub fn index_json(entries: &[Entry], generated_at: u64) -> String {
+pub fn index_json(entries: &[Entry], series: &[Series], generated_at: u64) -> String {
     let mut sorted = entries.to_vec();
     sorted.sort_by(|a, b| a.id.cmp(&b.id));
     let index = Index {
         schema_version: SCHEMA_VERSION,
         generated_at,
         mods: &sorted,
+        series: series::publish(series),
     };
     serde_json::to_string_pretty(&index).expect("entries serialize") + "\n"
 }
@@ -72,6 +76,7 @@ mod tests {
 
     use super::*;
     use crate::entry::parse;
+    use crate::series;
 
     #[test]
     fn signature_verifies_with_the_public_key() {
@@ -101,12 +106,17 @@ mod tests {
         let mut files: Vec<_> = std::fs::read_dir(dir.join("tests/sample"))
             .unwrap()
             .map(|e| e.unwrap().path())
+            .filter(|p| p.is_file())
             .collect();
         files.sort();
         for f in files {
             entries.push(parse(&std::fs::read_to_string(f).unwrap()).unwrap());
         }
-        let json = index_json(&entries, 1_760_000_000);
+        let series_file = dir.join("tests/sample/series/sample-series.yaml");
+        let text = std::fs::read_to_string(series_file).unwrap();
+        let series = vec![series::parse(&text, "sample-series").unwrap()];
+        let json = index_json(&entries, &series, 1_760_000_000);
+        assert!(json.contains("\"series\": ["), "the series are published");
         let sample = dir.join("../../src-tauri/tests/index-sample.json");
         if std::env::var_os("BLOOGBASE_SAMPLE_UPDATE").is_some() {
             std::fs::write(&sample, &json).unwrap();

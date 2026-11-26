@@ -1,0 +1,13 @@
+name: Sample Series
+description: Made-up parts for tests.
+translations:
+  de:
+    name: Beispielserie
+    description: Ausgedachte Teile für Tests.
+episodes:
+  - game: keen4
+    title: The Original
+  - mod: sample-patch
+    title: Patched
+bonus:
+  - mod: sample-levels

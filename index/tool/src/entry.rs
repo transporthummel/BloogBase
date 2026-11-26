@@ -1186,7 +1186,7 @@ fn is_word(s: &str) -> bool {
             .all(|b| b.is_ascii_graphic() && !b"%|<>&\"".contains(&b))
 }
 
-fn is_slug(s: &str) -> bool {
+pub(crate) fn is_slug(s: &str) -> bool {
     !s.is_empty()
         && !s.starts_with('-')
         && !s.ends_with('-')

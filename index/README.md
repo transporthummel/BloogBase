@@ -323,6 +323,40 @@ Discover marks a mod "New" for 30 days after an index update brought it to
 the player's app; `added` doesn't decide it. The first index an app
 downloads brings nothing new, since everything in it would be.
 
+## Series
+
+Mods that belong together are grouped in a series, one file per series in
+`series/`, named `<id>.yaml`. The app shows the series above a part's title,
+leads from one part to the next and has a page for the whole series. Only
+complete series go in: every part has to be in the index (or a game of the
+catalog), there are no placeholders for missing ones.
+
+```yaml
+name: "The Universe is Toast!"
+description: "…" # optional, a sentence or two
+translations: { de: { name: "…", description: "…" } } # optional
+episodes: # the main parts, numbered in this order
+  - mod: the-keys-of-krodacia
+  - mod: dead-in-the-desert
+    title: "Dead in the Desert" # optional
+bonus: # optional: level packs and extras, without a number
+  - mod: gridlock-s-dead-in-the-desert-levelpack
+```
+
+- A part names either `mod:` (an entry's id) or `game:` (a catalog game,
+  e.g. `keen4`); the original episodes form series that way too.
+- `title` is the episode's own title, for mods whose name starts with the
+  series' ("Shadow Keen 1: A Shadow Over Dune" → "A Shadow Over Dune").
+  Left out, the app shows the mod's name as it is.
+- Episodes are numbered 1, 2, 3 …; `number: "0"` or `number: "3.5"` overrides
+  one, and the next counts on from its whole part. Bonus parts have no
+  number.
+- The check refuses unknown ids, a mod or game in two series or twice in one,
+  fewer than two episodes and a number used twice.
+
+`index.json` lists them under `series`, sorted by id, with every episode's
+number written out. Apps before series ignore the field.
+
 ## Trying the index locally
 
 ```sh
