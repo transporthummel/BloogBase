@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { commands, type Game, type GameVersion, type Install } from "./bindings";
 
+/** Every episode, demo and beta is id Software's. */
+export const DEVELOPER = "id Software";
+export const DEVELOPER_URL = "https://www.idsoftware.com";
+
 /** The static game catalog; it never changes while the app runs. */
 export function useGames() {
   return useQuery({ queryKey: ["games"], queryFn: commands.listGames, staleTime: Infinity });

@@ -117,7 +117,9 @@ test("original games open their copy or say how to get them", async () => {
     "href",
     "/discover?tab=games",
   );
-  expect(screen.getByText("by id Software")).toBeInTheDocument();
+  // By id Software, to its homepage as on the games' pages.
+  const developer = screen.getByRole("button", { name: "id Software" });
+  expect(developer.parentElement).toHaveTextContent(/^by id Software$/);
 });
 
 test("goes back to where it was opened from, else to Discover", async () => {

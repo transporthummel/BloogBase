@@ -17,6 +17,7 @@ import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
 import { RelativeTime } from "../ui/RelativeTime";
 import { usePageTitle } from "../ui/usePageTitle";
+import { DEVELOPER, DEVELOPER_URL } from "../catalog";
 import { SeriesLine } from "../series/SeriesLine";
 import { SeriesSteps } from "../series/SeriesSteps";
 import {
@@ -220,10 +221,6 @@ function Description({ text }: { text: string }) {
     </div>
   );
 }
-
-/** Every episode, demo and beta is id Software's. */
-const DEVELOPER = "id Software";
-const DEVELOPER_URL = "https://www.idsoftware.com";
 
 /** A demo's or beta's own text, else the episode's; none for unknown games. */
 function gameDescription(t: TFunction, profile: Profile): string {

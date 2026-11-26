@@ -3,7 +3,7 @@ import { ArrowLeft, Check, Download, LibraryBig } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { type Game, type Profile } from "../bindings";
-import { useGames } from "../catalog";
+import { DEVELOPER, DEVELOPER_URL, useGames } from "../catalog";
 import { DetailsLink } from "../discover/DetailsLink";
 import { GameTile } from "../discover/GameTile";
 import { ModCard } from "../discover/ModCard";
@@ -18,9 +18,6 @@ import { EmptyState } from "../ui/EmptyState";
 import { Loading } from "../ui/Loading";
 import { PageHeader } from "../ui/PageHeader";
 import { partStates, type PartState, seriesDescription, seriesName } from "./series";
-
-/** Every author of id Software's own episodes. */
-const DEVELOPER = "id Software";
 
 export function SeriesRoute() {
   const { seriesId } = useParams({ from: "/series/$seriesId" });
@@ -67,7 +64,10 @@ export function SeriesPage({ seriesId }: { seriesId: string }) {
       ),
     ),
   ];
-  const authorLinks = Object.assign({}, ...states.map((s) => s.indexMod?.entry.authorLinks ?? {}));
+  const authorLinks = Object.assign(
+    { [DEVELOPER]: DEVELOPER_URL },
+    ...states.map((s) => s.indexMod?.entry.authorLinks ?? {}),
+  );
   const gameIds = [
     ...new Set(states.map((s) => s.indexMod?.entry.game ?? s.part.game).filter((g) => !!g)),
   ] as string[];
