@@ -19,7 +19,8 @@ export function SeriesLine({
   const text = (
     <>
       {name}
-      <span aria-hidden> · {number}</span>
+      {/* No-break spaces: the number wraps with the name's last word. */}
+      <span aria-hidden>{`\u00a0·\u00a0${number}`}</span>
       <span className="sr-only">
         , {place.number === "bonus" ? number : t("series.part", { number })}
       </span>

@@ -58,7 +58,9 @@ export function Hero({
   const seriesKey = profileKey(profile, index.data);
   const place = seriesKey ? seriesOf(places, seriesKey) : undefined;
   const title = place ? episodeTitle(place.part, profile.label) : profile.label;
-  usePageTitle(place ? `${seriesName(place.series, i18n.language)}: ${title}` : profile.label);
+  // "Series: Episode", unless the episode is named after the series.
+  const series = place && seriesName(place.series, i18n.language);
+  usePageTitle(series && series !== title ? `${series}: ${title}` : title);
   const shots = useScreenshots(profile.id);
   const cover = useCover(profile.id, profile.installId, profile.activeVariant?.id ?? null);
   const cardRef = useRef<HTMLElement>(null);
