@@ -1,5 +1,5 @@
-import { Link, useParams, useRouterState } from "@tanstack/react-router";
-import { Check, Download, LibraryBig } from "lucide-react";
+import { Link, useParams, useRouter, useRouterState } from "@tanstack/react-router";
+import { ArrowLeft, Check, Download, LibraryBig } from "lucide-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { type Game, type Profile } from "../bindings";
@@ -110,6 +110,7 @@ export function SeriesPage({ seriesId }: { seriesId: string }) {
 
   return (
     <>
+      <BackButton />
       <PageHeader title={seriesName(series, i18n.language)} />
       <div className="-mt-3 mb-8 grid max-w-prose gap-3 select-text">
         <div className="flex items-center gap-3">
@@ -147,6 +148,24 @@ export function SeriesPage({ seriesId }: { seriesId: string }) {
         </section>
       )}
     </>
+  );
+}
+
+/** Back to where the series was opened from: Discover, a card or a part's page. */
+function BackButton() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        router.history.canGoBack() ? router.history.back() : router.navigate({ to: "/discover" })
+      }
+      className="mb-2 inline-flex cursor-pointer items-center gap-1 text-sm text-muted hover:text-ink"
+    >
+      <ArrowLeft className="size-4" aria-hidden />
+      {t("series.back")}
+    </button>
   );
 }
 

@@ -1,16 +1,22 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vitest";
 import { commands } from "../bindings";
 import { galaxy, toast } from "../test/series";
 import { entry, game, indexMod, profile } from "../test/seriesData";
 import { SeriesPage } from "./SeriesPage";
 
+const router = vi.hoisted(() => ({
+  history: { canGoBack: vi.fn(() => true), back: vi.fn() },
+  navigate: vi.fn(),
+}));
+
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 vi.mock("@tanstack/react-router", async () => ({
   Link: (await import("../test/TestLink")).TestLink,
   useRouterState: () => "",
   useParams: vi.fn(),
+  useRouter: () => router,
 }));
 vi.mock("../bindings", () => ({
   commands: {
@@ -112,6 +118,15 @@ test("original games open their copy or say how to get them", async () => {
     "/discover?tab=games",
   );
   expect(screen.getByText("by id Software")).toBeInTheDocument();
+});
+
+test("goes back to where it was opened from, else to Discover", async () => {
+  renderPage("toast");
+  fireEvent.click(await screen.findByRole("button", { name: "Back" }));
+  expect(router.history.back).toHaveBeenCalled();
+  router.history.canGoBack.mockReturnValue(false);
+  fireEvent.click(screen.getByRole("button", { name: "Back" }));
+  await waitFor(() => expect(router.navigate).toHaveBeenCalledWith({ to: "/discover" }));
 });
 
 test("an unknown series says so and leads to Discover", async () => {

@@ -1265,6 +1265,7 @@
     "switchedFor": "{{name}} ist jetzt die gespielte Variante."
   },
   "series": {
+    "back": "Zurück",
     "bonus": "Bonus",
     "part": "Teil {{number}}",
     "partOf": "Teil {{number}} von {{count}}",
