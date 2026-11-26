@@ -1266,6 +1266,20 @@
   },
   "series": {
     "bonus": "Bonus",
-    "part": "Part {{number}}"
+    "part": "Part {{number}}",
+    "partOf": "Part {{number}} of {{count}}",
+    "previous": "Previous part",
+    "next": "Next part",
+    "whole": "Whole series",
+    "parts": "Parts of {{name}}",
+    "played": "{{played}} of {{count}} played",
+    "playedMark": "Played",
+    "episodes": "Episodes",
+    "bonusParts": "Bonus",
+    "notInstalled": "Not in your library",
+    "unknownTitle": "No such series",
+    "unknown": "The mod list doesn’t have this series (any more).",
+    "toDiscover": "Go to Discover",
+    "gameMissing": "Not in your library yet."
   }
 }

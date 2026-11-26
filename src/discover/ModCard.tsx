@@ -81,7 +81,7 @@ export function ModCard({
         <div className="flex gap-3">
           <GameTile gameId={entry.game} game={game} standalone={isSourceMod(entry)} />
           <div className="grid min-w-0 content-start gap-1">
-            {place && seriesLine && <SeriesLine place={place} />}
+            {place && seriesLine && <SeriesLine place={place} link />}
             <Heading className="leading-tight font-semibold">
               {place ? episodeTitle(place.part, entry.name) : entry.name}
             </Heading>

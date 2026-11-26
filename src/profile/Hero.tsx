@@ -18,6 +18,7 @@ import { Card } from "../ui/Card";
 import { RelativeTime } from "../ui/RelativeTime";
 import { usePageTitle } from "../ui/usePageTitle";
 import { SeriesLine } from "../series/SeriesLine";
+import { SeriesStrip } from "../series/SeriesStrip";
 import {
   episodeTitle,
   profileKey,
@@ -122,6 +123,7 @@ export function Hero({
             extensions={extensions}
             onShowVariant={onShowVariant}
           />
+          {place && <SeriesStrip place={place} />}
           {description && <Description key={profile.id} text={description} />}
           {cover.data?.scrambled && (
             <p className="flex max-w-prose items-start gap-2 text-sm">
@@ -270,7 +272,7 @@ function Credits({
   return (
     <div className="grid gap-2 short:gap-1.5">
       <div className="grid gap-1">
-        {place && <SeriesLine place={place} />}
+        {place && <SeriesLine place={place} link />}
         <h1 className="font-pixel text-lg leading-relaxed">{title}</h1>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted">

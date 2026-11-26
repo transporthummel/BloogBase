@@ -352,11 +352,10 @@ const indexed = (modId: string, status: IndexEntry["status"]): IndexMod => ({
 test("a game of a series shows the series above its title and in the page's title", async () => {
   vi.mocked(commands.indexSeries).mockResolvedValue([galaxy]);
   renderDetail();
-  expect(
-    await screen.findByRole("heading", { level: 1, name: "Secret of the Oracle" }),
-  ).toBeInTheDocument();
-  expect(screen.getByText(/Commander Keen 4–6/)).toHaveTextContent(
-    "Commander Keen 4–6 · 1, Part 1",
+  const title = await screen.findByRole("heading", { level: 1, name: "Secret of the Oracle" });
+  expect(title.previousElementSibling).toHaveTextContent("Commander Keen 4–6 · 1, Part 1");
+  expect(screen.getByRole("region", { name: "Parts of Commander Keen 4–6" })).toHaveTextContent(
+    "Part 1 of 3",
   );
   expect(document.title).toBe("Commander Keen 4–6: Secret of the Oracle – BloogBase");
 });

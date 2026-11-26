@@ -4,6 +4,8 @@
 
 ### Features
 
+- Mods of a series name it above their own title, on their card in Discover and the library and on their page, with the part's number ("The Universe is Toast! · 2") or "Bonus" for a level pack; the original games 1–3 and 4–6 count as series too. The page also shows the series as a strip: which part of how many, the parts before and after, and every part as a chip, played ones ticked, leading to its page or, when it isn't installed, to the series' page. That page lists all episodes in order and the bonus parts, each to install or play, with the authors and how many have been played. Both searches find mods by their series. The index keeps the series in `series/`, one file each, and lists only complete ones.
+
 ### Improvements
 
 ### Bug Fixes

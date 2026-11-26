@@ -1,4 +1,11 @@
-import { type IndexMod, type IndexSeries, type SeriesPart } from "../bindings";
+import {
+  type Game,
+  type IndexMod,
+  type IndexSeries,
+  type Profile,
+  type SeriesPart,
+} from "../bindings";
+import { gameTitle } from "../catalog";
 import { useSeries } from "../discover/queries";
 
 /** Where a mod or game stands in its series. */
@@ -97,4 +104,61 @@ export function seriesDescription(series: IndexSeries, lang: string): string | n
 export function seriesSearchText(place: SeriesPlace | undefined, lang: string): string[] {
   if (!place) return [];
   return [place.series.name, seriesName(place.series, lang)].map((s) => s.toLowerCase());
+}
+
+/** A part as the player has it: what it's called, where it leads, whether it was played. */
+export type PartState = {
+  /** `mod-<id>` or `game-<id>`, unique in a series; the anchor on its page. */
+  key: string;
+  part: SeriesPart;
+  number: string | "bonus";
+  title: string;
+  /** The play profile it opens: the mod's, or the copy of the game played last. */
+  profileId: string | null;
+  played: boolean;
+  /** The index entry, for a mod. */
+  indexMod?: IndexMod;
+};
+
+export function partKey(part: SeriesPart): string {
+  return part.mod ? `mod-${part.mod}` : `game-${part.game ?? ""}`;
+}
+
+/** Every part of `series` with what the library has of it. */
+export function partStates(
+  series: IndexSeries,
+  indexMods: IndexMod[],
+  profiles: Profile[],
+  games: Game[] | undefined,
+): PartState[] {
+  return seriesParts(series).map((part, i) => {
+    const number = i < series.episodes.length ? (part.number ?? String(i + 1)) : ("bonus" as const);
+    if (part.mod) {
+      const indexMod = indexMods.find((m) => m.entry.id === part.mod);
+      const profile = indexMod?.modId
+        ? profiles.find((p) => p.modId === indexMod.modId)
+        : undefined;
+      return {
+        key: partKey(part),
+        part,
+        number,
+        title: episodeTitle(part, indexMod?.entry.name ?? part.mod),
+        profileId: indexMod?.modId ? (profile?.id ?? indexMod.modId) : null,
+        played: (profile?.playSeconds ?? 0) > 0,
+        indexMod,
+      };
+    }
+    const gameId = part.game ?? "";
+    const copies = profiles
+      .filter((p) => p.modId === null && p.gameId === gameId)
+      .sort((a, b) => (b.lastPlayedAt ?? 0) - (a.lastPlayedAt ?? 0));
+    return {
+      key: partKey(part),
+      part,
+      number,
+      title: episodeTitle(part, gameTitle(games, gameId)),
+      profileId: copies[0]?.id ?? null,
+      played: copies.some((p) => p.playSeconds > 0),
+    };
+  });
 }

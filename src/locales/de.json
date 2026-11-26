@@ -1266,6 +1266,20 @@
   },
   "series": {
     "bonus": "Bonus",
-    "part": "Teil {{number}}"
+    "part": "Teil {{number}}",
+    "partOf": "Teil {{number}} von {{count}}",
+    "previous": "Vorheriger Teil",
+    "next": "Nächster Teil",
+    "whole": "Ganze Serie",
+    "parts": "Teile von {{name}}",
+    "played": "{{played}} von {{count}} gespielt",
+    "playedMark": "Gespielt",
+    "episodes": "Episoden",
+    "bonusParts": "Bonus",
+    "notInstalled": "Nicht in deiner Bibliothek",
+    "unknownTitle": "Diese Serie gibt es nicht",
+    "unknown": "Die Mod-Liste kennt diese Serie nicht (mehr).",
+    "toDiscover": "Zu Entdecken",
+    "gameMissing": "Noch nicht in deiner Bibliothek."
   }
 }

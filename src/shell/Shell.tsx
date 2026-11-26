@@ -124,7 +124,8 @@ export function Shell() {
           <span className="sr-only">BloogBase</span>
         </Link>
         <NavItem to="/" icon={LibraryBig} label={t("nav.library")} />
-        <NavItem to="/discover" icon={Compass} label={t("nav.discover")} />
+        {/* A series' page is part of Discover. */}
+        <NavItem to="/discover" also="/series/" icon={Compass} label={t("nav.discover")} />
         <div className="mt-auto grid gap-1">
           <JobsPanel />
           <FullscreenButton />
@@ -160,21 +161,29 @@ export function Shell() {
   );
 }
 
+const activeNavItem = { className: "bg-surface-raised text-ink", "aria-current": "page" } as const;
+
 function NavItem({
   to,
+  also,
   icon: Icon,
   label,
 }: {
   to: "/" | "/discover" | "/settings" | "/about";
+  /** Pages below this path count as this one's too. */
+  also?: string;
   icon: LucideIcon;
   label: string;
 }) {
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  const below = also !== undefined && path.startsWith(also);
   return (
     <Link
       to={to}
       title={label}
-      className={navItemClass}
-      activeProps={{ className: "bg-surface-raised text-ink", "aria-current": "page" }}
+      className={below ? `${navItemClass} ${activeNavItem.className}` : navItemClass}
+      aria-current={below ? "page" : undefined}
+      activeProps={activeNavItem}
       activeOptions={{ exact: true }}
     >
       <Icon className="size-5 shrink-0" aria-hidden />

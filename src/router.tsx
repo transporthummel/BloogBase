@@ -5,6 +5,7 @@ import { isSort, type Sort } from "./discover/fit";
 import { isDiscoverTab, type DiscoverTab } from "./discover/tabs";
 import { Library } from "./library/Library";
 import { ProfileRoute } from "./profile/ProfilePage";
+import { SeriesRoute } from "./series/SeriesPage";
 import { Settings } from "./settings/Settings";
 import { Setup } from "./setup/Setup";
 import { Shell } from "./shell/Shell";
@@ -38,6 +39,12 @@ const profileRoute = createRoute({
   }),
 });
 
+const seriesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/series/$seriesId",
+  component: SeriesRoute,
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/settings",
@@ -61,6 +68,7 @@ export const router = createRouter({
     libraryRoute,
     discoverRoute,
     profileRoute,
+    seriesRoute,
     settingsRoute,
     aboutRoute,
     setupRoute,
