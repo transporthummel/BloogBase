@@ -7,6 +7,7 @@ import { modsKey, profilesKey } from "../library/queries";
 export const indexStatusKey = ["indexStatus"] as const;
 export const indexModsKey = ["indexMods"] as const;
 export const freeGamesKey = ["freeGames"] as const;
+export const indexSeriesKey = ["indexSeries"] as const;
 
 export function useIndexStatus() {
   return useQuery({ queryKey: indexStatusKey, queryFn: commands.indexStatus });
@@ -14,6 +15,11 @@ export function useIndexStatus() {
 
 export function useIndexMods() {
   return useQuery({ queryKey: indexModsKey, queryFn: () => unwrap(commands.indexMods()) });
+}
+
+/** The index's series, with the parts this app shows. */
+export function useSeries() {
+  return useQuery({ queryKey: indexSeriesKey, queryFn: () => commands.indexSeries() });
 }
 
 export type Installed = "current" | "outdated" | null;
@@ -38,6 +44,7 @@ export function useRefreshIndex() {
     onSuccess: (status) => {
       client.setQueryData(indexStatusKey, status);
       client.invalidateQueries({ queryKey: indexModsKey });
+      client.invalidateQueries({ queryKey: indexSeriesKey });
     },
   });
 }
@@ -49,6 +56,7 @@ export function useIndexEvents() {
     const unlisten = events.indexUpdated.listen(({ payload: status }) => {
       client.setQueryData(indexStatusKey, status);
       client.invalidateQueries({ queryKey: indexModsKey });
+      client.invalidateQueries({ queryKey: indexSeriesKey });
       // Mods tied to an entry now carry its details.
       client.invalidateQueries({ queryKey: modsKey });
       client.invalidateQueries({ queryKey: profilesKey });

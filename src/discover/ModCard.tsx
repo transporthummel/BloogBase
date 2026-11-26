@@ -21,6 +21,8 @@ import { useEnterAction } from "../ui/useEnterAction";
 import { fitting, freeFit, isSourceMod, needsNoGame, requiredLabels } from "./fit";
 import { useFreeGames, useIndexMods } from "./queries";
 import { StatusBadge } from "./StatusBadge";
+import { SeriesLine } from "../series/SeriesLine";
+import { episodeTitle, seriesOf, useSeriesPlaces } from "../series/series";
 
 /** A mod from the index with everything needed to install it. */
 export function ModCard({
@@ -31,6 +33,7 @@ export function ModCard({
   enterInstalls = false,
   heading: Heading = "h2",
   featuredBadge = true,
+  seriesLine = true,
 }: {
   mod: IndexMod;
   installs: Install[];
@@ -43,6 +46,8 @@ export function ModCard({
   heading?: "h2" | "h3";
   /** Off under the "Recommended" group's heading, which says it already. */
   featuredBadge?: boolean;
+  /** Off on the series' own page, which says it already. */
+  seriesLine?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const actions = useRef<HTMLDivElement>(null);
@@ -54,6 +59,7 @@ export function ModCard({
   const base = entry.extends ? index.data?.find((m) => m.entry.id === entry.extends) : undefined;
   const baseMissing = base !== undefined && base.modId === null;
   const description = entryDescription(entry, i18n.language);
+  const place = seriesOf(useSeriesPlaces(), { indexId: entry.id });
   const date = entry.updated ?? entry.released;
   const details = [
     entry.authors.length > 0 && <Authors authors={entry.authors} links={entry.authorLinks} />,
@@ -75,7 +81,10 @@ export function ModCard({
         <div className="flex gap-3">
           <GameTile gameId={entry.game} game={game} standalone={isSourceMod(entry)} />
           <div className="grid min-w-0 content-start gap-1">
-            <Heading className="leading-tight font-semibold">{entry.name}</Heading>
+            {place && seriesLine && <SeriesLine place={place} />}
+            <Heading className="leading-tight font-semibold">
+              {place ? episodeTitle(place.part, entry.name) : entry.name}
+            </Heading>
             <p className="text-xs text-muted">
               {/* A source mod is named here once, not again as a badge. */}
               {isSourceMod(entry)

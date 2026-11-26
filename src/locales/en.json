@@ -1263,5 +1263,9 @@
     "ofVariant": "variant {{name}}",
     "removedVariant": "a variant the mod no longer has",
     "switchedFor": "{{name}} is the variant played now."
+  },
+  "series": {
+    "bonus": "Bonus",
+    "part": "Part {{number}}"
   }
 }

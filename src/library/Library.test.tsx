@@ -13,6 +13,7 @@ import {
   type RuntimeStatus,
 } from "../bindings";
 import { Library } from "./Library";
+import { galaxy } from "../test/series";
 import { profilesKey } from "./queries";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn() }));
@@ -73,6 +74,7 @@ vi.mock("../bindings", () => {
       oneButtonFiring: vi.fn(() => Promise.resolve({ status: "ok", data: false })),
       profileFiring: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
       gameSettings: vi.fn(() => Promise.resolve({ status: "ok", data: null })),
+      indexSeries: vi.fn(() => Promise.resolve([])),
       indexMods: vi.fn(() => Promise.resolve({ status: "ok", data: [] })),
       listVariants: vi.fn(),
       profileWorlds: vi.fn(),
@@ -147,6 +149,7 @@ function renderLibrary(container?: HTMLElement) {
 
 beforeEach(() => {
   navigate.mockClear();
+  vi.mocked(commands.indexSeries).mockResolvedValue([]);
   vi.mocked(commands.launchProfile).mockClear();
   localStorage.removeItem("bloogbase.controlsShown");
   localStorage.removeItem("bloogbase.controllerControlsShown");
@@ -890,4 +893,20 @@ test("once chosen, the arrow beside Play starts the other variants", async () =>
   );
   expect(screen.queryByRole("dialog")).toBeNull();
   localStorage.removeItem("bloogbase.controlsShown");
+});
+
+test("a game of a series shows the series above its own title, and is found by it", async () => {
+  vi.mocked(commands.indexSeries).mockResolvedValue([galaxy]);
+  vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
+  renderLibrary();
+  const heading = await screen.findByRole("heading", { name: "The Armageddon Machine" });
+  const card = heading.closest("article") as HTMLElement;
+  expect(within(card).getByText(/Commander Keen 4–6/)).toHaveTextContent(
+    "Commander Keen 4–6 · 2, Part 2",
+  );
+
+  const search = screen.getByRole("searchbox", { name: "Search library" });
+  await userEvent.type(search, "4–6");
+  expect(screen.getByRole("heading", { name: "The Armageddon Machine" })).toBeInTheDocument();
+  await userEvent.clear(search);
 });

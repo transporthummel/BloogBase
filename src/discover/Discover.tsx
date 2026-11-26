@@ -20,6 +20,7 @@ import { IndexError } from "./IndexError";
 import { ModCard } from "./ModCard";
 import { TABS, type DiscoverTab } from "./tabs";
 import { useFreeGames, useIndexMods, useIndexStatus, useRefreshIndex } from "./queries";
+import { seriesOf, seriesSearchText, useSeriesPlaces } from "../series/series";
 
 const KINDS: ModKind[] = ["episode", "levelpack", "conversion"];
 
@@ -100,6 +101,7 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
   const mods = useIndexMods();
   const installs = useInstalls();
   const freeGames = useFreeGames();
+  const places = useSeriesPlaces();
 
   // A link, e.g. to the news dialog's new mods, shows what it promises:
   // remembered filters could hide them.
@@ -161,7 +163,8 @@ function Mods({ games, sort: linkedSort }: { games: Game[]; sort?: Sort }) {
       if (notInstalled && hidden?.has(e.id)) return false;
       if (!needle) return true;
       const description = entryDescription(e, i18n.language) ?? "";
-      return [e.name, description, ...e.authors, ...(e.tags ?? [])].some((s) =>
+      const series = seriesSearchText(seriesOf(places, { indexId: e.id }), i18n.language);
+      return [e.name, description, ...e.authors, ...(e.tags ?? []), ...series].some((s) =>
         s.toLowerCase().includes(needle),
       );
     })

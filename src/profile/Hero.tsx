@@ -17,6 +17,15 @@ import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
 import { RelativeTime } from "../ui/RelativeTime";
 import { usePageTitle } from "../ui/usePageTitle";
+import { SeriesLine } from "../series/SeriesLine";
+import {
+  episodeTitle,
+  profileKey,
+  type SeriesPlace,
+  seriesName,
+  seriesOf,
+  useSeriesPlaces,
+} from "../series/series";
 import { screenshotSrc, useScreenshots } from "./captures";
 import { usePictureWidth } from "./heroPicture";
 import { ProfileActions } from "./ProfileActions";
@@ -42,9 +51,13 @@ export function Hero({
   modCount: number;
 }) {
   const { t, i18n } = useTranslation();
-  usePageTitle(profile.label);
   const mods = useMods({ enabled: profile.modId !== null });
   const index = useIndexMods();
+  const places = useSeriesPlaces();
+  const seriesKey = profileKey(profile, index.data);
+  const place = seriesKey ? seriesOf(places, seriesKey) : undefined;
+  const title = place ? episodeTitle(place.part, profile.label) : profile.label;
+  usePageTitle(place ? `${seriesName(place.series, i18n.language)}: ${title}` : profile.label);
   const shots = useScreenshots(profile.id);
   const cover = useCover(profile.id, profile.installId, profile.activeVariant?.id ?? null);
   const cardRef = useRef<HTMLElement>(null);
@@ -101,6 +114,8 @@ export function Hero({
         <div className="grid content-start gap-4 select-text short:gap-3">
           <Credits
             profile={profile}
+            title={title}
+            place={place}
             game={game}
             mod={mod}
             entry={entry}
@@ -218,6 +233,8 @@ function gameDescription(t: TFunction, profile: Profile): string {
 /** Title, what it runs on, authors, release, the mods played over it and links. */
 function Credits({
   profile,
+  title,
+  place,
   game,
   mod,
   entry,
@@ -225,6 +242,9 @@ function Credits({
   onShowVariant,
 }: {
   profile: Profile;
+  /** In a series, the episode's own title. */
+  title: string;
+  place?: SeriesPlace;
   game?: Game;
   mod?: Mod;
   entry?: IndexEntry;
@@ -249,7 +269,10 @@ function Credits({
     ) : null;
   return (
     <div className="grid gap-2 short:gap-1.5">
-      <h1 className="font-pixel text-lg leading-relaxed">{profile.label}</h1>
+      <div className="grid gap-1">
+        {place && <SeriesLine place={place} />}
+        <h1 className="font-pixel text-lg leading-relaxed">{title}</h1>
+      </div>
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
         {(profile.activeVariant || runsOn) && (
           // The way it's played (§9.7), then what it runs on, in one line.

@@ -23,6 +23,7 @@ import {
 import { setControlsShown } from "../preferences";
 import { ProfileDetail } from "./ProfilePage";
 import { slotFiles } from "./saves";
+import { galaxy } from "../test/series";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn(), save: vi.fn() }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
@@ -90,6 +91,7 @@ vi.mock("../bindings", () => {
     "setModInstall",
     "removeGame",
     "indexMods",
+    "indexSeries",
     "freeGames",
     "listScreenshots",
     "profileCover",
@@ -224,6 +226,7 @@ beforeEach(() => {
   vi.mocked(commands.listMods).mockResolvedValue(ok([]));
   vi.mocked(commands.modReadmes).mockResolvedValue(ok([]));
   vi.mocked(commands.gameReadmes).mockResolvedValue(ok([]));
+  vi.mocked(commands.indexSeries).mockResolvedValue([]);
   vi.mocked(commands.indexMods).mockResolvedValue(ok([]));
   vi.mocked(commands.freeGames).mockResolvedValue(ok([]));
   vi.mocked(commands.listScreenshots).mockResolvedValue(ok([]));
@@ -344,6 +347,18 @@ const indexed = (modId: string, status: IndexEntry["status"]): IndexMod => ({
   modId,
   updateAvailable: false,
   new: false,
+});
+
+test("a game of a series shows the series above its title and in the page's title", async () => {
+  vi.mocked(commands.indexSeries).mockResolvedValue([galaxy]);
+  renderDetail();
+  expect(
+    await screen.findByRole("heading", { level: 1, name: "Secret of the Oracle" }),
+  ).toBeInTheDocument();
+  expect(screen.getByText(/Commander Keen 4–6/)).toHaveTextContent(
+    "Commander Keen 4–6 · 1, Part 1",
+  );
+  expect(document.title).toBe("Commander Keen 4–6: Secret of the Oracle – BloogBase");
 });
 
 test("a mod's page says it was abandoned", async () => {

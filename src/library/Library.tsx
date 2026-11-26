@@ -7,6 +7,7 @@ import {
   useDeferredValue,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -38,6 +39,14 @@ import { profilesKey, profilesQuery, useProfiles } from "./queries";
 import { getLibrarySort, getShowTrivia, setLibrarySort } from "../preferences";
 import { arrange, librarySorts, STANDALONE, type LibrarySort } from "./sort";
 import { StatusBar } from "./StatusBar";
+import { SeriesLine } from "../series/SeriesLine";
+import {
+  episodeTitle,
+  type SeriesPlace,
+  seriesOf,
+  seriesSearchText,
+  useSeriesPlaces,
+} from "../series/series";
 import { leaveLibrary, returnToLibrary } from "./scroll";
 import { startupTrivia, triviaText } from "./trivia";
 import { useRuntimeStatus } from "../runtime/queries";
@@ -79,6 +88,18 @@ export function Library() {
   const runtime = useRuntimeStatus();
   // Once for all cards: each gets a yes or no.
   const updating = useUpdatingMods();
+  // Once for all cards too: each gets its place in a series, if any.
+  const places = useSeriesPlaces();
+  const indexMods = useIndexMods().data;
+  const indexIds = useMemo(
+    () => new Map((indexMods ?? []).flatMap((m) => (m.modId ? [[m.modId, m.entry.id]] : []))),
+    [indexMods],
+  );
+  const placeOf = (p: Profile) => {
+    const indexId = p.modId === null ? undefined : indexIds.get(p.modId);
+    if (p.modId === null) return seriesOf(places, { gameId: p.gameId });
+    return indexId ? seriesOf(places, { indexId }) : undefined;
+  };
   const [adding, setAdding] = useState(false);
   const [finding, setFinding] = useState(false);
   const [imported, setImported] = useState<number | null>(null);
@@ -213,9 +234,13 @@ export function Library() {
     if (!needle) return true;
     const game = gameById.get(p.gameId);
     const version = game?.versions.find((v) => v.id === p.versionId)?.label;
-    return [p.label, game?.title, game?.shortTitle, version].some((s) =>
-      s?.toLowerCase().includes(needle),
-    );
+    return [
+      p.label,
+      game?.title,
+      game?.shortTitle,
+      version,
+      ...seriesSearchText(placeOf(p), i18n.language),
+    ].some((s) => s?.toLowerCase().includes(needle));
   });
   const groups = arrange(shown, sort, games.data ?? [], i18n.language);
   // Names on more than one card, e.g. two copies of the same game.
@@ -397,6 +422,7 @@ export function Library() {
                       sharedLabel={shared.has(profile.label)}
                       canPlay={!!runtime.data?.active && !launch.isPending}
                       updating={profile.modId !== null && updating.has(profile.modId)}
+                      series={placeOf(profile)}
                       onPlay={playCard}
                     />
                   </li>
@@ -421,6 +447,7 @@ const ProfileCard = memo(function ProfileCard({
   sharedLabel,
   canPlay,
   updating,
+  series,
   onPlay,
 }: {
   profile: Profile;
@@ -432,6 +459,8 @@ const ProfileCard = memo(function ProfileCard({
   canPlay: boolean;
   /** An update is swapping the mod's files. */
   updating: boolean;
+  /** Its place in a series, the same object while the series don't change. */
+  series?: SeriesPlace;
   /** With the world to play, for a mod that keeps worlds, or a variant. */
   onPlay: (profile: Profile, world: WorldStart | null, variant?: string) => void;
 }) {
@@ -444,7 +473,9 @@ const ProfileCard = memo(function ProfileCard({
   const versionLabel = version?.label ?? t("library.unknownVersion");
   // The badge tells copies apart on screen; screen readers hear the version
   // with the name.
-  const name = sharedLabel ? `${profile.label} (${versionLabel})` : profile.label;
+  // In a series, the episode's own title below the series' line.
+  const title = series ? episodeTitle(series.part, profile.label) : profile.label;
+  const name = sharedLabel ? `${title} (${versionLabel})` : title;
   const cover = useCover(profile.id, profile.installId, profile.activeVariant?.id ?? null);
   // Alpha, beta or abandoned, as the index says now, else the KeenWiki page.
   const status =
@@ -472,6 +503,7 @@ const ProfileCard = memo(function ProfileCard({
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="grid gap-0.5">
+          {series && <SeriesLine place={series} />}
           <Heading className="text-sm leading-tight font-semibold">
             <Link
               to="/profiles/$profileId"
@@ -482,7 +514,7 @@ const ProfileCard = memo(function ProfileCard({
               // Also keeps the no-break spaces of the wrapped title out of its name.
               aria-label={name}
             >
-              {keepSeriesTogether(profile.label)}
+              {keepSeriesTogether(title)}
             </Link>
           </Heading>
           {(() => {

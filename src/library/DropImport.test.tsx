@@ -36,6 +36,7 @@ vi.mock("../bindings", () => ({
     installMod: vi.fn(),
     listMods: vi.fn(),
     listProfiles: vi.fn(),
+    indexSeries: vi.fn(() => Promise.resolve([])),
     indexMods: vi.fn(),
     listJobs: vi.fn(),
   },

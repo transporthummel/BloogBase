@@ -12,6 +12,7 @@ import {
 } from "../bindings";
 import { Discover } from "./Discover";
 import { compare, fitsEntry } from "./fit";
+import { toast } from "../test/series";
 
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 // What the page was opened with.
@@ -39,6 +40,7 @@ vi.mock("../bindings", () => ({
     listInstalls: vi.fn(),
     listJobs: vi.fn(() => Promise.resolve([])),
     indexStatus: vi.fn(),
+    indexSeries: vi.fn(() => Promise.resolve([])),
     indexMods: vi.fn(),
     refreshIndex: vi.fn(),
     installIndexMod: vi.fn(),
@@ -146,6 +148,7 @@ function renderDiscover() {
 
 beforeEach(() => {
   search = {};
+  vi.mocked(commands.indexSeries).mockResolvedValue([]);
   vi.mocked(commands.listGames).mockResolvedValue(games);
   vi.mocked(commands.indexStatus).mockResolvedValue(status);
   vi.mocked(commands.freeGames).mockResolvedValue({ status: "ok", data: [] });
@@ -749,4 +752,29 @@ test("sorted by recommendation, the recommended mods get a heading instead of a 
   ]);
   expect(within(card("Aurora")).getByText("Recommended")).toBeInTheDocument();
   await user.selectOptions(screen.getByRole("combobox", { name: "Sort by" }), "featured");
+});
+
+test("a mod of a series shows the series above its episode's title, and is found by it", async () => {
+  vi.mocked(commands.indexSeries).mockResolvedValue([toast]);
+  vi.mocked(commands.indexMods).mockResolvedValue({
+    status: "ok",
+    data: [
+      mod(entry("desert", { name: "The Universe is Toast!: Dead in the Desert" })),
+      mod(entry("Aurora")),
+    ],
+  });
+  renderDiscover();
+  const user = userEvent.setup();
+  await screen.findByRole("heading", { name: "Dead in the Desert" });
+  const desert = card("Dead in the Desert");
+  expect(within(desert).getByText(/The Universe is Toast!/)).toHaveTextContent(
+    "The Universe is Toast! · 2, Part 2",
+  );
+  expect(within(card("Aurora")).queryByText(/Toast/)).not.toBeInTheDocument();
+
+  await user.type(screen.getByRole("searchbox"), "universe");
+  expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
+    "Dead in the Desert",
+  ]);
+  await user.clear(screen.getByRole("searchbox"));
 });
