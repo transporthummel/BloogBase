@@ -1,0 +1,9 @@
+name: "The Robot Apocalypse"
+episodes:
+  - mod: the-ultra-omegamatic
+    title: "The Ultra Omegamatic"
+  - mod: the-armageddon-continues
+    title: "The Armageddon Continues"
+    number: "1.5"
+  - mod: secret-of-the-sorcerer
+    title: "Secret of the Sorcerer"
