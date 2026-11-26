@@ -1,8 +1,6 @@
-name: "Commander Keen 4–6"
+name: "Goodbye, Galaxy!"
 episodes:
   - game: keen4
     title: "Secret of the Oracle"
   - game: keen5
     title: "The Armageddon Machine"
-  - game: keen6
-    title: "Aliens Ate My Baby Sitter!"
