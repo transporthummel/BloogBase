@@ -28,6 +28,7 @@ export const ProfileCard = memo(function ProfileCard({
   canPlay,
   updating,
   series,
+  seriesLine = true,
   onPlay,
 }: {
   profile: Profile;
@@ -41,6 +42,8 @@ export const ProfileCard = memo(function ProfileCard({
   updating: boolean;
   /** Its place in a series, the same object while the series don't change. */
   series?: SeriesPlace;
+  /** Off on the series' own page, which says it already. */
+  seriesLine?: boolean;
   /** With the world to play, for a mod that keeps worlds, or a variant. */
   onPlay: (profile: Profile, world: WorldStart | null, variant?: string) => void;
 }) {
@@ -83,7 +86,7 @@ export const ProfileCard = memo(function ProfileCard({
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="grid gap-0.5">
-          {series && <SeriesLine place={series} />}
+          {series && seriesLine && <SeriesLine place={series} />}
           <Heading className="text-sm leading-tight font-semibold">
             <Link
               to="/profiles/$profileId"

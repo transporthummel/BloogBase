@@ -19,7 +19,21 @@ vi.mock("@tanstack/react-router", async () => ({
   useRouter: () => router,
 }));
 vi.mock("../bindings", () => ({
+  events: { playSessionEnded: { listen: vi.fn(() => Promise.resolve(() => {})) } },
   commands: {
+    runtimeStatus: vi.fn(() =>
+      Promise.resolve({
+        status: "ok",
+        data: {
+          active: { id: "dosbox", version: "0.83.0", path: "/x", managed: true },
+          managed: null,
+          pinnedVersion: "0.83.0",
+          downloadAvailable: true,
+          crtSwitchIgnored: false,
+        },
+      }),
+    ),
+    launchProfile: vi.fn(),
     listGames: vi.fn(),
     listProfiles: vi.fn(),
     listInstalls: vi.fn(),
@@ -88,11 +102,15 @@ test("lists the episodes in order and the bonus parts, each to install or open",
     "Battle of the Brains",
   ]);
   expect(items.map((li) => li.id)).toEqual(["part-mod-keys", "part-mod-desert", "part-mod-brains"]);
-  // Installed: its page; not: install it here.
-  expect(within(items[0]).getByRole("link", { name: /Details & Play/ })).toHaveAttribute(
+  // Installed: as in the library, the title opens its page and Play is below.
+  expect(within(items[0]).getByRole("link", { name: "The Keys of Krodacia" })).toHaveAttribute(
     "href",
     "/profiles/keys-mod",
   );
+  expect(
+    await within(items[0]).findByRole("button", { name: "Play The Keys of Krodacia" }),
+  ).toBeEnabled();
+  // Not installed: install it here.
   expect(within(items[1]).getByRole("button", { name: /Install/ })).toBeInTheDocument();
   // The page names the series once, not on every card.
   expect(within(episodes).queryByText(/Toast/)).not.toBeInTheDocument();
@@ -106,10 +124,13 @@ test("original games open their copy or say how to get them", async () => {
   const episodes = await screen.findByRole("region", { name: "Episodes" });
   const [keen4, keen5, keen6] = within(episodes).getAllByRole("listitem");
   expect(within(keen4).getByRole("heading")).toHaveTextContent("Secret of the Oracle");
-  expect(within(keen4).getByRole("link", { name: /Details & Play/ })).toHaveAttribute(
+  expect(within(keen4).getByRole("link", { name: "Secret of the Oracle" })).toHaveAttribute(
     "href",
     "/profiles/keen4-a",
   );
+  expect(
+    within(keen4).getByRole("button", { name: "Play Secret of the Oracle" }),
+  ).toBeInTheDocument();
   expect(within(keen5).getByText("Not in your library yet.")).toBeInTheDocument();
   expect(within(keen5).getByRole("link", { name: "Add game" })).toHaveAttribute("href", "/");
   expect(within(keen6).getByRole("heading")).toHaveTextContent("Commander Keen 6");

@@ -33,7 +33,6 @@ export function ModCard({
   enterInstalls = false,
   heading: Heading = "h2",
   featuredBadge = true,
-  seriesLine = true,
 }: {
   mod: IndexMod;
   installs: Install[];
@@ -46,8 +45,6 @@ export function ModCard({
   heading?: "h2" | "h3";
   /** Off under the "Recommended" group's heading, which says it already. */
   featuredBadge?: boolean;
-  /** Off on the series' own page, which says it already. */
-  seriesLine?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const actions = useRef<HTMLDivElement>(null);
@@ -81,7 +78,7 @@ export function ModCard({
         <div className="flex gap-3">
           <GameTile gameId={entry.game} game={game} standalone={isSourceMod(entry)} />
           <div className="grid min-w-0 content-start gap-1">
-            {place && seriesLine && <SeriesLine place={place} link />}
+            {place && <SeriesLine place={place} link />}
             <Heading className="leading-tight font-semibold">
               {place ? episodeTitle(place.part, entry.name) : entry.name}
             </Heading>
@@ -153,7 +150,8 @@ export function ModCard({
   );
 }
 
-function InstallAction({
+/** Install, update or open it, with the copy to install on and the jobs it starts. */
+export function InstallAction({
   mod,
   installs,
   games,
