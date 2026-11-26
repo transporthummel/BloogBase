@@ -353,10 +353,12 @@ test("a game of a series shows the series above its title and in the page's titl
   vi.mocked(commands.indexSeries).mockResolvedValue([galaxy]);
   renderDetail();
   const title = await screen.findByRole("heading", { level: 1, name: "Secret of the Oracle" });
-  expect(title.previousElementSibling).toHaveTextContent("Commander Keen 4–6 · 1, Part 1");
-  expect(screen.getByRole("region", { name: "Parts of Commander Keen 4–6" })).toHaveTextContent(
-    "Part 1 of 3",
-  );
+  // Which of how many, with the parts before and after beside it.
+  const line = title.previousElementSibling!;
+  expect(line).toHaveTextContent("Commander Keen 4–6 · 1/3, Part 1 of 3");
+  expect(
+    await within(line as HTMLElement).findByText(/^Next part: The Armageddon Machine/),
+  ).toBeInTheDocument();
   expect(document.title).toBe("Commander Keen 4–6: Secret of the Oracle – BloogBase");
 });
 
