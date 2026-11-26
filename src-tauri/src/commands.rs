@@ -1658,6 +1658,13 @@ pub fn index_mods(index: State<'_, ModIndex>, db: State<'_, Db>) -> CommandResul
     Ok(mod_index::list(&index, &db)?)
 }
 
+/// The series of the index, with the parts this app shows.
+#[tauri::command]
+#[specta::specta]
+pub fn index_series(index: State<'_, ModIndex>) -> Vec<mod_index::IndexSeries> {
+    index.series()
+}
+
 /// Downloads a mod from the index and installs it, or updates it when it's
 /// installed already. Without `install_id` it goes on the best fitting game,
 /// once a free episode for it has finished downloading; with none,

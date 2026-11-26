@@ -151,6 +151,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             commands::index_status,
             commands::refresh_index,
             commands::index_mods,
+            commands::index_series,
             commands::install_index_mod,
             commands::lookup_keenwiki,
             commands::check_mod_update,

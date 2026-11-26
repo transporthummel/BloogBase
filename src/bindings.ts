@@ -215,6 +215,8 @@ export const commands = {
 	refreshIndex: (force: boolean) => __TAURI_INVOKE<IndexStatus>("refresh_index", { force }),
 	/**  The mods in the index, with what's installed already. */
 	indexMods: () => typedError<IndexMod[], CommandError>(__TAURI_INVOKE("index_mods")),
+	/**  The series of the index, with the parts this app shows. */
+	indexSeries: () => __TAURI_INVOKE<IndexSeries[]>("index_series"),
 	/**
 	 *  Downloads a mod from the index and installs it, or updates it when it's
 	 *  installed already. Without `install_id` it goes on the best fitting game,
@@ -788,6 +790,19 @@ export type IndexNews = {
 	seen: string[] | null,
 	/**  Updates of installed mods offered already, as `<entry id>@<download url>`. */
 	offered: string[],
+};
+
+/**  Mods (and games) that belong together, as the index lists them. */
+export type IndexSeries = {
+	id: string,
+	name: string,
+	description?: string | null,
+	/**  Language code → the series' texts in that language. */
+	translations?: { [key in string]: SeriesTranslation },
+	/**  The main parts, in order, each with its number. */
+	episodes: SeriesPart[],
+	/**  Level packs and extras, without a number. */
+	bonus?: SeriesPart[],
 };
 
 export type IndexStatus = {
@@ -1395,6 +1410,26 @@ export type Seed = {
 export type SeedRead = {
 	file: string,
 	after: string,
+};
+
+/**  One part of a series: an index entry (`mod`) or a catalog game (`game`). */
+export type SeriesPart = {
+	/**  Id of the index entry. */
+	mod?: string | null,
+	/**  Id of the catalog game. */
+	game?: string | null,
+	/**
+	 *  The episode's title without the series' name; else the entry's or
+	 *  game's name is shown.
+	 */
+	title?: string | null,
+	/**  Episodes only, e.g. `"2"` or `"3.5"`. */
+	number?: string | null,
+};
+
+export type SeriesTranslation = {
+	name: string,
+	description?: string | null,
 };
 
 export type Setting = {

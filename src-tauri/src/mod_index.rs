@@ -387,11 +387,16 @@ struct RawIndex {
     /// Parsed one by one, so an entry this app doesn't understand only
     /// hides that entry.
     mods: Vec<serde_json::Value>,
+    /// Same; missing in indexes from before series.
+    #[serde(default)]
+    series: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 struct Parsed {
     entries: Vec<IndexEntry>,
+    /// Only with the parts this app shows.
+    series: Vec<IndexSeries>,
     /// Entries for a newer app.
     hidden: u32,
     generated_at: u64,
@@ -409,6 +414,51 @@ pub struct IndexMod {
     /// An update of the index brought it in the last [`NEW_FOR`] seconds.
     /// The first download of the index brings nothing new: everything is.
     pub new: bool,
+}
+
+/// Mods (and games) that belong together, as the index lists them.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct IndexSeries {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    /// Language code → the series' texts in that language.
+    #[serde(default)]
+    pub translations: BTreeMap<String, SeriesTranslation>,
+    /// The main parts, in order, each with its number.
+    pub episodes: Vec<SeriesPart>,
+    /// Level packs and extras, without a number.
+    #[serde(default)]
+    pub bonus: Vec<SeriesPart>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct SeriesTranslation {
+    pub name: String,
+    #[serde(default)]
+    pub description: Option<String>,
+}
+
+/// One part of a series: an index entry (`mod`) or a catalog game (`game`).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct SeriesPart {
+    /// Id of the index entry.
+    #[serde(rename = "mod", default)]
+    pub mod_id: Option<String>,
+    /// Id of the catalog game.
+    #[serde(default)]
+    pub game: Option<String>,
+    /// The episode's title without the series' name; else the entry's or
+    /// game's name is shown.
+    #[serde(default)]
+    pub title: Option<String>,
+    /// Episodes only, e.g. `"2"` or `"3.5"`.
+    #[serde(default)]
+    pub number: Option<String>,
 }
 
 /// How long an entry an update brought counts as new.
@@ -589,6 +639,14 @@ impl ModIndex {
             .index
             .as_ref()
             .map(|i| i.entries.clone())
+            .unwrap_or_default()
+    }
+
+    pub fn series(&self) -> Vec<IndexSeries> {
+        self.lock()
+            .index
+            .as_ref()
+            .map(|i| i.series.clone())
             .unwrap_or_default()
     }
 
@@ -810,6 +868,7 @@ fn parse(data: &[u8]) -> Result<Parsed> {
     if raw.schema_version > SCHEMA_VERSION {
         return Ok(Parsed {
             entries: Vec::new(),
+            series: Vec::new(),
             hidden: total,
             generated_at: raw.generated_at,
         });
@@ -840,11 +899,36 @@ fn parse(data: &[u8]) -> Result<Parsed> {
             }
         })
         .collect();
+    let series = raw
+        .series
+        .into_iter()
+        .filter_map(|v| match serde_json::from_value::<IndexSeries>(v) {
+            Ok(s) => visible_series(s, &entries),
+            Err(err) => {
+                tracing::debug!("index series not understood: {err}");
+                None
+            }
+        })
+        .collect();
     Ok(Parsed {
         hidden: total - entries.len() as u32,
+        series,
         entries,
         generated_at: raw.generated_at,
     })
+}
+
+/// `s` with only the parts this app shows: entries it has, games of its
+/// catalog. Fewer than two episodes left are no series.
+fn visible_series(mut s: IndexSeries, entries: &[IndexEntry]) -> Option<IndexSeries> {
+    let shown = |p: &SeriesPart| match (&p.mod_id, &p.game) {
+        (Some(m), None) => entries.iter().any(|e| e.id == *m),
+        (None, Some(g)) => catalog::game(g).is_some(),
+        _ => false,
+    };
+    s.episodes.retain(shown);
+    s.bonus.retain(shown);
+    (s.episodes.len() >= 2).then_some(s)
 }
 
 /// `app_version` `None`: any `minAppVersion` will do.
@@ -1436,6 +1520,50 @@ mod tests {
         let future = SAMPLE.replace(r#""schemaVersion": 1"#, r#""schemaVersion": 2"#);
         let p = parse(future.as_bytes()).unwrap();
         assert_eq!((p.entries.len(), p.hidden), (0, 2));
+    }
+
+    #[test]
+    fn series_show_only_the_parts_the_app_has() {
+        let p = parse(SAMPLE.as_bytes()).unwrap();
+        let [s] = &p.series[..] else {
+            panic!("one series: {:?}", p.series)
+        };
+        assert_eq!(s.id, "sample-series");
+        assert_eq!(s.translations["de"].name, "Beispielserie");
+        let parts: Vec<_> = s
+            .episodes
+            .iter()
+            .map(|e| (e.game.as_deref(), e.mod_id.as_deref(), e.number.as_deref()))
+            .collect();
+        assert_eq!(
+            parts,
+            [
+                (Some("keen4"), None, Some("1")),
+                (None, Some("sample-patch"), Some("2"))
+            ]
+        );
+        // `sample-levels` needs a newer app.
+        assert!(s.bonus.is_empty());
+
+        // With one episode left, the series goes.
+        let mut index: serde_json::Value = serde_json::from_str(SAMPLE).unwrap();
+        index["series"][0]["episodes"][0]["game"] = "keen9".into();
+        let p = parse(index.to_string().as_bytes()).unwrap();
+        assert!(p.series.is_empty());
+        assert_eq!(p.entries.len(), 1);
+
+        // Indexes from before series have none.
+        let mut index: serde_json::Value = serde_json::from_str(SAMPLE).unwrap();
+        index.as_object_mut().unwrap().remove("series");
+        let p = parse(index.to_string().as_bytes()).unwrap();
+        assert!(p.series.is_empty());
+        assert_eq!(p.entries.len(), 1);
+
+        // A series this app doesn't understand hides only itself.
+        let mut index: serde_json::Value = serde_json::from_str(SAMPLE).unwrap();
+        let broken = serde_json::json!({ "id": "x", "episodes": "many" });
+        index["series"].as_array_mut().unwrap().push(broken);
+        assert_eq!(parse(index.to_string().as_bytes()).unwrap().series.len(), 1);
     }
 
     #[test]
