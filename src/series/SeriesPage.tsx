@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { type Game, type Profile } from "../bindings";
 import { DEVELOPER, DEVELOPER_URL, useGames } from "../catalog";
 import { DetailsLink } from "../discover/DetailsLink";
-import { GameTile } from "../discover/GameTile";
 import { ModCard } from "../discover/ModCard";
 import { useFreeGames, useIndexMods, useSeries } from "../discover/queries";
 import { Cover } from "../library/Cover";
@@ -68,9 +67,6 @@ export function SeriesPage({ seriesId }: { seriesId: string }) {
     { [DEVELOPER]: DEVELOPER_URL },
     ...states.map((s) => s.indexMod?.entry.authorLinks ?? {}),
   );
-  const gameIds = [
-    ...new Set(states.map((s) => s.indexMod?.entry.game ?? s.part.game).filter((g) => !!g)),
-  ] as string[];
   const description = seriesDescription(series, i18n.language);
   const played = states.filter((s) => s.played).length;
 
@@ -113,23 +109,16 @@ export function SeriesPage({ seriesId }: { seriesId: string }) {
       <BackButton />
       <PageHeader title={seriesName(series, i18n.language)} />
       <div className="-mt-3 mb-8 grid max-w-prose gap-3 select-text">
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1.5">
-            {gameIds.map((id) => (
-              <GameTile key={id} gameId={id} game={games.find((g) => g.id === id)} />
-            ))}
-          </div>
-          <div className="grid gap-0.5 text-sm text-muted">
-            {authors.length > 0 && (
-              <p>
-                <Authors authors={authors} links={authorLinks} />
-              </p>
-            )}
-            <p className="flex items-center gap-1.5">
-              {played > 0 && <Check className="size-4 text-accent" aria-hidden />}
-              {t("series.played", { played, count: states.length })}
+        <div className="grid gap-0.5 text-sm text-muted">
+          {authors.length > 0 && (
+            <p>
+              <Authors authors={authors} links={authorLinks} />
             </p>
-          </div>
+          )}
+          <p className="flex items-center gap-1.5">
+            {played > 0 && <Check className="size-4 text-accent" aria-hidden />}
+            {t("series.played", { played, count: states.length })}
+          </p>
         </div>
         {description && <p className="text-sm leading-relaxed">{description}</p>}
       </div>
