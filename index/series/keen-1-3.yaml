@@ -1,0 +1,8 @@
+name: "Commander Keen 1–3"
+episodes:
+  - game: keen1
+    title: "Marooned on Mars"
+  - game: keen2
+    title: "The Earth Explodes"
+  - game: keen3
+    title: "Keen Must Die!"

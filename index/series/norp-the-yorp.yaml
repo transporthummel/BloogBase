@@ -1,0 +1,11 @@
+name: "Norp the Yorp"
+episodes:
+  - mod: norp-the-yorp-1
+    title: "Inside Mortimer's Computer"
+  - mod: norp-the-yorp-2
+    title: "Diffusion"
+  - mod: norp-the-yorp-3
+    title: "Brain Damage"
+  - mod: norp-the-yorp-3-5
+    title: "The Maze of Doom"
+    number: "3.5"
