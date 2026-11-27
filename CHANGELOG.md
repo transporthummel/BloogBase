@@ -4,7 +4,7 @@
 
 ### Features
 
-- Mods of a series name it above their own title, on their card in Discover and the library and on their page, with the part's number ("The Universe is Toast! · 2") or "Bonus" for a level pack; Keen 1–3 count as the series "Invasion of the Vorticons" and Keen 4–5 as "Goodbye, Galaxy!". On the page that line also says how many episodes there are ("· 2/3"), and arrows beside it lead to the parts before and after: to their page or, when one isn't installed, to its card on the series' page. That page lists all episodes in order and the bonus parts as cards like the library's, with their cover, each to open and play or to install, with the authors and how many have been played. Both searches find mods by their series. The index keeps the series in `series/`, one file each, and lists only complete ones.
+- Mods of a series name it above their own title, on their card in Discover and the library and on their page, with the part's number ("The Universe is Toast! · 2") or "Bonus" for a level pack; Keen 1–3 count as the series "Invasion of the Vorticons" and Keen 4–5 as "Goodbye, Galaxy!". On the page that line also says how many episodes there are ("· 2/3"), and arrows beside it lead to the parts before and after: to their page or, when one isn't installed, to its card on the series' page. The series' name leads to that page, which lists all episodes in order and the bonus parts as cards like the library's, with their cover, each to open and play or to install, with the authors and how many have been played. Both searches find mods by their series. The index keeps the series in `series/`, one file each, and lists only complete ones.
 
 ### Improvements
 

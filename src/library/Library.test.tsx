@@ -895,7 +895,7 @@ test("once chosen, the arrow beside Play starts the other variants", async () =>
   localStorage.removeItem("bloogbase.controlsShown");
 });
 
-test("a game of a series shows the series above its own title, and is found by it", async () => {
+test("a game of a series shows the series above its own title, leads to it and is found by it", async () => {
   vi.mocked(commands.indexSeries).mockResolvedValue([galaxy]);
   vi.mocked(commands.listProfiles).mockResolvedValue({ status: "ok", data: [profile] });
   renderLibrary();
@@ -903,6 +903,10 @@ test("a game of a series shows the series above its own title, and is found by i
   const card = heading.closest("article") as HTMLElement;
   expect(within(card).getByText(/Commander Keen 4–6/)).toHaveTextContent(
     "Commander Keen 4–6 · 2, Part 2",
+  );
+  expect(within(card).getByRole("link", { name: /Commander Keen 4–6/ })).toHaveAttribute(
+    "href",
+    "/series/$seriesId",
   );
 
   const search = screen.getByRole("searchbox", { name: "Search library" });

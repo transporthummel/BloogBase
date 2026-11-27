@@ -86,7 +86,7 @@ export const ProfileCard = memo(function ProfileCard({
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-3">
         <div className="grid gap-0.5">
-          {series && seriesLine && <SeriesLine place={series} />}
+          {series && seriesLine && <SeriesLine place={series} link />}
           <Heading className="text-sm leading-tight font-semibold">
             <Link
               to="/profiles/$profileId"
