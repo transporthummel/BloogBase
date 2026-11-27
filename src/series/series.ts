@@ -162,3 +162,27 @@ export function partStates(
     };
   });
 }
+
+/**
+ * The years a series came out in, from its parts' first releases: "1991",
+ * or "2006–2012". A game counts from its first full release, not a beta or
+ * demo. Null when no part has a date.
+ */
+export function seriesYears(states: PartState[], games: Game[] | undefined): string | null {
+  const years = states.flatMap((s) => {
+    const dates = s.indexMod
+      ? [s.indexMod.entry.released]
+      : (games
+          ?.find((g) => g.id === s.part.game)
+          ?.versions.filter((v) => (v.kind ?? "release") === "release")
+          .map((v) => v.released) ?? []);
+    // A part's first release only: a game's later ones (the id Anthology's)
+    // don't stretch the series.
+    const parsed = dates.flatMap((d) => (d && /^\d{4}/.test(d) ? [Number(d.slice(0, 4))] : []));
+    return parsed.length > 0 ? [Math.min(...parsed)] : [];
+  });
+  if (years.length === 0) return null;
+  const first = Math.min(...years);
+  const last = Math.max(...years);
+  return first === last ? String(first) : `${first}–${last}`;
+}

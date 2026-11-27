@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { type IndexMod } from "../bindings";
 import { galaxy, toast } from "../test/series";
+import { entry, game, indexMod } from "../test/seriesData";
 import {
   episodeTitle,
   profileKey,
@@ -8,6 +9,8 @@ import {
   seriesOf,
   seriesPlaces,
   seriesSearchText,
+  seriesYears,
+  type PartState,
 } from "./series";
 
 const places = seriesPlaces([toast, galaxy]);
@@ -59,4 +62,30 @@ test("titles and names", () => {
     "the universe is toast!",
     "das universum ist toast!",
   ]);
+});
+
+test("a series' years run from its first part's release to its last's", () => {
+  const part = (more: Partial<PartState>): PartState => ({
+    key: "k",
+    part: {},
+    number: "1",
+    title: "t",
+    profileId: null,
+    played: false,
+    ...more,
+  });
+  const mod = (released: string | null) =>
+    part({ indexMod: indexMod(entry("m", "M", { released })) });
+  const keen4 = game("keen4", "Commander Keen 4");
+  keen4.versions = [
+    { ...keen4.versions[0], released: "1991-12-15" },
+    { ...keen4.versions[0], released: "1990-05", kind: "beta" },
+    { ...keen4.versions[0], released: "1996-12-13" },
+  ];
+
+  expect(seriesYears([mod("2012-01-05"), mod("2006-03"), mod(null)], [])).toBe("2006–2012");
+  expect(seriesYears([mod("2009"), mod("2009-11")], [])).toBe("2009");
+  // A game from its first full release; a beta doesn't count.
+  expect(seriesYears([part({ part: { game: "keen4" } })], [keen4])).toBe("1991");
+  expect(seriesYears([mod(null)], [])).toBeNull();
 });

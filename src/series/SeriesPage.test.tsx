@@ -70,8 +70,13 @@ beforeEach(() => {
   vi.mocked(commands.indexMods).mockResolvedValue({
     status: "ok",
     data: [
-      indexMod(entry("keys", "The Universe is Toast!: The Keys of Krodacia"), "keys-mod"),
-      indexMod(entry("desert", "Dead in the Desert", { authors: ["Gridlock"] })),
+      indexMod(
+        entry("keys", "The Universe is Toast!: The Keys of Krodacia", { released: "2006-03" }),
+        "keys-mod",
+      ),
+      indexMod(
+        entry("desert", "Dead in the Desert", { authors: ["Gridlock"], released: "2012-01-05" }),
+      ),
       indexMod(entry("brains", "Battle of the Brains")),
       indexMod(entry("desert-pack", "Desert Levelpack", { type: "levelpack" })),
     ],
@@ -92,6 +97,7 @@ test("lists the episodes in order and the bonus parts, each to install or open",
   ).toBeInTheDocument();
   expect(screen.getByText("Keen against the Shikadi.")).toBeInTheDocument();
   expect(screen.getByText("by Someone, Gridlock")).toBeInTheDocument();
+  expect(screen.getByText("2006–2012")).toBeInTheDocument();
   expect(screen.getByText("1 of 4 played")).toBeInTheDocument();
 
   const episodes = screen.getByRole("region", { name: "Episodes" });

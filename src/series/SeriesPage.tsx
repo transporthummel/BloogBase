@@ -23,7 +23,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { Loading } from "../ui/Loading";
 import { Notice } from "../ui/Notice";
 import { PageHeader } from "../ui/PageHeader";
-import { partStates, type PartState, seriesDescription, seriesName } from "./series";
+import { partStates, type PartState, seriesDescription, seriesName, seriesYears } from "./series";
 
 export function SeriesRoute() {
   const { seriesId } = useParams({ from: "/series/$seriesId" });
@@ -82,6 +82,7 @@ export function SeriesPage({ seriesId }: { seriesId: string }) {
   );
   const description = seriesDescription(series, i18n.language);
   const played = states.filter((s) => s.played).length;
+  const years = seriesYears(states, games);
   const canPlay = !!runtime.data?.active && !launch.isPending;
 
   const card = (s: PartState, index: number) => {
@@ -156,6 +157,12 @@ export function SeriesPage({ seriesId }: { seriesId: string }) {
               <span>
                 <Authors authors={authors} links={authorLinks} />
               </span>
+              <span aria-hidden>·</span>
+            </>
+          )}
+          {years && (
+            <>
+              <span>{years}</span>
               <span aria-hidden>·</span>
             </>
           )}
