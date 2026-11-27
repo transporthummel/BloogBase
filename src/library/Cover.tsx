@@ -28,7 +28,8 @@ export function Cover({
   onError?: (src: string) => void;
 }) {
   if (src) {
-    // 320x200 pixels shown at 4:3, as on a CRT.
+    // 320x200 pixels shown at 4:3, as on a CRT, as wide as the card even
+    // where that's more than 320.
     return (
       <img
         src={src}
@@ -36,7 +37,7 @@ export function Cover({
         loading="lazy"
         decoding="async"
         onError={() => onError?.(src)}
-        className={`object-fill [image-rendering:pixelated] ${className}`}
+        className={`w-full object-fill [image-rendering:pixelated] ${className}`}
       />
     );
   }

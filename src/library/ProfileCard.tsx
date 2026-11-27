@@ -29,6 +29,7 @@ export const ProfileCard = memo(function ProfileCard({
   updating,
   series,
   seriesLine = true,
+  large = false,
   onPlay,
 }: {
   profile: Profile;
@@ -44,6 +45,8 @@ export const ProfileCard = memo(function ProfileCard({
   series?: SeriesPlace;
   /** Off on the series' own page, which says it already. */
   seriesLine?: boolean;
+  /** Bigger, with more of the cover: the series' page has only a few parts. */
+  large?: boolean;
   /** With the world to play, for a mod that keeps worlds, or a variant. */
   onPlay: (profile: Profile, world: WorldStart | null, variant?: string) => void;
 }) {
@@ -82,12 +85,13 @@ export const ProfileCard = memo(function ProfileCard({
           src={cover.data?.src}
           onError={cover.onError}
           standalone={profile.sourceMod}
+          className={large ? LARGE_COVER : undefined}
         />
       </Link>
-      <div className="flex flex-1 flex-col gap-2 p-3">
+      <div className={`flex flex-1 flex-col gap-2 ${large ? "p-4" : "p-3"}`}>
         <div className="grid gap-0.5">
           {series && seriesLine && <SeriesLine place={series} link />}
-          <Heading className="text-sm leading-tight font-semibold">
+          <Heading className={`${large ? "text-base" : "text-sm"} leading-tight font-semibold`}>
             <Link
               to="/profiles/$profileId"
               params={{ profileId: profile.id }}
@@ -213,6 +217,9 @@ export const ProfileCard = memo(function ProfileCard({
     </Card>
   );
 });
+
+/** The cover of a large card, with a bigger placeholder number. */
+export const LARGE_COVER = "aspect-[4/3] text-7xl";
 
 /**
  * Play with the other variants and worlds beside it, as on the page. Only

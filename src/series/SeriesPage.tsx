@@ -11,7 +11,7 @@ import { useFreeGames, useIndexMods, useSeries } from "../discover/queries";
 import { StatusBadge } from "../discover/StatusBadge";
 import { useUpdatingMods } from "../jobs/queries";
 import { Cover } from "../library/Cover";
-import { ProfileCard } from "../library/ProfileCard";
+import { LARGE_COVER, ProfileCard } from "../library/ProfileCard";
 import { useInstalls, useProfiles } from "../library/queries";
 import { useCardPlay } from "../library/useCardPlay";
 import { Authors } from "../mods/Authors";
@@ -98,6 +98,7 @@ export function SeriesPage({ seriesId }: { seriesId: string }) {
           updating={profile.modId !== null && updating.has(profile.modId)}
           series={{ series, part: s.part, number: s.number, index }}
           seriesLine={false}
+          large
           onPlay={play}
         />
       );
@@ -116,14 +117,23 @@ export function SeriesPage({ seriesId }: { seriesId: string }) {
     return <GamePartCard state={s} game={game} />;
   };
 
+  // Bigger than the library's, as a series has only a few parts: as many
+  // side by side as it has episodes, at most three, so a wider window makes
+  // them bigger rather than more. The bonus parts take the same width.
+  const columns = Math.min(3, episodes.length);
   const list = (parts: PartState[], numbered: boolean, from: number) => (
-    <ol className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-4">
+    <ol
+      className="grid gap-4"
+      style={{
+        gridTemplateColumns: `repeat(auto-fill, minmax(max(20rem, calc((100% - ${columns - 1}rem) / ${columns})), 1fr))`,
+      }}
+    >
       {parts.map((s, i) => (
         <li key={s.key} id={`part-${s.key}`} className="flex scroll-mt-6 gap-2">
           {numbered && (
             <span
               aria-hidden
-              className="w-7 shrink-0 pt-2 text-right font-pixel text-sm text-muted"
+              className="w-7 shrink-0 pt-2 text-right font-pixel text-base text-muted"
             >
               {s.number}
             </span>
@@ -139,17 +149,21 @@ export function SeriesPage({ seriesId }: { seriesId: string }) {
       <BackButton />
       <PageHeader title={seriesName(series, i18n.language)} />
       <div className="-mt-3 mb-8 grid max-w-prose gap-3 select-text">
-        <div className="grid gap-0.5 text-sm text-muted">
+        {/* Wraps after the authors as a whole when they're many. */}
+        <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
           {authors.length > 0 && (
-            <p>
-              <Authors authors={authors} links={authorLinks} />
-            </p>
+            <>
+              <span>
+                <Authors authors={authors} links={authorLinks} />
+              </span>
+              <span aria-hidden>·</span>
+            </>
           )}
-          <p className="flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-1.5">
             {played > 0 && <Check className="size-4 text-accent" aria-hidden />}
             {t("series.played", { played, count: states.length })}
-          </p>
-        </div>
+          </span>
+        </p>
         {description && <p className="text-sm leading-relaxed">{description}</p>}
       </div>
       {launch.error && (
@@ -222,10 +236,15 @@ function ModPartCard({
     (base && base.modId === null ? (base.entry.downloads[0]?.size ?? 0) : 0);
   return (
     <Card className="flex h-full flex-col">
-      <Cover gameId={entry.game} game={game} standalone={isSourceMod(entry)} />
-      <div className="flex flex-1 flex-col gap-2 p-3">
+      <Cover
+        gameId={entry.game}
+        game={game}
+        standalone={isSourceMod(entry)}
+        className={LARGE_COVER}
+      />
+      <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="grid gap-0.5">
-          <h3 className="text-sm leading-tight font-semibold">{state.title}</h3>
+          <h3 className="text-base leading-tight font-semibold">{state.title}</h3>
           <p className="text-xs text-muted">
             {isSourceMod(entry)
               ? t("mods.standalone")
@@ -255,9 +274,9 @@ function GamePartCard({ state, game }: { state: PartState; game?: Game }) {
   const free = useFreeGames().data?.some((f) => f.gameId === gameId && f.setup && !f.installed);
   return (
     <Card className="flex h-full flex-col">
-      <Cover gameId={gameId} game={game} />
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <h3 className="text-sm leading-tight font-semibold">{state.title}</h3>
+      <Cover gameId={gameId} game={game} className={LARGE_COVER} />
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        <h3 className="text-base leading-tight font-semibold">{state.title}</h3>
         <p className="text-xs text-muted">{t("series.gameMissing")}</p>
         <div className="mt-auto grid grid-cols-1 gap-2 pt-1.5">
           {free ? (
